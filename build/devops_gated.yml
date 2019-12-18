@@ -11,7 +11,7 @@ jobs:
     - Cmd
     - msbuild
     - visualstudio
-  condition:false
+  condition: false
 
   steps:
   - task: BatchScript@1
@@ -90,7 +90,7 @@ jobs:
     - msbuild
     - visualstudio
     - vstest
-  condition:false
+  condition: false
 
   steps:
   - task: BatchScript@1
@@ -148,7 +148,7 @@ jobs:
     - Cmd
     - msbuild
     - visualstudio
-  condition:false
+  condition: false
 
   steps:
   - task: BatchScript@1
@@ -221,7 +221,7 @@ jobs:
   displayName: 'Build Linux Ubuntu 16.04'
   pool:
     name: Hosted Ubuntu 1604
-  condition:false
+  condition: false
 
   steps:
   - bash: |
@@ -253,7 +253,7 @@ jobs:
     - Cmd
     - msbuild
     - visualstudio
-  condition:false
+  condition: false
 
   steps:
   - task: BatchScript@1
