@@ -11,7 +11,7 @@
 
 #include "azure_macro_utils/macro_utils.h"
 #include "umock_c/umock_c.h"
-#include "azure_c_shared_utility/buffer_.h"
+#include "azure_c_util/buffer_.h"
 #include "testrunnerswitcher.h"
 
 static size_t currentmalloc_call = 0;
@@ -71,7 +71,7 @@ void my_gballoc_free(void* ptr)
 }
 
 #define ENABLE_MOCKS
-#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_util/gballoc.h"
 
 #define ALLOCATION_SIZE             16
 #define TOTAL_ALLOCATION_SIZE       32

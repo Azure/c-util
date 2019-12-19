@@ -147,8 +147,10 @@ endfunction()
 set_platform_files(${CMAKE_CURRENT_LIST_DIR})
 
 include_directories(${UMOCK_C_INC_FOLDER})
+include_directories(${UMOCK_C_INC_FOLDER})
 
 set(azure_c_util_c_files
+    ./adapters/agenttime.c
     ./src/buffer.c
     ${LOGGING_C_FILE}
     ${XLOGGING_C_FILE}
@@ -164,6 +166,7 @@ set(azure_c_util_c_files
 )
 
 set(azure_c_util_h_files
+    ./inc/azure_c_util/agenttime.h
     ./inc/azure_c_util/buffer_.h
     ${LOGGING_H_FILE}
     ./inc/azure_c_util/envvariable.h
@@ -194,12 +197,12 @@ if(MSVC)
     set(source_h_files ${source_h_files}
         ./pal/windows/refcount_os.h
     )
-    target_include_directories(azure_c_util PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>$<BUILD_INTERFACE:${C_UTIL_FOLDER}/pal/windows>)
+    target_include_directories(azure_c_util PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/windows>)
 else()
     set(source_h_files ${source_h_files}
         ./pal/linux/refcount_os.h
     )
-    target_include_directories(azure_c_util PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>$<BUILD_INTERFACE:${C_UTIL_FOLDER}/pal/linux>)
+    target_include_directories(azure_c_util PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/linux>)
 endif()
 
 set(azure_c_util_target_libs)
@@ -257,6 +260,7 @@ endif()
 
 include_directories(${MACRO_UTILS_INC_FOLDER})
 include_directories(${UMOCK_C_INC_FOLDER})
+include_directories(${CMAKE_CURRENT_LIST_DIR}/inc)
 
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_unittests ${original_run_unittests})

@@ -13,7 +13,6 @@
 #include "azure_macro_utils/macro_utils.h"
 
 #include "azure_c_util/agenttime.h"
-#include "azure_c_util/optimize_size.h"
 
 #ifdef LOGERROR_CAPTURES_STACK_TRACES
 #include "azure_c_util/logging_stacktrace.h"
