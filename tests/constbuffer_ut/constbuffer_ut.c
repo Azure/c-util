@@ -24,11 +24,11 @@ void my_gballoc_free(void* ptr)
 
 #define ENABLE_MOCKS
 #include "umock_c/umock_c.h"
-#include "azure_c_shared_utility/buffer_.h"
-#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_util/buffer_.h"
+#include "azure_c_util/gballoc.h"
 
 #undef ENABLE_MOCKS
-#include "azure_c_shared_utility/constbuffer.h"
+#include "azure_c_util/constbuffer.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 

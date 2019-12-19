@@ -10,9 +10,7 @@ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-    ${XLOGGING_C_FILE}
-    ${LOGGING_C_FILE}
-	${TICKCOUTER_C_FILE}
+    ${TICKCOUTER_C_FILE}
 )
 
 set(${theseTestsName}_h_files

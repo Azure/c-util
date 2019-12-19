@@ -2,7 +2,7 @@
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #the purpose of these tests is to see that a LogError/LogInfo/LogLastError would compile under all switch combinations
-#the tests will not recompile the complete c_shared_utility library, only the relevant parts. These tests only target Windows
+#the tests will not recompile the complete c_util library, only the relevant parts. These tests only target Windows
 
 if(${run_unittests})
 

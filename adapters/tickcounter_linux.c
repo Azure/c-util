@@ -2,11 +2,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_util/gballoc.h"
 #include <stdint.h>
-#include "azure_c_shared_utility/tickcounter.h"
-#include "azure_c_shared_utility/optimize_size.h"
-#include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_util/tickcounter.h"
+#include "azure_c_util/optimize_size.h"
+#include "azure_c_util/xlogging.h"
 
 #ifdef __MACH__
 #include <mach/clock.h>

@@ -3,8 +3,8 @@
 
 #include <stdlib.h>
 #include <pthread.h>
-#include "azure_c_shared_utility/lock.h"
-#include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_util/lock.h"
+#include "azure_c_util/xlogging.h"
 
 LOCK_HANDLE Lock_Init(void)
 {

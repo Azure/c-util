@@ -10,8 +10,6 @@ set(${theseTestsName}_test_files
 )
 
 set(${theseTestsName}_c_files
-    ${XLOGGING_C_FILE}
-    ${LOGGING_C_FILE}
     srw_lock_mocked.c
     ../../adapters/string_utils.c
 )

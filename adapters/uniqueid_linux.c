@@ -7,8 +7,8 @@
 #include <uuid/uuid.h>
 
 #include "azure_macro_utils/macro_utils.h"
-#include "azure_c_shared_utility/uniqueid.h"
-#include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_util/uniqueid.h"
+#include "azure_c_util/xlogging.h"
 
 MU_DEFINE_ENUM_STRINGS(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);
 

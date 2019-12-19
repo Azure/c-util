@@ -8,7 +8,7 @@
 #endif
 
 #include "testrunnerswitcher.h"
-#include "azure_c_shared_utility/uniqueid.h"
+#include "azure_c_util/uniqueid.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 static TEST_MUTEX_HANDLE g_dllByDll;

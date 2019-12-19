@@ -16,8 +16,6 @@ set(${theseTestsName}_c_files
 )
 
 set(${theseTestsName}_h_files
-    ${XLOGGING_C_FILE}
-    ${LOGGING_C_FILE}
     ../../inc/azure_c_util/constbuffer_array_batcher.h
     ../real_test_files/real_constbuffer.h
     ../real_test_files/real_constbuffer_renames.h
