@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-set(theseTestsName buffer_ut)
+set(theseTestsName timer_ut)
 
 set(${theseTestsName}_test_files
     ${theseTestsName}.c
@@ -12,7 +12,7 @@ set(${theseTestsName}_test_files
 set(${theseTestsName}_c_files
     ${XLOGGING_C_FILE}
     ${LOGGING_C_FILE}
-    ../../src/buffer.c
+    timer_mocked.c
 )
 
 set(${theseTestsName}_h_files

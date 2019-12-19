@@ -3,19 +3,17 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-set(theseTestsName buffer_ut)
+set(theseTestsName constbuffer_ut)
 
 set(${theseTestsName}_test_files
-    ${theseTestsName}.c
+${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-    ${XLOGGING_C_FILE}
-    ${LOGGING_C_FILE}
-    ../../src/buffer.c
+../../src/constbuffer.c
 )
 
 set(${theseTestsName}_h_files
 )
 
-build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests")
+build_c_tests(${theseTestsName} ON "tests/azure_c_shared_utility_tests")

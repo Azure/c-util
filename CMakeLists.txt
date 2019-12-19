@@ -182,6 +182,11 @@ include_directories(${UMOCK_C_INC_FOLDER})
 set(azure_c_util_c_files
     ./adapters/agenttime.c
     ./src/buffer.c
+    ./src/crt_abstractions.c
+    ./src/constbuffer.c
+    ./src/constbuffer_array.c
+    ./src/constbuffer_array_batcher.c
+    ./src/memory_data.c
     ${LOGGING_C_FILE}
     ${XLOGGING_C_FILE}
     ${LOCK_C_FILE}
@@ -198,13 +203,19 @@ set(azure_c_util_c_files
 set(azure_c_util_h_files
     ./inc/azure_c_util/agenttime.h
     ./inc/azure_c_util/buffer_.h
+    ./inc/azure_c_util/constbuffer.h
+    ./inc/azure_c_util/constbuffer_array.h
+    ./inc/azure_c_util/constbuffer_array_batcher.h
+    ./inc/azure_c_util/crt_abstractions.h
     ${LOGGING_H_FILE}
     ./inc/azure_c_util/envvariable.h
     ./inc/azure_c_util/gballoc.h
     ./inc/azure_c_util/lock.h
+    ./inc/azure_c_util/memory_data.h
     ./inc/azure_c_util/refcount.h
     ./inc/azure_c_util/srw_lock.h
     ./inc/azure_c_util/string_utils.h
+    ./inc/azure_c_util/timer.h
     ./inc/azure_c_util/tickcounter.h
     ./inc/azure_c_util/threadapi.h
     ./inc/azure_c_util/uniqueid.h
@@ -216,24 +227,28 @@ set(azure_c_util_h_files
 FILE(GLOB azure_c_util_md_files "devdoc/*.md")
 SOURCE_GROUP(devdoc FILES ${azure_c_util_md_files})
 
+if(MSVC)
+    set(azure_c_util_h_files ${azure_c_util_h_files}
+        ./pal/windows/refcount_os.h
+    )
+else()
+    set(azure_c_util_h_files ${azure_c_util_h_files}
+        ./pal/linux/refcount_os.h
+    )
+endif()
+
 #this is the product (a library)
 add_library(azure_c_util ${azure_c_util_c_files} ${azure_c_util_h_files} ${azure_c_util_md_files})
 
-target_include_directories(azure_c_util PUBLIC
-            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc>
-            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-
 if(MSVC)
-    set(source_h_files ${source_h_files}
-        ./pal/windows/refcount_os.h
-    )
-    target_include_directories(azure_c_util PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/windows>)
+    target_include_directories(azure_c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/windows>)
+    include_directories(${CMAKE_CURRENT_LIST_DIR}/pal/windows)
 else()
-    set(source_h_files ${source_h_files}
-        ./pal/linux/refcount_os.h
-    )
-    target_include_directories(azure_c_util PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/linux>)
+    target_include_directories(azure_c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/linux>)
+    include_directories(${CMAKE_CURRENT_LIST_DIR}/pal/linux)
 endif()
+
+target_include_directories(azure_c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc>)
 
 set(azure_c_util_target_libs)
 
