@@ -1,3 +1,6 @@
 [submodule "deps/azure-c-build-tools"]
 	path = deps/azure-c-build-tools
 	url = https://github.com/Azure/azure-c-build-tools.git
+[submodule "deps/umock-c"]
+	path = deps/umock-c
+	url = https://github.com/Azure/umock-c.git
