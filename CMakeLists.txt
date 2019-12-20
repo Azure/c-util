@@ -23,6 +23,8 @@ endif()
 
 option(no_logging "disable logging (default is OFF)" OFF)
 
+set(C_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
+
 if(WIN32)
 
 if(${use_etw} STREQUAL "TRACELOGGING_WITH_CONSOLE")
