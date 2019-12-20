@@ -23,6 +23,19 @@ endif()
 
 option(no_logging "disable logging (default is OFF)" OFF)
 
+set(original_run_e2e_tests ${run_e2e_tests})
+set(original_run_unittests ${run_unittests})
+set(original_run_int_tests ${run_int_tests})
+
+set(run_e2e_tests OFF)
+set(run_unittests OFF)
+set(run_int_tests OFF)
+
+if ((NOT TARGET azure_c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-build-tools/CMakeLists.txt))
+        add_subdirectory(deps/azure-c-build-tools)
+endif()
+set_default_build_options()
+
 set(C_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 
 if(WIN32)
@@ -159,7 +172,6 @@ endfunction()
 set_platform_files(${CMAKE_CURRENT_LIST_DIR})
 
 include_directories(${UMOCK_C_INC_FOLDER})
-include_directories(${UMOCK_C_INC_FOLDER})
 
 set(azure_c_util_c_files
     ./adapters/agenttime.c
@@ -267,18 +279,6 @@ if(LINUX)
 endif()
 
 target_link_libraries(azure_c_util ${azure_c_util_target_libs})
-
-set(original_run_e2e_tests ${run_e2e_tests})
-set(original_run_unittests ${run_unittests})
-set(original_run_int_tests ${run_int_tests})
-
-set(run_e2e_tests OFF)
-set(run_unittests OFF)
-set(run_int_tests OFF)
-
-if ((NOT TARGET azure_c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-build-tools/CMakeLists.txt))
-        add_subdirectory(deps/azure-c-build-tools)
-endif()
 
 if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
         add_subdirectory(deps/azure-macro-utils-c)
