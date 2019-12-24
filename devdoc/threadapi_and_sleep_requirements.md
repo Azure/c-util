@@ -2,20 +2,12 @@
 
 ## Overview
 
-This document defines the behavior of the Azure IoT's **sleep** and **threadapi** adapters. These two
-adapters are specifed together because they are declared in the same
-[threadapi.h](https://github.com/Azure/azure-c-shared-utility/blob/master/inc/azure_c_shared_utility/threadapi.h)
-header file.
+This document defines the behavior of the **sleep** and **threadapi** adapters.
 
 The _sleep_ and _threadapi_ adapters are related because they share a header file and they
 both deal with thread functionality, but
 they are described as distinct adapters in these documents because the _sleep_ adapter is mandatory for
 correct SDK operation, while the _threadapi_ adapter is optional.
-
-## References
-
-[Azure IoT porting guide](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/porting_guide.md)<br/>
-[threadapi.h](https://github.com/Azure/azure-c-shared-utility/blob/master/inc/azure_c_shared_utility/threadapi.h)
 
 ## Exposed API
 

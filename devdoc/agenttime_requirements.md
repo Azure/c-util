@@ -9,10 +9,6 @@ Most of the times these functions can simply call the C standard time functions.
 Most implementations of the C `time()` function return seconds since 00:00 hours, Jan 1, 1970 UTC. Implementations
 which do not must convert the output of `time()` to conform to this spec.
 
-###### Header files
-- [agenttime.h](https://github.com/Azure/azure-c-shared-utility/blob/master/inc/azure_c_shared_utility/agenttime.h)<br/>
-
-
 ## Exposed API
 **SRS_AGENT_TIME_99_001: [** AGENT_TIME shall have the following interface **]**
 ```c

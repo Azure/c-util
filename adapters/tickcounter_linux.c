@@ -2,10 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#include "azure_c_util/gballoc.h"
 #include <stdint.h>
+#include "azure_macro_utils/macro_utils.h"
+#include "azure_c_util/gballoc.h"
 #include "azure_c_util/tickcounter.h"
-#include "azure_c_util/optimize_size.h"
 #include "azure_c_util/xlogging.h"
 
 #ifdef __MACH__
