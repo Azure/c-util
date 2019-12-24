@@ -249,6 +249,7 @@ jobs:
     - Cmd
     - msbuild
     - visualstudio
+  condition: false
 
   steps:
   - task: BatchScript@1
@@ -295,4 +296,3 @@ jobs:
       arguments: '-i $(Build.SourcesDirectory) -buildcheck -e deps'
       modifyEnvironment: false
       workingFolder: '$(Build.SourcesDirectory)'
-    condition: false
