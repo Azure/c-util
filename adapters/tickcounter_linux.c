@@ -14,6 +14,8 @@
 #endif
 
 
+#define INVALID_TIME_VALUE      (time_t)(-1)
+
 #ifndef __MACH__
 clockid_t time_basis = -1;
 #endif
