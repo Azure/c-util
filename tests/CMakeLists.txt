@@ -29,5 +29,7 @@ if(${run_unittests})
 endif()
 
 if(${run_int_tests})
-    add_subdirectory(string_utils_int)
+    if(WIN32)
+        add_subdirectory(string_utils_int)
+    endif()
 endif()
