@@ -218,7 +218,6 @@ jobs:
   displayName: 'Build Linux Ubuntu 16.04'
   pool:
     name: Hosted Ubuntu 1604
-  condition: false
 
   steps:
   - bash: |
