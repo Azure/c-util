@@ -89,7 +89,6 @@ jobs:
     - msbuild
     - visualstudio
     - vstest
-  condition: false
 
   steps:
   - task: BatchScript@1

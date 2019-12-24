@@ -36,6 +36,9 @@ if ((NOT TARGET azure_c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/
 endif()
 set_default_build_options()
 
+include(CTest)
+enable_testing()
+
 set(C_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 
 if(WIN32)
