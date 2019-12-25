@@ -11,7 +11,6 @@ jobs:
     - Cmd
     - msbuild
     - visualstudio
-  condition: false
 
   steps:
   - task: BatchScript@1
@@ -60,10 +59,10 @@ jobs:
       modifyEnvironment: true
 
   - task: CMake@1
-    displayName: 'CMake .. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -Drun_e2e_tests:bool=OFF -G "Visual Studio 15 2017 Win64"'
+    displayName: 'CMake .. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -G "Visual Studio 15 2017 Win64"'
     inputs:
       workingDirectory: 'build_x64'
-      cmakeArgs: '.. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -Drun_e2e_tests:bool=OFF -G "Visual Studio 15 2017 Win64"'
+      cmakeArgs: '.. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -G "Visual Studio 15 2017 Win64"'
 
   - task: VSBuild@1
     displayName: 'Build solution build_x64\*.sln'
@@ -90,7 +89,6 @@ jobs:
     - msbuild
     - visualstudio
     - vstest
-  condition: false
 
   steps:
   - task: BatchScript@1
@@ -118,15 +116,15 @@ jobs:
       modifyEnvironment: true
 
   - task: CMake@1
-    displayName: 'CMake ..'
+    displayName: 'CMake .. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=ON'
     inputs:
-      workingDirectory: 'build_x86'
-      cmakeArgs: '.. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Drun_e2e_tests:bool=ON -Duse_cppunittest:bool=ON'
+      workingDirectory: 'build_x64'
+      cmakeArgs: '.. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=ON'
 
   - task: VSBuild@1
-    displayName: 'Build solution build_x86\*.sln'
+    displayName: 'Build solution build_x64\*.sln'
     inputs:
-      solution: 'build_x86\*.sln'
+      solution: 'build_x64\*.sln'
       platform: Win32
       configuration: RelWithDebInfo
       maximumCpuCount: true
@@ -148,7 +146,6 @@ jobs:
     - Cmd
     - msbuild
     - visualstudio
-  condition: false
 
   steps:
   - task: BatchScript@1
@@ -221,7 +218,6 @@ jobs:
   displayName: 'Build Linux Ubuntu 16.04'
   pool:
     name: Hosted Ubuntu 1604
-  condition: false
 
   steps:
   - bash: |
@@ -253,6 +249,7 @@ jobs:
     - Cmd
     - msbuild
     - visualstudio
+  condition: false
 
   steps:
   - task: BatchScript@1
@@ -296,7 +293,6 @@ jobs:
     displayName: 'Run traceability tool'
     inputs:
       filename: 'deps/azure-c-build-tools/traceabilitytool/traceability_tool/bin/Release/traceabilitytool.exe'
-      arguments: '-i $(Build.SourcesDirectory) -buildcheck'
+      arguments: '-i $(Build.SourcesDirectory) -buildcheck -e deps'
       modifyEnvironment: false
       workingFolder: '$(Build.SourcesDirectory)'
-      
