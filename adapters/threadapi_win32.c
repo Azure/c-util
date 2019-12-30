@@ -51,7 +51,7 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int *res)
         if( returnCode != WAIT_OBJECT_0)
         {
             result = THREADAPI_ERROR;
-            LogError("Error waiting for Single Object. Return Code: %d. Error Code: %d", returnCode, result);
+            LogLastError("Error waiting for Single Object. Return Code: %d. Error Code: %d", returnCode, result);
         }
         else
         {
