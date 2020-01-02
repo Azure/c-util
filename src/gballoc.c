@@ -53,7 +53,7 @@ int gballoc_init(void)
     {
         gballocState = GBALLOC_STATE_INIT;
 
-        /* Codes_ SRS_GBALLOC_01_002: [Upon initialization the total memory used and maximum total memory used tracked by the module shall be set to 0.] */
+        /* Codes_SRS_GBALLOC_01_002: [Upon initialization the total memory used and maximum total memory used tracked by the module shall be set to 0.] */
         totalSize = 0;
         maxSize = 0;
         g_allocations = 0;
@@ -71,9 +71,12 @@ void gballoc_deinit(void)
     {
         /* Codes_SRS_GBALLOC_01_028: [gballoc_deinit shall free all resources allocated by gballoc_init.] */
         (void)Lock_Deinit(gballocThreadSafeLock);
+        gballocState = GBALLOC_STATE_NOT_INIT;
     }
-
-    gballocState = GBALLOC_STATE_NOT_INIT;
+    else
+    {
+        /* Codes_SRS_GBALLOC_01_029: [if gballoc is not initialized gballoc_deinit shall do nothing.] */
+    }
 }
 
 void* gballoc_malloc(size_t size)
@@ -97,6 +100,7 @@ void* gballoc_malloc(size_t size)
         ALLOCATION* allocation = (ALLOCATION*)malloc(sizeof(ALLOCATION));
         if (allocation == NULL)
         {
+            /* Codes_SRS_GBALLOC_01_013: [When gballoc_malloc fails allocating memory for its internal use, gballoc_malloc shall return NULL.] */
             result = NULL;
         }
         else
@@ -153,6 +157,7 @@ void* gballoc_calloc(size_t nmemb, size_t size)
         ALLOCATION* allocation = (ALLOCATION*)malloc(sizeof(ALLOCATION));
         if (allocation == NULL)
         {
+            /* Codes_SRS_GBALLOC_01_023: [When gballoc_calloc fails allocating memory for its internal use, gballoc_calloc shall return NULL.] */
             result = NULL;
         }
         else
@@ -238,6 +243,7 @@ void* gballoc_realloc(void* ptr, size_t size)
         }
         else
         {
+            /* Codes_SRS_GBALLOC_01_005: [gballoc_realloc shall call the C99 realloc function and return its result.] */
             result = realloc(ptr, size);
             if (result == NULL)
             {
@@ -267,7 +273,10 @@ void* gballoc_realloc(void* ptr, size_t size)
 
                 /* Codes_SRS_GBALLOC_01_007: [If realloc is successful, gballoc_realloc shall also increment the total memory used value tracked by this module.] */
                 totalSize += size;
-                g_allocations++;
+                if (ptr == NULL)
+                {
+                    g_allocations++;
+                }
 
                 /* Codes_SRS_GBALLOC_01_011: [The maximum total memory used shall be the maximum of the total memory used at any point.] */
                 if (maxSize < totalSize)
@@ -420,7 +429,7 @@ size_t gballoc_getAllocationCount(void)
 
 void gballoc_resetMetrics()
 {
-    /* Codes_SRS_GBALLOC_07_005: [ If gballoc was not initialized gballoc_reset Metrics shall do nothing.] */
+    /* Codes_SRS_GBALLOC_07_005: [ If gballoc was not initialized gballoc_resetMetrics shall do nothing.] */
     if (gballocState != GBALLOC_STATE_INIT)
     {
         LogError("gballoc is not initialized.");

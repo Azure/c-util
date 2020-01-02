@@ -14,6 +14,7 @@ set(${theseTestsName}_c_files
 )
 
 set(${theseTestsName}_h_files
+    ../../inc/azure_c_util/lock.h
 )
 
 build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests")

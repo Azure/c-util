@@ -188,7 +188,7 @@ extern size_t gballoc_getAllocationCount(void));
 extern void gballoc_resetMetrics(void);
 ```
 
-**SRS_GBALLOC_07_005: [** If `gballoc` was not initialized `gballoc_reset Metrics` shall do nothing.**]**
+**SRS_GBALLOC_07_005: [** If `gballoc` was not initialized `gballoc_resetMetrics` shall do nothing.**]**
 
 **SRS_GBALLOC_07_006: [** `gballoc_resetMetrics` shall ensure thread safety by using the lock created by `gballoc_Init` **]**
 

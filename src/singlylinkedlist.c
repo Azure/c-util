@@ -191,6 +191,7 @@ LIST_ITEM_HANDLE singlylinkedlist_get_next_item(LIST_ITEM_HANDLE item_handle)
     else
     {
         /* Codes_SRS_LIST_01_018: [singlylinkedlist_get_next_item shall return the next item in the list following the item item_handle.] */
+        /* Codes_SRS_LIST_01_022: [If no more items exist in the list after the item_handle item, singlylinkedlist_get_next_item shall return NULL.] */
         result = (LIST_ITEM_HANDLE)((LIST_ITEM_INSTANCE*)item_handle)->next;
     }
 

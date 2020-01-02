@@ -65,7 +65,6 @@ typedef unsigned char bool;
 
 /* Codes_SRS_CRT_ABSTRACTIONS_99_001:[The module shall not redefine the secure functions implemented by Microsoft CRT.] */
 /* Codes_SRS_CRT_ABSTRACTIONS_99_040 : [The module shall still compile when building on a Microsoft platform.] */
-/* Codes_SRS_CRT_ABSTRACTIONS_99_002: [CRTAbstractions module shall expose the following API]*/
 #if defined (_MSC_VER) || defined (MINGW_HAS_SECURE_API)
 #else // _MSC_VER || MINGW_HAS_SECURE_API
 

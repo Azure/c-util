@@ -72,6 +72,7 @@ TEST_FUNCTION_CLEANUP(cleans)
 }
 
 /* Tests_SRS_LOCK_10_002: [Lock_Init on success shall return a valid lock handle which should be a non NULL value] */
+/* Tests_SRS_LOCK_10_004: [ `Lock` shall be implemented as a non-recursive lock ]*/
 TEST_FUNCTION(LOCK_Lock_Init_succeeds)
 {
     //arrange
@@ -88,6 +89,26 @@ TEST_FUNCTION(LOCK_Lock_Init_succeeds)
 
     //cleanup
     (void)Lock_Deinit(handle);
+}
+
+/* Lock_Deinit */
+
+/* Tests_SRS_LOCK_10_012: [Lock_Deinit frees the memory pointed by handle] */
+TEST_FUNCTION(Lock_Deinit_frees_memory)
+{
+    //arrange
+    LOCK_HANDLE handle = Lock_Init();
+    umock_c_reset_all_calls();
+
+#ifdef WIN32
+    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
+#endif
+
+    //act
+    Lock_Deinit(handle);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /* Tests_SRS_LOCK_10_005: [Lock on success shall return LOCK_OK] */
@@ -108,6 +129,7 @@ TEST_FUNCTION(LOCK_Init_Lock_succeeds)
 }
 
 /* Tests_SRS_LOCK_10_009: [Unlock on success shall return LOCK_OK] */
+/* Tests_SRS_LOCK_10_008: [ `Unlock` shall perform a platform dependant unlock ]*/
 TEST_FUNCTION(LOCK_Init_Lock_Unlock_succeeds)
 {
     //arrange
@@ -124,6 +146,9 @@ TEST_FUNCTION(LOCK_Init_Lock_Unlock_succeeds)
     //cleanup
     (void)Lock_Deinit(handle);
 }
+
+/* Win32 Unlock cannot fail */
+/* Tests_SRS_LOCK_10_010: [Unlock on error shall return LOCK_ERROR] */
 
 /* Tests_SRS_LOCK_10_002: [Lock_Init on success shall return a valid lock handle which should be a non NULL value] */
 TEST_FUNCTION(LOCK_Init_DeInit_succeeds)
@@ -164,10 +189,14 @@ TEST_FUNCTION(LOCK_Unlock_NULL_fails)
     //act
     LOCK_RESULT result = Unlock(NULL);
 
-    /*Tests_SRS_LOCK_10_011:[ This API on NULL handle passed returns LOCK_ERROR]*/
+    // assert
     ASSERT_ARE_EQUAL(LOCK_RESULT, LOCK_ERROR, result);
 }
 
+/* On Win32, lock cannot fail */
+/* Tests_SRS_LOCK_10_006: [Lock on error shall return LOCK_ERROR] */
+
+/* Tests_SRS_LOCK_10_013: [ `Lock_Deinit` on NULL `handle` passed returns `LOCK_ERROR` ]*/
 TEST_FUNCTION(LOCK_DeInit_NULL_fails)
 {
     //arrange
@@ -181,6 +210,7 @@ TEST_FUNCTION(LOCK_DeInit_NULL_fails)
 
 /* Extra negative tests - only supported on Win32. */
 #ifdef WIN32
+/* Tests_SRS_LOCK_10_003: [Lock_Init on error shall return NULL ] */
 TEST_FUNCTION(LOCK_Lock_Init_fails_if_malloc_fails)
 {
     //arrange

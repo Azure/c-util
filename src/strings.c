@@ -23,8 +23,14 @@ typedef struct STRING_TAG
 /* Codes_SRS_STRING_07_001: [STRING_new shall allocate a new STRING_HANDLE pointing to an empty string.] */
 STRING_HANDLE STRING_new(void)
 {
-    STRING* result;
-    if ((result = (STRING*)malloc(sizeof(STRING))) != NULL)
+    STRING* result = malloc(sizeof(STRING));
+
+    if (result == NULL)
+    {
+        /* Codes_SRS_STRING_07_002: [STRING_new shall return an NULL STRING_HANDLE on any error that is encountered.] */
+        LogError("malloc failed.");
+    }
+    else
     {
         if ((result->s = (char*)malloc(1)) != NULL)
         {
@@ -38,7 +44,7 @@ STRING_HANDLE STRING_new(void)
             result = NULL;
         }
     }
-    return (STRING_HANDLE)result;
+    return result;
 }
 
 /*Codes_SRS_STRING_02_001: [STRING_clone shall produce a new string having the same content as the handle string.*/
@@ -644,7 +650,7 @@ int STRING_empty(STRING_HANDLE handle)
         if (temp == NULL)
         {
             LogError("Failure reallocating value.");
-            /* Codes_SRS_STRING_07_030: [STRING_empty shall return a nonzero value if the STRING_HANDLE is NULL.] */
+            /* Codes_SRS_STRING_07_030: [ If any error occurs, STRING_empty shall return a nonzero value. ] */
             result = MU_FAILURE;
         }
         else
@@ -748,13 +754,13 @@ STRING_HANDLE STRING_construct_n(const char* psz, size_t n)
     return result;
 }
 
-/* Codes_SRS_STRING_07_034: [STRING_compare returns an integer greater than, equal to, or less than zero, accordingly as the string pointed to by s1 is greater than, equal to, or less than the string s2.] */
+/* Codes_SRS_STRING_01_001: [ STRING_compare returns an integer greater than, equal to, or less than zero, accordingly as the string pointed to by s1 is greater than, equal to, or less than the string s2. ] */
 int STRING_compare(STRING_HANDLE s1, STRING_HANDLE s2)
 {
     int result;
     if (s1 == NULL && s2 == NULL)
     {
-        /* Codes_SRS_STRING_07_035: [If h1 and h2 are both NULL then STRING_compare shall return 0.]*/
+        /* Codes_SRS_STRING_01_002: [ If h1 and h2 are both NULL then STRING_compare shall return 0. ]*/
         result = 0;
     }
     else if (s1 == NULL)

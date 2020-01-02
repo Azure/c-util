@@ -15,6 +15,7 @@ typedef struct pos_TAG
     int flexible_array[];
 } pos;
 
+/* Tests_SRS_REFCOUNT_01_001: [ `DEFINE_REFCOUNT_TYPE` shall define the create/create_with_Extra_size/destroy functions for the type `type`. ]*/
 DEFINE_REFCOUNT_TYPE(pos);
 
 POS_HANDLE Pos_Create(int x)

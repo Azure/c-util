@@ -209,4 +209,18 @@ TEST_FUNCTION(without_gballoc_being_initialized_gballoc_getCurrentMemoryUsed_fai
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
+/* gballoc_resetMetrics */
+
+/* Tests_SRS_GBALLOC_07_005: [ If gballoc was not initialized gballoc_resetMetrics shall do nothing.] */
+TEST_FUNCTION(without_gballoc_being_initialized_gballoc_resetMetrics_returns)
+{
+    // arrange
+
+    // act
+    gballoc_resetMetrics();
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
 END_TEST_SUITE(GBAlloc_For_Init_UnitTests)

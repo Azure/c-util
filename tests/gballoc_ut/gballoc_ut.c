@@ -1698,6 +1698,8 @@ TEST_FUNCTION(gballoc_resetMetrics_lock_fail)
 
 /* Tests_SRS_GBALLOC_07_004: [ gballoc_getAllocationCount shall return the currently number of allocations. ] */
 /* Tests_SRS_GBALLOC_07_002: [ gballoc_getAllocationCount shall ensure thread safety by using the lock created by gballoc_Init ] */
+/* Tests_SRS_GBALLOC_07_006: [ gballoc_resetMetrics shall ensure thread safety by using the lock created by gballoc_Init ]*/
+/* Tests_SRS_GBALLOC_07_008: [ gballoc_resetMetrics shall reset the total allocation size, max allocation size and number of allocation to zero. ] */
 TEST_FUNCTION(gballoc_resetMetrics_success)
 {
     // arrange
@@ -1739,6 +1741,88 @@ TEST_FUNCTION(gballoc_resetMetrics_success)
     ASSERT_ARE_EQUAL(size_t, 0, mem_used);
     ASSERT_ARE_EQUAL(size_t, 0, alloc_count);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // Cleanup
+    gballoc_free(toBeFreed);
+    free(allocation);
+}
+
+/* Tests_SRS_GBALLOC_07_007: [** If the lock cannot be acquired, `gballoc_reset Metrics` shall do nothing.]*/
+TEST_FUNCTION(when_lock_cannot_be_acquired_gballoc_resetMetrics_returns)
+{
+    // arrange
+    void* allocation;
+    void* toBeFreed;
+    size_t mem_used;
+    size_t alloc_count;
+    gballoc_init();
+    umock_c_reset_all_calls();
+
+    allocation = malloc(OVERHEAD_SIZE);
+
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
+    EXPECTED_CALL(mock_malloc(0))
+        .SetReturn(allocation);
+    STRICT_EXPECTED_CALL(mock_malloc(1));
+    toBeFreed = gballoc_malloc(1);
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
+
+    alloc_count = gballoc_getAllocationCount();
+    ASSERT_ARE_EQUAL(size_t, 1, alloc_count);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE))
+        .SetReturn(LOCK_ERROR);
+
+    // act
+    gballoc_resetMetrics();
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    mem_used = gballoc_getCurrentMemoryUsed();
+    alloc_count = gballoc_getAllocationCount();
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(size_t, 0, mem_used);
+    ASSERT_ARE_EQUAL(size_t, 1, alloc_count);
+
+    // Cleanup
+    gballoc_free(toBeFreed);
+    free(allocation);
+}
+
+/* Tests_SRS_GBALLOC_01_007: [If realloc is successful, gballoc_realloc shall also increment the total memory used value tracked by this module.] */
+TEST_FUNCTION(gballoc_realloc_increases_tracked_usage)
+{
+    // arrange
+    void* allocation;
+    void* toBeFreed;
+    size_t alloc_count;
+    gballoc_init();
+    umock_c_reset_all_calls();
+
+    allocation = malloc(OVERHEAD_SIZE);
+
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
+    EXPECTED_CALL(mock_malloc(0))
+        .SetReturn(allocation);
+    STRICT_EXPECTED_CALL(mock_malloc(1));
+    toBeFreed = gballoc_malloc(1);
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
+    STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
+
+    alloc_count = gballoc_getAllocationCount();
+    ASSERT_ARE_EQUAL(size_t, 1, alloc_count);
+    size_t first_memory_usage = gballoc_getCurrentMemoryUsed();
+
+    // act
+    toBeFreed = gballoc_realloc(toBeFreed, 2);
+
+    // assert
+    ASSERT_IS_TRUE(gballoc_getCurrentMemoryUsed() > first_memory_usage);
+    ASSERT_ARE_EQUAL(size_t, 1, gballoc_getAllocationCount());
 
     // Cleanup
     gballoc_free(toBeFreed);

@@ -244,6 +244,7 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
     encoded = (char*)malloc(neededSize);
     if (encoded == NULL)
     {
+        /* Codes_SRS_BASE64_02_004: [ In case of any errors, Azure_Base64_Encode_Bytes shall return NULL. ]*/
         result = NULL;
         LogError("Azure_Base64_Encode:: Allocation failed.");
     }
@@ -327,6 +328,7 @@ STRING_HANDLE Azure_Base64_Encode_Bytes(const unsigned char* source, size_t size
     }
     else
     {
+        /*Codes_SRS_BASE64_02_003: [Otherwise, Azure_Base64_Encode_Bytes shall produce a STRING_HANDLE containing the Base64 representation of the buffer.] */
         result = Base64_Encode_Internal(source, size);
     }
     return result;

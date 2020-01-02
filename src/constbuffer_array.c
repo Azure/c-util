@@ -108,6 +108,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
     }
     else
     {
+        /* Codes_SRS_CONSTBUFFER_ARRAY_01_029: [ Otherwise, constbuffer_array_create_with_move_buffers shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE that holds the const buffers in buffers. ]*/
         result = REFCOUNT_TYPE_CREATE(CONSTBUFFER_ARRAY_HANDLE_DATA); /*explicit 0*/
         if (result == NULL)
         {
@@ -117,6 +118,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
         }
         else
         {
+            /* Codes_SRS_CONSTBUFFER_ARRAY_01_031: [ On success constbuffer_array_create_with_move_buffers shall return a non-NULL handle. ]*/
             result->created_with_moved_memory = true;
             result->buffers = buffers;
             result->nBuffers = buffer_count;

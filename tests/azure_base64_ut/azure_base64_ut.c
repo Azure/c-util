@@ -14,6 +14,7 @@
 #include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
+#include "umock_c/umock_c_negative_tests.h"
 
 static void* my_gballoc_malloc(size_t size)
 {
@@ -1489,6 +1490,7 @@ TEST_SUITE_INITIALIZE(TestSuiteInitialize)
     umock_c_init(on_umock_c_error);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
 }
@@ -1506,11 +1508,15 @@ TEST_FUNCTION_INITIALIZE(f)
     {
         ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
     }
+
+    ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
+
     umock_c_reset_all_calls();
 }
 
 TEST_FUNCTION_CLEANUP(cleans)
 {
+    umock_c_negative_tests_deinit();
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
@@ -1615,6 +1621,40 @@ TEST_FUNCTION(Base64_Encode_exhaustive_succeeds)
     }
 }
 
+/*Tests_SRS_BASE64_06_006: [If when allocating memory to produce the encoding a failure occurs then Azure_Base64_Encode shall return NULL.]*/
+TEST_FUNCTION(when_underlying_calls_fail_Azure_Base64_Encode_fails)
+{
+    ///Arrange
+    STRING_HANDLE result;
+    BUFFER_HANDLE input = BUFFER_new();
+    ASSERT_ARE_EQUAL(int, 0, BUFFER_build(input, testVector_BINARY_with_equal_signs[0].inputData, testVector_BINARY_with_equal_signs[0].inputLength));
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+    umock_c_negative_tests_snapshot();
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            ///act
+            result = Azure_Base64_Encode(input);
+
+            ///assert
+            ASSERT_IS_NULL(result, "Negative test %zu failed", i);
+        }
+    }
+
+    // cleanup
+    BUFFER_delete(input);
+}
+
+/* Azure_Base64_Encode_Bytes */
+
 /*Tests_SRS_BASE64_02_001: [If source is NULL then Azure_Base64_Encode_Bytes shall return NULL.] */
 TEST_FUNCTION(Base64_Encode_Bytes_with_NULL_source_returns_NULL)
 {
@@ -1668,6 +1708,34 @@ TEST_FUNCTION(Base64_Encode_Bytes_exhaustive_succeeds)
         STRING_delete(result);
     }
 }
+
+/*Tests_SRS_BASE64_02_004: [ In case of any errors, Azure_Base64_Encode_Bytes shall return NULL. ]*/
+TEST_FUNCTION(when_underlying_calls_fail_Azure_Base64_Encode_Bytes_fails)
+{
+    ///Arrange
+    STRING_HANDLE result;
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+    umock_c_negative_tests_snapshot();
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            ///act
+            result = Azure_Base64_Encode_Bytes(testVector_BINARY_with_equal_signs[0].inputData, testVector_BINARY_with_equal_signs[0].inputLength);
+
+            ///assert
+            ASSERT_IS_NULL(result, "Negative test %zu failed", i);
+        }
+    }
+}
+
+/* Azure_Base64_Decode */
 
 TEST_FUNCTION(Azure_Base64_Decode_exhaustive_succeeds)
 {
@@ -1801,5 +1869,30 @@ TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_6)
 
 }
 
+/*Tests_SRS_BASE64_06_010: [If there is any memory allocation failure during the decode then Azure_Base64_Decode shall return NULL.]*/
+TEST_FUNCTION(when_underlying_calls_fail_Azure_Base64_Decode_fails)
+{
+    ///Arrange
+    BUFFER_HANDLE result;
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+    umock_c_negative_tests_snapshot();
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            ///act
+            result = Azure_Base64_Decode(testVector_BINARY_with_equal_signs[0].expectedOutput);
+
+            ///assert
+            ASSERT_IS_NULL(result, "Negative test %zu failed", i);
+        }
+    }
+}
 
 END_TEST_SUITE(base64_unittests);

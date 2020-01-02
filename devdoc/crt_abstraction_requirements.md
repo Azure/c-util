@@ -13,8 +13,7 @@ The CRTAbstractions module provides the same secure functions for when not using
 **SRS_CRT_ABSTRACTIONS_99_040: [** The module shall still compile when building on a Microsoft platform. **]**
 
 ##Exposed API
-**SRS_CRT_ABSTRACTIONS_99_002: [**
-CRTAbstractions module shall expose the following API:
+
 ```c
 int strcat_s(char* dst, size_t dstSizeInBytes, const char* src);
 int strcpy_s(char* dst, size_t dstSizeInBytes, const char* src);
@@ -24,7 +23,6 @@ int mallocAndStrcpy_s(char** destination, const char* source);
 int unsignedIntToString(char* destination, size_t destinationSize, unsigned int value);
 int size_tToString(char* destination, size_t destinationSize, size_t value);
 ```
- **]**
 
 ### strcat_s
 ```c
@@ -94,6 +92,8 @@ int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ... );
 
 **SRS_CRT_ABSTRACTIONS_99_027: [** sprintf_s shall return the number of characters stored in dst upon success.  This number shall not include the terminating null character. **]**
 
+**SRS_CRT_ABSTRACTIONS_02_006: [** If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and sprintf_s shall fail. **]**
+
 **SRS_CRT_ABSTRACTIONS_99_028: [** If dst or format is a null pointer, sprintf_s shall return -1 and set errno to EINVAL **]**
 
 **SRS_CRT_ABSTRACTIONS_99_034: [** If the dst buffer is too small for the text being printed, then dst is set to an empty string and the function shall return -1. **]**
@@ -132,13 +132,13 @@ int unsignedIntToString(char* destination, size_t destinationSize, unsigned int 
 int size_tToString(char* destination, size_t destinationSize, size_t value)
 ```
 
-**SRS_CRT_ABSTRACTIONS_02_001: [** size_tToString shall convert the parameter value to its decimal representation as a string in the buffer indicated by parameter destination having the size indicated by parameter destinationSize. **]**
+**SRS_CRT_ABSTRACTIONS_02_007: [** If destination is NULL then size_tToString shall fail. **]**
 
-**SRS_CRT_ABSTRACTIONS_02_002: [** If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and size_tToString shall fail. **]**
+**SRS_CRT_ABSTRACTIONS_01_001: [** size_tToString shall convert the parameter value to its decimal representation as a string in the buffer indicated by parameter destination having the size indicated by parameter destinationSize. **]**
 
-**SRS_CRT_ABSTRACTIONS_02_003: [** If destination is NULL then size_tToString shall fail. **]**
+**SRS_CRT_ABSTRACTIONS_01_002: [** If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and size_tToString shall fail. **]**
 
-**SRS_CRT_ABSTRACTIONS_02_004: [** If the conversion has been successfull then size_tToString shall return 0. **]**
+**SRS_CRT_ABSTRACTIONS_01_003: [** If the conversion has been successfull then size_tToString shall return 0. **]**
 
 ### strtoull_s
 ```c
@@ -155,7 +155,7 @@ unsigned long long strtoull_s(const char* nptr, char** endptr, int base)
 
 **SRS_CRT_ABSTRACTIONS_21_005: [** The strtoull_s must convert number using base 2 to 36. **]**
 
-**SRS_CRT_ABSTRACTIONS_21_006: [** The strtoull_s must use the letters from a (or A) through z (or Z) to represent the numbers between 10 to 35. **]**
+**SRS_CRT_ABSTRACTIONS_21_006: [** The strtoull_s must use the letters from a (or A) through z (or Z) to represent the numbers using bases between 10 to 35. **]**
 
 **SRS_CRT_ABSTRACTIONS_21_007: [** If the base is 0 and no special chars precedes the number, strtoull_s must convert to a decimal (base 10). **]**
 

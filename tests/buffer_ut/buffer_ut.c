@@ -11,6 +11,7 @@
 
 #include "azure_macro_utils/macro_utils.h"
 #include "umock_c/umock_c.h"
+#include "umock_c/umock_c_negative_tests.h"
 #include "azure_c_util/buffer_.h"
 #include "testrunnerswitcher.h"
 
@@ -104,7 +105,9 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         umock_c_init(on_umock_c_error);
 
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_realloc, NULL);
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
     }
 
@@ -115,7 +118,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         TEST_MUTEX_DESTROY(g_testByTest);
     }
 
-    TEST_FUNCTION_INITIALIZE(f)
+    TEST_FUNCTION_INITIALIZE(function_init)
     {
         if (TEST_MUTEX_ACQUIRE(g_testByTest))
         {
@@ -123,6 +126,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         }
 
         umock_c_reset_all_calls();
+
+        ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
 
         currentmalloc_call = 0;
         whenShallmalloc_fail = 0;
@@ -133,6 +138,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
     TEST_FUNCTION_CLEANUP(cleans)
     {
+        umock_c_negative_tests_deinit();
+
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
@@ -335,6 +342,31 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(g_hBuffer);
     }
 
+    /* Tests_SRS_BUFFER_07_010: [BUFFER_build shall return nonzero if any error is encountered.] */
+    TEST_FUNCTION(when_underlying_calls_fail_BUFFER_build_fails)
+    {
+        ///arrange
+        BUFFER_HANDLE g_hBuffer;
+
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+        umock_c_negative_tests_snapshot();
+        for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+        {
+            if (umock_c_negative_tests_can_call_fail(i))
+            {
+                umock_c_negative_tests_reset();
+                umock_c_negative_tests_fail_call(i);
+
+                ///act
+                g_hBuffer = BUFFER_new();
+
+                ///assert
+                ASSERT_IS_NULL(g_hBuffer);
+            }
+        }
+    }
+
     /* Tests_SRS_BUFFER_07_009: [BUFFER_build shall return nonzero if handle is NULL ] */
     TEST_FUNCTION(BUFFER_build_NULL_HANDLE_Fail)
     {
@@ -392,6 +424,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     }
 
     /* Tests_SRS_BUFFER_01_002: [The size argument can be zero, in which case the underlying buffer held by the buffer instance shall be freed.] */
+    /* Tests_SRS_BUFFER_01_003: [If size is zero, source can be NULL.] */
     TEST_FUNCTION(BUFFER_build_Size_Zero_NULL_buffer_Succeeds)
     {
         ///arrange
@@ -414,7 +447,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(g_hBuffer);
     }
 
-    /* Tests_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
+    /* Tests_SRS_BUFFER_01_006: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
     TEST_FUNCTION(BUFFER_append_build_handle_NULL_fail)
     {
         ///arrange
@@ -434,7 +467,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(hBuffer);
     }
 
-    /* Tests_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
+    /* Tests_SRS_BUFFER_01_006: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
     TEST_FUNCTION(BUFFER_append_build_buffer_NULL_buffer_fail)
     {
         ///arrange
@@ -454,7 +487,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(hBuffer);
     }
 
-    /* Tests_SRS_BUFFER_07_029: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
+    /* Tests_SRS_BUFFER_01_006: [ BUFFER_append_build shall return nonzero if handle or source are NULL or if size is 0. ] */
     TEST_FUNCTION(BUFFER_append_build_Size_Zero_NULL_buffer_fail)
     {
         ///arrange
@@ -474,8 +507,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(hBuffer);
     }
 
-    /* Tests_SRS_BUFFER_07_030: [ if handle->buffer is NULL BUFFER_append_build shall allocate the a buffer of size bytes... ] */
-    /* Tests_SRS_BUFFER_07_031: [ ... and copy the contents of source to handle->buffer. ] */
+    /* Tests_SRS_BUFFER_01_007: [ if handle->buffer is NULL BUFFER_append_build shall allocate the a buffer of size bytes... ] */
+    /* Tests_SRS_BUFFER_01_008: [ ... and copy the contents of source to handle->buffer. ] */
     /* Tests_SRS_BUFFER_07_034: [ On success BUFFER_append_build shall return 0 ] */
     TEST_FUNCTION(BUFFER_append_build_buffer_NULL_succeed)
     {
@@ -521,8 +554,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(hBuffer);
     }
 
-    /* Tests_SRS_BUFFER_07_032: [ if handle->buffer is not NULL BUFFER_append_build shall realloc the buffer to be the handle->size + size ] */
-    /* Tests_SRS_BUFFER_07_033: [ ... and copy the contents of source to the end of the buffer. ] */
+    /* Tests_SRS_BUFFER_01_009: [ if handle->buffer is not NULL BUFFER_append_build shall realloc the buffer to be the handle->size + size ] */
+    /* Tests_SRS_BUFFER_01_010: [ ... and copy the contents of source to the end of the buffer. ] */
     /* Tests_SRS_BUFFER_07_034: [ On success BUFFER_append_build shall return 0 ] */
     TEST_FUNCTION(BUFFER_append_build_succeed)
     {
@@ -682,7 +715,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         ASSERT_ARE_NOT_EQUAL(int, nResult, 0);
     }
 
-    /* Codes_SRS_BUFFER_07_015: [BUFFER_unbuild shall always return success if the unsigned char* referenced by BUFFER_HANDLE is NULL.] */
+    /* Tests_SRS_BUFFER_07_015: [BUFFER_unbuild shall always return success if the unsigned char* referenced by BUFFER_HANDLE is NULL.] */
     TEST_FUNCTION(BUFFER_unbuild_Multiple_Alloc_Fail)
     {
         ///arrange
@@ -1279,8 +1312,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_delete(hAppend);
     }
 
-    /* Tests_SRS_BUFFER_07_024: [BUFFER_append concatenates b2 onto b1 without modifying b2 and shall return zero on success.] */
-    TEST_FUNCTION(BUFFER_prepend_Succeed)
+    /* Tests_SRS_BUFFER_01_004: [ BUFFER_prepend concatenates handle1 onto handle2 without modifying handle1 and shall return zero on success. ]*/
+TEST_FUNCTION(BUFFER_prepend_Succeed)
     {
         ///arrange
         int nResult;
@@ -1344,24 +1377,6 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
         /// assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    }
-
-    /* Tests_SRS_BUFFER_07_029: [BUFFER_u_char shall return NULL if underlying buffer size is zero.] */
-    TEST_FUNCTION(BUFFER_U_CHAR_HANDLE_SIZE_ZERO_Fail)
-    {
-        ///arrange
-        unsigned char c = 'c';
-        BUFFER_HANDLE g_hBuffer = BUFFER_create(&c, 0);
-        umock_c_reset_all_calls();
-
-        ///act
-        ASSERT_IS_NULL(BUFFER_u_char(g_hBuffer));
-
-        /// assert
-        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-        /// cleanup
-        BUFFER_delete(g_hBuffer);
     }
 
     /* BUFFER_length */
@@ -1644,7 +1659,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
     /* BUFFER_fill */
 
-    /* Tests_SRS_BUFFER_07_001: [ BUFFER_fill shall fill the supplied BUFFER_HANDLE with the supplied fill character. ] */
+    /* Tests_SRS_BUFFER_01_011: [ BUFFER_fill shall fill the supplied BUFFER_HANDLE with the supplied fill character. ] */
     TEST_FUNCTION(BUFFER_fill_succeed)
     {
         int result;
@@ -1692,7 +1707,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         //cleanup
     }
 
-    /* Tests_SRS_BUFFER_07_001: [ BUFFER_fill shall fill the supplied BUFFER_HANDLE with the supplied fill character. ] */
+    /* Tests_SRS_BUFFER_01_011: [ BUFFER_fill shall fill the supplied BUFFER_HANDLE with the supplied fill character. ] */
     TEST_FUNCTION(BUFFER_fill_empty_buffer_succeed)
     {
         int result;
