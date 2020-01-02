@@ -246,8 +246,6 @@ int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...)
     }
     else
     {
-        /*Codes_SRS_CRT_ABSTRACTIONS_99_033: [sprintf_s shall check the format string for valid formatting characters.  If the check fails, the function returns -1.]*/
-
 #if defined _MSC_VER
 #error crt_abstractions is not provided for Microsoft Compilers
 #else
@@ -267,6 +265,7 @@ int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...)
         /*C99: Thus, the null-terminated output has been completely written if and only if the returned value is nonnegative and less than n*/
         if (result < 0)
         {
+            /*Codes_SRS_CRT_ABSTRACTIONS_02_006: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and sprintf_s shall fail.] */
             result = -1;
         }
         else if ((size_t)result >= dstSizeInBytes)
@@ -291,7 +290,7 @@ int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...)
 }
 #endif /* _MSC_VER || MINGW_HAS_SECURE_API */
 
-/*Codes_SRS_CRT_ABSTRACTIONS_21_006: [The strtoull_s must use the letters from a(or A) through z(or Z) to represent the numbers between 10 to 35.]*/
+/*Codes_SRS_CRT_ABSTRACTIONS_21_006: [The strtoull_s must use the letters from a(or A) through z(or Z) to represent the numbers using bases between 10 to 35.]*/
 /* returns the integer value that correspond to the character 'c'. If the character is invalid, it returns -1. */
 #define DIGIT_VAL(c)         (((c>='0') && (c<='9')) ? (c-'0') : ((c>='a') && (c<='z')) ? (c-'a'+10) : ((c>='A') && (c<='Z')) ? (c-'A'+10) : -1)
 #define IN_BASE_RANGE(d, b)  ((d >= 0) && (d < b))
@@ -788,15 +787,15 @@ int unsignedIntToString(char* destination, size_t destinationSize, unsigned int 
 /*takes "value" and transforms it into a decimal string*/
 /*10 => "10"*/
 /*return 0 when everything went ok*/
-/*Codes_SRS_CRT_ABSTRACTIONS_02_001: [unsignedIntToString shall convert the parameter value to its decimal representation as a string in the buffer indicated by parameter destination having the size indicated by parameter destinationSize.] */
+/*Codes_SRS_CRT_ABSTRACTIONS_01_001: [ size_tToString shall convert the parameter value to its decimal representation as a string in the buffer indicated by parameter destination having the size indicated by parameter destinationSize. ] */
 int size_tToString(char* destination, size_t destinationSize, size_t value)
 {
     int result;
     size_t pos;
     /*the below loop gets the number in reverse order*/
-    /*Codes_SRS_CRT_ABSTRACTIONS_02_003: [If destination is NULL then unsignedIntToString shall fail.] */
-    /*Codes_SRS_CRT_ABSTRACTIONS_02_002: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and unsignedIntToString shall fail.] */
+    /*Codes_SRS_CRT_ABSTRACTIONS_01_002: [ If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and size_tToString shall fail. ] */
     if (
+        /*Codes_SRS_CRT_ABSTRACTIONS_02_007: [If destination is NULL then size_tToString shall fail.] */
         (destination == NULL) ||
         (destinationSize < 2) /*because the smallest number is '0\0' which requires 2 characters*/
         )
@@ -824,12 +823,12 @@ int size_tToString(char* destination, size_t destinationSize, size_t value)
                 destination[w] = destination[pos - 1 - w];
                 destination[pos - 1 - w] = temp;
             }
-            /*Codes_SRS_CRT_ABSTRACTIONS_02_004: [If the conversion has been successfull then unsignedIntToString shall return 0.] */
+            /*Codes_SRS_CRT_ABSTRACTIONS_01_003: [ If the conversion has been successfull then size_tToString shall return 0. ] */
             result = 0;
         }
         else
         {
-            /*Codes_SRS_CRT_ABSTRACTIONS_02_002: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and unsignedIntToString shall fail.] */
+            /*Codes_SRS_CRT_ABSTRACTIONS_01_002: [ If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and size_tToString shall fail. ] */
             result = MU_FAILURE;
         }
     }

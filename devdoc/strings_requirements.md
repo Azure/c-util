@@ -191,7 +191,7 @@ extern int STRING_empty(STRING_HANDLE s1)
 
 **SRS_STRING_07_023: [** STRING_empty shall return a nonzero value if the STRING_HANDLE is NULL. **]**
 
-**SRS_STRING_07_030: [** STRING_empty shall return a nonzero value if the STRING_HANDLE is NULL. **]**
+**SRS_STRING_07_030: [** If any error occurs, STRING_empty shall return a nonzero value. **]**
 
 ### STRING_length
 
@@ -223,9 +223,9 @@ extern STRING_HANDLE STRING_construct_n(const char* psz, size_t n);
 extern int STRING_compare(STRING_HANDLE h1, STRING_HANDLE h2);
 ```
 
-**SRS_STRING_07_034: [** STRING_compare returns an integer greater than, equal to, or less than zero, accordingly as the string pointed to by s1 is greater than, equal to, or less than the string s2. **]**
+**SRS_STRING_01_001: [** STRING_compare returns an integer greater than, equal to, or less than zero, accordingly as the string pointed to by s1 is greater than, equal to, or less than the string s2. **]**
 
-**SRS_STRING_07_035: [** If h1 and h2 are both NULL then STRING_compare shall return 0. **]**
+**SRS_STRING_01_002: [** If h1 and h2 are both NULL then STRING_compare shall return 0. **]**
 
 **SRS_STRING_07_036: [** If h1 is NULL and h2 is a nonNULL value then STRING_compare shall return 1. **]**
 

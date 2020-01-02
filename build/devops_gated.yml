@@ -249,7 +249,6 @@ jobs:
     - Cmd
     - msbuild
     - visualstudio
-  condition: false
 
   steps:
   - task: BatchScript@1

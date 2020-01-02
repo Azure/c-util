@@ -16,6 +16,10 @@
 #include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
+/* Tested by the virtue of compiling on Windows */
+/* Tests_SRS_CRT_ABSTRACTIONS_99_001:[The module shall not redefine the secure functions implemented by Microsoft CRT.] */
+/* Tests_SRS_CRT_ABSTRACTIONS_99_040 : [The module shall still compile when building on a Microsoft platform.] */
+
 // VS 2008 does not have INFINITY and all the nice goodies...
 #if defined (TIZENRT)
 #define DEFINE_INFINITY 1
@@ -752,6 +756,7 @@ TEST_FUNCTION(sprintf_s_fails_with_dst_set_to_null)
     ASSERT_ARE_EQUAL(int, EINVAL, errno);
 }
 
+/*Tests_SRS_CRT_ABSTRACTIONS_02_006: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and sprintf_s shall fail.] */
 TEST_FUNCTION(sprintf_s_fails_with_format_set_to_null)
 {
     // arrange
@@ -832,6 +837,7 @@ TEST_FUNCTION(strtoull_s_decimal_base_max_ull_64bit_success)
 }
 
 /*Tests_SRS_CRT_ABSTRACTIONS_21_014: [If the correct value is outside the range, the strtoull_s returns the value ULLONG_MAX, and errno will receive the value ERANGE.]*/
+/*Tests_SRS_CRT_ABSTRACTIONS_21_006: [The strtoull_s must use the letters from a(or A) through z(or Z) to represent the numbers using bases between 10 to 35.]*/
 TEST_FUNCTION(strtoull_s_hexadecimal_base_max_ull_128bit_success)
 {
     // arrange
@@ -862,7 +868,7 @@ TEST_FUNCTION(strtoull_s_hexadecimal_base_max_ull_128bit_success)
 }
 
 /*Tests_SRS_CRT_ABSTRACTIONS_21_038: [If the subject sequence starts with a negative sign, the strtoull_s will convert it to the posive representation of the negative value.]*/
-TEST_FUNCTION(strtoull_s_negative_nanber_decimal_base_ull_success)
+TEST_FUNCTION(strtoull_s_negative_number_decimal_base_ull_success)
 {
     // arrange
     const char* subjectStr = "-5";
@@ -950,6 +956,27 @@ TEST_FUNCTION(strtoull_s_decimal_base_success)
     ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
 }
 
+/*Tests_SRS_CRT_ABSTRACTIONS_21_007: [If the base is 0 and no special chars precedes the number, strtoull_s must convert to a decimal (base 10).]*/
+TEST_FUNCTION(strtoull_s_zero_base_success)
+{
+    // arrange
+    const char* subjectStr = "123456";
+    char* endptr;
+    int base = 10;
+    uint64_t result;
+
+    uint64_t expectedResult = 123456ULL;
+    char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+    // act
+    result = strtoull_s(subjectStr, &endptr, 0);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "123456", subjectStr);
+    ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
+    ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+}
+
 /*Tests_SRS_CRT_ABSTRACTIONS_21_011: [The valid sequence starts after the first non-white-space character, followed by an optional positive or negative sign, a number or a letter(depending of the base).]*/
 /*Tests_SRS_CRT_ABSTRACTIONS_21_010: [The white-space must be one of the characters ' ', '\f', '\n', '\r', '\t', '\v'.]*/
 TEST_FUNCTION(strtoull_s_decimal_base_with_spaces_success)
@@ -1012,6 +1039,24 @@ TEST_FUNCTION(strtoull_s_decimal_base_with_plus_signal_success)
     ASSERT_ARE_EQUAL(char_ptr, "  +123456", subjectStr);
     ASSERT_ARE_EQUAL(uint64_t, expectedResult, result);
     ASSERT_ARE_EQUAL(void_ptr, expectedEndptr, endptr);
+}
+
+/*Tests_SRS_CRT_ABSTRACTIONS_21_012: [If the subject sequence is empty or does not have the expected form, the strtoull_s must not perform any conversion; the value of nptr is stored in the object pointed to by endptr, provided that endptr is not a NULL pointer.]*/
+TEST_FUNCTION(strtoull_s_with_spaces_only_fails)
+{
+    // arrange
+    const char* subjectStr = "  ";
+    char* endptr;
+    int base = 10;
+    uint64_t result;
+
+    char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
+
+    // act
+    result = strtoull_s(subjectStr, &endptr, base);
+
+    // assert
+    ASSERT_ARE_EQUAL(uint64_t, 0, result);
 }
 
 /*Tests_SRS_CRT_ABSTRACTIONS_21_038: [If the subject sequence starts with a negative sign, the strtoull_s will convert it to the posive representation of the negative value.]*/
@@ -1120,6 +1165,7 @@ TEST_FUNCTION(strtoull_s_decimal_base_follow_by_string_success)
 }
 
 /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+/*Tests_SRS_CRT_ABSTRACTIONS_21_006: [The strtoull_s must use the letters from a(or A) through z(or Z) to represent the numbers using bases between 10 to 35.]*/
 TEST_FUNCTION(strtoull_s_hexadecimal_base_uppercase_success)
 {
     // arrange
@@ -1141,6 +1187,7 @@ TEST_FUNCTION(strtoull_s_hexadecimal_base_uppercase_success)
 }
 
 /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
+/*Tests_SRS_CRT_ABSTRACTIONS_21_006: [The strtoull_s must use the letters from a(or A) through z(or Z) to represent the numbers using bases between 10 to 35.]*/
 TEST_FUNCTION(strtoull_s_hexadecimal_base_lowercase_success)
 {
     // arrange
@@ -1163,6 +1210,7 @@ TEST_FUNCTION(strtoull_s_hexadecimal_base_lowercase_success)
 
 /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
 /*Tests_SRS_CRT_ABSTRACTIONS_21_008: [If the base is 0 and '0x' or '0X' precedes the number, strtoull_s must convert to a hexadecimal (base 16).]*/
+/*Tests_SRS_CRT_ABSTRACTIONS_21_006: [The strtoull_s must use the letters from a(or A) through z(or Z) to represent the numbers using bases between 10 to 35.]*/
 TEST_FUNCTION(strtoull_s_0x_hexadecimal_base_uppercase_success)
 {
     // arrange
@@ -1185,6 +1233,7 @@ TEST_FUNCTION(strtoull_s_0x_hexadecimal_base_uppercase_success)
 
 /*Tests_SRS_CRT_ABSTRACTIONS_21_005: [The strtoull_s must convert number using base 2 to 36.]*/
 /*Tests_SRS_CRT_ABSTRACTIONS_21_008: [If the base is 0 and '0x' or '0X' precedes the number, strtoull_s must convert to a hexadecimal (base 16).]*/
+/*Tests_SRS_CRT_ABSTRACTIONS_21_006: [The strtoull_s must use the letters from a(or A) through z(or Z) to represent the numbers using bases between 10 to 35.]*/
 TEST_FUNCTION(strtoull_s_0x_hexadecimal_base_lowercase_success)
 {
     // arrange
@@ -2583,7 +2632,7 @@ TEST_FUNCTION(size_tToString_fails_when_destination_is_NULL)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-/*Tests_SRS_CRT_ABSTRACTIONS_02_006: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and size_tToString shall fail.] */
+/*Tests_SRS_CRT_ABSTRACTIONS_01_002: [ If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and size_tToString shall fail. ] */
 TEST_FUNCTION(size_tToString_fails_when_destination_is_not_sufficient_for_1_digit)
 {
     // arrange
@@ -2599,7 +2648,7 @@ TEST_FUNCTION(size_tToString_fails_when_destination_is_not_sufficient_for_1_digi
 
 }
 
-/*Tests_SRS_CRT_ABSTRACTIONS_02_006: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and size_tToString shall fail.] */
+/*Tests_SRS_CRT_ABSTRACTIONS_01_002: [ If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and size_tToString shall fail. ] */
 TEST_FUNCTION(size_tToString_fails_when_destination_is_not_sufficient_for_more_than_1_digit)
 {
     // arrange
@@ -2621,7 +2670,7 @@ TEST_FUNCTION(size_tToString_fails_when_destination_is_not_sufficient_for_more_t
     }
 }
 
-/*Tests_SRS_CRT_ABSTRACTIONS_02_001: [size_tToString shall convert the parameter value to its decimal representation as a string in the buffer indicated by parameter destination having the size indicated by parameter destinationSize.] */
+/*Tests_SRS_CRT_ABSTRACTIONS_01_001: [ size_tToString shall convert the parameter value to its decimal representation as a string in the buffer indicated by parameter destination having the size indicated by parameter destinationSize. ] */
 TEST_FUNCTION(size_tToString_succeeds_1_digit)
 {
     // arrange
@@ -2638,8 +2687,8 @@ TEST_FUNCTION(size_tToString_succeeds_1_digit)
 
 }
 
-/*Tests_SRS_CRT_ABSTRACTIONS_02_001: [size_tToString shall convert the parameter value to its decimal representation as a string in the buffer indicated by parameter destination having the size indicated by parameter destinationSize.] */
-/*Tests_SRS_CRT_ABSTRACTIONS_02_004: [If the conversion has been successfull then size_tToString shall return 0.] */
+/*Tests_SRS_CRT_ABSTRACTIONS_01_001: [ size_tToString shall convert the parameter value to its decimal representation as a string in the buffer indicated by parameter destination having the size indicated by parameter destinationSize. ] */
+/*Tests_SRS_CRT_ABSTRACTIONS_01_003: [ If the conversion has been successfull then size_tToString shall return 0. ] */
 TEST_FUNCTION(size_tToString_succeeds_for_interesting_numbers)
 {
     // arrange
@@ -2675,8 +2724,8 @@ TEST_FUNCTION(size_tToString_succeeds_for_interesting_numbers)
     }
 }
 
-/*Tests_SRS_CRT_ABSTRACTIONS_02_001: [size_tToString shall convert the parameter value to its decimal representation as a string in the buffer indicated by parameter destination having the size indicated by parameter destinationSize.] */
-/*Tests_SRS_CRT_ABSTRACTIONS_02_004: [If the conversion has been successfull then size_tToString shall return 0.] */
+/*Tests_SRS_CRT_ABSTRACTIONS_01_001: [ size_tToString shall convert the parameter value to its decimal representation as a string in the buffer indicated by parameter destination having the size indicated by parameter destinationSize. ] */
+/*Tests_SRS_CRT_ABSTRACTIONS_01_003: [ If the conversion has been successfull then size_tToString shall return 0. ] */
 TEST_FUNCTION(size_tToString_succeeds_for_space_just_about_right)
 {
     // arrange

@@ -104,7 +104,7 @@ char* UUID_to_string(const UUID_T* uuid)
 
         if (number_of_chars_written != UUID_STRING_LENGTH)
         {
-            // Tests_SRS_UUID_09_015: [ If uuid_string fails to be set, UUID_to_string shall return NULL ]
+            // Codes_SRS_UUID_09_015: [ If uuid_string fails to be set, UUID_to_string shall return NULL ]
             LogError("Failed encoding UUID string");
             free(result);
             result = NULL;

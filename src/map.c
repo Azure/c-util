@@ -406,6 +406,7 @@ MAP_RESULT Map_AddOrUpdate(MAP_HANDLE handle, const char* key, const char* value
                 /*Codes_SRS_MAP_02_017: [Otherwise, Map_AddOrUpdate shall add the pair <key,value> to the map.]*/
                 if (insertNewKeyValue(handleData, key, value) != 0)
                 {
+                    /*Codes_SRS_MAP_02_018: [If there are any failures then Map_AddOrUpdate shall return MAP_ERROR.] */
                     result = MAP_ERROR;
                     LOG_MAP_ERROR;
                 }
@@ -423,6 +424,7 @@ MAP_RESULT Map_AddOrUpdate(MAP_HANDLE handle, const char* key, const char* value
                 char* newValue = (char*)realloc(handleData->values[index],valueLength  + 1);
                 if (newValue == NULL)
                 {
+                    /*Codes_SRS_MAP_02_018: [If there are any failures then Map_AddOrUpdate shall return MAP_ERROR.] */
                     result = MAP_ERROR;
                     LOG_MAP_ERROR;
                 }
@@ -590,6 +592,7 @@ STRING_HANDLE Map_ToJSON(MAP_HANDLE handle)
     /*Codes_SRS_MAP_02_052: [If parameter handle is NULL then Map_ToJSON shall return NULL.] */
     if (handle == NULL)
     {
+        /*Codes_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
         result = NULL;
         LogError("invalid arg (NULL)");
     }
@@ -599,6 +602,7 @@ STRING_HANDLE Map_ToJSON(MAP_HANDLE handle)
         result = STRING_construct("{");
         if (result == NULL)
         {
+            /*Codes_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
             LogError("STRING_construct failed");
         }
         else
@@ -614,6 +618,7 @@ STRING_HANDLE Map_ToJSON(MAP_HANDLE handle)
                 STRING_HANDLE key = STRING_new_JSON(handleData->keys[i]);
                 if (key == NULL)
                 {
+                    /*Codes_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
                     LogError("STRING_new_JSON failed");
                     STRING_delete(result);
                     result = NULL;
@@ -624,6 +629,7 @@ STRING_HANDLE Map_ToJSON(MAP_HANDLE handle)
                     STRING_HANDLE value = STRING_new_JSON(handleData->values[i]);
                     if (value == NULL)
                     {
+                        /*Codes_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
                         LogError("STRING_new_JSON failed");
                         STRING_delete(result);
                         result = NULL;
@@ -638,6 +644,7 @@ STRING_HANDLE Map_ToJSON(MAP_HANDLE handle)
                             (STRING_concat_with_STRING(result, value) == 0)
                             ))
                         {
+                            /*Codes_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
                             LogError("failed to build the JSON");
                             STRING_delete(result);
                             result = NULL;
@@ -661,6 +668,7 @@ STRING_HANDLE Map_ToJSON(MAP_HANDLE handle)
             {
                 if (STRING_concat(result, "}") != 0)
                 {
+                    /*Codes_SRS_MAP_02_051: [If any error occurs while producing the output, then Map_ToJSON shall fail and return NULL.] */
                     LogError("failed to build the JSON");
                     STRING_delete(result);
                     result = NULL;

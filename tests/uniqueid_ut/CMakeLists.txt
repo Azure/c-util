@@ -15,11 +15,18 @@ set(${theseTestsName}_test_files
     ${uniqueid_ut_test_file}
 )
 
+if(WIN32)
+set(${theseTestsName}_c_files
+    uniqueid_win32_mocked.c
+)
+else()
 set(${theseTestsName}_c_files
     ${UNIQUEID_C_FILE}
 )
+endif()
 
 set(${theseTestsName}_h_files
+    ../../inc/azure_c_util/uniqueid.h
 )
 
 if(APPLE)

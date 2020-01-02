@@ -48,6 +48,8 @@ BUFFER_create creates a new buffer from the memory at source, having size "size"
 
 **SRS_BUFFER_02_002: [** Otherwise, BUFFER_create shall allocate memory to hold size bytes and shall copy from source size bytes into the newly allocated memory. **]**
 
+**SRS_BUFFER_02_005: [** If size parameter is 0 then 1 byte of memory shall be allocated yet size of the buffer shall be set to 0. **]**
+
 **SRS_BUFFER_02_003: [** If allocating memory fails, then BUFFER_create shall return NULL. **]**
 
 **SRS_BUFFER_02_004: [** Otherwise, BUFFER_create shall return a non-NULL handle. **]**
@@ -119,15 +121,15 @@ int BUFFER_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
 int BUFFER_append_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
 ```
 
-**SRS_BUFFER_07_029: [** `BUFFER_append_build` shall return nonzero if handle or source are NULL or if size is 0. **]**
+**SRS_BUFFER_01_006: [** `BUFFER_append_build` shall return nonzero if handle or source are NULL or if size is 0. **]**
 
-**SRS_BUFFER_07_030: [** if handle->buffer is NULL `BUFFER_append_build` shall allocate the a buffer of size bytes... **]**
+**SRS_BUFFER_01_007: [** if handle->buffer is NULL `BUFFER_append_build` shall allocate the a buffer of size bytes... **]**
 
-**SRS_BUFFER_07_031: [** ... and copy the contents of source to handle->buffer. **]**
+**SRS_BUFFER_01_008: [** ... and copy the contents of source to handle->buffer. **]**
 
-**SRS_BUFFER_07_032: [** if handle->buffer is not NULL `BUFFER_append_build` shall realloc the buffer to be the handle->size + size **]**
+**SRS_BUFFER_01_009: [** if handle->buffer is not NULL `BUFFER_append_build` shall realloc the buffer to be the handle->size + size **]**
 
-**SRS_BUFFER_07_033: [** ... and copy the contents of source to the end of the buffer. **]**
+**SRS_BUFFER_01_010: [** ... and copy the contents of source to the end of the buffer. **]**
 
 **SRS_BUFFER_07_034: [** On success `BUFFER_append_build` shall return 0 **]**
 
@@ -221,7 +223,7 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
 extern int BUFFER_fill(BUFFER_HANDLE handle, unsigned char fill_char);
 ```
 
-**SRS_BUFFER_07_001: [** `BUFFER_fill` shall fill the supplied `BUFFER_HANDLE` with the supplied fill character. **]**
+**SRS_BUFFER_01_011: [** `BUFFER_fill` shall fill the supplied `BUFFER_HANDLE` with the supplied fill character. **]**
 
 **SRS_BUFFER_07_002: [** If `handle` is NULL `BUFFER_fill` shall return a non-zero value. **]**
 

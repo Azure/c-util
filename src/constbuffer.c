@@ -190,7 +190,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAn
     if (
         /*Codes_SRS_CONSTBUFFER_02_025: [ If handle is NULL then CONSTBUFFER_CreateFromOffsetAndSize shall fail and return NULL. ]*/
         (handle == NULL) ||
-        /*Codes_SRS_CONSTBUFFER_02_026: [ If offset is greater than or equal to handles's size then CONSTBUFFER_CreateFromOffsetAndSize shall fail and return NULL. ]*/
+        /* Codes_SRS_CONSTBUFFER_02_033: [ If offset is greater than handles's size then CONSTBUFFER_CreateFromOffsetAndSize shall fail and return NULL. ]*/
         (offset > handle->alias.size) ||
         /*Codes_SRS_CONSTBUFFER_02_032: [ If there are any failures then CONSTBUFFER_CreateFromOffsetAndSize shall fail and return NULL. ]*/
         (offset > SIZE_MAX - size) ||

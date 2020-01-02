@@ -26,6 +26,7 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
         RPC_STATUS status = UuidCreate(&uuidVal);
         if (status != RPC_S_OK && status != RPC_S_UUID_LOCAL_ONLY)
         {
+            /* Codes_SRS_UNIQUEID_07_004: [ If there is a failure for any reason the UniqueId_Generate shall return UNIQUEID_ERROR ] */
             LogError("Unable to aquire unique Id");
             result = UNIQUEID_ERROR;
         }
@@ -35,6 +36,7 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
             status = UuidToStringA(&uuidVal, &randomResult);
             if (status != RPC_S_OK)
             {
+                /* Codes_SRS_UNIQUEID_07_004: [ If there is a failure for any reason the UniqueId_Generate shall return UNIQUEID_ERROR ] */
                 LogError("Unable to convert Id to string");
                 result = UNIQUEID_ERROR;
             }
