@@ -241,6 +241,13 @@ if ((NOT TARGET umock_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMak
         include_directories(deps/umock-c/inc)
 endif()
 
+if((WIN32) AND (${run_traceability}))
+    #add traceability custom target
+    add_custom_target(azure_c_util_traceability ALL
+        COMMAND ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-build-tools/traceabilitytool/traceability_tool/bin/$<CONFIG>/traceabilitytool.exe -buildcheck -e ${CMAKE_CURRENT_LIST_DIR}/deps -i ${CMAKE_CURRENT_LIST_DIR})
+    add_dependencies(azure_c_util_traceability traceabilitytool)
+endif()
+
 include_directories(${MACRO_UTILS_INC_FOLDER})
 include_directories(${UMOCK_C_INC_FOLDER})
 include_directories(${CMAKE_CURRENT_LIST_DIR}/inc)
