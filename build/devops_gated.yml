@@ -58,6 +58,9 @@ jobs:
       filename: '"c:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"'
       modifyEnvironment: true
 
+  - task: NuGetToolInstaller@0
+    displayName: 'Use NuGet 4.3.0 (required for .NET core assemblies)'
+
   - task: CMake@1
     displayName: 'CMake .. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -G "Visual Studio 15 2017 Win64"'
     inputs:
@@ -115,6 +118,9 @@ jobs:
       filename: '"c:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"'
       modifyEnvironment: true
 
+  - task: NuGetToolInstaller@0
+    displayName: 'Use NuGet 4.3.0 (required for .NET core assemblies)'
+
   - task: CMake@1
     displayName: 'CMake .. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=ON'
     inputs:
@@ -142,7 +148,7 @@ jobs:
   displayName: 'Build Windows x86 Debug'
   pool:
     name: Hosted VS2017
-    demands:
+    demands: 
     - Cmd
     - msbuild
     - visualstudio
@@ -175,7 +181,7 @@ jobs:
     displayName: 'Download VLD'
 
   - task: BatchScript@1
-    displayName: 'Install VLD copy'
+    displayName: 'Install VLD'
     inputs:
       filename: '$(System.ArtifactsDirectory)/vld-2.5.1-setup.exe'
       arguments: '/suppressmsgboxes /verysilent /norestart'
@@ -192,6 +198,9 @@ jobs:
     inputs:
       filename: '"c:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"'
       modifyEnvironment: true
+
+  - task: NuGetToolInstaller@0
+    displayName: 'Use NuGet 4.3.0 (required for .NET core assemblies)'
 
   - task: CMake@1
     displayName: CMake
