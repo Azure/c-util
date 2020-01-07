@@ -39,7 +39,7 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
     /*Codes_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
     /*Codes_SRS_CONSTBUFFER_02_010: [The non-NULL handle returned by CONSTBUFFER_CreateFromBuffer shall have its ref count set to "1".]*/
     /*Codes_SRS_CONSTBUFFER_02_037: [ CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall allocate enough memory to hold CONSTBUFFER_HANDLE and size bytes. ]*/
-    result = malloc(sizeof(CONSTBUFFER_HANDLE_DATA) + size * sizeof(unsigned char));
+    result = (CONSTBUFFER_HANDLE)malloc(sizeof(CONSTBUFFER_HANDLE_DATA) + size * sizeof(unsigned char));
     if (result == NULL)
     {
         /*Codes_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
