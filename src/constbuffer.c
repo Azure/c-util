@@ -26,6 +26,11 @@ typedef struct CONSTBUFFER_HANDLE_DATA_TAG
     CONSTBUFFER_CUSTOM_FREE_FUNC custom_free_func;
     void* custom_free_func_context;
     CONSTBUFFER_HANDLE originalHandle; /*where the CONSTBUFFER_TYPE_FROM_OFFSET_AND_SIZE was build from*/
+#ifdef _MSC_VER
+/*warning C4200: nonstandard extension used: zero-sized array in struct/union */
+#pragma warning(disable:4200)
+#endif
+    unsigned char storage[]; /*if the memory was copied, this is where the copied memory is. For example in the case of CONSTBUFFER_CreateFromOffsetAndSizeWithCopy. Can have 0 as size.*/
 } CONSTBUFFER_HANDLE_DATA;
 
 static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* source, size_t size)
@@ -33,12 +38,15 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
     CONSTBUFFER_HANDLE result;
     /*Codes_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
     /*Codes_SRS_CONSTBUFFER_02_010: [The non-NULL handle returned by CONSTBUFFER_CreateFromBuffer shall have its ref count set to "1".]*/
-    result = (CONSTBUFFER_HANDLE)malloc(sizeof(CONSTBUFFER_HANDLE_DATA) + size);
+    /*Codes_SRS_CONSTBUFFER_02_037: [ CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall allocate enough memory to hold CONSTBUFFER_HANDLE and size bytes. ]*/
+    result = malloc(sizeof(CONSTBUFFER_HANDLE_DATA) + size * sizeof(unsigned char));
     if (result == NULL)
     {
         /*Codes_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
         /*Codes_SRS_CONSTBUFFER_02_008: [If copying the content fails, then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.] */
-        LogError("unable to malloc");
+        /*Codes_SRS_CONSTBUFFER_02_040: [ If there are any failures then CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
+        LogError("failure in malloc(sizeof(CONSTBUFFER_HANDLE_DATA)=%zu + size=%zu * sizeof(unsigned char)=%zu)",
+            sizeof(CONSTBUFFER_HANDLE_DATA) , size , sizeof(unsigned char));
         /*return as is*/
     }
     else
@@ -47,18 +55,19 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
 
         /*Codes_SRS_CONSTBUFFER_02_002: [Otherwise, CONSTBUFFER_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
         result->alias.size = size;
+        /*Codes_SRS_CONSTBUFFER_02_038: [ If size is 0 then CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall set the pointed to buffer to NULL. ]*/
         if (size == 0)
         {
             result->alias.buffer = NULL;
         }
         else
         {
-            unsigned char* temp = (unsigned char*)(result + 1);
             /*Codes_SRS_CONSTBUFFER_02_004: [Otherwise CONSTBUFFER_Create shall return a non-NULL handle.]*/
             /*Codes_SRS_CONSTBUFFER_02_007: [Otherwise, CONSTBUFFER_CreateFromBuffer shall copy the content of buffer.]*/
             /*Codes_SRS_CONSTBUFFER_02_009: [Otherwise, CONSTBUFFER_CreateFromBuffer shall return a non-NULL handle.]*/
-            (void)memcpy(temp, source, size);
-            result->alias.buffer = temp;
+            /*Codes_SRS_CONSTBUFFER_02_039: [ CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall set the pointed to a non-NULL value that contains the same bytes as offset...offset+size-1 of handle. ]*/
+            (void)memcpy(result->storage, source, size);
+            result->alias.buffer = result->storage;
         }
 
         result->buffer_type = CONSTBUFFER_TYPE_COPIED;
@@ -227,6 +236,43 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAn
 
             /*Codes_SRS_CONSTBUFFER_02_031: [ CONSTBUFFER_CreateFromOffsetAndSize shall succeed and return a non-NULL value. ]*/
         }
+    }
+    return result;
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
+{
+    CONSTBUFFER_HANDLE result;
+
+    if (
+        /*Codes_SRS_CONSTBUFFER_02_034: [ If handle is NULL then CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
+        (handle == NULL) ||
+        /*Codes_SRS_CONSTBUFFER_02_035: [ If offset exceeds the capacity of handle then CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
+        (offset > handle->alias.size) ||
+        /*Codes_SRS_CONSTBUFFER_02_040: [ If there are any failures then CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
+        (offset > SIZE_MAX - size) ||
+        /*Codes_SRS_CONSTBUFFER_02_036: [ If offset + size exceed the capacity of handle then CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
+        (offset + size > handle->alias.size)
+        )
+    {
+        LogError("invalid arguments CONSTBUFFER_HANDLE handle=%p, size_t offset=%zu, size_t size=%zu",
+            handle, offset, size);
+        result = NULL;
+    }
+    else
+    {
+        result = CONSTBUFFER_Create_Internal(handle->alias.buffer + offset, size);
+        if (result == NULL)
+        {
+            LogError("failure in CONSTBUFFER_Create_Internal(handle->alias.buffer=%p + offset=%zu, size=%zu)",
+                handle->alias.buffer, offset, size);
+            /*return as is*/
+        }
+        else
+        {
+            /*return as is*/
+        }
+
     }
     return result;
 }

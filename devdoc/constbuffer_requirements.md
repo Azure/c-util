@@ -5,8 +5,7 @@ ConstBuffer Requirements
 ## Overview
 
 ConstBuffer is a module that implements a read-only buffer of bytes (unsigned char). 
-Once created, the buffer can no longer be changed. The buffer is ref counted so further _Clone calls result in
-zero copy.
+Once created, the buffer can no longer be changed. The buffer is ref counted so further API calls result in zero copy.
 
 
 ## References
@@ -26,25 +25,31 @@ typedef struct CONSTBUFFER_TAG
     size_t size;
 } CONSTBUFFER;
 
-/*this creates a new constbuffer from a memory area*/
-MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, size_t, size);
+typedef void(*CONSTBUFFER_CUSTOM_FREE_FUNC)(void* context);
 
-/*this creates a new constbuffer from an existing BUFFER_HANDLE*/
-MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer);
+MOCKABLE_INTERFACE(constbuffer,
+    /*this creates a new constbuffer from a memory area*/
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, size_t, size),
 
-MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, size_t, size);
+    /*this creates a new constbuffer from an existing BUFFER_HANDLE*/
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer),
 
-MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, size_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext);
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, size_t, size),
 
-MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, size_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext),
 
-MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle);
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size),
 
-MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHandle);
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size),
 
-MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle);
+    FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle),
 
-MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right);
+    FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHandle),
+
+    FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle),
+
+    FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right)
+)
 ```
 
 ###  CONSTBUFFER_Create
@@ -140,6 +145,30 @@ Given an existing `handle` `CONSTBUFFER_CreateFromOffsetAndSize` creates another
 **SRS_CONSTBUFFER_02_031: [** `CONSTBUFFER_CreateFromOffsetAndSize` shall succeed and return a non-`NULL` value. **]**
 
 **SRS_CONSTBUFFER_02_032: [** If there are any failures then `CONSTBUFFER_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+### CONSTBUFFER_CreateFromOffsetAndSizeWithCopy
+```c
+FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
+```
+
+`CONSTBUFFER_CreateFromOffsetAndSizeWithCopy` creates a new CONSTBUFFER starting with the memory at `offset` in `handle` and having `size` bytes by copying (`memcpy`) those bytes. This creates a new `CONSTBUFFER_HANDLE` with its ref count set to 1.
+
+**SRS_CONSTBUFFER_02_034: [** If `handle` is `NULL` then `CONSTBUFFER_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_02_035: [** If `offset` exceeds the capacity of `handle` then `CONSTBUFFER_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_02_036: [** If `offset` + `size` exceed the capacity of `handle` then `CONSTBUFFER_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_02_037: [** `CONSTBUFFER_CreateFromOffsetAndSizeWithCopy` shall allocate enough memory to hold `CONSTBUFFER_HANDLE` and `size` bytes. **]**
+
+**SRS_CONSTBUFFER_02_038: [** If `size` is 0 then `CONSTBUFFER_CreateFromOffsetAndSizeWithCopy` shall set the pointed to buffer to `NULL`. **]**
+
+**SRS_CONSTBUFFER_02_039: [** `CONSTBUFFER_CreateFromOffsetAndSizeWithCopy` shall set the pointed to a non-`NULL` value that contains the same bytes as `offset`...`offset`+`size`-1 of `handle`. **]**
+
+**SRS_CONSTBUFFER_02_040: [** If there are any failures then `CONSTBUFFER_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
+
+
+
 
 
 ### CONSTBUFFER_IncRef
