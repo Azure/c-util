@@ -100,6 +100,14 @@ DEFINE_CREATE_WITH_EXTRA_SIZE(type) \
 DEFINE_CREATE(type) \
 DEFINE_DESTROY(type) \
 
+/*assuming that CONSTBUFFER_ARRAY_HANDLE is a type introduced with DEFINE_REFCOUNT_TYPE(CONSTBUFFER_ARRAY_HANDLE_DATA);
+and "checkpointContent" is a variable of type CONSTBUFFER_ARRAY_HANDLE
+then in order to see "count" / "counted" this is a good string to paste in Visual Studio's Watch window on 64 bit builds:
+
+(struct REFCOUNT_CONSTBUFFER_ARRAY_HANDLE_DATA_TAG*)((unsigned char*)checkpointContent - 8)
+
+*/
+
 #ifndef DEC_RETURN_ZERO
 #error refcount_os.h does not define DEC_RETURN_ZERO
 #endif // !DEC_RETURN_ZERO
