@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #define constbuffer_array_create real_constbuffer_array_create
-#define constbuffer_array_create_with_move_buffers real_constbuffer_array_create_with_move_buffers
 #define constbuffer_array_create_empty real_constbuffer_array_create_empty
+#define constbuffer_array_create_with_move_buffers real_constbuffer_array_create_with_move_buffers
 #define constbuffer_array_create_from_array_array real_constbuffer_array_create_from_array_array
 #define constbuffer_array_inc_ref real_constbuffer_array_inc_ref
 #define constbuffer_array_dec_ref real_constbuffer_array_dec_ref

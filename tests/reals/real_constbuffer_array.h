@@ -1,7 +1,14 @@
 // Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #ifndef REAL_CONSTBUFFER_ARRAY_H
 #define REAL_CONSTBUFFER_ARRAY_H
+
+#ifdef __cplusplus
+#include <cstdint>
+#else
+#include <stdint.h>
+#endif
 
 #include "azure_macro_utils/macro_utils.h"
 
@@ -11,8 +18,8 @@
     MU_FOR_EACH_1(R2, \
         constbuffer_array_create, \
         constbuffer_array_create_with_move_buffers, \
-        constbuffer_array_create_from_array_array, \
         constbuffer_array_create_empty, \
+        constbuffer_array_create_from_array_array, \
         constbuffer_array_inc_ref, \
         constbuffer_array_dec_ref, \
         constbuffer_array_add_front, \
@@ -21,26 +28,19 @@
         constbuffer_array_get_buffer, \
         constbuffer_array_get_buffer_content, \
         constbuffer_array_get_all_buffers_size, \
-        constbuffer_array_get_const_buffer_handle_array, \
-        CONSTBUFFER_ARRAY_HANDLE_contain_same \
+        constbuffer_array_get_const_buffer_handle_array \
 )
 
-#ifdef __cplusplus
-#include <cstddef>
-#else
-#include <stddef.h>
-#include <stdbool.h>
-#include <stdint.h>
-#endif
+#include "azure_c_util/constbuffer.h"
+#include "azure_c_util/constbuffer_array.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_create(const CONSTBUFFER_HANDLE* buffers, uint32_t buffer_count);
-CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_create_with_move_buffers(CONSTBUFFER_HANDLE* buffers, uint32_t buffer_count);
 CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_create_empty(void);
+CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_create_with_move_buffers(CONSTBUFFER_HANDLE* buffers, uint32_t buffer_count);
 CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_create_from_array_array(const CONSTBUFFER_ARRAY_HANDLE* buffer_arrays, uint32_t buffer_array_count);
 
 void real_constbuffer_array_inc_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle);
@@ -58,9 +58,6 @@ CONSTBUFFER_HANDLE real_constbuffer_array_get_buffer(CONSTBUFFER_ARRAY_HANDLE co
 const CONSTBUFFER* real_constbuffer_array_get_buffer_content(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, uint32_t buffer_index);
 int real_constbuffer_array_get_all_buffers_size(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, uint32_t* all_buffers_size);
 const CONSTBUFFER_HANDLE* real_constbuffer_array_get_const_buffer_handle_array(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle);
-
-/* compare */
-bool real_CONSTBUFFER_ARRAY_HANDLE_contain_same(CONSTBUFFER_ARRAY_HANDLE left, CONSTBUFFER_ARRAY_HANDLE right);
 
 #ifdef __cplusplus
 }
