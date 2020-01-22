@@ -260,9 +260,7 @@ if((WIN32) AND (${run_traceability}))
     add_dependencies(azure_c_util_traceability traceabilitytool)
 endif()
 
-if (${run_unittests} OR ${run_int_tests})
-    add_subdirectory(tests)
-endif()
+add_subdirectory(tests)
 
 include(CMakePackageConfigHelpers)
 

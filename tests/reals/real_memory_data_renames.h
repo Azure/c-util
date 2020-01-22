@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #define read_uint8_t real_read_uint8_t
 #define read_uint16_t real_read_uint16_t
