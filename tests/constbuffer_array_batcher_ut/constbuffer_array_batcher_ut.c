@@ -36,9 +36,9 @@ void real_free(void* ptr)
 
 #include "azure_c_util/constbuffer_array_batcher.h"
 
-#include "../real_test_files/real_constbuffer.h"
-#include "../real_test_files/real_constbuffer_array.h"
-#include "../real_test_files/real_memory_data.h"
+#include "../reals/real_constbuffer.h"
+#include "../reals/real_constbuffer_array.h"
+#include "../reals/real_memory_data.h"
 
 static TEST_MUTEX_HANDLE test_serialize_mutex;
 
