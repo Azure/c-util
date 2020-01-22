@@ -31,6 +31,7 @@
 extern "C" {
 #endif
 
+#include "windows.h"
 
 char* real_sprintf_char_function(const char* format, ...);
 

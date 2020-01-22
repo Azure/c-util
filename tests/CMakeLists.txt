@@ -4,6 +4,7 @@
 add_subdirectory(reals)
 
 if(${run_unittests})
+    add_subdirectory(reals_ut)
     add_subdirectory(agenttime_ut)
     add_subdirectory(azure_base64_ut)
     add_subdirectory(buffer_ut)

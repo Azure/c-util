@@ -10,19 +10,10 @@ ${theseTestsName}.c
 
 set(${theseTestsName}_c_files
     ../../src/constbuffer_array_batcher.c
-    ../real_test_files/real_constbuffer.c
-    ../real_test_files/real_constbuffer_array.c
-    ../real_test_files/real_memory_data.c
 )
 
 set(${theseTestsName}_h_files
     ../../inc/azure_c_util/constbuffer_array_batcher.h
-    ../real_test_files/real_constbuffer.h
-    ../real_test_files/real_constbuffer_renames.h
-    ../real_test_files/real_constbuffer_array.h
-    ../real_test_files/real_constbuffer_array_renames.h
-    ../real_test_files/real_memory_data.h
-    ../real_test_files/real_memory_data_renames.h
 )
 
-build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests")
+build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS azure_c_util_reals)

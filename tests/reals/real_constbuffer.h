@@ -31,6 +31,8 @@ extern "C"
 #include <stdbool.h>
 #endif
 
+#include "azure_c_util/constbuffer.h"
+
 CONSTBUFFER_HANDLE real_CONSTBUFFER_Create(const unsigned char* source, size_t size);
 
 CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer);
