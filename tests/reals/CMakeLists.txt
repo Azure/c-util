@@ -24,6 +24,10 @@ set(azure_c_util_reals_h_files
     real_constbuffer_array_renames.h
     real_constbuffer_array_batcher.h
     real_constbuffer_array_batcher_renames.h
+    real_crt_abstractions.h
+    real_crt_abstractions_renames.h
+    real_doublylinkedlist.h
+    real_doublylinkedlist_renames.h
     real_memory_data.h
     real_memory_data_renames.h
     real_singlylinkedlist.h

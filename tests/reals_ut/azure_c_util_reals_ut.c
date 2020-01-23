@@ -9,6 +9,8 @@
 #include "../tests/reals/real_constbuffer.h"
 #include "../tests/reals/real_constbuffer_array.h"
 #include "../tests/reals/real_constbuffer_array_batcher.h"
+#include "../tests/reals/real_crt_abstractions.h"
+#include "../tests/reals/real_doublylinkedlist.h"
 #include "../tests/reals/real_memory_data.h"
 #include "../tests/reals/real_singlylinkedlist.h"
 #include "../tests/reals/real_srw_lock.h"
@@ -19,6 +21,8 @@
 #include "azure_c_util/constbuffer.h"
 #include "azure_c_util/constbuffer_array.h"
 #include "azure_c_util/constbuffer_array_batcher.h"
+#include "azure_c_util/crt_abstractions.h"
+#include "azure_c_util/doublylinkedlist.h"
 #include "azure_c_util/memory_data.h"
 #include "azure_c_util/singlylinkedlist.h"
 #include "azure_c_util/srw_lock.h"
@@ -28,6 +32,8 @@
 
 BEGIN_TEST_SUITE(azure_c_util_reals_ut)
 
+// this test makes sure that the mappings work
+// (there is a real_ function corresponding to the original)
 TEST_FUNCTION(check_all_c_util_reals)
 {
     // arrange
@@ -36,6 +42,8 @@ TEST_FUNCTION(check_all_c_util_reals)
     REGISTER_CONSTBUFFER_GLOBAL_MOCK_HOOK();
     REGISTER_CONSTBUFFER_ARRAY_GLOBAL_MOCK_HOOK();
     REGISTER_CONSTBUFFER_ARRAY_BATCHER_GLOBAL_MOCK_HOOK();
+    REGISTER_CRT_ABSTRACTIONS_GLOBAL_MOCK_HOOKS();
+    REGISTER_DOUBLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
     REGISTER_MEMORY_DATA_GLOBAL_MOCK_HOOK();
     REGISTER_SINGLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
     REGISTER_SRW_LOCK_GLOBAL_MOCK_HOOK();
