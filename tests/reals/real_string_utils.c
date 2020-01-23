@@ -5,4 +5,4 @@
 
 #include "real_string_utils_renames.h"
 
-#include "../../../deps/azure-c-util/adapters/string_utils.c"
+#include "../../adapters/string_utils.c"

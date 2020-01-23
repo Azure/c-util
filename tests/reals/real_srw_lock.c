@@ -8,4 +8,4 @@
 
 #include "real_srw_lock_renames.h"
 
-#include "../../../deps/azure-c-util/adapters/srw_lock.c"
+#include "../../adapters/srw_lock.c"
