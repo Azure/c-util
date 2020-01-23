@@ -13,9 +13,6 @@
 #include "../tests/reals/real_doublylinkedlist.h"
 #include "../tests/reals/real_memory_data.h"
 #include "../tests/reals/real_singlylinkedlist.h"
-#include "../tests/reals/real_srw_lock.h"
-#include "../tests/reals/real_string_utils.h"
-#include "../tests/reals/real_timer.h"
 #include "../tests/reals/real_uuid.h"
 
 #include "azure_c_util/constbuffer.h"
@@ -25,10 +22,17 @@
 #include "azure_c_util/doublylinkedlist.h"
 #include "azure_c_util/memory_data.h"
 #include "azure_c_util/singlylinkedlist.h"
+#include "azure_c_util/uuid.h"
+
+#if defined _MSC_VER
+#include "../tests/reals/real_srw_lock.h"
+#include "../tests/reals/real_string_utils.h"
+#include "../tests/reals/real_timer.h"
+
 #include "azure_c_util/srw_lock.h"
 #include "azure_c_util/string_utils.h"
 #include "azure_c_util/timer.h"
-#include "azure_c_util/uuid.h"
+#endif
 
 BEGIN_TEST_SUITE(azure_c_util_reals_ut)
 
@@ -46,10 +50,13 @@ TEST_FUNCTION(check_all_c_util_reals)
     REGISTER_DOUBLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
     REGISTER_MEMORY_DATA_GLOBAL_MOCK_HOOK();
     REGISTER_SINGLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
+    REGISTER_UUID_GLOBAL_MOCK_HOOK();
+
+#if defined _MSC_VER
     REGISTER_SRW_LOCK_GLOBAL_MOCK_HOOK();
     REGISTER_STRING_UTILS_GLOBAL_MOCK_HOOK();
     REGISTER_TIMER_GLOBAL_MOCK_HOOK();
-    REGISTER_UUID_GLOBAL_MOCK_HOOK();
+#endif
 
     // assert
     // no explicit assert, if it builds it works

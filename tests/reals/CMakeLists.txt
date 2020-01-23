@@ -11,9 +11,6 @@ set(azure_c_util_reals_c_files
     real_doublylinkedlist.c
     real_memory_data.c
     real_singlylinkedlist.c
-    real_srw_lock.c
-    real_string_utils.c
-    real_timer.c
     real_uuid.c
 )
 
@@ -31,15 +28,27 @@ set(azure_c_util_reals_h_files
     real_memory_data.h
     real_memory_data_renames.h
     real_singlylinkedlist.h
+    real_uuid.h
+    real_uuid_renames.h
+)
+
+if(WIN32)
+set(azure_c_util_reals_c_files ${azure_c_util_reals_c_files}
+    real_srw_lock.c
+    real_string_utils.c
+    real_timer.c
+)
+
+set(azure_c_util_reals_h_files ${azure_c_util_reals_h_files}
     real_srw_lock.h
     real_srw_lock_renames.h
     real_string_utils.h
     real_string_utils_renames.h
     real_timer.h
     real_timer_renames.h
-    real_uuid.h
-    real_uuid_renames.h
 )
+endif()
+
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)
 add_library(azure_c_util_reals ${azure_c_util_reals_c_files} ${azure_c_util_reals_h_files})
