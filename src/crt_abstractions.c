@@ -24,6 +24,11 @@
 #define DEFINE_INFINITY 1
 #endif
 #endif
+
+
+
+
+
 #endif
 
 #if defined DEFINE_INFINITY
