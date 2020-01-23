@@ -5,4 +5,4 @@
 
 #include "real_timer_renames.h"
 
-#include "../../../deps/azure-c-util/adapters/timer.c"
+#include "../../adapters/timer.c"
