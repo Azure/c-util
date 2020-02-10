@@ -277,8 +277,8 @@ TEST_FUNCTION(g_timer_get_elapsed_in_ms_succeeds)
         .CopyOutArgumentBuffer_lpPerformanceCount(&pretendCounter2, sizeof(pretendCounter2));
 
     ///act
-    double elapsed1 = g_timer_get_elapsed_ms();
-    double elapsed2 = g_timer_get_elapsed_ms();
+    double elapsed1 = timer_global_get_elapsed_ms();
+    double elapsed2 = timer_global_get_elapsed_ms();
 
     ASSERT_IS_TRUE(elapsed1 == 2000.0); /* all integer number up to 2^31 are perfectly representable by double*/
 

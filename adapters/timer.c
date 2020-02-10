@@ -82,7 +82,7 @@ static LARGE_INTEGER g_freq;
 static volatile LONG g_timer_state = 0; /*0 - not "created", 1 - "created", "2" - creating*/
 
 /*returns a time in ms since "some" start.*/
-double g_timer_get_elapsed_ms(void)
+double timer_global_get_elapsed_ms(void)
 {
     while (InterlockedCompareExchange(&g_timer_state, 2, 0) != 1)
     {

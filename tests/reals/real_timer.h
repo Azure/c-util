@@ -15,7 +15,7 @@
         timer_create, \
         timer_start, \
         timer_get_elapsed, \
-        g_timer_get_elapsed_ms, \
+        timer_global_get_elapsed_ms, \
         timer_destroy \
 )
 
@@ -32,7 +32,7 @@ double real_timer_get_elapsed(TIMER_HANDLE handle);
 
 double real_timer_get_elapsed_ms(TIMER_HANDLE handle);
 
-double real_g_timer_get_elapsed_ms(void);
+double real_timer_global_get_elapsed_ms(void);
 
 void real_timer_destroy(TIMER_HANDLE handle);
 
