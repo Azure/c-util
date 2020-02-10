@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-#include "Windows.h"
+#include "windows.h"
 
 
 #define QueryPerformanceFrequency mocked_QueryPerformanceFrequency

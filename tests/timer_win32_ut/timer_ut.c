@@ -256,6 +256,38 @@ TEST_FUNCTION(timer_destroy_frees_handle)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
+TEST_FUNCTION(g_timer_get_elapsed_in_ms_succeeds)
+{
+    ///arrange
+    LARGE_INTEGER pretendFreq;
+    pretendFreq.QuadPart = 1000;
+    
+    STRICT_EXPECTED_CALL(mocked_QueryPerformanceFrequency(IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer_lpFrequency(&pretendFreq, sizeof(pretendFreq));
+
+    LARGE_INTEGER pretendCounter1;
+    pretendCounter1.QuadPart = 2000;
+    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer_lpPerformanceCount(&pretendCounter1, sizeof(pretendCounter1));
+
+    /*note: missing second QueryPerformanceFrequency*/
+    LARGE_INTEGER pretendCounter2;
+    pretendCounter2.QuadPart = 5000;
+    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_PTR_ARG))
+        .CopyOutArgumentBuffer_lpPerformanceCount(&pretendCounter2, sizeof(pretendCounter2));
+
+    ///act
+    double elapsed1 = timer_global_get_elapsed_ms();
+    double elapsed2 = timer_global_get_elapsed_ms();
+
+    ASSERT_IS_TRUE(elapsed1 == 2000.0); /* all integer number up to 2^31 are perfectly representable by double*/
+
+    ASSERT_IS_TRUE(elapsed2 == 5000.0); /* all integer number up to 2^31 are perfectly representable by double*/
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
 TEST_FUNCTION_CLEANUP(cleanup)
 {
     TEST_MUTEX_RELEASE(test_serialize_mutex);
