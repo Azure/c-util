@@ -6,6 +6,6 @@
 int main(void)
 {
     size_t failedTestCount = 0;
-    RUN_TEST_SUITE(constbuffer_array_batcher_unittests, failedTestCount);
+    RUN_TEST_SUITE(constbuffer_array_batcher_nv_unittests, failedTestCount);
     return failedTestCount;
 }

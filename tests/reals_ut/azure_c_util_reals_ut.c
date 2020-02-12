@@ -8,7 +8,7 @@
 
 #include "../tests/reals/real_constbuffer.h"
 #include "../tests/reals/real_constbuffer_array.h"
-#include "../tests/reals/real_constbuffer_array_batcher.h"
+#include "../tests/reals/real_constbuffer_array_batcher_nv.h"
 #include "../tests/reals/real_crt_abstractions.h"
 #include "../tests/reals/real_doublylinkedlist.h"
 #include "../tests/reals/real_memory_data.h"
@@ -17,7 +17,7 @@
 
 #include "azure_c_util/constbuffer.h"
 #include "azure_c_util/constbuffer_array.h"
-#include "azure_c_util/constbuffer_array_batcher.h"
+#include "azure_c_util/constbuffer_array_batcher_nv.h"
 #include "azure_c_util/crt_abstractions.h"
 #include "azure_c_util/doublylinkedlist.h"
 #include "azure_c_util/memory_data.h"

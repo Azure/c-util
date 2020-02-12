@@ -124,7 +124,7 @@ set(azure_c_util_c_files
     ./src/crt_abstractions.c
     ./src/constbuffer.c
     ./src/constbuffer_array.c
-    ./src/constbuffer_array_batcher.c
+    ./src/constbuffer_array_batcher_nv.c
     ./src/doublylinkedlist.c
     ./src/gballoc.c
     ./src/map.c
@@ -152,7 +152,7 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/buffer_.h
     ./inc/azure_c_util/constbuffer.h
     ./inc/azure_c_util/constbuffer_array.h
-    ./inc/azure_c_util/constbuffer_array_batcher.h
+    ./inc/azure_c_util/constbuffer_array_batcher_nv.h
     ./inc/azure_c_util/crt_abstractions.h
     ./inc/azure_c_util/doublylinkedlist.h
     ${LOGGING_H_FILE}
