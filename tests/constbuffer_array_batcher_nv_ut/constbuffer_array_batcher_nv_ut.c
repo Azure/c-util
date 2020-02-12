@@ -106,7 +106,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 
 /* constbuffer_array_batcher_nv_batch */
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_001: [ If payloads is NULL, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_001: [ If payloads is NULL, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_NULL_payloads_fails)
 {
     // arrange
@@ -120,7 +120,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_NULL_payloads_fails)
     ASSERT_IS_NULL(result);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_002: [ If count is 0, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_002: [ If count is 0, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_0_count_fails)
 {
     // arrange
@@ -139,12 +139,12 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_0_count_fails)
     real_constbuffer_array_dec_ref(test_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_003: [ Otherwise constbuffer_array_batcher_nv_batch shall obtain the number of buffers used by each CONSTBUFFER_ARRAY. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_004: [ constbuffer_array_batcher_nv_batch shall allocate memory for the header buffer (enough to hold the entire batch header namingly (count + 1) uint32_t values). ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_005: [ count shall be written as the first uint32_t in the header memory. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_006: [ The count of buffers for each array in payloads shall also be written in the header. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_007: [ constbuffer_array_batcher_nv_batch shall allocate enough memory for all the buffer handles in all the arrays + one extra header buffer handle. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_008: [ constbuffer_array_batcher_nv_batch shall populate the first handle in the newly allocated handles array with the header buffer handle. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_003: [ Otherwise constbuffer_array_batcher_nv_batch shall obtain the number of buffers used by each CONSTBUFFER_ARRAY. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_004: [ constbuffer_array_batcher_nv_batch shall allocate memory for the header buffer (enough to hold the entire batch header namingly (count + 1) uint32_t values). ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_005: [ count shall be written as the first uint32_t in the header memory. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_006: [ The count of buffers for each array in payloads shall also be written in the header. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_007: [ constbuffer_array_batcher_nv_batch shall allocate enough memory for all the buffer handles in all the arrays + one extra header buffer handle. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_008: [ constbuffer_array_batcher_nv_batch shall populate the first handle in the newly allocated handles array with the header buffer handle. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_batch_succeeds)
 {
     // arrange
@@ -184,12 +184,12 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_batch_succeeds)
     real_CONSTBUFFER_DecRef(actual_first_buffer);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_003: [ Otherwise constbuffer_array_batcher_nv_batch shall obtain the number of buffers used by each CONSTBUFFER_ARRAY. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_004: [ constbuffer_array_batcher_nv_batch shall allocate memory for the header buffer (enough to hold the entire batch header namingly (count + 1) uint32_t values). ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_005: [ count shall be written as the first uint32_t in the header memory. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_006: [ The count of buffers for each array in payloads shall also be written in the header. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_007: [ constbuffer_array_batcher_nv_batch shall allocate enough memory for all the buffer handles in all the arrays + one extra header buffer handle. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_008: [ constbuffer_array_batcher_nv_batch shall populate the first handle in the newly allocated handles array with the header buffer handle. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_003: [ Otherwise constbuffer_array_batcher_nv_batch shall obtain the number of buffers used by each CONSTBUFFER_ARRAY. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_004: [ constbuffer_array_batcher_nv_batch shall allocate memory for the header buffer (enough to hold the entire batch header namingly (count + 1) uint32_t values). ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_005: [ count shall be written as the first uint32_t in the header memory. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_006: [ The count of buffers for each array in payloads shall also be written in the header. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_007: [ constbuffer_array_batcher_nv_batch shall allocate enough memory for all the buffer handles in all the arrays + one extra header buffer handle. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_008: [ constbuffer_array_batcher_nv_batch shall populate the first handle in the newly allocated handles array with the header buffer handle. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_2_empty_arrays_succeeds)
 {
     // arrange
@@ -235,7 +235,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_2_empty_arrays_succeeds)
     real_CONSTBUFFER_DecRef(actual_first_buffer);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_009: [ constbuffer_array_batcher_nv_batch shall populate the rest of the handles in the newly allocated handles array with the const buffer handles obtained from the arrays in payloads. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_009: [ constbuffer_array_batcher_nv_batch shall populate the rest of the handles in the newly allocated handles array with the const buffer handles obtained from the arrays in payloads. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_an_array_with_1_buffer_succeeds)
 {
     // arrange
@@ -284,7 +284,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_an_array_with_1_buffer_suc
     real_CONSTBUFFER_DecRef(actual_buffers[1]);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_009: [ constbuffer_array_batcher_nv_batch shall populate the rest of the handles in the newly allocated handles array with the const buffer handles obtained from the arrays in payloads. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_009: [ constbuffer_array_batcher_nv_batch shall populate the rest of the handles in the newly allocated handles array with the const buffer handles obtained from the arrays in payloads. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_2_arrays_each_with_1_buffer_succeeds)
 {
     // arrange
@@ -345,7 +345,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_2_arrays_each_with_1_buffe
     real_CONSTBUFFER_DecRef(actual_buffers[2]);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_009: [ constbuffer_array_batcher_nv_batch shall populate the rest of the handles in the newly allocated handles array with the const buffer handles obtained from the arrays in payloads. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_009: [ constbuffer_array_batcher_nv_batch shall populate the rest of the handles in the newly allocated handles array with the const buffer handles obtained from the arrays in payloads. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_an_array_with_2_buffers_succeeds)
 {
     // arrange
@@ -402,7 +402,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_an_array_with_2_buffers_su
     real_CONSTBUFFER_DecRef(actual_buffers[2]);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_009: [ constbuffer_array_batcher_nv_batch shall populate the rest of the handles in the newly allocated handles array with the const buffer handles obtained from the arrays in payloads. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_009: [ constbuffer_array_batcher_nv_batch shall populate the rest of the handles in the newly allocated handles array with the const buffer handles obtained from the arrays in payloads. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_2_arrays_with_1_and_3_buffers_succeeds)
 {
     // arrange
@@ -479,7 +479,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_2_arrays_with_1_and_3_buff
     real_CONSTBUFFER_DecRef(actual_buffers[4]);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_010: [ If any error occurrs, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_010: [ If any error occurrs, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
 TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_batcher_nv_batch_fails)
 {
     // arrange
@@ -554,7 +554,7 @@ TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_batcher_nv_batch_fail
     real_CONSTBUFFER_DecRef(test_buffers[3]);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_023: [ If any of the payload const buffer arrays is NULL, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_023: [ If any of the payload const buffer arrays is NULL, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_first_array_NULL_fails)
 {
     // arrange
@@ -579,7 +579,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_first_array_NULL_fails)
     real_CONSTBUFFER_DecRef(test_buffer);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_023: [ If any of the payload const buffer arrays is NULL, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_023: [ If any of the payload const buffer arrays is NULL, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_2nd_array_NULL_fails)
 {
     // arrange
@@ -606,7 +606,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_2nd_array_NULL_fails)
 
 /* constbuffer_array_batcher_nv_unbatch */
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_011: [ If batch is NULL, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_011: [ If batch is NULL, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_NULL_batch_fails)
 {
     // arrange
@@ -621,7 +621,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_NULL_batch_fails)
     ASSERT_IS_NULL(result);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_012: [ If payload_count is NULL, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_012: [ If payload_count is NULL, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_NULL_payload_count_fails)
 {
     // arrange
@@ -645,14 +645,14 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_NULL_payload_count_fails
     real_CONSTBUFFER_DecRef(test_buffers[0]);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_013: [ Otherwise, constbuffer_array_batcher_nv_unbatch shall obtain the number of buffers in batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_014: [ constbuffer_array_batcher_nv_unbatch shall obtain the content of first (header) buffer in batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_015: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffer arrays batched by reading the first uint32_t. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_017: [ constbuffer_array_batcher_nv_unbatch shall allocate enough memory to hold the handles for buffer arrays that will be unbatched. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_016: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffers in each of the batched payloads reading the uint32_t values encoded in the rest of the first (header) buffer. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_018: [ constbuffer_array_batcher_nv_unbatch shall create a const buffer array for each of the payloads in the batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_019: [ On success constbuffer_array_batcher_nv_unbatch shall return the array of const buffer array handles that constitute the batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_020: [ On success constbuffer_array_batcher_nv_unbatch shall write in payload_count the number of const buffer arrays that are in the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_013: [ Otherwise, constbuffer_array_batcher_nv_unbatch shall obtain the number of buffers in batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_014: [ constbuffer_array_batcher_nv_unbatch shall obtain the content of first (header) buffer in batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_015: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffer arrays batched by reading the first uint32_t. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_017: [ constbuffer_array_batcher_nv_unbatch shall allocate enough memory to hold the handles for buffer arrays that will be unbatched. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_016: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffers in each of the batched payloads reading the uint32_t values encoded in the rest of the first (header) buffer. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_018: [ constbuffer_array_batcher_nv_unbatch shall create a const buffer array for each of the payloads in the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_019: [ On success constbuffer_array_batcher_nv_unbatch shall return the array of const buffer array handles that constitute the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_020: [ On success constbuffer_array_batcher_nv_unbatch shall write in payload_count the number of const buffer arrays that are in the batch. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_0_buffers_succeeds)
 {
     // arrange
@@ -690,14 +690,14 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_0_buffers
     real_free(result);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_013: [ Otherwise, constbuffer_array_batcher_nv_unbatch shall obtain the number of buffers in batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_014: [ constbuffer_array_batcher_nv_unbatch shall obtain the content of first (header) buffer in batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_015: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffer arrays batched by reading the first uint32_t. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_017: [ constbuffer_array_batcher_nv_unbatch shall allocate enough memory to hold the handles for buffer arrays that will be unbatched. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_016: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffers in each of the batched payloads reading the uint32_t values encoded in the rest of the first (header) buffer. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_018: [ constbuffer_array_batcher_nv_unbatch shall create a const buffer array for each of the payloads in the batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_019: [ On success constbuffer_array_batcher_nv_unbatch shall return the array of const buffer array handles that constitute the batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_020: [ On success constbuffer_array_batcher_nv_unbatch shall write in payload_count the number of const buffer arrays that are in the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_013: [ Otherwise, constbuffer_array_batcher_nv_unbatch shall obtain the number of buffers in batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_014: [ constbuffer_array_batcher_nv_unbatch shall obtain the content of first (header) buffer in batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_015: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffer arrays batched by reading the first uint32_t. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_017: [ constbuffer_array_batcher_nv_unbatch shall allocate enough memory to hold the handles for buffer arrays that will be unbatched. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_016: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffers in each of the batched payloads reading the uint32_t values encoded in the rest of the first (header) buffer. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_018: [ constbuffer_array_batcher_nv_unbatch shall create a const buffer array for each of the payloads in the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_019: [ On success constbuffer_array_batcher_nv_unbatch shall return the array of const buffer array handles that constitute the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_020: [ On success constbuffer_array_batcher_nv_unbatch shall write in payload_count the number of const buffer arrays that are in the batch. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_2_payload_with_0_buffers_succeeds)
 {
     // arrange
@@ -740,14 +740,14 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_2_payload_with_0_buffers
     real_free(result);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_013: [ Otherwise, constbuffer_array_batcher_nv_unbatch shall obtain the number of buffers in batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_014: [ constbuffer_array_batcher_nv_unbatch shall obtain the content of first (header) buffer in batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_015: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffer arrays batched by reading the first uint32_t. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_017: [ constbuffer_array_batcher_nv_unbatch shall allocate enough memory to hold the handles for buffer arrays that will be unbatched. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_016: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffers in each of the batched payloads reading the uint32_t values encoded in the rest of the first (header) buffer. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_018: [ constbuffer_array_batcher_nv_unbatch shall create a const buffer array for each of the payloads in the batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_019: [ On success constbuffer_array_batcher_nv_unbatch shall return the array of const buffer array handles that constitute the batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_020: [ On success constbuffer_array_batcher_nv_unbatch shall write in payload_count the number of const buffer arrays that are in the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_013: [ Otherwise, constbuffer_array_batcher_nv_unbatch shall obtain the number of buffers in batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_014: [ constbuffer_array_batcher_nv_unbatch shall obtain the content of first (header) buffer in batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_015: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffer arrays batched by reading the first uint32_t. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_017: [ constbuffer_array_batcher_nv_unbatch shall allocate enough memory to hold the handles for buffer arrays that will be unbatched. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_016: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffers in each of the batched payloads reading the uint32_t values encoded in the rest of the first (header) buffer. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_018: [ constbuffer_array_batcher_nv_unbatch shall create a const buffer array for each of the payloads in the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_019: [ On success constbuffer_array_batcher_nv_unbatch shall return the array of const buffer array handles that constitute the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_020: [ On success constbuffer_array_batcher_nv_unbatch shall write in payload_count the number of const buffer arrays that are in the batch. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_1_buffers_succeeds)
 {
     // arrange
@@ -796,14 +796,14 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_1_buffers
     real_free(result);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_013: [ Otherwise, constbuffer_array_batcher_nv_unbatch shall obtain the number of buffers in batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_014: [ constbuffer_array_batcher_nv_unbatch shall obtain the content of first (header) buffer in batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_015: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffer arrays batched by reading the first uint32_t. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_017: [ constbuffer_array_batcher_nv_unbatch shall allocate enough memory to hold the handles for buffer arrays that will be unbatched. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_016: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffers in each of the batched payloads reading the uint32_t values encoded in the rest of the first (header) buffer. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_018: [ constbuffer_array_batcher_nv_unbatch shall create a const buffer array for each of the payloads in the batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_019: [ On success constbuffer_array_batcher_nv_unbatch shall return the array of const buffer array handles that constitute the batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_020: [ On success constbuffer_array_batcher_nv_unbatch shall write in payload_count the number of const buffer arrays that are in the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_013: [ Otherwise, constbuffer_array_batcher_nv_unbatch shall obtain the number of buffers in batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_014: [ constbuffer_array_batcher_nv_unbatch shall obtain the content of first (header) buffer in batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_015: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffer arrays batched by reading the first uint32_t. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_017: [ constbuffer_array_batcher_nv_unbatch shall allocate enough memory to hold the handles for buffer arrays that will be unbatched. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_016: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffers in each of the batched payloads reading the uint32_t values encoded in the rest of the first (header) buffer. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_018: [ constbuffer_array_batcher_nv_unbatch shall create a const buffer array for each of the payloads in the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_019: [ On success constbuffer_array_batcher_nv_unbatch shall return the array of const buffer array handles that constitute the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_020: [ On success constbuffer_array_batcher_nv_unbatch shall write in payload_count the number of const buffer arrays that are in the batch. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_2_buffers_succeeds)
 {
     // arrange
@@ -859,14 +859,14 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_2_buffers
     real_free(result);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_013: [ Otherwise, constbuffer_array_batcher_nv_unbatch shall obtain the number of buffers in batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_014: [ constbuffer_array_batcher_nv_unbatch shall obtain the content of first (header) buffer in batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_015: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffer arrays batched by reading the first uint32_t. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_017: [ constbuffer_array_batcher_nv_unbatch shall allocate enough memory to hold the handles for buffer arrays that will be unbatched. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_016: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffers in each of the batched payloads reading the uint32_t values encoded in the rest of the first (header) buffer. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_018: [ constbuffer_array_batcher_nv_unbatch shall create a const buffer array for each of the payloads in the batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_019: [ On success constbuffer_array_batcher_nv_unbatch shall return the array of const buffer array handles that constitute the batch. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_020: [ On success constbuffer_array_batcher_nv_unbatch shall write in payload_count the number of const buffer arrays that are in the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_013: [ Otherwise, constbuffer_array_batcher_nv_unbatch shall obtain the number of buffers in batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_014: [ constbuffer_array_batcher_nv_unbatch shall obtain the content of first (header) buffer in batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_015: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffer arrays batched by reading the first uint32_t. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_017: [ constbuffer_array_batcher_nv_unbatch shall allocate enough memory to hold the handles for buffer arrays that will be unbatched. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_016: [ constbuffer_array_batcher_nv_unbatch shall extract the number of buffers in each of the batched payloads reading the uint32_t values encoded in the rest of the first (header) buffer. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_018: [ constbuffer_array_batcher_nv_unbatch shall create a const buffer array for each of the payloads in the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_019: [ On success constbuffer_array_batcher_nv_unbatch shall return the array of const buffer array handles that constitute the batch. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_020: [ On success constbuffer_array_batcher_nv_unbatch shall write in payload_count the number of const buffer arrays that are in the batch. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_2_payloads_each_with_different_number_of_buffers_succeeds)
 {
     // arrange
@@ -949,7 +949,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_2_payloads_each_with_dif
     real_free(result);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_022: [ If any error occurs, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_022: [ If any error occurs, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
 TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_batcher_nv_unbatch_fails)
 {
     // arrange
@@ -1023,7 +1023,7 @@ TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_batcher_nv_unbatch_fa
     real_CONSTBUFFER_DecRef(test_buffers[4]);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_022: [ If any error occurs, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_022: [ If any error occurs, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
 TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_batcher_nv_unbatch_of_2_payload_that_have_0_buffers_fails)
 {
     // arrange
@@ -1072,7 +1072,7 @@ TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_batcher_nv_unbatch_of
     real_CONSTBUFFER_DecRef(test_buffers[0]);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_021: [ If there are not enough buffers in batch to properly create all the payloads, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_021: [ If there are not enough buffers in batch to properly create all the payloads, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_0_buffers_fails)
 {
     // arrange
@@ -1095,7 +1095,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_0_buffers_fails)
     real_constbuffer_array_dec_ref(batch);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_024: [ If the size of the first buffer is less than uint32_t or not a multiple of uint32_t, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_024: [ If the size of the first buffer is less than uint32_t or not a multiple of uint32_t, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_header_buffer_size_3_fails)
 {
     // arrange
@@ -1123,7 +1123,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_header_buffer_size_3_fai
     real_CONSTBUFFER_DecRef(test_buffers[0]);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_024: [ If the size of the first buffer is less than uint32_t or not a multiple of uint32_t, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_024: [ If the size of the first buffer is less than uint32_t or not a multiple of uint32_t, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_header_buffer_size_5_fails)
 {
     // arrange
@@ -1151,7 +1151,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_header_buffer_size_5_fai
     real_CONSTBUFFER_DecRef(test_buffers[0]);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_021: [ If there are not enough buffers in batch to properly create all the payloads, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_021: [ If there are not enough buffers in batch to properly create all the payloads, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_1_buffer_but_only_one_buffer_in_batch_fails)
 {
     // arrange
@@ -1183,7 +1183,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_1_buffer_
     real_CONSTBUFFER_DecRef(test_buffers[0]);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_021: [ If there are not enough buffers in batch to properly create all the payloads, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_021: [ If there are not enough buffers in batch to properly create all the payloads, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_2_payloads_with_1_buffer_but_not_enough_buffers_for_first_payload_fails)
 {
     // arrange
@@ -1215,7 +1215,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_2_payloads_with_1_buffer
     real_CONSTBUFFER_DecRef(test_buffers[0]);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_021: [ If there are not enough buffers in batch to properly create all the payloads, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_021: [ If there are not enough buffers in batch to properly create all the payloads, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_2_payloads_with_1_buffer_but_not_enough_buffers_for_second_payload_fails)
 {
     // arrange
@@ -1261,7 +1261,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_2_payloads_with_1_buffer
     real_CONSTBUFFER_DecRef(test_buffers[1]);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_025: [ If the number of buffer arrays does not match the size of the first buffer, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_025: [ If the number of buffer arrays does not match the size of the first buffer, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_size_of_header_buffer_not_matching_the_nbumber_of_payloads_fails)
 {
     // arrange
@@ -1290,7 +1290,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_size_of_header_buffer_no
     real_CONSTBUFFER_DecRef(test_buffers[0]);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_01_026: [ If the number of buffer arrays in the batch is 0, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_026: [ If the number of buffer arrays in the batch is 0, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_payload_count_0_fails)
 {
     // arrange
