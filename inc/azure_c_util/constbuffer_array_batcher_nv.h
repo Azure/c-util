@@ -1,7 +1,7 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 
-#ifndef CONSTBUFFER_ARRAY_BATCHER_H
-#define CONSTBUFFER_ARRAY_BATCHER_H
+#ifndef CONSTBUFFER_ARRAY_BATCHER_NV_H
+#define CONSTBUFFER_ARRAY_BATCHER_NV_H
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -23,4 +23,4 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE*, constbuffer_array_batcher_nv_unba
 }
 #endif
 
-#endif /* CONSTBUFFER_ARRAY_BATCHER_H */
+#endif /* CONSTBUFFER_ARRAY_BATCHER_NV_H */
