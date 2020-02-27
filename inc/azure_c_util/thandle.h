@@ -3,18 +3,17 @@
 
 #include <stdlib.h>
 
-#include "windows.h"
-
 #include "azure_macro_utils/macro_utils.h"
 #include "umock_c/umock_c_prod.h"
 
 #include "azure_c_util/xlogging.h"
+#include "refcount_os.h"
 
 /*the incomplete unassignable type*/
 #define THANDLE(T) const T* const
 
 #define THANDLE_EXTRA_FIELDS(type) \
-    volatile LONG, refCount, \
+    volatile COUNT_TYPE, refCount, \
     void(*dispose)(type*) , \
 
 /*given a previous type T introduced by MU_DEFINE_STRUCT(T, T_FIELDS), this is the name of the type that has T wrapped*/
@@ -64,7 +63,7 @@
         {                                                                                                                                                               \
             /*Codes_SRS_THANDLE_02_014: [ THANDLE_MALLOC shall initialize the reference count to 1, store dispose and return a T* . ]*/                                 \
             handle_impl->dispose = dispose;                                                                                                                             \
-            (void)InterlockedExchange(&handle_impl->refCount, 1);                                                                                                       \
+            INIT_REF_VAR(handle_impl->refCount);                                                                                                                        \
             result = &(handle_impl->data);                                                                                                                              \
         }                                                                                                                                                               \
         return result;                                                                                                                                                  \
@@ -94,7 +93,7 @@
         {                                                                                                                                                               \
             /*Codes_SRS_THANDLE_02_002: [ THANDLE_DEC_REF shall decrement the ref count of t. ]*/                                                                       \
             THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
-            if (InterlockedDecrement(&(handle_impl->refCount)) == 0)                                                                                                    \
+            if (DEC_REF_VAR(handle_impl->refCount) == DEC_RETURN_ZERO)                                                                                                  \
             {                                                                                                                                                           \
                 /*Codes_SRS_THANDLE_02_003: [ If the ref count of t reaches 0 then THANDLE_DEC_REF shall call dispose (if not NULL) and free the used memory. ]*/       \
                 if(handle_impl->dispose!=NULL)                                                                                                                          \
@@ -117,7 +116,7 @@
         {                                                                                                                                                               \
             /*Codes_SRS_THANDLE_02_005: [ THANDLE_INC_REF shall increment the reference count of t. ]*/                                                                 \
             THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
-            (void)InterlockedIncrement(&(handle_impl->refCount));                                                                                                       \
+            INC_REF_VAR(handle_impl->refCount);                                                                                                                         \
         }                                                                                                                                                               \
     }                                                                                                                                                                   \
     void THANDLE_ASSIGN(T)(THANDLE(T) * t1, THANDLE(T) t2 )                                                                                                             \
