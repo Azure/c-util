@@ -70,8 +70,8 @@ TEST_SUITE_INITIALIZE(suite_init)
     result = umocktypes_stdint_register_types();
     ASSERT_ARE_EQUAL(int, 0, result);
 
-    REGISTER_UMOCK_ALIAS_TYPE(WORD, int);
-    REGISTER_UMOCK_ALIAS_TYPE(LPWSADATA, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(WORD, short);
+    REGISTER_UMOCK_ALIAS_TYPE(LPWSADATA, void *);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
