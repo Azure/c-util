@@ -51,7 +51,7 @@
     {                                                                                                                                                                   \
         T* result;                                                                                                                                                      \
         /*Codes_SRS_THANDLE_02_013: [ THANDLE_MALLOC shall allocate memory. ]*/                                                                                         \
-        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                                                       \
+        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                        \
         if (handle_impl == NULL)                                                                                                                                        \
         {                                                                                                                                                               \
             /*Codes_SRS_THANDLE_02_015: [ If malloc fails then THANDLE_MALLOC shall fail and return NULL. ]*/                                                           \
