@@ -5,7 +5,7 @@
 
 `thandle` is a module that provides a list of macros that help with ref counted handles.
 
-Given a type `LL` previously introduced by `MU_DEFINE_STRUCT`, `thandle`'s macros will encapsulate the type, provide a HANDLE (that is, opaque type) to it which other APIs can use. The handle type is `THANDLE(LL)`.
+Given a type `T` previously introduced by `MU_DEFINE_STRUCT`, `thandle`'s macros will encapsulate the type, provide a HANDLE (that is, opaque type) to it which other APIs can use. The handle type is `THANDLE(T)`.
 
 `thandle` will provide macros for declaring all the needed constructs in a .h file and macros for defining the constructs in a .c file.
 
@@ -91,14 +91,14 @@ MOCKABLE_FUNCTION(, void, THANDLE_ASSIGN(T), THANDLE(T) *, t1, THANDLE(T), t2 );
 
 ###  THANDLE_INITIALIZE(T)
 ```c
- MOCKABLE_FUNCTION(, void, THANDLE_INITIALIZE(T), THANDLE(T) *, t1, THANDLE(T), t2 );
+ MOCKABLE_FUNCTION(, void, THANDLE_INITIALIZE(T), THANDLE(T) *, lvalue, THANDLE(T), rvalue );
  ```
 
-`THANDLE_ASSIGN` does t1=t2. `t1` is NOT a constructed handle. Example: it is a field in a struct that has just been `malloc`'d.
+`THANDLE_INITIALIZE` achieves lvalue=rvalue. `lvalue` is NOT a constructed handle. Example: it is a field in a struct that has just been `malloc`'d.
 
-**SRS_THANDLE_02_011: [** If `t1` is `NULL` then `THANDLE_INITIALIZE` shall return. **]**
+**SRS_THANDLE_02_011: [** If `lvalue` is `NULL` then `THANDLE_INITIALIZE` shall return. **]**
 
-**SRS_THANDLE_02_012: [** `THANDLE_INITIALIZE` shall increment the reference count of `t2` and store it in `*t1`. **]**
+**SRS_THANDLE_02_012: [** `THANDLE_INITIALIZE` shall increment the reference count of `rvalue` and store it in `*lvalue`. **]**
 
 ## THANDLE_TYPE_DEFINE(T)
 ```
@@ -126,7 +126,7 @@ static T* THANDLE_MALLOC(T)(void(*dispose)(T*))
     THANDLE_FREE(T)(T* t)
 ```
 
-`THANDLE_FREE` free the allocated memory by `THANDLE_MALLOC`. It is called from `THANDLE_DEC_REF` (when reference count reaches 0) after `dispose`, or it can be called from the user code to free the memory.
+`THANDLE_FREE` frees the allocated memory by `THANDLE_MALLOC`. It is called from `THANDLE_DEC_REF` (when reference count reaches 0) after `dispose`, or it can be called from the user code to free the memory.
 
 **SRS_THANDLE_02_016: [** If `t` is `NULL` then `THANDLE_FREE` shall return. **]**
 

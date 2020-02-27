@@ -161,18 +161,18 @@
             }                                                                                                                                                           \
         }                                                                                                                                                               \
     }                                                                                                                                                                   \
-    void THANDLE_INITIALIZE(T)(THANDLE(T) * t1, THANDLE(T) t2 )                                                                                                         \
+    void THANDLE_INITIALIZE(T)(THANDLE(T) * lvalue, THANDLE(T) rvalue )                                                                                                 \
     {                                                                                                                                                                   \
-        /*Codes_SRS_THANDLE_02_011: [ If t1 is NULL then THANDLE_INITIALIZE shall return. ]*/                                                                           \
-        if(t1 == NULL)                                                                                                                                                  \
+        /*Codes_SRS_THANDLE_02_011: [ If lvalue is NULL then THANDLE_INITIALIZE shall return. ]*/                                                                       \
+        if(lvalue == NULL)                                                                                                                                              \
         {                                                                                                                                                               \
-            LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") * t1=%p, THANDLE(" MU_TOSTRING(T) ") t2=%p", t1, t2 );                                               \
+            LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") * lvalue=%p, THANDLE(" MU_TOSTRING(T) ") rvalue=%p", lvalue, rvalue );                               \
         }                                                                                                                                                               \
         else                                                                                                                                                            \
         {                                                                                                                                                               \
-            /*Codes_SRS_THANDLE_02_012: [ THANDLE_INITIALIZE shall increment the reference count of t2 and store it in *t1. ]*/                                         \
-            THANDLE_INC_REF(T)(t2);                                                                                                                                     \
-            * (T const**)t1 = t2;                                                                                                                                       \
+            /*Codes_SRS_THANDLE_02_012: [ THANDLE_INITIALIZE shall increment the reference count of rvalue and store it in *lvalue. ]*/                                 \
+            THANDLE_INC_REF(T)(rvalue);                                                                                                                                 \
+            * (T const**)lvalue = rvalue;                                                                                                                               \
         }                                                                                                                                                               \
     }                                                                                                                                                                   \
 

@@ -102,6 +102,8 @@ TEST_FUNCTION_CLEANUP(cleans)
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
+/* THANDLE_MALLOC *
+
 /*Tests_SRS_THANDLE_02_013: [ THANDLE_MALLOC shall allocate memory. ]*/
 /*Tests_SRS_THANDLE_02_014: [ THANDLE_MALLOC shall initialize the reference count to 1, store dispose and return a T* . ]*/
 TEST_FUNCTION(thandle_user_create_succeeds)
@@ -138,6 +140,8 @@ TEST_FUNCTION(thandle_user_create_fails_when_thandle_malloc_fails)
 
     ///cleanup
 }
+
+/* THANDLE_DEC_REF */
 
 /*Tests_SRS_THANDLE_02_001: [ If t is NULL then THANDLE_DEC_REF shall return. ]*/
 TEST_FUNCTION(THANDLE_DEC_REF_with_t_NULL_returns)
@@ -201,6 +205,8 @@ TEST_FUNCTION(THANDLE_DEC_REF_decrements_and_frees_resources)
     ///cleanup - nothing
 }
 
+/* THANDLE_INC_REF */
+
 /*Tests_SRS_THANDLE_02_004: [ If t is NULL then THANDLE_INC_REF shall return. ]*/
 TEST_FUNCTION(THANDLE_INC_REF_with_t_NULL_returns)
 {
@@ -214,6 +220,8 @@ TEST_FUNCTION(THANDLE_INC_REF_with_t_NULL_returns)
 
     ///cleanup - nothing
 }
+
+/* THANDLE_ASSIGN */
 
 /*Tests_SRS_THANDLE_02_006: [ If t1 is NULL then THANDLE_ASSIGN shall return. ]*/
 TEST_FUNCTION(THANDLE_ASSIGN_with_t1_NULL_returns)
@@ -325,28 +333,30 @@ TEST_FUNCTION(THANDLE_ASSIGN_with_t1_not_NULL_t2_not_NULL)
     THANDLE_DEC_REF(LL)(t2);
 }
 
-/*Tests_SRS_THANDLE_02_011: [ If t1 is NULL then THANDLE_INITIALIZE shall return. ]*/
-TEST_FUNCTION(THANDLE_INITIALIZE_with_t1_NULL_returns)
+/* THANDLE_INITIALIZE */
+
+/*Tests_SRS_THANDLE_02_011: [ If lvalue is NULL then THANDLE_INITIALIZE shall return. ]*/
+TEST_FUNCTION(THANDLE_INITIALIZE_with_lvalue_NULL_returns)
 {
     ///arrange
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)); /*this is THANDLE_MALLOC*/
     STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
-    THANDLE(LL) t1 = ll_create(TEST_A, TEST_S);
-    ASSERT_IS_NOT_NULL(t1);
+    THANDLE(LL) t2 = ll_create(TEST_A, TEST_S);
+    ASSERT_IS_NOT_NULL(t2);
     umock_c_reset_all_calls();
 
     ///act
-    THANDLE_INITIALIZE(LL)(NULL, t1);
+    THANDLE_INITIALIZE(LL)(NULL, t2);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
-    THANDLE_DEC_REF(LL)(t1);
+    THANDLE_DEC_REF(LL)(t2);
 }
 
-/*Tests_SRS_THANDLE_02_012: [ THANDLE_INITIALIZE shall increment the reference count of t2 and store it in *t1. ]*/
-TEST_FUNCTION(THANDLE_INITIALIZE_with_t1_non_NULL_succeeds)
+/*Tests_SRS_THANDLE_02_012: [ THANDLE_INITIALIZE shall increment the reference count of rvalue and store it in *lvalue. ]*/
+TEST_FUNCTION(THANDLE_INITIALIZE_with_lvalue_non_NULL_succeeds)
 {
     ///arrange
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)); /*this is THANDLE_MALLOC*/
@@ -367,6 +377,8 @@ TEST_FUNCTION(THANDLE_INITIALIZE_with_t1_non_NULL_succeeds)
     THANDLE_DEC_REF(LL)(t1);
     THANDLE_DEC_REF(LL)(t2);
 }
+
+/* THANDLE_FREE */
 
 /*Tests_SRS_THANDLE_02_017: [ THANDLE_FREE shall free the allocated memory by THANDLE_MALLOC. ]*/
 TEST_FUNCTION(THANDLE_FREE_frees_memory)
