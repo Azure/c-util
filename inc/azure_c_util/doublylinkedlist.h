@@ -6,11 +6,13 @@
 
 #ifdef __cplusplus
 #include <cstddef>
+#include <cstdint>
 #else
 #include <stddef.h>
+#include <stdint.h>
 #endif
 
-#include <stdint.h>
+#include "azure_c_util/containing_record.h"
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
@@ -31,12 +33,6 @@ MOCKABLE_FUNCTION(, void, DList_InsertHeadList, PDLIST_ENTRY, listHead, PDLIST_E
 MOCKABLE_FUNCTION(, void, DList_AppendTailList, PDLIST_ENTRY, listHead, PDLIST_ENTRY, ListToAppend);
 MOCKABLE_FUNCTION(, int, DList_RemoveEntryList, PDLIST_ENTRY, listEntry);
 MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveHeadList, PDLIST_ENTRY, listHead);
-
-//
-// Calculate the address of the base of the structure given its type, and an
-// address of a field within the structure.
-//
-#define containingRecord(address, type, field) ((type *)((uintptr_t)(address) - offsetof(type,field)))
 
 #ifdef __cplusplus
 }

@@ -56,8 +56,16 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 
 MU_DEFINE_STRUCT(A_B, A_B_FIELDS);
 
-THANDLE_TYPE_DECLARE(A_B);
-THANDLE_TYPE_DEFINE(A_B);
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
+    THANDLE_TYPE_DECLARE(A_B);
+    THANDLE_TYPE_DEFINE(A_B); 
+
+#ifdef __cplusplus
+    }
+#endif
 
 BEGIN_TEST_SUITE(thandle_unittests)
 
