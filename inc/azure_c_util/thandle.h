@@ -7,6 +7,7 @@
 #include "umock_c/umock_c_prod.h"
 
 #include "azure_c_util/xlogging.h"
+#include "azure_c_util/containing_record.h"
 #include "refcount_os.h"
 
 /*the incomplete unassignable type*/
