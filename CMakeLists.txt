@@ -171,6 +171,7 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/timer.h
     ./inc/azure_c_util/tickcounter.h
     ./inc/azure_c_util/threadapi.h
+    ./inc/azure_c_util/thandle.h
     ./inc/azure_c_util/uniqueid.h
     ./inc/azure_c_util/uuid.h
     ./inc/azure_c_util/xlogging.h

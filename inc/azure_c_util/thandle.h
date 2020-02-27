@@ -6,6 +6,7 @@
 #include "windows.h"
 
 #include "azure_macro_utils/macro_utils.h"
+#include "umock_c/umock_c_prod.h"
 
 #include "azure_c_util/xlogging.h"
 
@@ -46,123 +47,141 @@
 2. THANDLE_MALLOC macro to create it, initialize refCount to 0, and remember the dispose function*/
 
 #define THANDLE_TYPE_DEFINE(T) \
-    MU_DEFINE_STRUCT(THANDLE_WRAPPER_TYPE_NAME(T), T, data, THANDLE_EXTRA_FIELDS(T));                                           \
-    static T* THANDLE_MALLOC(T)(void(*dispose)(T*))                                                                             \
-    {                                                                                                                           \
-        T* result;                                                                                                              \
-        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                               \
-        if (handle_impl == NULL)                                                                                                \
-        {                                                                                                                       \
-            LogError("error in malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                              \
-                sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                                                          \
-            result = NULL;                                                                                                      \
-        }                                                                                                                       \
-        else                                                                                                                    \
-        {                                                                                                                       \
-            handle_impl->dispose = dispose;                                                                                     \
-            (void)InterlockedExchange(&handle_impl->refCount, 1);                                                               \
-            result = &(handle_impl->data);                                                                                      \
-        }                                                                                                                       \
-        return result;                                                                                                          \
-    }                                                                                                                           \
-    static void THANDLE_FREE(T)(T* t)                                                                                           \
-    {                                                                                                                           \
-        if (t == NULL)                                                                                                          \
-        {                                                                                                                       \
-            LogError("invalid arg " MU_TOSTRING(T) "* t=%p", t);                                                                \
-        }                                                                                                                       \
-        else                                                                                                                    \
-        {                                                                                                                       \
-            THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);               \
-            free(handle_impl);                                                                                                  \
-        }                                                                                                                       \
-    }                                                                                                                           \
-    void THANDLE_DEC_REF(T)(THANDLE(T) t)                                                                                       \
-    {                                                                                                                           \
-        if(t == NULL)                                                                                                           \
-        {                                                                                                                       \
-            LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") t=%p", t);                                                   \
-        }                                                                                                                       \
-        else                                                                                                                    \
-        {                                                                                                                       \
-            THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);               \
-            if (InterlockedDecrement(&(handle_impl->refCount)) == 0)                                                            \
-            {                                                                                                                   \
-                handle_impl->dispose(&handle_impl->data);                                                                       \
-                THANDLE_FREE(T)(&handle_impl->data);                                                                            \
-            }                                                                                                                   \
-                                                                                                                                \
-        }                                                                                                                       \
-    }                                                                                                                           \
-    void THANDLE_INC_REF(T)(THANDLE(T) t)                                                                                       \
-    {                                                                                                                           \
-        if(t == NULL)                                                                                                           \
-        {                                                                                                                       \
-            LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") t=%p", t);                                                   \
-        }                                                                                                                       \
-        else                                                                                                                    \
-        {                                                                                                                       \
-            THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);               \
-            (void)InterlockedIncrement(&(handle_impl->refCount));                                                               \
-        }                                                                                                                       \
-    }                                                                                                                           \
-    void THANDLE_ASSIGN(T)(THANDLE(T) * t1, THANDLE(T) t2 )                                                                     \
-    {                                                                                                                           \
-        if(t1 == NULL)                                                                                                          \
-        {                                                                                                                       \
-            LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") * t1=%p, THANDLE(" MU_TOSTRING(T) ") t2=%p", t1, t2 );       \
-        }                                                                                                                       \
-        else                                                                                                                    \
-        {                                                                                                                       \
-            if (*t1 == NULL)                                                                                                    \
-            {                                                                                                                   \
-                if (t2 == NULL)                                                                                                 \
-                {                                                                                                               \
-                    /*so nothing to do, leave them as they are*/                                                                \
-                }                                                                                                               \
-                else                                                                                                            \
-                {                                                                                                               \
-                    THANDLE_INC_REF(T)(t2);                                                                                     \
-                    * (T const**)t1 = t2;                                                                                       \
-                }                                                                                                               \
-            }                                                                                                                   \
-            else                                                                                                                \
-            {                                                                                                                   \
-                if (t2 == NULL)                                                                                                 \
-                {                                                                                                               \
-                    THANDLE_DEC_REF(T)(*t1);                                                                                    \
-                    * (T const**)t1 = t2;                                                                                       \
-                }                                                                                                               \
-                else                                                                                                            \
-                {                                                                                                               \
-                    THANDLE_INC_REF(T)(t2);                                                                                     \
-                    THANDLE_DEC_REF(T)(*t1);                                                                                    \
-                    * (T const**)t1 = t2;                                                                                       \
-                }                                                                                                               \
-            }                                                                                                                   \
-        }                                                                                                                       \
-    }                                                                                                                           \
-    void THANDLE_INITIALIZE(T)(THANDLE(T) * t1, THANDLE(T) t2 )                                                                 \
-    {                                                                                                                           \
-        if(t1 == NULL)                                                                                                          \
-        {                                                                                                                       \
-            LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") * t1=%p, THANDLE(" MU_TOSTRING(T) ") t2=%p", t1, t2 );       \
-        }                                                                                                                       \
-        else                                                                                                                    \
-        {                                                                                                                       \
-            THANDLE_INC_REF(T)(t2);                                                                                             \
-            * (T const**)t1 = t2;                                                                                               \
-        }                                                                                                                       \
-    }                                                                                                                           \
+    MU_DEFINE_STRUCT(THANDLE_WRAPPER_TYPE_NAME(T), T, data, THANDLE_EXTRA_FIELDS(T));                                                                                   \
+    static T* THANDLE_MALLOC(T)(void(*dispose)(T*))                                                                                                                     \
+    {                                                                                                                                                                   \
+        T* result;                                                                                                                                                      \
+        /*Codes_SRS_THANDLE_02_013: [ THANDLE_MALLOC shall allocate memory. ]*/                                                                                         \
+        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                                                       \
+        if (handle_impl == NULL)                                                                                                                                        \
+        {                                                                                                                                                               \
+            /*Codes_SRS_THANDLE_02_015: [ If malloc fails then THANDLE_MALLOC shall fail and return NULL. ]*/                                                           \
+            LogError("error in malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                                                                      \
+                sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                                                                                                  \
+            result = NULL;                                                                                                                                              \
+        }                                                                                                                                                               \
+        else                                                                                                                                                            \
+        {                                                                                                                                                               \
+            /*Codes_SRS_THANDLE_02_014: [ THANDLE_MALLOC shall initialize the reference count to 1, store dispose and return a T* . ]*/                                 \
+            handle_impl->dispose = dispose;                                                                                                                             \
+            (void)InterlockedExchange(&handle_impl->refCount, 1);                                                                                                       \
+            result = &(handle_impl->data);                                                                                                                              \
+        }                                                                                                                                                               \
+        return result;                                                                                                                                                  \
+    }                                                                                                                                                                   \
+    static void THANDLE_FREE(T)(T* t)                                                                                                                                   \
+    {                                                                                                                                                                   \
+        if (t == NULL)                                                                                                                                                  \
+        {                                                                                                                                                               \
+            LogError("invalid arg " MU_TOSTRING(T) "* t=%p", t);                                                                                                        \
+        }                                                                                                                                                               \
+        else                                                                                                                                                            \
+        {                                                                                                                                                               \
+            THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
+            free(handle_impl);                                                                                                                                          \
+        }                                                                                                                                                               \
+    }                                                                                                                                                                   \
+    void THANDLE_DEC_REF(T)(THANDLE(T) t)                                                                                                                               \
+    {                                                                                                                                                                   \
+        /*Codes_SRS_THANDLE_02_001: [ If t is NULL then THANDLE_DEC_REF shall return. ]*/                                                                               \
+        if(t == NULL)                                                                                                                                                   \
+        {                                                                                                                                                               \
+            LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") t=%p", t);                                                                                           \
+        }                                                                                                                                                               \
+        else                                                                                                                                                            \
+        {                                                                                                                                                               \
+            /*Codes_SRS_THANDLE_02_002: [ THANDLE_DEC_REF shall decrement the ref count of t. ]*/                                                                       \
+            THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
+            if (InterlockedDecrement(&(handle_impl->refCount)) == 0)                                                                                                    \
+            {                                                                                                                                                           \
+                /*Codes_SRS_THANDLE_02_003: [ If the ref count of t reaches 0 then THANDLE_DEC_REF shall call dispose (if not NULL) and free the used memory. ]*/       \
+                if(handle_impl->dispose!=NULL)                                                                                                                          \
+                {                                                                                                                                                       \
+                    handle_impl->dispose(&handle_impl->data);                                                                                                           \
+                }                                                                                                                                                       \
+                THANDLE_FREE(T)(&handle_impl->data);                                                                                                                    \
+            }                                                                                                                                                           \
+                                                                                                                                                                        \
+        }                                                                                                                                                               \
+    }                                                                                                                                                                   \
+    void THANDLE_INC_REF(T)(THANDLE(T) t)                                                                                                                               \
+    {                                                                                                                                                                   \
+        /*Codes_SRS_THANDLE_02_004: [ If t is NULL then THANDLE_INC_REF shall return. ]*/                                                                               \
+        if(t == NULL)                                                                                                                                                   \
+        {                                                                                                                                                               \
+            LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") t=%p", t);                                                                                           \
+        }                                                                                                                                                               \
+        else                                                                                                                                                            \
+        {                                                                                                                                                               \
+            /*Codes_SRS_THANDLE_02_005: [ THANDLE_INC_REF shall increment the reference count of t. ]*/                                                                 \
+            THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
+            (void)InterlockedIncrement(&(handle_impl->refCount));                                                                                                       \
+        }                                                                                                                                                               \
+    }                                                                                                                                                                   \
+    void THANDLE_ASSIGN(T)(THANDLE(T) * t1, THANDLE(T) t2 )                                                                                                             \
+    {                                                                                                                                                                   \
+        /*Codes_SRS_THANDLE_02_006: [ If t1 is NULL then THANDLE_ASSIGN shall return. ]*/                                                                               \
+        if(t1 == NULL)                                                                                                                                                  \
+        {                                                                                                                                                               \
+            LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") * t1=%p, THANDLE(" MU_TOSTRING(T) ") t2=%p", t1, t2 );                                               \
+        }                                                                                                                                                               \
+        else                                                                                                                                                            \
+        {                                                                                                                                                               \
+            if (*t1 == NULL)                                                                                                                                            \
+            {                                                                                                                                                           \
+                if (t2 == NULL)                                                                                                                                         \
+                {                                                                                                                                                       \
+                    /*Codes_SRS_THANDLE_02_007: [ If *t1 is NULL and t2 is NULL then THANDLE_ASSIGN shall return. ]*/                                                   \
+                    /*so nothing to do, leave them as they are*/                                                                                                        \
+                }                                                                                                                                                       \
+                else                                                                                                                                                    \
+                {                                                                                                                                                       \
+                    /*Codes_SRS_THANDLE_02_008: [ If *t1 is NULL and t2 is not NULL then THANDLE_ASSIGN shall increment the reference count of t2 and store t2 in *t1. ]*/ \
+                    THANDLE_INC_REF(T)(t2);                                                                                                                             \
+                    * (T const**)t1 = t2;                                                                                                                               \
+                }                                                                                                                                                       \
+            }                                                                                                                                                           \
+            else                                                                                                                                                        \
+            {                                                                                                                                                           \
+                if (t2 == NULL)                                                                                                                                         \
+                {                                                                                                                                                       \
+                    /*Codes_SRS_THANDLE_02_009: [ If *t1 is not NULL and t2 is NULL then THANDLE_ASSIGN shall decrement the reference count of *t1 and store NULL in *t1. ]*/ \
+                    THANDLE_DEC_REF(T)(*t1);                                                                                                                            \
+                    * (T const**)t1 = t2;                                                                                                                               \
+                }                                                                                                                                                       \
+                else                                                                                                                                                    \
+                {                                                                                                                                                       \
+                    /*CodesSRS_THANDLE_02_010: [ If *t1 is not NULL and t2 is not NULL then THANDLE_ASSIGN shall increment the reference count of t2, shall decrement the reference count of *t1 and store t2 in *t1. ]*/ \
+                    THANDLE_INC_REF(T)(t2);                                                                                                                             \
+                    THANDLE_DEC_REF(T)(*t1);                                                                                                                            \
+                    * (T const**)t1 = t2;                                                                                                                               \
+                }                                                                                                                                                       \
+            }                                                                                                                                                           \
+        }                                                                                                                                                               \
+    }                                                                                                                                                                   \
+    void THANDLE_INITIALIZE(T)(THANDLE(T) * t1, THANDLE(T) t2 )                                                                                                         \
+    {                                                                                                                                                                   \
+        /*Codes_SRS_THANDLE_02_011: [ If t1 is NULL then THANDLE_INITIALIZE shall return. ]*/                                                                           \
+        if(t1 == NULL)                                                                                                                                                  \
+        {                                                                                                                                                               \
+            LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") * t1=%p, THANDLE(" MU_TOSTRING(T) ") t2=%p", t1, t2 );                                               \
+        }                                                                                                                                                               \
+        else                                                                                                                                                            \
+        {                                                                                                                                                               \
+            /*Codes_SRS_THANDLE_02_012: [ THANDLE_INITIALIZE shall increment the reference count of t2 and store it in *t1. ]*/                                         \
+            THANDLE_INC_REF(T)(t2);                                                                                                                                     \
+            * (T const**)t1 = t2;                                                                                                                                       \
+        }                                                                                                                                                               \
+    }                                                                                                                                                                   \
 
 /*macro to be used in headers*/                                                                                       \
 /*introduces an incomplete type based on a MU_DEFINE_STRUCT(LL...) that has been THANDLE_TYPE_DEFINE(LL);*/           \
 #define THANDLE_TYPE_DECLARE(T)                                                                                       \
     typedef struct MU_C2(T,_TAG) T;  /*sort of DECLARE_STRUCT, but it doesn't exist in macro_utils.h  */              \
-    void THANDLE_DEC_REF(T)(THANDLE(T) t);                                                                            \
-    void THANDLE_INC_REF(T)(THANDLE(T) t);                                                                            \
-    void THANDLE_ASSIGN(T)(THANDLE(T) * t1, THANDLE(T) t2 );                                                          \
-    void THANDLE_INITIALIZE(T)(THANDLE(T) * t1, THANDLE(T) t2 );                                                      \
+    MOCKABLE_FUNCTION(, void, THANDLE_DEC_REF(T), THANDLE(T), t);                                                     \
+    MOCKABLE_FUNCTION(, void, THANDLE_INC_REF(T), THANDLE(T), t);                                                     \
+    MOCKABLE_FUNCTION(, void, THANDLE_ASSIGN(T), THANDLE(T) *, t1, THANDLE(T), t2 );                                  \
+    MOCKABLE_FUNCTION(, void, THANDLE_INITIALIZE(T), THANDLE(T) *, t1, THANDLE(T), t2 );                              \
 
 #endif /*THANDLE_H*/
 
