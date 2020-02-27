@@ -71,12 +71,14 @@
     }                                                                                                                                                                   \
     static void THANDLE_FREE(T)(T* t)                                                                                                                                   \
     {                                                                                                                                                                   \
+        /*Codes_SRS_THANDLE_02_016: [ If t is NULL then THANDLE_FREE shall return. ]*/                                                                                  \
         if (t == NULL)                                                                                                                                                  \
         {                                                                                                                                                               \
             LogError("invalid arg " MU_TOSTRING(T) "* t=%p", t);                                                                                                        \
         }                                                                                                                                                               \
         else                                                                                                                                                            \
         {                                                                                                                                                               \
+            /*Codes_SRS_THANDLE_02_017: [ THANDLE_FREE shall free the allocated memory by THANDLE_MALLOC. ]*/                                                           \
             THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
             free(handle_impl);                                                                                                                                          \
         }                                                                                                                                                               \
@@ -151,7 +153,7 @@
                 }                                                                                                                                                       \
                 else                                                                                                                                                    \
                 {                                                                                                                                                       \
-                    /*CodesSRS_THANDLE_02_010: [ If *t1 is not NULL and t2 is not NULL then THANDLE_ASSIGN shall increment the reference count of t2, shall decrement the reference count of *t1 and store t2 in *t1. ]*/ \
+                    /*Codes_SRS_THANDLE_02_010: [ If *t1 is not NULL and t2 is not NULL then THANDLE_ASSIGN shall increment the reference count of t2, shall decrement the reference count of *t1 and store t2 in *t1. ]*/ \
                     THANDLE_INC_REF(T)(t2);                                                                                                                             \
                     THANDLE_DEC_REF(T)(*t1);                                                                                                                            \
                     * (T const**)t1 = t2;                                                                                                                               \
