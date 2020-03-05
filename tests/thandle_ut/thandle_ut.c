@@ -181,7 +181,7 @@ TEST_FUNCTION(thandle_flex_user_create_fails_when_thandle_malloc_fails)
     ///cleanup
 }
 
-/*Codes_SRS_THANDLE_02_019: [ If extra_size + sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) would exceed SIZE_MAX then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/
+/*Tests_SRS_THANDLE_02_019: [ If extra_size + sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) would exceed SIZE_MAX then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/
 TEST_FUNCTION(thandle_flex_user_create_fails_when_SIZE_MAX_is_exceeded)
 {
     ///arrange
