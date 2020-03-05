@@ -30,6 +30,7 @@ void my_gballoc_free(void* ptr)
 
 #include "azure_c_util/thandle.h"
 #include "thandle_user.h"
+#include "thandle_flex_user.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
@@ -56,12 +57,13 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 
 MU_DEFINE_STRUCT(A_B, A_B_FIELDS);
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
     
     THANDLE_TYPE_DECLARE(A_B);
-    THANDLE_TYPE_DEFINE(A_B); 
+    THANDLE_TYPE_DEFINE(A_B);
 
 #ifdef __cplusplus
     }
@@ -102,7 +104,7 @@ TEST_FUNCTION_CLEANUP(cleans)
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
-/* THANDLE_MALLOC *
+/* THANDLE_MALLOC * /
 
 /*Tests_SRS_THANDLE_02_013: [ THANDLE_MALLOC shall allocate memory. ]*/
 /*Tests_SRS_THANDLE_02_014: [ THANDLE_MALLOC shall initialize the reference count to 1, store dispose and return a T* . ]*/
@@ -133,6 +135,59 @@ TEST_FUNCTION(thandle_user_create_fails_when_thandle_malloc_fails)
 
     ///act
     THANDLE(LL) ll = ll_create(TEST_A, TEST_S);
+
+    ///assert
+    ASSERT_IS_NULL(ll);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+}
+
+/* THANDLE_MALLOC_WITH_EXTRA_SIZE */
+
+/*Tests_SRS_THANDLE_02_020: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall allocate memory enough to hold T and extra_size. ]*/
+/*Tests_SRS_THANDLE_02_021: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall initialize the reference count to 1, store dispose and return a T*. ]*/
+TEST_FUNCTION(thandle_flex_user_create_succeeds)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
+
+    ///act
+    THANDLE(LL_FLEX) ll = ll_flex_create(TEST_A, TEST_S, 10);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(ll);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    THANDLE_DEC_REF(LL_FLEX)(ll);
+}
+
+/*Tests_SRS_THANDLE_02_022: [ If malloc fails then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/
+TEST_FUNCTION(thandle_flex_user_create_fails_when_thandle_malloc_fails)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        .SetReturn(NULL); /*this is THANDLE_MALLOC_WITH_EXTRA_SIZE*/
+
+    ///act
+    THANDLE(LL_FLEX) ll = ll_flex_create(TEST_A, TEST_S, 10);
+
+    ///assert
+    ASSERT_IS_NULL(ll);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+}
+
+/*Tests_SRS_THANDLE_02_019: [ If extra_size + sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) would exceed SIZE_MAX then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/
+TEST_FUNCTION(thandle_flex_user_create_fails_when_SIZE_MAX_is_exceeded)
+{
+    ///arrange
+
+    ///act
+    THANDLE(LL_FLEX) ll = ll_flex_create(TEST_A, TEST_S, SIZE_MAX/sizeof(int));
 
     ///assert
     ASSERT_IS_NULL(ll);
@@ -353,6 +408,23 @@ TEST_FUNCTION(THANDLE_INITIALIZE_with_lvalue_NULL_returns)
 
     ///cleanup
     THANDLE_DEC_REF(LL)(t2);
+}
+
+/*Tests_SRS_THANDLE_02_018: [ If rvalue is NULL then THANDLE_INITIALIZE shall store NULL in *lvalue. ]*/
+TEST_FUNCTION(THANDLE_INITIALIZE_with_rvalue_NULL_succeeds)
+{
+    ///arrange
+    THANDLE(LL) t2 = (THANDLE(LL))(0x444);
+    umock_c_reset_all_calls();
+
+    ///act
+    THANDLE_INITIALIZE(LL)(&t2, NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(t2);
+
+    ///cleanup
 }
 
 /*Tests_SRS_THANDLE_02_012: [ THANDLE_INITIALIZE shall increment the reference count of rvalue and store it in *lvalue. ]*/
