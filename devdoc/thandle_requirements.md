@@ -107,7 +107,7 @@ MOCKABLE_FUNCTION(, void, THANDLE_ASSIGN(T), THANDLE(T) *, t1, THANDLE(T), t2 );
 #define THANDLE_TYPE_DEFINE(T)
 ```
 
-`THANDLE_TYPE_DEFINE` introduces the implementation for the functions in `THANDLE_TYPE_DECLARE` (`THANDLE_DEC_REF`, `THANDLE_INC_REF`, `THANDLE_ASSIGN`, `THANDLE_INITIALIZE`) and two new memory management functions `THANDLE_MALLOC(T)` and `THANDLE_FREE(T)`.
+`THANDLE_TYPE_DEFINE` introduces the implementation for the functions in `THANDLE_TYPE_DECLARE` (`THANDLE_DEC_REF`, `THANDLE_INC_REF`, `THANDLE_ASSIGN`, `THANDLE_INITIALIZE`) and three new memory management functions `THANDLE_MALLOC(T)`, `THANDLE_MALLOC_WITH_EXTRA_SIZE(T)` and `THANDLE_FREE(T)`.
 
 ### THANDLE_MALLOC(T)
 ```c
@@ -122,13 +122,28 @@ static T* THANDLE_MALLOC(T)(void(*dispose)(T*))
 
 **SRS_THANDLE_02_015: [** If `malloc` fails then `THANDLE_MALLOC` shall fail and return `NULL`. **]**
 
+### THANDLE_MALLOC_WITH_EXTRA_SIZE
+```c
+static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(T)(void(*dispose)(T*), size_t extra_size)
+```
+
+`THANDLE_MALLOC_WITH_EXTRA_SIZE` return a pointer to `T`. `dispose` is a function that the `THANDLE_DEC_REF` calls when the reference count reaches 0 in order to free the resources allocated by the user in `T`. `dispose` can be `NULL` in which case there are no user resources to be de-allocated. `T` is a type that has a flexible array. `extra_size` is the size in bytes of the flexible array.
+
+**SRS_THANDLE_02_019: [** If `extra_size` + `sizeof(THANDLE_WRAPPER_TYPE_NAME(T))` would exceed `SIZE_MAX` then `THANDLE_MALLOC_WITH_EXTRA_SIZE` shall fail and return `NULL`. **]**
+
+**SRS_THANDLE_02_020: [** `THANDLE_MALLOC_WITH_EXTRA_SIZE` shall allocate memory enough to hold `T` and `extra_size`. **]**
+
+**SRS_THANDLE_02_021: [** `THANDLE_MALLOC_WITH_EXTRA_SIZE` shall initialize the reference count to 1, store `dispose` and return a `T*`. **]**
+
+**SRS_THANDLE_02_022: [** If `malloc` fails then `THANDLE_MALLOC_WITH_EXTRA_SIZE` shall fail and return `NULL`. **]**
+
 
 ### `THANDLE_FREE(T)`
 ```c
     THANDLE_FREE(T)(T* t)
 ```
 
-`THANDLE_FREE` frees the allocated memory by `THANDLE_MALLOC`. It is called from `THANDLE_DEC_REF` (when reference count reaches 0) after `dispose`, or it can be called from the user code to free the memory.
+`THANDLE_FREE` frees the allocated memory by `THANDLE_MALLOC` or `THANDLE_MALLOC_WITH_EXTRA_SIZE`. It is called from `THANDLE_DEC_REF` (when reference count reaches 0) after `dispose`, or it can be called from the user code to free the memory.
 
 **SRS_THANDLE_02_016: [** If `t` is `NULL` then `THANDLE_FREE` shall return. **]**
 

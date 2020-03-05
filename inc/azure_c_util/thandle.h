@@ -2,6 +2,7 @@
 #define THANDLE_H
 
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "azure_macro_utils/macro_utils.h"
 #include "umock_c/umock_c_prod.h"
@@ -23,6 +24,10 @@
 /*given a previous type T, THANDLE_MALLOC introduces a new name that mimics "malloc for T"*/
 /*the new name is used to define the name of a static function that allocates memory*/
 #define THANDLE_MALLOC(T) MU_C2(T,_MALLOC)
+
+/*given a previous type T, THANDLE_MALLOC_WITH_EXTRA_SIZE introduces a new name that mimics "malloc for T, where T is a flex type"*/
+/*the new name is used to define the name of a static function that allocates memory*/
+#define THANDLE_MALLOC_WITH_EXTRA_SIZE(T) MU_C2(T,_MALLOC_WITH_EXTRA_SIZE)
 
 /*given a previous type T, THANDLE_FREE introduces a new name that mimics "free for T"*/
 /*the new name is used to define the name of a static function that free memory allocated by THANDLE_MALLOC*/
@@ -63,6 +68,38 @@ static T* THANDLE_MALLOC(T)(void(*dispose)(T*))                                 
         handle_impl->dispose = dispose;                                                                                                                             \
         INIT_REF_VAR(handle_impl->refCount);                                                                                                                        \
         result = &(handle_impl->data);                                                                                                                              \
+    }                                                                                                                                                               \
+    return result;                                                                                                                                                  \
+}                                                                                                                                                                   \
+
+#define THANDLE_MALLOC_WITH_EXTRA_SIZE_MACRO(T)                                                                                                                     \
+static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(T)(void(*dispose)(T*), size_t extra_size)                                                                                  \
+{                                                                                                                                                                   \
+    T* result;                                                                                                                                                      \
+    /*Codes_SRS_THANDLE_02_019: [ If extra_size + sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) would exceed SIZE_MAX then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/ \
+    if (SIZE_MAX - sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) < extra_size)                                                                                               \
+    {                                                                                                                                                               \
+        LogError("extra_size=%zu produces arithmetic overflows", extra_size);                                                                                       \
+        result = NULL;                                                                                                                                              \
+    }                                                                                                                                                               \
+    else                                                                                                                                                            \
+    {                                                                                                                                                               \
+        /*Codes_SRS_THANDLE_02_020: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall allocate memory enough to hold T and extra_size. ]*/                                     \
+        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)malloc(extra_size + sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                       \
+        if (handle_impl == NULL)                                                                                                                                    \
+        {                                                                                                                                                           \
+            /*Codes_SRS_THANDLE_02_022: [ If malloc fails then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/                                       \
+            LogError("error in malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                                                                  \
+                sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                                                                                              \
+            result = NULL;                                                                                                                                          \
+        }                                                                                                                                                           \
+        else                                                                                                                                                        \
+        {                                                                                                                                                           \
+            /*Codes_SRS_THANDLE_02_021: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall initialize the reference count to 1, store dispose and return a T*. ]*/              \
+            handle_impl->dispose = dispose;                                                                                                                         \
+            INIT_REF_VAR(handle_impl->refCount);                                                                                                                    \
+            result = &(handle_impl->data);                                                                                                                          \
+        }                                                                                                                                                           \
     }                                                                                                                                                               \
     return result;                                                                                                                                                  \
 }                                                                                                                                                                   \
@@ -198,8 +235,9 @@ void THANDLE_INITIALIZE(T)(THANDLE(T) * lvalue, THANDLE(T) rvalue )             
 
 /*given a previous type T introduced by MU_DEFINE_STRUCT(T, T_FIELDS), this introduces a wrapper type that contains T (and other fields) and defines the functions of that type T*/
 #define THANDLE_TYPE_DEFINE(T) \
-    MU_DEFINE_STRUCT(THANDLE_WRAPPER_TYPE_NAME(T), T, data, THANDLE_EXTRA_FIELDS(T));                                                                               \
+    MU_DEFINE_STRUCT(THANDLE_WRAPPER_TYPE_NAME(T), THANDLE_EXTRA_FIELDS(T), T, data);                                                                               \
     THANDLE_MALLOC_MACRO(T)                                                                                                                                         \
+    THANDLE_MALLOC_WITH_EXTRA_SIZE_MACRO(T)                                                                                                                         \
     THANDLE_FREE_MACRO(T)                                                                                                                                           \
     THANDLE_DEC_REF_MACRO(T)                                                                                                                                        \
     THANDLE_INC_REF_MACRO(T)                                                                                                                                        \
