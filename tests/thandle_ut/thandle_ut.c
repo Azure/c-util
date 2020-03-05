@@ -355,6 +355,23 @@ TEST_FUNCTION(THANDLE_INITIALIZE_with_lvalue_NULL_returns)
     THANDLE_DEC_REF(LL)(t2);
 }
 
+/*Tests_SRS_THANDLE_02_018: [ If rvalue is NULL then THANDLE_INITIALIZE shall store NULL in *lvalue. ]*/
+TEST_FUNCTION(THANDLE_INITIALIZE_with_rvalue_NULL_succeeds)
+{
+    ///arrange
+    THANDLE(LL) t2 = (THANDLE(LL))(0x444);
+    umock_c_reset_all_calls();
+
+    ///act
+    THANDLE_INITIALIZE(LL)(&t2, NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(t2);
+
+    ///cleanup
+}
+
 /*Tests_SRS_THANDLE_02_012: [ THANDLE_INITIALIZE shall increment the reference count of rvalue and store it in *lvalue. ]*/
 TEST_FUNCTION(THANDLE_INITIALIZE_with_lvalue_non_NULL_succeeds)
 {

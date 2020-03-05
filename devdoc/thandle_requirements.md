@@ -98,6 +98,8 @@ MOCKABLE_FUNCTION(, void, THANDLE_ASSIGN(T), THANDLE(T) *, t1, THANDLE(T), t2 );
 
 **SRS_THANDLE_02_011: [** If `lvalue` is `NULL` then `THANDLE_INITIALIZE` shall return. **]**
 
+**SRS_THANDLE_02_018: [** If `rvalue` is `NULL` then `THANDLE_INITIALIZE` shall store `NULL` in `*lvalue`. **]**
+
 **SRS_THANDLE_02_012: [** `THANDLE_INITIALIZE` shall increment the reference count of `rvalue` and store it in `*lvalue`. **]**
 
 ## THANDLE_TYPE_DEFINE(T)
