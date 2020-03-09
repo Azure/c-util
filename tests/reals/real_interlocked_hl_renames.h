@@ -1,0 +1,8 @@
+// Copyright (c) Microsoft. All rights reserved.
+
+#define InterlockedHL_Add64WithCeiling real_InterlockedHL_Add64WithCeiling
+#define InterlockedHL_WaitForValue real_InterlockedHL_WaitForValue
+#define InterlockedHL_SetAndWake real_InterlockedHL_SetAndWake
+#define InterlockedHL_CompareExchange64If real_InterlockedHL_CompareExchange64If
+
+#define INTERLOCKED_HL_RESULT real_INTERLOCKED_HL_RESULT
