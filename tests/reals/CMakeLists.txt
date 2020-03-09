@@ -34,12 +34,15 @@ set(azure_c_util_reals_h_files
 
 if(WIN32)
 set(azure_c_util_reals_c_files ${azure_c_util_reals_c_files}
+    real_interlocked_hl.c
     real_srw_lock.c
     real_string_utils.c
     real_timer.c
 )
 
 set(azure_c_util_reals_h_files ${azure_c_util_reals_h_files}
+    real_interlocked_hl.h
+    real_interlocked_hl_renames.h
     real_srw_lock.h
     real_srw_lock_renames.h
     real_string_utils.h

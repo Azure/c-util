@@ -88,6 +88,7 @@ function(set_platform_files c_util_dir)
             set(LOGGING_C_FILE ${c_util_dir}/src/etwlogger_driver.c ${c_util_dir}/src/consolelogger.c PARENT_SCOPE)
             set(LOGGING_H_FILE ${c_util_dir}/inc/azure_c_util/etwlogger_driver.h ${c_util_dir}/inc/azure_c_util/consolelogger.h PARENT_SCOPE)
         endif()
+        set(INTERLOCKED_HL_C_FILE ${c_util_dir}/adapters/interlocked_hl_win32.c PARENT_SCOPE)
         set(LOCK_C_FILE ${c_util_dir}/adapters/lock_win32.c PARENT_SCOPE)
         set(PLATFORM_C_FILE ${c_util_dir}/adapters/platform_win32.c PARENT_SCOPE)
         set(THREAD_C_FILE ${c_util_dir}/adapters/threadapi_win32.c PARENT_SCOPE)
@@ -144,6 +145,7 @@ set(azure_c_util_c_files
     ${ENVIRONMENT_VARIABLE_C_FILE}
     ${LOGGING_STACKTRACE_C_FILE}
     ${PLATFORM_C_FILE}
+    ${INTERLOCKED_HL_C_FILE}
 )
 
 set(azure_c_util_h_files
@@ -175,6 +177,7 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/uniqueid.h
     ./inc/azure_c_util/uuid.h
     ./inc/azure_c_util/xlogging.h
+    ./inc/azure_c_util/interlocked_hl.h
     ${LOGGING_STACKTRACE_H_FILE}
 )
 
@@ -196,6 +199,7 @@ add_library(azure_c_util ${azure_c_util_c_files} ${azure_c_util_h_files} ${azure
 
 if(MSVC)
     target_include_directories(azure_c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/windows>)
+    target_link_libraries(azure_c_util synchronization)
     include_directories(${CMAKE_CURRENT_LIST_DIR}/pal/windows)
 else()
     target_include_directories(azure_c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/linux>)

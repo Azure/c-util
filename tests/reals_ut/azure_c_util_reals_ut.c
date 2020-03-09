@@ -28,10 +28,12 @@
 #include "../tests/reals/real_srw_lock.h"
 #include "../tests/reals/real_string_utils.h"
 #include "../tests/reals/real_timer.h"
+#include "../tests/reals/real_interlocked_hl.h"
 
 #include "azure_c_util/srw_lock.h"
 #include "azure_c_util/string_utils.h"
 #include "azure_c_util/timer.h"
+#include "azure_c_util/interlocked_hl.h"
 #endif
 
 BEGIN_TEST_SUITE(azure_c_util_reals_ut)
@@ -56,6 +58,7 @@ TEST_FUNCTION(check_all_c_util_reals)
     REGISTER_SRW_LOCK_GLOBAL_MOCK_HOOK();
     REGISTER_STRING_UTILS_GLOBAL_MOCK_HOOK();
     REGISTER_TIMER_GLOBAL_MOCK_HOOK();
+    REGISTER_INTERLOCKED_HL_GLOBAL_MOCK_HOOK();
 #endif
 
     // assert
