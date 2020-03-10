@@ -14,6 +14,7 @@
 #include "../tests/reals/real_memory_data.h"
 #include "../tests/reals/real_singlylinkedlist.h"
 #include "../tests/reals/real_uuid.h"
+#include "../tests/reals/real_threadapi.h"
 
 #include "azure_c_util/constbuffer.h"
 #include "azure_c_util/constbuffer_array.h"
@@ -23,6 +24,7 @@
 #include "azure_c_util/memory_data.h"
 #include "azure_c_util/singlylinkedlist.h"
 #include "azure_c_util/uuid.h"
+#include "azure_c_util/threadapi.h"
 
 #if defined _MSC_VER
 #include "../tests/reals/real_srw_lock.h"
@@ -53,6 +55,7 @@ TEST_FUNCTION(check_all_c_util_reals)
     REGISTER_MEMORY_DATA_GLOBAL_MOCK_HOOK();
     REGISTER_SINGLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
     REGISTER_UUID_GLOBAL_MOCK_HOOK();
+    REGISTER_THREADAPI_GLOBAL_MOCK_HOOK();
 
 #if defined _MSC_VER
     REGISTER_SRW_LOCK_GLOBAL_MOCK_HOOK();

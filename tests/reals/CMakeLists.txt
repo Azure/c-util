@@ -11,6 +11,7 @@ set(azure_c_util_reals_c_files
     real_doublylinkedlist.c
     real_memory_data.c
     real_singlylinkedlist.c
+    real_threadapi.c
     real_uuid.c
 )
 
@@ -30,6 +31,8 @@ set(azure_c_util_reals_h_files
     real_singlylinkedlist.h
     real_uuid.h
     real_uuid_renames.h
+    real_threadapi.h
+    real_threadapi_renames.h
 )
 
 if(WIN32)
