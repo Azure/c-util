@@ -133,8 +133,6 @@ set(azure_c_util_c_files
     ./src/singlylinkedlist.c
     ./src/strings.c
     ./src/uuid.c
-    ${LOGGING_C_FILE}
-    ${XLOGGING_C_FILE}
     ${LOCK_C_FILE}
     ${SRW_LOCK_C_FILE}
     ${TIMER_C_FILE}
@@ -143,7 +141,6 @@ set(azure_c_util_c_files
     ${THREAD_C_FILE}
     ${UNIQUEID_C_FILE}
     ${ENVIRONMENT_VARIABLE_C_FILE}
-    ${LOGGING_STACKTRACE_C_FILE}
     ${PLATFORM_C_FILE}
     ${INTERLOCKED_HL_C_FILE}
 )
@@ -157,7 +154,6 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/constbuffer_array_batcher_nv.h
     ./inc/azure_c_util/crt_abstractions.h
     ./inc/azure_c_util/doublylinkedlist.h
-    ${LOGGING_H_FILE}
     ./inc/azure_c_util/envvariable.h
     ./inc/azure_c_util/gballoc.h
     ./inc/azure_c_util/lock.h
@@ -178,8 +174,20 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/uuid.h
     ./inc/azure_c_util/xlogging.h
     ./inc/azure_c_util/interlocked_hl.h
-    ${LOGGING_STACKTRACE_H_FILE}
 )
+
+set(azure_c_util_logging_c_files
+    ${LOGGING_C_FILE}
+    ${XLOGGING_C_FILE}
+    ${LOGGING_STACKTRACE_C_FILE}
+    )
+
+set(azure_c_util_logging_h_files
+    ${LOGGING_H_FILE}
+    ${LOGGING_STACKTRACE_H_FILE}
+    )
+
+add_library(azure_c_util_logging ${azure_c_util_logging_c_files} ${azure_c_util_logging_h_files})
 
 FILE(GLOB azure_c_util_md_files "devdoc/*.md")
 SOURCE_GROUP(devdoc FILES ${azure_c_util_md_files})
@@ -199,7 +207,7 @@ add_library(azure_c_util ${azure_c_util_c_files} ${azure_c_util_h_files} ${azure
 
 if(MSVC)
     target_include_directories(azure_c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/windows>)
-    target_link_libraries(azure_c_util synchronization)
+    target_link_libraries(azure_c_util synchronization azure_c_util_logging)
     include_directories(${CMAKE_CURRENT_LIST_DIR}/pal/windows)
 else()
     target_include_directories(azure_c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/linux>)
