@@ -9,6 +9,8 @@
 
 #include "azure_c_util/thandle.h"
 
+#include "thandle_flex_user.h"
+
 #define LL_FLEX_FIELDS          \
     int, a,                     \
     char*, s,                   \
