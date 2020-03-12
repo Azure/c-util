@@ -14,6 +14,10 @@ THANDLE_TYPE_DECLARE(LL) /*LL is a struct in thandle_user.c that has an "int" in
 
 THANDLE(LL) ll_create(int a, const char* b);
 
+void ll_increment_a(THANDLE(LL) ll, int amount);
+
+int ll_get_a(THANDLE(LL) ll);
+
 #ifdef __cplusplus
 }
 #endif

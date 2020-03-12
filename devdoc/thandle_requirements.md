@@ -107,7 +107,7 @@ MOCKABLE_FUNCTION(, void, THANDLE_ASSIGN(T), THANDLE(T) *, t1, THANDLE(T), t2 );
 #define THANDLE_TYPE_DEFINE(T)
 ```
 
-`THANDLE_TYPE_DEFINE` introduces the implementation for the functions in `THANDLE_TYPE_DECLARE` (`THANDLE_DEC_REF`, `THANDLE_INC_REF`, `THANDLE_ASSIGN`, `THANDLE_INITIALIZE`) and three new memory management functions `THANDLE_MALLOC(T)`, `THANDLE_MALLOC_WITH_EXTRA_SIZE(T)` and `THANDLE_FREE(T)`.
+`THANDLE_TYPE_DEFINE` introduces the implementation for the functions in `THANDLE_TYPE_DECLARE` (`THANDLE_DEC_REF`, `THANDLE_INC_REF`, `THANDLE_ASSIGN`, `THANDLE_INITIALIZE`, `THANDLE_GET_T`) and three new memory management functions `THANDLE_MALLOC(T)`, `THANDLE_MALLOC_WITH_EXTRA_SIZE(T)` and `THANDLE_FREE(T)`.
 
 ### THANDLE_MALLOC(T)
 ```c
@@ -138,7 +138,7 @@ static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(T)(void(*dispose)(T*), size_t extra_siz
 **SRS_THANDLE_02_022: [** If `malloc` fails then `THANDLE_MALLOC_WITH_EXTRA_SIZE` shall fail and return `NULL`. **]**
 
 
-### `THANDLE_FREE(T)`
+### THANDLE_FREE(T)
 ```c
     THANDLE_FREE(T)(T* t)
 ```
@@ -150,3 +150,13 @@ static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(T)(void(*dispose)(T*), size_t extra_siz
 **SRS_THANDLE_02_017: [** `THANDLE_FREE` shall free the allocated memory by `THANDLE_MALLOC`. **]**
 
 
+### THANDLE_GET_T(T)
+```c
+static T* THANDLE_GET_T(T)(THANDLE(T) t)
+```
+
+Given a previously constructed `THANDLE(T)`, `THANDLE_GET_T(T)` reeturns a pointer to the underlying type of the handle. Useful for all the APIs that take a `THANDLE(T)` as parameter.
+
+**SRS_THANDLE_02_023: [** If `t` is `NULL` then `THANDLE_GET_T(T)` shall return `NULL`. **]**
+
+**SRS_THANDLE_02_024: [** `THANDLE_GET_T(T)` shall return the same pointer as `THANDLE_MALLOC`/`THANDLE_MALLOC_WITH_EXTRA_SIZE` returned at the handle creation time. **]**

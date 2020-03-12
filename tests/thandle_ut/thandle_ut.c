@@ -51,7 +51,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 }
 
 /*the following data structures etc are needed because THANDLE_FREE cannot be called with NULL from a THANDLER(T) holder*/
-#define A_B_FIELDS        \
+#define A_B_FIELDS          \
     int, a,                 \
     int, b
 
@@ -486,6 +486,43 @@ TEST_FUNCTION(THANDLE_FREE_with_t_NULL_returns)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
+}
+
+/*Tests_SRS_THANDLE_02_023: [ If t is NULL then THANDLE_GET_T(T) shall return NULL. ]*/
+TEST_FUNCTION(THANDLE_GET_T_with_t_NULL_returns_NULL)
+{
+    ///arrange
+
+    ///act
+    A_B* result = THANDLE_GET_T(A_B)(NULL);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    
+    ///cleanup
+}
+
+/*Tests_SRS_THANDLE_02_023: [ If t is NULL then THANDLE_GET_T(T) shall return NULL. ]*/
+TEST_FUNCTION(THANDLE_GET_T_with_t_not_NULL_returns_original_pointer) /*direct testing is not really possible (GET_T is static) but shall be inferred by the actions of _increment_a and _get_a*/
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
+    THANDLE(LL) ll = ll_create(TEST_A, TEST_S);
+    ASSERT_IS_NOT_NULL(ll);
+    int incremented;
+
+    ///act
+    ll_increment_a(ll, 5);
+    incremented = ll_get_a(ll);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, TEST_A + 5, incremented);
+
+    ///cleanup
+    THANDLE_DEC_REF(LL)(ll);
 }
 
 END_TEST_SUITE(thandle_unittests)

@@ -9,10 +9,12 @@
 
 #include "azure_c_util/thandle.h"
 
+#include "thandle_user.h"
+
 #define LL_FIELDS           \
-    int, a,                 \
-    char*, s                \
-    
+    char*, s,               \
+    int, a                  \
+
 MU_DEFINE_STRUCT(LL, LL_FIELDS);
 
 THANDLE_TYPE_DEFINE(LL);
@@ -59,6 +61,35 @@ THANDLE(LL) ll_create(int a, const char* s)
         THANDLE_FREE(LL)(result);
         result = NULL;
 allOk:;
+    }
+    return result;
+}
+
+void ll_increment_a(THANDLE(LL) ll, int amount)
+{
+    if (ll == NULL)
+    {
+        LogError("invalid arguments: THANDLE(LL) ll=%p", ll);
+    }
+    else
+    {
+        LL* underlying = THANDLE_GET_T(LL)(ll);
+        underlying->a += amount;
+    }
+}
+
+int ll_get_a(THANDLE(LL) ll)
+{
+    int result;
+    if (ll == NULL)
+    {
+        LogError("invalid arguments: THANDLE(LL) ll=%p", ll);
+        result = INT_MAX;
+    }
+    else
+    {
+        LL* underlying = THANDLE_GET_T(LL)(ll);
+        result = underlying->a;
     }
     return result;
 }

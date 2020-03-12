@@ -47,6 +47,9 @@
 /*given a previous type T, THANDLE_INITIALIZE introduces a new name for a function that does T1=T2 (with inc ref, and considers T1 as uninitialized memory)*/
 #define THANDLE_INITIALIZE(T) MU_C2(T,_INITIALIZE)
 
+/*given a previous type T (and its THANDLE(T)), THANDLE_GET_T introduces a new name for a function that returns the T* from under the THANDLE(T)*/
+#define THANDLE_GET_T(T) MU_C2(T,_GET_T)
+
 /*given a previous type T introduced by MU_DEFINE_STRUCT(T, T_FIELDS), this introduces THANDLE_MALLOC macro to create its wrapper, initialize refCount to 1, and remember the dispose function*/
 
 #define THANDLE_MALLOC_MACRO(T) \
@@ -233,6 +236,26 @@ void THANDLE_INITIALIZE(T)(THANDLE(T) * lvalue, THANDLE(T) rvalue )             
     }                                                                                                                                                               \
 }                                                                                                                                                                   \
 
+/*if THANDLE(T) is previously defined, then this macro returns the T* from under the THANDLE(T) */
+#define THANDLE_GET_T_MACRO(T)                                                                                                                                      \
+static T* THANDLE_GET_T(T)(THANDLE(T) t)                                                                                                                            \
+{                                                                                                                                                                   \
+    T* result;                                                                                                                                                      \
+    /*Codes_SRS_THANDLE_02_023: [ If t is NULL then THANDLE_GET_T(T) shall return NULL. ]*/                                                                         \
+    if(t == NULL)                                                                                                                                                   \
+    {                                                                                                                                                               \
+        LogError("invalid argument THANDLE(" MU_TOSTRING(T) ")t=%p", t);                                                                                            \
+        result = NULL;                                                                                                                                              \
+    }                                                                                                                                                               \
+    else                                                                                                                                                            \
+    {                                                                                                                                                               \
+        /*Codes_SRS_THANDLE_02_024: [ THANDLE_GET_T(T) shall return the same pointer as THANDLE_MALLOC/THANDLE_MALLOC_WITH_EXTRA_SIZE returned at the handle creation time. ]*/ \
+        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = containingRecord(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                        \
+        result = &handle_impl->data;                                                                                                                                \
+    }                                                                                                                                                               \
+    return result;                                                                                                                                                  \
+}                                                                                                                                                                   \
+
 /*given a previous type T introduced by MU_DEFINE_STRUCT(T, T_FIELDS), this introduces a wrapper type that contains T (and other fields) and defines the functions of that type T*/
 #define THANDLE_TYPE_DEFINE(T) \
     MU_DEFINE_STRUCT(THANDLE_WRAPPER_TYPE_NAME(T), THANDLE_EXTRA_FIELDS(T), T, data);                                                                               \
@@ -242,7 +265,8 @@ void THANDLE_INITIALIZE(T)(THANDLE(T) * lvalue, THANDLE(T) rvalue )             
     THANDLE_DEC_REF_MACRO(T)                                                                                                                                        \
     THANDLE_INC_REF_MACRO(T)                                                                                                                                        \
     THANDLE_ASSIGN_MACRO(T)                                                                                                                                         \
-    THANDLE_INITIALIZE_MACRO(T)
+    THANDLE_INITIALIZE_MACRO(T)                                                                                                                                     \
+    THANDLE_GET_T_MACRO(T)
 
 /*macro to be used in headers*/                                                                                       \
 /*introduces an incomplete type based on a MU_DEFINE_STRUCT(T...) that has been THANDLE_TYPE_DEFINE(T);*/             \
