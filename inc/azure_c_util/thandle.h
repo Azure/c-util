@@ -243,21 +243,10 @@ void THANDLE_INITIALIZE(T)(THANDLE(T) * lvalue, THANDLE(T) rvalue )             
 #define THANDLE_GET_T_MACRO(T)                                                                                                                                      \
 static T* THANDLE_GET_T(T)(THANDLE(T) t)                                                                                                                            \
 {                                                                                                                                                                   \
-    T* result;                                                                                                                                                      \
     /*Codes_SRS_THANDLE_02_023: [ If t is NULL then THANDLE_GET_T(T) shall return NULL. ]*/                                                                         \
-    if(t == NULL)                                                                                                                                                   \
-    {                                                                                                                                                               \
-        LogError("invalid argument THANDLE(" MU_TOSTRING(T) ")t=%p", t);                                                                                            \
-        result = NULL;                                                                                                                                              \
-    }                                                                                                                                                               \
-    else                                                                                                                                                            \
-    {                                                                                                                                                               \
-        /*Codes_SRS_THANDLE_02_024: [ THANDLE_GET_T(T) shall return the same pointer as THANDLE_MALLOC/THANDLE_MALLOC_WITH_EXTRA_SIZE returned at the handle creation time. ]*/ \
-        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = containingRecord(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                        \
-        result = &handle_impl->data;                                                                                                                                \
-    }                                                                                                                                                               \
-    return result;                                                                                                                                                  \
-}                                                                                                                                                                   \
+    /*Codes_SRS_THANDLE_02_024: [ THANDLE_GET_T(T) shall return the same pointer as THANDLE_MALLOC/THANDLE_MALLOC_WITH_EXTRA_SIZE returned at the handle creation time. ]*/ \
+    return (T*)t;                                                                                                                                                   \
+}
 
 /*given a previous type T introduced by MU_DEFINE_STRUCT(T, T_FIELDS), this introduces a wrapper type that contains T (and other fields) and defines the functions of that type T*/
 #define THANDLE_TYPE_DEFINE(T) \
