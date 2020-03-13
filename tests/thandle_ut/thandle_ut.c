@@ -525,4 +525,34 @@ TEST_FUNCTION(THANDLE_GET_T_with_t_not_NULL_returns_original_pointer) /*direct t
     THANDLE_DEC_REF(LL)(ll);
 }
 
+/*returns a pointer to an array of 2 THANDLE(LL)*/
+static void builds_out_arg(THANDLE(LL)** x)
+{
+    *x = (THANDLE(LL)*)gballoc_malloc(sizeof(THANDLE(LL)) * 2);
+    ASSERT_IS_NOT_NULL(*x);
+}
+
+/*this test wants to see that an array of THANDLE(LL) can be returned from some constructor as out argument*/
+TEST_FUNCTION(THANDLE_T_can_build_an_array)
+{
+    THANDLE(LL)* arr;
+    builds_out_arg(&arr); /*arr points to an array of 2 THANDLE(LL)s*/
+
+    THANDLE(LL) temp = ll_create(1, "4");
+    ASSERT_IS_NOT_NULL(temp);
+    THANDLE_INITIALIZE(LL)(&arr[0], temp);
+    THANDLE_DEC_REF(LL)(temp);
+
+    THANDLE(LL) temp2 = ll_create(2, "44");
+    ASSERT_IS_NOT_NULL(temp2);
+    THANDLE_INITIALIZE(LL)(&arr[1], temp2);
+    THANDLE_DEC_REF(LL)(temp2);
+
+    THANDLE_DEC_REF(LL)(arr[0]);
+    THANDLE_DEC_REF(LL)(arr[1]);
+
+    gballoc_free((void*)arr);
+}
+
+
 END_TEST_SUITE(thandle_unittests)
