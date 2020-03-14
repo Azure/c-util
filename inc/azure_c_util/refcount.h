@@ -89,7 +89,7 @@ static void REFCOUNT_TYPE_DECLARE_DESTROY(type)(type* counted_type) \
     free(ref_counted); \
 }
 
-/* Codes_SRS_REFCOUNT_01_001: [ `DEFINE_REFCOUNT_TYPE` shall define the create/create_with_Extra_size/destroy functions for the type `type`. ]*/
+/* Codes_SRS_REFCOUNT_01_001: [ DEFINE_REFCOUNT_TYPE shall define the create/create_with_Extra_size/destroy functions for the type type. ]*/
 #define DEFINE_REFCOUNT_TYPE(type) \
 REFCOUNT_TYPE(type) \
 { \
