@@ -1747,7 +1747,7 @@ TEST_FUNCTION(gballoc_resetMetrics_success)
     free(allocation);
 }
 
-/* Tests_SRS_GBALLOC_07_007: [** If the lock cannot be acquired, `gballoc_reset Metrics` shall do nothing.]*/
+/* Tests_SRS_GBALLOC_07_007: [** If the lock cannot be acquired, gballoc_reset Metrics shall do nothing.]*/
 TEST_FUNCTION(when_lock_cannot_be_acquired_gballoc_resetMetrics_returns)
 {
     // arrange

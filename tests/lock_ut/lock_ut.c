@@ -72,7 +72,7 @@ TEST_FUNCTION_CLEANUP(cleans)
 }
 
 /* Tests_SRS_LOCK_10_002: [Lock_Init on success shall return a valid lock handle which should be a non NULL value] */
-/* Tests_SRS_LOCK_10_004: [ `Lock` shall be implemented as a non-recursive lock ]*/
+/* Tests_SRS_LOCK_10_004: [ Lock shall be implemented as a non-recursive lock ]*/
 TEST_FUNCTION(LOCK_Lock_Init_succeeds)
 {
     //arrange
@@ -129,7 +129,7 @@ TEST_FUNCTION(LOCK_Init_Lock_succeeds)
 }
 
 /* Tests_SRS_LOCK_10_009: [Unlock on success shall return LOCK_OK] */
-/* Tests_SRS_LOCK_10_008: [ `Unlock` shall perform a platform dependant unlock ]*/
+/* Tests_SRS_LOCK_10_008: [ Unlock shall perform a platform dependant unlock ]*/
 TEST_FUNCTION(LOCK_Init_Lock_Unlock_succeeds)
 {
     //arrange
@@ -196,7 +196,7 @@ TEST_FUNCTION(LOCK_Unlock_NULL_fails)
 /* On Win32, lock cannot fail */
 /* Tests_SRS_LOCK_10_006: [Lock on error shall return LOCK_ERROR] */
 
-/* Tests_SRS_LOCK_10_013: [ `Lock_Deinit` on NULL `handle` passed returns `LOCK_ERROR` ]*/
+/* Tests_SRS_LOCK_10_013: [ Lock_Deinit on NULL handle passed returns LOCK_ERROR ]*/
 TEST_FUNCTION(LOCK_DeInit_NULL_fails)
 {
     //arrange
