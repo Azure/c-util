@@ -263,7 +263,6 @@ static T* THANDLE_GET_T(T)(THANDLE(T) t)                                        
 /*macro to be used in headers*/                                                                                       \
 /*introduces an incomplete type based on a MU_DEFINE_STRUCT(T...) previously defined;*/                               \
 #define THANDLE_TYPE_DECLARE(T)                                                                                       \
-    typedef struct MU_C2(T,_TAG) T;                                                                                   \
     THANDLE_MACRO(T);                                                                                                 \
     MOCKABLE_FUNCTION(, void, THANDLE_DEC_REF(T), THANDLE(T), t);                                                     \
     MOCKABLE_FUNCTION(, void, THANDLE_INC_REF(T), THANDLE(T), t);                                                     \
