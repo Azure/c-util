@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+    typedef struct LL_TAG LL;
+
 THANDLE_TYPE_DECLARE(LL) /*LL is a struct in thandle_user.c that has an "int" in it and a char*. This macro brings a dec_ref, inc_ref, assign, and initialize capabilities*/
 
 THANDLE(LL) ll_create(int a, const char* b);
