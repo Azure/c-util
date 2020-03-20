@@ -117,9 +117,9 @@ TEST_FUNCTION(UniqueId_Generate_Succeed)
     //Arrange
     char uid[BUFFER_SIZE];
 
-    STRICT_EXPECTED_CALL(mocked_UuidCreate(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(mocked_UuidToStringA(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(mocked_RpcStringFreeA(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocked_UuidCreate(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(mocked_UuidToStringA(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(mocked_RpcStringFreeA(IGNORED_ARG));
 
     //Act
     UNIQUEID_RESULT result = UniqueId_Generate(uid, BUFFER_SIZE);
@@ -136,9 +136,9 @@ TEST_FUNCTION(when_underlying_calls_fail_UniqueId_Generate_fails)
     //Arrange
     char uid[BUFFER_SIZE];
 
-    STRICT_EXPECTED_CALL(mocked_UuidCreate(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(mocked_UuidToStringA(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(mocked_RpcStringFreeA(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(mocked_UuidCreate(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(mocked_UuidToStringA(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(mocked_RpcStringFreeA(IGNORED_ARG))
         .CallCannotFail();
 
     umock_c_negative_tests_snapshot();

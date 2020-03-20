@@ -62,14 +62,14 @@ static void my_timer_destroy(TIMER_HANDLE timer)
 static SRW_LOCK_HANDLE TEST_srw_lock_create(bool do_statistics, const char* lock_name)
 {
     SRW_LOCK_HANDLE result;
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
     if (do_statistics)
     {
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
         STRICT_EXPECTED_CALL(timer_create())
             .SetReturn((TIMER_HANDLE)my_gballoc_malloc(2));
     }
-    STRICT_EXPECTED_CALL(mocked_InitializeSRWLock(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocked_InitializeSRWLock(IGNORED_ARG));
     result = srw_lock_create(do_statistics, lock_name);
     ASSERT_IS_NOT_NULL(result);
     umock_c_reset_all_calls();
@@ -78,13 +78,13 @@ static SRW_LOCK_HANDLE TEST_srw_lock_create(bool do_statistics, const char* lock
 
 static void TEST_srw_lock_acquire_shared(SRW_LOCK_HANDLE handle, double pretendTimeElapsed)
 {
-    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockShared(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(timer_get_elapsed(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockShared(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(timer_get_elapsed(IGNORED_ARG))
         .SetReturn(pretendTimeElapsed);
 
     if (pretendTimeElapsed >= 600) /*10 minutes, hardcoded*/
     {
-        STRICT_EXPECTED_CALL(timer_start(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(timer_start(IGNORED_ARG));
     }
 
     srw_lock_acquire_shared(handle);
@@ -93,13 +93,13 @@ static void TEST_srw_lock_acquire_shared(SRW_LOCK_HANDLE handle, double pretendT
 
 static void TEST_srw_lock_acquire_exclusive(SRW_LOCK_HANDLE handle, double pretendTimeElapsed)
 {
-    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockExclusive(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(timer_get_elapsed(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockExclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(timer_get_elapsed(IGNORED_ARG))
         .SetReturn(pretendTimeElapsed);
 
     if (pretendTimeElapsed >= 600) /*10 minutes, hardcoded*/
     {
-        STRICT_EXPECTED_CALL(timer_start(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(timer_start(IGNORED_ARG));
     }
 
     srw_lock_acquire_exclusive(handle);
@@ -159,11 +159,11 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 TEST_FUNCTION(srw_lock_create_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(timer_create())
         .SetReturn((TIMER_HANDLE)my_gballoc_malloc(2));
-    STRICT_EXPECTED_CALL(mocked_InitializeSRWLock(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocked_InitializeSRWLock(IGNORED_ARG));
 
     ///act
     SRW_LOCK_HANDLE bsdlLock = srw_lock_create(true, "test_lock");
@@ -185,8 +185,8 @@ TEST_FUNCTION(srw_lock_create_succeeds)
 TEST_FUNCTION(srw_lock_create_with_do_statistics_false_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mocked_InitializeSRWLock(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(mocked_InitializeSRWLock(IGNORED_ARG));
 
     ///act
     SRW_LOCK_HANDLE bsdlLock = srw_lock_create(false, "test_lock");
@@ -204,12 +204,12 @@ TEST_FUNCTION(srw_lock_create_with_do_statistics_false_succeeds)
 TEST_FUNCTION(srw_lock_create_fails_1)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(timer_create())
         .SetReturn(NULL);
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
 
     ///act
     SRW_LOCK_HANDLE bsdlLock = srw_lock_create(true, "test_lock");
@@ -225,10 +225,10 @@ TEST_FUNCTION(srw_lock_create_fails_1)
 TEST_FUNCTION(srw_lock_create_fails_2)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
         .SetReturn(NULL);
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
 
     ///act
     SRW_LOCK_HANDLE bsdlLock = srw_lock_create(true, "test_lock");
@@ -244,7 +244,7 @@ TEST_FUNCTION(srw_lock_create_fails_2)
 TEST_FUNCTION(srw_lock_create_fails_3)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
         .SetReturn(NULL);
 
     ///act
@@ -278,8 +278,8 @@ TEST_FUNCTION(srw_lock_acquire_exclusive_succeeds)
     ///arrange
     SRW_LOCK_HANDLE bsdlLock = TEST_srw_lock_create(true, "test_lock");
 
-    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockExclusive(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(timer_get_elapsed(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockExclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(timer_get_elapsed(IGNORED_ARG))
         .SetReturn(0);
 
     ///act
@@ -300,7 +300,7 @@ TEST_FUNCTION(srw_lock_acquire_exclusive_with_do_statistics_false_succeeds)
     ///arrange
     SRW_LOCK_HANDLE bsdlLock = TEST_srw_lock_create(false, "test_lock");
 
-    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockExclusive(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockExclusive(IGNORED_ARG));
 
     ///act
     srw_lock_acquire_exclusive(bsdlLock);
@@ -320,10 +320,10 @@ TEST_FUNCTION(srw_lock_acquire_exclusive_restarts_timer_succeeds)
     ///arrange
     SRW_LOCK_HANDLE bsdlLock = TEST_srw_lock_create(true, "test_lock");
 
-    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockExclusive(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(timer_get_elapsed(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockExclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(timer_get_elapsed(IGNORED_ARG))
         .SetReturn(10000);
-    STRICT_EXPECTED_CALL(timer_start(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(timer_start(IGNORED_ARG));
 
     ///act
     srw_lock_acquire_exclusive(bsdlLock);
@@ -358,7 +358,7 @@ TEST_FUNCTION(srw_lock_release_exclusive_succeeds)
     TEST_srw_lock_acquire_exclusive(bsdlLock, 1);
     
 
-    STRICT_EXPECTED_CALL(mocked_ReleaseSRWLockExclusive(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocked_ReleaseSRWLockExclusive(IGNORED_ARG));
 
     ///act
     srw_lock_release_exclusive(bsdlLock);
@@ -388,9 +388,9 @@ TEST_FUNCTION(srw_lock_destroy_free_used_resources)
     ///arrange
     SRW_LOCK_HANDLE bsdlLock = TEST_srw_lock_create(true, "test_lock");
     
-    STRICT_EXPECTED_CALL(timer_destroy(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(timer_destroy(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
 
     ///act
     srw_lock_destroy(bsdlLock);
@@ -418,8 +418,8 @@ TEST_FUNCTION(srw_lock_acquire_shared_succeeds)
     ///arrange
     SRW_LOCK_HANDLE bsdlLock = TEST_srw_lock_create(true, "test_lock");
 
-    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockShared(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(timer_get_elapsed(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockShared(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(timer_get_elapsed(IGNORED_ARG))
         .SetReturn(0);
 
     ///act
@@ -440,10 +440,10 @@ TEST_FUNCTION(srw_lock_acquire_shared_restarts_timer_succeeds)
     ///arrange
     SRW_LOCK_HANDLE bsdlLock = TEST_srw_lock_create(true, "test_lock");
 
-    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockShared(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(timer_get_elapsed(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockShared(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(timer_get_elapsed(IGNORED_ARG))
         .SetReturn(10000);
-    STRICT_EXPECTED_CALL(timer_start(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(timer_start(IGNORED_ARG));
 
     ///act
     srw_lock_acquire_shared(bsdlLock);
@@ -462,7 +462,7 @@ TEST_FUNCTION(srw_lock_acquire_shared_with_do_statistic_false_succeeds)
     ///arrange
     SRW_LOCK_HANDLE bsdlLock = TEST_srw_lock_create(false, "test_lock");
 
-    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockShared(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocked_AcquireSRWLockShared(IGNORED_ARG));
 
     ///act
     srw_lock_acquire_shared(bsdlLock);
@@ -492,7 +492,7 @@ TEST_FUNCTION(srw_lock_release_shared_succeeds)
     SRW_LOCK_HANDLE bsdlLock = TEST_srw_lock_create(true, "test_lock");
     TEST_srw_lock_acquire_shared(bsdlLock, 1);
 
-    STRICT_EXPECTED_CALL(mocked_ReleaseSRWLockShared(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocked_ReleaseSRWLockShared(IGNORED_ARG));
 
     ///act
     srw_lock_release_shared(bsdlLock);
