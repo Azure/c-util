@@ -81,7 +81,7 @@ TEST_FUNCTION(tickcounter_create_fails)
 {
     ///arrange
     TICK_COUNTER_HANDLE tickHandle;
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
         .IgnoreArgument(1)
         .SetReturn((void*)NULL);
 
@@ -97,7 +97,7 @@ TEST_FUNCTION(tickcounter_create_succeed)
 {
     ///arrange
     TICK_COUNTER_HANDLE tickHandle;
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
         .IgnoreArgument(1);
 
     ///act
@@ -127,7 +127,7 @@ TEST_FUNCTION(tickcounter_destroy_succeed)
     TICK_COUNTER_HANDLE tickHandle = tickcounter_create();
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG))
         .IgnoreArgument(1);
 
     ///act

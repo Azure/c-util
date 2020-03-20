@@ -1523,7 +1523,7 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_1_byte_malloc
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     EXPECTED_CALL(mock_malloc(0))
         .SetReturn(allocation2);
-    STRICT_EXPECTED_CALL(mock_realloc(IGNORED_PTR_ARG, 3))
+    STRICT_EXPECTED_CALL(mock_realloc(IGNORED_ARG, 3))
         .IgnoreArgument(1)
         .SetReturn((char*)allocation2 + OVERHEAD_SIZE / 2); /*somewhere in the middle of allocation*/
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));

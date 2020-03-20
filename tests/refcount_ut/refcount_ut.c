@@ -82,7 +82,7 @@ BEGIN_TEST_SUITE(refcount_unittests)
     {
         ///arrange
         POS_HANDLE p;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
 
         ///act
         p = Pos_Create(4);
@@ -100,7 +100,7 @@ BEGIN_TEST_SUITE(refcount_unittests)
     {
         ///arrange
         POS_HANDLE p;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
             .SetReturn(NULL);
 
         ///act
@@ -119,7 +119,7 @@ BEGIN_TEST_SUITE(refcount_unittests)
     {
         ///arrange
         POS_HANDLE p;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
 
         ///act
         p = Pos_Create_With_Extra_Size(4, 42);
@@ -137,7 +137,7 @@ BEGIN_TEST_SUITE(refcount_unittests)
     {
         ///arrange
         POS_HANDLE p;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
             .SetReturn(NULL);
 
         ///act
@@ -155,12 +155,12 @@ BEGIN_TEST_SUITE(refcount_unittests)
     {
         ///arrange
         POS_HANDLE p;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
         p = Pos_Create(4);
         umock_c_reset_all_calls();
 
         ///act
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
         Pos_Destroy(p);
 
         ///assert
@@ -209,7 +209,7 @@ BEGIN_TEST_SUITE(refcount_unittests)
         umock_c_reset_all_calls();
 
         ///act
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
         Pos_Destroy(clone_of_p);
 
         ///assert

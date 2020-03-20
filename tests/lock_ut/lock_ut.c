@@ -77,7 +77,7 @@ TEST_FUNCTION(LOCK_Lock_Init_succeeds)
 {
     //arrange
 #ifdef WIN32
-    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 #endif
 
     //act
@@ -101,7 +101,7 @@ TEST_FUNCTION(Lock_Deinit_frees_memory)
     umock_c_reset_all_calls();
 
 #ifdef WIN32
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 #endif
 
     //act
@@ -159,7 +159,7 @@ TEST_FUNCTION(LOCK_Init_DeInit_succeeds)
     umock_c_reset_all_calls();
 
 #ifdef WIN32
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 #endif
 
     //act
@@ -214,7 +214,7 @@ TEST_FUNCTION(LOCK_DeInit_NULL_fails)
 TEST_FUNCTION(LOCK_Lock_Init_fails_if_malloc_fails)
 {
     //arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG))
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
         .SetReturn(NULL);
 
     //act

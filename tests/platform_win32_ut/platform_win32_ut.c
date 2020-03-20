@@ -101,7 +101,7 @@ TEST_FUNCTION(platform_init_success)
     int result;
 
     //arrange
-    STRICT_EXPECTED_CALL(WSAStartup(IGNORED_NUM_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(WSAStartup(IGNORED_ARG, IGNORED_ARG));
 
     //act
     result = platform_init();
@@ -118,7 +118,7 @@ TEST_FUNCTION(platform_init_WSAStartup_0_fail)
     int result;
 
     //arrange
-    STRICT_EXPECTED_CALL(WSAStartup(IGNORED_NUM_ARG, IGNORED_PTR_ARG)).SetReturn(1);
+    STRICT_EXPECTED_CALL(WSAStartup(IGNORED_ARG, IGNORED_ARG)).SetReturn(1);
 
     //act
     result = platform_init();

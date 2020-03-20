@@ -96,7 +96,7 @@ TEST_FUNCTION_INITIALIZE(init)
 TEST_FUNCTION(timer_create_malloc_fails)
 {
     //arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG))
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
         .SetReturn(NULL);
 
     //act
@@ -111,10 +111,10 @@ static void test_timer_create_success_expectations(void)
     LARGE_INTEGER frequency, start_time;
     frequency.QuadPart = 10;
     start_time.QuadPart = 1;
-    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mocked_QueryPerformanceFrequency(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(mocked_QueryPerformanceFrequency(IGNORED_ARG))
         .CopyOutArgumentBuffer_lpFrequency(&frequency, sizeof(frequency));
-    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_ARG))
         .CopyOutArgumentBuffer_lpPerformanceCount(&start_time, sizeof(start_time));
 }
 
@@ -153,7 +153,7 @@ TEST_FUNCTION(timer_start_succeeds)
     test_timer_create_success_expectations();
     TIMER_HANDLE timer = timer_create();
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_ARG))
         .CopyOutArgumentBuffer_lpPerformanceCount(&stop_time, sizeof(stop_time));
 
     //act
@@ -185,7 +185,7 @@ TEST_FUNCTION(timer_get_elapsed_success)
     test_timer_create_success_expectations();
     TIMER_HANDLE timer = timer_create();
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_ARG))
         .CopyOutArgumentBuffer_lpPerformanceCount(&stop_time, sizeof(stop_time));
     
     //act
@@ -217,7 +217,7 @@ TEST_FUNCTION(timer_get_elapsed_ms_success)
     test_timer_create_success_expectations();
     TIMER_HANDLE timer = timer_create();
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_ARG))
         .CopyOutArgumentBuffer_lpPerformanceCount(&stop_time, sizeof(stop_time));
 
     //act
@@ -247,7 +247,7 @@ TEST_FUNCTION(timer_destroy_frees_handle)
     test_timer_create_success_expectations();
     TIMER_HANDLE timer = timer_create();
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     //act
     timer_destroy(timer);
@@ -262,18 +262,18 @@ TEST_FUNCTION(g_timer_get_elapsed_in_ms_succeeds)
     LARGE_INTEGER pretendFreq;
     pretendFreq.QuadPart = 1000;
     
-    STRICT_EXPECTED_CALL(mocked_QueryPerformanceFrequency(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(mocked_QueryPerformanceFrequency(IGNORED_ARG))
         .CopyOutArgumentBuffer_lpFrequency(&pretendFreq, sizeof(pretendFreq));
 
     LARGE_INTEGER pretendCounter1;
     pretendCounter1.QuadPart = 2000;
-    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_ARG))
         .CopyOutArgumentBuffer_lpPerformanceCount(&pretendCounter1, sizeof(pretendCounter1));
 
     /*note: missing second QueryPerformanceFrequency*/
     LARGE_INTEGER pretendCounter2;
     pretendCounter2.QuadPart = 5000;
-    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_PTR_ARG))
+    STRICT_EXPECTED_CALL(mocked_QueryPerformanceCounter(IGNORED_ARG))
         .CopyOutArgumentBuffer_lpPerformanceCount(&pretendCounter2, sizeof(pretendCounter2));
 
     ///act

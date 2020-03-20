@@ -343,7 +343,7 @@ TEST_FUNCTION(InterlockedHL_Add64WithCeiling_succeeds)
 
         ///arrange
         STRICT_EXPECTED_CALL(InterlockedAdd64(&(inputValues[i].Addend), 0));
-        STRICT_EXPECTED_CALL(InterlockedCompareExchange64(&(inputValues[i].Addend), IGNORED_NUM_ARG, inputValues[i].Addend));
+        STRICT_EXPECTED_CALL(InterlockedCompareExchange64(&(inputValues[i].Addend), IGNORED_ARG, inputValues[i].Addend));
 
         ///act
         INTERLOCKED_HL_RESULT result = InterlockedHL_Add64WithCeiling(&(inputValues[i].Addend), inputValues[i].Ceiling, inputValues[i].Value, &originalAddend);
@@ -403,7 +403,7 @@ TEST_FUNCTION(when_the_value_equals_target_value_after_waiting_InterlockedHL_Wai
     LONG target_value = 0x42;
 
     STRICT_EXPECTED_CALL(InterlockedAdd(&value, 0));
-    STRICT_EXPECTED_CALL(WaitOnAddress(&value, IGNORED_PTR_ARG, sizeof(LONG), INFINITE))
+    STRICT_EXPECTED_CALL(WaitOnAddress(&value, IGNORED_ARG, sizeof(LONG), INFINITE))
         .CopyOutArgumentBuffer_Address(&target_value, sizeof(LONG));
     STRICT_EXPECTED_CALL(InterlockedAdd(&value, 0));
 
@@ -428,10 +428,10 @@ TEST_FUNCTION(when_the_value_after_a_succesfull_wait_on_address_does_not_equal_t
     LONG final_value = 0x42;
 
     STRICT_EXPECTED_CALL(InterlockedAdd(&value, 0));
-    STRICT_EXPECTED_CALL(WaitOnAddress(&value, IGNORED_PTR_ARG, sizeof(LONG), INFINITE))
+    STRICT_EXPECTED_CALL(WaitOnAddress(&value, IGNORED_ARG, sizeof(LONG), INFINITE))
         .CopyOutArgumentBuffer_Address(&intermediate_value, sizeof(LONG));
     STRICT_EXPECTED_CALL(InterlockedAdd(&value, 0));
-    STRICT_EXPECTED_CALL(WaitOnAddress(&value, IGNORED_PTR_ARG, sizeof(LONG), INFINITE))
+    STRICT_EXPECTED_CALL(WaitOnAddress(&value, IGNORED_ARG, sizeof(LONG), INFINITE))
         .CopyOutArgumentBuffer_Address(&final_value, sizeof(LONG));
     STRICT_EXPECTED_CALL(InterlockedAdd(&value, 0));
 
@@ -452,7 +452,7 @@ TEST_FUNCTION(when_the_WaitOnAddress_fails_InterlockedHL_WaitForValue_also_fails
     LONG intermediate_value = 0x41;
 
     STRICT_EXPECTED_CALL(InterlockedAdd(&value, 0));
-    STRICT_EXPECTED_CALL(WaitOnAddress(&value, IGNORED_PTR_ARG, sizeof(LONG), INFINITE))
+    STRICT_EXPECTED_CALL(WaitOnAddress(&value, IGNORED_ARG, sizeof(LONG), INFINITE))
         .CopyOutArgumentBuffer_Address(&intermediate_value, sizeof(LONG))
         .SetReturn(FALSE);
 
