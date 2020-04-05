@@ -1,11 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifdef THANDLE_USES_GBALLOC
-#include "azure_c_util/gballoc.h"
-#else
 #include <stdlib.h>
-#endif
 
 #include "azure_c_util/thandle_stdlib.h"
 
