@@ -8,8 +8,24 @@
 #include "umock_c/umock_c_prod.h"
 
 #include "azure_c_util/xlogging.h"
+
 #include "azure_c_util/containing_record.h"
 #include "refcount_os.h"
+
+#ifdef THANDLE_MALLOC_FUNCTION
+    #ifndef THANDLE_FREE_FUNCTION
+        #error THANDLE_MALLOC_FUNCTION and THANDLE_FREE_FUNCTION must be both defined or both not defined
+    #else
+        /*do nothing, the macros here will call whatever THANDLE_MALLOC_FUNCTION/THANDLE_FREE_FUNCTION expands to*/
+    #endif
+#else
+    #ifdef THANDLE_FREE_FUNCTION
+        #error THANDLE_MALLOC_FUNCTION and THANDLE_FREE_FUNCTION must be both defined or both not defined
+    #else
+        /*include the "stock" implementation*/
+        #include "azure_c_util/thandle_stdlib.h"
+    #endif
+#endif
 
 /*the incomplete unassignable type*/
 #define THANDLE(T) MU_C2(CONST_P2_CONST_,T)
@@ -60,7 +76,7 @@ static T* THANDLE_MALLOC(T)(void(*dispose)(T*))                                 
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
     /*Codes_SRS_THANDLE_02_013: [ THANDLE_MALLOC shall allocate memory. ]*/                                                                                         \
-    THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                        \
+    THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)THANDLE_MALLOC_FUNCTION(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                       \
     if (handle_impl == NULL)                                                                                                                                        \
     {                                                                                                                                                               \
         /*Codes_SRS_THANDLE_02_015: [ If malloc fails then THANDLE_MALLOC shall fail and return NULL. ]*/                                                           \
@@ -91,7 +107,7 @@ static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(T)(void(*dispose)(T*), size_t extra_siz
     else                                                                                                                                                            \
     {                                                                                                                                                               \
         /*Codes_SRS_THANDLE_02_020: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall allocate memory enough to hold T and extra_size. ]*/                                     \
-        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)malloc(extra_size + sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                       \
+        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)THANDLE_MALLOC_FUNCTION(extra_size + sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));      \
         if (handle_impl == NULL)                                                                                                                                    \
         {                                                                                                                                                           \
             /*Codes_SRS_THANDLE_02_022: [ If malloc fails then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/                                       \
@@ -123,7 +139,7 @@ static void THANDLE_FREE(T)(T* t)                                               
     {                                                                                                                                                               \
         /*Codes_SRS_THANDLE_02_017: [ THANDLE_FREE shall free the allocated memory by THANDLE_MALLOC. ]*/                                                           \
         THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = containingRecord(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                        \
-        free(handle_impl);                                                                                                                                          \
+        THANDLE_FREE_FUNCTION(handle_impl);                                                                                                                         \
     }                                                                                                                                                               \
 }                                                                                                                                                                   \
 
