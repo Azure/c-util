@@ -58,16 +58,18 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 MU_DEFINE_STRUCT(A_B, A_B_FIELDS);
 
 
+#define THANDLE_MALLOC_FUNCTION gballoc_malloc
+#define THANDLE_FREE_FUNCTION gballoc_free
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
     THANDLE_TYPE_DECLARE(A_B);
     THANDLE_TYPE_DEFINE(A_B);
-
 #ifdef __cplusplus
     }
 #endif
+#undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_FREE_FUNCTION
 
 BEGIN_TEST_SUITE(thandle_unittests)
 
