@@ -9,6 +9,10 @@ Given a type `T` previously introduced by `MU_DEFINE_STRUCT`, `thandle`'s macros
 
 `thandle` will provide macros for declaring all the needed constructs in a .h file and macros for defining the constructs in a .c file.
 
+`thandle` can de directed to use a user-indicated functions for allocating/free memory by having the preprocessor tokens `THANDLE_MALLOC_FUNCTION`/`THANDLE_FREE_FUNCTION` defined at the time of `THANDLE_TYPE_DEFINE` macro expansion. 
+
+If `THANDLE_MALLOC_FUNCTION`/`THANDLE_FREE_FUNCTION` are not defined then `thandle` uses `malloc`/`free` from <stdlib.h>.
+
 ## Exposed API
 
 ```c
