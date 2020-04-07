@@ -14,7 +14,7 @@
 #define LL_FLEX_FIELDS          \
     int, a,                     \
     char*, s,                   \
-    int, theMany[]
+    size_t, theMany[]
 
 #ifdef _MSC_VER
     /*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/en-us/library/b6fae073.aspx*/
@@ -22,7 +22,12 @@
 #endif
 MU_DEFINE_STRUCT(LL_FLEX, LL_FLEX_FIELDS);
 
+
+#define THANDLE_MALLOC_FUNCTION gballoc_malloc
+#define THANDLE_FREE_FUNCTION gballoc_free
 THANDLE_TYPE_DEFINE(LL_FLEX);
+#undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_FREE_FUNCTION
 
 static void frees_the_string(LL_FLEX* ll)
 {
@@ -64,7 +69,7 @@ THANDLE(LL_FLEX) ll_flex_create(int a, const char* s, size_t howMany)
             goto allOk;
         }
 
-        for (int i = 0; i < howMany; i++)
+        for (size_t i = 0; i < howMany; i++)
         {
             result->theMany[i] = i;
         }

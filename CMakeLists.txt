@@ -132,6 +132,7 @@ set(azure_c_util_c_files
     ./src/memory_data.c
     ./src/singlylinkedlist.c
     ./src/strings.c
+    ./src/thandle_stdlib.c
     ./src/uuid.c
     ${LOCK_C_FILE}
     ${SRW_LOCK_C_FILE}
@@ -170,6 +171,7 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/tickcounter.h
     ./inc/azure_c_util/threadapi.h
     ./inc/azure_c_util/thandle.h
+    ./inc/azure_c_util/thandle_stdlib.h
     ./inc/azure_c_util/uniqueid.h
     ./inc/azure_c_util/uuid.h
     ./inc/azure_c_util/xlogging.h

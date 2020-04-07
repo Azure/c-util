@@ -18,7 +18,12 @@
 
 MU_DEFINE_STRUCT(LL, LL_FIELDS);
 
+
+#define THANDLE_MALLOC_FUNCTION gballoc_malloc
+#define THANDLE_FREE_FUNCTION gballoc_free
 THANDLE_TYPE_DEFINE(LL);
+#undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_FREE_FUNCTION
 
 static void frees_the_string(LL* ll)
 {
