@@ -446,6 +446,7 @@ TEST_FUNCTION(THANDLE_INITIALIZE_with_lvalue_non_NULL_succeeds)
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NOT_NULL(t2);
+    ASSERT_ARE_EQUAL(void_ptr, t2, t1);
 
     ///cleanup
     THANDLE_DEC_REF(LL)(t1);

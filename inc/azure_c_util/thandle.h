@@ -34,7 +34,7 @@
 #define THANDLE(T) MU_C2(CONST_P2_CONST_,T)
 
 #define THANDLE_MACRO(T)                                \
-    typedef const T* const THANDLE(T);
+    typedef const T* const volatile THANDLE(T);
 
 #define THANDLE_EXTRA_FIELDS(type) \
     volatile COUNT_TYPE, refCount, \
@@ -46,6 +46,9 @@
 /*given a previous type T, THANDLE_MALLOC introduces a new name that mimics "malloc for T"*/
 /*the new name is used to define the name of a static function that allocates memory*/
 #define THANDLE_MALLOC(T) MU_C2(T,_MALLOC)
+
+/*given a previous type T, THANDLE_INSPECT introduces a new name that if a function that returns the THANDLE_WRAPPER_TYPE_NAME(T) - useful in debugging. The function has no side-effects.*/
+#define THANDLE_INSPECT(T) MU_C2(T,_INSPECT)
 
 /*given a previous type T, THANDLE_MALLOC_WITH_EXTRA_SIZE introduces a new name that mimics "malloc for T, where T is a flex type"*/
 /*the new name is used to define the name of a static function that allocates memory*/
@@ -95,6 +98,14 @@ static T* THANDLE_MALLOC(T)(void(*dispose)(T*))                                 
         result = &(handle_impl->data);                                                                                                                              \
     }                                                                                                                                                               \
     return result;                                                                                                                                                  \
+}                                                                                                                                                                   \
+
+/*this is only useful during debugging: from a THANDLE(T) it returns THANDLE_WRAPPER_TYPE_NAME(T) - which can be viewed in debugger - useful for seeing refCount. 
+Example: write REAL_BSDL_LOG_STRUCTURE_INSPECT(temp) in the Visual Studio watch window, where REAL_BSDL_LOG_STRUCTURE is a previously THANDLE'd type               */
+#define THANDLE_INSPECT_MACRO(T) \
+const THANDLE_WRAPPER_TYPE_NAME(T)* const THANDLE_INSPECT(T)(THANDLE(T) t)                                                                                          \
+{                                                                                                                                                                   \
+    return containingRecord(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                                                                 \
 }                                                                                                                                                                   \
 
 #define THANDLE_MALLOC_WITH_EXTRA_SIZE_MACRO(T)                                                                                                                     \
@@ -277,7 +288,8 @@ static T* THANDLE_GET_T(T)(THANDLE(T) t)                                        
     THANDLE_INC_REF_MACRO(T)                                                                                                                                        \
     THANDLE_ASSIGN_MACRO(T)                                                                                                                                         \
     THANDLE_INITIALIZE_MACRO(T)                                                                                                                                     \
-    THANDLE_GET_T_MACRO(T)
+    THANDLE_GET_T_MACRO(T)                                                                                                                                          \
+    THANDLE_INSPECT_MACRO(T)                                                                                                                                        \
 
 /*macro to be used in headers*/                                                                                       \
 /*introduces an incomplete type based on a MU_DEFINE_STRUCT(T...) previously defined;*/                               \
