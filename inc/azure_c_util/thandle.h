@@ -34,7 +34,7 @@
 #define THANDLE(T) MU_C2(CONST_P2_CONST_,T)
 
 #define THANDLE_MACRO(T)                                \
-    typedef const T* const THANDLE(T);
+    typedef const T* const volatile THANDLE(T);
 
 #define THANDLE_EXTRA_FIELDS(type) \
     volatile COUNT_TYPE, refCount, \
