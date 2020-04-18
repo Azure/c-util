@@ -165,22 +165,22 @@ Given a previously constructed `THANDLE(T)`, `THANDLE_GET_T(T)` reeturns a point
 
 **SRS_THANDLE_02_024: [** `THANDLE_GET_T(T)` shall return the same pointer as `THANDLE_MALLOC`/`THANDLE_MALLOC_WITH_EXTRA_SIZE` returned at the handle creation time. **]**
 
-###     THANDLE_COPY_MACRO(T)
+###     THANDLE_CREATE_FROM_CONTENT_MACRO(T)
 ```c
-THANDLE_COPY_MACRO(T)
-static T* THANDLE_COPY(T)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source))
+THANDLE_CREATE_FROM_CONTENT_MACRO(T)
+THANDLE(T) THANDLE_CREATE_FROM_CONTENT(T)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source))
 ```
 
-Given a previously existing T, `THANDLE_COPY_MACRO` will copy `T`'s content and return a `THANDLE(T)`.
+Given a previously existing T, `THANDLE_CREATE_FROM_CONTENT` will copy `T`'s content and return a `THANDLE(T)`.
 
-**SRS_THANDLE_02_025: [** If `source` is `NULL` then `THANDLE_COPY` shall fail and return `NULL`. **]**
+**SRS_THANDLE_02_025: [** If `source` is `NULL` then `THANDLE_CREATE_FROM_CONTENT` shall fail and return `NULL`. **]**
 
-**SRS_THANDLE_02_026: [** `THANDLE_COPY` shall allocate memory. **]**
+**SRS_THANDLE_02_026: [** `THANDLE_CREATE_FROM_CONTENT` shall allocate memory. **]**
 
-**SRS_THANDLE_02_027: [** If `copy` is `NULL` then `THANDLE_COPY` shall memcpy the content of `source` in allocated memory. **]**
+**SRS_THANDLE_02_027: [** If `copy` is `NULL` then `THANDLE_CREATE_FROM_CONTENT` shall memcpy the content of `source` in allocated memory. **]**
 
-**SRS_THANDLE_02_028: [** If `copy` is not `NULL` then `THANDLE_COPY` shall call `copy` to copy `source` into allocated memory. **]**
+**SRS_THANDLE_02_028: [** If `copy` is not `NULL` then `THANDLE_CREATE_FROM_CONTENT` shall call `copy` to copy `source` into allocated memory. **]**
 
-**SRS_THANDLE_02_029: [** `THANDLE_COPY` shall initialize the ref count to 1, succeed and return a non-`NULL` value. **]**
+**SRS_THANDLE_02_029: [** `THANDLE_CREATE_FROM_CONTENT` shall initialize the ref count to 1, succeed and return a non-`NULL` value. **]**
 
-**SRS_THANDLE_02_030: [** If there are any failures then `THANDLE_COPY` shall fail and return `NULL`. **]**
+**SRS_THANDLE_02_030: [** If there are any failures then `THANDLE_CREATE_FROM_CONTENT` shall fail and return `NULL`. **]**
