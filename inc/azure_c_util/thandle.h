@@ -54,6 +54,9 @@
 /*the new name is used to define the name of a static function that allocates memory*/
 #define THANDLE_MALLOC_WITH_EXTRA_SIZE(T) MU_C2(T,_MALLOC_WITH_EXTRA_SIZE)
 
+/*given a previous type T, THANDLE_COPY introduces a new name for the function that makes of copy of T and returns a THANDLE to the copy*/
+#define THANDLE_COPY(T) MU_C2(T,_COPY)
+
 /*given a previous type T, THANDLE_FREE introduces a new name that mimics "free for T"*/
 /*the new name is used to define the name of a static function that frees the memory allocated by THANDLE_MALLOC/THANDLE_MALLOC_WITH_EXTRA_SIZE*/
 #define THANDLE_FREE(T) MU_C2(T,_FREE)
@@ -139,6 +142,56 @@ static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(T)(void(*dispose)(T*), size_t extra_siz
     }                                                                                                                                                               \
     return result;                                                                                                                                                  \
 }                                                                                                                                                                   \
+
+#define THANDLE_COPY_MACRO(T)                                                                                                                                       \
+static THANDLE(T) THANDLE_COPY(T)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source))                                                 \
+{                                                                                                                                                                   \
+    T* result;                                                                                                                                                      \
+    if(                                                                                                                                                             \
+        (source == NULL)                                                                                                                                            \
+    )                                                                                                                                                               \
+    {                                                                                                                                                               \
+        LogError("invalid arguments const " MU_TOSTRING(T) "* source=%p, void(*dispose)(" MU_TOSTRING(T) "*)=%p, int(*copy)(" MU_TOSTRING(T) "* destination, const " MU_TOSTRING(T) "* source)=%p", source, dispose, copy);             \
+        result = NULL;                                                                                                                                              \
+    }                                                                                                                                                               \
+    else                                                                                                                                                            \
+    {                                                                                                                                                               \
+        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)THANDLE_MALLOC_FUNCTION(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                   \
+        if (handle_impl == NULL)                                                                                                                                    \
+        {                                                                                                                                                           \
+            LogError("error in malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                                                                  \
+                sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                                                                                              \
+            result = NULL;                                                                                                                                          \
+        }                                                                                                                                                           \
+        else                                                                                                                                                        \
+        {                                                                                                                                                           \
+            if(copy==NULL)                                                                                                                                          \
+            {                                                                                                                                                       \
+                (void)memcpy(&(handle_impl->data), source, sizeof(T));                                                                                              \
+                handle_impl->dispose = dispose;                                                                                                                     \
+                INIT_REF_VAR(handle_impl->refCount);                                                                                                                \
+                result = &(handle_impl->data);                                                                                                                      \
+            }                                                                                                                                                       \
+            else                                                                                                                                                    \
+            {                                                                                                                                                       \
+                if (copy(&handle_impl->data, source) != 0)                                                                                                          \
+                {                                                                                                                                                   \
+                    LogError("failure in copy(&handle_impl->data=%p, source=%p)", &handle_impl->data, source);                                                      \
+                    THANDLE_FREE_FUNCTION(handle_impl);                                                                                                             \
+                    result = NULL;                                                                                                                                  \
+                }                                                                                                                                                   \
+                else                                                                                                                                                \
+                {                                                                                                                                                   \
+                    handle_impl->dispose = dispose;                                                                                                                 \
+                    INIT_REF_VAR(handle_impl->refCount);                                                                                                            \
+                    result = &(handle_impl->data);                                                                                                                  \
+                }                                                                                                                                                   \
+            }                                                                                                                                                       \
+        }                                                                                                                                                           \
+    }                                                                                                                                                               \
+    return result;                                                                                                                                                  \
+}                                                                                                                                                                   \
+
 
 /*given a previous type T introduced by MU_DEFINE_STRUCT(T, T_FIELDS), this introduces THANDLE_FREE macro to free all used resources*/
 #define THANDLE_FREE_MACRO(T) \
@@ -283,6 +336,7 @@ static T* THANDLE_GET_T(T)(THANDLE(T) t)                                        
     MU_DEFINE_STRUCT(THANDLE_WRAPPER_TYPE_NAME(T), THANDLE_EXTRA_FIELDS(T), T, data);                                                                               \
     THANDLE_MALLOC_MACRO(T)                                                                                                                                         \
     THANDLE_MALLOC_WITH_EXTRA_SIZE_MACRO(T)                                                                                                                         \
+    THANDLE_COPY_MACRO(T)                                                                                                                                           \
     THANDLE_FREE_MACRO(T)                                                                                                                                           \
     THANDLE_DEC_REF_MACRO(T)                                                                                                                                        \
     THANDLE_INC_REF_MACRO(T)                                                                                                                                        \
