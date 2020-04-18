@@ -10,7 +10,6 @@
 #endif
 
 #include "azure_macro_utils/macro_utils.h"
-#include "azure_c_util/string_utils.h"
 
 #include "testrunnerswitcher.h"
 
@@ -84,7 +83,7 @@ static int copy_A_S(A_S* destination, const A_S* source)
 {
     int result;
     destination->a = source->a;
-    destination->s = sprintf_char("%s", source->s);
+    destination->s = (char*)malloc(strlen(source->s)+1);
 
     if (destination->s == NULL)
     {
@@ -92,6 +91,7 @@ static int copy_A_S(A_S* destination, const A_S* source)
     }
     else
     {
+        (void)memcpy(destination->s, source->s, strlen(source->s) + 1);
         result = 0;
     }
 

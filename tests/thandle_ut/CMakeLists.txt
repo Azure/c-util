@@ -13,7 +13,6 @@ set(${theseTestsName}_c_files
 thandle_user.c
 thandle_flex_user.c
 ../../src/thandle_stdlib.c
-../../adapters/string_utils.c
 )
 
 set(${theseTestsName}_h_files
