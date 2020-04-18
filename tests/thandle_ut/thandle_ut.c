@@ -10,6 +10,7 @@
 #endif
 
 #include "azure_macro_utils/macro_utils.h"
+
 #include "testrunnerswitcher.h"
 
 void* my_gballoc_malloc(size_t size)
@@ -67,6 +68,50 @@ extern "C" {
     THANDLE_TYPE_DEFINE(A_B);
 #ifdef __cplusplus
     }
+#endif
+#undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_FREE_FUNCTION
+
+
+typedef struct A_S_TAG
+{
+    int a;
+    char* s;
+}A_S;
+
+static int copy_A_S(A_S* destination, const A_S* source)
+{
+    int result;
+    destination->a = source->a;
+    destination->s = (char*)malloc(strlen(source->s)+1);
+
+    if (destination->s == NULL)
+    {
+        result = MU_FAILURE;
+    }
+    else
+    {
+        (void)memcpy(destination->s, source->s, strlen(source->s) + 1);
+        result = 0;
+    }
+
+    return result;
+}
+
+static void dispose_A_S(A_S* a_s)
+{
+    free(a_s->s);
+}
+
+#define THANDLE_MALLOC_FUNCTION gballoc_malloc
+#define THANDLE_FREE_FUNCTION gballoc_free
+#ifdef __cplusplus
+extern "C" {
+#endif
+    THANDLE_TYPE_DECLARE(A_S);
+    THANDLE_TYPE_DEFINE(A_S);
+#ifdef __cplusplus
+}
 #endif
 #undef THANDLE_MALLOC_FUNCTION
 #undef THANDLE_FREE_FUNCTION
@@ -557,5 +602,115 @@ TEST_FUNCTION(THANDLE_T_can_build_an_array)
     gballoc_free((void*)arr);
 }
 
+/*Tests_SRS_THANDLE_02_025: [ If source is NULL then THANDLE_CREATE_FROM_CONTENT shall fail and return NULL. ]*/
+TEST_FUNCTION(THANDLE_COPY_with_source_NULL_fails)
+{
+    ///arrange
+
+    ///act
+    THANDLE(A_B) result = THANDLE_CREATE_FROM_CONTENT(A_B)(NULL, NULL, NULL);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_THANDLE_02_026: [ THANDLE_CREATE_FROM_CONTENT shall allocate memory. ]*/
+/*Tests_SRS_THANDLE_02_027: [ If copy is NULL then THANDLE_CREATE_FROM_CONTENT shall memcpy the content of source in allocated memory. ]*/
+/*Tests_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(THANDLE_COPY_with_copy_NULL_succeeds)
+{
+    ///arramnge
+    A_B a_b;
+    a_b.a = 2;
+    a_b.b = 3;
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+
+    ///act
+    THANDLE(A_B) result = THANDLE_CREATE_FROM_CONTENT(A_B)(&a_b, NULL, NULL);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(int, a_b.a, result->a);
+    ASSERT_ARE_EQUAL(int, a_b.b, result->b);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    
+    ///clean
+    THANDLE_DEC_REF(A_B)(result);
+}
+
+/*Tests_SRS_THANDLE_02_026: [ THANDLE_CREATE_FROM_CONTENT shall allocate memory. ]*/
+/*Tests_SRS_THANDLE_02_028: [ If copy is not NULL then THANDLE_CREATE_FROM_CONTENT shall call copy to copy source into allocated memory. ]*/
+/*Tests_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(THANDLE_COPY_DISPOSE_with_non_NULL_succeeds)
+{
+    ///arramnge
+    char copy[] = "HELLOWORLD";
+    A_S a_s;
+    a_s.a = 22;
+    a_s.s = copy;
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is sprintf_char in copy_A_S, also known as "copy"*/
+
+    ///act
+    THANDLE(A_S) result = THANDLE_CREATE_FROM_CONTENT(A_S)(&a_s, dispose_A_S, copy_A_S);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(int, a_s.a, result->a);
+    ASSERT_ARE_EQUAL(char_ptr, a_s.s, result->s);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    THANDLE_DEC_REF(A_S)(result);
+}
+
+/*Tests_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT shall fail and return NULL. ]*/
+TEST_FUNCTION(THANDLE_COPY_when_THANDLE_MALLOC_FUNCTION_fails_it_fails)
+{
+    ///arramnge
+    char copy[] = "HELLOWORLD";
+    A_S a_s;
+    a_s.a = 22;
+    a_s.s = copy;
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)) /*this is THANDLE_MALLOC*/
+        .SetReturn(NULL);
+
+    ///act
+    THANDLE(A_S) result = THANDLE_CREATE_FROM_CONTENT(A_S)(&a_s, dispose_A_S, copy_A_S);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+/*Tests_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT shall fail and return NULL. ]*/
+TEST_FUNCTION(THANDLE_COPY_when_copy_fails_it_fails)
+{
+    ///arramnge
+    char copy[] = "HELLOWORLD";
+    A_S a_s;
+    a_s.a = 22;
+    a_s.s = copy;
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)) /*this is sprintf_char in copy_A_S, asl known as "copy"*/
+        .SetReturn(NULL);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+
+    ///act
+    THANDLE(A_S) result = THANDLE_CREATE_FROM_CONTENT(A_S)(&a_s, dispose_A_S, copy_A_S);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
 
 END_TEST_SUITE(thandle_unittests)

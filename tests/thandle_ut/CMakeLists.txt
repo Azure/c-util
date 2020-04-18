@@ -22,7 +22,5 @@ thandle_user.h
 thandle_flex_user.h
 )
 
-add_definitions(-DTHANDLE_USES_GBALLOC)
-
 build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests")
 

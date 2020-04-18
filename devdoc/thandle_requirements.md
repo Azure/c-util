@@ -5,7 +5,7 @@
 
 `thandle` is a module that provides a list of macros that help with ref counted handles.
 
-Given a type `T` previously introduced by `MU_DEFINE_STRUCT`, `thandle`'s macros will encapsulate the type, provide a HANDLE (that is, opaque type) to it which other APIs can use. The handle type is `THANDLE(T)`.
+Given a type `T` , `thandle`'s macros will encapsulate the type, provide a HANDLE (that is) to it which other APIs can use. The handle type is `THANDLE(T)`. The type provided retain `T`'s mechanism. That is, if `T` is a struct type, then `THANDLE(T)->x` is the same as `T->x`.
 
 `thandle` will provide macros for declaring all the needed constructs in a .h file and macros for defining the constructs in a .c file.
 
@@ -164,3 +164,23 @@ Given a previously constructed `THANDLE(T)`, `THANDLE_GET_T(T)` reeturns a point
 **SRS_THANDLE_02_023: [** If `t` is `NULL` then `THANDLE_GET_T(T)` shall return `NULL`. **]**
 
 **SRS_THANDLE_02_024: [** `THANDLE_GET_T(T)` shall return the same pointer as `THANDLE_MALLOC`/`THANDLE_MALLOC_WITH_EXTRA_SIZE` returned at the handle creation time. **]**
+
+###     THANDLE_CREATE_FROM_CONTENT_MACRO(T)
+```c
+THANDLE_CREATE_FROM_CONTENT_MACRO(T)
+THANDLE(T) THANDLE_CREATE_FROM_CONTENT(T)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source))
+```
+
+Given a previously existing T, `THANDLE_CREATE_FROM_CONTENT` will copy `T`'s content and return a `THANDLE(T)`.
+
+**SRS_THANDLE_02_025: [** If `source` is `NULL` then `THANDLE_CREATE_FROM_CONTENT` shall fail and return `NULL`. **]**
+
+**SRS_THANDLE_02_026: [** `THANDLE_CREATE_FROM_CONTENT` shall allocate memory. **]**
+
+**SRS_THANDLE_02_027: [** If `copy` is `NULL` then `THANDLE_CREATE_FROM_CONTENT` shall memcpy the content of `source` in allocated memory. **]**
+
+**SRS_THANDLE_02_028: [** If `copy` is not `NULL` then `THANDLE_CREATE_FROM_CONTENT` shall call `copy` to copy `source` into allocated memory. **]**
+
+**SRS_THANDLE_02_029: [** `THANDLE_CREATE_FROM_CONTENT` shall initialize the ref count to 1, succeed and return a non-`NULL` value. **]**
+
+**SRS_THANDLE_02_030: [** If there are any failures then `THANDLE_CREATE_FROM_CONTENT` shall fail and return `NULL`. **]**
