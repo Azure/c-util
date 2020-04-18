@@ -148,6 +148,7 @@ static THANDLE(T) THANDLE_COPY(T)(const T* source, void(*dispose)(T*), int(*copy
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
     if(                                                                                                                                                             \
+        /*Codes_SRS_THANDLE_02_025: [ If source is NULL then THANDLE_COPY shall fail and return NULL. ]*/                                                           \
         (source == NULL)                                                                                                                                            \
     )                                                                                                                                                               \
     {                                                                                                                                                               \
@@ -156,9 +157,11 @@ static THANDLE(T) THANDLE_COPY(T)(const T* source, void(*dispose)(T*), int(*copy
     }                                                                                                                                                               \
     else                                                                                                                                                            \
     {                                                                                                                                                               \
+        /*Codes_SRS_THANDLE_02_026: [ THANDLE_COPY shall allocate memory. ]*/                                                                                       \
         THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)THANDLE_MALLOC_FUNCTION(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                   \
         if (handle_impl == NULL)                                                                                                                                    \
         {                                                                                                                                                           \
+            /*Codes_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_COPY shall fail and return NULL. ]*/                                               \
             LogError("error in malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                                                                  \
                 sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                                                                                              \
             result = NULL;                                                                                                                                          \
@@ -167,15 +170,19 @@ static THANDLE(T) THANDLE_COPY(T)(const T* source, void(*dispose)(T*), int(*copy
         {                                                                                                                                                           \
             if(copy==NULL)                                                                                                                                          \
             {                                                                                                                                                       \
+                /*Codes_SRS_THANDLE_02_027: [ If copy is NULL then THANDLE_COPY shall memcpy the content of source in allocated memory. ]*/                         \
                 (void)memcpy(&(handle_impl->data), source, sizeof(T));                                                                                              \
                 handle_impl->dispose = dispose;                                                                                                                     \
+                /*Codes_SRS_THANDLE_02_029: [ THANDLE_COPY shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/                            \
                 INIT_REF_VAR(handle_impl->refCount);                                                                                                                \
                 result = &(handle_impl->data);                                                                                                                      \
             }                                                                                                                                                       \
             else                                                                                                                                                    \
             {                                                                                                                                                       \
+                /*Codes_SRS_THANDLE_02_028: [ If copy is not NULL then THANDLE_COPY shall call copy to copy source into allocated memory. ]*/                       \
                 if (copy(&handle_impl->data, source) != 0)                                                                                                          \
                 {                                                                                                                                                   \
+                    /*Codes_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_COPY shall fail and return NULL. ]*/                                       \
                     LogError("failure in copy(&handle_impl->data=%p, source=%p)", &handle_impl->data, source);                                                      \
                     THANDLE_FREE_FUNCTION(handle_impl);                                                                                                             \
                     result = NULL;                                                                                                                                  \
@@ -183,6 +190,7 @@ static THANDLE(T) THANDLE_COPY(T)(const T* source, void(*dispose)(T*), int(*copy
                 else                                                                                                                                                \
                 {                                                                                                                                                   \
                     handle_impl->dispose = dispose;                                                                                                                 \
+                    /*Codes_SRS_THANDLE_02_029: [ THANDLE_COPY shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/                        \
                     INIT_REF_VAR(handle_impl->refCount);                                                                                                            \
                     result = &(handle_impl->data);                                                                                                                  \
                 }                                                                                                                                                   \
