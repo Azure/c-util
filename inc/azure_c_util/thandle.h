@@ -214,7 +214,7 @@ static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(T)(const T* source, void(*dis
 #define THANDLE_CREATE_FROM_CONTENT_MACRO(T)                                                                                                                        \
 static size_t THANDLE_GET_SIZEOF(T)(const T* t)                                                                                                                     \
 {                                                                                                                                                                   \
-    return sizeof(T);                                                                                                                                               \
+    return sizeof(*t);                                                                                                                                              \
 }                                                                                                                                                                   \
 static THANDLE(T) THANDLE_CREATE_FROM_CONTENT(T)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source))                                  \
 {                                                                                                                                                                   \
