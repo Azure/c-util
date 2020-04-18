@@ -103,6 +103,11 @@ static void dispose_A_S(A_S* a_s)
     free(a_s->s);
 }
 
+#ifdef _MSC_VER
+/*warning C4200: nonstandard extension used: zero-sized array in struct/union */
+#pragma warning(disable:4200)
+#endif
+
 #define THANDLE_MALLOC_FUNCTION gballoc_malloc
 #define THANDLE_FREE_FUNCTION gballoc_free
 #ifdef __cplusplus
@@ -110,6 +115,86 @@ extern "C" {
 #endif
     THANDLE_TYPE_DECLARE(A_S);
     THANDLE_TYPE_DEFINE(A_S);
+#ifdef __cplusplus
+}
+#endif
+#undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_FREE_FUNCTION
+
+typedef struct A_FLEX_TAG
+{
+    int n;
+    int p[]; /*p has always "n" elements*/
+}A_FLEX;
+
+
+static size_t get_sizeof_A_FLEX(const A_FLEX* source)
+{
+    return sizeof(A_FLEX) + source->n * sizeof(int);
+}
+
+#define THANDLE_MALLOC_FUNCTION gballoc_malloc
+#define THANDLE_FREE_FUNCTION gballoc_free
+#ifdef __cplusplus
+extern "C" {
+#endif
+    THANDLE_TYPE_DECLARE(A_FLEX);
+    THANDLE_TYPE_DEFINE(A_FLEX);
+#ifdef __cplusplus
+}
+#endif
+#undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_FREE_FUNCTION
+
+
+/*a flex structure that has a non-default copy*/
+typedef struct A_S_FLEX_TAG
+{
+    int n;
+    char* s;
+    int p[]; /*p has always "n" elements*/
+}A_S_FLEX;
+
+static int copy_A_S_FLEX(A_S_FLEX* destination, const A_S_FLEX* source)
+{
+    int result;
+    destination->n = source->n;
+    destination->s = (char*)malloc(strlen(source->s) + 1);
+
+    if (destination->s == NULL)
+    {
+        result = MU_FAILURE;
+    }
+    else
+    {
+        (void)memcpy(destination->s, source->s, strlen(source->s) + 1);
+        for (int i = 0; i < source->n; i++)
+        {
+            destination->p[i] = source->p[i];
+        }
+        result = 0;
+    }
+
+    return result;
+}
+
+static void dispose_A_S_FLEX(A_S_FLEX* a_s)
+{
+    free(a_s->s);
+}
+
+static size_t get_sizeof_A_S_FLEX(const A_S_FLEX* source)
+{
+    return sizeof(A_S_FLEX) + source->n * sizeof(int);
+}
+
+#define THANDLE_MALLOC_FUNCTION gballoc_malloc
+#define THANDLE_FREE_FUNCTION gballoc_free
+#ifdef __cplusplus
+extern "C" {
+#endif
+    THANDLE_TYPE_DECLARE(A_S_FLEX);
+    THANDLE_TYPE_DEFINE(A_S_FLEX);
 #ifdef __cplusplus
 }
 #endif
@@ -602,8 +687,9 @@ TEST_FUNCTION(THANDLE_T_can_build_an_array)
     gballoc_free((void*)arr);
 }
 
-/*Tests_SRS_THANDLE_02_025: [ If source is NULL then THANDLE_CREATE_FROM_CONTENT shall fail and return NULL. ]*/
-TEST_FUNCTION(THANDLE_COPY_with_source_NULL_fails)
+/*Tests_SRS_THANDLE_02_025: [ If source is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/
+/*Tests_SRS_THANDLE_02_032: [ THANDLE_CREATE_FROM_CONTENT returns what THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T)); returns. ]*/
+TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_with_source_NULL_fails)
 {
     ///arrange
 
@@ -615,12 +701,13 @@ TEST_FUNCTION(THANDLE_COPY_with_source_NULL_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_THANDLE_02_026: [ THANDLE_CREATE_FROM_CONTENT shall allocate memory. ]*/
-/*Tests_SRS_THANDLE_02_027: [ If copy is NULL then THANDLE_CREATE_FROM_CONTENT shall memcpy the content of source in allocated memory. ]*/
-/*Tests_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(THANDLE_COPY_with_copy_NULL_succeeds)
+/*Tests_SRS_THANDLE_02_026: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall allocate memory. ]*/
+/*Tests_SRS_THANDLE_02_027: [ If copy is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall memcpy the content of source in allocated memory. ]*/
+/*Tests_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/
+/*Tests_SRS_THANDLE_02_032: [ THANDLE_CREATE_FROM_CONTENT returns what THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T)); returns. ]*/
+TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_with_copy_NULL_succeeds)
 {
-    ///arramnge
+    ///arrange
     A_B a_b;
     a_b.a = 2;
     a_b.b = 3;
@@ -640,12 +727,13 @@ TEST_FUNCTION(THANDLE_COPY_with_copy_NULL_succeeds)
     THANDLE_DEC_REF(A_B)(result);
 }
 
-/*Tests_SRS_THANDLE_02_026: [ THANDLE_CREATE_FROM_CONTENT shall allocate memory. ]*/
-/*Tests_SRS_THANDLE_02_028: [ If copy is not NULL then THANDLE_CREATE_FROM_CONTENT shall call copy to copy source into allocated memory. ]*/
-/*Tests_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(THANDLE_COPY_DISPOSE_with_non_NULL_succeeds)
+/*Tests_SRS_THANDLE_02_026: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall allocate memory. ]*/
+/*Tests_SRS_THANDLE_02_028: [ If copy is not NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall call copy to copy source into allocated memory. ]*/
+/*Tests_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/
+/*Tests_SRS_THANDLE_02_032: [ THANDLE_CREATE_FROM_CONTENT returns what THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T)); returns. ]*/
+TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_DISPOSE_with_non_NULL_succeeds)
 {
-    ///arramnge
+    ///arrange
     char copy[] = "HELLOWORLD";
     A_S a_s;
     a_s.a = 22;
@@ -667,10 +755,11 @@ TEST_FUNCTION(THANDLE_COPY_DISPOSE_with_non_NULL_succeeds)
     THANDLE_DEC_REF(A_S)(result);
 }
 
-/*Tests_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT shall fail and return NULL. ]*/
-TEST_FUNCTION(THANDLE_COPY_when_THANDLE_MALLOC_FUNCTION_fails_it_fails)
+/*Tests_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/
+/*Tests_SRS_THANDLE_02_032: [ THANDLE_CREATE_FROM_CONTENT returns what THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T)); returns. ]*/
+TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_when_THANDLE_MALLOC_FUNCTION_fails_it_fails)
 {
-    ///arramnge
+    ///arrange
     char copy[] = "HELLOWORLD";
     A_S a_s;
     a_s.a = 22;
@@ -689,17 +778,18 @@ TEST_FUNCTION(THANDLE_COPY_when_THANDLE_MALLOC_FUNCTION_fails_it_fails)
     ///clean
 }
 
-/*Tests_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT shall fail and return NULL. ]*/
-TEST_FUNCTION(THANDLE_COPY_when_copy_fails_it_fails)
+/*Tests_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/
+/*Tests_SRS_THANDLE_02_032: [ THANDLE_CREATE_FROM_CONTENT returns what THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T)); returns. ]*/
+TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_when_copy_fails_it_fails)
 {
-    ///arramnge
+    ///arrange
     char copy[] = "HELLOWORLD";
     A_S a_s;
     a_s.a = 22;
     a_s.s = copy;
 
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)) /*this is sprintf_char in copy_A_S, asl known as "copy"*/
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)) /*this is malloc in copy_A_S, aslo known as "copy"*/
         .SetReturn(NULL);
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
 
@@ -712,5 +802,76 @@ TEST_FUNCTION(THANDLE_COPY_when_copy_fails_it_fails)
 
     ///clean
 }
+
+/*Tests_SRS_THANDLE_02_031: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall call get_sizeof to get the needed size to store T. ]*/
+TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof)
+{
+    ///arrange
+    int n = 4; /*number of elements in the flexible array*/
+    A_FLEX* source = (A_FLEX*)my_gballoc_malloc(sizeof(A_FLEX) + n * sizeof(int));
+    ASSERT_IS_NOT_NULL(source);
+
+    source->n = 4;
+    for (int i = 0; i < n; i++)
+    {
+        source->p[i] = i * i;
+    }
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+
+    ///act
+    THANDLE(A_FLEX) copy = THANDLE_CREATE_FROM_CONTENT_FLEX(A_FLEX)(source, NULL, NULL, get_sizeof_A_FLEX);
+
+    ///assert
+    ASSERT_ARE_EQUAL(int, source->n, copy->n);
+    for (int i = 0; i < n; i++)
+    {
+        ASSERT_ARE_EQUAL(int, source->p[i], copy->p[i]);
+    }
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    my_gballoc_free(source);
+    THANDLE_DEC_REF(A_FLEX)(copy);
+}
+
+/*Tests_SRS_THANDLE_02_031: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall call get_sizeof to get the needed size to store T. ]*/
+/*Tests_SRS_THANDLE_02_028: [ If copy is not NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall call copy to copy source into allocated memory. ]*/
+TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof_2)
+{
+    ///arrange
+    int n = 4; /*number of elements in the flexible array*/
+    A_S_FLEX* source = (A_S_FLEX *)my_gballoc_malloc(sizeof(A_S_FLEX) + n * sizeof(int));
+    ASSERT_IS_NOT_NULL(source);
+
+    source->s = "abc";
+
+    source->n = 4;
+    for (int i = 0; i < n; i++)
+    {
+        source->p[i] = i * i;
+    }
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is malloc for the string*/
+
+    ///act
+    THANDLE(A_S_FLEX) copy = THANDLE_CREATE_FROM_CONTENT_FLEX(A_S_FLEX)(source, dispose_A_S_FLEX, copy_A_S_FLEX, get_sizeof_A_S_FLEX);
+
+    ///assert
+    ASSERT_ARE_EQUAL(int, source->n, copy->n);
+    for (int i = 0; i < n; i++)
+    {
+        ASSERT_ARE_EQUAL(int, source->p[i], copy->p[i]);
+    }
+    ASSERT_ARE_EQUAL(char_ptr, source->s, copy->s);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    my_gballoc_free(source);
+    THANDLE_DEC_REF(A_S_FLEX)(copy);
+}
+
+
 
 END_TEST_SUITE(thandle_unittests)
