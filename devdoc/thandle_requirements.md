@@ -49,7 +49,7 @@ The type is const - so the following incorrect assignment fails at compile time:
 #define THANDLE_TYPE_DECLARE(T)
 ```
 
-`THANDLE_TYPE_DECLARE` introduces several functions that can be used with `THANDLE(T)` type. These are `THANDLE_DEC_REF(T)`, `THANDLE_INC_REF(T)`, `THANDLE_ASSIGN(T)`, `THANDLE_INITIALIZE(T)`.
+`THANDLE_TYPE_DECLARE` introduces several functions that can be used with `THANDLE(T)` type. These are `THANDLE_DEC_REF(T)`, `THANDLE_INC_REF(T)`, `THANDLE_ASSIGN(T)`, `THANDLE_INITIALIZE(T)`, `THANDLE_MOVE(T)`.
 
 ###  THANDLE_DEC_REF(T)
 ```c
@@ -165,22 +165,62 @@ Given a previously constructed `THANDLE(T)`, `THANDLE_GET_T(T)` reeturns a point
 
 **SRS_THANDLE_02_024: [** `THANDLE_GET_T(T)` shall return the same pointer as `THANDLE_MALLOC`/`THANDLE_MALLOC_WITH_EXTRA_SIZE` returned at the handle creation time. **]**
 
-###     THANDLE_CREATE_FROM_CONTENT_MACRO(T)
+### THANDLE_CREATE_FROM_CONTENT_FLEX_MACRO(T)
+```c
+THANDLE_CREATE_FROM_CONTENT_FLEX_MACRO(T)
+THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(T)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source), size_t(*get_sizeof)(const T* source))
+```
+
+Given a previously existing T, `THANDLE_CREATE_FROM_CONTENT_FLEX` will copy `T`'s content and return a `THANDLE(T)`. The allocated memory's size for copy is given by `get_sizeof` return value.
+
+**SRS_THANDLE_02_025: [** If `source` is `NULL` then `THANDLE_CREATE_FROM_CONTENT_FLEX` shall fail and return `NULL`. **]**
+
+**SRS_THANDLE_02_031: [** `THANDLE_CREATE_FROM_CONTENT_FLEX` shall call `get_sizeof` to get the needed size to store `T`. **]**
+
+**SRS_THANDLE_02_026: [** `THANDLE_CREATE_FROM_CONTENT_FLEX` shall allocate memory. **]**
+
+**SRS_THANDLE_02_027: [** If `copy` is `NULL` then `THANDLE_CREATE_FROM_CONTENT_FLEX` shall memcpy the content of `source` in allocated memory. **]**
+
+**SRS_THANDLE_02_028: [** If `copy` is not `NULL` then `THANDLE_CREATE_FROM_CONTENT_FLEX` shall call `copy` to copy `source` into allocated memory. **]**
+
+**SRS_THANDLE_02_029: [** `THANDLE_CREATE_FROM_CONTENT_FLEX` shall initialize the ref count to 1, succeed and return a non-`NULL` value. **]**
+
+**SRS_THANDLE_02_030: [** If there are any failures then `THANDLE_CREATE_FROM_CONTENT_FLEX` shall fail and return `NULL`. **]**
+
+### THANDLE_GET_SIZEOF(T)
+```c
+static size_t THANDLE_GET_SIZEOF(T)(const T* t)
+```
+
+`THANDLE_GET_SIZEOF(T)` is a helper macro for `THANDLE_CREATE_FROM_CONTENT_MACRO(T)` (below) that returns `sizeof(T)`.
+
+
+###  THANDLE_CREATE_FROM_CONTENT_MACRO(T)
 ```c
 THANDLE_CREATE_FROM_CONTENT_MACRO(T)
 THANDLE(T) THANDLE_CREATE_FROM_CONTENT(T)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source))
 ```
 
-Given a previously existing T, `THANDLE_CREATE_FROM_CONTENT` will copy `T`'s content and return a `THANDLE(T)`.
+`THANDLE_CREATE_FROM_CONTENT_MACRO` is the same as `THANDLE_CREATE_FROM_CONTENT_FLEX_MACRO` where `get_sizeof` function returns what the C's sizeof operator evaluates to.
 
-**SRS_THANDLE_02_025: [** If `source` is `NULL` then `THANDLE_CREATE_FROM_CONTENT` shall fail and return `NULL`. **]**
+**SRS_THANDLE_02_032: [** `THANDLE_CREATE_FROM_CONTENT` returns what `THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T));` returns. **]**
 
-**SRS_THANDLE_02_026: [** `THANDLE_CREATE_FROM_CONTENT` shall allocate memory. **]**
+###  THANDLE_MOVE_MACRO(T)
+```c
+THANDLE_MOVE_MACRO(T)
+void THANDLE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2)
+```
 
-**SRS_THANDLE_02_027: [** If `copy` is `NULL` then `THANDLE_CREATE_FROM_CONTENT` shall memcpy the content of `source` in allocated memory. **]**
+`THANDLE_MOVE` moves `*t2` under `*t1` and NULLs *t2. 
 
-**SRS_THANDLE_02_028: [** If `copy` is not `NULL` then `THANDLE_CREATE_FROM_CONTENT` shall call `copy` to copy `source` into allocated memory. **]**
+**SRS_THANDLE_02_033: [** If `t1` is `NULL` then `THANDLE_MOVE` shall return. **]**
 
-**SRS_THANDLE_02_029: [** `THANDLE_CREATE_FROM_CONTENT` shall initialize the ref count to 1, succeed and return a non-`NULL` value. **]**
+**SRS_THANDLE_02_034: [** If `t2` is `NULL` then `THANDLE_MOVE` shall return. **]**
 
-**SRS_THANDLE_02_030: [** If there are any failures then `THANDLE_CREATE_FROM_CONTENT` shall fail and return `NULL`. **]**
+**SRS_THANDLE_02_035: [** If `*t1` is `NULL` and `*t2` is `NULL` then `THANDLE_MOVE` shall return. **]**
+
+**SRS_THANDLE_02_036: [** If `*t1` is `NULL` and `*t2` is not `NULL` then `THANDLE_MOVE` shall move `*t2` under `t1`, set `*t2` to `NULL` and return. **]**
+
+**SRS_THANDLE_02_037: [** If `*t1` is not `NULL` and `*t2` is `NULL` then `THANDLE_MOVE` shall `THANDLE_DEC_REF` `*t1`, set `*t1` to `NULL` and return. **]**
+
+**SRS_THANDLE_02_038: [** If `*t1` is not `NULL` and `*t2` is not `NULL` then `THANDLE_MOVE` shall `THANDLE_DEC_REF` `*t1`, set `*t1` to `*t2`, set `*t2` to `NULL` and return. **]**
