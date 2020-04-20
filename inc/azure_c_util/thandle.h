@@ -60,7 +60,7 @@
 /*given a previous type T (usually a struct with a flexible array member), THANDLE_CREATE_FROM_CONTENT_FLEX introduces a new name for the function that makes of copy of T and returns a THANDLE to the caller*/
 #define THANDLE_CREATE_FROM_CONTENT_FLEX(T) MU_C2(T,_CREATE_FROM_CONTENT_FLEX)
 
-/*given a previous type T (usually a struct with a flexible array member), THANDLE_GET_SIZEOF introduces a new name for a user functiont that returns the sizeof of T */
+/*given a previous type T (usually a struct with a flexible array member), THANDLE_GET_SIZEOF introduces a new name for a user function that returns the sizeof of T */
 #define THANDLE_GET_SIZEOF(T) MU_C2(T,_GET_SIZE_OF)
 
 /*given a previous type T, THANDLE_FREE introduces a new name that mimics "free for T"*/

@@ -187,6 +187,14 @@ Given a previously existing T, `THANDLE_CREATE_FROM_CONTENT_FLEX` will copy `T`'
 
 **SRS_THANDLE_02_030: [** If there are any failures then `THANDLE_CREATE_FROM_CONTENT_FLEX` shall fail and return `NULL`. **]**
 
+### THANDLE_GET_SIZEOF(T)
+```c
+static size_t THANDLE_GET_SIZEOF(T)(const T* t)
+```
+
+`THANDLE_GET_SIZEOF(T)` is a helper macro for `THANDLE_CREATE_FROM_CONTENT_MACRO(T)` (below) that returns `sizeof(T)`.
+
+
 ###  THANDLE_CREATE_FROM_CONTENT_MACRO(T)
 ```c
 THANDLE_CREATE_FROM_CONTENT_MACRO(T)
