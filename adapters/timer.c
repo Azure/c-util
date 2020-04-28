@@ -95,3 +95,16 @@ double timer_global_get_elapsed_ms(void)
     return (double)now.QuadPart * 1000.0 / (double)g_freq.QuadPart;
 }
 
+/*returns a time in us since "some" start.*/
+double timer_global_get_elapsed_us(void)
+{
+    while (InterlockedCompareExchange(&g_timer_state, 2, 0) != 1)
+    {
+        (void)QueryPerformanceFrequency(&g_freq); /*from MSDN:  On systems that run Windows XP or later, the function will always succeed and will thus never return zero.*/
+        (void)InterlockedExchange(&g_timer_state, 1);
+    }
+
+    LARGE_INTEGER now;
+    (void)QueryPerformanceCounter(&now);
+    return (double)now.QuadPart * 1000000.0 / (double)g_freq.QuadPart;
+}
