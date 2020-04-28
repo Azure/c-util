@@ -34,6 +34,8 @@ double real_timer_get_elapsed_ms(TIMER_HANDLE handle);
 
 double real_timer_global_get_elapsed_ms(void);
 
+double real_timer_global_get_elapsed_us(void);
+
 void real_timer_destroy(TIMER_HANDLE handle);
 
 #ifdef __cplusplus

@@ -21,6 +21,7 @@ MOCKABLE_FUNCTION(, double, timer_get_elapsed, TIMER_HANDLE, timer);
 MOCKABLE_FUNCTION(, double, timer_get_elapsed_ms, TIMER_HANDLE, timer);
 MOCKABLE_FUNCTION(, void, timer_destroy, TIMER_HANDLE, timer);
 MOCKABLE_FUNCTION(, double, timer_global_get_elapsed_ms);
+MOCKABLE_FUNCTION(, double, timer_global_get_elapsed_us);
 
 
 #ifdef __cplusplus
