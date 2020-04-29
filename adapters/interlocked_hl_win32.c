@@ -21,7 +21,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_Add64WithCeil
         (originalAddend == NULL)
         )
     {
-        LogError("invalid arguments LONGLONG volatile * Addend=%p, LONGLONG Ceiling=%I64d, LONGLONG Value=%I64d, LONGLONG* originalAddend=%p", 
+        LogError("invalid arguments LONGLONG volatile * Addend=%p, LONGLONG Ceiling=%I64d, LONGLONG Value=%I64d, LONGLONG* originalAddend=%p",
             Addend, Ceiling, Value, originalAddend);
         result = INTERLOCKED_HL_ERROR;
     }
@@ -103,11 +103,50 @@ IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForValue,
             /* Codes_SRS_INTERLOCKED_HL_01_008: [ If the value at address does not match, InterlockedHL_WaitForValue shall issue another call to WaitOnAddress. ]*/
 
             /* Codes_SRS_INTERLOCKED_HL_01_004: [ If the value at address is not equal to value, InterlockedHL_WaitForValue shall wait until the value at address changes in order to compare it again to value by using WaitOnAddress. ]*/
-            /* Codes_SRS_INTERLOCKED_HL_01_003: [ If the value at address is equal to value, InterlockedHL_WaitForValue shall return INTERLOCKED_HL_OK. ]*/
             /* Codes_SRS_INTERLOCKED_HL_01_005: [ When waiting for the value at address to change, the milliseconds argument value shall be used as timeout. ]*/
             if (!WaitOnAddress(address, &current_value, sizeof(current_value), milliseconds))
             {
                 /* Codes_SRS_INTERLOCKED_HL_01_006: [ If WaitOnAddress fails, InterlockedHL_WaitForValue shall fail and return INTERLOCKED_HL_ERROR. ]*/
+                result = INTERLOCKED_HL_ERROR;
+                break;
+            }
+        } while (1);
+    }
+
+    return result;
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForNotValue, LONG volatile*, address, LONG, value, DWORD, milliseconds)
+{
+    INTERLOCKED_HL_RESULT result;
+
+    /* Codes_SRS_INTERLOCKED_HL_42_001: [ If address is NULL, InterlockedHL_WaitForNotValue shall fail and return INTERLOCKED_HL_ERROR. ]*/
+    if (address == NULL)
+    {
+        result = INTERLOCKED_HL_ERROR;
+    }
+    else
+    {
+        LONG current_value;
+
+        do
+        {
+            /* Codes_SRS_INTERLOCKED_HL_42_005: [ When WaitOnAddress succeeds, the value at address shall be compared to the target value passed in value by using InterlockedAdd. ]*/
+            current_value = InterlockedAdd(address, 0);
+            if (current_value != value)
+            {
+                /* Codes_SRS_INTERLOCKED_HL_42_002: [ If the value at address is not equal to value, InterlockedHL_WaitForNotValue shall return INTERLOCKED_HL_OK. ]*/
+                result = INTERLOCKED_HL_OK;
+                break;
+            }
+
+            /* Codes_SRS_INTERLOCKED_HL_42_006: [ If the value at address matches, InterlockedHL_WaitForNotValue shall issue another call to WaitOnAddress. ]*/
+
+            /* Codes_SRS_INTERLOCKED_HL_42_003: [ If the value at address is equal to value, InterlockedHL_WaitForNotValue shall wait until the value at address changes in order to compare it again to value by using WaitOnAddress. ]*/
+            /* Codes_SRS_INTERLOCKED_HL_42_004: [ When waiting for the value at address to change, the milliseconds argument value shall be used as timeout. ]*/
+            if (!WaitOnAddress(address, &current_value, sizeof(current_value), milliseconds))
+            {
+                /* Codes_SRS_INTERLOCKED_HL_42_007: [ If WaitOnAddress fails, InterlockedHL_WaitForNotValue shall fail and return INTERLOCKED_HL_ERROR. ]*/
                 result = INTERLOCKED_HL_ERROR;
                 break;
             }

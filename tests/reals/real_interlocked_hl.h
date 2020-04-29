@@ -13,6 +13,7 @@
     MU_FOR_EACH_1(R2,                      \
         InterlockedHL_Add64WithCeiling, \
         InterlockedHL_WaitForValue, \
+        InterlockedHL_WaitForNotValue, \
         InterlockedHL_SetAndWake, \
         InterlockedHL_CompareExchange64If \
     )
@@ -25,9 +26,10 @@ extern "C" {
 
     INTERLOCKED_HL_RESULT real_InterlockedHL_Add64WithCeiling(LONGLONG volatile * Addend, LONGLONG Ceiling, LONGLONG Value, LONGLONG* originalAddend);
     INTERLOCKED_HL_RESULT real_InterlockedHL_WaitForValue(LONG volatile* address, LONG value, DWORD milliseconds);
+    INTERLOCKED_HL_RESULT real_InterlockedHL_WaitForNotValue(LONG volatile* address, LONG value, DWORD milliseconds);
     INTERLOCKED_HL_RESULT real_InterlockedHL_SetAndWake(LONG volatile* address, LONG value);
     INTERLOCKED_HL_RESULT real_InterlockedHL_CompareExchange64If(LONG64 volatile* target, LONG64 exchange, INTERLOCKED_COMPARE_EXCHANGE_64_IF compare, LONG64* original_target);
-    
+
 #ifdef __cplusplus
 }
 #endif
