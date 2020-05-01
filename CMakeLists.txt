@@ -131,6 +131,7 @@ set(azure_c_util_c_files
     ./src/map.c
     ./src/memory_data.c
     ./src/singlylinkedlist.c
+    ./src/sm.c
     ./src/strings.c
     ./src/thandle_stdlib.c
     ./src/uuid.c
@@ -163,6 +164,7 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/platform.h
     ./inc/azure_c_util/refcount.h
     ./inc/azure_c_util/singlylinkedlist.h
+    ./inc/azure_c_util/sm.h
     ./inc/azure_c_util/srw_lock.h
     ./inc/azure_c_util/string_utils.h
     ./inc/azure_c_util/strings.h
