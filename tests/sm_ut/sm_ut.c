@@ -23,11 +23,16 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
-#define ENABLE_MOCKS
 #include "umock_c/umock_c.h"
-#include "azure_c_util/gballoc.h"
+#include "umock_c/umocktypes_stdint.h"
 
+#define ENABLE_MOCKS
+
+#include "azure_c_util/gballoc.h"
+#include "azure_c_util/interlocked_hl.h"
 #undef ENABLE_MOCKS
+
+#include "real_interlocked_hl.h"
 
 #include "azure_c_util/sm.h"
 
@@ -44,7 +49,7 @@ static SM_HANDLE TEST_sm_create(void)
 {
     SM_HANDLE result;
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
-    result =sm_create("a");
+    result = sm_create("a");
     ASSERT_IS_NOT_NULL(result);
 
     return result;
@@ -61,6 +66,8 @@ TEST_SUITE_INITIALIZE(setsBufferTempSize)
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+
+    REGISTER_INTERLOCKED_HL_GLOBAL_MOCK_HOOK();
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
@@ -144,6 +151,31 @@ TEST_FUNCTION(sm_create_failing_case)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
+}
+
+/*Tests_SRS_SM_02_005: [ If sm is NULL then sm_destroy shall return. ]*/
+TEST_FUNCTION(sm_destroy_with_sm_NULL_returns)
+{
+    ///act
+    sm_destroy(NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_SM_02_006: [ sm_destroy shall free all used resources. ]*/
+TEST_FUNCTION(sm_destroy_destroys_all_used_resources)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+
+    STRICT_EXPECTED_CALL(gballoc_free(sm));
+
+    ///act
+    sm_destroy(sm);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_SM_02_007: [ If sm is NULL then sm_open_begin shall fail and return a non-zero value. ]*/
@@ -358,7 +390,7 @@ TEST_FUNCTION(sm_close_begin_without_open_fails)
 }
 
 /*Tests_SRS_SM_02_014: [ sm_close_begin shall set b_now to its own n. ]*/
-/*Tests_SRS_SM_02_016: [ sm_close_begin shall wait for e to reach 0. ]*/
+/*Tests_SRS_SM_02_016: [ sm_close_begin shall wait for e to be n. ]*/
 /*Tests_SRS_SM_02_017: [ sm_close_begin shall succeed and return 0. ]*/
 TEST_FUNCTION(sm_close_begin_succeeds_with_0_executing)
 {
@@ -382,22 +414,84 @@ TEST_FUNCTION(sm_close_begin_succeeds_with_0_executing)
 }
 
 /*Tests_SRS_SM_02_014: [ sm_close_begin shall set b_now to its own n. ]*/
-/*Tests_SRS_SM_02_016: [ sm_close_begin shall wait for e to reach 0. ]*/
+/*Tests_SRS_SM_02_016: [ sm_close_begin shall wait for e to be n. ]*/
 /*Tests_SRS_SM_02_017: [ sm_close_begin shall succeed and return 0. ]*/
-TEST_FUNCTION(sm_close_begin_succeeds_with_1_executing)
+TEST_FUNCTION(sm_close_begin_succeeds_with_1_executing) /*left to int tests*/
+{
+
+}
+
+/*Tests_SRS_SM_02_018: [ If sm is NULL then sm_close_end shall return. ]*/
+TEST_FUNCTION(sm_close_end_with_sm_NULL_returns)
+{
+    ///arrange
+
+    ///act
+    sm_close_end(NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+/*Tests_SRS_SM_02_019: [ sm_close_end shall switch b_now to -1. ]*/
+TEST_FUNCTION(sm_close_end_switches_b_now_to_minus_1)
 {
     ///arrange
     int result;
     SM_HANDLE sm = TEST_sm_create();
+    
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    sm_open_end(sm);
+    
+    ///act
+    result = sm_close_begin(sm);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    sm_close_end(sm);
+
+    result = sm_begin(sm); /*find b_now to -1, fails*/
+
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_02_021: [ If sm is NULL then sm_begin shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(sm_begin_with_sm_NULL_fails)
+{
+    ///arrange
+    int result;
+
+    ///act
+    result = sm_begin(NULL);
+
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+/*Tests_SRS_SM_02_022: [ If current n is greater than b_now then sm_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
+TEST_FUNCTION(sm_begin_when_b_now_is_INT64_MAX_succeeds)
+{
+    ///arrange
+    int result;
+    SM_HANDLE sm = TEST_sm_create();
+
     result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(int, 0, result);
     sm_open_end(sm);
 
+    ///act
     result = sm_begin(sm);
     ASSERT_ARE_EQUAL(int, 0, result);
-
-    ///act
-    result = sm_close_begin(sm);
 
     ///assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -405,7 +499,224 @@ TEST_FUNCTION(sm_close_begin_succeeds_with_1_executing)
 
     ///clean
     sm_end(sm);
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_02_022: [ If current n is greater than b_now then sm_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
+TEST_FUNCTION(sm_begin_without_open_fails)
+{
+    ///arrange
+    int result;
+    SM_HANDLE sm = TEST_sm_create();
+
+    ///act
+    result = sm_begin(sm);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_02_022: [ If current n is greater than b_now then sm_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
+TEST_FUNCTION(sm_begin_middle_of_open_fails)
+{
+    ///arrange
+    int result;
+    SM_HANDLE sm = TEST_sm_create();
+
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    ///act
+    result = sm_begin(sm);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_open_end(sm);
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_02_022: [ If current n is greater than b_now then sm_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
+TEST_FUNCTION(sm_begin_middle_of_close_fails)
+{
+    ///arrange
+    int result;
+    SM_HANDLE sm = TEST_sm_create();
+
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    sm_open_end(sm);
+
+    result = sm_close_begin(sm);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    ///act
+    result = sm_begin(sm);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
     sm_close_end(sm);
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_02_022: [ If current n is greater than b_now then sm_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
+TEST_FUNCTION(sm_begin_after_barrier_fails)
+{
+    ///arrange
+    int result;
+    SM_HANDLE sm = TEST_sm_create();
+
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    sm_open_end(sm);
+
+    result = sm_barrier_begin(sm);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    ///act
+    result = sm_begin(sm);
+    
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_barrier_end(sm);
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_02_024: [ If sm is NULL then sm_end shall return. ]*/
+TEST_FUNCTION(sm_end_with_sm_NULL_returns)
+{
+    ///arrange
+
+    ///act
+    sm_end(NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_SM_02_025: [ sm_end shall increment the number of executed APIs (e). ]*/
+/*Tests_SRS_SM_02_026: [ If the number of executed APIs matches the waiting barrier then sm_end shall wake up the waiting barrier. ]*/
+TEST_FUNCTION(sm_end_increments_number_of_executed_APIs)
+{
+    /*left to int tests*/
+}
+
+/*Tests_SRS_SM_02_027: [ If sm is NULL then sm_barrier_begin shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(sm_barrier_begin_with_sm_NULL_fails)
+{
+    ///arrange
+    int result;
+
+    ///act
+    result = sm_barrier_begin(NULL);
+
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_SM_02_028: [ If current n is greater than b_now then sm_barrier_begin shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(sm_barrier_begin_after_create_fails)
+{
+    ///arrange
+    int result;
+    SM_HANDLE sm = TEST_sm_create();
+
+    ///act
+    result = sm_barrier_begin(sm);
+
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_02_028: [ If current n is greater than b_now then sm_barrier_begin shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(sm_barrier_begin_after_open_fails)
+{
+    ///arrange
+    int result;
+    SM_HANDLE sm = TEST_sm_create();
+
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    ///act
+    result = sm_barrier_begin(sm);
+
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_open_end(sm);
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_02_028: [ If current n is greater than b_now then sm_barrier_begin shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(sm_barrier_begin_after_barrier_fails)
+{
+    ///arrange
+    int result;
+    SM_HANDLE sm = TEST_sm_create();
+
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    sm_open_end(sm);
+
+    result = sm_barrier_begin(sm);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    ///act
+    result = sm_barrier_begin(sm);
+
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_barrier_end(sm);
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_02_029: [ sm_barrier_begin shall wait for the completion of all the previous operations. ]*/
+/*Tests_SRS_SM_02_030: [ sm_barrier_begin shall succeed and return 0. ]*/
+TEST_FUNCTION(sm_barrier_begin_succeeds)
+{
+    ///arrange
+    int result;
+    SM_HANDLE sm = TEST_sm_create();
+
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    sm_open_end(sm);
+
+    ///act
+    result = sm_barrier_begin(sm);
+
+    ///assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
     sm_destroy(sm);
 }
 

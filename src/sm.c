@@ -46,6 +46,7 @@ SM_HANDLE sm_create(const char* name)
 
     if (result == NULL)
     {
+        /*Codes_SRS_SM_02_004: [ If there are any failures then sm_create shall fail and return NULL. ]*/
         LogError("SM name=%s, failure in malloc(sizeof(SM_HANDLE_DATA)=%zu);",
             MU_P_OR_NULL(name), sizeof(SM_HANDLE_DATA));
         /*return as is*/
@@ -72,6 +73,7 @@ void sm_destroy(SM_HANDLE sm)
     }
     else
     {
+        /*Codes_SRS_SM_02_006: [ sm_destroy shall free all used resources. ]*/
         free(sm);
     }
 }
@@ -81,6 +83,7 @@ int sm_open_begin(SM_HANDLE sm)
     int result;
     if (sm == NULL)
     {
+        /*Codes_SRS_SM_02_007: [ If sm is NULL then sm_open_begin shall fail and return a non-zero value. ]*/
         LogError("invalid argument SM_HANDLE sm=%p", sm);
         result = MU_FAILURE;
     }
@@ -91,6 +94,7 @@ int sm_open_begin(SM_HANDLE sm)
         LONG64 b_now = InterlockedCompareExchange64(&sm->b_now, 0, -1);
         if (b_now != -1)
         {
+            /*Codes_SRS_SM_02_012: [ If sm_open_end doesn't follow a call to sm_open_begin then sm_open_end shall return. ]*/
             LogError("cannot execute, name=%s, b_now=%" PRId64 "", sm->name, b_now);
             result = MU_FAILURE;
         }
@@ -146,13 +150,22 @@ int sm_close_begin(SM_HANDLE sm)
         /*Codes_SRS_SM_02_015: [ If setting b_now to n fails then sm_close_begin shall fail and return a non-zero value. ]*/
         if (n > b_now) /*note: no number is greater than INT64_MAX*/
         {
-            LogError("there's a barrier already name=%s, b_now=%" PRId64 "", sm->name, b_now);
-            result = MU_FAILURE;
+            if (b_now == -1)
+            {
+                /*Codes_SRS_SM_02_020: [ If there was no sm_open_begin/sm_open_end called previously, sm_close_begin shall fail and return a non-zero value. ]*/
+                LogError("cannot close that which was not opened name=%s, b_now=%" PRId64 "", sm->name, b_now); 
+                result = MU_FAILURE;
+            }
+            else
+            {
+                LogError("there's a barrier already name=%s, b_now=%" PRId64 "", sm->name, b_now);
+                result = MU_FAILURE;
+            }
         }
         else
         {
-            /*Codes_SRS_SM_02_016: [ sm_close_begin shall wait for e to reach 0. ]*/
-            if (InterlockedHL_WaitForValue64(&sm->e, b_now - 1, INFINITE) != INTERLOCKED_HL_OK)
+            /*Codes_SRS_SM_02_016: [ sm_close_begin shall wait for e to be n. ]*/
+            if (InterlockedHL_WaitForValue64(&sm->e, n, INFINITE) != INTERLOCKED_HL_OK)
             {
                 LogError("failure in InterlockedHL_WaitForValue(&sm->e, 0, INFINITE), name=%s, n=%" PRId64 "", sm->name, n);
                 result = MU_FAILURE;
@@ -187,6 +200,7 @@ void sm_close_end(SM_HANDLE sm)
 int sm_begin(SM_HANDLE sm)
 {
     int result;
+    /*Codes_SRS_SM_02_021: [ If sm is NULL then sm_begin shall fail and return a non-zero value. ]*/
     if (sm == NULL)
     {
         LogError("invalid argument SM_HANDLE sm=%p", sm);
@@ -196,6 +210,8 @@ int sm_begin(SM_HANDLE sm)
     {
         LONG64 n = InterlockedIncrement64(&sm->n);
         LONG64 b_now = InterlockedAdd64(&sm->b_now, 0);
+
+        /*Codes_SRS_SM_02_022: [ If current n is greater than b_now then sm_begin shall fail and return a non-zero value. ]*/
         if (n > b_now)
         {
             LogError("there's a barrier already name=%s, b_now=%" PRId64 "", sm->name, b_now);
@@ -203,16 +219,18 @@ int sm_begin(SM_HANDLE sm)
         }
         else
         {
+            /*Codes_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
             result = 0;
         }
     }
     
-    return 0;
+    return result;
 }
 
 void sm_end(SM_HANDLE sm)
 {
     int result;
+    /*Codes_SRS_SM_02_024: [ If sm is NULL then sm_end shall return. ]*/
     if (sm == NULL)
     {
         LogError("invalid argument SM_HANDLE sm=%p", sm);
@@ -220,10 +238,13 @@ void sm_end(SM_HANDLE sm)
     }
     else
     {
+        /*Codes_SRS_SM_02_025: [ sm_end shall increment the number of executed APIs (e). ]*/
         LONG64 e = InterlockedIncrement64(&sm->e);
+
+        /*Codes_SRS_SM_02_026: [ If the number of executed APIs matches the waiting barrier then sm_end shall wake up the waiting barrier. ]*/
         if (e == InterlockedAdd64(&sm->b_now, 0))
         {
-            WakeByAddressSingle((void*)&sm->e); /*this may result in extra wakes...*/
+            WakeByAddressSingle((void*)&sm->e); /*this may result in extra wakes... when b_now is incremented just before WakeByAddressSingle. Oh, well - false wake, captured (and ignored) by WaitForValue. Some other "e" will match b_now later*/
         }
     }
 }
@@ -249,7 +270,7 @@ int sm_barrier_begin(SM_HANDLE sm)
         }
         else
         {
-            if (InterlockedHL_WaitForValue64(&sm->e, n - 1, INFINITE) != INTERLOCKED_HL_OK)
+            if (InterlockedHL_WaitForValue64(&sm->e, n, INFINITE) != INTERLOCKED_HL_OK)
             {
                 LogError("failure in InterlockedHL_WaitForValue(&sm->e, n - 1, INFINITE), name=%s, n=%" PRId64 "", sm->name, n);
                 result = MU_FAILURE;

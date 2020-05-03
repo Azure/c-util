@@ -11,13 +11,11 @@ ${theseTestsName}.c
 
 set(${theseTestsName}_c_files
 ../../src/sm.c
-${INTERLOCKED_HL_C_FILE}
 )
 
 set(${theseTestsName}_h_files
 ../../inc/azure_c_util/sm.h
-${INTERLOCKED_HL_H_FILE}
 )
 
-build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS synchronization)
+build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS synchronization azure_c_util_reals)
 

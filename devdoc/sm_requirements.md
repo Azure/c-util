@@ -49,11 +49,11 @@ When there's no barrier scheduled to be executed / executing, the `b_now` is set
 
 Multiple barrier can attempt to set `b_now` to their own `n`. `InterlockedCompareExchange` will only allow one to execute. The other barries (and other APIs obviously) will be rejected from executing.
 
-`b_now` has a few special values. `b_now` == -1 means `sm` has been created. When `b_now` is -1 all APIs are prohibited from executing because their `n` is going to be greater than -1. `b_now` is set to `0` by the winning competing `open` (if there's multiple of them).
+`b_now` has a few special values. `b_now` == -1 means `sm` has been created. When `b_now` is -1 all APIs are prohibited from executing because their `n` is going to be greater than -1. `b_now` is set to `0` by the winning competing `open` (if there's multiple of them). So that means at operation "0" is always `open`.
 
-When `open` ends - `b_now` is set to `INT64_MAX` and `n` is set to 1, thus allowing other APIs to execute.
+When `open` ends - `b_now` is set to `INT64_MAX` `e` is set to 1, and the next operation will get its `n` set to "1". Setting `b_now` to `INT64_MAX` allows for all the other APIs to execute.
 
-Once a barries wins the `b_now` competition it wait for `e` (the number of finished executed APIs) to reach 0. Once that happens, the barrier can proceed to the barrier code. When the barrier finishes executionm `b_now` is raise again to `INT64_MAX`.
+Once a barries wins the `b_now` competition it wait for `e` (the number of finished executed APIs) to reach 0. Once that happens, the barrier can proceed to the barrier code. When the barrier finishes executionm `b_now` is raised again to `INT64_MAX`.
 
 `close` is in no way different than any other barrier with the exception that close reverts `b_now` to -1 ("create state") thus allowing another `open` to execute.
 
@@ -100,14 +100,14 @@ MOCKABLE_FUNCTION(, void, sm_destroy, SM_HANDLE, sm);
 
 **SRS_SM_02_005: [** If `sm` is `NULL` then `sm_destroy` shall return. **]**
 
-**SRS_SM_02_006: [** `sm shall free all used resources. **]**
+**SRS_SM_02_006: [** `sm_destroy` shall free all used resources. **]**
 
 ### sm_open_begin
 ```c
 MOCKABLE_FUNCTION(, int, sm_open_begin, SM_HANDLE, sm);
 ```
 
-`sm_open_begin` signals from the user to `sm` that "open" is requested.
+`sm_open_begin` asks from `sm` permission to enter "open" state.
 
 **SRS_SM_02_007: [** If `sm` is `NULL` then `sm_open_begin` shall fail and return a non-zero value. **]**
 
@@ -120,7 +120,7 @@ MOCKABLE_FUNCTION(, int, sm_open_begin, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm);
 ```
 
-`sm_open_end` signals from the user to `sm` that "open" has completed.
+`sm_open_end` informs `sm` that user's "open" state operations have completed.
 
 **SRS_SM_02_010: [** If `sm` is `NULL` then `sm_open_end` shall return. **]**
 
@@ -133,7 +133,7 @@ MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, int, sm_close_begin, SM_HANDLE, sm);
 ```
 
-`sm_close_begin` signals from the user than "close" is to begin.
+`sm_open_begin` asks from `sm` permission to exit "open" state.
 
 **SRS_SM_02_013: [** If `sm` is `NULL` then `sm_close_begin` shall fail and return a non-zero value. **]**
 
@@ -143,7 +143,7 @@ MOCKABLE_FUNCTION(, int, sm_close_begin, SM_HANDLE, sm);
 
 **SRS_SM_02_015: [** If setting `b_now` to `n` fails then `sm_close_begin` shall fail and return a non-zero value. **]**
 
-**SRS_SM_02_016: [** `sm_close_begin` shall wait for `e` to reach 0. **]**
+**SRS_SM_02_016: [** `sm_close_begin` shall wait for `e` to be n. **]**
 
 **SRS_SM_02_017: [** `sm_close_begin` shall succeed and return 0. **]**
 
@@ -152,8 +152,52 @@ MOCKABLE_FUNCTION(, int, sm_close_begin, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
 ```
 
-`sm_close_end` signal from the user the termination of the started "close" activities.
+`sm_close_end` informs `sm` that user's "close" state operations have completed.
 
 **SRS_SM_02_018: [** If `sm` is `NULL` then `sm_close_end` shall return. **]**
 
 **SRS_SM_02_019: [** `sm_close_end` shall switch `b_now` to `-1`. **]**
+
+### sm_begin
+```c
+MOCKABLE_FUNCTION(, int, sm_begin, SM_HANDLE, sm);
+```
+
+`sm_begin` asks from `sm` permission to execute a non-barrier operation.
+
+**SRS_SM_02_021: [** If `sm` is `NULL` then `sm_begin` shall fail and return a non-zero value. **]**
+
+**SRS_SM_02_022: [** If current `n` is greater than `b_now` then `sm_begin` shall fail and return a non-zero value. **]**
+
+**SRS_SM_02_023: [** `sm_begin` shall succeed and return 0. **]**
+
+### sm_end
+```c
+MOCKABLE_FUNCTION(, void, sm_end, SM_HANDLE, sm);
+```
+
+`sm_end` informs `sm` that user's execution of a non-barrier operations has completed.
+
+**SRS_SM_02_024: [** If `sm` is `NULL` then `sm_end` shall return. **]**
+
+**SRS_SM_02_025: [** `sm_end` shall increment the number of executed APIs (`e`). **]**
+
+**SRS_SM_02_026: [** If the number of executed APIs matches the waiting barrier then `sm_end` shall wake up the waiting barrier. **]**
+
+### sm_barrier_begin
+```c
+MOCKABLE_FUNCTION(, int, sm_barrier_begin, SM_HANDLE, sm);
+```
+
+`sm_barrier_begin` asks from `sm` permission to execute a barrier operation.
+
+**SRS_SM_02_027: [** If `sm` is `NULL` then `sm_barrier_begin` shall fail and return a non-zero value. **]**
+
+**SRS_SM_02_028: [** If current `n` is greater than `b_now` then `sm_barrier_begin` shall fail and return a non-zero value. **]**
+
+**SRS_SM_02_029: [** `sm_barrier_begin` shall wait for the completion of all the previous operations. **]**
+
+**SRS_SM_02_030: [** `sm_barrier_begin` shall succeed and return 0. **]**
+
+**SRS_SM_02_031: [** If there are any failures then `sm_barrier_begin` shall fail and return a non-zero value. **]**
+
