@@ -201,3 +201,13 @@ MOCKABLE_FUNCTION(, int, sm_barrier_begin, SM_HANDLE, sm);
 
 **SRS_SM_02_031: [** If there are any failures then `sm_barrier_begin` shall fail and return a non-zero value. **]**
 
+### sm_barrier_end
+```c
+MOCKABLE_FUNCTION(, void, sm_barrier_end, SM_HANDLE, sm);
+```
+
+`sm_barrier_end` informs `sm` that user's execution of a barrier operations has completed.
+
+**SRS_SM_02_032: [** If `sm` is `NULL` then `sm_barrier_end` shall return. **]**
+
+**SRS_SM_02_033: [** `sm_barrier_end` shall increment the number of executed operations (`e`), switch `b_now` to `INT64_MAX` and return, **]**

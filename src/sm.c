@@ -273,12 +273,15 @@ int sm_barrier_begin(SM_HANDLE sm)
             if (InterlockedHL_WaitForValue64(&sm->e, n, INFINITE) != INTERLOCKED_HL_OK)
             {
                 LogError("failure in InterlockedHL_WaitForValue(&sm->e, n - 1, INFINITE), name=%s, n=%" PRId64 "", sm->name, n);
+                /*vld.h if it is needed? yes=> go with it to other places InterlockedIncrement64(&sm->e); /*it did finish, not succesfully, but it did finish*/
                 result = MU_FAILURE;
             }
             else
             {
                 result = 0;
             }
+
+
         }
     }
 
@@ -287,12 +290,14 @@ int sm_barrier_begin(SM_HANDLE sm)
 
 void sm_barrier_end(SM_HANDLE sm)
 {
+    /*Codes_SRS_SM_02_032: [ If sm is NULL then `sm_barrier_end shall return. ]*/
     if (sm == NULL)
     {
         LogError("invalid argument SM_HANDLE sm=%p", sm);
     }
     else
     {
+        /*Codes_SRS_SM_02_033: [ sm_barrier_end shall increment the number of executed operations (e), switch b_now to INT64_MAX and return, ]*/
         InterlockedIncrement64(&sm->e);
         InterlockedExchange64(&sm->b_now, INT64_MAX);
     }
