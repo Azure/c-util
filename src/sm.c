@@ -15,7 +15,7 @@
 
 typedef struct SM_HANDLE_DATA_TAG
 {
-    volatile LONG64 /*vld.h - make it 64 bit*/ b_now; /*where's the barrier at, INT32_MAX if there's no barrier, 0 if the module is "created", "1" if it is created*/
+    volatile LONG64 b_now; /*where's the barrier at, INT64_MAX if there's no barrier, 0 if the module is "while creating", "1" if it is created*/
     volatile LONG64 n; /*where's the API number at*/
     volatile LONG64 e; /*how many of the APIs are executing, excluding the barrier*/
 
@@ -153,7 +153,7 @@ int sm_close_begin(SM_HANDLE sm)
             if (b_now == -1)
             {
                 /*Codes_SRS_SM_02_020: [ If there was no sm_open_begin/sm_open_end called previously, sm_close_begin shall fail and return a non-zero value. ]*/
-                LogError("cannot close that which was not opened name=%s, b_now=%" PRId64 "", sm->name, b_now); 
+                LogError("cannot close that which was not opened name=%s, b_now=%" PRId64 "", sm->name, b_now);
                 result = MU_FAILURE;
             }
             else
@@ -273,15 +273,12 @@ int sm_barrier_begin(SM_HANDLE sm)
             if (InterlockedHL_WaitForValue64(&sm->e, n, INFINITE) != INTERLOCKED_HL_OK)
             {
                 LogError("failure in InterlockedHL_WaitForValue(&sm->e, n - 1, INFINITE), name=%s, n=%" PRId64 "", sm->name, n);
-                /*vld.h if it is needed? yes=> go with it to other places InterlockedIncrement64(&sm->e); /*it did finish, not succesfully, but it did finish*/
                 result = MU_FAILURE;
             }
             else
             {
                 result = 0;
             }
-
-
         }
     }
 
