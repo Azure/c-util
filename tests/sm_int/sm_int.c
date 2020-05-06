@@ -28,7 +28,7 @@
 /*a non barrier thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
 /*a thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
 
-#define N_MAX_THREADS 3
+#define N_MAX_THREADS 32
 
 typedef struct ONE_WRITE_TAG
 {
@@ -75,6 +75,8 @@ TEST_FUNCTION_CLEANUP(cleanup)
 
 }
 
+static volatile LONG barrier_executions = 0;
+
 static DWORD barrier_thread(
     LPVOID lpThreadParameter
 )
@@ -85,13 +87,17 @@ static DWORD barrier_thread(
     {
         if (sm_barrier_begin(data->sm) == 0)
         {
+
             LONG source = InterlockedIncrement(&data->source_of_numbers);
             LONG index = InterlockedIncrement(&data->current_index) - 1;
 
             if (index >= ARRAY_SIZE)
             {
+                sm_barrier_end(data->sm);
                 break;
             }
+
+            InterlockedIncrement(&barrier_executions);
 
             data->writes[index].what_was_source = source;
             data->writes[index].is_barrier = true;
@@ -104,6 +110,8 @@ static DWORD barrier_thread(
     }
     return 0;
 }
+
+static volatile LONG non_barrier_executions = 0;
 
 static DWORD non_barrier_thread(
     LPVOID lpThreadParameter
@@ -120,8 +128,11 @@ static DWORD non_barrier_thread(
 
             if (index >= ARRAY_SIZE)
             {
+                sm_end(data->sm);
                 break;
             }
+
+            InterlockedIncrement(&non_barrier_executions);
 
             data->writes[index].what_was_source = source;
             data->writes[index].is_barrier = false;
@@ -135,6 +146,27 @@ static DWORD non_barrier_thread(
     return 0;
 }
 
+static void verify(THREADS_COMMON* data) /*ASSERTS*/
+{
+    size_t i;
+    LONG maxBeforeBarrier = -1;
+    for (i = 0; i < ARRAY_SIZE; i++)
+    {
+        if (!data->writes[i].is_barrier)
+        {
+            if (data->writes[i].what_was_source > maxBeforeBarrier)
+            {
+                maxBeforeBarrier = data->writes[i].what_was_source;
+            }
+        }
+        else
+        {
+            ASSERT_IS_TRUE(data->writes[i].what_was_source > maxBeforeBarrier);
+            maxBeforeBarrier = data->writes[i].what_was_source;
+        }
+    }
+}
+
 TEST_FUNCTION(sm_does_not_block)
 {
     ///arrange
@@ -144,9 +176,9 @@ TEST_FUNCTION(sm_does_not_block)
     ASSERT_IS_NOT_NULL(data->sm);
 
     ///act
-    for (uint32_t nthreads = 1; nthreads <= N_MAX_THREADS; nthreads++)
+    for (uint32_t nthreads = 1 /*vld.h change to 1*/; nthreads <= N_MAX_THREADS; nthreads++)
     {
-        for(uint32_t n_barrier_threads=0; n_barrier_threads<=nthreads; n_barrier_threads++)
+        for(uint32_t n_barrier_threads=0/*vld.h change to 1*/; n_barrier_threads<=nthreads; n_barrier_threads++)
         {
             uint32_t n_non_barrier_threads = nthreads - n_barrier_threads;
 
@@ -156,6 +188,8 @@ TEST_FUNCTION(sm_does_not_block)
             HANDLE nonBarrierThreads[N_MAX_THREADS];
             (void)memset(nonBarrierThreads, 0, sizeof(nonBarrierThreads));
 
+            (void)InterlockedExchange(&non_barrier_executions, 0);
+            (void)InterlockedExchange(&barrier_executions, 0);
             (void)InterlockedExchange(&data->source_of_numbers, 0);
             (void)InterlockedExchange(&data->current_index, 0);
             (void)memset(data->writes, 0, sizeof(data->writes));
@@ -196,6 +230,9 @@ TEST_FUNCTION(sm_does_not_block)
                     (waitResult <= WAIT_OBJECT_0 + n_barrier_threads - 1)
                 );
             }
+
+            /*verify the all numbers written by barriers are greater than all previous numbers*/
+            verify(data);
 
             ASSERT_IS_TRUE(sm_close_begin(data->sm) == 0);
             sm_close_end(data->sm);
