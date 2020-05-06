@@ -206,6 +206,9 @@ else()
     )
 endif()
 
+add_definitions(/W4)
+add_definitions(/WX)
+
 #this is the product (a library)
 add_library(azure_c_util ${azure_c_util_c_files} ${azure_c_util_h_files} ${azure_c_util_md_files})
 

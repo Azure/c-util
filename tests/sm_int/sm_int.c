@@ -11,9 +11,10 @@
 
 #include "testrunnerswitcher.h"
 
+#include "azure_c_util/timer.h"
 #include "azure_c_util/sm.h"
 
-#define ARRAY_SIZE 1000
+#define ARRAY_SIZE 10000000
 
 /*how many threads maximum. This needs to be slightly higher than the number of CPU threads because we want to see interrupted threads*/
 /*the tests will start from 1*/
@@ -44,6 +45,8 @@ typedef struct THREADS_COMMON_TAG
     volatile LONG source_of_numbers;
     volatile LONG current_index;
     ONE_WRITE writes[ARRAY_SIZE + 100];
+
+    double startTimems;
 
 }THREADS_COMMON;
 
@@ -194,6 +197,8 @@ TEST_FUNCTION(sm_does_not_block)
             (void)InterlockedExchange(&data->current_index, 0);
             (void)memset(data->writes, 0, sizeof(data->writes));
 
+            data->startTimems = timer_global_get_elapsed_ms();
+
             ASSERT_IS_TRUE(sm_open_begin(data->sm) == 0);
             sm_open_end(data->sm);
 
@@ -233,6 +238,8 @@ TEST_FUNCTION(sm_does_not_block)
 
             /*verify the all numbers written by barriers are greater than all previous numbers*/
             verify(data);
+
+            printf("took %f us, non_barrier_executions=%" PRId32 ", barrier_executions=%" PRId32 "\n", timer_global_get_elapsed_ms() - data->startTimems, InterlockedAdd(&non_barrier_executions, 0), InterlockedAdd(&barrier_executions, 0));
 
             ASSERT_IS_TRUE(sm_close_begin(data->sm) == 0);
             sm_close_end(data->sm);
