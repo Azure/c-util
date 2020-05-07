@@ -62,28 +62,6 @@ typedef struct THREADS_COMMON_TAG
 
 MU_DEFINE_ENUM(THREAD_TYPE, THREAD_TYPE_VALUE)
 
-BEGIN_TEST_SUITE(sm_int_tests)
-
-TEST_SUITE_INITIALIZE(suite_init)
-{
-
-}
-
-TEST_SUITE_CLEANUP(s)
-{
-
-}
-
-TEST_FUNCTION_INITIALIZE(init)
-{
-
-}
-
-TEST_FUNCTION_CLEANUP(cleanup)
-{
-
-}
-
 static DWORD barrier_thread(
     LPVOID lpThreadParameter
 )
@@ -122,7 +100,7 @@ static DWORD non_barrier_thread(
 {
     THREADS_COMMON* data = (THREADS_COMMON*)lpThreadParameter;
     /*a non barrier thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
-    while (InterlockedAdd(&data->current_index, 0)<ARRAY_SIZE)
+    while (InterlockedAdd(&data->current_index, 0) < ARRAY_SIZE)
     {
         if (sm_begin(data->sm) == SM_EXEC_GRANTED)
         {
@@ -168,6 +146,28 @@ static void verify(THREADS_COMMON* data) /*ASSERTS*/
             maxBeforeBarrier = data->writes[i].what_was_source;
         }
     }
+}
+
+BEGIN_TEST_SUITE(sm_int_tests)
+
+TEST_SUITE_INITIALIZE(suite_init)
+{
+
+}
+
+TEST_SUITE_CLEANUP(s)
+{
+
+}
+
+TEST_FUNCTION_INITIALIZE(init)
+{
+
+}
+
+TEST_FUNCTION_CLEANUP(cleanup)
+{
+
 }
 
 TEST_FUNCTION(sm_does_not_block)
