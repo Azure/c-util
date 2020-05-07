@@ -308,30 +308,6 @@ TEST_FUNCTION(sm_close_begin_with_sm_NULL_returns)
     ///clean
 }
 
-#if 0 /*vld.h sa vedem daca se poate face ceva cu el, da'slabe sanse, ca e barrier cu wait... care nu se face cu UT*/
-/*Tests_SRS_SM_02_014: [ sm_close_begin shall set lowest bit of b_now to 1. ]*/
-/*Tests_SRS_SM_02_015: [ If setting the lowest bit b_now to 1 fails then sm_close_begin shall return SM_EXEC_REFUSED. ]*/
-TEST_FUNCTION(sm_close_begin_while_barrier_fails_1) /*barrier is sm_open_begin in this test*/
-{
-    ///arrange
-    SM_RESULT result;
-    SM_HANDLE sm = TEST_sm_create();
-    result = sm_open_begin(sm);
-    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-
-    ///act - open after open
-    result = sm_close_begin(sm);
-
-    ///assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///clean
-    sm_open_end(sm);
-    sm_destroy(sm);
-}
-#endif
-
 /*Tests_SRS_SM_02_014: [ sm_close_begin shall set lowest bit of b_now to 1. ]*/
 /*Tests_SRS_SM_02_015: [ If setting the lowest bit b_now to 1 fails then sm_close_begin shall return SM_EXEC_REFUSED. ]*/
 TEST_FUNCTION(sm_close_begin_while_barrier_fails_2) /*barrier is sm_close_begin in this test*/
@@ -683,30 +659,6 @@ TEST_FUNCTION(sm_barrier_begin_after_create_fails)
     ///clean
     sm_destroy(sm);
 }
-
-#if 0 /*uncomment when code allows for checking sm_barrier_begin_after_open_fails*/
-/*Tests_SRS_SM_02_028: [ If current n is greater than b_now then sm_barrier_begin shall fail and return a non-zero value. ]*/
-TEST_FUNCTION(sm_barrier_begin_after_open_fails)
-{
-    ///arrange
-    SM_RESULT result;
-    SM_HANDLE sm = TEST_sm_create();
-
-    result = sm_open_begin(sm);
-    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-
-    ///act
-    result = sm_barrier_begin(sm);
-
-    ///assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///clean
-    sm_open_end(sm);
-    sm_destroy(sm);
-}
-#endif
 
 /*Tests_SRS_SM_02_028: [ If current n is greater than b_now then sm_barrier_begin shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(sm_barrier_begin_after_barrier_fails)

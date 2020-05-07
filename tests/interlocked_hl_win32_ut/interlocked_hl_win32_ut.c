@@ -456,6 +456,112 @@ TEST_FUNCTION(when_the_WaitOnAddress_fails_InterlockedHL_WaitForValue_also_fails
 }
 
 
+/* InterlockedHL_WaitForValue64 */
+
+/* Tests_SRS_INTERLOCKED_HL_02_021: [ If address is NULL then InterlockedHL_WaitForValue64 shall fail and return INTERLOCKED_HL_ERROR. ]*/
+TEST_FUNCTION(InterlockedHL_WaitForValue64_with_NULL_address_fails)
+{
+    // arrange
+    INTERLOCKED_HL_RESULT result;
+
+    // act
+    result = InterlockedHL_WaitForValue64(NULL, 0x42, INFINITE);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_ERROR, result);
+}
+
+/* Tests_SRS_INTERLOCKED_HL_02_022: [ If the value at address is equal to value then InterlockedHL_WaitForValue64 shall return INTERLOCKED_HL_OK. ]*/
+TEST_FUNCTION(when_the_value_equals_target_value_InterlockedHL_WaitForValue64_returns_OK)
+{
+    // arrange
+    INTERLOCKED_HL_RESULT result;
+    LONG64 value = 0x42;
+
+    STRICT_EXPECTED_CALL(InterlockedAdd64(&value, 0));
+
+    // act
+    result = InterlockedHL_WaitForValue64(&value, 0x42, INFINITE);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
+}
+
+/* Tests_SRS_INTERLOCKED_HL_02_023: [ If the value at address is not equal to value, InterlockedHL_WaitForValue64 shall wait until the value at address changes in order to compare it again to value by using WaitOnAddress. ]*/
+/* Tests_SRS_INTERLOCKED_HL_02_024: [ When waiting for the value at address to change, the milliseconds argument value shall be used as timeout. ]*/
+/* Tests_SRS_INTERLOCKED_HL_02_025: [ When WaitOnAddress succeeds, the value at address shall be compared to the target value passed in value by using InterlockedAdd64. ]*/
+TEST_FUNCTION(when_the_value_equals_target_value_after_waiting_InterlockedHL_WaitForValue64_returns_OK)
+{
+    // arrange
+    INTERLOCKED_HL_RESULT result;
+    LONG64 value = 0x41;
+    LONG64 target_value = 0x42;
+
+    STRICT_EXPECTED_CALL(InterlockedAdd64(&value, 0));
+    STRICT_EXPECTED_CALL(WaitOnAddress(&value, IGNORED_ARG, sizeof(LONG64), INFINITE))
+        .CopyOutArgumentBuffer_Address(&target_value, sizeof(LONG64));
+    STRICT_EXPECTED_CALL(InterlockedAdd64(&value, 0));
+
+    // act
+    result = InterlockedHL_WaitForValue64(&value, 0x42, INFINITE);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
+}
+
+/* Tests_SRS_INTERLOCKED_HL_02_022: [ If the value at address is equal to value then InterlockedHL_WaitForValue64 shall return INTERLOCKED_HL_OK. ]*/
+/* Tests_SRS_INTERLOCKED_HL_02_024: [ When waiting for the value at address to change, the milliseconds argument value shall be used as timeout. ]*/
+/* Tests_SRS_INTERLOCKED_HL_02_025: [ When WaitOnAddress succeeds, the value at address shall be compared to the target value passed in value by using InterlockedAdd64. ]*/
+/* Tests_SRS_INTERLOCKED_HL_02_026: [ If the value at address does not match, InterlockedHL_WaitForValue64 shall issue another call to WaitOnAddress. ]*/
+TEST_FUNCTION(when_the_value_after_a_succesfull_wait_on_address_64_does_not_equal_target_a_new_wait_for_address_shall_be_issued)
+{
+    // arrange
+    INTERLOCKED_HL_RESULT result;
+    LONG64 value = 0x40;
+    LONG64 intermediate_value = 0x41;
+    LONG64 final_value = 0x42;
+
+    STRICT_EXPECTED_CALL(InterlockedAdd64(&value, 0));
+    STRICT_EXPECTED_CALL(WaitOnAddress(&value, IGNORED_ARG, sizeof(LONG64), INFINITE))
+        .CopyOutArgumentBuffer_Address(&intermediate_value, sizeof(LONG64));
+    STRICT_EXPECTED_CALL(InterlockedAdd64(&value, 0));
+    STRICT_EXPECTED_CALL(WaitOnAddress(&value, IGNORED_ARG, sizeof(LONG64), INFINITE))
+        .CopyOutArgumentBuffer_Address(&final_value, sizeof(LONG64));
+    STRICT_EXPECTED_CALL(InterlockedAdd64(&value, 0));
+
+    // act
+    result = InterlockedHL_WaitForValue64(&value, 0x42, INFINITE);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
+}
+
+/* Tests_SRS_INTERLOCKED_HL_02_027: [ If WaitOnAddress fails, InterlockedHL_WaitForValue64 shall fail and return INTERLOCKED_HL_ERROR. ]*/
+TEST_FUNCTION(when_the_WaitOnAddress_fails_InterlockedHL_WaitForValue64_also_fails)
+{
+    // arrange
+    INTERLOCKED_HL_RESULT result;
+    LONG64 value = 0x40;
+    LONG64 intermediate_value = 0x41;
+
+    STRICT_EXPECTED_CALL(InterlockedAdd64(&value, 0));
+    STRICT_EXPECTED_CALL(WaitOnAddress(&value, IGNORED_ARG, sizeof(LONG64), INFINITE))
+        .CopyOutArgumentBuffer_Address(&intermediate_value, sizeof(LONG64))
+        .SetReturn(FALSE);
+
+    // act
+    result = InterlockedHL_WaitForValue64(&value, 0x42, INFINITE);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_ERROR, result);
+}
+
+
 /* InterlockedHL_WaitForNotValue */
 
 /* Tests_SRS_INTERLOCKED_HL_42_001: [ If address is NULL, InterlockedHL_WaitForNotValue shall fail and return INTERLOCKED_HL_ERROR. ]*/
