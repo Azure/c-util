@@ -15,10 +15,10 @@
 
 typedef struct SM_HANDLE_DATA_TAG
 {
-    volatile LONG64 b_now; /*where's the barrier at, INT64_MAX if there's no barrier, 0 if the module is "while creating", "1" if it is created*/
-    volatile LONG64 n; /*where's the API number at*/
-    volatile LONG64 e; /*how many of the APIs are executing, excluding the barrier*/
-    volatile LONG e_done;
+    volatile LONG64 b_now; /*where's the barrier at, starts at 0. 1 is when barrier is active. 2,4,6... barrier inactive. 3,5,7... barrier active*/
+    volatile LONG64 n; /*number of API calls to barriers and non-barriers alike*/
+    volatile LONG64 e; /*how many of the APIs have executed. Both abrriers and non-barriers set this*/
+    volatile LONG e_done; /*varible that is signalled when e == n-1 (so a barrier is signaled that it might be allowed to proceed with execution */
 #ifdef _MSC_VER
 /*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/en-us/library/b6fae073.aspx*/
 #pragma warning(disable:4200)
@@ -123,6 +123,7 @@ void sm_open_end(SM_HANDLE sm)
     }
 }
 
+/*aims at getting a stable "e" for a stable "n" and returns the difference between them*/
 static LONG64 get_n_minus_e(SM_HANDLE sm)
 {
     LONG64 e1, e2, n1, n2;
@@ -140,11 +141,49 @@ static LONG64 get_n_minus_e(SM_HANDLE sm)
     return n1 - e1;
 }
 
+/*sm_barrier_begin calls this. Also sm_close calls this, because _close is nothing else but another barrier*/
+static int sm_barrier_begin_internal(SM_HANDLE sm)
+{
+    int result;
+    LONG64 b_now = InterlockedOr64(&sm->b_now, 1);
+
+    if ((b_now & 1) == 0)
+    {
+        InterlockedExchange(&sm->e_done, 0);
+
+        LONG64 n = InterlockedIncrement64(&sm->n);
+        (void)n;
+
+        result = 0;
+
+        /*drain previous executions*/
+        while (get_n_minus_e(sm) != 1)
+        {
+            if (InterlockedHL_WaitForValue(&sm->e_done, 1, INFINITE) != INTERLOCKED_HL_OK)
+            {
+                LogError("failure in InterlockedHL_WaitForValue(&sm->e, n - 1, INFINITE), name=%s, n=%" PRId64 "", sm->name, n);
+                InterlockedIncrement64(&sm->e); /*this is pretty fatal here - the wait failed... */
+                result = MU_FAILURE;
+                break;
+            }
+            else
+            {
+                /*will be checked up*/
+            }
+        }
+    }
+    else
+    {
+        LogError("there's a barrier already name=%s, b_now=%" PRId64 "", sm->name, b_now);
+        result = MU_FAILURE;
+    }
+    return result;
+}
+
+
 int sm_close_begin(SM_HANDLE sm)
 {
-    (void)sm;
-    return 0;
-#if 0
+
     int result;
     /*Codes_SRS_SM_02_013: [ If sm is NULL then sm_close_begin shall fail and return a non-zero value. ]*/
     if (sm == NULL)
@@ -154,32 +193,9 @@ int sm_close_begin(SM_HANDLE sm)
     }
     else
     {
-        /*Codes_SRS_SM_02_014: [ sm_close_begin shall set b_now to its own n. ]*/
-        LONG64 b_now = InterlockedCompareExchange64(&sm->b_now, INT64_MAX -1, INT64_MAX);
-        if (b_now == INT64_MAX)
-        {
-            LONG64 n = InterlockedIncrement64(&sm->n);
-            /*Codes_SRS_SM_02_016: [ sm_close_begin shall wait for e to be n. ]*/
-            if (InterlockedHL_WaitForValue64(&sm->e_done, n, INFINITE) != INTERLOCKED_HL_OK)
-            {
-                LogError("failure in InterlockedHL_WaitForValue(&sm->e, 0, INFINITE), name=%s, n=%" PRId64 "", sm->name, n);
-                result = MU_FAILURE;
-            }
-            else
-            {
-                /*Codes_SRS_SM_02_017: [ sm_close_begin shall succeed and return 0. ]*/
-                result = 0;
-            }
-        }
-        else
-        {
-            /*barrier is setting*/
-            LogError("there's a barrier setting already name=%s, b_now=%" PRId64 "", sm->name, b_now);
-            result = MU_FAILURE;
-        }
+        result = sm_barrier_begin_internal(sm);
     }
     return result;
-#endif
 }
 
 void sm_close_end(SM_HANDLE sm)
@@ -220,16 +236,16 @@ int sm_begin(SM_HANDLE sm)
         }
         else
         {
-            LONG64 n = InterlockedIncrement64(&sm->n);
-            (void)n;
+            (void)InterlockedIncrement64(&sm->n);
+
             LONG64 b_now_2 = InterlockedAdd64(&sm->b_now, 0);
             if (b_now_2 != b_now_1)
             {
                 InterlockedIncrement64(&sm->e);
-                //if (get_n_minus_e(sm) == 1)
-                //{
-                //    InterlockedHL_SetAndWake((void*)&sm->e_done, 1);
-                //}
+                if (get_n_minus_e(sm) == 1)
+                {
+                    InterlockedHL_SetAndWake((void*)&sm->e_done, 1);
+                }
                 result = MU_FAILURE;
             }
             else
@@ -254,14 +270,13 @@ void sm_end(SM_HANDLE sm)
     else
     {
         /*Codes_SRS_SM_02_025: [ sm_end shall increment the number of executed APIs (e). ]*/
-        LONG64 e = InterlockedIncrement64(&sm->e);
-        (void)e;
+        (void)InterlockedIncrement64(&sm->e);
 
         /*Codes_SRS_SM_02_026: [ If the number of executed APIs matches the waiting barrier then sm_end shall wake up the waiting barrier. ]*/
-        //if (get_n_minus_e(sm) == 1)
-        //{
-        //    InterlockedHL_SetAndWake((void*)&sm->e_done, 1);
-        //}
+        if (get_n_minus_e(sm) == 1)
+        {
+            InterlockedHL_SetAndWake((void*)&sm->e_done, 1);
+        }
     }
 }
 
@@ -275,42 +290,7 @@ int sm_barrier_begin(SM_HANDLE sm)
     }
     else
     {
-        LONG64 b_now = InterlockedOr64(&sm->b_now, 1);
-
-        if ((b_now & 1) == 0)
-        {
-            InterlockedExchange(&sm->e_done, 0);
-
-            LONG64 n = InterlockedIncrement64(&sm->n);
-            (void)n;
-            //if (get_n_minus_e(sm) == 1)
-            //{
-            //    result = 0;
-            //}
-            //else
-            //{
-            //    do
-            //    {
-            //        if (InterlockedHL_WaitForValue(&sm->e_done, 1, INFINITE) != INTERLOCKED_HL_OK)
-            //        {
-            //            LogError("failure in InterlockedHL_WaitForValue(&sm->e, n - 1, INFINITE), name=%s, n=%" PRId64 "", sm->name, n);
-            //            InterlockedIncrement64(&sm->e); /*this is pretty fatal here - the wait failed... */
-            //            result = MU_FAILURE;
-            //        }
-            //        else
-            //        {
-            //            result = 0;
-            //        }
-            //    }
-            //}
-            while (get_n_minus_e(sm) != 1);
-            result = 0;
-        }
-        else
-        {
-            LogError("there's a barrier already name=%s, b_now=%" PRId64 "", sm->name, b_now);
-            result = MU_FAILURE;
-        }
+        return sm_barrier_begin_internal(sm);
     }
 
     return result;

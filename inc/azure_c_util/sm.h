@@ -4,6 +4,8 @@
 #ifndef SM_H
 #define SM_H
 
+#include "azure_macro_utils/macro_utils.h"
+
 #ifdef __cplusplus
 extern "C"
 {
