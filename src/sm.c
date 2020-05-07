@@ -15,7 +15,6 @@
 
 typedef struct SM_HANDLE_DATA_TAG
 {
-    volatile LONG64 b_source; /*barriers are ordered themselves, they start at 1. every barrier_begin increments b_source, tries to switch b_now to self*/
     volatile LONG64 b_now; /*where's the barrier at, INT64_MAX if there's no barrier, 0 if the module is "while creating", "1" if it is created*/
     volatile LONG64 n; /*where's the API number at*/
     volatile LONG64 e; /*how many of the APIs are executing, excluding the barrier*/
@@ -59,7 +58,6 @@ SM_HANDLE sm_create(const char* name)
         (void)InterlockedExchange64(&result->n, 0);
         (void)InterlockedExchange64(&result->e, 0);
         (void)InterlockedExchange(&result->e_done, 0);
-        (void)InterlockedExchange64(&result->b_source, 0);
         (void)memcpy(result->name, name, flexSize);
         /*return as is*/
     }
@@ -120,16 +118,8 @@ void sm_open_end(SM_HANDLE sm)
     else
     {
         /*Codes_SRS_SM_02_011: [ sm_open_end shall set b_now to INT64_MAX and return. ]*/
-        LONG64 b_now = InterlockedCompareExchange64(&sm->b_now, INT64_MAX, 0);
-        if (b_now != 0)
-        {
-            LogError("cannot end that which has no begin, name=%s, b_now=%" PRId64 "", sm->name, b_now);
-        }
-        else
-        {
-            InterlockedIncrement64(&sm->e);
-            /*b_now now allows calls to flow*/
-        }
+        InterlockedIncrement64(&sm->e);
+        InterlockedExchange64(&sm->b_now, 0);
     }
 }
 
@@ -207,7 +197,6 @@ void sm_close_end(SM_HANDLE sm)
         (void)InterlockedExchange64(&sm->n, 0);
         (void)InterlockedExchange64(&sm->e, 0);
         (void)InterlockedExchange(&sm->e_done, 0);
-        (void)InterlockedExchange64(&sm->b_source, 0);
     }
 }
 
@@ -222,9 +211,9 @@ int sm_begin(SM_HANDLE sm)
     }
     else
     {
-        LONG64 b_now_1 = InterlockedCompareExchange64(&sm->b_now, INT64_MAX, INT64_MAX);
+        LONG64 b_now_1 = InterlockedAdd64(&sm->b_now, 0);
 
-        if (b_now_1 != INT64_MAX)
+        if ((b_now_1 & 1)==1)
         {
             LogError("there's a barrier already name=%s, b_now=%" PRId64 "", sm->name, b_now_1);
             result = MU_FAILURE;
@@ -233,14 +222,14 @@ int sm_begin(SM_HANDLE sm)
         {
             LONG64 n = InterlockedIncrement64(&sm->n);
             (void)n;
-            LONG64 b_now_2 = InterlockedCompareExchange64(&sm->b_now, INT64_MAX, INT64_MAX);
+            LONG64 b_now_2 = InterlockedAdd64(&sm->b_now, 0);
             if (b_now_2 != b_now_1)
             {
                 InterlockedIncrement64(&sm->e);
-                if (get_n_minus_e(sm) == 1)
-                {
-                    InterlockedHL_SetAndWake((void*)&sm->e_done, 1);
-                }
+                //if (get_n_minus_e(sm) == 1)
+                //{
+                //    InterlockedHL_SetAndWake((void*)&sm->e_done, 1);
+                //}
                 result = MU_FAILURE;
             }
             else
@@ -269,10 +258,10 @@ void sm_end(SM_HANDLE sm)
         (void)e;
 
         /*Codes_SRS_SM_02_026: [ If the number of executed APIs matches the waiting barrier then sm_end shall wake up the waiting barrier. ]*/
-        if (get_n_minus_e(sm) == 1)
-        {
-            InterlockedHL_SetAndWake((void*)&sm->e_done, 1);
-        }
+        //if (get_n_minus_e(sm) == 1)
+        //{
+        //    InterlockedHL_SetAndWake((void*)&sm->e_done, 1);
+        //}
     }
 }
 
@@ -286,37 +275,36 @@ int sm_barrier_begin(SM_HANDLE sm)
     }
     else
     {
-        LONG64 b_source = InterlockedIncrement64(&sm->b_source);
+        LONG64 b_now = InterlockedOr64(&sm->b_now, 1);
 
-        LONG64 b_now = InterlockedCompareExchange64(&sm->b_now, b_source, INT64_MAX);
-
-        if (b_now == INT64_MAX)
+        if ((b_now & 1) == 0)
         {
-
             InterlockedExchange(&sm->e_done, 0);
 
             LONG64 n = InterlockedIncrement64(&sm->n);
-
-            LONG64 e = InterlockedAdd64(&sm->e, 0);
-            (void)e;
-
-            if (get_n_minus_e(sm) == 1)
-            {
-                result = 0;
-            }
-            else
-            {
-                if (InterlockedHL_WaitForValue(&sm->e_done, 1, INFINITE) != INTERLOCKED_HL_OK)
-                {
-                    LogError("failure in InterlockedHL_WaitForValue(&sm->e, n - 1, INFINITE), name=%s, n=%" PRId64 "", sm->name, n);
-                    InterlockedIncrement64(&sm->e); /*this is pretty fatal here - the wait failed... */
-                    result = MU_FAILURE;
-                }
-                else
-                {
-                    result = 0;
-                }
-            }
+            (void)n;
+            //if (get_n_minus_e(sm) == 1)
+            //{
+            //    result = 0;
+            //}
+            //else
+            //{
+            //    do
+            //    {
+            //        if (InterlockedHL_WaitForValue(&sm->e_done, 1, INFINITE) != INTERLOCKED_HL_OK)
+            //        {
+            //            LogError("failure in InterlockedHL_WaitForValue(&sm->e, n - 1, INFINITE), name=%s, n=%" PRId64 "", sm->name, n);
+            //            InterlockedIncrement64(&sm->e); /*this is pretty fatal here - the wait failed... */
+            //            result = MU_FAILURE;
+            //        }
+            //        else
+            //        {
+            //            result = 0;
+            //        }
+            //    }
+            //}
+            while (get_n_minus_e(sm) != 1);
+            result = 0;
         }
         else
         {
@@ -340,6 +328,6 @@ void sm_barrier_end(SM_HANDLE sm)
         /*Codes_SRS_SM_02_033: [ sm_barrier_end shall increment the number of executed operations (e), switch b_now to INT64_MAX and return, ]*/
         InterlockedIncrement64(&sm->e);
         InterlockedExchange(&sm->e_done, 0);
-        InterlockedExchange64(&sm->b_now, INT64_MAX);
+        InterlockedIncrement64(&sm->b_now);
     }
 }

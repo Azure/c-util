@@ -14,7 +14,7 @@
 #include "azure_c_util/timer.h"
 #include "azure_c_util/sm.h"
 
-#define ARRAY_SIZE 10000000
+#define ARRAY_SIZE 1000000
 
 /*how many threads maximum. This needs to be slightly higher than the number of CPU threads because we want to see interrupted threads*/
 /*the tests will start from 1*/
@@ -151,8 +151,8 @@ static DWORD non_barrier_thread(
 
 static void verify(THREADS_COMMON* data) /*ASSERTS*/
 {
-    size_t i;
-    LONG maxBeforeBarrier = -1;
+    volatile size_t i;
+    volatile LONG maxBeforeBarrier = -1;
     for (i = 0; i < ARRAY_SIZE; i++)
     {
         if (!data->writes[i].is_barrier)
@@ -179,9 +179,10 @@ TEST_FUNCTION(sm_does_not_block)
     ASSERT_IS_NOT_NULL(data->sm);
 
     ///act
-    for (uint32_t nthreads = 1 /*vld.h change to 1*/; nthreads <= N_MAX_THREADS; nthreads++)
+    for (uint32_t nthreads = 1; nthreads <= N_MAX_THREADS; nthreads++)
     {
-        for(uint32_t n_barrier_threads=0/*vld.h change to 1*/; n_barrier_threads<=nthreads; n_barrier_threads++)
+        for(uint32_t n_barrier_threads=0; n_barrier_threads<=nthreads; n_barrier_threads++)
+        //for (uint32_t n_barrier_threads = 1; n_barrier_threads <= 1; n_barrier_threads++)
         {
             uint32_t n_non_barrier_threads = nthreads - n_barrier_threads;
 
@@ -239,7 +240,7 @@ TEST_FUNCTION(sm_does_not_block)
             /*verify the all numbers written by barriers are greater than all previous numbers*/
             verify(data);
 
-            printf("took %f us, non_barrier_executions=%" PRId32 ", barrier_executions=%" PRId32 "\n", timer_global_get_elapsed_ms() - data->startTimems, InterlockedAdd(&non_barrier_executions, 0), InterlockedAdd(&barrier_executions, 0));
+            printf("took %f ms, non_barrier_executions=%" PRId32 ", barrier_executions=%" PRId32 "\n", timer_global_get_elapsed_ms() - data->startTimems, InterlockedAdd(&non_barrier_executions, 0), InterlockedAdd(&barrier_executions, 0));
 
             ASSERT_IS_TRUE(sm_close_begin(data->sm) == 0);
             sm_close_end(data->sm);
