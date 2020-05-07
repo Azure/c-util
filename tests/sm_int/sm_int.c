@@ -89,7 +89,7 @@ static DWORD barrier_thread(
     /*a non barrier thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
     while (InterlockedAdd(&data->current_index, 0) < ARRAY_SIZE)
     {
-        if (sm_barrier_begin(data->sm) == 0)
+        if (sm_barrier_begin(data->sm) == SM_EXEC_GRANTED)
         {
 
             LONG source = InterlockedIncrement(&data->source_of_numbers);
@@ -125,7 +125,7 @@ static DWORD non_barrier_thread(
     /*a non barrier thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
     while (InterlockedAdd(&data->current_index, 0)<ARRAY_SIZE)
     {
-        if (sm_begin(data->sm) == 0)
+        if (sm_begin(data->sm) == SM_EXEC_GRANTED)
         {
             LONG source = InterlockedIncrement(&data->source_of_numbers);
             LONG index = InterlockedIncrement(&data->current_index) - 1;
@@ -202,7 +202,7 @@ TEST_FUNCTION(sm_does_not_block)
 
             data->startTimems = timer_global_get_elapsed_ms();
 
-            ASSERT_IS_TRUE(sm_open_begin(data->sm) == 0);
+            ASSERT_IS_TRUE(sm_open_begin(data->sm) == SM_EXEC_GRANTED);
             sm_open_end(data->sm);
 
             printf("\nnthreads=%" PRIu32 " n_barrier_threads=%" PRIu32 " n_non_barrier_threads=%" PRIu32 "\n", nthreads, n_barrier_threads, n_non_barrier_threads);
@@ -248,7 +248,7 @@ TEST_FUNCTION(sm_does_not_block)
                 InterlockedAdd(&barrier_grants, 0),
                 InterlockedAdd64(&barrier_refusals, 0));
 
-            ASSERT_IS_TRUE(sm_close_begin(data->sm) == 0);
+            ASSERT_IS_TRUE(sm_close_begin(data->sm) == SM_EXEC_GRANTED);
             sm_close_end(data->sm);
         }
     }
