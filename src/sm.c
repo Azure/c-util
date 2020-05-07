@@ -18,7 +18,7 @@ typedef struct SM_HANDLE_DATA_TAG
     volatile LONG64 b_now; /*where's the barrier at, starts at 0. 1 is when barrier is active. 2,4,6... barrier inactive. 3,5,7... barrier active*/
     volatile LONG64 n; /*number of API calls to barriers and non-barriers alike*/
     volatile LONG64 e; /*how many of the APIs have executed. Both abrriers and non-barriers set this*/
-    volatile LONG e_done; /*varible that is signalled when e == n-1 (so a barrier is signaled that it might be allowed to proceed with execution */
+    volatile LONG e_done; /*varible that is signalled when e == n-1 (so a barrier is signaled that it might be allowed to proceed with execution)*/
 #ifdef _MSC_VER
 /*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/en-us/library/b6fae073.aspx*/
 #pragma warning(disable:4200)
