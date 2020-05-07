@@ -78,7 +78,8 @@ TEST_FUNCTION_CLEANUP(cleanup)
 
 }
 
-static volatile LONG barrier_executions = 0;
+static volatile LONG barrier_grants = 0;
+static volatile LONG64 barrier_refusals = 0;
 
 static DWORD barrier_thread(
     LPVOID lpThreadParameter
@@ -93,6 +94,7 @@ static DWORD barrier_thread(
 
             LONG source = InterlockedIncrement(&data->source_of_numbers);
             LONG index = InterlockedIncrement(&data->current_index) - 1;
+            InterlockedIncrement(&barrier_grants);
 
             if (index >= ARRAY_SIZE)
             {
@@ -100,21 +102,20 @@ static DWORD barrier_thread(
                 break;
             }
 
-            InterlockedIncrement(&barrier_executions);
-
             data->writes[index].what_was_source = source;
             data->writes[index].is_barrier = true;
             sm_barrier_end(data->sm);
         }
         else
         {
-            /*not granted execution, so just hammer*/
+            InterlockedIncrement64(&barrier_refusals);
         }
     }
     return 0;
 }
 
-static volatile LONG non_barrier_executions = 0;
+static volatile LONG non_barrier_grants = 0;
+static volatile LONG64 non_barrier_refusals = 0;
 
 static DWORD non_barrier_thread(
     LPVOID lpThreadParameter
@@ -128,14 +129,13 @@ static DWORD non_barrier_thread(
         {
             LONG source = InterlockedIncrement(&data->source_of_numbers);
             LONG index = InterlockedIncrement(&data->current_index) - 1;
+            InterlockedIncrement(&non_barrier_grants);
 
             if (index >= ARRAY_SIZE)
             {
                 sm_end(data->sm);
                 break;
             }
-
-            InterlockedIncrement(&non_barrier_executions);
 
             data->writes[index].what_was_source = source;
             data->writes[index].is_barrier = false;
@@ -144,6 +144,7 @@ static DWORD non_barrier_thread(
         else
         {
             /*not granted execution, so just hammer*/
+            InterlockedIncrement64(&non_barrier_refusals);
         }
     }
     return 0;
@@ -191,8 +192,10 @@ TEST_FUNCTION(sm_does_not_block)
             HANDLE nonBarrierThreads[N_MAX_THREADS];
             (void)memset(nonBarrierThreads, 0, sizeof(nonBarrierThreads));
 
-            (void)InterlockedExchange(&non_barrier_executions, 0);
-            (void)InterlockedExchange(&barrier_executions, 0);
+            (void)InterlockedExchange(&non_barrier_grants, 0);
+            (void)InterlockedExchange64(&non_barrier_refusals, 0);
+            (void)InterlockedExchange(&barrier_grants, 0);
+            (void)InterlockedExchange64(&barrier_refusals, 0);
             (void)InterlockedExchange(&data->source_of_numbers, 0);
             (void)InterlockedExchange(&data->current_index, 0);
             (void)memset(data->writes, 0, sizeof(data->writes));
@@ -239,7 +242,11 @@ TEST_FUNCTION(sm_does_not_block)
             /*verify the all numbers written by barriers are greater than all previous numbers*/
             verify(data);
 
-            printf("took %f ms, non_barrier_executions=%" PRId32 ", barrier_executions=%" PRId32 "\n", timer_global_get_elapsed_ms() - data->startTimems, InterlockedAdd(&non_barrier_executions, 0), InterlockedAdd(&barrier_executions, 0));
+            printf("took %f ms, non_barrier_grants=%" PRId32 ", non_barrier_refusals=%" PRId64 " barrier_grants=%" PRId32 ", barrier_refusals=%" PRId64 "\n", timer_global_get_elapsed_ms() - data->startTimems, 
+                InterlockedAdd(&non_barrier_grants, 0), 
+                InterlockedAdd64(&non_barrier_refusals, 0),
+                InterlockedAdd(&barrier_grants, 0),
+                InterlockedAdd64(&barrier_refusals, 0));
 
             ASSERT_IS_TRUE(sm_close_begin(data->sm) == 0);
             sm_close_end(data->sm);
