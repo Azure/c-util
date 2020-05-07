@@ -29,6 +29,8 @@ typedef struct SM_HANDLE_DATA_TAG
 
 static const char NO_NAME[] = "NO_NAME";
 
+MU_DEFINE_ENUM_STRINGS(SM_RESULT, SM_RESULT_VALUES);
+
 SM_HANDLE sm_create(const char* name)
 {
     SM_HANDLE result;
@@ -81,12 +83,12 @@ void sm_destroy(SM_HANDLE sm)
 
 int sm_open_begin(SM_HANDLE sm)
 {
-    int result;
+    SM_RESULT result;
     if (sm == NULL)
     {
         /*Codes_SRS_SM_02_007: [ If sm is NULL then sm_open_begin shall fail and return a non-zero value. ]*/
         LogError("invalid argument SM_HANDLE sm=%p", sm);
-        result = MU_FAILURE;
+        result = SM_ERROR;
     }
     else
     {
@@ -97,12 +99,12 @@ int sm_open_begin(SM_HANDLE sm)
         {
             /*Codes_SRS_SM_02_012: [ If sm_open_end doesn't follow a call to sm_open_begin then sm_open_end shall return. ]*/
             LogError("cannot execute, name=%s, b_now=%" PRId64 "", sm->name, b_now);
-            result = MU_FAILURE;
+            result = SM_EXEC_REFUSED;
         }
         else
         {
             InterlockedIncrement64(&sm->n);
-            result = 0;
+            result = SM_EXEC_GRANTED;
         }
     }
     return result;
@@ -142,9 +144,9 @@ static LONG64 get_n_minus_e(SM_HANDLE sm)
 }
 
 /*sm_barrier_begin calls this. Also sm_close calls this, because _close is nothing else but another barrier*/
-static int sm_barrier_begin_internal(SM_HANDLE sm)
+static SM_RESULT sm_barrier_begin_internal(SM_HANDLE sm)
 {
-    int result;
+    SM_RESULT result;
     LONG64 b_now = InterlockedOr64(&sm->b_now, 1);
 
     if ((b_now & 1) == 0)
@@ -154,42 +156,41 @@ static int sm_barrier_begin_internal(SM_HANDLE sm)
         LONG64 n = InterlockedIncrement64(&sm->n);
         (void)n;
 
-        result = 0;
+        result = SM_EXEC_GRANTED;
 
         /*drain previous executions*/
         while (get_n_minus_e(sm) != 1)
         {
             if (InterlockedHL_WaitForValue(&sm->e_done, 1, INFINITE) != INTERLOCKED_HL_OK)
             {
-                LogError("failure in InterlockedHL_WaitForValue(&sm->e, n - 1, INFINITE), name=%s, n=%" PRId64 "", sm->name, n);
+                LogError("Catastrophic failure: InterlockedHL_WaitForValue(&sm->e_done, 1, INFINITE), name=%s, n=%" PRId64 "", sm->name, n);
                 InterlockedIncrement64(&sm->e); /*this is pretty fatal here - the wait failed... */
-                result = MU_FAILURE;
+                result = SM_ERROR;
                 break;
             }
             else
             {
-                /*will be checked up*/
+                /*some thread thinks that n - 1 == e, the while condition will look at that throughly*/
             }
         }
     }
     else
     {
-        //LogError("there's a barrier already name=%s, b_now=%" PRId64 "", sm->name, b_now);
-        result = MU_FAILURE;
+        result = SM_EXEC_REFUSED;
     }
     return result;
 }
 
 
-int sm_close_begin(SM_HANDLE sm)
+SM_RESULT sm_close_begin(SM_HANDLE sm)
 {
 
-    int result;
+    SM_RESULT result;
     /*Codes_SRS_SM_02_013: [ If sm is NULL then sm_close_begin shall fail and return a non-zero value. ]*/
     if (sm == NULL)
     {
         LogError("invalid argument SM_HANDLE sm=%p", sm);
-        result = MU_FAILURE;
+        result = SM_ERROR;
     }
     else
     {
@@ -216,14 +217,14 @@ void sm_close_end(SM_HANDLE sm)
     }
 }
 
-int sm_begin(SM_HANDLE sm)
+SM_RESULT sm_begin(SM_HANDLE sm)
 {
-    int result;
+    SM_RESULT result;
     /*Codes_SRS_SM_02_021: [ If sm is NULL then sm_begin shall fail and return a non-zero value. ]*/
     if (sm == NULL)
     {
         LogError("invalid argument SM_HANDLE sm=%p", sm);
-        result = MU_FAILURE;
+        result = SM_ERROR;
     }
     else
     {
@@ -231,8 +232,7 @@ int sm_begin(SM_HANDLE sm)
 
         if ((b_now_1 & 1)==1)
         {
-            //LogError("there's a barrier already name=%s, b_now=%" PRId64 "", sm->name, b_now_1);
-            result = MU_FAILURE;
+            result = SM_EXEC_REFUSED;
         }
         else
         {
@@ -246,11 +246,11 @@ int sm_begin(SM_HANDLE sm)
                 {
                     InterlockedHL_SetAndWake((void*)&sm->e_done, 1);
                 }
-                result = MU_FAILURE;
+                result = SM_EXEC_REFUSED;;
             }
             else
             {
-                result = 0;
+                result = SM_EXEC_GRANTED;
             }
         }
     }
@@ -260,7 +260,7 @@ int sm_begin(SM_HANDLE sm)
 
 void sm_end(SM_HANDLE sm)
 {
-    int result;
+    SM_RESULT result;
     /*Codes_SRS_SM_02_024: [ If sm is NULL then sm_end shall return. ]*/
     if (sm == NULL)
     {
@@ -280,13 +280,13 @@ void sm_end(SM_HANDLE sm)
     }
 }
 
-int sm_barrier_begin(SM_HANDLE sm)
+SM_RESULT sm_barrier_begin(SM_HANDLE sm)
 {
-    int result;
+    SM_RESULT result;
     if (sm == NULL)
     {
         LogError("invalid argument SM_HANDLE sm=%p", sm);
-        result = MU_FAILURE;
+        result = SM_ERROR;
     }
     else
     {

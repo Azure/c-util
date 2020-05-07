@@ -5,7 +5,7 @@
 
 `State manager` (short:`sm`) is a module the manages the call state for the APIs of a module under the following sematics:
 
-1. the module has 2 step initialization (that is, the module has a _create and a _open APIs)
+1. the module has 2 step initialization (that is, the module has a _create and a _open APIs). Note: _open can be a do-nothing operation for the case when the user module doesn't have a real _open.
 
 2. the module's APIs are callable after _open has executed (_open being the exception - it can only be called after _create)
 
@@ -40,22 +40,22 @@ A substate of "OPEN" would begin execution by switching the state variable to "S
 In a multithreaded environment reaching the condition of "let's have 1 executing API" was sometimes difficult, because other APIs would be insistent to execute too (and the first thing they did was to increment the number of executing APIs... thus blocking the execution of the substate). With enough luck, the number of pending API calls would eventually match 1 and the substate would go happily about its way.
 
 `sm` aims at providing a better solution by:
-- providing a consistent way of managing "state" across modules (no more individual "ongoingAPIcalls" and "pendingAPIcalls" and "what's the corrent order? state before counting or counting before state?")
+- providing a consistent way of managing "state" across modules (no more individual "ongoingAPIcalls" and "pendingAPIcalls" and "what's the correct order? state before counting or counting before state?")
 - providing progress in all cases for APIs that require their own sub-state undisturbed (that is, APIs that cannot execute in parallel with any other APIs), so no more a problem of "enough luck".
 
-To achieve the above goals, `sm` assigns to each API call a sequence number (`n`). Sequence numbers are consecutive. The logic is simple: if the current API's sequence number is less than the sequence number of the barrier (`bnow`), then the API is allowed to execute. Otherwise, the API is prohibited from execution, because it follows a barrier. 
+To achieve the above goals, `sm` assigns to each API call a sequence number (`n`). Sequence numbers are consecutive. The logic is simple: an API is granted execution when there's no barrier (it acts as invariant for the increment of `n`). Otherwise, the API is prohibited from execution.
 
-When there's no barrier scheduled to be executed / executing, the `b_now` is set to the maximum representable number (`INT64_MAX`). When there's a barrier executing or scheduled to execute, the `b_now` is lowered to that barrier's `n`.
+Barriers follow their own ever increasing numbers called `b_now`. `b_now` start at 0. A barrier is taken when `b_now`'s least significant bit is 1. Example `b_now` == 0 means there's no ongoing barrier. `b_now` == 3 means there's an ongoing barrier.
 
-Multiple barrier can attempt to set `b_now` to their own `n`. `InterlockedCompareExchange` will only allow one to execute. The other barries (and other APIs obviously) will be rejected from executing.
+Multiple barrier can attempt to set `b_now`'s least significant bit to 1. Only 1 of them will win the competition onver `InterlockedOr64` so only 1 will grant execution. The other barries will lose arbitration and will not be granted execution rights. When user calls `sm_barrier_end` to indicate that the barrier should be lifted, `b_now` is `InterlockedIncremented64`.
 
-`b_now` has a few special values. `b_now` == -1 means `sm` has been created. When `b_now` is -1 all APIs are prohibited from executing because their `n` is going to be greater than -1. `b_now` is set to `0` by the winning competing `open` (if there's multiple of them). So that means at operation "0" is always `open`.
+Once a barries wins the `b_now` competition it increments `n` and wait for the difference between started APIs (`n`)  and the number of executed APIs (`e`) to be 1. When that happens, barrier is known to have drained all the previous calls and is allowed to return to user land.
 
-When `open` ends - `b_now` is set to `INT64_MAX` `e` is set to 1, and the next operation will get its `n` set to "1". Setting `b_now` to `INT64_MAX` allows for all the other APIs to execute.
+`close` is in no way different than any other barrier with the exception that close reverts the state to `create`'s. As opposed to the "historical" implementation, `_close` might not grant execution because another barrier is executing. However, just like any other barrier, `_close` will wait for all preceeding APIs to finish executing before granting execution to the caller.
 
-Once a barries wins the `b_now` competition it wait for `e` (the number of finished executed APIs) to reach 0. Once that happens, the barrier can proceed to the barrier code. When the barrier finishes executionm `b_now` is raised again to `INT64_MAX`.
+`sm` does not fully verify all sequences of calls. It is the user's responsibility to provide pair of calls. That is, `sm_open_begin` should be followed by a `sm_open_end` before let's say `sm_begin_close` is called. Some of these combinations are detected by the virtue of how barriers work but not all.
 
-`close` is in no way different than any other barrier with the exception that close reverts `b_now` to -1 ("create state") thus allowing another `open` to execute.
+Note: there's an ever increasing `n`, `e` and `b_now`. These are 64 bit values. `LONG64` max value is 9223372036854775808. Assuming 1,000,000,000 increments for `n` per second, the maximum value of LONG64 will be reached in 9,223,372,036 seconds. This is more than 290 years. This rather simplistic computation shows that in the current state of computation power (year is 2020 today) there's no need to worry about `n` wrapping around to `INT64_MIN`.
 
 ## Exposed API
 
@@ -146,6 +146,8 @@ MOCKABLE_FUNCTION(, int, sm_close_begin, SM_HANDLE, sm);
 **SRS_SM_02_016: [** `sm_close_begin` shall wait for `e` to be n. **]**
 
 **SRS_SM_02_017: [** `sm_close_begin` shall succeed and return 0. **]**
+
+**SRS_SM_02_034: [** If there are any failures then `sm_close_begin` shall fail and return a non-zero value. **]**
 
 ### sm_close_end
 ```c

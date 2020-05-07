@@ -15,19 +15,26 @@ extern "C"
 
 #include "umock_c/umock_c_prod.h"
 
+#define SM_RESULT_VALUES    \
+    SM_EXEC_GRANTED,        \
+    SM_EXEC_REFUSED,        \
+    SM_ERROR                \
+
+MU_DEFINE_ENUM(SM_RESULT, SM_RESULT_VALUES);
+
     MOCKABLE_FUNCTION(, SM_HANDLE, sm_create, const char*, name);
     MOCKABLE_FUNCTION(, void, sm_destroy, SM_HANDLE, sm);
 
-    MOCKABLE_FUNCTION(, int, sm_open_begin, SM_HANDLE, sm);
+    MOCKABLE_FUNCTION(, SM_RESULT, sm_open_begin, SM_HANDLE, sm);
     MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm);
 
-    MOCKABLE_FUNCTION(, int, sm_close_begin, SM_HANDLE, sm);
+    MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin, SM_HANDLE, sm);
     MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
 
-    MOCKABLE_FUNCTION(, int, sm_begin, SM_HANDLE, sm);
+    MOCKABLE_FUNCTION(, SM_RESULT, sm_begin, SM_HANDLE, sm);
     MOCKABLE_FUNCTION(, void, sm_end, SM_HANDLE, sm);
 
-    MOCKABLE_FUNCTION(, int, sm_barrier_begin, SM_HANDLE, sm);
+    MOCKABLE_FUNCTION(, SM_RESULT, sm_barrier_begin, SM_HANDLE, sm);
     MOCKABLE_FUNCTION(, void, sm_barrier_end, SM_HANDLE, sm);
 
 #ifdef __cplusplus
