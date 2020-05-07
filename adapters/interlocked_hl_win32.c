@@ -116,6 +116,47 @@ IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForValue,
     return result;
 }
 
+IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForValue64, LONG64 volatile*, address, LONG64, value, DWORD, milliseconds)
+{
+    INTERLOCKED_HL_RESULT result;
+
+    /*Codes_SRS_INTERLOCKED_HL_02_021: [ If address is NULL then InterlockedHL_WaitForValue64 shall fail and return INTERLOCKED_HL_ERROR. ]*/
+    if (address == NULL)
+    {
+        result = INTERLOCKED_HL_ERROR;
+    }
+    else
+    {
+        LONG64 current_value;
+
+        do
+        {
+            /* Codes_SRS_INTERLOCKED_HL_02_025: [ When WaitOnAddress succeeds, the value at address shall be compared to the target value passed in value by using InterlockedAdd64. ]*/
+            current_value = InterlockedAdd64(address, 0);
+            if (current_value == value)
+            {
+                /* Codes_SRS_INTERLOCKED_HL_02_022: [ If the value at address is equal to value then InterlockedHL_WaitForValue64 shall return INTERLOCKED_HL_OK. ]*/
+                result = INTERLOCKED_HL_OK;
+                break;
+            }
+
+            /* Codes_SRS_INTERLOCKED_HL_02_026: [ If the value at address does not match, InterlockedHL_WaitForValue64 shall issue another call to WaitOnAddress. ]*/
+
+            /* Codes_SRS_INTERLOCKED_HL_02_023: [ If the value at address is not equal to value, InterlockedHL_WaitForValue64 shall wait until the value at address changes in order to compare it again to value by using WaitOnAddress. ]*/
+            /* Codes_SRS_INTERLOCKED_HL_02_024: [ When waiting for the value at address to change, the milliseconds argument value shall be used as timeout. ]*/
+            if (!WaitOnAddress(address, &current_value, sizeof(current_value), milliseconds))
+            {
+                /* Codes_SRS_INTERLOCKED_HL_02_027: [ If WaitOnAddress fails, InterlockedHL_WaitForValue64 shall fail and return INTERLOCKED_HL_ERROR. ]*/
+                result = INTERLOCKED_HL_ERROR;
+                break;
+            }
+        } while (1);
+    }
+
+    return result;
+}
+
+
 IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForNotValue, LONG volatile*, address, LONG, value, DWORD, milliseconds)
 {
     INTERLOCKED_HL_RESULT result;

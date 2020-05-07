@@ -1,6 +1,5 @@
-// Copyright (C) Microsoft Corporation. All rights reserved.
-
-#include "windows.h"
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #ifndef TIMER_H
 #define TIMER_H
