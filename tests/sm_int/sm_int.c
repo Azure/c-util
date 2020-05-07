@@ -179,10 +179,9 @@ TEST_FUNCTION(sm_does_not_block)
     ASSERT_IS_NOT_NULL(data->sm);
 
     ///act
-    for (uint32_t nthreads = 1; nthreads <= N_MAX_THREADS; nthreads++)
+    for (uint32_t nthreads = 32; nthreads <= N_MAX_THREADS; nthreads++)
     {
         for(uint32_t n_barrier_threads=0; n_barrier_threads<=nthreads; n_barrier_threads++)
-        //for (uint32_t n_barrier_threads = 1; n_barrier_threads <= 1; n_barrier_threads++)
         {
             uint32_t n_non_barrier_threads = nthreads - n_barrier_threads;
 

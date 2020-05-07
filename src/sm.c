@@ -174,7 +174,7 @@ static int sm_barrier_begin_internal(SM_HANDLE sm)
     }
     else
     {
-        LogError("there's a barrier already name=%s, b_now=%" PRId64 "", sm->name, b_now);
+        //LogError("there's a barrier already name=%s, b_now=%" PRId64 "", sm->name, b_now);
         result = MU_FAILURE;
     }
     return result;
@@ -231,7 +231,7 @@ int sm_begin(SM_HANDLE sm)
 
         if ((b_now_1 & 1)==1)
         {
-            LogError("there's a barrier already name=%s, b_now=%" PRId64 "", sm->name, b_now_1);
+            //LogError("there's a barrier already name=%s, b_now=%" PRId64 "", sm->name, b_now_1);
             result = MU_FAILURE;
         }
         else
@@ -290,7 +290,7 @@ int sm_barrier_begin(SM_HANDLE sm)
     }
     else
     {
-        return sm_barrier_begin_internal(sm);
+        result=sm_barrier_begin_internal(sm);
     }
 
     return result;
