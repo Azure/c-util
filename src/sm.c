@@ -255,8 +255,9 @@ SM_RESULT sm_begin(SM_HANDLE sm)
             /*Codes_SRS_SM_02_036: [ If the barrier changed after incrementing n then sm_begin shall increment e, signal a potential drain, and return SM_EXEC_REFUSED. ]*/
             if (b_now_2 != b_now_1)
             {
-                InterlockedIncrement64(&sm->e);
-                if (get_n_minus_e(sm) == 1)
+                LONG64 e = InterlockedIncrement64(&sm->e);
+                LONG64 n = InterlockedAdd64(&sm->n, 0);
+                if (n - e == 1)
                 {
                     InterlockedHL_SetAndWake((void*)&sm->e_done, 1);
                 }
@@ -285,10 +286,11 @@ void sm_end(SM_HANDLE sm)
     else
     {
         /*Codes_SRS_SM_02_025: [ sm_end shall increment the number of executed APIs (e). ]*/
-        (void)InterlockedIncrement64(&sm->e);
+        LONG64 e = InterlockedIncrement64(&sm->e);
 
         /*Codes_SRS_SM_02_026: [ If n-e is 1 then sm_end shall wake up the waiting barrier. ]*/
-        if (get_n_minus_e(sm) == 1)
+        LONG64 n = InterlockedAdd64(&sm->n, 0);
+        if (n - e == 1)
         {
             InterlockedHL_SetAndWake((void*)&sm->e_done, 1);
         }
