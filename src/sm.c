@@ -86,14 +86,14 @@ int sm_open_begin(SM_HANDLE sm)
     SM_RESULT result;
     if (sm == NULL)
     {
-        /*Codes_SRS_SM_02_007: [ If sm is NULL then sm_open_begin shall fail and return a non-zero value. ]*/
+        /*Codes_SRS_SM_02_007: [ If sm is NULL then sm_open_begin shall fail and return SM_ERROR. ]*/
         LogError("invalid argument SM_HANDLE sm=%p", sm);
         result = SM_ERROR;
     }
     else
     {
-        /*Codes_SRS_SM_02_008: [ If b_now is not -1 then sm_open_begin shall fail and return a non-zero value. ]*/
-        /*Codes_SRS_SM_02_009: [ sm_open_begin shall set b_now to 0, succeed and return 0. ]*/
+        /*Codes_SRS_SM_02_008: [ If b_now is not -1 then sm_open_begin shall fail and return SM_EXEC_REFUSED. ]*/
+        /*Codes_SRS_SM_02_009: [ sm_open_begin shall set b_now to 0, succeed and return SM_EXEC_GRANTED. ]*/
         LONG64 b_now = InterlockedCompareExchange64(&sm->b_now, 0, -1);
         if (b_now != -1)
         {

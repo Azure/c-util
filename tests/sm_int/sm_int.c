@@ -79,7 +79,7 @@ TEST_FUNCTION_CLEANUP(cleanup)
 }
 
 static volatile LONG barrier_grants = 0;
-static volatile LONG64 barrier_refusals = 0;
+static volatile LONG64 barrier_refusals = 0; /*this is just for giggles*/
 
 static DWORD barrier_thread(
     LPVOID lpThreadParameter
@@ -91,9 +91,8 @@ static DWORD barrier_thread(
     {
         if (sm_barrier_begin(data->sm) == SM_EXEC_GRANTED)
         {
-
-            LONG source = InterlockedIncrement(&data->source_of_numbers);
             LONG index = InterlockedIncrement(&data->current_index) - 1;
+            LONG source = InterlockedIncrement(&data->source_of_numbers);
             InterlockedIncrement(&barrier_grants);
 
             if (index >= ARRAY_SIZE)
@@ -127,8 +126,8 @@ static DWORD non_barrier_thread(
     {
         if (sm_begin(data->sm) == SM_EXEC_GRANTED)
         {
-            LONG source = InterlockedIncrement(&data->source_of_numbers);
             LONG index = InterlockedIncrement(&data->current_index) - 1;
+            LONG source = InterlockedIncrement(&data->source_of_numbers);
             InterlockedIncrement(&non_barrier_grants);
 
             if (index >= ARRAY_SIZE)
@@ -253,7 +252,7 @@ TEST_FUNCTION(sm_does_not_block)
         }
     }
 
-    ///assert
+    ///assert - in "verify"
 
     ///clean
     sm_destroy(data->sm);

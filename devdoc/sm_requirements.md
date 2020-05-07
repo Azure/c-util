@@ -49,32 +49,40 @@ Barriers follow their own ever increasing numbers called `b_now`. `b_now` start 
 
 Multiple barrier can attempt to set `b_now`'s least significant bit to 1. Only 1 of them will win the competition onver `InterlockedOr64` so only 1 will grant execution. The other barries will lose arbitration and will not be granted execution rights. When user calls `sm_barrier_end` to indicate that the barrier should be lifted, `b_now` is `InterlockedIncremented64`.
 
-Once a barries wins the `b_now` competition it increments `n` and wait for the difference between started APIs (`n`)  and the number of executed APIs (`e`) to be 1. When that happens, barrier is known to have drained all the previous calls and is allowed to return to user land.
+Once a barries wins the `b_now` competition it increments `n` and wait for the difference between started APIs (`n`)  and the number of executed APIs (`e`) to be 1. When that happens, barrier is known to have drained all the previous calls and is allowed to return to user land with execution granted.
 
 `close` is in no way different than any other barrier with the exception that close reverts the state to `create`'s. As opposed to the "historical" implementation, `_close` might not grant execution because another barrier is executing. However, just like any other barrier, `_close` will wait for all preceeding APIs to finish executing before granting execution to the caller.
 
-`sm` does not fully verify all sequences of calls. It is the user's responsibility to provide pair of calls. That is, `sm_open_begin` should be followed by a `sm_open_end` before let's say `sm_begin_close` is called. Some of these combinations are detected by the virtue of how barriers work but not all.
+`sm` does not fully verify all sequences of calls. It is the user's responsibility to provide pair of calls. That is, `sm_open_begin` should be followed by a `sm_open_end` before let's say `sm_begin_close` is called. Some of these combinations are detected by the virtue of how barriers work but not all. For example, all calls to `sm_barrier_begin` or `sm_begin` immediately after `sm_open_begin` will block (this is expected to be discovered in user land at user code testing time).
 
 Note: there's an ever increasing `n`, `e` and `b_now`. These are 64 bit values. `LONG64` max value is 9223372036854775808. Assuming 1,000,000,000 increments for `n` per second, the maximum value of LONG64 will be reached in 9,223,372,036 seconds. This is more than 290 years. This rather simplistic computation shows that in the current state of computation power (year is 2020 today) there's no need to worry about `n` wrapping around to `INT64_MIN`.
 
 ## Exposed API
 
 ```c
-    MOCKABLE_FUNCTION(, SM_HANDLE, sm_create, const char*, name);
-    MOCKABLE_FUNCTION(, void, sm_destroy, SM_HANDLE, sm);
+typedef struct SM_HANDLE_DATA_TAG* SM_HANDLE;
 
-    MOCKABLE_FUNCTION(, int, sm_open_begin, SM_HANDLE, sm);
-    MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm);
+#define SM_RESULT_VALUES    \
+    SM_EXEC_GRANTED,        \
+    SM_EXEC_REFUSED,        \
+    SM_ERROR                \
 
-    MOCKABLE_FUNCTION(, void, sm_close_begin, SM_HANDLE, sm);
-    MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
+MU_DEFINE_ENUM(SM_RESULT, SM_RESULT_VALUES);
 
-    MOCKABLE_FUNCTION(, int, sm_begin, SM_HANDLE, sm);
-    MOCKABLE_FUNCTION(, void, sm_end, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, SM_HANDLE, sm_create, const char*, name);
+MOCKABLE_FUNCTION(, void, sm_destroy, SM_HANDLE, sm);
 
-    MOCKABLE_FUNCTION(, int, sm_barrier_begin, SM_HANDLE, sm);
-    MOCKABLE_FUNCTION(, void, sm_barrier_end, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, SM_RESULT, sm_open_begin, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm);
 
+MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
+
+MOCKABLE_FUNCTION(, SM_RESULT, sm_begin, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, void, sm_end, SM_HANDLE, sm);
+
+MOCKABLE_FUNCTION(, SM_RESULT, sm_barrier_begin, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, void, sm_barrier_end, SM_HANDLE, sm);
 ```
 
 ### sm_create
@@ -104,16 +112,16 @@ MOCKABLE_FUNCTION(, void, sm_destroy, SM_HANDLE, sm);
 
 ### sm_open_begin
 ```c
-MOCKABLE_FUNCTION(, int, sm_open_begin, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, SM_RESULT, sm_open_begin, SM_HANDLE, sm);
 ```
 
 `sm_open_begin` asks from `sm` permission to enter "open" state.
 
-**SRS_SM_02_007: [** If `sm` is `NULL` then `sm_open_begin` shall fail and return a non-zero value. **]**
+**SRS_SM_02_007: [** If `sm` is `NULL` then `sm_open_begin` shall fail and return `SM_ERROR`. **]**
 
-**SRS_SM_02_008: [** If `b_now` is not -1 then `sm_open_begin` shall fail and return a non-zero value. **]**
+**SRS_SM_02_008: [** If `b_now` is not -1 then `sm_open_begin` shall fail and return `SM_EXEC_REFUSED`. **]**
 
-**SRS_SM_02_009: [** `sm_open_begin` shall set `b_now` to 0, succeed and return 0. **]**
+**SRS_SM_02_009: [** `sm_open_begin` shall set `b_now` to 0, succeed and return `SM_EXEC_GRANTED`. **]**
 
 ### sm_open_end
 ```c
@@ -125,8 +133,8 @@ MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm);
 **SRS_SM_02_010: [** If `sm` is `NULL` then `sm_open_end` shall return. **]**
 
 **SRS_SM_02_012: [** If `sm_open_end` doesn't follow a call to `sm_open_begin` then `sm_open_end` shall return. **]**
-
-**SRS_SM_02_011: [** `sm_open_end` shall set `b_now` to `INT64_MAX` and return. **]**
+AICI AM RAMAS - acuma nani
+**SRS_SM_02_011: [** `sm_open_end` shall set `e` to 1, `b_now` to `INT64_MAX` and return. **]**
 
 ### sm_close_begin
 ```c

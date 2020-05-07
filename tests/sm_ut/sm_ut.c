@@ -190,7 +190,7 @@ TEST_FUNCTION(sm_destroy_destroys_all_used_resources)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_SM_02_007: [ If sm is NULL then sm_open_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_007: [ If sm is NULL then sm_open_begin shall fail and return SM_ERROR. ]*/
 TEST_FUNCTION(sm_open_begin_with_sm_NULL_fails)
 {
     ///arrange
@@ -206,8 +206,8 @@ TEST_FUNCTION(sm_open_begin_with_sm_NULL_fails)
     ///clean
 }
 
-/*Tests_SRS_SM_02_008: [ If b_now is not -1 then sm_open_begin shall fail and return a non-zero value. ]*/
-/*Tests_SRS_SM_02_009: [ sm_open_begin shall set b_now to 0, succeed and return 0. ]*/
+/*Tests_SRS_SM_02_008: [ If b_now is not -1 then sm_open_begin shall fail and return SM_EXEC_REFUSED. ]*/
+/*Tests_SRS_SM_02_009: [ sm_open_begin shall set b_now to 0, succeed and return SM_EXEC_GRANTED. ]*/
 TEST_FUNCTION(sm_open_begin_succeeds)
 {
     ///arrange
@@ -226,7 +226,7 @@ TEST_FUNCTION(sm_open_begin_succeeds)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_008: [ If b_now is not -1 then sm_open_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_008: [ If b_now is not -1 then sm_open_begin shall fail and return SM_EXEC_REFUSED. ]*/
 TEST_FUNCTION(sm_open_begin_after_being_fails)
 {
     ///arrange
@@ -706,7 +706,7 @@ TEST_FUNCTION(sm_barrier_begin_after_create_fails)
     sm_destroy(sm);
 }
 
-#if 0 /*vld.h*/
+#if 0 /*uncomment when code allows for checking sm_barrier_begin_after_open_fails*/
 /*Tests_SRS_SM_02_028: [ If current n is greater than b_now then sm_barrier_begin shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(sm_barrier_begin_after_open_fails)
 {
