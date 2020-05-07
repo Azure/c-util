@@ -257,7 +257,7 @@ TEST_FUNCTION(sm_open_end_with_sm_NULL_returns)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_SM_02_011: [ sm_open_end shall set n to 0, b_now to INT64_MAX and return. ]*/
+/*Tests_SRS_SM_02_011: [ sm_open_end shall increment e, b_now to 0 and return. ]*/
 TEST_FUNCTION(sm_open_end_succeeds)
 {
     ///arrange
@@ -266,7 +266,7 @@ TEST_FUNCTION(sm_open_end_succeeds)
     result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
 
-    ///act - open after open
+    ///act
     sm_open_end(sm);
 
     ///assert
@@ -292,7 +292,7 @@ TEST_FUNCTION(sm_open_end_without_sm_open_begin)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_013: [ If sm is NULL then sm_close_begin shall return. ]*/
+/*Tests_SRS_SM_02_013: [ If sm is NULL then sm_close_begin shall fail and return SM_ERROR. ]*/
 TEST_FUNCTION(sm_close_begin_with_sm_NULL_returns)
 {
     ///arrange
@@ -309,8 +309,8 @@ TEST_FUNCTION(sm_close_begin_with_sm_NULL_returns)
 }
 
 #if 0 /*vld.h sa vedem daca se poate face ceva cu el, da'slabe sanse, ca e barrier cu wait... care nu se face cu UT*/
-/*Tests_SRS_SM_02_014: [ sm_close_begin shall set b_now to its own n. ]*/
-/*Tests_SRS_SM_02_015: [ If setting b_now to n fails then sm_close_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_014: [ sm_close_begin shall set lowest bit of b_now to 1. ]*/
+/*Tests_SRS_SM_02_015: [ If setting the lowest bit b_now to 1 fails then sm_close_begin shall return SM_EXEC_REFUSED. ]*/
 TEST_FUNCTION(sm_close_begin_while_barrier_fails_1) /*barrier is sm_open_begin in this test*/
 {
     ///arrange
@@ -332,8 +332,8 @@ TEST_FUNCTION(sm_close_begin_while_barrier_fails_1) /*barrier is sm_open_begin i
 }
 #endif
 
-/*Tests_SRS_SM_02_014: [ sm_close_begin shall set b_now to its own n. ]*/
-/*Tests_SRS_SM_02_015: [ If setting b_now to n fails then sm_close_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_014: [ sm_close_begin shall set lowest bit of b_now to 1. ]*/
+/*Tests_SRS_SM_02_015: [ If setting the lowest bit b_now to 1 fails then sm_close_begin shall return SM_EXEC_REFUSED. ]*/
 TEST_FUNCTION(sm_close_begin_while_barrier_fails_2) /*barrier is sm_close_begin in this test*/
 {
     ///arrange
@@ -360,8 +360,8 @@ TEST_FUNCTION(sm_close_begin_while_barrier_fails_2) /*barrier is sm_close_begin 
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_014: [ sm_close_begin shall set b_now to its own n. ]*/
-/*Tests_SRS_SM_02_015: [ If setting b_now to n fails then sm_close_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_014: [ sm_close_begin shall set lowest bit of b_now to 1. ]*/
+/*Tests_SRS_SM_02_015: [ If setting the lowest bit b_now to 1 fails then sm_close_begin shall return SM_EXEC_REFUSED. ]*/
 TEST_FUNCTION(sm_close_begin_while_barrier_fails_3) /*barrier is other API in this test*/
 {
     ///arrange
@@ -388,7 +388,7 @@ TEST_FUNCTION(sm_close_begin_while_barrier_fails_3) /*barrier is other API in th
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_020: [ If there was no sm_open_begin/sm_open_end called previously, sm_close_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_020: [ If there was no sm_open_begin/sm_open_end called previously, sm_close_begin shall fail and SM_EXEC_REFUSED. ]*/
 TEST_FUNCTION(sm_close_begin_without_open_fails)
 {
     ///arrange
@@ -406,9 +406,9 @@ TEST_FUNCTION(sm_close_begin_without_open_fails)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_014: [ sm_close_begin shall set b_now to its own n. ]*/
-/*Tests_SRS_SM_02_016: [ sm_close_begin shall wait for e to be n. ]*/
-/*Tests_SRS_SM_02_017: [ sm_close_begin shall succeed and return 0. ]*/
+/*Tests_SRS_SM_02_014: [ sm_close_begin shall set lowest bit of b_now to 1. ]*/
+/*Tests_SRS_SM_02_016: [ sm_close_begin shall wait for all previous operations to end. ]*/
+/*Tests_SRS_SM_02_017: [ sm_close_begin shall succeed and return SM_EXEC_GRANTED. ]*/
 TEST_FUNCTION(sm_close_begin_succeeds_with_0_executing)
 {
     ///arrange
@@ -432,7 +432,7 @@ TEST_FUNCTION(sm_close_begin_succeeds_with_0_executing)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_034: [ If there are any failures then sm_close_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_034: [ If there are any failures then sm_close_begin shall fail and return SM_ERROR. ]*/
 TEST_FUNCTION(sm_close_begin_unhappy_path)
 {
     ///arrange
@@ -462,9 +462,9 @@ TEST_FUNCTION(sm_close_begin_unhappy_path)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_014: [ sm_close_begin shall set b_now to its own n. ]*/
-/*Tests_SRS_SM_02_016: [ sm_close_begin shall wait for e to be n. ]*/
-/*Tests_SRS_SM_02_017: [ sm_close_begin shall succeed and return 0. ]*/
+/*Tests_SRS_SM_02_014: [ sm_close_begin shall set lowest bit of b_now to 1. ]*/
+/*Tests_SRS_SM_02_016: [ sm_close_begin shall wait for all previous operations to end. ]*/
+/*Tests_SRS_SM_02_017: [ sm_close_begin shall succeed and return SM_EXEC_GRANTED. ]*/
 TEST_FUNCTION(sm_close_begin_succeeds_with_1_executing) /*left to int tests*/
 {
 
@@ -484,7 +484,7 @@ TEST_FUNCTION(sm_close_end_with_sm_NULL_returns)
     ///clean
 }
 
-/*Tests_SRS_SM_02_019: [ sm_close_end shall switch b_now to -1. ]*/
+/*Tests_SRS_SM_02_019: [ sm_close_end shall switch b_now to -1, n to 0 and e to 0. ]*/
 TEST_FUNCTION(sm_close_end_switches_b_now_to_minus_1)
 {
     ///arrange
@@ -512,7 +512,7 @@ TEST_FUNCTION(sm_close_end_switches_b_now_to_minus_1)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_021: [ If sm is NULL then sm_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_021: [ If sm is NULL then sm_begin shall fail and return SM_ERROR. ]*/
 TEST_FUNCTION(sm_begin_with_sm_NULL_fails)
 {
     ///arrange
@@ -528,9 +528,9 @@ TEST_FUNCTION(sm_begin_with_sm_NULL_fails)
     ///clean
 }
 
-/*Tests_SRS_SM_02_022: [ If current n is greater than b_now then sm_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_022: [ If there's a barrier set then sm_begin shall return SM_EXEC_REFUSED. ]*/
 /*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
-TEST_FUNCTION(sm_begin_when_b_now_is_INT64_MAX_succeeds)
+TEST_FUNCTION(sm_begin_when_b_now_s_least_significant_bit_is_not_set_sm_begin_SM_EXEC_GRANTED)
 {
     ///arrange
     SM_RESULT result;
@@ -553,7 +553,7 @@ TEST_FUNCTION(sm_begin_when_b_now_is_INT64_MAX_succeeds)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_022: [ If current n is greater than b_now then sm_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_022: [ If there's a barrier set then sm_begin shall return SM_EXEC_REFUSED. ]*/
 /*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
 TEST_FUNCTION(sm_begin_without_open_fails)
 {
@@ -573,7 +573,7 @@ TEST_FUNCTION(sm_begin_without_open_fails)
 }
 
 #if 0 /*vld.h - check if it can be uncommented*/
-/*Tests_SRS_SM_02_022: [ If current n is greater than b_now then sm_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_022: [ If there's a barrier set then sm_begin shall return SM_EXEC_REFUSED. ]*/
 /*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
 TEST_FUNCTION(sm_begin_middle_of_open_fails)
 {
@@ -597,7 +597,7 @@ TEST_FUNCTION(sm_begin_middle_of_open_fails)
 }
 #endif
 
-/*Tests_SRS_SM_02_022: [ If current n is greater than b_now then sm_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_022: [ If there's a barrier set then sm_begin shall return SM_EXEC_REFUSED. ]*/
 /*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
 TEST_FUNCTION(sm_begin_middle_of_close_fails)
 {
@@ -626,7 +626,7 @@ TEST_FUNCTION(sm_begin_middle_of_close_fails)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_022: [ If current n is greater than b_now then sm_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_022: [ If there's a barrier set then sm_begin shall return SM_EXEC_REFUSED. ]*/
 /*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
 TEST_FUNCTION(sm_begin_after_barrier_fails)
 {
@@ -674,7 +674,7 @@ TEST_FUNCTION(sm_end_increments_number_of_executed_APIs)
     /*left to int tests*/
 }
 
-/*Tests_SRS_SM_02_027: [ If sm is NULL then sm_barrier_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_027: [ If sm is NULL then sm_barrier_begin shall fail and return SM_ERROR. ]*/
 TEST_FUNCTION(sm_barrier_begin_with_sm_NULL_fails)
 {
     ///arrange
@@ -781,7 +781,7 @@ TEST_FUNCTION(sm_barrier_begin_succeeds)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_031: [ If there are any failures then sm_barrier_begin shall fail and return a non-zero value. ]*/
+/*Tests_SRS_SM_02_031: [ If there are any failures then sm_barrier_begin shall fail and return SM_ERROR. ]*/
 TEST_FUNCTION(sm_barrier_begin_fails_when_wait_for_value_fails)
 {
     ///arrange
@@ -822,7 +822,7 @@ TEST_FUNCTION(sm_barrier_end_with_sm_NULL_returns)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_SM_02_033: [ sm_barrier_end shall increment the number of executed operations (e), switch b_now to INT64_MAX and return, ]*/
+/*Tests_SRS_SM_02_033: [ sm_barrier_end shall increment the number of executed operations (e), increment b_now and return. ]*/
 TEST_FUNCTION(sm_barrier_end_succeeds)
 {
     ///arrange

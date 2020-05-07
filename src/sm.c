@@ -119,7 +119,7 @@ void sm_open_end(SM_HANDLE sm)
     }
     else
     {
-        /*Codes_SRS_SM_02_011: [ sm_open_end shall set b_now to INT64_MAX and return. ]*/
+        /*Codes_SRS_SM_02_011: [ sm_open_end shall increment e, b_now to 0 and return. ]*/
         InterlockedIncrement64(&sm->e);
         InterlockedExchange64(&sm->b_now, 0);
     }
@@ -149,6 +149,8 @@ static SM_RESULT sm_barrier_begin_internal(SM_HANDLE sm)
     SM_RESULT result;
     LONG64 b_now = InterlockedOr64(&sm->b_now, 1);
 
+    /*Codes_SRS_SM_02_028: [ If b_now has least significand bit set to 1 then sm_barrier_begin shall fail and SM_EXEC_REFUSED. ]*/
+    /*Codes_SRS_SM_02_020: [ If there was no sm_open_begin/sm_open_end called previously, sm_close_begin shall fail and SM_EXEC_REFUSED. ]*/
     if ((b_now & 1) == 0)
     {
         InterlockedExchange(&sm->e_done, 0);
@@ -156,13 +158,19 @@ static SM_RESULT sm_barrier_begin_internal(SM_HANDLE sm)
         LONG64 n = InterlockedIncrement64(&sm->n);
         (void)n;
 
+        /*Codes_SRS_SM_02_030: [ sm_barrier_begin shall succeed and return SM_EXEC_GRANTED. ]*/
+        /*Codes_SRS_SM_02_017: [ sm_close_begin shall succeed and return SM_EXEC_GRANTED. ]*/
         result = SM_EXEC_GRANTED;
 
         /*drain previous executions*/
+        /*Codes_SRS_SM_02_016: [ sm_close_begin shall wait for all previous operations to end. ]*/
+        /*Codes_SRS_SM_02_029: [ sm_barrier_begin shall wait for the completion of all the previous operations. ]*/
         while (get_n_minus_e(sm) != 1)
         {
             if (InterlockedHL_WaitForValue(&sm->e_done, 1, INFINITE) != INTERLOCKED_HL_OK)
             {
+                /*Codes_SRS_SM_02_031: [ If there are any failures then sm_barrier_begin shall fail and return SM_ERROR. ]*/
+                /*Codes_SRS_SM_02_034: [ If there are any failures then sm_close_begin shall fail and return SM_ERROR. ]*/
                 LogError("Catastrophic failure: InterlockedHL_WaitForValue(&sm->e_done, 1, INFINITE), name=%s, n=%" PRId64 "", sm->name, n);
                 InterlockedIncrement64(&sm->e); /*this is pretty fatal here - the wait failed... */
                 result = SM_ERROR;
@@ -176,6 +184,7 @@ static SM_RESULT sm_barrier_begin_internal(SM_HANDLE sm)
     }
     else
     {
+        /*Codes_SRS_SM_02_015: [ If setting the lowest bit b_now to 1 fails then sm_close_begin shall return SM_EXEC_REFUSED. ]*/
         result = SM_EXEC_REFUSED;
     }
     return result;
@@ -186,7 +195,7 @@ SM_RESULT sm_close_begin(SM_HANDLE sm)
 {
 
     SM_RESULT result;
-    /*Codes_SRS_SM_02_013: [ If sm is NULL then sm_close_begin shall fail and return a non-zero value. ]*/
+    /*Codes_SRS_SM_02_013: [ If sm is NULL then sm_close_begin shall fail and return SM_ERROR. ]*/
     if (sm == NULL)
     {
         LogError("invalid argument SM_HANDLE sm=%p", sm);
@@ -209,7 +218,7 @@ void sm_close_end(SM_HANDLE sm)
     else
     {
         /*cannot really check that it is paired with a _close_begin without moving b_now through user land, not going to do that. That solution woould push the b_now of the "close" in user land. And user has to return with the same b_now here and check that it is the same*/
-        /*Codes_SRS_SM_02_019: [ sm_close_end shall switch b_now to -1. ]*/
+        /*Codes_SRS_SM_02_019: [ sm_close_end shall switch b_now to -1, n to 0 and e to 0. ]*/
         (void)InterlockedExchange64(&sm->b_now, -1);
         (void)InterlockedExchange64(&sm->n, 0);
         (void)InterlockedExchange64(&sm->e, 0);
@@ -220,7 +229,7 @@ void sm_close_end(SM_HANDLE sm)
 SM_RESULT sm_begin(SM_HANDLE sm)
 {
     SM_RESULT result;
-    /*Codes_SRS_SM_02_021: [ If sm is NULL then sm_begin shall fail and return a non-zero value. ]*/
+    /*Codes_SRS_SM_02_021: [ If sm is NULL then sm_begin shall fail and return SM_ERROR. ]*/
     if (sm == NULL)
     {
         LogError("invalid argument SM_HANDLE sm=%p", sm);
@@ -230,15 +239,19 @@ SM_RESULT sm_begin(SM_HANDLE sm)
     {
         LONG64 b_now_1 = InterlockedAdd64(&sm->b_now, 0);
 
+        /*Codes_SRS_SM_02_022: [ If there's a barrier set then sm_begin shall return SM_EXEC_REFUSED. ]*/
         if ((b_now_1 & 1)==1)
         {
             result = SM_EXEC_REFUSED;
         }
         else
         {
+            /*Codes_SRS_SM_02_035: [ sm_begin shall increment n. ]*/
             (void)InterlockedIncrement64(&sm->n);
 
             LONG64 b_now_2 = InterlockedAdd64(&sm->b_now, 0);
+
+            /*Codes_SRS_SM_02_036: [ If the barrier changed after incrementing n then sm_begin shall increment e, signal a potential drain, and return SM_EXEC_REFUSED. ]*/
             if (b_now_2 != b_now_1)
             {
                 InterlockedIncrement64(&sm->e);
@@ -250,6 +263,7 @@ SM_RESULT sm_begin(SM_HANDLE sm)
             }
             else
             {
+                /*Codes_SRS_SM_02_023: [ sm_begin shall succeed and return SM_EXEC_GRANTED. ]*/
                 result = SM_EXEC_GRANTED;
             }
         }
@@ -272,7 +286,7 @@ void sm_end(SM_HANDLE sm)
         /*Codes_SRS_SM_02_025: [ sm_end shall increment the number of executed APIs (e). ]*/
         (void)InterlockedIncrement64(&sm->e);
 
-        /*Codes_SRS_SM_02_026: [ If the number of executed APIs matches the waiting barrier then sm_end shall wake up the waiting barrier. ]*/
+        /*Codes_SRS_SM_02_026: [ If n-e is 1 then sm_end shall wake up the waiting barrier. ]*/
         if (get_n_minus_e(sm) == 1)
         {
             InterlockedHL_SetAndWake((void*)&sm->e_done, 1);
@@ -283,6 +297,7 @@ void sm_end(SM_HANDLE sm)
 SM_RESULT sm_barrier_begin(SM_HANDLE sm)
 {
     SM_RESULT result;
+    /*Codes_SRS_SM_02_027: [ If sm is NULL then sm_barrier_begin shall fail and return SM_ERROR. ]*/
     if (sm == NULL)
     {
         LogError("invalid argument SM_HANDLE sm=%p", sm);
@@ -298,14 +313,14 @@ SM_RESULT sm_barrier_begin(SM_HANDLE sm)
 
 void sm_barrier_end(SM_HANDLE sm)
 {
-    /*Codes_SRS_SM_02_032: [ If sm is NULL then `sm_barrier_end shall return. ]*/
+    /*Codes_SRS_SM_02_032: [ If sm is NULL then sm_barrier_end shall return. ]*/
     if (sm == NULL)
     {
         LogError("invalid argument SM_HANDLE sm=%p", sm);
     }
     else
     {
-        /*Codes_SRS_SM_02_033: [ sm_barrier_end shall increment the number of executed operations (e), switch b_now to INT64_MAX and return, ]*/
+        /*Codes_SRS_SM_02_033: [ sm_barrier_end shall increment the number of executed operations (e), increment b_now and return. ]*/
         InterlockedIncrement64(&sm->e);
         InterlockedExchange(&sm->e_done, 0);
         InterlockedIncrement64(&sm->b_now);

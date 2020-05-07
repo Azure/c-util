@@ -133,8 +133,8 @@ MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm);
 **SRS_SM_02_010: [** If `sm` is `NULL` then `sm_open_end` shall return. **]**
 
 **SRS_SM_02_012: [** If `sm_open_end` doesn't follow a call to `sm_open_begin` then `sm_open_end` shall return. **]**
-AICI AM RAMAS - acuma nani
-**SRS_SM_02_011: [** `sm_open_end` shall set `e` to 1, `b_now` to `INT64_MAX` and return. **]**
+
+**SRS_SM_02_011: [** `sm_open_end` shall increment `e`, `b_now` to 0 and return. **]**
 
 ### sm_close_begin
 ```c
@@ -143,19 +143,19 @@ MOCKABLE_FUNCTION(, int, sm_close_begin, SM_HANDLE, sm);
 
 `sm_open_begin` asks from `sm` permission to exit "open" state.
 
-**SRS_SM_02_013: [** If `sm` is `NULL` then `sm_close_begin` shall fail and return a non-zero value. **]**
+**SRS_SM_02_013: [** If `sm` is `NULL` then `sm_close_begin` shall fail and return `SM_ERROR`. **]**
 
-**SRS_SM_02_020: [** If there was no `sm_open_begin`/`sm_open_end` called previously, `sm_close_begin` shall fail and return a non-zero value. **]**
+**SRS_SM_02_020: [** If there was no `sm_open_begin`/`sm_open_end` called previously, `sm_close_begin` shall fail and `SM_EXEC_REFUSED`. **]**
 
-**SRS_SM_02_014: [** `sm_close_begin` shall set `b_now` to its own `n`. **]**
+**SRS_SM_02_014: [** `sm_close_begin` shall set lowest bit of `b_now` to 1. **]**
 
-**SRS_SM_02_015: [** If setting `b_now` to `n` fails then `sm_close_begin` shall fail and return a non-zero value. **]**
+**SRS_SM_02_015: [** If setting the lowest bit `b_now` to 1 fails then `sm_close_begin` shall  return `SM_EXEC_REFUSED`. **]**
 
-**SRS_SM_02_016: [** `sm_close_begin` shall wait for `e` to be n. **]**
+**SRS_SM_02_016: [** `sm_close_begin` shall wait for all previous operations to end. **]**
 
-**SRS_SM_02_017: [** `sm_close_begin` shall succeed and return 0. **]**
+**SRS_SM_02_017: [** `sm_close_begin` shall succeed and return `SM_EXEC_GRANTED`. **]**
 
-**SRS_SM_02_034: [** If there are any failures then `sm_close_begin` shall fail and return a non-zero value. **]**
+**SRS_SM_02_034: [** If there are any failures then `sm_close_begin` shall fail and return `SM_ERROR`. **]**
 
 ### sm_close_end
 ```c
@@ -166,7 +166,7 @@ MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
 
 **SRS_SM_02_018: [** If `sm` is `NULL` then `sm_close_end` shall return. **]**
 
-**SRS_SM_02_019: [** `sm_close_end` shall switch `b_now` to `-1`. **]**
+**SRS_SM_02_019: [** `sm_close_end` shall switch `b_now` to `-1`, `n` to 0 and `e` to 0. **]**
 
 ### sm_begin
 ```c
@@ -175,11 +175,16 @@ MOCKABLE_FUNCTION(, int, sm_begin, SM_HANDLE, sm);
 
 `sm_begin` asks from `sm` permission to execute a non-barrier operation.
 
-**SRS_SM_02_021: [** If `sm` is `NULL` then `sm_begin` shall fail and return a non-zero value. **]**
+**SRS_SM_02_021: [** If `sm` is `NULL` then `sm_begin` shall fail and return `SM_ERROR`. **]**
 
-**SRS_SM_02_022: [** If current `n` is greater than `b_now` then `sm_begin` shall fail and return a non-zero value. **]**
+**SRS_SM_02_022: [** If there's a barrier set then `sm_begin` shall return `SM_EXEC_REFUSED`. **]**
 
-**SRS_SM_02_023: [** `sm_begin` shall succeed and return 0. **]**
+**SRS_SM_02_035: [** `sm_begin` shall increment `n`. **]**
+
+**SRS_SM_02_036: [** If the barrier changed after incrementing `n` then `sm_begin` shall increment `e`, signal a potential drain, and return `SM_EXEC_REFUSED`.
+ **]**
+
+**SRS_SM_02_023: [** `sm_begin` shall succeed and return `SM_EXEC_GRANTED`. **]**
 
 ### sm_end
 ```c
@@ -192,7 +197,7 @@ MOCKABLE_FUNCTION(, void, sm_end, SM_HANDLE, sm);
 
 **SRS_SM_02_025: [** `sm_end` shall increment the number of executed APIs (`e`). **]**
 
-**SRS_SM_02_026: [** If the number of executed APIs matches the waiting barrier then `sm_end` shall wake up the waiting barrier. **]**
+**SRS_SM_02_026: [** If `n`-`e` is 1 then `sm_end` shall wake up the waiting barrier. **]**
 
 ### sm_barrier_begin
 ```c
@@ -201,15 +206,15 @@ MOCKABLE_FUNCTION(, int, sm_barrier_begin, SM_HANDLE, sm);
 
 `sm_barrier_begin` asks from `sm` permission to execute a barrier operation.
 
-**SRS_SM_02_027: [** If `sm` is `NULL` then `sm_barrier_begin` shall fail and return a non-zero value. **]**
+**SRS_SM_02_027: [** If `sm` is `NULL` then `sm_barrier_begin` shall fail and return `SM_ERROR`. **]**
 
-**SRS_SM_02_028: [** If current `n` is greater than `b_now` then `sm_barrier_begin` shall fail and return a non-zero value. **]**
+**SRS_SM_02_028: [** If `b_now` has least significand bit set to 1 then `sm_barrier_begin` shall fail and `SM_EXEC_REFUSED`. **]**
 
 **SRS_SM_02_029: [** `sm_barrier_begin` shall wait for the completion of all the previous operations. **]**
 
-**SRS_SM_02_030: [** `sm_barrier_begin` shall succeed and return 0. **]**
+**SRS_SM_02_030: [** `sm_barrier_begin` shall succeed and return `SM_EXEC_GRANTED`. **]**
 
-**SRS_SM_02_031: [** If there are any failures then `sm_barrier_begin` shall fail and return a non-zero value. **]**
+**SRS_SM_02_031: [** If there are any failures then `sm_barrier_begin` shall fail and return `SM_ERROR`. **]**
 
 ### sm_barrier_end
 ```c
