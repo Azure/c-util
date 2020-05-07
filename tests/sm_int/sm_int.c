@@ -31,6 +31,12 @@
 
 #define N_MAX_THREADS 32
 
+static volatile LONG barrier_grants = 0;
+static volatile LONG64 barrier_refusals = 0; /*this is just for giggles*/
+
+static volatile LONG non_barrier_grants = 0;
+static volatile LONG64 non_barrier_refusals = 0;
+
 typedef struct ONE_WRITE_TAG
 {
     LONG what_was_source;
@@ -78,9 +84,6 @@ TEST_FUNCTION_CLEANUP(cleanup)
 
 }
 
-static volatile LONG barrier_grants = 0;
-static volatile LONG64 barrier_refusals = 0; /*this is just for giggles*/
-
 static DWORD barrier_thread(
     LPVOID lpThreadParameter
 )
@@ -112,9 +115,6 @@ static DWORD barrier_thread(
     }
     return 0;
 }
-
-static volatile LONG non_barrier_grants = 0;
-static volatile LONG64 non_barrier_refusals = 0;
 
 static DWORD non_barrier_thread(
     LPVOID lpThreadParameter

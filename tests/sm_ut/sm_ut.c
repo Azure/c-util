@@ -528,8 +528,8 @@ TEST_FUNCTION(sm_begin_with_sm_NULL_fails)
     ///clean
 }
 
-/*Tests_SRS_SM_02_022: [ If there's a barrier set then sm_begin shall return SM_EXEC_REFUSED. ]*/
-/*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
+/*Tests_SRS_SM_02_035: [ sm_begin shall increment n. ]*/
+/*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return SM_EXEC_GRANTED. ]*/
 TEST_FUNCTION(sm_begin_when_b_now_s_least_significant_bit_is_not_set_sm_begin_SM_EXEC_GRANTED)
 {
     ///arrange
@@ -553,8 +553,13 @@ TEST_FUNCTION(sm_begin_when_b_now_s_least_significant_bit_is_not_set_sm_begin_SM
     sm_destroy(sm);
 }
 
+/*Tests_SRS_SM_02_036: [ If the barrier changed after incrementing n then sm_begin shall increment e, signal a potential drain, and return SM_EXEC_REFUSED. ]*/
+TEST_FUNCTION(sm_begin_with_unstable_barrier_returns_SM_EXEC_REFUSED)
+{
+    /*left to int tests*/
+}
+
 /*Tests_SRS_SM_02_022: [ If there's a barrier set then sm_begin shall return SM_EXEC_REFUSED. ]*/
-/*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
 TEST_FUNCTION(sm_begin_without_open_fails)
 {
     ///arrange
@@ -572,33 +577,7 @@ TEST_FUNCTION(sm_begin_without_open_fails)
     sm_destroy(sm);
 }
 
-#if 0 /*vld.h - check if it can be uncommented*/
 /*Tests_SRS_SM_02_022: [ If there's a barrier set then sm_begin shall return SM_EXEC_REFUSED. ]*/
-/*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
-TEST_FUNCTION(sm_begin_middle_of_open_fails)
-{
-    ///arrange
-    SM_RESULT result;
-    SM_HANDLE sm = TEST_sm_create();
-
-    result = sm_open_begin(sm);
-    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-
-    ///act
-    result = sm_begin(sm);
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-
-    ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///clean
-    sm_open_end(sm);
-    sm_destroy(sm);
-}
-#endif
-
-/*Tests_SRS_SM_02_022: [ If there's a barrier set then sm_begin shall return SM_EXEC_REFUSED. ]*/
-/*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
 TEST_FUNCTION(sm_begin_middle_of_close_fails)
 {
     ///arrange
@@ -627,7 +606,6 @@ TEST_FUNCTION(sm_begin_middle_of_close_fails)
 }
 
 /*Tests_SRS_SM_02_022: [ If there's a barrier set then sm_begin shall return SM_EXEC_REFUSED. ]*/
-/*Tests_SRS_SM_02_023: [ sm_begin shall succeed and return 0. ]*/
 TEST_FUNCTION(sm_begin_after_barrier_fails)
 {
     ///arrange
@@ -668,7 +646,7 @@ TEST_FUNCTION(sm_end_with_sm_NULL_returns)
 }
 
 /*Tests_SRS_SM_02_025: [ sm_end shall increment the number of executed APIs (e). ]*/
-/*Tests_SRS_SM_02_026: [ If the number of executed APIs matches the waiting barrier then sm_end shall wake up the waiting barrier. ]*/
+/*Tests_SRS_SM_02_026: [ If n-e is 1 then sm_end shall wake up the waiting barrier. ]*/
 TEST_FUNCTION(sm_end_increments_number_of_executed_APIs)
 {
     /*left to int tests*/
@@ -759,7 +737,7 @@ TEST_FUNCTION(sm_barrier_begin_after_barrier_fails)
 }
 
 /*Tests_SRS_SM_02_029: [ sm_barrier_begin shall wait for the completion of all the previous operations. ]*/
-/*Tests_SRS_SM_02_030: [ sm_barrier_begin shall succeed and return 0. ]*/
+/*Tests_SRS_SM_02_030: [ sm_barrier_begin shall succeed and return SM_EXEC_GRANTED. ]*/
 TEST_FUNCTION(sm_barrier_begin_succeeds)
 {
     ///arrange

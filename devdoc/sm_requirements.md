@@ -225,4 +225,4 @@ MOCKABLE_FUNCTION(, void, sm_barrier_end, SM_HANDLE, sm);
 
 **SRS_SM_02_032: [** If `sm` is `NULL` then `sm_barrier_end` shall return. **]**
 
-**SRS_SM_02_033: [** `sm_barrier_end` shall increment the number of executed operations (`e`), switch `b_now` to `INT64_MAX` and return, **]**
+**SRS_SM_02_033: [** `sm_barrier_end` shall increment the number of executed operations (`e`), increment `b_now` and return. **]**

@@ -149,6 +149,7 @@ static SM_RESULT sm_barrier_begin_internal(SM_HANDLE sm)
     SM_RESULT result;
     LONG64 b_now = InterlockedOr64(&sm->b_now, 1);
 
+    /*Codes_SRS_SM_02_014: [ sm_close_begin shall set lowest bit of b_now to 1. ]*/
     /*Codes_SRS_SM_02_028: [ If b_now has least significand bit set to 1 then sm_barrier_begin shall fail and SM_EXEC_REFUSED. ]*/
     /*Codes_SRS_SM_02_020: [ If there was no sm_open_begin/sm_open_end called previously, sm_close_begin shall fail and SM_EXEC_REFUSED. ]*/
     if ((b_now & 1) == 0)
