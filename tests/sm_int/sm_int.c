@@ -62,7 +62,7 @@ typedef struct THREADS_COMMON_TAG
 
 MU_DEFINE_ENUM(THREAD_TYPE, THREAD_TYPE_VALUE)
 
-static DWORD barrier_thread(
+static DWORD WINAPI barrier_thread(
     LPVOID lpThreadParameter
 )
 {
@@ -94,7 +94,7 @@ static DWORD barrier_thread(
     return 0;
 }
 
-static DWORD non_barrier_thread(
+static  DWORD WINAPI non_barrier_thread(
     LPVOID lpThreadParameter
 )
 {

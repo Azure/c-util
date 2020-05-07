@@ -97,6 +97,8 @@ function(set_platform_files c_util_dir)
         set(UNIQUEID_C_FILE ${c_util_dir}/adapters/uniqueid_win32.c PARENT_SCOPE)
         set(STRING_UTILS_C_FILE ${c_util_dir}/adapters/string_utils.c PARENT_SCOPE)
         set(SRW_LOCK_C_FILE ${c_util_dir}/adapters/srw_lock.c PARENT_SCOPE)
+        set(SM_C_FILE ${c_util_dir}/src/sm.c PARENT_SCOPE)
+        set(SM_H_FILE ${c_util_dir}/inc/azure_c_util/sm.h PARENT_SCOPE)
     else()
         set(LOCK_C_FILE ${c_util_dir}/adapters/lock_pthreads.c PARENT_SCOPE)
         set(PLATFORM_C_FILE ${c_util_dir}/adapters/platform_linux.c PARENT_SCOPE)
@@ -106,6 +108,8 @@ function(set_platform_files c_util_dir)
         set(XLOGGING_C_FILE ${c_util_dir}/src/xlogging.c PARENT_SCOPE)
         set(LOGGING_C_FILE ${c_util_dir}/src/consolelogger.c PARENT_SCOPE)
         set(LOGGING_H_FILE ${c_util_dir}/inc/azure_c_util/consolelogger.h PARENT_SCOPE)
+        set(SM_C_FILE) #there's no SM for linux
+        set(SM_H_FILE) #there's no SM for linux
     endif()
     
     if(WIN32 OR MACOSX OR LINUX)
@@ -131,12 +135,12 @@ set(azure_c_util_c_files
     ./src/map.c
     ./src/memory_data.c
     ./src/singlylinkedlist.c
-    ./src/sm.c
     ./src/strings.c
     ./src/thandle_stdlib.c
     ./src/uuid.c
     ${LOCK_C_FILE}
     ${SRW_LOCK_C_FILE}
+    ${SM_C_FILE}
     ${TIMER_C_FILE}
     ${STRING_UTILS_C_FILE}
     ${TICKCOUTER_C_FILE}
@@ -164,7 +168,6 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/platform.h
     ./inc/azure_c_util/refcount.h
     ./inc/azure_c_util/singlylinkedlist.h
-    ./inc/azure_c_util/sm.h
     ./inc/azure_c_util/srw_lock.h
     ./inc/azure_c_util/string_utils.h
     ./inc/azure_c_util/strings.h
@@ -178,6 +181,7 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/uuid.h
     ./inc/azure_c_util/xlogging.h
     ./inc/azure_c_util/interlocked_hl.h
+    ${SM_H_FILE}
 )
 
 set(azure_c_util_logging_c_files
