@@ -96,7 +96,7 @@ function(set_platform_files c_util_dir)
         set(TIMER_C_FILE ${c_util_dir}/adapters/timer.c PARENT_SCOPE)
         set(UNIQUEID_C_FILE ${c_util_dir}/adapters/uniqueid_win32.c PARENT_SCOPE)
         set(STRING_UTILS_C_FILE ${c_util_dir}/adapters/string_utils.c PARENT_SCOPE)
-        set(SRW_LOCK_C_FILE ${c_util_dir}/adapters/srw_lock.c PARENT_SCOPE)
+        set(INTERLOCKED_IF_C_FILE ${c_util_dir}/src/interlocked_if_win32.c PARENT_SCOPE)
     else()
         set(LOCK_C_FILE ${c_util_dir}/adapters/lock_pthreads.c PARENT_SCOPE)
         set(PLATFORM_C_FILE ${c_util_dir}/adapters/platform_linux.c PARENT_SCOPE)
@@ -106,6 +106,7 @@ function(set_platform_files c_util_dir)
         set(XLOGGING_C_FILE ${c_util_dir}/src/xlogging.c PARENT_SCOPE)
         set(LOGGING_C_FILE ${c_util_dir}/src/consolelogger.c PARENT_SCOPE)
         set(LOGGING_H_FILE ${c_util_dir}/inc/azure_c_util/consolelogger.h PARENT_SCOPE)
+        set(INTERLOCKED_IF_C_FILE ${c_util_dir}/src/interlocked_if_linux.c PARENT_SCOPE)
     endif()
     
     if(WIN32 OR MACOSX OR LINUX)
@@ -144,6 +145,7 @@ set(azure_c_util_c_files
     ${ENVIRONMENT_VARIABLE_C_FILE}
     ${PLATFORM_C_FILE}
     ${INTERLOCKED_HL_C_FILE}
+    ${INTERLOCKED_IF_C_FILE}
 )
 
 set(azure_c_util_h_files
@@ -176,6 +178,7 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/uuid.h
     ./inc/azure_c_util/xlogging.h
     ./inc/azure_c_util/interlocked_hl.h
+    ./inc/azure_c_util/interlocked_if.h
 )
 
 set(azure_c_util_logging_c_files
