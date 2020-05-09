@@ -480,26 +480,15 @@ static void verify(THREADS_COMMON* data) /*ASSERTS*/
     }
 }
 
+static SYSTEM_INFO systemInfo;
+static DWORD dwNumberOfProcessors;
+
 BEGIN_TEST_SUITE(sm_int_tests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
-
-}
-
-TEST_SUITE_CLEANUP(s)
-{
-
-}
-
-TEST_FUNCTION_INITIALIZE(init)
-{
-
-}
-
-TEST_FUNCTION_CLEANUP(cleanup)
-{
-
+    GetSystemInfo(&systemInfo);
+    dwNumberOfProcessors = systemInfo.dwNumberOfProcessors;
 }
 
 /*tests aims to mindlessly execute the APIs.
@@ -516,7 +505,7 @@ TEST_FUNCTION(sm_chaos)
 
     InterlockedExchange(&data->threadsShouldFinish, 0);
 
-    for (uint32_t nthreads = 1; nthreads <= N_MAX_THREADS; nthreads++)
+    for (uint32_t nthreads = 1; nthreads <= 4 * dwNumberOfProcessors; nthreads*=2)
     {
         data->n_begin_open_threads = nthreads;
         data->n_end_open_threads = nthreads;
@@ -606,7 +595,7 @@ TEST_FUNCTION(sm_does_not_block)
     ASSERT_IS_NOT_NULL(data->sm);
 
     ///act
-    for (uint32_t nthreads = 1; nthreads <= N_MAX_THREADS; nthreads+=4)
+    for (uint32_t nthreads = 1; nthreads <= 4 * dwNumberOfProcessors; nthreads*=2)
     {
         for(uint32_t n_barrier_threads=0; n_barrier_threads<=nthreads; n_barrier_threads+=4)
         {
