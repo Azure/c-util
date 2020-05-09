@@ -34,8 +34,8 @@ MU_DEFINE_ENUM(SM_STATE, SM_STATE_VALUES)
 
 typedef struct SM_HANDLE_DATA_TAG
 {
-    volatile LONG64 state;
-    volatile LONG64 n; /*number of API calls to non-barriers*/
+    volatile LONG state;
+    volatile LONG n; /*number of API calls to non-barriers*/
 #ifdef _MSC_VER
 /*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/en-us/library/b6fae073.aspx*/
 #pragma warning(disable:4200)
@@ -74,8 +74,8 @@ SM_HANDLE sm_create(const char* name)
     else
     {
         /*Codes_SRS_SM_02_003: [ sm_create shall set b_now to -1, n to 0, and e to 0 succeed and return a non-NULL value. ]*/
-        (void)InterlockedExchange64(&result->state, SM_CREATED);
-        (void)InterlockedExchange64(&result->n, 0);
+        (void)InterlockedExchange(&result->state, SM_CREATED);
+        (void)InterlockedExchange(&result->n, 0);
         (void)memcpy(result->name, name, flexSize);
         /*return as is*/
     }
@@ -108,7 +108,7 @@ int sm_open_begin(SM_HANDLE sm)
     }
     else
     {
-        LONG64 state = InterlockedAdd64(&sm->state, 0);
+        LONG state = InterlockedAdd(&sm->state, 0);
         if ((state & SM_STATE_MASK) != SM_CREATED)
         {
             LogError("cannot begin to open that which is in %" PRI_MU_ENUM " state", MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
@@ -116,7 +116,7 @@ int sm_open_begin(SM_HANDLE sm)
         }
         else
         {
-            if (InterlockedCompareExchange64(&sm->state, state - SM_CREATED + SM_OPENING + SM_STATE_INCREMENT, state) != state)
+            if (InterlockedCompareExchange(&sm->state, state - SM_CREATED + SM_OPENING + SM_STATE_INCREMENT, state) != state)
             {
                 LogError("state changed meanwhile, maybe some other thread...");
                 result = SM_EXEC_REFUSED;
@@ -139,14 +139,14 @@ void sm_open_end(SM_HANDLE sm)
     }
     else
     {
-        LONG64 state = InterlockedAdd64(&sm->state, 0);
+        LONG state = InterlockedAdd(&sm->state, 0);
         if ((state & SM_STATE_MASK) != SM_OPENING)
         {
             LogError("cannot end to open that which is in %" PRI_MU_ENUM " state", MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
         }
         else
         {
-            if (InterlockedCompareExchange64(&sm->state, state - SM_CREATED + SM_OPENING + SM_STATE_INCREMENT, state) != state)
+            if (InterlockedCompareExchange(&sm->state, state - SM_OPENING + SM_OPENED + SM_STATE_INCREMENT, state) != state)
             {
                 LogError("state changed meanwhile, very straaaaange");
             }
@@ -169,7 +169,7 @@ SM_RESULT sm_close_begin(SM_HANDLE sm)
     }
     else
     {
-        LONG64 state = InterlockedAdd64(&sm->state, 0);
+        LONG state = InterlockedAdd(&sm->state, 0);
         if ((state & SM_STATE_MASK) != SM_OPENED)
         {
             LogError("cannot begin to close that which is in %" PRI_MU_ENUM " state", MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
@@ -177,16 +177,16 @@ SM_RESULT sm_close_begin(SM_HANDLE sm)
         }
         else
         {
-            if (InterlockedCompareExchange64(&sm->state, state - SM_OPENED + SM_OPENED_DRAINING_TO_CLOSE + SM_STATE_INCREMENT, state) != state)
+            if (InterlockedCompareExchange(&sm->state, state - SM_OPENED + SM_OPENED_DRAINING_TO_CLOSE + SM_STATE_INCREMENT, state) != state)
             {
                 LogError("state changed meanwhile, this thread cannot close");
                 result = SM_EXEC_REFUSED;
             }
             else
             {
-                InterlockedHL_WaitForValue64(&sm->n, 0, INFINITE);
+                InterlockedHL_WaitForValue(&sm->n, 0, INFINITE);
 
-                InterlockedAdd64(&sm->state, - SM_OPENED_DRAINING_TO_CLOSE + SM_CLOSING + SM_STATE_INCREMENT);
+                InterlockedAdd(&sm->state, - SM_OPENED_DRAINING_TO_CLOSE + SM_CLOSING + SM_STATE_INCREMENT);
                 result = SM_EXEC_GRANTED;
             }
         }
@@ -204,14 +204,14 @@ void sm_close_end(SM_HANDLE sm)
     }
     else
     {
-        LONG64 state = InterlockedAdd64(&sm->state, 0);
+        LONG state = InterlockedAdd(&sm->state, 0);
         if ((state & SM_STATE_MASK) != SM_CLOSING)
         {
             LogError("cannot end to close that which is in %" PRI_MU_ENUM " state", MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
         }
         else
         {
-            if (InterlockedCompareExchange64(&sm->state, state - SM_CLOSING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
+            if (InterlockedCompareExchange(&sm->state, state - SM_CLOSING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
             {
                 LogError("state changed meanwhile, very straaaaange");
             }
@@ -226,7 +226,7 @@ void sm_close_end(SM_HANDLE sm)
 SM_RESULT sm_begin(SM_HANDLE sm)
 {
     SM_RESULT result;
-    LONG64 state1 = InterlockedAdd64(&sm->state, 0);
+    LONG state1 = InterlockedAdd(&sm->state, 0);
     if ((state1 & SM_STATE_MASK) != SM_OPENED)
     {
         LogError("cannot execute begin when state is %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATE, state1 & SM_STATE_MASK));
@@ -234,11 +234,11 @@ SM_RESULT sm_begin(SM_HANDLE sm)
     }
     else
     {
-        InterlockedIncrement64(&sm->n);
-        LONG64 state2 = InterlockedAdd64(&sm->state, 0);
+        InterlockedIncrement(&sm->n);
+        LONG state2 = InterlockedAdd(&sm->state, 0);
         if (state2 != state1)
         {
-            LONG64 n = InterlockedDecrement64(&sm->n);
+            LONG n = InterlockedDecrement(&sm->n);
             if (n == 0)
             {
                 WakeByAddressSingle((void*)&sm->n);
@@ -261,18 +261,18 @@ void sm_end(SM_HANDLE sm)
     }
     else
     {
-        LONG64 state1 = InterlockedAdd64(&sm->state, 0);
+        LONG state = InterlockedAdd(&sm->state, 0);
         if (
-            ((state1 & SM_STATE_MASK) != SM_OPENED) &&
-            ((state1 & SM_STATE_MASK) != SM_OPENED_DRAINING_TO_BARRIER) &&
-            ((state1 & SM_STATE_MASK) != SM_OPENED_DRAINING_TO_CLOSE)
+            ((state & SM_STATE_MASK) != SM_OPENED) &&
+            ((state & SM_STATE_MASK) != SM_OPENED_DRAINING_TO_BARRIER) &&
+            ((state & SM_STATE_MASK) != SM_OPENED_DRAINING_TO_CLOSE)
             )
         {
-            LogError("cannot execute end when state is %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATE, state1 & SM_STATE_MASK));
+            LogError("cannot execute end when state is %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
         }
         else
         {
-            LONG64 n = InterlockedDecrement64(&sm->n);
+            LONG n = InterlockedDecrement(&sm->n);
             if (n == 0)
             {
                 WakeByAddressSingle((void*)&sm->n);
@@ -291,7 +291,7 @@ SM_RESULT sm_barrier_begin(SM_HANDLE sm)
     }
     else
     {
-        LONG64 state = InterlockedAdd64(&sm->state, 0);
+        LONG state = InterlockedAdd(&sm->state, 0);
         if ((state & SM_STATE_MASK) != SM_OPENED)
         {
             LogError("cannot execute barrier begin when state is %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
@@ -299,16 +299,16 @@ SM_RESULT sm_barrier_begin(SM_HANDLE sm)
         }
         else
         {
-            if (InterlockedCompareExchange64(&sm->state, state - SM_OPENED + SM_OPENED_DRAINING_TO_BARRIER + SM_STATE_INCREMENT, state) != state)
+            if (InterlockedCompareExchange(&sm->state, state - SM_OPENED + SM_OPENED_DRAINING_TO_BARRIER + SM_STATE_INCREMENT, state) != state)
             {
                 LogError("state changed meanwhile, this thread cannot start a barrier");
                 result = SM_EXEC_REFUSED;
             }
             else
             {
-                InterlockedHL_WaitForValue64(&sm->n, 0, INFINITE);
+                InterlockedHL_WaitForValue(&sm->n, 0, INFINITE);
                 
-                InterlockedAdd64(&sm->state, - SM_OPENED_DRAINING_TO_BARRIER + SM_OPENED_BARRIER + SM_STATE_INCREMENT);
+                InterlockedAdd(&sm->state, - SM_OPENED_DRAINING_TO_BARRIER + SM_OPENED_BARRIER + SM_STATE_INCREMENT);
                 result = SM_EXEC_GRANTED;
             }
         }
@@ -324,14 +324,14 @@ void sm_barrier_end(SM_HANDLE sm)
     }
     else
     {
-        LONG64 state = InterlockedAdd64(&sm->state, 0);
+        LONG state = InterlockedAdd(&sm->state, 0);
         if ((state & SM_STATE_MASK) != SM_OPENED_BARRIER)
         {
             LogError("cannot execute barrier end when state is %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
         }
         else
         {
-            if (InterlockedCompareExchange64(&sm->state, state - SM_OPENED_BARRIER + SM_OPENED + SM_STATE_INCREMENT, state) != state)
+            if (InterlockedCompareExchange(&sm->state, state - SM_OPENED_BARRIER + SM_OPENED + SM_STATE_INCREMENT, state) != state)
             {
                 LogError("state changed meanwhile, very straaaaange");
             }
