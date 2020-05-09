@@ -16,22 +16,9 @@
 
 #include "azure_c_util/sm.h"
 
-#define ARRAY_SIZE 1000000
+TEST_DEFINE_ENUM_TYPE(SM_RESULT, SM_RESULT_VALUES);
 
-/*how many threads maximum. This needs to be slightly higher than the number of CPU threads because we want to see interrupted threads*/
-/*the tests will start from 1*/
-/*for every number of threads (starting from 1... N_MAX_THREADS)*/
-/*the test will spawn 0... N_MAX_THREADS of threads that do "non-barrier" operations*/
-/*the rest of the threads will do "barrier" operations*/
-/*all the threads write in an array of 1.000.000 elements. Each element contains 2 items: 1) a number 2) a type (true = barrier, false = non-barrier)*/
-
-/*there's a shared index the array (starts at zero)*/
-/*there's a shared "source of numbers" (starts at zero)*/
-
-/*a non barrier thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
-/*a thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
-
-#define N_MAX_THREADS 32
+#define N_MAX_THREADS MAXIMUM_WAIT_OBJECTS
 
 typedef struct OPEN_CLOSE_THREADS_TAG
 {
@@ -362,6 +349,20 @@ static void waitAndDestroyBeginAndEndThreads(OPEN_CLOSE_THREADS* data)
     }
 }
 
+#define ARRAY_SIZE 1000000
+
+/*how many threads maximum. This needs to be slightly higher than the number of CPU threads because we want to see interrupted threads*/
+/*the tests will start from 1*/
+/*for every number of threads (starting from 1... N_MAX_THREADS)*/
+/*the test will spawn 0... N_MAX_THREADS of threads that do "non-barrier" operations*/
+/*the rest of the threads will do "barrier" operations*/
+/*all the threads write in an array of 1.000.000 elements. Each element contains 2 items: 1) a number 2) a type (true = barrier, false = non-barrier)*/
+
+/*there's a shared index the array (starts at zero)*/
+/*there's a shared "source of numbers" (starts at zero)*/
+
+/*a non barrier thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
+/*a thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
 
 static volatile LONG barrier_grants = 0;
 static volatile LONG64 barrier_refusals = 0; /*this is just for giggles*/
@@ -489,6 +490,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 {
     GetSystemInfo(&systemInfo);
     dwNumberOfProcessors = systemInfo.dwNumberOfProcessors;
+    ASSERT_IS_TRUE(dwNumberOfProcessors * 4 <= N_MAX_THREADS, "for systems with maaany processors, modify N_MAX_THREADS to be bigger");
 }
 
 /*tests aims to mindlessly execute the APIs.
@@ -505,7 +507,7 @@ TEST_FUNCTION(sm_chaos)
 
     InterlockedExchange(&data->threadsShouldFinish, 0);
 
-    for (uint32_t nthreads = 1; nthreads <= 4 * dwNumberOfProcessors; nthreads*=2)
+    for (uint32_t nthreads = 1; nthreads <= min(4 * dwNumberOfProcessors, N_MAX_THREADS); nthreads*=2)
     {
         data->n_begin_open_threads = nthreads;
         data->n_end_open_threads = nthreads;
@@ -595,7 +597,7 @@ TEST_FUNCTION(sm_does_not_block)
     ASSERT_IS_NOT_NULL(data->sm);
 
     ///act
-    for (uint32_t nthreads = 1; nthreads <= 4 * dwNumberOfProcessors; nthreads*=2)
+    for (uint32_t nthreads = 1; nthreads <= min(4 * dwNumberOfProcessors, N_MAX_THREADS); nthreads*=2)
     {
         for(uint32_t n_barrier_threads=0; n_barrier_threads<=nthreads; n_barrier_threads+=4)
         {
@@ -673,6 +675,199 @@ TEST_FUNCTION(sm_does_not_block)
     ///clean
     sm_destroy(data->sm);
     free(data);
+}
+
+/*below tests aim to see that calling any API produces GRANT/REFUSED from any state*/
+/*these are states
+SM_CREATED	SM_CREATED(1)	SM_STATE_TAG
+SM_OPENING	SM_OPENING(2)	SM_STATE_TAG
+SM_OPENED	SM_OPENED(3)	SM_STATE_TAG
+SM_OPENED_DRAINING_TO_BARRIER	SM_OPENED_DRAINING_TO_BARRIER(4)	SM_STATE_TAG
+SM_OPENED_DRAINING_TO_CLOSE	SM_OPENED_DRAINING_TO_CLOSE(5)	SM_STATE_TAG
+SM_OPENED_BARRIER	SM_OPENED_BARRIER(6)	SM_STATE_TAG
+SM_CLOSING	SM_CLOSING(7)	SM_STATE_TAG
+
+these are APIs:
+sm_open_begin
+sm_close_begin
+sm_begin
+sm_barrier_begin
+*/
+
+typedef struct SM_GO_TO_STATE_TAG
+{
+    SM_HANDLE sm;
+    uint32_t targetState;
+    HANDLE thread;
+}SM_GO_TO_STATE;
+
+static DWORD WINAPI switchesState(
+    LPVOID lpThreadParameter
+)
+{
+    SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)lpThreadParameter;
+    switch (goToState->targetState)
+    {
+        case 0:/*SM_CREATED*/
+        {
+            break;
+        }
+        case 1:/*SM_OPENING*/
+        {
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(goToState->sm));
+            break;
+        }
+        case 2:/*SM_OPENED*/
+        {
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(goToState->sm));
+            sm_open_end(goToState->sm);
+            break;
+        }
+        case 3:/*SM_OPENED_DRAINING_TO_BARRIER*/
+        {
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(goToState->sm));
+            sm_open_end(goToState->sm);
+
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_begin(goToState->sm));
+
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_barrier_begin(goToState->sm)); /*switches to draining mode*/
+            sm_barrier_end(goToState->sm);
+            break;
+
+        }
+        case 4:/*SM_OPENED_DRAINING_TO_CLOSE*/
+        {
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(goToState->sm));
+            sm_open_end(goToState->sm);
+
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_begin(goToState->sm));
+
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_close_begin(goToState->sm)); /*switches to draining mode*/
+            sm_close_end(goToState->sm);
+
+            break;
+        }
+        case 5:/*SM_OPENED_BARRIER*/
+        {
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(goToState->sm));
+            sm_open_end(goToState->sm);
+
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_barrier_begin(goToState->sm));
+            break;
+        }
+        case 6:/*SM_CLOSING*/
+        {
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(goToState->sm));
+            sm_open_end(goToState->sm);
+
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_close_begin(goToState->sm));
+            break;
+        }
+        default:
+        {
+            ASSERT_FAIL("unknown state");
+            break;
+        }
+    }
+    return 0;
+}
+
+static void sm_gotostate(SM_GO_TO_STATE* goToState)
+{
+    goToState->thread = CreateThread(NULL, 0, switchesState, goToState, 0, NULL);
+    ASSERT_IS_NOT_NULL(goToState->thread);
+    /*depending on the requested state, the thread might have finished by now...*/
+}
+
+/*tests different expected returns from different states of SM*/
+TEST_FUNCTION(STATE_and_API)
+{
+    SM_RESULT expected[][4]=
+    {
+                                                /*sm_open_begin*/       /*sm_close_begin*/      /*sm_begin*/        /*sm_barrier_begin*/
+        /*SM_CREATED*/                      {   SM_EXEC_GRANTED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
+        /*SM_OPENING*/                      {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
+        /*SM_OPENED*/                       {   SM_EXEC_REFUSED,        SM_EXEC_GRANTED,        SM_EXEC_GRANTED,    SM_EXEC_GRANTED     },
+        /*SM_OPENED_DRAINING_TO_BARRIER*/   {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
+        /*SM_OPENED_DRAINING_TO_CLOSE*/     {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
+        /*SM_OPENED_BARRIER*/               {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
+        /*SM_CLOSING*/                      {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
+    };
+
+    for (uint32_t i = 0; i < sizeof(expected) / sizeof(expected[0]); i++)
+    {
+        for (uint32_t j = 0; j < sizeof(expected[0]) / sizeof(expected[0][0]); j++)
+        {
+            SM_GO_TO_STATE goToState;
+            goToState.sm = sm_create(NULL);
+            ASSERT_IS_NOT_NULL(goToState.sm);
+            goToState.targetState = i;
+            sm_gotostate(&goToState);
+
+            Sleep(100); /*assume it gets to the state in this much ample time*/
+
+            switch (j)
+            {
+                case 0:/*sm_open_begin*/
+                {
+                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j], sm_open_begin(goToState.sm));
+                    if (expected[i][j] == SM_EXEC_GRANTED)
+                    {
+                        sm_open_end(goToState.sm);
+                    }
+                    break;
+                }
+                case 1:/*sm_close_begin*/
+                {
+                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j], sm_close_begin(goToState.sm));
+                    if (expected[i][j] == SM_EXEC_GRANTED)
+                    {
+                        sm_close_end(goToState.sm);
+                    }
+                    break;
+                }
+                case 2:/*sm_begin*/
+                {
+                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j], sm_begin(goToState.sm));
+                    if (expected[i][j] == SM_EXEC_GRANTED)
+                    {
+                        sm_end(goToState.sm);
+                    }
+                    break;
+                }
+                case 3:/*sm_barrier_begin*/
+                {
+                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j], sm_barrier_begin(goToState.sm));
+                    if (expected[i][j] == SM_EXEC_GRANTED)
+                    {
+                        sm_barrier_end(goToState.sm);
+                    }
+                    break;
+                }
+                default:
+                {
+                    ASSERT_FAIL("unknown action");
+                }
+            }
+
+            /*unstuck thread if needed*/
+            if (i == 3) /*SM_OPENED_DRAINING_TO_BARRIER*/
+            {
+                sm_end(goToState.sm); /*this unblocks the thread*/
+            }
+
+            if (i == 4) /*SM_OPENED_DRAINING_TO_CLOSE*/
+            {
+                sm_end(goToState.sm); /*this unblocks the thread*/
+            }
+
+            ASSERT_IS_TRUE(WaitForSingleObject(goToState.thread, INFINITE) == WAIT_OBJECT_0);
+            (void)CloseHandle(goToState.thread);
+            
+            sm_destroy(goToState.sm);
+        }
+    }
+
 }
 
 END_TEST_SUITE(sm_int_tests)
