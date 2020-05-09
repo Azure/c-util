@@ -16,13 +16,13 @@
 #include "azure_c_util/sm.h"
 
 #define SM_STATE_VALUES             \
-    SM_CREATED,               \
-    SM_OPENING,               \
-    SM_OPENED,                \
-    SM_OPENED_DRAINING_TO_BARRIER,                \
-    SM_OPENED_DRAINING_TO_CLOSE,                \
-    SM_OPENED_BARRIER,          \
-    SM_CLOSING                \
+    SM_CREATED,                     \
+    SM_OPENING,                     \
+    SM_OPENED,                      \
+    SM_OPENED_DRAINING_TO_BARRIER,  \
+    SM_OPENED_DRAINING_TO_CLOSE,    \
+    SM_OPENED_BARRIER,              \
+    SM_CLOSING                      \
 
 MU_DEFINE_ENUM(SM_STATE, SM_STATE_VALUES)
 
@@ -177,8 +177,7 @@ SM_RESULT sm_close_begin(SM_HANDLE sm)
         }
         else
         {
-            LONG64 draining_state;
-            if ((draining_state = InterlockedCompareExchange64(&sm->state, state - SM_OPENED + SM_OPENED_DRAINING_TO_CLOSE + SM_STATE_INCREMENT, state)) != state)
+            if (InterlockedCompareExchange64(&sm->state, state - SM_OPENED + SM_OPENED_DRAINING_TO_CLOSE + SM_STATE_INCREMENT, state) != state)
             {
                 LogError("state changed meanwhile, this thread cannot close");
                 result = SM_EXEC_REFUSED;
@@ -300,8 +299,7 @@ SM_RESULT sm_barrier_begin(SM_HANDLE sm)
         }
         else
         {
-            LONG64 draining_state;
-            if ((draining_state=InterlockedCompareExchange64(&sm->state, state - SM_OPENED + SM_OPENED_DRAINING_TO_BARRIER + SM_STATE_INCREMENT, state)) != state)
+            if (InterlockedCompareExchange64(&sm->state, state - SM_OPENED + SM_OPENED_DRAINING_TO_BARRIER + SM_STATE_INCREMENT, state) != state)
             {
                 LogError("state changed meanwhile, this thread cannot start a barrier");
                 result = SM_EXEC_REFUSED;
