@@ -7,18 +7,35 @@
 
 #include "windows.h"
 
+#include "azure_macro_utils/macro_utils.h"
+
 #include "azure_c_util/xlogging.h"
 #include "azure_c_util/gballoc.h"
 #include "azure_c_util/interlocked_hl.h"
 
 #include "azure_c_util/sm.h"
 
+#define SM_STATE_VALUES             \
+    SM_CREATED,               \
+    SM_OPENING,               \
+    SM_OPENED,                \
+    SM_OPENED_DRAINING_TO_BARRIER,                \
+    SM_OPENED_DRAINING_TO_CLOSE,                \
+    SM_OPENED_BARRIER,          \
+    SM_CLOSING                \
+
+MU_DEFINE_ENUM(SM_STATE, SM_STATE_VALUES)
+
+#define SM_STATE_MASK       255
+#define SM_STATE_INCREMENT 256 /*at every state change, the state is incremented by this much*/
+
+#undef LogError
+#define LogError(...) {}
+
 typedef struct SM_HANDLE_DATA_TAG
 {
-    volatile LONG64 b_now; /*where's the barrier at, starts at 0. 1 is when barrier is active. 2,4,6... barrier inactive. 3,5,7... barrier active*/
-    volatile LONG64 n; /*number of API calls to barriers and non-barriers alike*/
-    volatile LONG64 e; /*how many of the APIs have executed. Both abrriers and non-barriers set this*/
-    volatile LONG e_done; /*varible that is signalled when e == n-1 (so a barrier is signaled that it might be allowed to proceed with execution)*/
+    volatile LONG64 state;
+    volatile LONG64 n; /*number of API calls to non-barriers*/
 #ifdef _MSC_VER
 /*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/en-us/library/b6fae073.aspx*/
 #pragma warning(disable:4200)
@@ -30,6 +47,7 @@ typedef struct SM_HANDLE_DATA_TAG
 static const char NO_NAME[] = "NO_NAME";
 
 MU_DEFINE_ENUM_STRINGS(SM_RESULT, SM_RESULT_VALUES);
+MU_DEFINE_ENUM_STRINGS(SM_STATE, SM_STATE_VALUES);
 
 SM_HANDLE sm_create(const char* name)
 {
@@ -56,10 +74,8 @@ SM_HANDLE sm_create(const char* name)
     else
     {
         /*Codes_SRS_SM_02_003: [ sm_create shall set b_now to -1, n to 0, and e to 0 succeed and return a non-NULL value. ]*/
-        (void)InterlockedExchange64(&result->b_now, -1);
+        (void)InterlockedExchange64(&result->state, SM_CREATED);
         (void)InterlockedExchange64(&result->n, 0);
-        (void)InterlockedExchange64(&result->e, 0);
-        (void)InterlockedExchange(&result->e_done, 0);
         (void)memcpy(result->name, name, flexSize);
         /*return as is*/
     }
@@ -92,19 +108,23 @@ int sm_open_begin(SM_HANDLE sm)
     }
     else
     {
-        /*Codes_SRS_SM_02_008: [ If b_now is not -1 then sm_open_begin shall fail and return SM_EXEC_REFUSED. ]*/
-        /*Codes_SRS_SM_02_009: [ sm_open_begin shall set b_now to 0, succeed and return SM_EXEC_GRANTED. ]*/
-        LONG64 b_now = InterlockedCompareExchange64(&sm->b_now, 0, -1);
-        if (b_now != -1)
+        LONG64 state = InterlockedAdd64(&sm->state, 0);
+        if ((state & SM_STATE_MASK) != SM_CREATED)
         {
-            /*Codes_SRS_SM_02_012: [ If sm_open_end doesn't follow a call to sm_open_begin then sm_open_end shall return. ]*/
-            LogError("cannot execute, name=%s, b_now=%" PRId64 "", sm->name, b_now);
+            LogError("cannot begin to open that which is in %" PRI_MU_ENUM " state", MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
             result = SM_EXEC_REFUSED;
         }
         else
         {
-            InterlockedIncrement64(&sm->n);
-            result = SM_EXEC_GRANTED;
+            if (InterlockedCompareExchange64(&sm->state, state - SM_CREATED + SM_OPENING + SM_STATE_INCREMENT, state) != state)
+            {
+                LogError("state changed meanwhile, maybe some other thread...");
+                result = SM_EXEC_REFUSED;
+            }
+            else
+            {
+                result = SM_EXEC_GRANTED;
+            }
         }
     }
     return result;
@@ -119,78 +139,23 @@ void sm_open_end(SM_HANDLE sm)
     }
     else
     {
-        /*Codes_SRS_SM_02_011: [ sm_open_end shall increment e, b_now to 0 and return. ]*/
-        InterlockedIncrement64(&sm->e);
-        InterlockedExchange64(&sm->b_now, 0);
-    }
-}
-
-/*aims at getting a stable "e" for a stable "n" and returns the difference between them*/
-static LONG64 get_n_minus_e(SM_HANDLE sm)
-{
-    LONG64 e1, e2, n1, n2;
-    do
-    {
-        e1 = InterlockedAdd64(&sm->e, 0);
-        do
+        LONG64 state = InterlockedAdd64(&sm->state, 0);
+        if ((state & SM_STATE_MASK) != SM_OPENING)
         {
-            n1 = InterlockedAdd64(&sm->n, 0);
-            e2 = InterlockedAdd64(&sm->e, 0);
-            n2 = InterlockedAdd64(&sm->n, 0);
-        } while (n1 != n2);
-    } while (e1 != e2);
-
-    return n1 - e1;
-}
-
-/*sm_barrier_begin calls this. Also sm_close calls this, because _close is nothing else but another barrier*/
-static SM_RESULT sm_barrier_begin_internal(SM_HANDLE sm)
-{
-    SM_RESULT result;
-    LONG64 b_now = InterlockedOr64(&sm->b_now, 1);
-
-    /*Codes_SRS_SM_02_014: [ sm_close_begin shall set lowest bit of b_now to 1. ]*/
-    /*Codes_SRS_SM_02_028: [ If b_now has least significand bit set to 1 then sm_barrier_begin shall fail and SM_EXEC_REFUSED. ]*/
-    /*Codes_SRS_SM_02_020: [ If there was no sm_open_begin/sm_open_end called previously, sm_close_begin shall fail and SM_EXEC_REFUSED. ]*/
-    if ((b_now & 1) == 0)
-    {
-        InterlockedExchange(&sm->e_done, 0);
-
-        LONG64 n = InterlockedIncrement64(&sm->n);
-        (void)n;
-
-        /*Codes_SRS_SM_02_030: [ sm_barrier_begin shall succeed and return SM_EXEC_GRANTED. ]*/
-        /*Codes_SRS_SM_02_017: [ sm_close_begin shall succeed and return SM_EXEC_GRANTED. ]*/
-        result = SM_EXEC_GRANTED;
-
-        /*drain previous executions*/
-        /*Codes_SRS_SM_02_016: [ sm_close_begin shall wait for all previous operations to end. ]*/
-        /*Codes_SRS_SM_02_029: [ sm_barrier_begin shall wait for the completion of all the previous operations. ]*/
-        while (get_n_minus_e(sm) != 1)
+            LogError("cannot end to open that which is in %" PRI_MU_ENUM " state", MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
+        }
+        else
         {
-            if (InterlockedHL_WaitForValue(&sm->e_done, 1, INFINITE) != INTERLOCKED_HL_OK)
+            if (InterlockedCompareExchange64(&sm->state, state - SM_CREATED + SM_OPENING + SM_STATE_INCREMENT, state) != state)
             {
-                /*Codes_SRS_SM_02_031: [ If there are any failures then sm_barrier_begin shall fail and return SM_ERROR. ]*/
-                /*Codes_SRS_SM_02_034: [ If there are any failures then sm_close_begin shall fail and return SM_ERROR. ]*/
-                LogError("Catastrophic failure: InterlockedHL_WaitForValue(&sm->e_done, 1, INFINITE), name=%s, n=%" PRId64 "", sm->name, n);
-                InterlockedIncrement64(&sm->e); /*this is pretty fatal here - the wait failed... */
-                result = SM_ERROR;
-                break;
+                LogError("state changed meanwhile, very straaaaange");
             }
             else
             {
-                /*some thread thinks that n - 1 == e, the while condition will look at that throughly*/
             }
         }
     }
-    else
-    {
-        /*Codes_SRS_SM_02_015: [ If setting the lowest bit b_now to 1 fails then sm_close_begin shall return SM_EXEC_REFUSED. ]*/
-        result = SM_EXEC_REFUSED;
-    }
-    return result;
 }
-
 
 SM_RESULT sm_close_begin(SM_HANDLE sm)
 {
@@ -204,68 +169,25 @@ SM_RESULT sm_close_begin(SM_HANDLE sm)
     }
     else
     {
-        result = sm_barrier_begin_internal(sm);
-    }
-    return result;
-}
-
-void sm_close_end(SM_HANDLE sm)
-{
-    /*Codes_SRS_SM_02_018: [ If sm is NULL then sm_close_end shall return. ]*/
-    if (sm == NULL)
-    {
-        LogError("invalid argument SM_HANDLE sm=%p", sm);
-    }
-    else
-    {
-        /*cannot really check that it is paired with a _close_begin without moving b_now through user land, not going to do that. That solution woould push the b_now of the "close" in user land. And user has to return with the same b_now here and check that it is the same*/
-        /*Codes_SRS_SM_02_019: [ sm_close_end shall switch b_now to -1, n to 0 and e to 0. ]*/
-        (void)InterlockedExchange64(&sm->b_now, -1);
-        (void)InterlockedExchange64(&sm->n, 0);
-        (void)InterlockedExchange64(&sm->e, 0);
-        (void)InterlockedExchange(&sm->e_done, 0);
-    }
-}
-
-SM_RESULT sm_begin(SM_HANDLE sm)
-{
-    SM_RESULT result;
-    /*Codes_SRS_SM_02_021: [ If sm is NULL then sm_begin shall fail and return SM_ERROR. ]*/
-    if (sm == NULL)
-    {
-        LogError("invalid argument SM_HANDLE sm=%p", sm);
-        result = SM_ERROR;
-    }
-    else
-    {
-        LONG64 b_now_1 = InterlockedAdd64(&sm->b_now, 0);
-
-        /*Codes_SRS_SM_02_022: [ If there's a barrier set then sm_begin shall return SM_EXEC_REFUSED. ]*/
-        if ((b_now_1 & 1)==1)
+        LONG64 state = InterlockedAdd64(&sm->state, 0);
+        if ((state & SM_STATE_MASK) != SM_OPENED)
         {
+            LogError("cannot begin to close that which is in %" PRI_MU_ENUM " state", MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
             result = SM_EXEC_REFUSED;
         }
         else
         {
-            /*Codes_SRS_SM_02_035: [ sm_begin shall increment n. ]*/
-            (void)InterlockedIncrement64(&sm->n);
-
-            LONG64 b_now_2 = InterlockedAdd64(&sm->b_now, 0);
-
-            /*Codes_SRS_SM_02_036: [ If the barrier changed after incrementing n then sm_begin shall increment e, signal a potential drain, and return SM_EXEC_REFUSED. ]*/
-            if (b_now_2 != b_now_1)
+            LONG64 draining_state;
+            if ((draining_state = InterlockedCompareExchange64(&sm->state, state - SM_OPENED + SM_OPENED_DRAINING_TO_CLOSE + SM_STATE_INCREMENT, state)) != state)
             {
-                LONG64 e = InterlockedIncrement64(&sm->e);
-                LONG64 n = InterlockedAdd64(&sm->n, 0);
-                if (n - e == 1)
-                {
-                    InterlockedHL_SetAndWake((void*)&sm->e_done, 1);
-                }
-                result = SM_EXEC_REFUSED;;
+                LogError("state changed meanwhile, this thread cannot close");
+                result = SM_EXEC_REFUSED;
             }
             else
             {
-                /*Codes_SRS_SM_02_023: [ sm_begin shall succeed and return SM_EXEC_GRANTED. ]*/
+                InterlockedHL_WaitForValue64(&sm->n, 0, INFINITE);
+
+                InterlockedAdd64(&sm->state, - SM_OPENED_DRAINING_TO_CLOSE + SM_CLOSING + SM_STATE_INCREMENT);
                 result = SM_EXEC_GRANTED;
             }
         }
@@ -274,25 +196,88 @@ SM_RESULT sm_begin(SM_HANDLE sm)
     return result;
 }
 
-void sm_end(SM_HANDLE sm)
+void sm_close_end(SM_HANDLE sm)
 {
-    SM_RESULT result;
-    /*Codes_SRS_SM_02_024: [ If sm is NULL then sm_end shall return. ]*/
     if (sm == NULL)
     {
+        /*Codes_SRS_SM_02_010: [ If sm is NULL then sm_open_end shall return. ]*/
         LogError("invalid argument SM_HANDLE sm=%p", sm);
-        result = MU_FAILURE;
     }
     else
     {
-        /*Codes_SRS_SM_02_025: [ sm_end shall increment the number of executed APIs (e). ]*/
-        LONG64 e = InterlockedIncrement64(&sm->e);
-
-        /*Codes_SRS_SM_02_026: [ If n-e is 1 then sm_end shall wake up the waiting barrier. ]*/
-        LONG64 n = InterlockedAdd64(&sm->n, 0);
-        if (n - e == 1)
+        LONG64 state = InterlockedAdd64(&sm->state, 0);
+        if ((state & SM_STATE_MASK) != SM_CLOSING)
         {
-            InterlockedHL_SetAndWake((void*)&sm->e_done, 1);
+            LogError("cannot end to close that which is in %" PRI_MU_ENUM " state", MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
+        }
+        else
+        {
+            if (InterlockedCompareExchange64(&sm->state, state - SM_CLOSING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
+            {
+                LogError("state changed meanwhile, very straaaaange");
+            }
+            else
+            {
+
+            }
+        }
+    }
+}
+
+SM_RESULT sm_begin(SM_HANDLE sm)
+{
+    SM_RESULT result;
+    LONG64 state1 = InterlockedAdd64(&sm->state, 0);
+    if ((state1 & SM_STATE_MASK) != SM_OPENED)
+    {
+        LogError("cannot execute begin when state is %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATE, state1 & SM_STATE_MASK));
+        result = SM_EXEC_REFUSED;
+    }
+    else
+    {
+        InterlockedIncrement64(&sm->n);
+        LONG64 state2 = InterlockedAdd64(&sm->state, 0);
+        if (state2 != state1)
+        {
+            LONG64 n = InterlockedDecrement64(&sm->n);
+            if (n == 0)
+            {
+                WakeByAddressSingle((void*)&sm->n);
+            }
+            result = SM_EXEC_REFUSED;
+        }
+        else
+        {
+            result = SM_EXEC_GRANTED;
+        }
+    }
+    return result;
+}
+
+void sm_end(SM_HANDLE sm)
+{
+    if (sm == NULL)
+    {
+        LogError("return");
+    }
+    else
+    {
+        LONG64 state1 = InterlockedAdd64(&sm->state, 0);
+        if (
+            ((state1 & SM_STATE_MASK) != SM_OPENED) &&
+            ((state1 & SM_STATE_MASK) != SM_OPENED_DRAINING_TO_BARRIER) &&
+            ((state1 & SM_STATE_MASK) != SM_OPENED_DRAINING_TO_CLOSE)
+            )
+        {
+            LogError("cannot execute end when state is %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATE, state1 & SM_STATE_MASK));
+        }
+        else
+        {
+            LONG64 n = InterlockedDecrement64(&sm->n);
+            if (n == 0)
+            {
+                WakeByAddressSingle((void*)&sm->n);
+            }
         }
     }
 }
@@ -300,32 +285,62 @@ void sm_end(SM_HANDLE sm)
 SM_RESULT sm_barrier_begin(SM_HANDLE sm)
 {
     SM_RESULT result;
-    /*Codes_SRS_SM_02_027: [ If sm is NULL then sm_barrier_begin shall fail and return SM_ERROR. ]*/
     if (sm == NULL)
     {
-        LogError("invalid argument SM_HANDLE sm=%p", sm);
+        LogError("return");
         result = SM_ERROR;
     }
     else
     {
-        result=sm_barrier_begin_internal(sm);
+        LONG64 state = InterlockedAdd64(&sm->state, 0);
+        if ((state & SM_STATE_MASK) != SM_OPENED)
+        {
+            LogError("cannot execute barrier begin when state is %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
+            result = SM_EXEC_REFUSED;
+        }
+        else
+        {
+            LONG64 draining_state;
+            if ((draining_state=InterlockedCompareExchange64(&sm->state, state - SM_OPENED + SM_OPENED_DRAINING_TO_BARRIER + SM_STATE_INCREMENT, state)) != state)
+            {
+                LogError("state changed meanwhile, this thread cannot start a barrier");
+                result = SM_EXEC_REFUSED;
+            }
+            else
+            {
+                InterlockedHL_WaitForValue64(&sm->n, 0, INFINITE);
+                
+                InterlockedAdd64(&sm->state, - SM_OPENED_DRAINING_TO_BARRIER + SM_OPENED_BARRIER + SM_STATE_INCREMENT);
+                result = SM_EXEC_GRANTED;
+            }
+        }
     }
-
     return result;
 }
 
 void sm_barrier_end(SM_HANDLE sm)
 {
-    /*Codes_SRS_SM_02_032: [ If sm is NULL then sm_barrier_end shall return. ]*/
     if (sm == NULL)
     {
-        LogError("invalid argument SM_HANDLE sm=%p", sm);
+        LogError("return");
     }
     else
     {
-        /*Codes_SRS_SM_02_033: [ sm_barrier_end shall increment the number of executed operations (e), increment b_now and return. ]*/
-        InterlockedIncrement64(&sm->e);
-        InterlockedExchange(&sm->e_done, 0);
-        InterlockedIncrement64(&sm->b_now);
+        LONG64 state = InterlockedAdd64(&sm->state, 0);
+        if ((state & SM_STATE_MASK) != SM_OPENED_BARRIER)
+        {
+            LogError("cannot execute barrier end when state is %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
+        }
+        else
+        {
+            if (InterlockedCompareExchange64(&sm->state, state - SM_OPENED_BARRIER + SM_OPENED + SM_STATE_INCREMENT, state) != state)
+            {
+                LogError("state changed meanwhile, very straaaaange");
+            }
+            else
+            {
+                /*it's all fine, we're back to SM_OPENED*/
+            }
+        }
     }
 }
