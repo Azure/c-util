@@ -59,6 +59,11 @@ typedef struct OPEN_CLOSE_THREADS_TAG
     uint32_t n_begin_barrier_threads;
     uint32_t n_end_barrier_threads;
 
+    HANDLE beginThreads[N_MAX_THREADS];
+    volatile LONG n_begin_grants;
+    volatile LONG n_begin_refuses;
+    uint32_t n_begin_threads;
+
     volatile LONG threadsShouldFinish; /*this test is time bound*/
 } OPEN_CLOSE_THREADS;
 
@@ -306,19 +311,55 @@ static void waitAndDestroyEndBarrierThreads(OPEN_CLOSE_THREADS* data)
     }
 }
 
-/*computes nth fib number*/
-static uint32_t fib_n(uint32_t n)
+static  DWORD WINAPI callsBeginAndEnd(
+    LPVOID lpThreadParameter
+)
 {
-    int32_t f1 = 0;
-    int32_t f2 = 1;
-    uint32_t result = 0;
-    for (uint32_t i = 0;i < n; i++)
+    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
+
+    while (InterlockedAdd(&data->threadsShouldFinish, 0) == 0)
     {
-        result = f1 + f2;
-        f1 = f2;
-        f2 = result;
+        if (sm_begin(data->sm) == SM_EXEC_GRANTED)
+        {
+            InterlockedIncrement(&data->n_begin_grants);
+            double startTime = timer_global_get_elapsed_ms();
+            uint32_t pretend_to_do_something_time_in_ms = rand() % 10;
+            while (timer_global_get_elapsed_ms() - startTime < pretend_to_do_something_time_in_ms)
+            {
+                /*well-pretend*/
+            }
+            sm_end(data->sm);
+        }
+        else
+        {
+            InterlockedIncrement(&data->n_begin_refuses);
+        }
     }
-    return result;
+    return 0;
+}
+
+static void createBeginAndEndThreads(OPEN_CLOSE_THREADS* data)
+{
+    uint32_t iBegin;
+    for (iBegin = 0; iBegin < data->n_begin_threads; iBegin++)
+    {
+        data->beginThreads[iBegin] = CreateThread(NULL, 0, callsBeginAndEnd, data, 0, NULL);
+        ASSERT_IS_NOT_NULL(data->beginThreads[iBegin]);
+    }
+}
+
+static void waitAndDestroyBeginAndEndThreads(OPEN_CLOSE_THREADS* data)
+{
+    if (data->n_begin_threads > 0)
+    {
+        DWORD dw = WaitForMultipleObjects(data->n_begin_threads, data->beginThreads, TRUE, INFINITE);
+        ASSERT_IS_TRUE((WAIT_OBJECT_0 <= dw) && (dw <= WAIT_OBJECT_0 + data->n_begin_threads));
+    }
+
+    for (uint32_t iBegin = 0; iBegin < data->n_begin_threads; iBegin++)
+    {
+        (void)CloseHandle(data->beginThreads[iBegin]);
+    }
 }
 
 
@@ -461,7 +502,9 @@ TEST_FUNCTION_CLEANUP(cleanup)
 
 }
 
-TEST_FUNCTION(sm_does_not_block_with_open_and_close)
+/*tests aims to mindlessly execute the APIs.
+at least 1 sm_open_begin and at least 1 sm_begin are waited to happen*/
+TEST_FUNCTION(sm_chaos)
 {
     OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)malloc(sizeof(OPEN_CLOSE_THREADS));
 
@@ -481,6 +524,7 @@ TEST_FUNCTION(sm_does_not_block_with_open_and_close)
         data->n_end_close_threads = nthreads;
         data->n_begin_barrier_threads = nthreads;
         data->n_end_barrier_threads = nthreads;
+        data->n_begin_threads = nthreads;
         
         InterlockedExchange(&data->threadsShouldFinish, 0);
         InterlockedExchange(&data->n_begin_open_grants, 0);
@@ -489,6 +533,8 @@ TEST_FUNCTION(sm_does_not_block_with_open_and_close)
         InterlockedExchange(&data->n_begin_close_refuses, 0);
         InterlockedExchange(&data->n_begin_barrier_grants, 0);
         InterlockedExchange(&data->n_begin_barrier_refuses, 0);
+        InterlockedExchange(&data->n_begin_grants, 0);
+        InterlockedExchange(&data->n_begin_refuses, 0);
 
         createBeginOpenThreads(data);
         createEndOpenThreads(data);
@@ -496,18 +542,26 @@ TEST_FUNCTION(sm_does_not_block_with_open_and_close)
         createEndCloseThreads(data);
         createBeginBarrierThreads(data);
         createEndBarrierThreads(data);
+        createBeginAndEndThreads(data);
 
         Sleep(1000);
         uint32_t counterSleep = 1;
-        while (InterlockedAdd(&data->n_begin_open_grants, 0) == 0)
+        LONG n_begin_open_grants_local;
+        LONG n_begin_grants_local;
+        while (
+            (n_begin_open_grants_local=InterlockedAdd(&data->n_begin_open_grants, 0)), 
+            (n_begin_grants_local = InterlockedAdd(&data->n_begin_grants, 0)),
+            ((n_begin_open_grants_local==0) ||(n_begin_grants_local==0))
+            )
         {
-            printf("Slept %" PRIu32 " ms, no sign of n_begin_open_grants\n", counterSleep * 1000);
+            printf("Slept %" PRIu32 " ms, no sign of n_begin_open_grants=%" PRId32 ", n_begin_grants=%" PRId32 " \n", counterSleep * 1000, n_begin_open_grants_local, n_begin_grants_local);
             counterSleep++;
             Sleep(1000);
         }
 
         InterlockedExchange(&data->threadsShouldFinish, 1);
 
+        waitAndDestroyBeginAndEndThreads(data);
         waitAndDestroyEndBarrierThreads(data);
         waitAndDestroyBeginBarrierThreads(data);
         waitAndDestroyEndCloseThreads(data);
@@ -523,6 +577,7 @@ TEST_FUNCTION(sm_does_not_block_with_open_and_close)
             ", n_begin_open_grants=%" PRIu32 ", n_begin_open_refuses=%" PRIu32 
             ", n_begin_close_grants=%" PRIu32 ", n_begin_close_refuses=%" PRIu32 
             ", n_begin_barrier_grants=%" PRIu32 ", n_begin_barrier_refuses=%" PRIu32
+            ", n_begin_grants=%" PRIu32 ", n_begin_refuses=%" PRIu32
             "\n",
             nthreads,
             InterlockedAdd(&data->n_begin_open_grants, 0),
@@ -530,7 +585,9 @@ TEST_FUNCTION(sm_does_not_block_with_open_and_close)
             InterlockedAdd(&data->n_begin_close_grants, 0),
             InterlockedAdd(&data->n_begin_close_refuses, 0),
             InterlockedAdd(&data->n_begin_barrier_grants, 0),
-            InterlockedAdd(&data->n_begin_barrier_refuses, 0)
+            InterlockedAdd(&data->n_begin_barrier_refuses, 0),
+            InterlockedAdd(&data->n_begin_grants, 0),
+            InterlockedAdd(&data->n_begin_refuses, 0)
         );
 
         ASSERT_IS_TRUE(InterlockedAdd(&data->n_begin_open_grants, 0) >= 1);
@@ -628,6 +685,5 @@ TEST_FUNCTION(sm_does_not_block)
     sm_destroy(data->sm);
     free(data);
 }
-
 
 END_TEST_SUITE(sm_int_tests)

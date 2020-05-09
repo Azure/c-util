@@ -272,11 +272,30 @@ void sm_end(SM_HANDLE sm)
         }
         else
         {
-            LONG n = InterlockedDecrement(&sm->n);
-            if (n == 0)
+
+            do /*a rather convoluted loop to make _end be idempotent (too many _end will be ignored)*/
             {
-                WakeByAddressSingle((void*)&sm->n);
-            }
+                LONG n = InterlockedAdd(&sm->n, 0);
+                if (n <= 0)
+                {
+                    break;
+                }
+                else
+                {
+                    if (InterlockedCompareExchange(&sm->n, n - 1, n) != n)
+                    {
+                        /*well - continue...*/
+                    }
+                    else
+                    {
+                        if (n - 1 == 0)
+                        {
+                            WakeByAddressSingle((void*)&sm->n);
+                        }
+                        break;
+                    }
+                }
+            } while (1);
         }
     }
 }
