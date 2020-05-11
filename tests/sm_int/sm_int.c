@@ -306,7 +306,7 @@ static  DWORD WINAPI callsBeginAndEnd(
 
     while (InterlockedAdd(&data->threadsShouldFinish, 0) == 0)
     {
-        if (sm_begin(data->sm) == SM_EXEC_GRANTED)
+        if (sm_exec_begin(data->sm) == SM_EXEC_GRANTED)
         {
             InterlockedIncrement(&data->n_begin_grants);
             double startTime = timer_global_get_elapsed_ms();
@@ -315,7 +315,7 @@ static  DWORD WINAPI callsBeginAndEnd(
             {
                 /*well-pretend*/
             }
-            sm_end(data->sm);
+            sm_exec_end(data->sm);
         }
         else
         {
@@ -435,7 +435,7 @@ static  DWORD WINAPI non_barrier_thread(
     /*a non barrier thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
     while (InterlockedAdd(&data->current_index, 0) < ARRAY_SIZE)
     {
-        if (sm_begin(data->sm) == SM_EXEC_GRANTED)
+        if (sm_exec_begin(data->sm) == SM_EXEC_GRANTED)
         {
             LONG index = InterlockedIncrement(&data->current_index) - 1;
             LONG source = InterlockedIncrement(&data->source_of_numbers);
@@ -443,13 +443,13 @@ static  DWORD WINAPI non_barrier_thread(
 
             if (index >= ARRAY_SIZE)
             {
-                sm_end(data->sm);
+                sm_exec_end(data->sm);
                 break;
             }
 
             data->writes[index].what_was_source = source;
             data->writes[index].is_barrier = false;
-            sm_end(data->sm);
+            sm_exec_end(data->sm);
         }
         else
         {
@@ -516,7 +516,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 }
 
 /*tests aims to mindlessly execute the APIs.
-at least 1 sm_open_begin and at least 1 sm_begin are waited to happen*/
+at least 1 sm_open_begin and at least 1 sm_exec_begin are waited to happen*/
 TEST_FUNCTION(sm_chaos)
 {
     OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)malloc(sizeof(OPEN_CLOSE_THREADS));
@@ -576,7 +576,7 @@ TEST_FUNCTION(sm_chaos)
 
         waitAndDestroyBeginAndEndThreads(data);
 
-        /*there's an unknown number of granted sm_barrier_begin that have not been matched to their ends. So closing them*/
+        /*there might be a sm_barrier begin that is not followed by a sm_barrier_end. So this is calling it "just in case"*/
         
         sm_barrier_end(data->sm);
 
@@ -588,8 +588,6 @@ TEST_FUNCTION(sm_chaos)
         waitAndDestroyBeginOpenThreads(data);
 
         /*just in case anything needs to close*/
-        sm_barrier_end(data->sm);
-        sm_close_end(data->sm);
 
         printf("nthreads=%" PRIu32 
             ", n_begin_open_grants=%" PRIu32 ", n_begin_open_refuses=%" PRIu32 
@@ -717,7 +715,7 @@ SM_CLOSING	SM_CLOSING(7)	SM_STATE_TAG
 these are APIs:
 sm_open_begin
 sm_close_begin
-sm_begin
+sm_exec_begin
 sm_barrier_begin
 */
 
@@ -761,7 +759,7 @@ static DWORD WINAPI switchesState(
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(goToState->sm));
             sm_open_end(goToState->sm);
 
-            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_begin(goToState->sm));
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_exec_begin(goToState->sm));
 
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_barrier_begin(goToState->sm)); /*switches to draining mode*/
             break;
@@ -772,7 +770,7 @@ static DWORD WINAPI switchesState(
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(goToState->sm));
             sm_open_end(goToState->sm);
 
-            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_begin(goToState->sm));
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_exec_begin(goToState->sm));
 
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_close_begin(goToState->sm)); /*switches to draining mode*/
 
@@ -849,7 +847,7 @@ static DWORD WINAPI switchesToCreated(
         }
         case 3:/*SM_OPENED_DRAINING_TO_BARRIER*/
         {
-            sm_end(goToState->sm);
+            sm_exec_end(goToState->sm);
             Sleep(THREAD_TO_BACK_DELAY);
             sm_barrier_end(goToState->sm);
 
@@ -862,7 +860,7 @@ static DWORD WINAPI switchesToCreated(
         }
         case 4:/*SM_OPENED_DRAINING_TO_CLOSE*/
         {
-            sm_end(goToState->sm);
+            sm_exec_end(goToState->sm);
             sm_close_end(goToState->sm);
 
             break;
@@ -907,7 +905,7 @@ TEST_FUNCTION(STATE_and_API)
 {
     SM_RESULT expected[][4]=
     {
-                                                /*sm_open_begin*/       /*sm_close_begin*/      /*sm_begin*/        /*sm_barrier_begin*/
+                                                /*sm_open_begin*/       /*sm_close_begin*/      /*sm_exec_begin*/        /*sm_barrier_begin*/
         /*SM_CREATED*/                      {   SM_EXEC_GRANTED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
         /*SM_OPENING*/                      {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
         /*SM_OPENED*/                       {   SM_EXEC_REFUSED,        SM_EXEC_GRANTED,        SM_EXEC_GRANTED,    SM_EXEC_GRANTED     },
@@ -952,12 +950,12 @@ TEST_FUNCTION(STATE_and_API)
                     }
                     break;
                 }
-                case 2:/*sm_begin*/
+                case 2:/*sm_exec_begin*/
                 {
-                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j], sm_begin(goToState.sm));
+                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j], sm_exec_begin(goToState.sm));
                     if (expected[i][j] == SM_EXEC_GRANTED)
                     {
-                        sm_end(goToState.sm);
+                        sm_exec_end(goToState.sm);
                     }
                     break;
                 }

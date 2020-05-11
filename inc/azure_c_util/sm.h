@@ -31,8 +31,8 @@ MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
 
-MOCKABLE_FUNCTION(, SM_RESULT, sm_begin, SM_HANDLE, sm);
-MOCKABLE_FUNCTION(, void, sm_end, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, SM_RESULT, sm_exec_begin, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, void, sm_exec_end, SM_HANDLE, sm);
 
 MOCKABLE_FUNCTION(, SM_RESULT, sm_barrier_begin, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, void, sm_barrier_end, SM_HANDLE, sm);

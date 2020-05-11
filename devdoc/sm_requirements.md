@@ -11,7 +11,7 @@
 
 3. the module has a _close function that reverts the effects of _open and allows calling _open again
 
-4. the APIs that can be called in the _open state can be further divided into 2 categories
+4. the APIs that can be called in the _open state can be further divided into 3 categories
 
    a) APIs that can be called in parallel (for example a _read API).
 
@@ -21,9 +21,11 @@
 
        ii) the barrier API can only execute when all the previous APIs have stopped executing
 
-       iii) no other APIs (including other barriers) can start to execute after the current barrier (that means those APIs will fail)
+       iii) no other APIs (including other barriers) can start to execute after the current barrier (that means those APIs will not be granted execution)
 
-5. there's no "parking", "queueing", "sleeping", "waiting", "buffering", "saving" or otherwise postponing or delaying the execution of an API: it either starts to execute (for barries execution includes waiting for all the previous APIs to finish executing) or it fails. Retrying is a user-land mechanism.
+    c) `sm_close_begin`. Close blocks the execution of all the other APIs and waits for them to drain.
+
+5. there's no "parking", "queueing", "sleeping", "waiting", "buffering", "saving" or otherwise postponing or delaying the execution of an API: it either starts to execute (for barries execution includes waiting for all the previous APIs to finish executing; for close it means draining everything - barriers or calls alike) or it fails. Retrying is a user-land mechanism.
 
 ## Design
 
@@ -43,19 +45,32 @@ In a multithreaded environment reaching the condition of "let's have 1 executing
 - providing a consistent way of managing "state" across modules (no more individual "ongoingAPIcalls" and "pendingAPIcalls" and "what's the correct order? state before counting or counting before state?")
 - providing progress in all cases for APIs that require their own sub-state undisturbed (that is, APIs that cannot execute in parallel with any other APIs), so no more a problem of "enough luck".
 
-To achieve the above goals, `sm` assigns to each API call a sequence number (`n`). Sequence numbers are consecutive. The logic is simple: an API is granted execution when there's no barrier (it acts as invariant for the increment of `n`). Otherwise, the API is prohibited from execution.
+To achieve the above goals, `sm` maintains the following state
+1) the current granted state + 1 bit that is set to 1 when `sm_close_begin` is called.
+2) the number of APIs that did not finish executing (`n`). `n` is incremented at every `sm_exec_begin` and decremented when the user signaled finishing executing by calling `sm_exec_end`.
 
-Barriers follow their own ever increasing numbers called `b_now`. `b_now` start at 0. A barrier is taken when `b_now`'s least significant bit is 1. Example `b_now` == 0 means there's no ongoing barrier. `b_now` == 3 means there's an ongoing barrier.
+`n` is used to enable drains on the calls. The drains are signaled and they will unblock the execution of a `sm_close_begin` or a `sm_barrier_begin`.
 
-Multiple barrier can attempt to set `b_now`'s least significant bit to 1. Only 1 of them will win the competition onver `InterlockedOr64` so only 1 will grant execution. The other barries will lose arbitration and will not be granted execution rights. When user calls `sm_barrier_end` to indicate that the barrier should be lifted, `b_now` is `InterlockedIncremented64`.
+Barriers - since they are exclusive - are realized by switching to a state called `SM_OPENED_BARRIER`. Prohibiting regular calls to _begin is achieved by switching temporarily the state from `SM_OPENED` to `SM_OPENED_DRAINING_TO_BARRIER`.
 
-Once a barries wins the `b_now` competition it increments `n` and wait for the difference between started APIs (`n`)  and the number of executed APIs (`e`) to be 1. When that happens, barrier is known to have drained all the previous calls and is allowed to return to user land with execution granted.
+Close is realized by prohibiting all calls (including competing `sm_close_begin` calls) by setting a bit with `InterlockedOr`. `sm_close_begin` will wait for the state to reach `SM_OPENED` and the number of executing calls to be `0`. This allows an ongoing barrier to finish (and return to `SM_OPENED` state), or the executing APIs to finish.
 
-`close` is in no way different than any other barrier with the exception that close reverts the state to `create`'s. As opposed to the "historical" implementation, `_close` might not grant execution because another barrier is executing. However, just like any other barrier, `_close` will wait for all preceeding APIs to finish executing before granting execution to the caller.
+`sm` will verify all sequence of calls. When a _begin calls is called in an unexpected state, `sm` will refuse to grant the execution. `sm_exec_end` calls do not have a return value, but `sm` does protect internally against mismatched such calls. For example, `n` is decremented by `sm_exec_end`, but `sm` does not allow `n` to reach negative values.
 
-`sm` does not fully verify all sequences of calls. It is the user's responsibility to provide pair of calls. That is, `sm_open_begin` should be followed by a `sm_open_end` before let's say `sm_begin_close` is called. Some of these combinations are detected by the virtue of how barriers work but not all. For example, all calls to `sm_barrier_begin` or `sm_begin` immediately after `sm_open_begin` will block (this is expected to be discovered in user land at user code testing time).
+`n` is a 32 bit value. At the time of writing `sm` it is of no concern an overflow above `INT32_MAX` because that would mean there are more than 2 billion standing requests that have no yet been ended, and the assumption is that something will go wrong in other parts of the system before it goes bad in `sm`.
 
-Note: there's an ever increasing `n`, `e` and `b_now`. These are 64 bit values. `LONG64` max value is 9223372036854775808. Assuming 1,000,000,000 increments for `n` per second, the maximum value of LONG64 will be reached in 9,223,372,036 seconds. This is more than 290 years. This rather simplistic computation shows that in the current state of computation power (year is 2020 today) there's no need to worry about `n` wrapping around to `INT64_MIN`.
+These are the internal state of `sm`:
+- `SM_CREATED` - entered after a call to `sm_create`
+- `SM_OPENING` - entered after a call to `sm_open_begin`
+- `SM_OPENED` - entered after `sm_open_end` is called
+- `SM_OPENED_DRAINING_TO_BARRIER` - entered after a call to `sm_barrier_begin` is about to be granted. This state is active while `n` is greater than 0.
+- `SM_OPENED_DRAINING_TO_CLOSE` - entered after a call to `sm_close_begin` is about to be granted. This state is active while `n` is greater than 0.
+- `SM_OPENED_BARRIER` - entered when `sm_barrier_begin` is granted. 
+- `SM_CLOSING` - entered when a _begin_close is granted.
+
+In addition to the above states, part of the state is the `_close` bit that is set to `1` when `sm_close_begin` has been called. The bit stays `1` until the state is switched to `SM_CLOSING`.
+
+The state is a 32 bit variable. The lowest byte contains the above information. The most significand 3 bytes are an ever increasing counter of calls that is needed to avoid potential ABA problems. That is, a `SM_OPENED` state will be different from `SM_OPENED_STATE` after it went through a `sm_close_begin`/`sm_close_end`/`sm_open_begin`/`sm_open_end`.
 
 ## Exposed API
 
@@ -78,8 +93,8 @@ MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
 
-MOCKABLE_FUNCTION(, SM_RESULT, sm_begin, SM_HANDLE, sm);
-MOCKABLE_FUNCTION(, void, sm_end, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, SM_RESULT, sm_exec_begin, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, void, sm_exec_end, SM_HANDLE, sm);
 
 MOCKABLE_FUNCTION(, SM_RESULT, sm_barrier_begin, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, void, sm_barrier_end, SM_HANDLE, sm);
@@ -95,7 +110,7 @@ MOCKABLE_FUNCTION(, SM_HANDLE, sm_create, const char*, name);
 
 **SRS_SM_02_002: [** `sm_create` shall allocate memory for the instance. **]**
 
-**SRS_SM_02_003: [** `sm_create` shall set `b_now` to -1, `n` to 0, and `e` to 0 succeed and return a non-`NULL` value. **]**
+**SRS_SM_02_037: [** `sm_create` shall set state to `SM_CREATED` and `n` to 0. **]**
 
 **SRS_SM_02_004: [** If there are any failures then `sm_create` shall fail and return `NULL`. **]**
 
@@ -108,6 +123,8 @@ MOCKABLE_FUNCTION(, void, sm_destroy, SM_HANDLE, sm);
 
 **SRS_SM_02_005: [** If `sm` is `NULL` then `sm_destroy` shall return. **]**
 
+**SRS_SM_02_038: [** `sm_destroy` behave as if `sm_close_begin` would have been called. **]**
+
 **SRS_SM_02_006: [** `sm_destroy` shall free all used resources. **]**
 
 ### sm_open_begin
@@ -119,9 +136,11 @@ MOCKABLE_FUNCTION(, SM_RESULT, sm_open_begin, SM_HANDLE, sm);
 
 **SRS_SM_02_007: [** If `sm` is `NULL` then `sm_open_begin` shall fail and return `SM_ERROR`. **]**
 
-**SRS_SM_02_008: [** If `b_now` is not -1 then `sm_open_begin` shall fail and return `SM_EXEC_REFUSED`. **]**
+**SRS_SM_02_039: [** If the state is not `SM_CREATED` then `sm_open_begin` shall return `SM_EXEC_REFUSED`. **]**
 
-**SRS_SM_02_009: [** `sm_open_begin` shall set `b_now` to 0, succeed and return `SM_EXEC_GRANTED`. **]**
+**SRS_SM_02_040: [** `sm_open_begin` shall switch the state to `SM_OPENING`. **]**
+
+**SRS_SM_02_009: [** `sm_open_begin` shall return `SM_EXEC_GRANTED`. **]**
 
 ### sm_open_end
 ```c
@@ -132,30 +151,40 @@ MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm);
 
 **SRS_SM_02_010: [** If `sm` is `NULL` then `sm_open_end` shall return. **]**
 
-**SRS_SM_02_012: [** If `sm_open_end` doesn't follow a call to `sm_open_begin` then `sm_open_end` shall return. **]**
+**SRS_SM_02_041: [** If state is not `SM_OPENING` then `sm_open_end` shall return. **]**
 
-**SRS_SM_02_011: [** `sm_open_end` shall increment `e`, `b_now` to 0 and return. **]**
+**SRS_SM_02_042: [** `sm_open_end` shall switch the state to `SM_OPENED`. **]**
 
 ### sm_close_begin
 ```c
 MOCKABLE_FUNCTION(, int, sm_close_begin, SM_HANDLE, sm);
 ```
 
-`sm_open_begin` asks from `sm` permission to exit "open" state.
+`sm_open_begin` asks from `sm` permission to exit `SM_OPENED` state (or one of its derived state) and return to `SM_CREATED`.
 
 **SRS_SM_02_013: [** If `sm` is `NULL` then `sm_close_begin` shall fail and return `SM_ERROR`. **]**
 
-**SRS_SM_02_020: [** If there was no `sm_open_begin`/`sm_open_end` called previously, `sm_close_begin` shall fail and `SM_EXEC_REFUSED`. **]**
 
-**SRS_SM_02_014: [** `sm_close_begin` shall set lowest bit of `b_now` to 1. **]**
+**SRS_SM_02_045: [** `sm_close_begin` shall set `SM_CLOSE_BIT` to 1. **]**
 
-**SRS_SM_02_015: [** If setting the lowest bit `b_now` to 1 fails then `sm_close_begin` shall  return `SM_EXEC_REFUSED`. **]**
+**SRS_SM_02_046: [** If `SM_CLOSE_BIT` was already 1 then `sm_close_begin` shall return `SM_EXEC_REFUSED`. **]**
 
-**SRS_SM_02_016: [** `sm_close_begin` shall wait for all previous operations to end. **]**
+**SRS_SM_02_047: [** If the state is `SM_OPENED` then `sm_close_begin` shall switch it to `SM_OPENED_DRAINING_TO_CLOSE`. **]**
 
-**SRS_SM_02_017: [** `sm_close_begin` shall succeed and return `SM_EXEC_GRANTED`. **]**
+**SRS_SM_02_048: [** `sm_close_begin` shall wait for `n` to reach 0. **]**
 
-**SRS_SM_02_034: [** If there are any failures then `sm_close_begin` shall fail and return `SM_ERROR`. **]**
+**SRS_SM_02_049: [** `sm_close_begin` shall switch the state to `SM_CLOSING` and return `SM_EXEC_GRANTED`. **]**
+
+**SRS_SM_02_050: [** If the state is `SM_OPENED_BARRIER` then `sm_close_begin` shall re-evaluate the state. **]**
+
+**SRS_SM_02_051: [** If the state is `SM_OPENED_DRAINING_TO_BARRIER` then `sm_close_begin` shall re-evaluate the state. **]**
+
+**SRS_SM_02_052: [** If the state is any other value then `sm_close_begin` shall return `SM_EXEC_REFUSED`. **]**
+
+**SRS_SM_02_053: [** `sm_close_begin` shall set `SM_CLOSE_BIT` to 0. **]**
+
+**SRS_SM_02_071: [** If there are any failures then `sm_close_begin` shall fail and return `SM_ERROR`. **]**
+
 
 ### sm_close_end
 ```c
@@ -166,38 +195,48 @@ MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
 
 **SRS_SM_02_018: [** If `sm` is `NULL` then `sm_close_end` shall return. **]**
 
-**SRS_SM_02_019: [** `sm_close_end` shall switch `b_now` to `-1`, `n` to 0 and `e` to 0. **]**
+**SRS_SM_02_043: [** If the state is not `SM_CLOSING` then `sm_close_end` shall return. **]**
 
-### sm_begin
+**SRS_SM_02_044: [** `sm_close_end` shall switch the state to `SM_CREATED`. **]**
+
+### sm_exec_begin
 ```c
-MOCKABLE_FUNCTION(, int, sm_begin, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, int, sm_exec_begin, SM_HANDLE, sm);
 ```
 
-`sm_begin` asks from `sm` permission to execute a non-barrier operation.
+`sm_exec_begin` asks from `sm` permission to execute a non-barrier operation.
 
-**SRS_SM_02_021: [** If `sm` is `NULL` then `sm_begin` shall fail and return `SM_ERROR`. **]**
+**SRS_SM_02_021: [** If `sm` is `NULL` then `sm_exec_begin` shall fail and return `SM_ERROR`. **]**
 
-**SRS_SM_02_022: [** If there's a barrier set then `sm_begin` shall return `SM_EXEC_REFUSED`. **]**
+**SRS_SM_02_054: [** If state is not `SM_OPENED` then `sm_exec_begin` shall return `SM_EXEC_REFUSED`. **]**
 
-**SRS_SM_02_035: [** `sm_begin` shall increment `n`. **]**
+**SRS_SM_02_055: [** If `SM_CLOSE_BIT` is 1 then `sm_exec_begin` shall return `SM_EXEC_REFUSED`. **]**
 
-**SRS_SM_02_036: [** If the barrier changed after incrementing `n` then `sm_begin` shall increment `e`, signal a potential drain, and return `SM_EXEC_REFUSED`.
- **]**
+**SRS_SM_02_056: [** `sm_exec_begin` shall increment `n`. **]**
 
-**SRS_SM_02_023: [** `sm_begin` shall succeed and return `SM_EXEC_GRANTED`. **]**
+**SRS_SM_02_057: [** If the state changed after incrementing `n` then `sm_exec_begin` shall return `SM_EXEC_REFUSED`. **]**
 
-### sm_end
+**SRS_SM_02_058: [** `sm_exec_begin` shall return `SM_EXEC_GRANTED`. **]**
+
+### sm_exec_end
 ```c
-MOCKABLE_FUNCTION(, void, sm_end, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, void, sm_exec_end, SM_HANDLE, sm);
 ```
 
-`sm_end` informs `sm` that user's execution of a non-barrier operations has completed.
+`sm_exec_end` informs `sm` that user's execution of a non-barrier operations has completed.
 
-**SRS_SM_02_024: [** If `sm` is `NULL` then `sm_end` shall return. **]**
+**SRS_SM_02_024: [** If `sm` is `NULL` then `sm_exec_end` shall return. **]**
 
-**SRS_SM_02_025: [** `sm_end` shall increment the number of executed APIs (`e`). **]**
+**SRS_SM_02_059: [** If state is not `SM_OPENED` then `sm_exec_end` shall return. **]**
 
-**SRS_SM_02_026: [** If `n`-`e` is 1 then `sm_end` shall wake up the waiting barrier. **]**
+**SRS_SM_02_060: [** If state is not `SM_OPENED_DRAINING_TO_BARRIER` then `sm_exec_end` shall return. **]**
+
+**SRS_SM_02_061: [** If state is not `SM_OPENED_DRAINING_TO_CLOSE` then `sm_exec_end` shall return. **]**
+
+**SRS_SM_02_062: [** `sm_exec_end` shall decrement `n` with saturation at 0. **]**
+
+**SRS_SM_02_063: [** If `n` reaches 0 then `sm_exec_end` shall signal that. **]**
+
 
 ### sm_barrier_begin
 ```c
@@ -208,13 +247,19 @@ MOCKABLE_FUNCTION(, int, sm_barrier_begin, SM_HANDLE, sm);
 
 **SRS_SM_02_027: [** If `sm` is `NULL` then `sm_barrier_begin` shall fail and return `SM_ERROR`. **]**
 
-**SRS_SM_02_028: [** If `b_now` has least significand bit set to 1 then `sm_barrier_begin` shall fail and `SM_EXEC_REFUSED`. **]**
+**SRS_SM_02_064: [** If state is not `SM_OPENED` then `sm_barrier_begin` shall return `SM_EXEC_REFUSED`. **]**
 
-**SRS_SM_02_029: [** `sm_barrier_begin` shall wait for the completion of all the previous operations. **]**
+**SRS_SM_02_065: [** If `SM_CLOSE_BIT` is set to 1 then `sm_barrier_begin` shall return `SM_EXEC_REFUSED`. **]**
 
-**SRS_SM_02_030: [** `sm_barrier_begin` shall succeed and return `SM_EXEC_GRANTED`. **]**
+**SRS_SM_02_066: [** `sm_barrier_begin` shall switch the state to `SM_OPENED_DRAINING_TO_BARRIER`. **]**
 
-**SRS_SM_02_031: [** If there are any failures then `sm_barrier_begin` shall fail and return `SM_ERROR`. **]**
+**SRS_SM_02_067: [** If the state changed meanwhile then `sm_barrier_begin` shall return `SM_EXEC_REFUSED`. **]**
+
+**SRS_SM_02_068: [** `sm_barrier_begin` shall wait for `n` to reach 0. **]**
+
+**SRS_SM_02_069: [** `sm_barrier_begin` shall switch the state to `SM_OPENED_BARRIER` and return `SM_EXEC_GRANTED`. **]**
+
+**SRS_SM_02_070: [** If there are any failures then `sm_barrier_begin` shall return `SM_ERROR`. **]**
 
 ### sm_barrier_end
 ```c
@@ -225,4 +270,6 @@ MOCKABLE_FUNCTION(, void, sm_barrier_end, SM_HANDLE, sm);
 
 **SRS_SM_02_032: [** If `sm` is `NULL` then `sm_barrier_end` shall return. **]**
 
-**SRS_SM_02_033: [** `sm_barrier_end` shall increment the number of executed operations (`e`), increment `b_now` and return. **]**
+**SRS_SM_02_072: [** If state is not `SM_OPENED_BARRIER` then `sm_barrier_end` shall return. **]**
+
+**SRS_SM_02_073: [** `sm_barrier_end` shall switch the state to `SM_OPENED`. **]**
