@@ -165,7 +165,7 @@ void sm_open_end(SM_HANDLE sm)
             /*Codes_SRS_SM_02_042: [ sm_open_end shall switch the state to SM_OPENED. ]*/
             if (InterlockedCompareExchange(&sm->state, state - SM_OPENING + SM_OPENED + SM_STATE_INCREMENT, state) != state)
             {
-                LogError("sm name=%s. sm_open_end state changed meanwhile (it was%" PRI_SM_STATE ", likely competing threads.", sm->name, );
+                LogError("sm name=%s. sm_open_end state changed meanwhile (it was%" PRI_SM_STATE ", likely competing threads.", sm->name, SM_STATE_VALUE(state));
             }
             else
             {
@@ -179,18 +179,19 @@ static SM_RESULT sm_close_begin_internal(SM_HANDLE sm)
 {
     SM_RESULT result;
 
+    LONG state;
     /*Codes_SRS_SM_02_045: [ sm_close_begin shall set SM_CLOSE_BIT to 1. ]*/
-    if ((InterlockedOr(&sm->state, SM_CLOSE_BIT) & SM_CLOSE_BIT) == SM_CLOSE_BIT)
+    if (((state=InterlockedOr(&sm->state, SM_CLOSE_BIT)) & SM_CLOSE_BIT) == SM_CLOSE_BIT)
     {
         /*Codes_SRS_SM_02_046: [ If SM_CLOSE_BIT was already 1 then sm_close_begin shall return SM_EXEC_REFUSED. ]*/
-        LogError("sm name=%s. another thread is performing close", sm->name);
+        LogError("sm name=%s. another thread is performing close (state=%" PRI_SM_STATE ")", sm->name, SM_STATE_VALUE(state));
         result = SM_EXEC_REFUSED;
     }
     else
     {
         do
         {
-            LONG state = InterlockedAdd(&sm->state, 0);
+            state = InterlockedAdd(&sm->state, 0);
 
             /*Codes_SRS_SM_02_047: [ If the state is SM_OPENED then sm_close_begin shall switch it to SM_OPENED_DRAINING_TO_CLOSE. ]*/
             if ((state & SM_STATE_MASK) == SM_OPENED)
@@ -205,7 +206,7 @@ static SM_RESULT sm_close_begin_internal(SM_HANDLE sm)
                     if (InterlockedHL_WaitForValue(&sm->n, 0, INFINITE) != INTERLOCKED_HL_OK)
                     {
                         /*Codes_SRS_SM_02_071: [ If there are any failures then sm_close_begin shall fail and return SM_ERROR. ]*/
-                        LogError("sm name=%s. failure in InterlockedHL_WaitForValue(&sm->n=%p, 0, INFINITE)", sm->name, &sm->n);
+                        LogError("sm name=%s. failure in InterlockedHL_WaitForValue(&sm->n=%p, 0, INFINITE), state was %" PRI_SM_STATE "", sm->name, &sm->n, SM_STATE_VALUE(state));
                         (void)InterlockedAdd(&sm->state, -SM_OPENED_DRAINING_TO_CLOSE + SM_OPENED + SM_STATE_INCREMENT); /*undo state to SM_OPENED...*/
                         result = SM_ERROR;
                         break;
@@ -264,21 +265,20 @@ static void sm_close_end_internal(SM_HANDLE sm)
     LONG state = InterlockedAdd(&sm->state, 0);
     if ((state & SM_STATE_MASK) != SM_CLOSING)
     {
-        LogError("sm name=%s. cannot end to close that which is in %" PRI_MU_ENUM " state", sm->name, MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
+        LogError("sm name=%s. cannot sm_close_end_internal that which is in %" PRI_SM_STATE " state", sm->name, SM_STATE_VALUE(state));
     }
     else
     {
         /*Codes_SRS_SM_02_044: [ sm_close_end shall switch the state to SM_CREATED. ]*/
         if (InterlockedCompareExchange(&sm->state, state - SM_CLOSING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
         {
-            LogError("sm name=%s. state changed meanwhile, likely competing threads", sm->name);
+            LogError("sm name=%s. state changed meanwhile (it was %" PRI_SM_STATE "), likely competing threads", sm->name, SM_STATE_VALUE(state));
         }
         else
         {
 
         }
     }
-
 }
 
 void sm_close_end(SM_HANDLE sm)
@@ -313,7 +313,7 @@ SM_RESULT sm_exec_begin(SM_HANDLE sm)
             ((state1 & SM_CLOSE_BIT) == SM_CLOSE_BIT)
             )
         {
-            LogError("sm name=%s. cannot execute begin when state is %" PRI_MU_ENUM "", sm->name, MU_ENUM_VALUE(SM_STATE, state1 & SM_STATE_MASK));
+            LogError("sm name=%s. cannot call sm_exec_begin when state is %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(state1));
             result = SM_EXEC_REFUSED;
         }
         else
@@ -323,8 +323,9 @@ SM_RESULT sm_exec_begin(SM_HANDLE sm)
             LONG state2 = InterlockedAdd(&sm->state, 0);
 
             /*Codes_SRS_SM_02_057: [ If the state changed after incrementing n then sm_exec_begin shall return SM_EXEC_REFUSED. ]*/
-            if (state2 != state1)
+            if (state1 != state2)
             {
+                LogError("sm name=%s. state changed meanwhile from %" PRI_SM_STATE " to %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(state1), SM_STATE_VALUE(state2));
                 LONG n = InterlockedDecrement(&sm->n);
                 if (n == 0)
                 {
@@ -361,7 +362,7 @@ void sm_exec_end(SM_HANDLE sm)
             ((state & SM_STATE_MASK) != SM_OPENED_DRAINING_TO_CLOSE)
             )
         {
-            LogError("sm name=%s. cannot execute exec end when state is %" PRI_MU_ENUM "", sm->name, MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
+            LogError("sm name=%s. cannot execute exec end when state is %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(state));
         }
         else
         {
@@ -413,7 +414,7 @@ SM_RESULT sm_barrier_begin(SM_HANDLE sm)
             ((state & SM_CLOSE_BIT) == SM_CLOSE_BIT)
             )
         {
-            LogError("sm name=%s. cannot execute barrier begin when state is %" PRI_MU_ENUM "", sm->name, MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
+            LogError("sm name=%s. cannot execute barrier begin when state is %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(state));
             result = SM_EXEC_REFUSED;
         }
         else
@@ -422,7 +423,7 @@ SM_RESULT sm_barrier_begin(SM_HANDLE sm)
             if (InterlockedCompareExchange(&sm->state, state - SM_OPENED + SM_OPENED_DRAINING_TO_BARRIER + SM_STATE_INCREMENT, state) != state)
             {
                 /*Codes_SRS_SM_02_067: [ If the state changed meanwhile then sm_barrier_begin shall return SM_EXEC_REFUSED. ]*/
-                LogError("sm name=%s. state changed meanwhile, this thread cannot start a barrier, likely competing threads", sm->name);
+                LogError("sm name=%s. state changed meanwhile (it was %" PRI_SM_STATE "), this thread cannot start a barrier, likely competing threads", sm->name, SM_STATE_VALUE(state));
                 result = SM_EXEC_REFUSED;
             }
             else
@@ -433,7 +434,7 @@ SM_RESULT sm_barrier_begin(SM_HANDLE sm)
                     /*switch back the state*/
                     /*Codes_SRS_SM_02_070: [ If there are any failures then sm_barrier_begin shall return SM_ERROR. ]*/
                     (void)InterlockedAdd(&sm->state, -SM_OPENED_DRAINING_TO_BARRIER + SM_OPENED + SM_STATE_INCREMENT);
-                    LogError("sm name=%s. failure in InterlockedHL_WaitForValue(&sm->n=%p, 0, INFINITE)", sm->name, &sm->n);
+                    LogError("sm name=%s. failure in InterlockedHL_WaitForValue(&sm->n=%p, 0, INFINITE), state was %" PRI_SM_STATE "", sm->name, &sm->n, SM_STATE_VALUE(state));
                     result = SM_ERROR;
                 }
                 else
@@ -461,14 +462,14 @@ void sm_barrier_end(SM_HANDLE sm)
         /*Codes_SRS_SM_02_072: [ If state is not SM_OPENED_BARRIER then sm_barrier_end shall return. ]*/
         if ((state & SM_STATE_MASK) != SM_OPENED_BARRIER)
         {
-            LogError("sm name=%s. cannot execute barrier end when state is %" PRI_MU_ENUM "", sm->name, MU_ENUM_VALUE(SM_STATE, state & SM_STATE_MASK));
+            LogError("sm name=%s. cannot call sm_barrier_end when state is %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(state));
         }
         else
         {
             /*Codes_SRS_SM_02_073: [ sm_barrier_end shall switch the state to SM_OPENED. ]*/
             if (InterlockedCompareExchange(&sm->state, state - SM_OPENED_BARRIER + SM_OPENED + SM_STATE_INCREMENT, state) != state)
             {
-                LogError("sm name=%s. state changed meanwhile, likely competing threads", sm->name);
+                LogError("sm name=%s. state changed meanwhile (it was %" PRI_SM_STATE "), likely competing threads", sm->name, SM_STATE_VALUE(state));
             }
             else
             {
