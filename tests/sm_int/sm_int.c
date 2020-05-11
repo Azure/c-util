@@ -484,6 +484,28 @@ static void verify(THREADS_COMMON* data) /*ASSERTS*/
 static SYSTEM_INFO systemInfo;
 static DWORD dwNumberOfProcessors;
 
+#define SM_APIS_VALUES      \
+SM_OPEN_BEGIN,              \
+SM_CLOSE_BEGIN,             \
+SM_BEGIN,                   \
+SM_BARRIER_BEGIN            \
+
+MU_DEFINE_ENUM(SM_APIS, SM_APIS_VALUES)
+MU_DEFINE_ENUM_STRINGS(SM_APIS, SM_APIS_VALUES)
+
+#define SM_STATES_VALUES             \
+SM_CREATED,                          \
+SM_OPENING,                          \
+SM_OPENED,                           \
+SM_OPENED_DRAINING_TO_BARRIER,       \
+SM_OPENED_DRAINING_TO_CLOSE,         \
+SM_OPENED_BARRIER,                   \
+SM_CLOSING                           \
+
+
+MU_DEFINE_ENUM(SM_STATES, SM_STATES_VALUES)
+MU_DEFINE_ENUM_STRINGS(SM_STATES, SM_STATES_VALUES)
+
 BEGIN_TEST_SUITE(sm_int_tests)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -553,6 +575,11 @@ TEST_FUNCTION(sm_chaos)
         InterlockedExchange(&data->threadsShouldFinish, 1);
 
         waitAndDestroyBeginAndEndThreads(data);
+
+        /*there's an unknown number of granted sm_barrier_begin that have not been matched to their ends. So closing them*/
+        
+        sm_barrier_end(data->sm);
+
         waitAndDestroyEndBarrierThreads(data);
         waitAndDestroyBeginBarrierThreads(data);
         waitAndDestroyEndCloseThreads(data);
@@ -694,11 +721,14 @@ sm_begin
 sm_barrier_begin
 */
 
+#define THREAD_TO_BACK_DELAY 1000
+
 typedef struct SM_GO_TO_STATE_TAG
 {
     SM_HANDLE sm;
     uint32_t targetState;
-    HANDLE thread;
+    HANDLE threadTo;
+    HANDLE threadBack;
 }SM_GO_TO_STATE;
 
 static DWORD WINAPI switchesState(
@@ -706,6 +736,9 @@ static DWORD WINAPI switchesState(
 )
 {
     SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)lpThreadParameter;
+
+    printf("set state thread: will now switch state to %" PRI_MU_ENUM "\n", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED + goToState->targetState)));
+
     switch (goToState->targetState)
     {
         case 0:/*SM_CREATED*/
@@ -731,7 +764,6 @@ static DWORD WINAPI switchesState(
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_begin(goToState->sm));
 
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_barrier_begin(goToState->sm)); /*switches to draining mode*/
-            sm_barrier_end(goToState->sm);
             break;
 
         }
@@ -743,7 +775,6 @@ static DWORD WINAPI switchesState(
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_begin(goToState->sm));
 
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_close_begin(goToState->sm)); /*switches to draining mode*/
-            sm_close_end(goToState->sm);
 
             break;
         }
@@ -769,15 +800,107 @@ static DWORD WINAPI switchesState(
             break;
         }
     }
+
+    
+
     return 0;
 }
 
+
 static void sm_gotostate(SM_GO_TO_STATE* goToState)
 {
-    goToState->thread = CreateThread(NULL, 0, switchesState, goToState, 0, NULL);
-    ASSERT_IS_NOT_NULL(goToState->thread);
+    goToState->threadTo = CreateThread(NULL, 0, switchesState, goToState, 0, NULL);
+    ASSERT_IS_NOT_NULL(goToState->threadTo);
     /*depending on the requested state, the thread might have finished by now...*/
 }
+
+
+static DWORD WINAPI switchesToCreated(
+    LPVOID lpThreadParameter
+)
+{
+    SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)lpThreadParameter;
+    
+    Sleep(2* THREAD_TO_BACK_DELAY);
+
+    printf("thread reset sate: will now switch state back to %" PRI_MU_ENUM "\n", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED)));
+
+    switch (goToState->targetState)
+    {
+        case 0:/*SM_CREATED*/
+        {
+            break;
+        }
+        case 1:/*SM_OPENING*/
+        {
+            sm_open_end(goToState->sm);
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_close_begin(goToState->sm));
+            sm_close_end(goToState->sm);
+            break;
+        }
+        case 2:/*SM_OPENED*/
+        {
+            if (sm_close_begin(goToState->sm) == SM_EXEC_GRANTED)
+            {
+                sm_close_end(goToState->sm);
+            }
+            
+            break;
+        }
+        case 3:/*SM_OPENED_DRAINING_TO_BARRIER*/
+        {
+            sm_end(goToState->sm);
+            Sleep(THREAD_TO_BACK_DELAY);
+            sm_barrier_end(goToState->sm);
+
+            if (sm_close_begin(goToState->sm) == SM_EXEC_GRANTED)
+            {
+                sm_close_end(goToState->sm);
+            }
+            break;
+
+        }
+        case 4:/*SM_OPENED_DRAINING_TO_CLOSE*/
+        {
+            sm_end(goToState->sm);
+            sm_close_end(goToState->sm);
+
+            break;
+        }
+        case 5:/*SM_OPENED_BARRIER*/
+        {
+            sm_barrier_end(goToState->sm);
+
+            if (sm_close_begin(goToState->sm) == SM_EXEC_GRANTED)
+            {
+                sm_close_end(goToState->sm);
+            }
+            break;
+        }
+        case 6:/*SM_CLOSING*/
+        {
+            sm_close_end(goToState->sm);
+            break;
+        }
+        default:
+        {
+            ASSERT_FAIL("unknown state");
+            break;
+        }
+    }
+    return 0;
+}
+
+static void sm_gofromstate(SM_GO_TO_STATE* goToState)
+{
+    goToState->threadBack = CreateThread(NULL, 0, switchesToCreated, goToState, 0, NULL);
+    ASSERT_IS_NOT_NULL(goToState->threadBack);
+    /*depending on the requested state, the thread might have finished by now...*/
+}
+
+
+
+
 
 /*tests different expected returns from different states of SM*/
 TEST_FUNCTION(STATE_and_API)
@@ -788,13 +911,13 @@ TEST_FUNCTION(STATE_and_API)
         /*SM_CREATED*/                      {   SM_EXEC_GRANTED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
         /*SM_OPENING*/                      {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
         /*SM_OPENED*/                       {   SM_EXEC_REFUSED,        SM_EXEC_GRANTED,        SM_EXEC_GRANTED,    SM_EXEC_GRANTED     },
-        /*SM_OPENED_DRAINING_TO_BARRIER*/   {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
+        /*SM_OPENED_DRAINING_TO_BARRIER*/   {   SM_EXEC_REFUSED,        SM_EXEC_GRANTED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
         /*SM_OPENED_DRAINING_TO_CLOSE*/     {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
-        /*SM_OPENED_BARRIER*/               {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
+        /*SM_OPENED_BARRIER*/               {   SM_EXEC_REFUSED,        SM_EXEC_GRANTED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
         /*SM_CLOSING*/                      {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
     };
 
-    for (uint32_t i = 0; i < sizeof(expected) / sizeof(expected[0]); i++)
+    for (uint32_t i = 1 /*vld.h switch back to 1*/; i < sizeof(expected) / sizeof(expected[0]); i++)
     {
         for (uint32_t j = 0; j < sizeof(expected[0]) / sizeof(expected[0][0]); j++)
         {
@@ -802,9 +925,12 @@ TEST_FUNCTION(STATE_and_API)
             goToState.sm = sm_create(NULL);
             ASSERT_IS_NOT_NULL(goToState.sm);
             goToState.targetState = i;
-            sm_gotostate(&goToState);
 
-            Sleep(100); /*assume it gets to the state in this much ample time*/
+            printf("going to state =%" PRI_MU_ENUM "; calling=%" PRI_MU_ENUM "\n", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
+            sm_gotostate(&goToState);
+            sm_gofromstate(&goToState);
+
+            Sleep(THREAD_TO_BACK_DELAY);
 
             switch (j)
             {
@@ -850,20 +976,12 @@ TEST_FUNCTION(STATE_and_API)
                 }
             }
 
-            /*unstuck thread if needed*/
-            if (i == 3) /*SM_OPENED_DRAINING_TO_BARRIER*/
-            {
-                sm_end(goToState.sm); /*this unblocks the thread*/
-            }
-
-            if (i == 4) /*SM_OPENED_DRAINING_TO_CLOSE*/
-            {
-                sm_end(goToState.sm); /*this unblocks the thread*/
-            }
-
-            ASSERT_IS_TRUE(WaitForSingleObject(goToState.thread, INFINITE) == WAIT_OBJECT_0);
-            (void)CloseHandle(goToState.thread);
+            ASSERT_IS_TRUE(WaitForSingleObject(goToState.threadTo, INFINITE) == WAIT_OBJECT_0);
+            (void)CloseHandle(goToState.threadTo);
             
+            ASSERT_IS_TRUE(WaitForSingleObject(goToState.threadBack, INFINITE) == WAIT_OBJECT_0);
+            (void)CloseHandle(goToState.threadBack);
+
             sm_destroy(goToState.sm);
         }
     }
