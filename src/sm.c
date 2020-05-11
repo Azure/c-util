@@ -165,7 +165,7 @@ void sm_open_end(SM_HANDLE sm)
             }
             else
             {
-
+                /*we are done*/
             }
         }
     }

@@ -899,6 +899,8 @@ static void sm_gofromstate(SM_GO_TO_STATE* goToState)
 
 
 
+/*Tests_SRS_SM_02_050: [ If the state is SM_OPENED_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
+/*Tests_SRS_SM_02_051: [ If the state is SM_OPENED_DRAINING_TO_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
 
 /*tests different expected returns from different states of SM*/
 TEST_FUNCTION(STATE_and_API)
@@ -915,7 +917,7 @@ TEST_FUNCTION(STATE_and_API)
         /*SM_CLOSING*/                      {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
     };
 
-    for (uint32_t i = 1 /*vld.h switch back to 1*/; i < sizeof(expected) / sizeof(expected[0]); i++)
+    for (uint32_t i = 0 ; i < sizeof(expected) / sizeof(expected[0]); i++)
     {
         for (uint32_t j = 0; j < sizeof(expected[0]) / sizeof(expected[0][0]); j++)
         {
