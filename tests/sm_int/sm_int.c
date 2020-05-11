@@ -13,6 +13,7 @@
 
 #include "azure_c_util/timer.h"
 #include "azure_c_util/interlocked_hl.h"
+#include "azure_c_util/xlogging.h"
 
 #include "azure_c_util/sm.h"
 
@@ -567,7 +568,7 @@ TEST_FUNCTION(sm_chaos)
             ((n_begin_open_grants_local==0) ||(n_begin_grants_local==0))
             )
         {
-            printf("Slept %" PRIu32 " ms, no sign of n_begin_open_grants=%" PRId32 ", n_begin_grants=%" PRId32 " \n", counterSleep * 1000, n_begin_open_grants_local, n_begin_grants_local);
+            LogInfo("Slept %" PRIu32 " ms, no sign of n_begin_open_grants=%" PRId32 ", n_begin_grants=%" PRId32 " \n", counterSleep * 1000, n_begin_open_grants_local, n_begin_grants_local);
             counterSleep++;
             Sleep(1000);
         }
@@ -589,7 +590,7 @@ TEST_FUNCTION(sm_chaos)
 
         /*just in case anything needs to close*/
 
-        printf("nthreads=%" PRIu32 
+        LogInfo("nthreads=%" PRIu32 
             ", n_begin_open_grants=%" PRIu32 ", n_begin_open_refuses=%" PRIu32 
             ", n_begin_close_grants=%" PRIu32 ", n_begin_close_refuses=%" PRIu32 
             ", n_begin_barrier_grants=%" PRIu32 ", n_begin_barrier_refuses=%" PRIu32
@@ -647,7 +648,7 @@ TEST_FUNCTION(sm_does_not_block)
             ASSERT_IS_TRUE(sm_open_begin(data->sm) == SM_EXEC_GRANTED);
             sm_open_end(data->sm);
 
-            printf("\nnthreads=%" PRIu32 " n_barrier_threads=%" PRIu32 " n_non_barrier_threads=%" PRIu32 "\n", nthreads, n_barrier_threads, n_non_barrier_threads);
+            LogInfo("\nnthreads=%" PRIu32 " n_barrier_threads=%" PRIu32 " n_non_barrier_threads=%" PRIu32 "\n", nthreads, n_barrier_threads, n_non_barrier_threads);
 
             /*create them barrier threads*/
             for (uint32_t iBarrier = 0; iBarrier < n_barrier_threads; iBarrier++)
@@ -684,7 +685,7 @@ TEST_FUNCTION(sm_does_not_block)
             /*verify the all numbers written by barriers are greater than all previous numbers*/
             verify(data);
 
-            printf("took %f ms, non_barrier_grants=%" PRId32 ", non_barrier_refusals=%" PRId64 " barrier_grants=%" PRId32 ", barrier_refusals=%" PRId64 "\n", timer_global_get_elapsed_ms() - data->startTimems, 
+            LogInfo("took %f ms, non_barrier_grants=%" PRId32 ", non_barrier_refusals=%" PRId64 " barrier_grants=%" PRId32 ", barrier_refusals=%" PRId64 "\n", timer_global_get_elapsed_ms() - data->startTimems, 
                 InterlockedAdd(&non_barrier_grants, 0), 
                 InterlockedAdd64(&non_barrier_refusals, 0),
                 InterlockedAdd(&barrier_grants, 0),
@@ -735,7 +736,7 @@ static DWORD WINAPI switchesState(
 {
     SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)lpThreadParameter;
 
-    printf("set state thread: will now switch state to %" PRI_MU_ENUM "\n", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED + goToState->targetState)));
+    LogInfo("set state thread: will now switch state to %" PRI_MU_ENUM "\n", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED + goToState->targetState)));
 
     switch (goToState->targetState)
     {
@@ -821,7 +822,7 @@ static DWORD WINAPI switchesToCreated(
     
     Sleep(2* THREAD_TO_BACK_DELAY);
 
-    printf("thread reset sate: will now switch state back to %" PRI_MU_ENUM "\n", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED)));
+    LogInfo("thread reset sate: will now switch state back to %" PRI_MU_ENUM "\n", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED)));
 
     switch (goToState->targetState)
     {
@@ -903,18 +904,23 @@ static void sm_gofromstate(SM_GO_TO_STATE* goToState)
 /*Tests_SRS_SM_02_051: [ If the state is SM_OPENED_DRAINING_TO_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
 
 /*tests different expected returns from different states of SM*/
+/*at time=0                     a thread is started that switched state to the desired state to execute some API. This thread might block there. For example when the "to" state is SM_OPENED_DRAINING_TO_BARRIER. */
+/*at time=0                     a thread is started. The thread waits 2*THREAD_TO_BACK_DELAY and then it will unstuck the thread above.*/
+/*at time=THREAD_TO_BACK_DELAY  an API is executed, result is collected and asserted*/
+/*at time = 2*THREAD_TO_BACK_DELAY the second thread unblocks execution and reverts execution to SM_CREATED*/
+
 TEST_FUNCTION(STATE_and_API)
 {
     SM_RESULT expected[][4]=
     {
-                                                /*sm_open_begin*/       /*sm_close_begin*/      /*sm_exec_begin*/        /*sm_barrier_begin*/
-        /*SM_CREATED*/                      {   SM_EXEC_GRANTED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
-        /*SM_OPENING*/                      {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
-        /*SM_OPENED*/                       {   SM_EXEC_REFUSED,        SM_EXEC_GRANTED,        SM_EXEC_GRANTED,    SM_EXEC_GRANTED     },
-        /*SM_OPENED_DRAINING_TO_BARRIER*/   {   SM_EXEC_REFUSED,        SM_EXEC_GRANTED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
-        /*SM_OPENED_DRAINING_TO_CLOSE*/     {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
-        /*SM_OPENED_BARRIER*/               {   SM_EXEC_REFUSED,        SM_EXEC_GRANTED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
-        /*SM_CLOSING*/                      {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,    SM_EXEC_REFUSED     },
+                                                /*sm_open_begin*/       /*sm_close_begin*/      /*sm_exec_begin*/       /*sm_barrier_begin*/
+        /*SM_CREATED*/                      {   SM_EXEC_GRANTED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED     },
+        /*SM_OPENING*/                      {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED     },
+        /*SM_OPENED*/                       {   SM_EXEC_REFUSED,        SM_EXEC_GRANTED,        SM_EXEC_GRANTED,        SM_EXEC_GRANTED     },
+        /*SM_OPENED_DRAINING_TO_BARRIER*/   {   SM_EXEC_REFUSED,        SM_EXEC_GRANTED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED     },
+        /*SM_OPENED_DRAINING_TO_CLOSE*/     {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED     },
+        /*SM_OPENED_BARRIER*/               {   SM_EXEC_REFUSED,        SM_EXEC_GRANTED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED     },
+        /*SM_CLOSING*/                      {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED     },
     };
 
     for (uint32_t i = 0 ; i < sizeof(expected) / sizeof(expected[0]); i++)
@@ -926,7 +932,7 @@ TEST_FUNCTION(STATE_and_API)
             ASSERT_IS_NOT_NULL(goToState.sm);
             goToState.targetState = i;
 
-            printf("going to state =%" PRI_MU_ENUM "; calling=%" PRI_MU_ENUM "\n", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
+            LogInfo("going to state =%" PRI_MU_ENUM "; calling=%" PRI_MU_ENUM "\n", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
             sm_gotostate(&goToState);
             sm_gofromstate(&goToState);
 

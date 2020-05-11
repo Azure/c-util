@@ -208,7 +208,7 @@ static SM_RESULT sm_close_begin_internal(SM_HANDLE sm)
                     }
                     
                     /*Codes_SRS_SM_02_049: [ sm_close_begin shall switch the state to SM_CLOSING and return SM_EXEC_GRANTED. ]*/
-                    InterlockedAdd(&sm->state, -SM_OPENED_DRAINING_TO_CLOSE + SM_CLOSING + SM_STATE_INCREMENT);
+                    (void)InterlockedAdd(&sm->state, -SM_OPENED_DRAINING_TO_CLOSE + SM_CLOSING + SM_STATE_INCREMENT);
                     result = SM_EXEC_GRANTED;
                     break;
                 }
@@ -315,7 +315,7 @@ SM_RESULT sm_exec_begin(SM_HANDLE sm)
         else
         {
             /*Codes_SRS_SM_02_056: [ sm_exec_begin shall increment n. ]*/
-            InterlockedIncrement(&sm->n);
+            (void)InterlockedIncrement(&sm->n);
             LONG state2 = InterlockedAdd(&sm->state, 0);
 
             /*Codes_SRS_SM_02_057: [ If the state changed after incrementing n then sm_exec_begin shall return SM_EXEC_REFUSED. ]*/
@@ -428,14 +428,14 @@ SM_RESULT sm_barrier_begin(SM_HANDLE sm)
                 {
                     /*switch back the state*/
                     /*Codes_SRS_SM_02_070: [ If there are any failures then sm_barrier_begin shall return SM_ERROR. ]*/
-                    InterlockedAdd(&sm->state, -SM_OPENED_DRAINING_TO_BARRIER + SM_OPENED + SM_STATE_INCREMENT);
+                    (void)InterlockedAdd(&sm->state, -SM_OPENED_DRAINING_TO_BARRIER + SM_OPENED + SM_STATE_INCREMENT);
                     LogError("failure in InterlockedHL_WaitForValue(&sm->n=%p, 0, INFINITE)", &sm->n);
                     result = SM_ERROR;
                 }
                 else
                 {
                     /*Codes_SRS_SM_02_069: [ sm_barrier_begin shall switch the state to SM_OPENED_BARRIER and return SM_EXEC_GRANTED. ]*/
-                    InterlockedAdd(&sm->state, -SM_OPENED_DRAINING_TO_BARRIER + SM_OPENED_BARRIER + SM_STATE_INCREMENT);
+                    (void)InterlockedAdd(&sm->state, -SM_OPENED_DRAINING_TO_BARRIER + SM_OPENED_BARRIER + SM_STATE_INCREMENT);
                     result = SM_EXEC_GRANTED;
                 }
             }

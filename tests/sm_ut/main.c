@@ -4,8 +4,6 @@
 #include <stddef.h>
 #include "testrunnerswitcher.h"
 
-#include "vld.h"
-
 int main(void)
 {
     size_t failedTestCount = 0;
