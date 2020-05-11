@@ -190,8 +190,6 @@ TEST_FUNCTION(sm_destroy_in_SM_CREATED_succeeds)
     ///clean
 }
 
-/*vld.h see how difficult is to call sm_Destroy in all other states*/
-
 /*Tests_SRS_SM_02_007: [ If sm is NULL then sm_open_begin shall fail and return SM_ERROR. ]*/
 TEST_FUNCTION(sm_open_begin_with_sm_NULL_returns_SM_ERROR)
 {
@@ -551,8 +549,8 @@ TEST_FUNCTION(sm_exec_begin_in_SM_CREATED_returns_SM_EXEC_REFUSED)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_055: [ If SM_CLOSE_BIT is 1 then sm_exec_begin shall return SM_EXEC_REFUSED. ]*/ /*vld.h left to int tests, SM_CLOSE_BIT is set WHILE sm_close_begin is called*/
-/*Tests_SRS_SM_02_057: [ If the state changed after incrementing n then sm_exec_begin shall return SM_EXEC_REFUSED. ]*/ /*vld.h left to int tests, SM_CLOSE_BIT is set WHILE sm_close_begin is called*/
+/*Tests_SRS_SM_02_055: [ If SM_CLOSE_BIT is 1 then sm_exec_begin shall return SM_EXEC_REFUSED. ]*/ /*left to int tests, SM_CLOSE_BIT is set WHILE sm_close_begin is called*/
+/*Tests_SRS_SM_02_057: [ If the state changed after incrementing n then sm_exec_begin shall return SM_EXEC_REFUSED. ]*/ /*left to int tests, SM_CLOSE_BIT is set WHILE sm_close_begin is called*/
 
 /*Tests_SRS_SM_02_056: [ sm_exec_begin shall increment n. ]*/
 /*Tests_SRS_SM_02_058: [ sm_exec_begin shall return SM_EXEC_GRANTED. ]*/
@@ -611,7 +609,7 @@ TEST_FUNCTION(sm_exec_end_in_SM_CREATED_returns)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_063: [ If n reaches 0 then sm_exec_end shall signal that. ]*/ /*vld.h left to int tests... ? de facut ca si interlocked_ut*/
+/*Tests_SRS_SM_02_063: [ If n reaches 0 then sm_exec_end shall signal that. ]*/ /*left to int tests...*/
 /*Tests_SRS_SM_02_062: [ sm_exec_end shall decrement n with saturation at 0. ]*/
 TEST_FUNCTION(sm_exec_end_signals)
 {
@@ -728,7 +726,7 @@ TEST_FUNCTION(sm_barrier_begin_returns_SM_EXEC_GRANTED)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_067: [ If the state changed meanwhile then sm_barrier_begin shall return SM_EXEC_REFUSED. ]*/ /*sort of left to int tests vld.h maybe fixeable by interlocked mocking*/
+/*Tests_SRS_SM_02_067: [ If the state changed meanwhile then sm_barrier_begin shall return SM_EXEC_REFUSED. ]*/ /*left to int tests*/
 /*Tests_SRS_SM_02_068: [ sm_barrier_begin shall wait for n to reach 0. ]*/ /*fixeable maybe by interlcoked mocking*/
 
 /*Tests_SRS_SM_02_070: [ If there are any failures then sm_barrier_begin shall return SM_ERROR. ]*/
