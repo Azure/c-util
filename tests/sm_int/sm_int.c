@@ -1,4 +1,5 @@
 // Copyright(C) Microsoft Corporation.All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #ifdef __cplusplus
 #include <cinttypes>
@@ -10,6 +11,8 @@
 #include "windows.h"
 
 #include "testrunnerswitcher.h"
+
+#include "azure_macro_utils/macro_utils.h"
 
 #include "azure_c_util/timer.h"
 #include "azure_c_util/interlocked_hl.h"
@@ -65,11 +68,11 @@ static  DWORD WINAPI callsBeginOpen(
     {
         if (sm_open_begin(data->sm) == SM_EXEC_GRANTED)
         {
-            InterlockedIncrement(&data->n_begin_open_grants);
+            (void)InterlockedIncrement(&data->n_begin_open_grants);
         }
         else
         {
-            InterlockedIncrement(&data->n_begin_open_refuses);
+            (void)InterlockedIncrement(&data->n_begin_open_refuses);
         }
     }
     return 0;
@@ -147,11 +150,11 @@ static  DWORD WINAPI callsBeginClose(
     {
         if (sm_close_begin(data->sm) == SM_EXEC_GRANTED)
         {
-            InterlockedIncrement(&data->n_begin_close_grants);
+            (void)InterlockedIncrement(&data->n_begin_close_grants);
         }
         else
         {
-            InterlockedIncrement(&data->n_begin_close_refuses);
+            (void)InterlockedIncrement(&data->n_begin_close_refuses);
         }
     }
     return 0;
@@ -228,11 +231,11 @@ static  DWORD WINAPI callsBeginBarrier(
     {
         if (sm_barrier_begin(data->sm) == SM_EXEC_GRANTED)
         {
-            InterlockedIncrement(&data->n_begin_barrier_grants);
+            (void)InterlockedIncrement(&data->n_begin_barrier_grants);
         }
         else
         {
-            InterlockedIncrement(&data->n_begin_barrier_refuses);
+            (void)InterlockedIncrement(&data->n_begin_barrier_refuses);
         }
     }
     return 0;
@@ -309,7 +312,7 @@ static  DWORD WINAPI callsBeginAndEnd(
     {
         if (sm_exec_begin(data->sm) == SM_EXEC_GRANTED)
         {
-            InterlockedIncrement(&data->n_begin_grants);
+            (void)InterlockedIncrement(&data->n_begin_grants);
             double startTime = timer_global_get_elapsed_ms();
             uint32_t pretend_to_do_something_time_in_ms = rand() % 10;
             while (timer_global_get_elapsed_ms() - startTime < pretend_to_do_something_time_in_ms)
@@ -320,7 +323,7 @@ static  DWORD WINAPI callsBeginAndEnd(
         }
         else
         {
-            InterlockedIncrement(&data->n_begin_refuses);
+            (void)InterlockedIncrement(&data->n_begin_refuses);
         }
     }
     return 0;
@@ -408,7 +411,7 @@ static DWORD WINAPI barrier_thread(
         {
             LONG index = InterlockedIncrement(&data->current_index) - 1;
             LONG source = InterlockedIncrement(&data->source_of_numbers);
-            InterlockedIncrement(&barrier_grants);
+            (void)InterlockedIncrement(&barrier_grants);
 
             if (index >= ARRAY_SIZE)
             {
@@ -422,7 +425,7 @@ static DWORD WINAPI barrier_thread(
         }
         else
         {
-            InterlockedIncrement64(&barrier_refusals);
+            (void)InterlockedIncrement64(&barrier_refusals);
         }
     }
     return 0;
@@ -440,7 +443,7 @@ static  DWORD WINAPI non_barrier_thread(
         {
             LONG index = InterlockedIncrement(&data->current_index) - 1;
             LONG source = InterlockedIncrement(&data->source_of_numbers);
-            InterlockedIncrement(&non_barrier_grants);
+            (void)InterlockedIncrement(&non_barrier_grants);
 
             if (index >= ARRAY_SIZE)
             {
@@ -455,7 +458,7 @@ static  DWORD WINAPI non_barrier_thread(
         else
         {
             /*not granted execution, so just hammer*/
-            InterlockedIncrement64(&non_barrier_refusals);
+            (void)InterlockedIncrement64(&non_barrier_refusals);
         }
     }
     return 0;
@@ -528,7 +531,7 @@ TEST_FUNCTION(sm_chaos)
 
     data->startTime_ms = timer_global_get_elapsed_ms();
 
-    InterlockedExchange(&data->threadsShouldFinish, 0);
+    (void)InterlockedExchange(&data->threadsShouldFinish, 0);
 
     for (uint32_t nthreads = 1; nthreads <= min(4 * dwNumberOfProcessors, N_MAX_THREADS); nthreads*=2)
     {
@@ -540,15 +543,15 @@ TEST_FUNCTION(sm_chaos)
         data->n_end_barrier_threads = nthreads;
         data->n_begin_threads = nthreads;
         
-        InterlockedExchange(&data->threadsShouldFinish, 0);
-        InterlockedExchange(&data->n_begin_open_grants, 0);
-        InterlockedExchange(&data->n_begin_open_refuses, 0);
-        InterlockedExchange(&data->n_begin_close_grants, 0);
-        InterlockedExchange(&data->n_begin_close_refuses, 0);
-        InterlockedExchange(&data->n_begin_barrier_grants, 0);
-        InterlockedExchange(&data->n_begin_barrier_refuses, 0);
-        InterlockedExchange(&data->n_begin_grants, 0);
-        InterlockedExchange(&data->n_begin_refuses, 0);
+        (void)InterlockedExchange(&data->threadsShouldFinish, 0);
+        (void)InterlockedExchange(&data->n_begin_open_grants, 0);
+        (void)InterlockedExchange(&data->n_begin_open_refuses, 0);
+        (void)InterlockedExchange(&data->n_begin_close_grants, 0);
+        (void)InterlockedExchange(&data->n_begin_close_refuses, 0);
+        (void)InterlockedExchange(&data->n_begin_barrier_grants, 0);
+        (void)InterlockedExchange(&data->n_begin_barrier_refuses, 0);
+        (void)InterlockedExchange(&data->n_begin_grants, 0);
+        (void)InterlockedExchange(&data->n_begin_refuses, 0);
 
         createBeginOpenThreads(data);
         createEndOpenThreads(data);
@@ -573,7 +576,7 @@ TEST_FUNCTION(sm_chaos)
             Sleep(1000);
         }
 
-        InterlockedExchange(&data->threadsShouldFinish, 1);
+        (void)InterlockedExchange(&data->threadsShouldFinish, 1);
 
         waitAndDestroyBeginAndEndThreads(data);
 

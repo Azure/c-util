@@ -33,7 +33,7 @@ Historic context: before `sm` the world had explicit states, such as
 - "OPEN" (where all APIs would be allowed to execute)
 - "OPENING" (marks the transiton from "CREATED" to "OPEN")
 - "CLOSING" (where APIs would be drained - it devolves into "CREATED" once that was done)
-- all sort of other substates of "OPEN" which would not allow other APIs to execute (and once work was done, the substte would revert back to "OPEN").
+- all sort of other substates of "OPEN" which would not allow other APIs to execute (and once work was done, the substate would revert back to "OPEN").
 
 The world had for every module an explicit "count of API" - which was the total number of ongoing APIs. It would be incremented at the begin of every APIs. Then the API would check if it is executed in the "OPEN" state (substates would have different names). It would be decremented at the end of every API. 
 

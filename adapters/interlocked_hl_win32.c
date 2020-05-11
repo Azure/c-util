@@ -1,4 +1,5 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <inttypes.h>
 #include <limits.h>
@@ -123,6 +124,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForValue6
     /*Codes_SRS_INTERLOCKED_HL_02_021: [ If address is NULL then InterlockedHL_WaitForValue64 shall fail and return INTERLOCKED_HL_ERROR. ]*/
     if (address == NULL)
     {
+        LogError("invalid arguments LONG64 volatile*, address=%p, LONG64, value=%" PRId64 ", DWORD, milliseconds=%" PRIu32 "",
+            address, value, milliseconds);
         result = INTERLOCKED_HL_ERROR;
     }
     else
@@ -146,6 +149,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForValue6
             /* Codes_SRS_INTERLOCKED_HL_02_024: [ When waiting for the value at address to change, the milliseconds argument value shall be used as timeout. ]*/
             if (!WaitOnAddress(address, &current_value, sizeof(current_value), milliseconds))
             {
+                LogLastError("failure in WaitOnAddress(address=%p, &current_value=%p, sizeof(current_value)=%zu, milliseconds=%" PRIu32 ")",
+                    address, current_value, sizeof(current_value), milliseconds);
                 /* Codes_SRS_INTERLOCKED_HL_02_027: [ If WaitOnAddress fails, InterlockedHL_WaitForValue64 shall fail and return INTERLOCKED_HL_ERROR. ]*/
                 result = INTERLOCKED_HL_ERROR;
                 break;
@@ -187,6 +192,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForNotVal
             /* Codes_SRS_INTERLOCKED_HL_42_004: [ When waiting for the value at address to change, the milliseconds argument value shall be used as timeout. ]*/
             if (!WaitOnAddress(address, &current_value, sizeof(current_value), milliseconds))
             {
+                LogLastError("failure in WaitOnAddress(address=%p, &current_value=%p, sizeof(current_value)=%zu, milliseconds=%" PRIu32 ")",
+                    address, &current_value, sizeof(current_value), milliseconds);
                 /* Codes_SRS_INTERLOCKED_HL_42_007: [ If WaitOnAddress fails, InterlockedHL_WaitForNotValue shall fail and return INTERLOCKED_HL_ERROR. ]*/
                 result = INTERLOCKED_HL_ERROR;
                 break;

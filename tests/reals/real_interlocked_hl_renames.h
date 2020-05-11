@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #define InterlockedHL_Add64WithCeiling real_InterlockedHL_Add64WithCeiling
 #define InterlockedHL_WaitForValue real_InterlockedHL_WaitForValue
