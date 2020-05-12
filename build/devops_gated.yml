@@ -269,12 +269,6 @@ jobs:
       arguments: 'submodule update --init --force deps/azure-c-build-tools'
 
   - task: BatchScript@1
-    displayName: 'Git submodule update'
-    inputs:
-      filename: 'C:\Program Files\Git\bin\git.exe'
-      arguments: 'submodule update --init --force deps/azure-macro-utils-c'
-
-  - task: BatchScript@1
     displayName: 'Git submodule clean'
     inputs:
       filename: 'C:\Program Files\Git\bin\git.exe'
@@ -305,7 +299,7 @@ jobs:
       vsVersion: 16.0
       platform: x64
       configuration: RelWithDebInfo
-      msbuildArgs: '/t:restore /t:build /t:traceabilitytool'
+      msbuildArgs: '/t:restore /t:traceabilitytool'
       clean: true
       maximumCpuCount: true
 
