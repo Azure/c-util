@@ -69,7 +69,6 @@ function(set_platform_files c_util_dir)
         set(LOCK_C_FILE ${c_util_dir}/adapters/lock_win32.c PARENT_SCOPE)
         set(PLATFORM_C_FILE ${c_util_dir}/adapters/platform_win32.c PARENT_SCOPE)
         set(THREAD_C_FILE ${c_util_dir}/adapters/threadapi_win32.c PARENT_SCOPE)
-        set(TICKCOUTER_C_FILE ${c_util_dir}/adapters/tickcounter_win32.c PARENT_SCOPE)
         set(TIMER_C_FILE ${c_util_dir}/adapters/timer.c PARENT_SCOPE)
         set(UNIQUEID_C_FILE ${c_util_dir}/adapters/uniqueid_win32.c PARENT_SCOPE)
         set(STRING_UTILS_C_FILE ${c_util_dir}/adapters/string_utils.c PARENT_SCOPE)
@@ -80,7 +79,6 @@ function(set_platform_files c_util_dir)
         set(LOCK_C_FILE ${c_util_dir}/adapters/lock_pthreads.c PARENT_SCOPE)
         set(PLATFORM_C_FILE ${c_util_dir}/adapters/platform_linux.c PARENT_SCOPE)
         set(THREAD_C_FILE ${c_util_dir}/adapters/threadapi_pthreads.c PARENT_SCOPE)
-        set(TICKCOUTER_C_FILE ${c_util_dir}/adapters/tickcounter_linux.c PARENT_SCOPE)
         set(UNIQUEID_C_FILE ${c_util_dir}/adapters/uniqueid_stub.c PARENT_SCOPE)
         set(SM_C_FILE) #there's no SM for linux
         set(SM_H_FILE) #there's no SM for linux
@@ -117,7 +115,6 @@ set(azure_c_util_c_files
     ${SM_C_FILE}
     ${TIMER_C_FILE}
     ${STRING_UTILS_C_FILE}
-    ${TICKCOUTER_C_FILE}
     ${THREAD_C_FILE}
     ${UNIQUEID_C_FILE}
     ${ENVIRONMENT_VARIABLE_C_FILE}
@@ -147,7 +144,6 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/strings.h
     ./inc/azure_c_util/strings_types.h
     ./inc/azure_c_util/timer.h
-    ./inc/azure_c_util/tickcounter.h
     ./inc/azure_c_util/threadapi.h
     ./inc/azure_c_util/thandle.h
     ./inc/azure_c_util/thandle_stdlib.h
