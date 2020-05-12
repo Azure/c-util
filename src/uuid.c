@@ -7,7 +7,7 @@
 #include "azure_c_util/gballoc.h"
 #include "azure_c_util/uuid.h"
 #include "azure_c_util/uniqueid.h"
-#include "azure_c_util/xlogging.h"
+#include "azure_c_logging/xlogging.h"
 
 #define UUID_STRING_LENGTH          36
 #define UUID_STRING_SIZE            (UUID_STRING_LENGTH + 1)

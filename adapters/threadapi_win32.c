@@ -4,7 +4,7 @@
 #include "windows.h"
 #include "azure_macro_utils/macro_utils.h"
 #include "azure_c_util/threadapi.h"
-#include "azure_c_util/xlogging.h"
+#include "azure_c_logging/xlogging.h"
 
 MU_DEFINE_ENUM_STRINGS(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 

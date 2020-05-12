@@ -5,7 +5,7 @@
 
 #include "windows.h"
 
-#include "azure_c_util/xlogging.h"
+#include "azure_c_logging/xlogging.h"
 #include "azure_c_util/gballoc.h"
 #include "azure_c_util/timer.h"
 #include "azure_c_util/string_utils.h"

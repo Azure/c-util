@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include "azure_c_util/gballoc.h"
 #include "azure_c_util/azure_base64.h"
-#include "azure_c_util/xlogging.h"
+#include "azure_c_logging/xlogging.h"
 
 
 #define splitInt(intVal, bytePos)   (char)((intVal >> (bytePos << 3)) & 0xFF)

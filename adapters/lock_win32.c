@@ -5,7 +5,7 @@
 #include <windows.h>
 #include "azure_c_util/lock.h"
 #include "azure_c_util/gballoc.h"
-#include "azure_c_util/xlogging.h"
+#include "azure_c_logging/xlogging.h"
 
 #include "azure_macro_utils/macro_utils.h"
 

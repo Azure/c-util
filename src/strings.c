@@ -9,7 +9,7 @@
 #include "azure_macro_utils/macro_utils.h"
 #include "azure_c_util/gballoc.h"
 #include "azure_c_util/strings.h"
-#include "azure_c_util/xlogging.h"
+#include "azure_c_logging/xlogging.h"
 
 static const char hexToASCII[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
