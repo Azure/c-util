@@ -255,7 +255,7 @@ TEST_FUNCTION(sm_open_end_with_sm_NULL_returns)
     ///arrange
 
     ///act
-    sm_open_end(NULL);
+    sm_open_end(NULL, true);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -270,7 +270,7 @@ TEST_FUNCTION(sm_open_end_in_SM_CREATED_returns)
     SM_HANDLE sm = TEST_sm_create();
 
     ///act
-    sm_open_end(sm);
+    sm_open_end(sm, true);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -279,7 +279,7 @@ TEST_FUNCTION(sm_open_end_in_SM_CREATED_returns)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_042: [ sm_open_end shall switch the state to SM_OPENED. ]*/
+/*Tests_SRS_SM_02_074: [ If success is true then sm_open_end shall switch the state to SM_OPENED. ]*/
 TEST_FUNCTION(sm_open_end_switches_to_SM_OPENED)
 {
     ///arrange
@@ -289,7 +289,7 @@ TEST_FUNCTION(sm_open_end_switches_to_SM_OPENED)
 
     ///act
     SM_RESULT result1 = sm_exec_begin(sm);
-    sm_open_end(sm);
+    sm_open_end(sm, true);
     SM_RESULT result2 = sm_exec_begin(sm);
     
     ///assert
@@ -299,6 +299,29 @@ TEST_FUNCTION(sm_open_end_switches_to_SM_OPENED)
 
     ///clean
     sm_exec_end(sm);
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_02_075: [ If success is false then sm_open_end shall switch the state to SM_CREATED. ]*/
+TEST_FUNCTION(sm_open_end_switches_to_SM_CREATED)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+
+    ///act
+    SM_RESULT result1 = sm_exec_begin(sm);
+    sm_open_end(sm, false);
+    SM_RESULT result2 = sm_open_begin(sm); /*sm_open_begin can only be executed in SM_CREATED state*/
+
+    ///assert
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, result1);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result2);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_open_end(sm, true);
     sm_destroy(sm);
 }
 
@@ -327,7 +350,7 @@ TEST_FUNCTION(sm_close_begin_in_SM_OPENED_succeeds)
     SM_HANDLE sm = TEST_sm_create();
     SM_RESULT result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-    sm_open_end(sm);
+    sm_open_end(sm, true);
 
     STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE));
 
@@ -352,7 +375,7 @@ TEST_FUNCTION(sm_close_begin_with_SM_CLOSE_BIT_refuses)
     SM_HANDLE sm = TEST_sm_create();
     SM_RESULT result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-    sm_open_end(sm);
+    sm_open_end(sm, true);
 
     /*sets SM_CLOSE_BIT to 1*/
     STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE));
@@ -399,7 +422,7 @@ TEST_FUNCTION(sm_close_begin_after_close_begin_close_end_open_begin_open_end_suc
     
     result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-    sm_open_end(sm);
+    sm_open_end(sm, true);
 
     STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE));
 
@@ -409,7 +432,7 @@ TEST_FUNCTION(sm_close_begin_after_close_begin_close_end_open_begin_open_end_suc
 
     result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-    sm_open_end(sm);
+    sm_open_end(sm, true);
 
     umock_c_reset_all_calls();
 
@@ -436,7 +459,7 @@ TEST_FUNCTION(sm_close_unhappy_path)
 
     result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-    sm_open_end(sm);
+    sm_open_end(sm, true);
 
     umock_c_reset_all_calls();
 
@@ -491,7 +514,7 @@ TEST_FUNCTION(sm_close_end_switches_state_to_SM_CREATED) /*allows sm_open_begin 
 
     result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-    sm_open_end(sm);
+    sm_open_end(sm, true);
 
     STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE));
 
@@ -507,7 +530,7 @@ TEST_FUNCTION(sm_close_end_switches_state_to_SM_CREATED) /*allows sm_open_begin 
     result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    sm_open_end(sm);
+    sm_open_end(sm, true);
 
     ///clean
     sm_destroy(sm);
@@ -561,7 +584,7 @@ TEST_FUNCTION(sm_exec_begin_succeeds)
     SM_RESULT result;
     result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-    sm_open_end(sm);
+    sm_open_end(sm, true);
 
     umock_c_reset_all_calls();
 
@@ -618,7 +641,7 @@ TEST_FUNCTION(sm_exec_end_signals)
     SM_RESULT result;
     result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-    sm_open_end(sm);
+    sm_open_end(sm, true);
 
     result = sm_exec_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
@@ -680,7 +703,7 @@ TEST_FUNCTION(sm_barrier_begin_with_SM_CLOSE_BIT_set_refuses)
     SM_RESULT result;
     result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-    sm_open_end(sm);
+    sm_open_end(sm, true);
 
     result = sm_close_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
@@ -708,7 +731,7 @@ TEST_FUNCTION(sm_barrier_begin_returns_SM_EXEC_GRANTED)
     SM_RESULT result, result1, result2;
     result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-    sm_open_end(sm);
+    sm_open_end(sm, true);
 
     STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE));
 
@@ -737,7 +760,7 @@ TEST_FUNCTION(sm_barrier_begin_fails_when_interlocked_fails)
     SM_RESULT result;
     result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-    sm_open_end(sm);
+    sm_open_end(sm, true);
 
     STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE))
         .SetReturn(INTERLOCKED_HL_ERROR);
@@ -789,7 +812,7 @@ TEST_FUNCTION(sm_barrier_begin_switched_to_SM_OPENED)
     SM_RESULT result, result1, result2;
     result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
-    sm_open_end(sm);
+    sm_open_end(sm, true);
 
     STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE));
     result = sm_barrier_begin(sm);

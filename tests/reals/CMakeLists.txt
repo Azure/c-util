@@ -41,6 +41,7 @@ set(azure_c_util_reals_c_files ${azure_c_util_reals_c_files}
     real_srw_lock.c
     real_string_utils.c
     real_timer.c
+    real_sm.c
 )
 
 set(azure_c_util_reals_h_files ${azure_c_util_reals_h_files}
@@ -52,6 +53,8 @@ set(azure_c_util_reals_h_files ${azure_c_util_reals_h_files}
     real_string_utils_renames.h
     real_timer.h
     real_timer_renames.h
+    real_sm.h
+    real_sm_renames.h
 )
 endif()
 

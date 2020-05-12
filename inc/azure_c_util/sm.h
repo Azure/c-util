@@ -4,6 +4,12 @@
 #ifndef SM_H
 #define SM_H
 
+#ifdef __cplusplus
+/*C++ has native support for "bool"*/
+#else
+#include <stdbool.h>
+#endif
+
 #include "azure_macro_utils/macro_utils.h"
 
 #ifdef __cplusplus
@@ -26,7 +32,7 @@ MOCKABLE_FUNCTION(, SM_HANDLE, sm_create, const char*, name);
 MOCKABLE_FUNCTION(, void, sm_destroy, SM_HANDLE, sm);
 
 MOCKABLE_FUNCTION(, SM_RESULT, sm_open_begin, SM_HANDLE, sm);
-MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm, bool, success);
 
 MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
