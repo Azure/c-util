@@ -266,7 +266,7 @@ jobs:
     displayName: 'Git submodule update'
     inputs:
       filename: 'C:\Program Files\Git\bin\git.exe'
-      arguments: 'submodule update --init --force deps/azure-c-build-tools'
+      arguments: 'submodule update --init --force'
 
   - task: BatchScript@1
     displayName: 'Git submodule clean'
@@ -285,6 +285,12 @@ jobs:
     inputs:
       filename: '"c:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"'
       modifyEnvironment: true
+
+  - task: CMake@1
+    displayName: CMake
+    inputs:
+      workingDirectory: 'build'
+      cmakeArgs: '.. -Ax64'
 
   - task: VSBuild@1
     displayName: 'Build traceabilitytool only'
