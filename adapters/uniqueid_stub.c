@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "azure_c_util/uniqueid.h"
-#include "azure_c_util/xlogging.h"
+#include "azure_c_logging/xlogging.h"
 #include <time.h>
 
 MU_DEFINE_ENUM_STRINGS(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);
