@@ -3,7 +3,7 @@
 
 ## Overview
 
-`State manager` (short:`sm`) is a module the manages the call state for the APIs of a module under the following sematics:
+`State manager` (short:`sm`) is a module the manages the call state for the APIs of a module under the following semantics:
 
 1. the module has 2 step initialization (that is, the module has a _create and a _open APIs). Note: _open can be a do-nothing operation for the case when the user module doesn't have a real _open.
 

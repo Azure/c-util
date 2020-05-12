@@ -26,10 +26,10 @@
 
 MU_DEFINE_ENUM(SM_STATE, SM_STATE_VALUES)
 
-#define SM_STATE_MASK       127
-#define SM_STATE_INCREMENT  256 /*at every state change, the state is incremented by this much*/
+#define SM_STATE_MASK       ((1<<7)-1) /*127*/
+#define SM_STATE_INCREMENT  (1<<8)  /*256*/ /*at every state change, the state is incremented by this much*/
 
-#define SM_CLOSE_BIT 128
+#define SM_CLOSE_BIT        (1<<7)
 
 #define PRI_SM_STATE "" PRI_MU_ENUM " SM_CLOSE_BIT=%d"
 
@@ -38,7 +38,7 @@ MU_DEFINE_ENUM(SM_STATE, SM_STATE_VALUES)
 typedef struct SM_HANDLE_DATA_TAG
 {
     volatile LONG state;
-    volatile LONG n; /*number of API calls to non-barriers*/
+    volatile LONG non_barrier_call_count; /*number of API calls to non-barriers*/
 #ifdef _MSC_VER
 /*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/en-us/library/b6fae073.aspx*/
 #pragma warning(disable:4200)
@@ -78,7 +78,7 @@ SM_HANDLE sm_create(const char* name)
     {
         /*Codes_SRS_SM_02_037: [ sm_create shall set state to SM_CREATED and n to 0. ]*/
         (void)InterlockedExchange(&result->state, SM_CREATED);
-        (void)InterlockedExchange(&result->n, 0);
+        (void)InterlockedExchange(&result->non_barrier_call_count, 0);
         (void)memcpy(result->name, name, flexSize);
         /*return as is*/
     }
@@ -203,10 +203,10 @@ static SM_RESULT sm_close_begin_internal(SM_HANDLE sm)
                 else
                 {
                     /*Codes_SRS_SM_02_048: [ sm_close_begin shall wait for n to reach 0. ]*/
-                    if (InterlockedHL_WaitForValue(&sm->n, 0, INFINITE) != INTERLOCKED_HL_OK)
+                    if (InterlockedHL_WaitForValue(&sm->non_barrier_call_count, 0, INFINITE) != INTERLOCKED_HL_OK)
                     {
                         /*Codes_SRS_SM_02_071: [ If there are any failures then sm_close_begin shall fail and return SM_ERROR. ]*/
-                        LogError("sm name=%s. failure in InterlockedHL_WaitForValue(&sm->n=%p, 0, INFINITE), state was %" PRI_SM_STATE "", sm->name, &sm->n, SM_STATE_VALUE(state));
+                        LogError("sm name=%s. failure in InterlockedHL_WaitForValue(&sm->non_barrier_call_count=%p, 0, INFINITE), state was %" PRI_SM_STATE "", sm->name, &sm->non_barrier_call_count, SM_STATE_VALUE(state));
                         (void)InterlockedAdd(&sm->state, -SM_OPENED_DRAINING_TO_CLOSE + SM_OPENED + SM_STATE_INCREMENT); /*undo state to SM_OPENED...*/
                         result = SM_ERROR;
                         break;
@@ -319,17 +319,17 @@ SM_RESULT sm_exec_begin(SM_HANDLE sm)
         else
         {
             /*Codes_SRS_SM_02_056: [ sm_exec_begin shall increment n. ]*/
-            (void)InterlockedIncrement(&sm->n);
+            (void)InterlockedIncrement(&sm->non_barrier_call_count);
             LONG state2 = InterlockedAdd(&sm->state, 0);
 
             /*Codes_SRS_SM_02_057: [ If the state changed after incrementing n then sm_exec_begin shall return SM_EXEC_REFUSED. ]*/
             if (state1 != state2)
             {
                 LogError("sm name=%s. state changed meanwhile from %" PRI_SM_STATE " to %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(state1), SM_STATE_VALUE(state2));
-                LONG n = InterlockedDecrement(&sm->n);
+                LONG n = InterlockedDecrement(&sm->non_barrier_call_count);
                 if (n == 0)
                 {
-                    WakeByAddressSingle((void*)&sm->n);
+                    WakeByAddressSingle((void*)&sm->non_barrier_call_count);
                 }
                 result = SM_EXEC_REFUSED;
             }
@@ -348,7 +348,7 @@ void sm_exec_end(SM_HANDLE sm)
     /*Codes_SRS_SM_02_024: [ If sm is NULL then sm_exec_end shall return. ]*/
     if (sm == NULL)
     {
-        LogError("return");
+        LogError("invalid arg SM_HANDLE sm=%p", sm);
     }
     else
     {
@@ -369,14 +369,14 @@ void sm_exec_end(SM_HANDLE sm)
             /*Codes_SRS_SM_02_062: [ sm_exec_end shall decrement n with saturation at 0. ]*/
             do /*a rather convoluted loop to make _end be idempotent (too many _end will be ignored)*/
             {
-                LONG n = InterlockedAdd(&sm->n, 0);
+                LONG n = InterlockedAdd(&sm->non_barrier_call_count, 0);
                 if (n <= 0)
                 {
                     break;
                 }
                 else
                 {
-                    if (InterlockedCompareExchange(&sm->n, n - 1, n) != n)
+                    if (InterlockedCompareExchange(&sm->non_barrier_call_count, n - 1, n) != n)
                     {
                         /*well - retry sort of...*/
                     }
@@ -385,7 +385,7 @@ void sm_exec_end(SM_HANDLE sm)
                         /*Codes_SRS_SM_02_063: [ If n reaches 0 then sm_exec_end shall signal that. ]*/
                         if (n - 1 == 0)
                         {
-                            WakeByAddressSingle((void*)&sm->n);
+                            WakeByAddressSingle((void*)&sm->non_barrier_call_count);
                         }
                         break;
                     }
@@ -401,7 +401,7 @@ SM_RESULT sm_barrier_begin(SM_HANDLE sm)
     /*Codes_SRS_SM_02_027: [ If sm is NULL then sm_barrier_begin shall fail and return SM_ERROR. ]*/
     if (sm == NULL)
     {
-        LogError("return");
+        LogError("invalid arg SM_HANDLE sm=%p", sm);
         result = SM_ERROR;
     }
     else
@@ -429,12 +429,12 @@ SM_RESULT sm_barrier_begin(SM_HANDLE sm)
             else
             {
                 /*Codes_SRS_SM_02_068: [ sm_barrier_begin shall wait for n to reach 0. ]*/
-                if (InterlockedHL_WaitForValue(&sm->n, 0, INFINITE) != INTERLOCKED_HL_OK)
+                if (InterlockedHL_WaitForValue(&sm->non_barrier_call_count, 0, INFINITE) != INTERLOCKED_HL_OK)
                 {
                     /*switch back the state*/
                     /*Codes_SRS_SM_02_070: [ If there are any failures then sm_barrier_begin shall return SM_ERROR. ]*/
                     (void)InterlockedAdd(&sm->state, -SM_OPENED_DRAINING_TO_BARRIER + SM_OPENED + SM_STATE_INCREMENT);
-                    LogError("sm name=%s. failure in InterlockedHL_WaitForValue(&sm->n=%p, 0, INFINITE), state was %" PRI_SM_STATE "", sm->name, &sm->n, SM_STATE_VALUE(state));
+                    LogError("sm name=%s. failure in InterlockedHL_WaitForValue(&sm->non_barrier_call_count=%p, 0, INFINITE), state was %" PRI_SM_STATE "", sm->name, &sm->non_barrier_call_count, SM_STATE_VALUE(state));
                     result = SM_ERROR;
                 }
                 else
@@ -454,7 +454,7 @@ void sm_barrier_end(SM_HANDLE sm)
     /*Codes_SRS_SM_02_032: [ If sm is NULL then sm_barrier_end shall return. ]*/
     if (sm == NULL)
     {
-        LogError("return");
+        LogError("invalid arg SM_HANDLE sm=%p", sm);
     }
     else
     {
