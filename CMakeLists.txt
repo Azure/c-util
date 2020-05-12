@@ -75,7 +75,7 @@ function(set_platform_files c_util_dir)
         set(SRW_LOCK_C_FILE ${c_util_dir}/adapters/srw_lock.c PARENT_SCOPE)
         set(SM_C_FILE ${c_util_dir}/src/sm.c PARENT_SCOPE)
         set(SM_H_FILE ${c_util_dir}/inc/azure_c_util/sm.h PARENT_SCOPE)
-        set(INTERLOCKED_IF_C_FILE ${c_util_dir}/adapters/interlocked_if_win32.c PARENT_SCOPE)
+        set(INTERLOCKED_IF_C_FILE ${c_util_dir}/adapters/interlocked_win32.c PARENT_SCOPE)
     else()
         set(LOCK_C_FILE ${c_util_dir}/adapters/lock_pthreads.c PARENT_SCOPE)
         set(PLATFORM_C_FILE ${c_util_dir}/adapters/platform_linux.c PARENT_SCOPE)
@@ -83,7 +83,7 @@ function(set_platform_files c_util_dir)
         set(UNIQUEID_C_FILE ${c_util_dir}/adapters/uniqueid_stub.c PARENT_SCOPE)
         set(SM_C_FILE) #there's no SM for linux
         set(SM_H_FILE) #there's no SM for linux
-        set(INTERLOCKED_IF_C_FILE ${c_util_dir}/adapters/interlocked_if_linux.c PARENT_SCOPE)
+        set(INTERLOCKED_IF_C_FILE ${c_util_dir}/adapters/interlocked_linux.c PARENT_SCOPE)
     endif()
     
     if(WIN32 OR MACOSX OR LINUX)
@@ -154,7 +154,7 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/uuid.h
     ./inc/azure_c_util/interlocked_hl.h
     ${SM_H_FILE}
-    ./inc/azure_c_util/interlocked_if.h
+    ./inc/azure_c_util/interlocked.h
 )
 
 FILE(GLOB azure_c_util_md_files "devdoc/*.md")
