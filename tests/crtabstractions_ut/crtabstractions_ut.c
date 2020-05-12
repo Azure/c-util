@@ -962,7 +962,6 @@ TEST_FUNCTION(strtoull_s_zero_base_success)
     // arrange
     const char* subjectStr = "123456";
     char* endptr;
-    int base = 10;
     uint64_t result;
 
     uint64_t expectedResult = 123456ULL;
@@ -1049,8 +1048,6 @@ TEST_FUNCTION(strtoull_s_with_spaces_only_fails)
     char* endptr;
     int base = 10;
     uint64_t result;
-
-    char* expectedEndptr = (char*)subjectStr + strlen(subjectStr);
 
     // act
     result = strtoull_s(subjectStr, &endptr, base);
