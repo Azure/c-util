@@ -16,7 +16,7 @@
 
 #include "azure_c_util/timer.h"
 #include "azure_c_util/interlocked_hl.h"
-#include "azure_c_util/xlogging.h"
+#include "azure_c_logging/xlogging.h"
 
 #include "azure_c_util/sm.h"
 

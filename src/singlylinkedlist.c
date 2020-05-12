@@ -5,7 +5,7 @@
 #include "azure_macro_utils/macro_utils.h"
 #include "azure_c_util/gballoc.h"
 #include "azure_c_util/singlylinkedlist.h"
-#include "azure_c_util/xlogging.h"
+#include "azure_c_logging/xlogging.h"
 
 typedef struct LIST_ITEM_INSTANCE_TAG
 {

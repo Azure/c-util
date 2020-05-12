@@ -7,7 +7,7 @@
 #include <time.h>
 #include "azure_c_util/gballoc.h"
 #include "azure_c_util/tickcounter.h"
-#include "azure_c_util/xlogging.h"
+#include "azure_c_logging/xlogging.h"
 
 #define INVALID_TIME_VALUE      (time_t)(-1)
 typedef struct TICK_COUNTER_INSTANCE_TAG
