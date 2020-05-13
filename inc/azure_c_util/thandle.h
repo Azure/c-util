@@ -10,7 +10,7 @@
 #include "azure_macro_utils/macro_utils.h"
 #include "umock_c/umock_c_prod.h"
 
-#include "azure_c_util/xlogging.h"
+#include "azure_c_logging/xlogging.h"
 
 #include "azure_c_util/containing_record.h"
 #include "refcount_os.h"

@@ -16,14 +16,6 @@ option(run_int_tests "set run_int_tests to ON to integration tests (default is O
 option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is ON)" ON)
 option(run_traceability "run traceability tool (default is ON)" ON)
 
-if(WIN32)
-    option(logerror_captures_stack_traces "LogError will make a reasonable attempt to capture the stack trace at the time of calling LogError. Only available on Windows" OFF)
-    set(use_etw OFF CACHE STRING "set use_etw to OFF = No ETW logging, TRACELOGGING = Use ETW from tracelogging.h, TRACELOGGING_WITH_CONSOLE = Use ETW from tracelogging.h and call console logger. Default is OFF")
-    set_property(CACHE use_etw PROPERTY STRINGS TRACELOGGING_WITH_CONSOLE TRACELOGGING OFF)
-endif()
-
-option(no_logging "disable logging (default is OFF)" OFF)
-
 set(original_run_e2e_tests ${run_e2e_tests})
 set(original_run_unittests ${run_unittests})
 set(original_run_int_tests ${run_int_tests})
@@ -44,55 +36,39 @@ enable_testing()
 
 set(C_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 
-if(WIN32)
-
-if(${use_etw} STREQUAL "TRACELOGGING_WITH_CONSOLE")
-    add_definitions(-DUSE_TRACELOGGING)
-    add_definitions(-DCALL_CONSOLE_LOGGER)
-endif() #(${use_etw} STREQUAL "TRACELOGGING_WITH_CONSOLE")
-
-if(${use_etw} STREQUAL "TRACELOGGING")
-    add_definitions(-DUSE_TRACELOGGING)
-endif() #(${use_etw} STREQUAL "TRACELOGGING")
-
+if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
+        add_subdirectory(deps/azure-macro-utils-c)
+        include_directories(deps/azure-macro-utils-c/inc)
 endif()
 
-if(${logerror_captures_stack_traces})
-    #set a preprocessor option (LOGERROR_CAPTURES_STACK_TRACES) and add the files that provide the functionality
-    add_definitions(-DLOGERROR_CAPTURES_STACK_TRACES)
-    set(LOGGING_STACKTRACE_C_FILE ./src/logging_stacktrace.c)
-    set(LOGGING_STACKTRACE_H_FILE ./inc/azure_c_util/logging_stacktrace.h)
-else()
-    set(LOGGING_STACKTRACE_C_FILE)
-    set(LOGGING_STACKTRACE_H_FILE)
+if ((NOT TARGET ctest) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-ctest/CMakeLists.txt))
+        add_subdirectory(deps/azure-ctest)
+        include_directories(deps/azure-ctest/inc)
 endif()
 
-if(${no_logging})
-    add_definitions(-DNO_LOGGING)
+if ((NOT TARGET testrunnerswitcher) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-testrunnerswitcher/CMakeLists.txt))
+        add_subdirectory(deps/azure-c-testrunnerswitcher)
+        include_directories(deps/azure-c-testrunnerswitcher/inc)
+endif()
+
+if ((NOT TARGET umock_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMakeLists.txt))
+        add_subdirectory(deps/umock-c)
+        include_directories(deps/umock-c/inc)
+endif()
+
+if ((NOT TARGET azure_c_logging) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-logging/CMakeLists.txt))
+        add_subdirectory(deps/azure-c-logging)
+        include_directories(deps/azure-c-logging/inc)
 endif()
 
 # This function focuses on setting files which are unique to a given hardware platform.
 # The choice of tlsio is not unique per-platform, and is set in the main CMakeLists.txt
 function(set_platform_files c_util_dir)
     if(WIN32)
-        if(${use_etw} STREQUAL "OFF")
-            set(XLOGGING_C_FILE ${c_util_dir}/src/xlogging.c PARENT_SCOPE)
-            set(LOGGING_C_FILE ${c_util_dir}/src/consolelogger.c PARENT_SCOPE)
-            set(LOGGING_H_FILE ${c_util_dir}/inc/azure_c_util/consolelogger.h PARENT_SCOPE)
-        elseif(${use_etw} STREQUAL "TRACELOGGING")
-            set(XLOGGING_C_FILE ${c_util_dir}/src/etwxlogging.c PARENT_SCOPE)
-            set(LOGGING_C_FILE ${c_util_dir}/src/etwlogger_driver.c PARENT_SCOPE)
-            set(LOGGING_H_FILE ${c_util_dir}/inc/azure_c_util/etwlogger_driver.h PARENT_SCOPE)
-        elseif(${use_etw} STREQUAL "TRACELOGGING_WITH_CONSOLE")
-            set(XLOGGING_C_FILE ${c_util_dir}/src/etwxlogging.c PARENT_SCOPE)
-            set(LOGGING_C_FILE ${c_util_dir}/src/etwlogger_driver.c ${c_util_dir}/src/consolelogger.c PARENT_SCOPE)
-            set(LOGGING_H_FILE ${c_util_dir}/inc/azure_c_util/etwlogger_driver.h ${c_util_dir}/inc/azure_c_util/consolelogger.h PARENT_SCOPE)
-        endif()
         set(INTERLOCKED_HL_C_FILE ${c_util_dir}/adapters/interlocked_hl_win32.c PARENT_SCOPE)
         set(LOCK_C_FILE ${c_util_dir}/adapters/lock_win32.c PARENT_SCOPE)
         set(PLATFORM_C_FILE ${c_util_dir}/adapters/platform_win32.c PARENT_SCOPE)
         set(THREAD_C_FILE ${c_util_dir}/adapters/threadapi_win32.c PARENT_SCOPE)
-        set(TICKCOUTER_C_FILE ${c_util_dir}/adapters/tickcounter_win32.c PARENT_SCOPE)
         set(TIMER_C_FILE ${c_util_dir}/adapters/timer.c PARENT_SCOPE)
         set(UNIQUEID_C_FILE ${c_util_dir}/adapters/uniqueid_win32.c PARENT_SCOPE)
         set(STRING_UTILS_C_FILE ${c_util_dir}/adapters/string_utils.c PARENT_SCOPE)
@@ -103,11 +79,7 @@ function(set_platform_files c_util_dir)
         set(LOCK_C_FILE ${c_util_dir}/adapters/lock_pthreads.c PARENT_SCOPE)
         set(PLATFORM_C_FILE ${c_util_dir}/adapters/platform_linux.c PARENT_SCOPE)
         set(THREAD_C_FILE ${c_util_dir}/adapters/threadapi_pthreads.c PARENT_SCOPE)
-        set(TICKCOUTER_C_FILE ${c_util_dir}/adapters/tickcounter_linux.c PARENT_SCOPE)
         set(UNIQUEID_C_FILE ${c_util_dir}/adapters/uniqueid_stub.c PARENT_SCOPE)
-        set(XLOGGING_C_FILE ${c_util_dir}/src/xlogging.c PARENT_SCOPE)
-        set(LOGGING_C_FILE ${c_util_dir}/src/consolelogger.c PARENT_SCOPE)
-        set(LOGGING_H_FILE ${c_util_dir}/inc/azure_c_util/consolelogger.h PARENT_SCOPE)
         set(SM_C_FILE) #there's no SM for linux
         set(SM_H_FILE) #there's no SM for linux
     endif()
@@ -143,7 +115,6 @@ set(azure_c_util_c_files
     ${SM_C_FILE}
     ${TIMER_C_FILE}
     ${STRING_UTILS_C_FILE}
-    ${TICKCOUTER_C_FILE}
     ${THREAD_C_FILE}
     ${UNIQUEID_C_FILE}
     ${ENVIRONMENT_VARIABLE_C_FILE}
@@ -173,29 +144,14 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/strings.h
     ./inc/azure_c_util/strings_types.h
     ./inc/azure_c_util/timer.h
-    ./inc/azure_c_util/tickcounter.h
     ./inc/azure_c_util/threadapi.h
     ./inc/azure_c_util/thandle.h
     ./inc/azure_c_util/thandle_stdlib.h
     ./inc/azure_c_util/uniqueid.h
     ./inc/azure_c_util/uuid.h
-    ./inc/azure_c_util/xlogging.h
     ./inc/azure_c_util/interlocked_hl.h
     ${SM_H_FILE}
 )
-
-set(azure_c_util_logging_c_files
-    ${LOGGING_C_FILE}
-    ${XLOGGING_C_FILE}
-    ${LOGGING_STACKTRACE_C_FILE}
-    )
-
-set(azure_c_util_logging_h_files
-    ${LOGGING_H_FILE}
-    ${LOGGING_STACKTRACE_H_FILE}
-    )
-
-add_library(azure_c_util_logging ${azure_c_util_logging_c_files} ${azure_c_util_logging_h_files})
 
 FILE(GLOB azure_c_util_md_files "devdoc/*.md")
 SOURCE_GROUP(devdoc FILES ${azure_c_util_md_files})
@@ -215,7 +171,7 @@ add_library(azure_c_util ${azure_c_util_c_files} ${azure_c_util_h_files} ${azure
 
 if(MSVC)
     target_include_directories(azure_c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/windows>)
-    target_link_libraries(azure_c_util synchronization azure_c_util_logging)
+    target_link_libraries(azure_c_util synchronization azure_c_logging)
     include_directories(${CMAKE_CURRENT_LIST_DIR}/pal/windows)
 else()
     target_include_directories(azure_c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/linux>)
@@ -245,26 +201,6 @@ endif()
 
 target_link_libraries(azure_c_util ${azure_c_util_target_libs})
 
-if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
-        add_subdirectory(deps/azure-macro-utils-c)
-        include_directories(deps/azure-macro-utils-c/inc)
-endif()
-
-if ((NOT TARGET ctest) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-ctest/CMakeLists.txt))
-        add_subdirectory(deps/azure-ctest)
-        include_directories(deps/azure-ctest/inc)
-endif()
-
-if ((NOT TARGET testrunnerswitcher) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-testrunnerswitcher/CMakeLists.txt))
-        add_subdirectory(deps/azure-c-testrunnerswitcher)
-        include_directories(deps/azure-c-testrunnerswitcher/inc)
-endif()
-
-if ((NOT TARGET umock_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMakeLists.txt))
-        add_subdirectory(deps/umock-c)
-        include_directories(deps/umock-c/inc)
-endif()
-
 include_directories(${MACRO_UTILS_INC_FOLDER})
 include_directories(${UMOCK_C_INC_FOLDER})
 include_directories(${CMAKE_CURRENT_LIST_DIR}/inc)
@@ -277,7 +213,7 @@ set(run_traceability ${original_run_traceability})
 if((WIN32) AND (${run_traceability}))
     #add traceability custom target
     add_custom_target(azure_c_util_traceability ALL
-        COMMAND ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-build-tools/traceabilitytool/traceability_tool/bin/$<CONFIG>/traceabilitytool.exe -buildcheck -e ${CMAKE_CURRENT_LIST_DIR}/deps -i ${CMAKE_CURRENT_LIST_DIR})
+        COMMAND traceabilitytool -buildcheck -e ${CMAKE_CURRENT_LIST_DIR}/deps -i ${CMAKE_CURRENT_LIST_DIR})
     add_dependencies(azure_c_util_traceability traceabilitytool)
 endif()
 

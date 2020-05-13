@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include "azure_c_util/gballoc.h"
 #include "azure_c_util/buffer_.h"
-#include "azure_c_util/xlogging.h"
+#include "azure_c_logging/xlogging.h"
 
 typedef struct BUFFER_TAG
 {
