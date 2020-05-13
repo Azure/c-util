@@ -60,9 +60,9 @@ Close is realized by prohibiting all calls (including competing `sm_close_begin`
 `n` is a 32 bit value. At the time of writing `sm` it is of no concern an overflow above `INT32_MAX` because that would mean there are more than 2 billion standing requests that have no yet been ended, and the assumption is that something will go wrong in other parts of the system before it goes bad in `sm`.
 
 These are the internal state of `sm`:
-- `SM_CREATED` - entered after a call to `sm_create`
+- `SM_CREATED` - entered after a call to `sm_create` or `sm_open_end` is called with `success` set to `false`.
 - `SM_OPENING` - entered after a call to `sm_open_begin`
-- `SM_OPENED` - entered after `sm_open_end` is called
+- `SM_OPENED` - entered after `sm_open_end` is called with `success` set to `true`.
 - `SM_OPENED_DRAINING_TO_BARRIER` - entered after a call to `sm_barrier_begin` is about to be granted. This state is active while `n` is greater than 0.
 - `SM_OPENED_DRAINING_TO_CLOSE` - entered after a call to `sm_close_begin` is about to be granted. This state is active while `n` is greater than 0.
 - `SM_OPENED_BARRIER` - entered when `sm_barrier_begin` is granted. 
@@ -88,7 +88,7 @@ MOCKABLE_FUNCTION(, SM_HANDLE, sm_create, const char*, name);
 MOCKABLE_FUNCTION(, void, sm_destroy, SM_HANDLE, sm);
 
 MOCKABLE_FUNCTION(, SM_RESULT, sm_open_begin, SM_HANDLE, sm);
-MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm, bool, success);
 
 MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
@@ -144,16 +144,18 @@ MOCKABLE_FUNCTION(, SM_RESULT, sm_open_begin, SM_HANDLE, sm);
 
 ### sm_open_end
 ```c
-MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm, bool, success);
 ```
 
-`sm_open_end` informs `sm` that user's "open" state operations have completed.
+`sm_open_end` informs `sm` that user's "open" state operations have completed and if they were succesfull.
 
 **SRS_SM_02_010: [** If `sm` is `NULL` then `sm_open_end` shall return. **]**
 
 **SRS_SM_02_041: [** If state is not `SM_OPENING` then `sm_open_end` shall return. **]**
 
-**SRS_SM_02_042: [** `sm_open_end` shall switch the state to `SM_OPENED`. **]**
+**SRS_SM_02_074: [** If `success` is `true` then `sm_open_end` shall switch the state to `SM_OPENED`. **]**
+
+**SRS_SM_02_075: [** If `success` is `false` then `sm_open_end` shall switch the state to `SM_CREATED`. **]**
 
 ### sm_close_begin
 ```c

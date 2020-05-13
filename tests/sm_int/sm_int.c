@@ -3,9 +3,11 @@
 
 #ifdef __cplusplus
 #include <cinttypes>
+#include <cstdlib>
 #else
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #endif
 
 #include "windows.h"
@@ -110,7 +112,7 @@ static  DWORD WINAPI callsEndOpen(
 
     while (InterlockedAdd(&data->threadsShouldFinish, 0) == 0)
     {
-        sm_open_end(data->sm); /*might as well fail*/
+        sm_open_end(data->sm, (rand()%2==0));
     }
     return 0;
 }
@@ -523,9 +525,13 @@ TEST_SUITE_INITIALIZE(suite_init)
 at least 1 sm_open_begin and at least 1 sm_exec_begin are waited to happen*/
 TEST_FUNCTION(sm_chaos)
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)malloc(sizeof(OPEN_CLOSE_THREADS));
+    LogInfo("disabling logging for the duration of sm_chaos. Logging takes additional locks that \"might\" help the test pass");
+    LOGGER_LOG toBeRestored = xlogging_get_log_function();
+    xlogging_set_log_function(NULL);
 
+    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)malloc(sizeof(OPEN_CLOSE_THREADS));
     ASSERT_IS_NOT_NULL(data);
+
     data->sm = sm_create(NULL);
     ASSERT_IS_NOT_NULL(data->sm);
 
@@ -571,7 +577,7 @@ TEST_FUNCTION(sm_chaos)
             ((n_begin_open_grants_local==0) ||(n_begin_grants_local==0))
             )
         {
-            LogInfo("Slept %" PRIu32 " ms, no sign of n_begin_open_grants=%" PRId32 ", n_begin_grants=%" PRId32 " \n", counterSleep * 1000, n_begin_open_grants_local, n_begin_grants_local);
+            LogInfo("Slept %" PRIu32 " ms, no sign of n_begin_open_grants=%" PRId32 ", n_begin_grants=%" PRId32 "", counterSleep * 1000, n_begin_open_grants_local, n_begin_grants_local);
             counterSleep++;
             Sleep(1000);
         }
@@ -580,9 +586,12 @@ TEST_FUNCTION(sm_chaos)
 
         waitAndDestroyBeginAndEndThreads(data);
 
-        /*there might be a sm_barrier begin that is not followed by a sm_barrier_end. So this is calling it "just in case"*/
+        /*there might be a sm_barrier_begin that is not followed by a sm_barrier_end. So this is calling it "just in case"*/
         
         sm_barrier_end(data->sm);
+
+        /*there might be a sm_open_begin that is not followed by a sm_open_end. So this is calling it "just in case"*/
+        sm_open_end(data->sm, true);
 
         waitAndDestroyEndBarrierThreads(data);
         waitAndDestroyBeginBarrierThreads(data);
@@ -598,7 +607,7 @@ TEST_FUNCTION(sm_chaos)
             ", n_begin_close_grants=%" PRIu32 ", n_begin_close_refuses=%" PRIu32 
             ", n_begin_barrier_grants=%" PRIu32 ", n_begin_barrier_refuses=%" PRIu32
             ", n_begin_grants=%" PRIu32 ", n_begin_refuses=%" PRIu32
-            "\n",
+            "",
             nthreads,
             InterlockedAdd(&data->n_begin_open_grants, 0),
             InterlockedAdd(&data->n_begin_open_refuses, 0),
@@ -611,14 +620,19 @@ TEST_FUNCTION(sm_chaos)
         );
 
         ASSERT_IS_TRUE(InterlockedAdd(&data->n_begin_open_grants, 0) >= 1);
-        ASSERT_IS_TRUE(InterlockedAdd(&data->n_begin_open_grants, 0) - InterlockedAdd(&data->n_begin_close_grants, 0) <= 1);
     }
 
     free(data);
+
+    xlogging_set_log_function(toBeRestored);
 }
 
 TEST_FUNCTION(sm_does_not_block)
 {
+    LogInfo("disabling logging for the duration of sm_does_not_block. Logging takes additional locks that \"might\" help the test pass");
+    LOGGER_LOG toBeRestored = xlogging_get_log_function();
+    xlogging_set_log_function(NULL);
+
     ///arrange
     THREADS_COMMON* data = (THREADS_COMMON*)malloc(sizeof(THREADS_COMMON));
     ASSERT_IS_NOT_NULL(data);
@@ -649,9 +663,9 @@ TEST_FUNCTION(sm_does_not_block)
             data->startTimems = timer_global_get_elapsed_ms();
 
             ASSERT_IS_TRUE(sm_open_begin(data->sm) == SM_EXEC_GRANTED);
-            sm_open_end(data->sm);
+            sm_open_end(data->sm, true);
 
-            LogInfo("\nnthreads=%" PRIu32 " n_barrier_threads=%" PRIu32 " n_non_barrier_threads=%" PRIu32 "\n", nthreads, n_barrier_threads, n_non_barrier_threads);
+            LogInfo("\nnthreads=%" PRIu32 " n_barrier_threads=%" PRIu32 " n_non_barrier_threads=%" PRIu32 "", nthreads, n_barrier_threads, n_non_barrier_threads);
 
             /*create them barrier threads*/
             for (uint32_t iBarrier = 0; iBarrier < n_barrier_threads; iBarrier++)
@@ -688,7 +702,7 @@ TEST_FUNCTION(sm_does_not_block)
             /*verify the all numbers written by barriers are greater than all previous numbers*/
             verify(data);
 
-            LogInfo("took %f ms, non_barrier_grants=%" PRId32 ", non_barrier_refusals=%" PRId64 " barrier_grants=%" PRId32 ", barrier_refusals=%" PRId64 "\n", timer_global_get_elapsed_ms() - data->startTimems, 
+            LogInfo("took %f ms, non_barrier_grants=%" PRId32 ", non_barrier_refusals=%" PRId64 " barrier_grants=%" PRId32 ", barrier_refusals=%" PRId64 "", timer_global_get_elapsed_ms() - data->startTimems, 
                 InterlockedAdd(&non_barrier_grants, 0), 
                 InterlockedAdd64(&non_barrier_refusals, 0),
                 InterlockedAdd(&barrier_grants, 0),
@@ -704,6 +718,8 @@ TEST_FUNCTION(sm_does_not_block)
     ///clean
     sm_destroy(data->sm);
     free(data);
+
+    xlogging_set_log_function(toBeRestored);
 }
 
 /*below tests aim to see that calling any API produces GRANT/REFUSED from any state*/
@@ -739,7 +755,7 @@ static DWORD WINAPI switchesState(
 {
     SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)lpThreadParameter;
 
-    LogInfo("set state thread: will now switch state to %" PRI_MU_ENUM "\n", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED + goToState->targetState)));
+    LogInfo("set state thread: will now switch state to %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED + goToState->targetState)));
 
     switch (goToState->targetState)
     {
@@ -755,13 +771,13 @@ static DWORD WINAPI switchesState(
         case 2:/*SM_OPENED*/
         {
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(goToState->sm));
-            sm_open_end(goToState->sm);
+            sm_open_end(goToState->sm, true);
             break;
         }
         case 3:/*SM_OPENED_DRAINING_TO_BARRIER*/
         {
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(goToState->sm));
-            sm_open_end(goToState->sm);
+            sm_open_end(goToState->sm, true);
 
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_exec_begin(goToState->sm));
 
@@ -772,7 +788,7 @@ static DWORD WINAPI switchesState(
         case 4:/*SM_OPENED_DRAINING_TO_CLOSE*/
         {
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(goToState->sm));
-            sm_open_end(goToState->sm);
+            sm_open_end(goToState->sm, true);
 
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_exec_begin(goToState->sm));
 
@@ -783,7 +799,7 @@ static DWORD WINAPI switchesState(
         case 5:/*SM_OPENED_BARRIER*/
         {
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(goToState->sm));
-            sm_open_end(goToState->sm);
+            sm_open_end(goToState->sm, true);
 
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_barrier_begin(goToState->sm));
             break;
@@ -791,7 +807,7 @@ static DWORD WINAPI switchesState(
         case 6:/*SM_CLOSING*/
         {
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(goToState->sm));
-            sm_open_end(goToState->sm);
+            sm_open_end(goToState->sm, true);
 
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_close_begin(goToState->sm));
             break;
@@ -825,7 +841,7 @@ static DWORD WINAPI switchesToCreated(
     
     Sleep(2* THREAD_TO_BACK_DELAY);
 
-    LogInfo("thread reset sate: will now switch state back to %" PRI_MU_ENUM "\n", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED)));
+    LogInfo("thread reset sate: will now switch state back to %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED)));
 
     switch (goToState->targetState)
     {
@@ -835,7 +851,7 @@ static DWORD WINAPI switchesToCreated(
         }
         case 1:/*SM_OPENING*/
         {
-            sm_open_end(goToState->sm);
+            sm_open_end(goToState->sm, true);
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_close_begin(goToState->sm));
             sm_close_end(goToState->sm);
             break;
@@ -935,7 +951,7 @@ TEST_FUNCTION(STATE_and_API)
             ASSERT_IS_NOT_NULL(goToState.sm);
             goToState.targetState = i;
 
-            LogInfo("going to state =%" PRI_MU_ENUM "; calling=%" PRI_MU_ENUM "\n", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
+            LogInfo("going to state =%" PRI_MU_ENUM "; calling=%" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
             sm_gotostate(&goToState);
             sm_gofromstate(&goToState);
 
@@ -948,7 +964,7 @@ TEST_FUNCTION(STATE_and_API)
                     ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j], sm_open_begin(goToState.sm));
                     if (expected[i][j] == SM_EXEC_GRANTED)
                     {
-                        sm_open_end(goToState.sm);
+                        sm_open_end(goToState.sm, true);
                     }
                     break;
                 }
