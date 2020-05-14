@@ -337,9 +337,6 @@ BEGIN_TEST_SUITE(strings_unittests)
             //assert
             ASSERT_IS_NULL(g_hString, "STRING_new failure in test %zu/%zu", index, count);
         }
-
-        ///cleanup
-        STRING_delete(g_hString);
     }
 
     /* Tests_SRS_STRING_07_009: [STRING_new_quoted shall return a NULL STRING_HANDLE if the supplied const char* is NULL.] */
