@@ -8,10 +8,6 @@
 typedef struct pos_TAG
 {
     int x;
-#ifdef _MSC_VER
-    /*warning C4200: nonstandard extension used: zero-sized array in struct/union */
-#pragma warning(disable:4200)
-#endif
     int flexible_array[];
 } pos;
 

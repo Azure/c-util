@@ -26,10 +26,6 @@ typedef struct CONSTBUFFER_HANDLE_DATA_TAG
     CONSTBUFFER_CUSTOM_FREE_FUNC custom_free_func;
     void* custom_free_func_context;
     CONSTBUFFER_HANDLE originalHandle; /*where the CONSTBUFFER_TYPE_FROM_OFFSET_AND_SIZE was build from*/
-#ifdef _MSC_VER
-/*warning C4200: nonstandard extension used: zero-sized array in struct/union */
-#pragma warning(disable:4200)
-#endif
     unsigned char storage[]; /*if the memory was copied, this is where the copied memory is. For example in the case of CONSTBUFFER_CreateFromOffsetAndSizeWithCopy. Can have 0 as size.*/
 } CONSTBUFFER_HANDLE_DATA;
 

@@ -103,11 +103,6 @@ static void dispose_A_S(A_S* a_s)
     free(a_s->s);
 }
 
-#ifdef _MSC_VER
-/*warning C4200: nonstandard extension used: zero-sized array in struct/union */
-#pragma warning(disable:4200)
-#endif
-
 #define THANDLE_MALLOC_FUNCTION gballoc_malloc
 #define THANDLE_FREE_FUNCTION gballoc_free
 #ifdef __cplusplus

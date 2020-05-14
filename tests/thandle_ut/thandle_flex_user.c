@@ -16,10 +16,6 @@
     char*, s,                   \
     size_t, theMany[]
 
-#ifdef _MSC_VER
-    /*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/en-us/library/b6fae073.aspx*/
-#pragma warning(disable:4200)
-#endif
 MU_DEFINE_STRUCT(LL_FLEX, LL_FLEX_FIELDS);
 
 
