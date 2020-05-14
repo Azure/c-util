@@ -541,6 +541,7 @@ TEST_FUNCTION(THANDLE_INITIALIZE_with_lvalue_NULL_returns)
 TEST_FUNCTION(THANDLE_INITIALIZE_with_rvalue_NULL_succeeds)
 {
     ///arrange
+    MU_SUPPRESS_WARNING(4197) // The cast would be perfectly fine for C, but teh C++ compiler will meow
     THANDLE(LL) t2 = (THANDLE(LL))(0x444);
     umock_c_reset_all_calls();
 
