@@ -9,7 +9,7 @@ The interface is based on the Windows [Interlocked API](https://docs.microsoft.c
 
 ## Notes
 
-* The `interlocked` module does not perform validation for on the arguments.
+* The `interlocked` module does not perform validation on the arguments.
 * All boolean operations are bitwise.
 * All integer values are assumed to be using two's complement representation.
 
@@ -56,7 +56,7 @@ MOCKABLE_FUNCTION(, int8_t, interlocked_xor_8, volatile int8_t*, destination, in
 MOCKABLE_FUNCTION(, int32_t, interlocked_add, volatile int32_t*, addend, int32_t, value);
 ```
 
-**SRS_INTERLOCKED_43_001 [** `interlocked_add` shall atomically add `*addend` with `value` and store the result in `addend`.**]**
+**SRS_INTERLOCKED_43_001 [** `interlocked_add` shall atomically add `*addend` with `value` and store the result in `*addend`.**]**
 
 **SRS_INTERLOCKED_43_032: [** `interlocked_add` shall return the result of the addition.**]**
 
@@ -109,7 +109,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_compare_exchange, volatile int32_t*, de
 
 **SRS_INTERLOCKED_43_006 [** `interlocked_compare_exchange` shall compare the 32-bit integers pointed to by `destination` and `comperand`. If they are equal, `*destination` is set to `exchange`. These operations are performed atomically.***]**
 
-**SRS_INTERLOCKED_43_037: [** `interlocked_compare_exchange` shall return the initial value of the `destination` parameter.**]**
+**SRS_INTERLOCKED_43_037: [** `interlocked_compare_exchange` shall return the initial value of `*destination`.**]**
 
 ## interlocked_compare_exchange_128
 
@@ -117,21 +117,25 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_compare_exchange, volatile int32_t*, de
 MOCKABLE_FUNCTION(, bool, interlocked_compare_exchange_128, volatile int64_t*, destination, int64_t, exchange_high, int64_t, exchange_low, int64_t*, comperand_result);
 ```
 
-**SRS_INTERLOCKED_43_007 [** `interlocked_compare_exchange_128` shall compare `*destination` with `*comperand_result`. If they are equal, `exchange_high` and `exchange_low` are stored in the array specified by `destination`. These operations are performed atomically. The `destination` and `comperand_result` parameters are arrays of two 64-bit integers considered as a 128-bit fields.**]**
+Note: The `destination` and `comperand_result` parameters are arrays of two 64-bit integers considered as a 128-bit fields.
+
+**SRS_INTERLOCKED_43_007 [** `interlocked_compare_exchange_128` shall compare `*destination` with `*comperand_result`. If they are equal, `exchange_high` and `exchange_low` are stored in the array specified by `destination`. These operations are performed atomically.**]**
 
 **SRS_INTERLOCKED_43_039: [** `interlocked_compare_exchange_128` shall store the initial value of `*destination` in `*comperand_result` regardless of the result of the comparison.` **]**
 
-**SRS_INTERLOCKED_43_038: [** `interlocked_compare_exchange_128` shall return `1` if `*comperand_result` equals the original value of `*destination` and `0` otherwise**]**
+**SRS_INTERLOCKED_43_038: [** `interlocked_compare_exchange_128` shall return `true` if `*comperand_result` equals the original value of `*destination`.**]**
+
+**SRS_INTERLOCKED_43_063: [** `interlocked_compare_exchange_128` shall return `false` if `*comperand_result` does not equal the original value of `*destination`. **]**
 
 ## interlocked_compare_exchange_16
 
 ```c
-MOCKABLE_FUNCTION(, int16_t, interlocked_compare_exchange_64, volatile int16_t*, destination, int16_t, exchange, int16_t, comperand);
+MOCKABLE_FUNCTION(, int16_t, interlocked_compare_exchange_16, volatile int16_t*, destination, int16_t, exchange, int16_t, comperand);
 ```
 
 **SRS_INTERLOCKED_43_009 [**`interlocked_compare_exchange_16` shall compare the 16-bit integers pointed to by `destination` and `comperand`. If they are equal, `*destination` is set to `exchange`. These operations are performed atomically.**]**
 
-**SRS_INTERLOCKED_43_040: [** `interlocked_compare_exchange_16` shall return the initial value of the `destination` parameter. **]**
+**SRS_INTERLOCKED_43_040: [** `interlocked_compare_exchange_16` shall return the initial value of `*destination`. **]**
 
 ## interlocked_compare_exchange_64
 
@@ -141,7 +145,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_compare_exchange_64, volatile int64_t*,
 
 **SRS_INTERLOCKED_43_008 [**`interlocked_compare_exchange_64` shall compare the 64-bit integers pointed to by `destination` and `comperand`. If they are equal, `*destination` is set to `exchange`. These operations are performed atomically.**]**
 
-**SRS_INTERLOCKED_43_041: [** `interlocked_compare_exchange_64` shall return the initial value of the `destination` parameter. **]**
+**SRS_INTERLOCKED_43_041: [** `interlocked_compare_exchange_64` shall return the initial value of `*destination`. **]**
 
 ## interlocked_compare_exchange_pointer
 
@@ -149,9 +153,9 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_compare_exchange_64, volatile int64_t*,
 MOCKABLE_FUNCTION(, void*, interlocked_compare_exchange_pointer, volatile void**, destination, void*, exchange, void*, comperand);
 ```
 
-**SRS_INTERLOCKED_43_010 [**`interlocked_compare_exchange_64` shall compare the pointers `destination` and `comperand`. If they are equal, `*destination` is set to `exchange`. These operations are performed atomically.**]**
+**SRS_INTERLOCKED_43_010 [**`interlocked_compare_exchange_pointer` shall compare the pointers `destination` and `comperand`. If they are equal, `*destination` is set to `exchange`. These operations are performed atomically.**]**
 
-**SRS_INTERLOCKED_43_042: [** `interlocked_compare_exchange_64` shall return the initial value of the `destination` parameter. **]**
+**SRS_INTERLOCKED_43_042: [** `interlocked_compare_exchange_pointer` shall return the initial value of `*destination`. **]**
 
 ## interlocked_decrement
 
@@ -232,7 +236,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_exchange_add, volatile int32_t*, addend
 
 **SRS_INTERLOCKED_43_018 [** `interlocked_exchange_add` shall perform an atomic addition of the 32-bit values `*addend` and `value` and store the result in `*addend`.**]**
 
-**SRS_INTERLOCKED_43_050: [** `interlocked_exchange_add` shall return the initial value of `*addend` **]**
+**SRS_INTERLOCKED_43_050: [** `interlocked_exchange_add` shall return the initial value of `*addend`. **]**
 
 ## interlocked_exchange_add_64
 
@@ -240,9 +244,8 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_exchange_add, volatile int32_t*, addend
 MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_add_64, volatile int64_t*, addend, int64_t, value);
 ```
 
-**SRS_INTERLOCKED_43_018 [** `interlocked_exchange_add_64` shall perform an atomic addition of the 64-bit values `*addend` and `value` and store the result in `*addend`.**]**
-
-**SRS_INTERLOCKED_43_050: [** `interlocked_exchange_add_64` shall return the initial value of `*addend` **]**
+**SRS_INTERLOCKED_43_019 [** `interlocked_exchange_add_64` shall perform an atomic addition of the 64-bit values `*addend` and `value` and store the result in `*addend`.**]**
+**SRS_INTERLOCKED_43_064: [** `interlocked_exchange_add_64` shall return the initial value of `*addend`. **]**
 
 ## interlocked_exchange_pointer
 
