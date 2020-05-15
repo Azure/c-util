@@ -245,6 +245,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_add_64, volatile int64_t*, add
 ```
 
 **SRS_INTERLOCKED_43_019 [** `interlocked_exchange_add_64` shall perform an atomic addition of the 64-bit values `*addend` and `value` and store the result in `*addend`.**]**
+
 **SRS_INTERLOCKED_43_064: [** `interlocked_exchange_add_64` shall return the initial value of `*addend`. **]**
 
 ## interlocked_exchange_pointer
@@ -314,6 +315,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_or_64, volatile int64_t*, destination, 
 ```
 
 **SRS_INTERLOCKED_43_026 [** `interlocked_or_64` shall perform an atomic bitwise OR operation on the 64-bit integers `*destination` and `value` and store the result in `destination`.**]**
+
 **SRS_INTERLOCKED_43_057: [** `interlocked_or_64` shall return the initial value of `*destination`. **]**
 
 
