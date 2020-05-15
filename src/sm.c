@@ -42,11 +42,6 @@ typedef struct SM_HANDLE_DATA_TAG
 {
     volatile LONG state;
     volatile LONG non_barrier_call_count; /*number of API calls to non-barriers*/
-#ifdef _MSC_VER
-/*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/en-us/library/b6fae073.aspx*/
-#pragma warning(disable:4200)
-#endif
-
     char name[]; /*used in printing "who this is"*/
 }SM_HANDLE_DATA;
 
