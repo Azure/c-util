@@ -119,7 +119,7 @@ MOCKABLE_FUNCTION(, bool, interlocked_compare_exchange_128, volatile int64_t*, d
 
 Note: The `destination` and `comperand_result` parameters are arrays of two 64-bit integers considered as a 128-bit fields.
 
-**SRS_INTERLOCKED_43_007 [** `interlocked_compare_exchange_128` shall compare `*destination` with `*comperand_result`. If they are equal, `exchange_high` and `exchange_low` are stored in the array specified by `destination`. These operations are performed atomically.**]**
+**SRS_INTERLOCKED_43_007 [** `interlocked_compare_exchange_128` shall compare `*destination` with `*comperand_result`. If they are equal, `destination[0]` is set to `exchange_low` and `destination[1]` is set to `exchange_high`. These operations are performed atomically.**]**
 
 **SRS_INTERLOCKED_43_039: [** `interlocked_compare_exchange_128` shall store the initial value of `*destination` in `*comperand_result` regardless of the result of the comparison.` **]**
 
