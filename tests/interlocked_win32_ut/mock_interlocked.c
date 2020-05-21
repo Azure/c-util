@@ -65,7 +65,6 @@
 #define InterlockedXor64 mock_InterlockedXor64
 #undef InterlockedXor8 
 #define InterlockedXor8 mock_InterlockedXor8
-#undef ENABLE_MOCKS
 
 LONG mock_InterlockedAdd(volatile LONG* addend, LONG value);
 LONG mock_InterlockedAnd(volatile LONG* destination, LONG value);
