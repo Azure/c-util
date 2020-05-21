@@ -202,8 +202,8 @@ TEST_FUNCTION(interlocked_compare_exchange_does_not_exchange_when_not_equal)
 TEST_FUNCTION(interlocked_compare_exchange_128_exchanges_when_equal)
 {
     ///arrange
-    volatile int64_t* destination = malloc(2 * sizeof(int64_t));
-    int64_t* comperand_result = malloc(2 * sizeof(int64_t));
+    volatile int64_t* destination = (volatile int64_t*)malloc(2 * sizeof(int64_t));
+    int64_t* comperand_result = (int64_t*)malloc(2 * sizeof(int64_t));
 
     destination[0] = INT64_MAX;
     destination[1] = INT64_MIN;
@@ -234,9 +234,8 @@ TEST_FUNCTION(interlocked_compare_exchange_128_exchanges_when_equal)
 TEST_FUNCTION(interlocked_compare_exchange_128_does_not_exchange_when_not_equal)
 {
     ///arrange
-    
-    volatile int64_t* destination = malloc(2 * sizeof(int64_t));
-    int64_t* comperand_result = malloc(2 * sizeof(int64_t));
+    volatile int64_t* destination = (volatile int64_t*)malloc(2 * sizeof(int64_t));
+    int64_t* comperand_result = (int64_t*)malloc(2 * sizeof(int64_t));
 
     destination[0] = INT64_MAX;
     destination[1] = INT64_MIN;
