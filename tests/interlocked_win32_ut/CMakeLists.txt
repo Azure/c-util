@@ -15,6 +15,7 @@ mock_interlocked.c
 
 set(${theseTestsName}_h_files
 ../../inc/azure_c_util/interlocked.h
+mock_interlocked.h
 )
 
 build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS synchronization)

@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "windows.h"
+#include "mock_interlocked.h"
 
 #undef InterlockedAdd 
 #define InterlockedAdd mock_InterlockedAdd
@@ -66,35 +67,4 @@
 #undef InterlockedXor8 
 #define InterlockedXor8 mock_InterlockedXor8
 
-LONG mock_InterlockedAdd(volatile LONG* addend, LONG value);
-LONG mock_InterlockedAnd(volatile LONG* destination, LONG value);
-SHORT mock_InterlockedAnd16(volatile SHORT* destination, SHORT value);
-LONG64 mock_InterlockedAnd64(volatile LONG64* destination, LONG64 value);
-char mock_InterlockedAnd8(volatile char* destination, char value);
-LONG mock_InterlockedCompareExchange(volatile LONG* destination, LONG exchange, LONG comperand);
-BOOLEAN mock_InterlockedCompareExchange128(volatile LONG64* destination, LONG64 exchange_high, LONG64 exchange_low, LONG64* comperand_result);
-SHORT mock_InterlockedCompareExchange16(volatile SHORT* destination, SHORT exchange, SHORT comperand);
-LONG64 mock_InterlockedCompareExchange64(volatile LONG64* destination, LONG64 exchange, LONG64 comperand);
-void* mock_InterlockedCompareExchangePointer(PVOID volatile* destination, void* exchange, void* comperand);
-LONG mock_InterlockedDecrement(volatile LONG* addend);
-SHORT mock_InterlockedDecrement16(volatile SHORT* addend);
-LONG64 mock_InterlockedDecrement64(volatile LONG64* addend);
-LONG mock_InterlockedExchange(volatile LONG* target, LONG value);
-SHORT mock_InterlockedExchange16(volatile SHORT* target, SHORT value);
-LONG64 mock_InterlockedExchange64(volatile LONG64* target, LONG64 value);
-CHAR mock_InterlockedExchange8(volatile CHAR* target, CHAR value);
-LONG mock_InterlockedExchangeAdd(volatile LONG* addend, LONG value);
-LONG64 mock_InterlockedExchangeAdd64(volatile LONG64* addend, LONG64 value);
-void* mock_InterlockedExchangePointer(PVOID volatile* target, void* value);
-LONG mock_InterlockedIncrement(volatile LONG* addend);
-SHORT mock_InterlockedIncrement16(volatile SHORT* addend);
-LONG64 mock_InterlockedIncrement64(volatile LONG64* addend);
-LONG mock_InterlockedOr(volatile LONG* destination, LONG value);
-SHORT mock_InterlockedOr16(volatile SHORT* destination, SHORT value);
-LONG64 mock_InterlockedOr64(volatile LONG64* destination, LONG64 value);
-char mock_InterlockedOr8(volatile char* destination, char value);
-LONG mock_InterlockedXor(volatile LONG* destination, LONG value);
-SHORT mock_InterlockedXor16(volatile SHORT* destination, SHORT value);
-LONG64 mock_InterlockedXor64(volatile LONG64* destination, LONG64 value);
-char mock_InterlockedXor8(volatile char* destination, char value);
 #include "../../adapters/interlocked_win32.c"
