@@ -83,7 +83,7 @@ LONG64 mock_InterlockedDecrement64(volatile LONG64* addend);
 LONG mock_InterlockedExchange(volatile LONG* target, LONG value);
 SHORT mock_InterlockedExchange16(volatile SHORT* target, SHORT value);
 LONG64 mock_InterlockedExchange64(volatile LONG64* target, LONG64 value);
-char mock_InterlockedExchange8(volatile char* target, char value);
+CHAR mock_InterlockedExchange8(volatile CHAR* target, CHAR value);
 LONG mock_InterlockedExchangeAdd(volatile LONG* addend, LONG value);
 LONG64 mock_InterlockedExchangeAdd64(volatile LONG64* addend, LONG64 value);
 void* mock_InterlockedExchangePointer(PVOID volatile* target, void* value);

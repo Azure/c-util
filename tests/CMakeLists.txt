@@ -30,7 +30,7 @@ if(${run_unittests})
         add_subdirectory(srw_lock_ut)
         add_subdirectory(timer_win32_ut)
         add_subdirectory(interlocked_hl_win32_ut)
-	add_subdirectory(interlocked_win32_ut)
+        add_subdirectory(interlocked_win32_ut)
     endif()
 endif()
 
