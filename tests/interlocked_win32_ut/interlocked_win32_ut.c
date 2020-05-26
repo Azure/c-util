@@ -103,6 +103,25 @@ TEST_FUNCTION(interlocked_add_calls_InterlockedAdd)
     ASSERT_ARE_EQUAL(int32_t, -1, return_val);
 }
 
+/*Tests_SRS_INTERLOCKED_WIN32_43_064: [ interlocked_add_64 shall call InterlockedAdd64 from windows.h. ]*/
+/*Tests_SRS_INTERLOCKED_WIN32_43_065: [ interlocked_add_64 shall return the result of the addition. ]*/
+TEST_FUNCTION(interlocked_add_64_calls_InterlockedAdd64)
+{
+    ///arrange
+    volatile int64_t addend = INT64_MAX;
+    int64_t value = INT64_MIN;
+    STRICT_EXPECTED_CALL(mock_InterlockedAdd64((volatile LONG64*)&addend, value))
+        .SetReturn(-1);
+
+    ///act
+    int64_t return_val = interlocked_add_64(&addend, value);
+
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int64_t, -1, return_val);
+}
+
 /*Tests_SRS_INTERLOCKED_WIN32_43_003: [interlocked_and shall call InterlockedAnd from windows.h.]*/
 /*Tests_SRS_INTERLOCKED_WIN32_43_004 : [interlocked_and shall return the initial value of * destination.]*/
 TEST_FUNCTION(interlocked_and_calls_InterlockedAnd)

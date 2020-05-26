@@ -14,6 +14,16 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int32_t, interlocked_add, volatile int32_t*, adden
     return InterlockedAdd((volatile LONG*)addend, value);
 }
 
+IMPLEMENT_MOCKABLE_FUNCTION(, int64_t, interlocked_add_64, volatile int64_t*, addend, int64_t, value)
+{
+    /*Codes_SRS_INTERLOCKED_43_065: [ interlocked_add_64 shall atomically add 64-bit integers *addend and value and store the result in *addend. ]*/
+    /*Codes_SRS_INTERLOCKED_43_066: [ interlocked_add_64 shall return the result of the addition. ]*/
+    /*Codes_SRS_INTERLOCKED_WIN32_43_064: [ interlocked_add_64 shall call InterlockedAdd64 from windows.h. ]*/
+    /*Codes_SRS_INTERLOCKED_WIN32_43_065: [ interlocked_add_64 shall return the result of the addition. ]*/
+
+    return InterlockedAdd64((volatile LONG64*)addend, value);
+}
+
 IMPLEMENT_MOCKABLE_FUNCTION(, int32_t, interlocked_and, volatile int32_t*, destination, int32_t, value) 
 {
     /*Codes_SRS_INTERLOCKED_43_002 [ interlocked_and shall perform an atomic bitwise AND operation on the 32-bit integer values *destination and value and store the result in *destination.]*/

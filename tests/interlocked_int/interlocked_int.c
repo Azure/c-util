@@ -49,7 +49,7 @@ TEST_FUNCTION_CLEANUP(d)
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
-/*Tests_SRS_INTERLOCKED_43_001: [ interlocked_add shall atomically add *addend with value and store the result in *addend.]*/
+/*Tests_SRS_INTERLOCKED_43_001: [ interlocked_add shall atomically add 32-bit integers *addend and value and store the result in *addend.]*/
 /*Tests_SRS_INTERLOCKED_43_032: [interlocked_add shall return the result of the addition.]*/
 TEST_FUNCTION(interlocked_add_does_addition)
 {
@@ -65,7 +65,7 @@ TEST_FUNCTION(interlocked_add_does_addition)
     ASSERT_ARE_EQUAL(int32_t, -1, return_val);
 }
 
-/*Tests_SRS_INTERLOCKED_43_001: [ interlocked_add shall atomically add *addend with value and store the result in *addend.]*/
+/*Tests_SRS_INTERLOCKED_43_001: [ interlocked_add shall atomically add 32-bit integers *addend and value and store the result in *addend.]*/
 /*Tests_SRS_INTERLOCKED_43_032: [interlocked_add shall return the result of the addition.]*/
 TEST_FUNCTION(interlocked_add_overflows_upper_bound)
 {
@@ -81,7 +81,7 @@ TEST_FUNCTION(interlocked_add_overflows_upper_bound)
     ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
 }
 
-/*Tests_SRS_INTERLOCKED_43_001: [ interlocked_add shall atomically add *addend with value and store the result in *addend.]*/
+/*Tests_SRS_INTERLOCKED_43_001: [ interlocked_add shall atomically add 32-bit integers *addend and value and store the result in *addend.]*/
 /*Tests_SRS_INTERLOCKED_43_032: [interlocked_add shall return the result of the addition.]*/
 TEST_FUNCTION(interlocked_add_overflows_lower_bound)
 {
@@ -95,6 +95,54 @@ TEST_FUNCTION(interlocked_add_overflows_lower_bound)
     ///assert
     ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&addend, 0));
     ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
+}
+
+/*Tests_SRS_INTERLOCKED_43_065: [ interlocked_add_64 shall atomically add 64-bit integers *addend and value and store the result in *addend. ]*/
+/*Tests_SRS_INTERLOCKED_43_066: [ interlocked_add_64 shall return the result of the addition. ]*/
+TEST_FUNCTION(interlocked_add_64_does_addition)
+{
+    ///arrange
+    volatile int64_t addend = INT64_MAX;
+    int64_t value = INT64_MIN;
+
+    ///act
+    int64_t return_val = interlocked_add_64(&addend, value);
+
+    ///assert
+    ASSERT_ARE_EQUAL(int64_t, -1, interlocked_or_64(&addend, 0));
+    ASSERT_ARE_EQUAL(int64_t, -1, return_val);
+}
+
+/*Tests_SRS_INTERLOCKED_43_065: [ interlocked_add_64 shall atomically add 64-bit integers *addend and value and store the result in *addend. ]*/
+/*Tests_SRS_INTERLOCKED_43_066: [ interlocked_add_64 shall return the result of the addition. ]*/
+TEST_FUNCTION(interlocked_add_64_overflows_upper_bound)
+{
+    ///arrange
+    volatile int64_t addend = INT64_MAX;
+    int64_t value = 1;
+
+    ///act
+    int64_t return_val = interlocked_add_64(&addend, value);
+
+    ///assert
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&addend, 0));
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val);
+}
+
+/*Tests_SRS_INTERLOCKED_43_065: [ interlocked_add_64 shall atomically add 64-bit integers *addend and value and store the result in *addend. ]*/
+/*Tests_SRS_INTERLOCKED_43_066: [ interlocked_add_64 shall return the result of the addition. ]*/
+TEST_FUNCTION(interlocked_add_64_overflows_lower_bound)
+{
+    ///arrange
+    volatile int64_t addend = INT64_MIN;
+    int64_t value = -1;
+
+    ///act
+    int64_t return_val = interlocked_add_64(&addend, value);
+
+    ///assert
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&addend, 0));
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val);
 }
 
 /*Tests_SRS_INTERLOCKED_43_002: [interlocked_and shall perform an atomic bitwise AND operation on the 32 - bit integer values * destination and value and store the result in * destination.]*/
@@ -345,7 +393,7 @@ TEST_FUNCTION(interlocked_compare_exchange_pointer_exchanges_when_equal)
     void* return_val = interlocked_compare_exchange_pointer(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(void_ptr, &value2, interlocked_or_64(&destination, 0));
+    ASSERT_ARE_EQUAL(void_ptr, &value2, interlocked_or_64((volatile int64_t*)&destination, 0));
     ASSERT_ARE_EQUAL(void_ptr, &value1, return_val);
 }
 
