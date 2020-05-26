@@ -5,6 +5,7 @@
 #include "umock_c/umock_c_prod.h"
 
 MOCKABLE_FUNCTION(, LONG, mock_InterlockedAdd, volatile LONG*, addend, LONG, value);
+MOCKABLE_FUNCTION(, LONG64, mock_InterlockedAdd64, volatile LONG64*, addend, LONG64, value);
 MOCKABLE_FUNCTION(, LONG, mock_InterlockedAnd, volatile LONG*, destination, LONG, value);
 MOCKABLE_FUNCTION(, SHORT, mock_InterlockedAnd16, volatile SHORT*, destination, SHORT, value);
 MOCKABLE_FUNCTION(, LONG64, mock_InterlockedAnd64, volatile LONG64*, destination, LONG64, value);

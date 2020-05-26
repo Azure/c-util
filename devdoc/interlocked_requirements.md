@@ -17,6 +17,7 @@ The interface is based on the Windows [Interlocked API](https://docs.microsoft.c
 
 ```c
 MOCKABLE_FUNCTION(, int32_t, interlocked_add, volatile int32_t*, addend, int32_t, value);
+MOCKABLE_FUNCTION(, int64_t, interlocked_add_64, volatile int64_t*, addend, int64_t, value);
 MOCKABLE_FUNCTION(, int32_t, interlocked_and, volatile int32_t*, destination, int32_t, value);
 MOCKABLE_FUNCTION(, int16_t, interlocked_and_16, volatile int16_t*, destination, int16_t, value);
 MOCKABLE_FUNCTION(, int64_t, interlocked_and_64, volatile int64_t*, destination, int64_t, value);
@@ -56,9 +57,19 @@ MOCKABLE_FUNCTION(, int8_t, interlocked_xor_8, volatile int8_t*, destination, in
 MOCKABLE_FUNCTION(, int32_t, interlocked_add, volatile int32_t*, addend, int32_t, value);
 ```
 
-**SRS_INTERLOCKED_43_001: [** `interlocked_add` shall atomically add `*addend` with `value` and store the result in `*addend`.**]**
+**SRS_INTERLOCKED_43_001: [** `interlocked_add` shall atomically add 32-bit integers `*addend` and `value` and store the result in `*addend`.**]**
 
 **SRS_INTERLOCKED_43_032: [** `interlocked_add` shall return the result of the addition.**]**
+
+## interlocked_add_64
+
+```c
+MOCKABLE_FUNCTION(, int64_t, interlocked_add_64, volatile int64_t*, addend, int64_t, value);
+```
+
+**SRS_INTERLOCKED_43_065: [** `interlocked_add_64` shall atomically add 64-bit integers `*addend` and `value` and store the result in `*addend`. **]**
+
+**SRS_INTERLOCKED_43_066: [** `interlocked_add_64` shall return the result of the addition. **]**
 
 ## interlocked_and
 

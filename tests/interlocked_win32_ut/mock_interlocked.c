@@ -6,6 +6,8 @@
 
 #undef InterlockedAdd 
 #define InterlockedAdd mock_InterlockedAdd
+#undef InterlockedAdd64 
+#define InterlockedAdd64 mock_InterlockedAdd64
 #undef InterlockedAnd 
 #define InterlockedAnd mock_InterlockedAnd
 #undef InterlockedAnd16 
