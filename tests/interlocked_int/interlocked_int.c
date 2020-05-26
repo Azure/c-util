@@ -393,7 +393,7 @@ TEST_FUNCTION(interlocked_compare_exchange_pointer_exchanges_when_equal)
     void* return_val = interlocked_compare_exchange_pointer(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(void_ptr, &value2, interlocked_or_64((volatile int64_t*)&destination, 0));
+    ASSERT_ARE_EQUAL(void_ptr, &value2, interlocked_compare_exchange_pointer(&destination, NULL, NULL));
     ASSERT_ARE_EQUAL(void_ptr, &value1, return_val);
 }
 
@@ -412,7 +412,7 @@ TEST_FUNCTION(interlocked_compare_exchange_pointer_does_not_exchange_when_not_eq
     void* return_val = interlocked_compare_exchange_pointer(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(void_ptr, &value1, interlocked_or_64((volatile int64_t*)&destination, 0));
+    ASSERT_ARE_EQUAL(void_ptr, &value1, interlocked_compare_exchange_pointer(&destination, NULL, NULL));
     ASSERT_ARE_EQUAL(void_ptr, &value1, return_val);
 }
 
@@ -725,7 +725,7 @@ TEST_FUNCTION(interlocked_exchange_pointer_sets_target)
     void* return_val = interlocked_exchange_pointer(&target, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(void_ptr, &value2, interlocked_or_64((volatile int64_t*)&target, 0));
+    ASSERT_ARE_EQUAL(void_ptr, &value2, interlocked_compare_exchange_pointer(&target, NULL, NULL));
     ASSERT_ARE_EQUAL(void_ptr, &value1, return_val);
 }
 
