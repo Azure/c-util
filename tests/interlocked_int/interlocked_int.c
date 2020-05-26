@@ -54,7 +54,8 @@ TEST_FUNCTION_CLEANUP(d)
 TEST_FUNCTION(interlocked_add_does_addition)
 {
     ///arrange
-    volatile int32_t addend = INT32_MAX;
+    volatile int32_t addend;
+	interlocked_exchange(&addend, INT32_MAX);
     int32_t value = INT32_MIN;
 
     ///act
@@ -70,7 +71,8 @@ TEST_FUNCTION(interlocked_add_does_addition)
 TEST_FUNCTION(interlocked_add_overflows_upper_bound)
 {
     ///arrange
-    volatile int32_t addend = INT32_MAX;
+    volatile int32_t addend;
+	interlocked_exchange(&addend, INT32_MAX);
     int32_t value = 1;
 
     ///act
@@ -83,10 +85,11 @@ TEST_FUNCTION(interlocked_add_overflows_upper_bound)
 
 /*Tests_SRS_INTERLOCKED_43_001: [ interlocked_add shall atomically add 32-bit integers *addend and value and store the result in *addend.]*/
 /*Tests_SRS_INTERLOCKED_43_032: [interlocked_add shall return the result of the addition.]*/
-TEST_FUNCTION(interlocked_add_overflows_lower_bound)
+TEST_FUNCTION(interlocked_add_underflows_lower_bound)
 {
     ///arrange
-    volatile int32_t addend = INT32_MIN;
+    volatile int32_t addend;
+	interlocked_exchange(&addend, INT32_MIN);
     int32_t value = -1;
 
     ///act
@@ -102,7 +105,8 @@ TEST_FUNCTION(interlocked_add_overflows_lower_bound)
 TEST_FUNCTION(interlocked_add_64_does_addition)
 {
     ///arrange
-    volatile int64_t addend = INT64_MAX;
+    volatile int64_t addend;
+	interlocked_exchange_64(&addend, INT64_MAX);
     int64_t value = INT64_MIN;
 
     ///act
@@ -118,7 +122,8 @@ TEST_FUNCTION(interlocked_add_64_does_addition)
 TEST_FUNCTION(interlocked_add_64_overflows_upper_bound)
 {
     ///arrange
-    volatile int64_t addend = INT64_MAX;
+    volatile int64_t addend;
+	interlocked_exchange_64(&addend, INT64_MAX);
     int64_t value = 1;
 
     ///act
@@ -131,10 +136,11 @@ TEST_FUNCTION(interlocked_add_64_overflows_upper_bound)
 
 /*Tests_SRS_INTERLOCKED_43_065: [ interlocked_add_64 shall atomically add 64-bit integers *addend and value and store the result in *addend. ]*/
 /*Tests_SRS_INTERLOCKED_43_066: [ interlocked_add_64 shall return the result of the addition. ]*/
-TEST_FUNCTION(interlocked_add_64_overflows_lower_bound)
+TEST_FUNCTION(interlocked_add_64_underflows_lower_bound)
 {
     ///arrange
-    volatile int64_t addend = INT64_MIN;
+    volatile int64_t addend;
+	interlocked_exchange_64(&addend, INT64_MIN);
     int64_t value = -1;
 
     ///act
@@ -150,7 +156,8 @@ TEST_FUNCTION(interlocked_add_64_overflows_lower_bound)
 TEST_FUNCTION(interlocked_and_does_bitwise_and)
 {
     ///arrange
-    volatile uint32_t destination = 0xF0F0F0F0;
+    volatile uint32_t destination;
+	interlocked_exchange((volatile int32_t*)&destination, (uint32_t)0xF0F0F0F0);
     uint32_t value = 0x0F0F0FFF;
 
     ///act
@@ -166,7 +173,8 @@ TEST_FUNCTION(interlocked_and_does_bitwise_and)
 TEST_FUNCTION(interlocked_and_16_does_bitwise_and)
 {
     ///arrange
-    volatile uint16_t destination = 0xF0F0;
+    volatile uint16_t destination;
+	interlocked_exchange_16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
     uint16_t value = 0x0FFF;
 
     ///act
@@ -183,7 +191,8 @@ TEST_FUNCTION(interlocked_and_16_does_bitwise_and)
 TEST_FUNCTION(interlocked_and_64_does_bitwise_and)
 {
     ///arrange
-    volatile uint64_t destination = 0xF0F0F0F0F0F0F0F0;
+    volatile uint64_t destination;
+	interlocked_exchange_64((volatile int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
     uint64_t value = 0x0F0F0F0F0F0F0FFF;
 
     ///act
@@ -199,7 +208,8 @@ TEST_FUNCTION(interlocked_and_64_does_bitwise_and)
 TEST_FUNCTION(interlocked_and_8_does_bitwise_and)
 {
     ///arrange
-    volatile uint8_t destination = 0xF0;
+    volatile uint8_t destination;
+	interlocked_exchange_8((volatile int8_t*)&destination, (uint8_t)0xF0);
     uint8_t value = 0xAF;
 
     ///act
@@ -215,7 +225,8 @@ TEST_FUNCTION(interlocked_and_8_does_bitwise_and)
 TEST_FUNCTION(interlocked_compare_exchange_exchanges_when_equal)
 {
     ///arrange
-    volatile int32_t destination = INT32_MAX;
+    volatile int32_t destination;
+	interlocked_exchange(&destination, INT32_MAX);
     int32_t comperand = INT32_MAX;
     int32_t exchange = INT32_MIN;
 
@@ -232,7 +243,8 @@ TEST_FUNCTION(interlocked_compare_exchange_exchanges_when_equal)
 TEST_FUNCTION(interlocked_compare_exchange_does_not_exchange_when_not_equal)
 {
     ///arrange
-    volatile int32_t destination = INT32_MAX;
+    volatile int32_t destination;
+	interlocked_exchange(&destination, INT32_MAX);
     int32_t comperand = INT32_MIN;
     int32_t exchange = INT32_MIN;
 
@@ -251,7 +263,8 @@ TEST_FUNCTION(interlocked_compare_exchange_does_not_exchange_when_not_equal)
 TEST_FUNCTION(interlocked_compare_exchange_128_exchanges_when_equal)
 {
     ///arrange
-    volatile int64_t* destination = (volatile int64_t*)malloc(2 * sizeof(int64_t));
+    volatile int64_t* destination;
+    interlocked_exchange_pointer((void* volatile*)&destination, malloc(2 * sizeof(int64_t)));
     int64_t* comperand_result = (int64_t*)malloc(2 * sizeof(int64_t));
 
     destination[0] = INT64_MAX;
@@ -283,7 +296,8 @@ TEST_FUNCTION(interlocked_compare_exchange_128_exchanges_when_equal)
 TEST_FUNCTION(interlocked_compare_exchange_128_does_not_exchange_when_not_equal)
 {
     ///arrange
-    volatile int64_t* destination = (volatile int64_t*)malloc(2 * sizeof(int64_t));
+    volatile int64_t* destination;
+    interlocked_exchange_pointer((void* volatile*)&destination, malloc(2 * sizeof(int64_t)));
     int64_t* comperand_result = (int64_t*)malloc(2 * sizeof(int64_t));
 
     destination[0] = INT64_MAX;
@@ -312,10 +326,11 @@ TEST_FUNCTION(interlocked_compare_exchange_128_does_not_exchange_when_not_equal)
 
 /*Tests_SRS_INTERLOCKED_43_009: [interlocked_compare_exchange_16 shall compare the 16-bit integers pointed to by destination and comperand. If they are equal, *destination is set to exchange. These operations are performed atomically.]*/
 /*Tests_SRS_INTERLOCKED_43_040: [ interlocked_compare_exchange_16 shall return the initial value of *destination. ]*/
-TEST_FUNCTION(interlocked_compare_exchange_16_equal_case)
+TEST_FUNCTION(interlocked_compare_exchange_16_exchanges_when_equal)
 {
     ///arrange
-    volatile int16_t destination = INT16_MAX;
+    volatile int16_t destination;
+	interlocked_exchange_16(&destination, INT16_MAX);
     int16_t comperand = INT16_MAX;
     int16_t exchange = INT16_MIN;
 
@@ -329,10 +344,11 @@ TEST_FUNCTION(interlocked_compare_exchange_16_equal_case)
 
 /*Tests_SRS_INTERLOCKED_43_009: [interlocked_compare_exchange_16 shall compare the 16-bit integers pointed to by destination and comperand. If they are equal, *destination is set to exchange. These operations are performed atomically.]*/
 /*Tests_SRS_INTERLOCKED_43_040: [ interlocked_compare_exchange_16 shall return the initial value of *destination. ]*/
-TEST_FUNCTION(interlocked_compare_exchange_16_not_exchanges_when_equal)
+TEST_FUNCTION(interlocked_compare_exchange_16_does_not_exchange_when_not_equal)
 {
     ///arrange
-    volatile int16_t destination = INT16_MAX;
+    volatile int16_t destination;
+	interlocked_exchange_16(&destination, INT16_MAX);
     int16_t comperand = INT16_MIN;
     int16_t exchange = INT16_MIN;
 
@@ -349,7 +365,8 @@ TEST_FUNCTION(interlocked_compare_exchange_16_not_exchanges_when_equal)
 TEST_FUNCTION(interlocked_compare_exchange_64_exchanges_when_equal)
 {
     ///arrange
-    volatile int64_t destination = INT64_MAX;
+    volatile int64_t destination;
+	interlocked_exchange_64(&destination, INT64_MAX);
     int64_t comperand = INT64_MAX;
     int64_t exchange = INT64_MIN;
 
@@ -366,7 +383,8 @@ TEST_FUNCTION(interlocked_compare_exchange_64_exchanges_when_equal)
 TEST_FUNCTION(interlocked_compare_exchange_64_does_not_exchange_when_not_equal)
 {
     ///arrange
-    volatile int64_t destination = INT64_MAX;
+    volatile int64_t destination;
+	interlocked_exchange_64(&destination, INT64_MAX);
     int64_t comperand = INT64_MIN;
     int64_t exchange = INT64_MIN;
 
@@ -385,7 +403,8 @@ TEST_FUNCTION(interlocked_compare_exchange_pointer_exchanges_when_equal)
     ///arrange
     int value1 = 1;
     int value2 = 2;
-    void* volatile destination = &value1;
+    void* volatile destination;
+    interlocked_exchange_pointer(&destination, &value1);
     void* comperand = &value1;
     void* exchange = &value2;
 
@@ -404,7 +423,8 @@ TEST_FUNCTION(interlocked_compare_exchange_pointer_does_not_exchange_when_not_eq
     ///arrange
     int value1 = 1;
     int value2 = 2;
-    void* volatile destination = &value1;
+    void* volatile destination;
+    interlocked_exchange_pointer(&destination, &value1);
     void* comperand = &value2;
     void* exchange = &value2;
 
@@ -421,7 +441,8 @@ TEST_FUNCTION(interlocked_compare_exchange_pointer_does_not_exchange_when_not_eq
 TEST_FUNCTION(interlocked_decrement_upper_bound)
 {
     ///arrange
-    volatile int32_t addend = INT32_MAX;
+    volatile int32_t addend;
+	interlocked_exchange(&addend, INT32_MAX);
 
     ///act
     int32_t return_val = interlocked_decrement(&addend);
@@ -436,7 +457,8 @@ TEST_FUNCTION(interlocked_decrement_upper_bound)
 TEST_FUNCTION(interlocked_decrement_lower_bound)
 {
     ///arrange
-    volatile int32_t addend = INT32_MIN + 1;
+    volatile int32_t addend;
+	interlocked_exchange(&addend, INT32_MIN + 1);
 
     ///act
     int32_t return_val = interlocked_decrement(&addend);
@@ -447,10 +469,11 @@ TEST_FUNCTION(interlocked_decrement_lower_bound)
 
 }
 
-TEST_FUNCTION(interlocked_decrement_overflows_lower_bound)
+TEST_FUNCTION(interlocked_decrement_underflows_lower_bound)
 {
     ///arrange
-    volatile int32_t addend = INT32_MIN;
+    volatile int32_t addend;
+	interlocked_exchange(&addend, INT32_MIN);
 
     ///act
     int32_t return_val = interlocked_decrement(&addend);
@@ -466,7 +489,8 @@ TEST_FUNCTION(interlocked_decrement_overflows_lower_bound)
 TEST_FUNCTION(interlocked_decrement_16_upper_bound)
 {
     ///arrange
-    volatile int16_t addend = INT16_MAX;
+    volatile int16_t addend;
+	interlocked_exchange_16(&addend, INT16_MAX);
 
     ///act
     int16_t return_val = interlocked_decrement_16(&addend);
@@ -481,7 +505,8 @@ TEST_FUNCTION(interlocked_decrement_16_upper_bound)
 TEST_FUNCTION(interlocked_decrement_16_lower_bound)
 {
     ///arrange
-    volatile int16_t addend = INT16_MIN + 1;
+    volatile int16_t addend;
+	interlocked_exchange_16(&addend, INT16_MIN + 1);
 
     ///act
     int16_t return_val = interlocked_decrement_16(&addend);
@@ -493,10 +518,11 @@ TEST_FUNCTION(interlocked_decrement_16_lower_bound)
 
 /*Tests_SRS_INTERLOCKED_43_012: [ interlocked_decrement_16 shall atomically decrement (decrease by one) the 16-bit variable *addend.]*/
 /*Tests_SRS_INTERLOCKED_43_044: [ interlocked_decrement_16 shall return the decremented value. ]*/
-TEST_FUNCTION(interlocked_decrement_16_overflows_lower_bound)
+TEST_FUNCTION(interlocked_decrement_16_underflows_lower_bound)
 {
     ///arrange
-    volatile int16_t addend = INT16_MIN;
+    volatile int16_t addend;
+	interlocked_exchange_16(&addend, INT16_MIN);
 
     ///act
     int16_t return_val = interlocked_decrement_16(&addend);
@@ -511,7 +537,8 @@ TEST_FUNCTION(interlocked_decrement_16_overflows_lower_bound)
 TEST_FUNCTION(interlocked_decrement_64_upper_bound)
 {
     ///arrange
-    volatile int64_t addend = INT64_MAX;
+    volatile int64_t addend;
+	interlocked_exchange_64(&addend, INT64_MAX);
 
     ///act
     int64_t return_val = interlocked_decrement_64(&addend);
@@ -526,7 +553,8 @@ TEST_FUNCTION(interlocked_decrement_64_upper_bound)
 TEST_FUNCTION(interlocked_decrement_64_lower_bound)
 {
     ///arrange
-    volatile int64_t addend = INT64_MIN + 1;
+    volatile int64_t addend;
+	interlocked_exchange_64(&addend, INT64_MIN + 1);
 
     ///act
     int64_t return_val = interlocked_decrement_64(&addend);
@@ -538,10 +566,11 @@ TEST_FUNCTION(interlocked_decrement_64_lower_bound)
 
 /*Tests_SRS_INTERLOCKED_43_013: [ interlocked_decrement_64 shall atomically decrement (decrease by one) the 64-bit variable *addend.]*/
 /*Tests_SRS_INTERLOCKED_43_045: [ interlocked_decrement_64 shall return the decremented value. ]*/
-TEST_FUNCTION(interlocked_decrement_64_overflows_lower_bound)
+TEST_FUNCTION(interlocked_decrement_64_underflows_lower_bound)
 {
     ///arrange
-    volatile int64_t addend = INT64_MIN;
+    volatile int64_t addend;
+	interlocked_exchange_64(&addend, INT64_MIN);
 
     ///act
     int64_t return_val = interlocked_decrement_64(&addend);
@@ -556,7 +585,8 @@ TEST_FUNCTION(interlocked_decrement_64_overflows_lower_bound)
 TEST_FUNCTION(interlocked_exchange_sets_target)
 {
     ///arrange
-    volatile int32_t target = INT32_MIN;
+    volatile int32_t target;
+	interlocked_exchange(&target, INT32_MIN);
     int32_t value = INT32_MAX;
 
     ///act
@@ -572,7 +602,8 @@ TEST_FUNCTION(interlocked_exchange_sets_target)
 TEST_FUNCTION(interlocked_exchange_16_sets_target)
 {
     ///arrange
-    volatile int16_t target = INT16_MIN;
+    volatile int16_t target;
+	interlocked_exchange_16(&target, INT16_MIN);
     int16_t value = INT16_MAX;
 
     ///act
@@ -588,7 +619,8 @@ TEST_FUNCTION(interlocked_exchange_16_sets_target)
 TEST_FUNCTION(interlocked_exchange_64_sets_target)
 {
     ///arrange
-    volatile int64_t target = INT64_MIN;
+    volatile int64_t target;
+	interlocked_exchange_64(&target, INT64_MIN);
     int64_t value = INT64_MAX;
 
     ///act
@@ -604,7 +636,8 @@ TEST_FUNCTION(interlocked_exchange_64_sets_target)
 TEST_FUNCTION(interlocked_exchange_8_sets_target)
 {
     ///arrange
-    volatile int8_t target = INT8_MIN;
+    volatile int8_t target;
+	interlocked_exchange_8(&target, INT8_MIN);
     int8_t value = INT8_MAX;
 
     ///act
@@ -620,7 +653,8 @@ TEST_FUNCTION(interlocked_exchange_8_sets_target)
 TEST_FUNCTION(interlocked_exchange_add_sets_target_to_sum)
 {
     ///arrange
-    volatile int32_t addend = INT32_MIN;
+    volatile int32_t addend;
+	interlocked_exchange(&addend, INT32_MIN);
     int32_t value = INT32_MAX;
 
     ///act
@@ -636,7 +670,8 @@ TEST_FUNCTION(interlocked_exchange_add_sets_target_to_sum)
 TEST_FUNCTION(interlocked_exchange_add_overflows_upper_bound)
 {
     ///arrange
-    volatile int32_t addend = INT32_MAX;
+    volatile int32_t addend;
+	interlocked_exchange(&addend, INT32_MAX);
     int32_t value = 1;
 
     ///act
@@ -649,10 +684,11 @@ TEST_FUNCTION(interlocked_exchange_add_overflows_upper_bound)
 
 /*Tests_SRS_INTERLOCKED_43_018: [ interlocked_exchange_add shall perform an atomic addition of the 32-bit values *addend and value and store the result in *addend.]*/
 /*Tests_SRS_INTERLOCKED_43_050: [ interlocked_exchange_add shall return the initial value of *addend. ]*/
-TEST_FUNCTION(interlocked_exchange_add_overflows_lower_bound)
+TEST_FUNCTION(interlocked_exchange_add_underflows_lower_bound)
 {
     ///arrange
-    volatile int32_t addend = INT32_MIN;
+    volatile int32_t addend;
+	interlocked_exchange(&addend, INT32_MIN);
     int32_t value = -1;
 
     ///act
@@ -668,7 +704,8 @@ TEST_FUNCTION(interlocked_exchange_add_overflows_lower_bound)
 TEST_FUNCTION(interlocked_exchange_add_64_sets_target_to_sum)
 {
     ///arrange
-    volatile int64_t addend = INT64_MIN;
+    volatile int64_t addend;
+	interlocked_exchange_64(&addend, INT64_MIN);
     int64_t value = INT64_MAX;
 
     ///act
@@ -684,7 +721,8 @@ TEST_FUNCTION(interlocked_exchange_add_64_sets_target_to_sum)
 TEST_FUNCTION(interlocked_exchange_add_64_overflows_upper_bound)
 {
     ///arrange
-    volatile int64_t addend = INT64_MAX;
+    volatile int64_t addend;
+	interlocked_exchange_64(&addend, INT64_MAX);
     int64_t value = 1;
 
     ///act
@@ -697,10 +735,11 @@ TEST_FUNCTION(interlocked_exchange_add_64_overflows_upper_bound)
 
 /*Tests_SRS_INTERLOCKED_43_019: [ interlocked_exchange_add_64 shall perform an atomic addition of the 64-bit values *addend and value and store the result in *addend.]*/
 /*Tests_SRS_INTERLOCKED_43_064: [ interlocked_exchange_add_64 shall return the initial value of *addend. ]*/
-TEST_FUNCTION(interlocked_exchange_add_64_overflows_lower_bound)
+TEST_FUNCTION(interlocked_exchange_add_64_underflows_lower_bound)
 {
     ///arrange
-    volatile int64_t addend = INT64_MIN;
+    volatile int64_t addend;
+	interlocked_exchange_64(&addend, INT64_MIN);
     int64_t value = -1;
 
     ///act
@@ -734,7 +773,8 @@ TEST_FUNCTION(interlocked_exchange_pointer_sets_target)
 TEST_FUNCTION(interlocked_increment_upper_bound)
 {
     ///arrange
-    volatile int32_t addend = INT32_MAX-1;
+    volatile int32_t addend;
+	interlocked_exchange(&addend, INT32_MAX-1);
 
     ///act
     int32_t return_val = interlocked_increment(&addend);
@@ -749,7 +789,8 @@ TEST_FUNCTION(interlocked_increment_upper_bound)
 TEST_FUNCTION(interlocked_increment_lower_bound)
 {
     ///arrange
-    volatile int32_t addend = INT32_MIN;
+    volatile int32_t addend;
+	interlocked_exchange(&addend, INT32_MIN);
 
     ///act
     int32_t return_val = interlocked_increment(&addend);
@@ -765,7 +806,8 @@ TEST_FUNCTION(interlocked_increment_lower_bound)
 TEST_FUNCTION(interlocked_increment_overflows_upper_bound)
 {
     ///arrange
-    volatile int32_t addend = INT32_MAX;
+    volatile int32_t addend;
+	interlocked_exchange(&addend, INT32_MAX);
 
     ///act
     int32_t return_val = interlocked_increment(&addend);
@@ -780,7 +822,8 @@ TEST_FUNCTION(interlocked_increment_overflows_upper_bound)
 TEST_FUNCTION(interlocked_increment_16_upper_bound)
 {
     ///arrange
-    volatile int16_t addend = INT16_MAX - 1;
+    volatile int16_t addend;
+	interlocked_exchange_16(&addend, INT16_MAX - 1);
 
     ///act
     int16_t return_val = interlocked_increment_16(&addend);
@@ -795,7 +838,8 @@ TEST_FUNCTION(interlocked_increment_16_upper_bound)
 TEST_FUNCTION(interlocked_increment_16_lower_bound)
 {
     ///arrange
-    volatile int16_t addend = INT16_MIN;
+    volatile int16_t addend;
+	interlocked_exchange_16(&addend, INT16_MIN);
 
     ///act
     int16_t return_val = interlocked_increment_16(&addend);
@@ -810,7 +854,8 @@ TEST_FUNCTION(interlocked_increment_16_lower_bound)
 TEST_FUNCTION(interlocked_increment_16_overflows_upper_bound)
 {
     ///arrange
-    volatile int16_t addend = INT16_MAX;
+    volatile int16_t addend;
+	interlocked_exchange_16(&addend, INT16_MAX);
 
     ///act
     int16_t return_val = interlocked_increment_16(&addend);
@@ -825,7 +870,8 @@ TEST_FUNCTION(interlocked_increment_16_overflows_upper_bound)
 TEST_FUNCTION(interlocked_increment_64_upper_bound)
 {
     ///arrange
-    volatile int64_t addend = INT64_MAX - 1;
+    volatile int64_t addend;
+	interlocked_exchange_64(&addend, INT64_MAX - 1);
 
     ///act
     int64_t return_val = interlocked_increment_64(&addend);
@@ -840,7 +886,8 @@ TEST_FUNCTION(interlocked_increment_64_upper_bound)
 TEST_FUNCTION(interlocked_increment_64_lower_bound)
 {
     ///arrange
-    volatile int64_t addend = INT64_MIN;
+    volatile int64_t addend;
+	interlocked_exchange_64(&addend, INT64_MIN);
 
     ///act
     int64_t return_val = interlocked_increment_64(&addend);
@@ -856,7 +903,8 @@ TEST_FUNCTION(interlocked_increment_64_lower_bound)
 TEST_FUNCTION(interlocked_increment_64_overflows_upper_bound)
 {
     ///arrange
-    volatile int64_t addend = INT64_MAX;
+    volatile int64_t addend;
+	interlocked_exchange_64(&addend, INT64_MAX);
 
     ///act
     int64_t return_val = interlocked_increment_64(&addend);
@@ -871,7 +919,8 @@ TEST_FUNCTION(interlocked_increment_64_overflows_upper_bound)
 TEST_FUNCTION(interlocked_or_does_bitwise_or)
 {
     ///arrange
-    volatile uint32_t destination = 0xF0F0F0F0;
+    volatile uint32_t destination;
+	interlocked_exchange((volatile int32_t*)&destination, (uint32_t)0xF0F0F0F0);
     uint32_t value = 0x0F0F0F0F;
 
     ///act
@@ -887,7 +936,8 @@ TEST_FUNCTION(interlocked_or_does_bitwise_or)
 TEST_FUNCTION(interlocked_or_16_does_bitwise_or)
 {
     ///arrange
-    volatile uint16_t destination = 0xF0F0;
+    volatile uint16_t destination;
+	interlocked_exchange_16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
     uint16_t value = 0x0F0F;
 
     ///act
@@ -904,7 +954,8 @@ TEST_FUNCTION(interlocked_or_16_does_bitwise_or)
 TEST_FUNCTION(interlocked_or_64_does_bitwise_or)
 {
     ///arrange
-    volatile uint64_t destination = 0xF0F0F0F0F0F0F0F0;
+    volatile uint64_t destination;
+	interlocked_exchange_64((volatile int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
     uint64_t value = 0x0F0F0F0F0F0F0F0F;
 
     ///act
@@ -920,7 +971,8 @@ TEST_FUNCTION(interlocked_or_64_does_bitwise_or)
 TEST_FUNCTION(interlocked_or_8_does_bitwise_or)
 {
     ///arrange
-    volatile uint8_t destination = 0xF0;
+    volatile uint8_t destination;
+	interlocked_exchange_8((volatile int8_t*)&destination, (uint8_t)0xF0);
     uint8_t value = 0x0F;
 
     ///act
@@ -936,7 +988,8 @@ TEST_FUNCTION(interlocked_or_8_does_bitwise_or)
 TEST_FUNCTION(interlocked_xor_does_bitwise_xor)
 {
     ///arrange
-    volatile uint32_t destination = 0xF0F0F0FF;
+    volatile uint32_t destination;
+	interlocked_exchange((volatile int32_t*)&destination, (uint32_t)0xF0F0F0FF);
     uint32_t value = 0x0F0F0F0F;
 
     ///act
@@ -952,7 +1005,8 @@ TEST_FUNCTION(interlocked_xor_does_bitwise_xor)
 TEST_FUNCTION(interlocked_xor_16_does_bitwise_xor)
 {
     ///arrange
-    volatile uint16_t destination = 0xF0FF;
+    volatile uint16_t destination;
+	interlocked_exchange_16((volatile int16_t*)&destination, (uint16_t)0xF0FF);
     uint16_t value = 0x0F0F;
 
     ///act
@@ -969,7 +1023,8 @@ TEST_FUNCTION(interlocked_xor_16_does_bitwise_xor)
 TEST_FUNCTION(interlocked_xor_64_does_bitwise_xor)
 {
     ///arrange
-    volatile uint64_t destination = 0xF0F0F0F0F0F0F0FF;
+    volatile uint64_t destination;
+	interlocked_exchange_64((volatile int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0FF);
     uint64_t value = 0x0F0F0F0F0F0F0F0F;
 
     ///act
@@ -985,7 +1040,8 @@ TEST_FUNCTION(interlocked_xor_64_does_bitwise_xor)
 TEST_FUNCTION(interlocked_xor_8_does_bitwise_xor)
 {
     ///arrange
-    volatile uint8_t destination = 0xFF;
+    volatile uint8_t destination;
+	interlocked_exchange_8((volatile int8_t*)&destination, (uint8_t)0xFF);
     uint8_t value = 0x0F;
 
     ///act
