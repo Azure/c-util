@@ -4,7 +4,6 @@
 #ifdef __cplusplus
 #include <cstdlib>
 #include <cstddef>
-#include <cstdbool>
 #else
 #include <stdlib.h>
 #include <stddef.h>
@@ -195,6 +194,7 @@ TEST_FUNCTION(interlocked_compare_exchange_calls_InterlockedCompareExchange)
     ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
 }
 
+#ifdef _WIN64
 /*Tests_SRS_INTERLOCKED_WIN32_43_013: [interlocked_compare_exchange_128 shall call InterlockedCompareExchange128 from windows.h.]*/
 /*Tests_SRS_INTERLOCKED_WIN32_43_014 : [interlocked_compare_exchange_128 shall return true if* comperand_result equals the original value of* destination.]*/
 TEST_FUNCTION(interlocked_compare_exchange_128_calls_InterlockedCompareExchange128_true_case)
@@ -260,6 +260,7 @@ TEST_FUNCTION(interlocked_compare_exchange_128_calls_InterlockedCompareExchange1
     free((void*)destination);
     free(comperand_result);
 }
+#endif
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_015: [interlocked_compare_exchange_16 shall call InterlockedCompareExchange16 from windows.h.]*/
 /*Tests_SRS_INTERLOCKED_WIN32_43_016 : [interlocked_compare_exchange_16 shall return the initial value of * destination.]*/

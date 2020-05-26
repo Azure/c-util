@@ -61,7 +61,7 @@ TEST_FUNCTION(interlocked_add_does_addition)
     int32_t return_val = interlocked_add(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, -1, interlocked_or((volatile int32_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int32_t, -1, interlocked_or(&addend, 0));
     ASSERT_ARE_EQUAL(int32_t, -1, return_val);
 }
 
@@ -77,7 +77,7 @@ TEST_FUNCTION(interlocked_add_overflows_upper_bound)
     int32_t return_val = interlocked_add(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or((volatile int32_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or(&addend, 0));
     ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
 }
 
@@ -93,7 +93,7 @@ TEST_FUNCTION(interlocked_add_overflows_lower_bound)
     int32_t return_val = interlocked_add(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or((volatile int32_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&addend, 0));
     ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
 }
 
@@ -196,6 +196,7 @@ TEST_FUNCTION(interlocked_compare_exchange_does_not_exchange_when_not_equal)
     ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
 }
 
+#ifdef _WIN64
 /*Tests_SRS_INTERLOCKED_43_007: [ interlocked_compare_exchange_128 shall compare *destination with *comperand_result. If they are equal, destination[0] is set to exchange_low and destination[1] is set to exchange_high. These operations are performed atomically.]*/
 /*Tests_SRS_INTERLOCKED_43_039: [ interlocked_compare_exchange_128 shall store the initial value of *destination in *comperand_result regardless of the result of the comparison.` ]*/
 /*Tests_SRS_INTERLOCKED_43_038: [ interlocked_compare_exchange_128 shall return true if *comperand_result equals the original value of *destination.]*/
@@ -259,6 +260,7 @@ TEST_FUNCTION(interlocked_compare_exchange_128_does_not_exchange_when_not_equal)
     free((void*)destination);
     free((void*)comperand_result);
 }
+#endif
 
 /*Tests_SRS_INTERLOCKED_43_009: [interlocked_compare_exchange_16 shall compare the 16-bit integers pointed to by destination and comperand. If they are equal, *destination is set to exchange. These operations are performed atomically.]*/
 /*Tests_SRS_INTERLOCKED_43_040: [ interlocked_compare_exchange_16 shall return the initial value of *destination. ]*/
@@ -343,7 +345,7 @@ TEST_FUNCTION(interlocked_compare_exchange_pointer_exchanges_when_equal)
     void* return_val = interlocked_compare_exchange_pointer(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(void_ptr, &value2, interlocked_or_64((volatile int64_t*)&destination, 0));
+    ASSERT_ARE_EQUAL(void_ptr, &value2, interlocked_or_64(&destination, 0));
     ASSERT_ARE_EQUAL(void_ptr, &value1, return_val);
 }
 
@@ -377,7 +379,7 @@ TEST_FUNCTION(interlocked_decrement_upper_bound)
     int32_t return_val = interlocked_decrement(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX - 1, interlocked_or((volatile int32_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX - 1, interlocked_or(&addend, 0));
     ASSERT_ARE_EQUAL(int32_t, INT32_MAX - 1, return_val);
 }
 
@@ -392,7 +394,7 @@ TEST_FUNCTION(interlocked_decrement_lower_bound)
     int32_t return_val = interlocked_decrement(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or((volatile int32_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or(&addend, 0));
     ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
 
 }
@@ -406,7 +408,7 @@ TEST_FUNCTION(interlocked_decrement_overflows_lower_bound)
     int32_t return_val = interlocked_decrement(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or((volatile int32_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&addend, 0));
     ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
 
 }
@@ -422,7 +424,7 @@ TEST_FUNCTION(interlocked_decrement_16_upper_bound)
     int16_t return_val = interlocked_decrement_16(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX - 1, interlocked_or_16((volatile int16_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX - 1, interlocked_or_16(&addend, 0));
     ASSERT_ARE_EQUAL(int16_t, INT16_MAX - 1, return_val);
 }
 
@@ -437,7 +439,7 @@ TEST_FUNCTION(interlocked_decrement_16_lower_bound)
     int16_t return_val = interlocked_decrement_16(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, interlocked_or_16((volatile int16_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, interlocked_or_16(&addend, 0));
     ASSERT_ARE_EQUAL(int16_t, INT16_MIN, return_val);
 }
 
@@ -452,7 +454,7 @@ TEST_FUNCTION(interlocked_decrement_16_overflows_lower_bound)
     int16_t return_val = interlocked_decrement_16(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, interlocked_or_16((volatile int16_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, interlocked_or_16(&addend, 0));
     ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val);
 }
 
@@ -467,7 +469,7 @@ TEST_FUNCTION(interlocked_decrement_64_upper_bound)
     int64_t return_val = interlocked_decrement_64(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX - 1, interlocked_or_64((volatile int64_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX - 1, interlocked_or_64(&addend, 0));
     ASSERT_ARE_EQUAL(int64_t, INT64_MAX - 1, return_val);
 }
 
@@ -482,7 +484,7 @@ TEST_FUNCTION(interlocked_decrement_64_lower_bound)
     int64_t return_val = interlocked_decrement_64(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64((volatile int64_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&addend, 0));
     ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val);
 }
 
@@ -497,7 +499,7 @@ TEST_FUNCTION(interlocked_decrement_64_overflows_lower_bound)
     int64_t return_val = interlocked_decrement_64(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64((volatile int64_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&addend, 0));
     ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val);
 }
 
@@ -513,7 +515,7 @@ TEST_FUNCTION(interlocked_exchange_sets_target)
     int32_t return_val = interlocked_exchange(&target, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or((volatile int32_t*)&target, 0));
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&target, 0));
     ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
 }
 
@@ -529,7 +531,7 @@ TEST_FUNCTION(interlocked_exchange_16_sets_target)
     int16_t return_val = interlocked_exchange_16(&target, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, interlocked_or_16((volatile int16_t*)&target, 0));
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, interlocked_or_16(&target, 0));
     ASSERT_ARE_EQUAL(int16_t, INT16_MIN, return_val);
 }
 
@@ -545,7 +547,7 @@ TEST_FUNCTION(interlocked_exchange_64_sets_target)
     int64_t return_val = interlocked_exchange_64(&target, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64((volatile int64_t*)&target, 0));
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&target, 0));
     ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val);
 }
 
@@ -561,7 +563,7 @@ TEST_FUNCTION(interlocked_exchange_8_sets_target)
     int8_t return_val = interlocked_exchange_8(&target, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int8_t, INT8_MAX, interlocked_or_8((volatile int8_t*)&target, 0));
+    ASSERT_ARE_EQUAL(int8_t, INT8_MAX, interlocked_or_8(&target, 0));
     ASSERT_ARE_EQUAL(int8_t, INT8_MIN, return_val);
 }
 
@@ -577,7 +579,7 @@ TEST_FUNCTION(interlocked_exchange_add_sets_target_to_sum)
     int32_t return_val = interlocked_exchange_add(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, -1, interlocked_or((volatile int32_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int32_t, -1, interlocked_or(&addend, 0));
     ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
 }
 
@@ -593,7 +595,7 @@ TEST_FUNCTION(interlocked_exchange_add_overflows_upper_bound)
     int32_t return_val = interlocked_exchange_add(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or((volatile int32_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or(&addend, 0));
     ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
 }
 
@@ -609,7 +611,7 @@ TEST_FUNCTION(interlocked_exchange_add_overflows_lower_bound)
     int32_t return_val = interlocked_exchange_add(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or((volatile int32_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&addend, 0));
     ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
 }
 
@@ -625,7 +627,7 @@ TEST_FUNCTION(interlocked_exchange_add_64_sets_target_to_sum)
     int64_t return_val = interlocked_exchange_add_64(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, -1, interlocked_or_64((volatile int64_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int64_t, -1, interlocked_or_64(&addend, 0));
     ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val);
 }
 
@@ -641,7 +643,7 @@ TEST_FUNCTION(interlocked_exchange_add_64_overflows_upper_bound)
     int64_t return_val = interlocked_exchange_add_64(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64((volatile int64_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&addend, 0));
     ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val);
 }
 
@@ -657,7 +659,7 @@ TEST_FUNCTION(interlocked_exchange_add_64_overflows_lower_bound)
     int64_t return_val = interlocked_exchange_add_64(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64((volatile int64_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&addend, 0));
     ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val);
 }
 
@@ -690,7 +692,7 @@ TEST_FUNCTION(interlocked_increment_upper_bound)
     int32_t return_val = interlocked_increment(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or((volatile int32_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&addend, 0));
     ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
 }
 
@@ -705,7 +707,7 @@ TEST_FUNCTION(interlocked_increment_lower_bound)
     int32_t return_val = interlocked_increment(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN + 1, interlocked_or((volatile int32_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN + 1, interlocked_or(&addend, 0));
     ASSERT_ARE_EQUAL(int32_t, INT32_MIN + 1, return_val);
 
 }
@@ -721,7 +723,7 @@ TEST_FUNCTION(interlocked_increment_overflows_upper_bound)
     int32_t return_val = interlocked_increment(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or((volatile int32_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or(&addend, 0));
     ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
 }
 
@@ -736,7 +738,7 @@ TEST_FUNCTION(interlocked_increment_16_upper_bound)
     int16_t return_val = interlocked_increment_16(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, interlocked_or_16((volatile int16_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, interlocked_or_16(&addend, 0));
     ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val);
 }
 
@@ -751,7 +753,7 @@ TEST_FUNCTION(interlocked_increment_16_lower_bound)
     int16_t return_val = interlocked_increment_16(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MIN + 1, interlocked_or_16((volatile int16_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int16_t, INT16_MIN + 1, interlocked_or_16(&addend, 0));
     ASSERT_ARE_EQUAL(int16_t, INT16_MIN + 1, return_val);
 }
 
@@ -766,7 +768,7 @@ TEST_FUNCTION(interlocked_increment_16_overflows_upper_bound)
     int16_t return_val = interlocked_increment_16(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, interlocked_or_16((volatile int16_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, interlocked_or_16(&addend, 0));
     ASSERT_ARE_EQUAL(int16_t, INT16_MIN, return_val);
 }
 
@@ -781,7 +783,7 @@ TEST_FUNCTION(interlocked_increment_64_upper_bound)
     int64_t return_val = interlocked_increment_64(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64((volatile int64_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&addend, 0));
     ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val);
 }
 
@@ -796,7 +798,7 @@ TEST_FUNCTION(interlocked_increment_64_lower_bound)
     int64_t return_val = interlocked_increment_64(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN + 1, interlocked_or_64((volatile int64_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN + 1, interlocked_or_64(&addend, 0));
     ASSERT_ARE_EQUAL(int64_t, INT64_MIN + 1, return_val);
 
 }
@@ -812,7 +814,7 @@ TEST_FUNCTION(interlocked_increment_64_overflows_upper_bound)
     int64_t return_val = interlocked_increment_64(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64((volatile int64_t*)&addend, 0));
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&addend, 0));
     ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val);
 }
 
