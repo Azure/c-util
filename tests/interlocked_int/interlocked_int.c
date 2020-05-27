@@ -62,8 +62,8 @@ TEST_FUNCTION(interlocked_add_does_addition)
     int32_t return_val = interlocked_add(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, -1, interlocked_or(&addend, 0));
-    ASSERT_ARE_EQUAL(int32_t, -1, return_val);
+    ASSERT_ARE_EQUAL(int32_t, -1, interlocked_or(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int32_t, -1, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_001: [ interlocked_add shall atomically add 32-bit integers *addend and value and store the result in *addend.]*/
@@ -79,8 +79,8 @@ TEST_FUNCTION(interlocked_add_overflows_upper_bound)
     int32_t return_val = interlocked_add(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or(&addend, 0));
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_43_001: [ interlocked_add shall atomically add 32-bit integers *addend and value and store the result in *addend.]*/
@@ -96,8 +96,8 @@ TEST_FUNCTION(interlocked_add_underflows_lower_bound)
     int32_t return_val = interlocked_add(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&addend, 0));
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_065: [ interlocked_add_64 shall atomically add 64-bit integers *addend and value and store the result in *addend. ]*/
@@ -113,8 +113,8 @@ TEST_FUNCTION(interlocked_add_64_does_addition)
     int64_t return_val = interlocked_add_64(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, -1, interlocked_or_64(&addend, 0));
-    ASSERT_ARE_EQUAL(int64_t, -1, return_val);
+    ASSERT_ARE_EQUAL(int64_t, -1, interlocked_or_64(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, -1, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_065: [ interlocked_add_64 shall atomically add 64-bit integers *addend and value and store the result in *addend. ]*/
@@ -130,8 +130,8 @@ TEST_FUNCTION(interlocked_add_64_overflows_upper_bound)
     int64_t return_val = interlocked_add_64(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&addend, 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val);
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_065: [ interlocked_add_64 shall atomically add 64-bit integers *addend and value and store the result in *addend. ]*/
@@ -147,8 +147,8 @@ TEST_FUNCTION(interlocked_add_64_underflows_lower_bound)
     int64_t return_val = interlocked_add_64(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&addend, 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val);
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_002: [interlocked_and shall perform an atomic bitwise AND operation on the 32 - bit integer values * destination and value and store the result in * destination.]*/
@@ -164,8 +164,8 @@ TEST_FUNCTION(interlocked_and_does_bitwise_and)
     uint32_t return_val = (uint32_t)interlocked_and((volatile int32_t*)&destination, (int32_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint32_t, 0x000000F0, interlocked_or((volatile int32_t*)&destination, 0));
-    ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val);
+    ASSERT_ARE_EQUAL(uint32_t, 0x000000F0, interlocked_or((volatile int32_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_003: [ interlocked_and_16 shall perform an atomic bitwise AND operation on the 16-bit integer values *destination and value and store the result in *destination.]*/
@@ -182,8 +182,8 @@ TEST_FUNCTION(interlocked_and_16_does_bitwise_and)
 
 
     ///assert
-    ASSERT_ARE_EQUAL(uint16_t, 0x00F0, interlocked_or_16((volatile int16_t*)&destination, 0));
-    ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val);
+    ASSERT_ARE_EQUAL(uint16_t, 0x00F0, interlocked_or_16((volatile int16_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_004: [ interlocked_and_64 shall perform an atomic bitwise AND operation on the 64-bit integer values *destination and value and store the result in *destination.]*/
@@ -199,8 +199,8 @@ TEST_FUNCTION(interlocked_and_64_does_bitwise_and)
     uint64_t return_val = (uint64_t)interlocked_and_64((volatile int64_t*)&destination, (int64_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint64_t, 0x00000000000000F0, interlocked_or_64((volatile int64_t*)&destination, 0));
-    ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val);
+    ASSERT_ARE_EQUAL(uint64_t, 0x00000000000000F0, interlocked_or_64((volatile int64_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_005: [ interlocked_and_8 shall perform an atomic bitwise AND operation on the 8-bit integer values *destination and value and store the result in *destination]*/
@@ -216,8 +216,8 @@ TEST_FUNCTION(interlocked_and_8_does_bitwise_and)
     uint8_t return_val = (uint8_t)interlocked_and_8((volatile int8_t*)&destination, (int8_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint8_t, 0xA0, interlocked_or_8((volatile int8_t*)&destination, 0));
-    ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val);
+    ASSERT_ARE_EQUAL(uint8_t, 0xA0, interlocked_or_8((volatile int8_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_006: [ interlocked_compare_exchange shall compare the 32-bit integers pointed to by destination and comperand. If they are equal, *destination is set to exchange. These operations are performed atomically.*]*/
@@ -234,8 +234,8 @@ TEST_FUNCTION(interlocked_compare_exchange_exchanges_when_equal)
     int32_t return_val = interlocked_compare_exchange(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or(&destination, 0));
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or(&destination, 0), "*destination is not equal to exchange.");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_006: [ interlocked_compare_exchange shall compare the 32-bit integers pointed to by destination and comperand. If they are equal, *destination is set to exchange. These operations are performed atomically.*]*/
@@ -252,8 +252,8 @@ TEST_FUNCTION(interlocked_compare_exchange_does_not_exchange_when_not_equal)
     int32_t return_val = interlocked_compare_exchange(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&destination, 0));
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&destination, 0), "*destination is not equal to the original value.");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val, "Return value is incorrect");
 }
 
 #ifdef _WIN64
@@ -279,11 +279,11 @@ TEST_FUNCTION(interlocked_compare_exchange_128_exchanges_when_equal)
     bool return_val = interlocked_compare_exchange_128(destination, exchange_high, exchange_low, comperand_result);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, 3, interlocked_or_64(&destination[0], 0));
-    ASSERT_ARE_EQUAL(int64_t, 2, interlocked_or_64(&destination[1], 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, comperand_result[0]);
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, comperand_result[1]);
-    ASSERT_IS_TRUE(return_val);
+    ASSERT_ARE_EQUAL(int64_t, 3, interlocked_or_64(&destination[0], 0), "destination[0] not equal to exchange_low.");
+    ASSERT_ARE_EQUAL(int64_t, 2, interlocked_or_64(&destination[1], 0), "destination[1] not equal to exchange_high.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, comperand_result[0], "comperand_result[0] is not equal to destination[0].");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, comperand_result[1], "comperand_result[1] is not equal to destination[1].");
+    ASSERT_IS_TRUE(return_val, "Return value is incorrect");
 
     ///cleanup
     free((void*)destination);
@@ -312,11 +312,11 @@ TEST_FUNCTION(interlocked_compare_exchange_128_does_not_exchange_when_not_equal)
     bool return_val = interlocked_compare_exchange_128(destination, exchange_high, exchange_low, comperand_result);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&destination[0], 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&destination[1], 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, comperand_result[0]);
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, comperand_result[1]);
-    ASSERT_IS_FALSE(return_val);
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&destination[0], 0), "destination[0] is not equal to original value.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&destination[1], 0), "destination[1] is not equal to original value.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, comperand_result[0], "comperand_result[0] is not equal to destination[0].");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, comperand_result[1], "comperand_result[1] is not equal to destination[1].");
+    ASSERT_IS_FALSE(return_val, "Return value is incorrect");
 
     ///cleanup
     free((void*)destination);
@@ -338,8 +338,8 @@ TEST_FUNCTION(interlocked_compare_exchange_16_exchanges_when_equal)
     int16_t return_val = interlocked_compare_exchange_16(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, interlocked_or_16(&destination, 0));
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val);
+    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, interlocked_or_16(&destination, 0), "*destination is not equal to exchange.");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_009: [interlocked_compare_exchange_16 shall compare the 16-bit integers pointed to by destination and comperand. If they are equal, *destination is set to exchange. These operations are performed atomically.]*/
@@ -356,8 +356,8 @@ TEST_FUNCTION(interlocked_compare_exchange_16_does_not_exchange_when_not_equal)
     int16_t return_val = interlocked_compare_exchange_16(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, interlocked_or_16(&destination, 0));
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val);
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, interlocked_or_16(&destination, 0), "*destination is not equal to the original value.");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_008: [interlocked_compare_exchange_64 shall compare the 64-bit integers pointed to by destination and comperand. If they are equal, *destination is set to exchange. These operations are performed atomically.]*/
@@ -374,8 +374,8 @@ TEST_FUNCTION(interlocked_compare_exchange_64_exchanges_when_equal)
     int64_t return_val = interlocked_compare_exchange_64(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&destination, 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val);
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&destination, 0), "*destination is not equal to exchange.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_008: [interlocked_compare_exchange_64 shall compare the 64-bit integers pointed to by destination and comperand. If they are equal, *destination is set to exchange. These operations are performed atomically.]*/
@@ -392,8 +392,8 @@ TEST_FUNCTION(interlocked_compare_exchange_64_does_not_exchange_when_not_equal)
     int64_t return_val = interlocked_compare_exchange_64(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&destination, 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val);
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&destination, 0), "*destination is not equal to the original value.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_010: [interlocked_compare_exchange_pointer shall compare the pointers destination and comperand. If they are equal, *destination is set to exchange. These operations are performed atomically.]*/
@@ -412,8 +412,8 @@ TEST_FUNCTION(interlocked_compare_exchange_pointer_exchanges_when_equal)
     void* return_val = interlocked_compare_exchange_pointer(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(void_ptr, &value2, interlocked_compare_exchange_pointer(&destination, NULL, NULL));
-    ASSERT_ARE_EQUAL(void_ptr, &value1, return_val);
+    ASSERT_ARE_EQUAL(void_ptr, &value2, interlocked_compare_exchange_pointer(&destination, NULL, NULL), "*destination is not equal to exchange.");
+    ASSERT_ARE_EQUAL(void_ptr, &value1, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_010: [interlocked_compare_exchange_pointer shall compare the pointers destination and comperand. If they are equal, *destination is set to exchange. These operations are performed atomically.]*/
@@ -432,8 +432,8 @@ TEST_FUNCTION(interlocked_compare_exchange_pointer_does_not_exchange_when_not_eq
     void* return_val = interlocked_compare_exchange_pointer(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(void_ptr, &value1, interlocked_compare_exchange_pointer(&destination, NULL, NULL));
-    ASSERT_ARE_EQUAL(void_ptr, &value1, return_val);
+    ASSERT_ARE_EQUAL(void_ptr, &value1, interlocked_compare_exchange_pointer(&destination, NULL, NULL), "*destination is not equal to original value.");
+    ASSERT_ARE_EQUAL(void_ptr, &value1, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_011: [ interlocked_decrement shall atomically decrement (decrease by one) the 32-bit variable *addend.]*/
@@ -448,8 +448,8 @@ TEST_FUNCTION(interlocked_decrement_upper_bound)
     int32_t return_val = interlocked_decrement(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX - 1, interlocked_or(&addend, 0));
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX - 1, return_val);
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX - 1, interlocked_or(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX - 1, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_011: [ interlocked_decrement shall atomically decrement (decrease by one) the 32-bit variable *addend.]*/
@@ -464,8 +464,8 @@ TEST_FUNCTION(interlocked_decrement_lower_bound)
     int32_t return_val = interlocked_decrement(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or(&addend, 0));
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val, "Return value is incorrect");
 
 }
 
@@ -479,8 +479,8 @@ TEST_FUNCTION(interlocked_decrement_underflows_lower_bound)
     int32_t return_val = interlocked_decrement(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&addend, 0));
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val, "Return value is incorrect");
 
 }
 
@@ -496,8 +496,8 @@ TEST_FUNCTION(interlocked_decrement_16_upper_bound)
     int16_t return_val = interlocked_decrement_16(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX - 1, interlocked_or_16(&addend, 0));
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX - 1, return_val);
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX - 1, interlocked_or_16(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX - 1, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_012: [ interlocked_decrement_16 shall atomically decrement (decrease by one) the 16-bit variable *addend.]*/
@@ -512,8 +512,8 @@ TEST_FUNCTION(interlocked_decrement_16_lower_bound)
     int16_t return_val = interlocked_decrement_16(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, interlocked_or_16(&addend, 0));
-    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, return_val);
+    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, interlocked_or_16(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_012: [ interlocked_decrement_16 shall atomically decrement (decrease by one) the 16-bit variable *addend.]*/
@@ -528,8 +528,8 @@ TEST_FUNCTION(interlocked_decrement_16_underflows_lower_bound)
     int16_t return_val = interlocked_decrement_16(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, interlocked_or_16(&addend, 0));
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val);
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, interlocked_or_16(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_013: [ interlocked_decrement_64 shall atomically decrement (decrease by one) the 64-bit variable *addend.]*/
@@ -544,8 +544,8 @@ TEST_FUNCTION(interlocked_decrement_64_upper_bound)
     int64_t return_val = interlocked_decrement_64(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX - 1, interlocked_or_64(&addend, 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX - 1, return_val);
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX - 1, interlocked_or_64(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX - 1, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_013: [ interlocked_decrement_64 shall atomically decrement (decrease by one) the 64-bit variable *addend.]*/
@@ -560,8 +560,8 @@ TEST_FUNCTION(interlocked_decrement_64_lower_bound)
     int64_t return_val = interlocked_decrement_64(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&addend, 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val);
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_013: [ interlocked_decrement_64 shall atomically decrement (decrease by one) the 64-bit variable *addend.]*/
@@ -576,8 +576,8 @@ TEST_FUNCTION(interlocked_decrement_64_underflows_lower_bound)
     int64_t return_val = interlocked_decrement_64(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&addend, 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val);
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_014: [ interlocked_exchange shall set the 32-bit variable pointed to by target to value as an atomic operation.]*/
@@ -593,8 +593,8 @@ TEST_FUNCTION(interlocked_exchange_sets_target)
     int32_t return_val = interlocked_exchange(&target, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&target, 0));
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&target, 0), "Result stored in *target is incorrect.");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_015: [ interlocked_exchange_16 shall set the 16-bit variable pointed to by target to value as an atomic operation.]*/
@@ -610,8 +610,8 @@ TEST_FUNCTION(interlocked_exchange_16_sets_target)
     int16_t return_val = interlocked_exchange_16(&target, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, interlocked_or_16(&target, 0));
-    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, return_val);
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, interlocked_or_16(&target, 0), "Result stored in *target is incorrect.");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_016: [ interlocked_exchange_64 shall set the 64-bit variable pointed to by target to value as an atomic operation.]*/
@@ -627,8 +627,8 @@ TEST_FUNCTION(interlocked_exchange_64_sets_target)
     int64_t return_val = interlocked_exchange_64(&target, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&target, 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val);
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&target, 0), "Result stored in *target is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_017: [ interlocked_exchange_8 shall set the 8-bit variable pointed to by target to value as an atomic operation.]*/
@@ -644,8 +644,8 @@ TEST_FUNCTION(interlocked_exchange_8_sets_target)
     int8_t return_val = interlocked_exchange_8(&target, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int8_t, INT8_MAX, interlocked_or_8(&target, 0));
-    ASSERT_ARE_EQUAL(int8_t, INT8_MIN, return_val);
+    ASSERT_ARE_EQUAL(int8_t, INT8_MAX, interlocked_or_8(&target, 0), "Result stored in *target is incorrect.");
+    ASSERT_ARE_EQUAL(int8_t, INT8_MIN, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_018: [ interlocked_exchange_add shall perform an atomic addition of the 32-bit values *addend and value and store the result in *addend.]*/
@@ -661,8 +661,8 @@ TEST_FUNCTION(interlocked_exchange_add_sets_target_to_sum)
     int32_t return_val = interlocked_exchange_add(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, -1, interlocked_or(&addend, 0));
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
+    ASSERT_ARE_EQUAL(int32_t, -1, interlocked_or(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_018: [ interlocked_exchange_add shall perform an atomic addition of the 32-bit values *addend and value and store the result in *addend.]*/
@@ -678,8 +678,8 @@ TEST_FUNCTION(interlocked_exchange_add_overflows_upper_bound)
     int32_t return_val = interlocked_exchange_add(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or(&addend, 0));
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_018: [ interlocked_exchange_add shall perform an atomic addition of the 32-bit values *addend and value and store the result in *addend.]*/
@@ -695,8 +695,8 @@ TEST_FUNCTION(interlocked_exchange_add_underflows_lower_bound)
     int32_t return_val = interlocked_exchange_add(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&addend, 0));
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_019: [ interlocked_exchange_add_64 shall perform an atomic addition of the 64-bit values *addend and value and store the result in *addend.]*/
@@ -712,8 +712,8 @@ TEST_FUNCTION(interlocked_exchange_add_64_sets_target_to_sum)
     int64_t return_val = interlocked_exchange_add_64(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, -1, interlocked_or_64(&addend, 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val);
+    ASSERT_ARE_EQUAL(int64_t, -1, interlocked_or_64(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_019: [ interlocked_exchange_add_64 shall perform an atomic addition of the 64-bit values *addend and value and store the result in *addend.]*/
@@ -729,8 +729,8 @@ TEST_FUNCTION(interlocked_exchange_add_64_overflows_upper_bound)
     int64_t return_val = interlocked_exchange_add_64(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&addend, 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val);
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_019: [ interlocked_exchange_add_64 shall perform an atomic addition of the 64-bit values *addend and value and store the result in *addend.]*/
@@ -746,8 +746,8 @@ TEST_FUNCTION(interlocked_exchange_add_64_underflows_lower_bound)
     int64_t return_val = interlocked_exchange_add_64(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&addend, 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val);
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_020: [ interlocked_exchange_pointer shall atomically set *target to value]*/
@@ -765,7 +765,7 @@ TEST_FUNCTION(interlocked_exchange_pointer_sets_target)
 
     ///assert
     ASSERT_ARE_EQUAL(void_ptr, &value2, interlocked_compare_exchange_pointer(&target, NULL, NULL));
-    ASSERT_ARE_EQUAL(void_ptr, &value1, return_val);
+    ASSERT_ARE_EQUAL(void_ptr, &value1, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_021: [ interlocked_increment shall atomically increment (increase by one) the 32-bit variable *addend.]*/
@@ -780,8 +780,8 @@ TEST_FUNCTION(interlocked_increment_upper_bound)
     int32_t return_val = interlocked_increment(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&addend, 0));
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, interlocked_or(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_021: [ interlocked_increment shall atomically increment (increase by one) the 32-bit variable *addend.]*/
@@ -796,8 +796,8 @@ TEST_FUNCTION(interlocked_increment_lower_bound)
     int32_t return_val = interlocked_increment(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN + 1, interlocked_or(&addend, 0));
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN + 1, return_val);
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN + 1, interlocked_or(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN + 1, return_val, "Return value is incorrect");
 
 }
 
@@ -813,8 +813,8 @@ TEST_FUNCTION(interlocked_increment_overflows_upper_bound)
     int32_t return_val = interlocked_increment(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or(&addend, 0));
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, interlocked_or(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_022: [ interlocked_increment_16 shall atomically increment (increase by one) the 16-bit variable *addend.]*/
@@ -829,8 +829,8 @@ TEST_FUNCTION(interlocked_increment_16_upper_bound)
     int16_t return_val = interlocked_increment_16(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, interlocked_or_16(&addend, 0));
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val);
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, interlocked_or_16(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_022: [ interlocked_increment_16 shall atomically increment (increase by one) the 16-bit variable *addend.]*/
@@ -845,8 +845,8 @@ TEST_FUNCTION(interlocked_increment_16_lower_bound)
     int16_t return_val = interlocked_increment_16(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MIN + 1, interlocked_or_16(&addend, 0));
-    ASSERT_ARE_EQUAL(int16_t, INT16_MIN + 1, return_val);
+    ASSERT_ARE_EQUAL(int16_t, INT16_MIN + 1, interlocked_or_16(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MIN + 1, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_022: [ interlocked_increment_16 shall atomically increment (increase by one) the 16-bit variable *addend.]*/
@@ -861,8 +861,8 @@ TEST_FUNCTION(interlocked_increment_16_overflows_upper_bound)
     int16_t return_val = interlocked_increment_16(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, interlocked_or_16(&addend, 0));
-    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, return_val);
+    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, interlocked_or_16(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_023: [ interlocked_increment_64 shall atomically increment (increase by one) the 64-bit variable *addend.]*/
@@ -877,8 +877,8 @@ TEST_FUNCTION(interlocked_increment_64_upper_bound)
     int64_t return_val = interlocked_increment_64(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&addend, 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val);
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, interlocked_or_64(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_023: [ interlocked_increment_64 shall atomically increment (increase by one) the 64-bit variable *addend.]*/
@@ -893,8 +893,8 @@ TEST_FUNCTION(interlocked_increment_64_lower_bound)
     int64_t return_val = interlocked_increment_64(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN + 1, interlocked_or_64(&addend, 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN + 1, return_val);
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN + 1, interlocked_or_64(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN + 1, return_val, "Return value is incorrect");
 
 }
 
@@ -910,8 +910,8 @@ TEST_FUNCTION(interlocked_increment_64_overflows_upper_bound)
     int64_t return_val = interlocked_increment_64(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&addend, 0));
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val);
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, interlocked_or_64(&addend, 0), "Result stored in *addend is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_024: [ interlocked_or shall perform an atomic bitwise OR operation on the 32-bit integers *destination and value and store the result in destination.]*/
@@ -927,8 +927,8 @@ TEST_FUNCTION(interlocked_or_does_bitwise_or)
     uint32_t return_val = (uint32_t)interlocked_or((volatile int32_t*)&destination, (int32_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint32_t, 0xFFFFFFFF, interlocked_or((volatile int32_t*)&destination, 0));
-    ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val);
+    ASSERT_ARE_EQUAL(uint32_t, 0xFFFFFFFF, interlocked_or((volatile int32_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_025: [ interlocked_or_16 shall perform an atomic bitwise OR operation on the 16-bit integers *destination and value and store the result in destination.]*/
@@ -945,8 +945,8 @@ TEST_FUNCTION(interlocked_or_16_does_bitwise_or)
 
 
     ///assert
-    ASSERT_ARE_EQUAL(uint16_t, 0xFFFF, interlocked_or_16((volatile int16_t*)&destination, 0));
-    ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val);
+    ASSERT_ARE_EQUAL(uint16_t, 0xFFFF, interlocked_or_16((volatile int16_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_026: [ interlocked_or_64 shall perform an atomic bitwise OR operation on the 64-bit integers *destination and value and store the result in destination.]*/
@@ -962,8 +962,8 @@ TEST_FUNCTION(interlocked_or_64_does_bitwise_or)
     uint64_t return_val = (uint64_t)interlocked_or_64((volatile int64_t*)&destination, (int64_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint64_t, 0xFFFFFFFFFFFFFFFF, interlocked_or_64((volatile int64_t*)&destination, 0));
-    ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val);
+    ASSERT_ARE_EQUAL(uint64_t, 0xFFFFFFFFFFFFFFFF, interlocked_or_64((volatile int64_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_027: [ interlocked_or_8 shall perform an atomic bitwise OR operation on the 8-bit integers *destination and value and store the result in destination.]*/
@@ -979,8 +979,8 @@ TEST_FUNCTION(interlocked_or_8_does_bitwise_or)
     uint8_t return_val = (uint8_t)interlocked_or_8((volatile int8_t*)&destination, (int8_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint8_t, 0xFF, interlocked_or_8((volatile int8_t*)&destination, 0));
-    ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val);
+    ASSERT_ARE_EQUAL(uint8_t, 0xFF, interlocked_or_8((volatile int8_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_028: [ interlocked_xor shall perform an atomic bitwise XOR operation on the 32-bit integers *destination and value and store the result in destination.]*/
@@ -996,8 +996,8 @@ TEST_FUNCTION(interlocked_xor_does_bitwise_xor)
     uint32_t return_val = (uint32_t)interlocked_xor((volatile int32_t*)&destination, (int32_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint32_t, 0xFFFFFFF0, interlocked_or((volatile int32_t*)&destination, 0));
-    ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0FF, return_val);
+    ASSERT_ARE_EQUAL(uint32_t, 0xFFFFFFF0, interlocked_or((volatile int32_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0FF, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_029: [ interlocked_xor_16 shall perform an atomic bitwise XOR operation on the 16-bit integers *destination and value and store the result in destination.]*/
@@ -1014,8 +1014,8 @@ TEST_FUNCTION(interlocked_xor_16_does_bitwise_xor)
 
 
     ///assert
-    ASSERT_ARE_EQUAL(uint16_t, 0xFFF0, interlocked_or_16((volatile int16_t*)&destination, 0));
-    ASSERT_ARE_EQUAL(uint16_t, 0xF0FF, return_val);
+    ASSERT_ARE_EQUAL(uint16_t, 0xFFF0, interlocked_or_16((volatile int16_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint16_t, 0xF0FF, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_030: [ interlocked_xor_64 shall perform an atomic bitwise XOR operation on the 64-bit integers *destination and value and store the result in destination.]*/
@@ -1031,8 +1031,8 @@ TEST_FUNCTION(interlocked_xor_64_does_bitwise_xor)
     uint64_t return_val = (uint64_t)interlocked_xor_64((volatile int64_t*)&destination, (int64_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint64_t, 0xFFFFFFFFFFFFFFF0, interlocked_or_64((volatile int64_t*)&destination, 0));
-    ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0FF, return_val);
+    ASSERT_ARE_EQUAL(uint64_t, 0xFFFFFFFFFFFFFFF0, interlocked_or_64((volatile int64_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0FF, return_val, "Return value is incorrect");
 }
 
 /*Tests_SRS_INTERLOCKED_43_031: [ interlocked_xor_8 shall perform an atomic bitwise XOR operation on the 8-bit integers *destination and value and store the result in destination.]*/
@@ -1048,8 +1048,8 @@ TEST_FUNCTION(interlocked_xor_8_does_bitwise_xor)
     uint8_t return_val = (uint8_t)interlocked_xor_8((volatile int8_t*)&destination, (int8_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint8_t, 0xF0, interlocked_or_8((volatile int8_t*)&destination, 0));
-    ASSERT_ARE_EQUAL(uint8_t, 0xFF, return_val);
+    ASSERT_ARE_EQUAL(uint8_t, 0xF0, interlocked_or_8((volatile int8_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint8_t, 0xFF, return_val, "Return value is incorrect");
 }
 
 END_TEST_SUITE(interlocked_int)
