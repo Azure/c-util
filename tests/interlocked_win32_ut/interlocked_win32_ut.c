@@ -90,7 +90,7 @@ TEST_FUNCTION(interlocked_add_calls_InterlockedAdd)
 {
     ///arrange
     volatile int32_t addend;
-	InterlockedExchange((volatile LONG*)&addend, INT32_MAX);
+    InterlockedExchange((volatile LONG*)&addend, INT32_MAX);
     int32_t value = INT32_MIN;
     STRICT_EXPECTED_CALL(mock_InterlockedAdd((volatile LONG*)&addend, value))
         .SetReturn(-1);
@@ -110,7 +110,7 @@ TEST_FUNCTION(interlocked_add_64_calls_InterlockedAdd64)
 {
     ///arrange
     volatile int64_t addend;
-	InterlockedExchange64(&addend, INT64_MAX);
+    InterlockedExchange64(&addend, INT64_MAX);
     int64_t value = INT64_MIN;
     STRICT_EXPECTED_CALL(mock_InterlockedAdd64((volatile LONG64*)&addend, value))
         .SetReturn(-1);
@@ -130,7 +130,7 @@ TEST_FUNCTION(interlocked_and_calls_InterlockedAnd)
 {
     ///arrange
     volatile uint32_t destination;
-	InterlockedExchange((volatile LONG*)&destination, (uint32_t)0xF0F0F0F0);
+    InterlockedExchange((volatile LONG*)&destination, (uint32_t)0xF0F0F0F0);
     uint32_t value = 0x0F0F0F0F;
     STRICT_EXPECTED_CALL(mock_InterlockedAnd((volatile LONG*)&destination, value))
         .SetReturn(0xF0F0F0F0);
@@ -149,7 +149,7 @@ TEST_FUNCTION(interlocked_and_16_calls_InterlockedAnd16)
 {
     ///arrange
     volatile uint16_t destination;
-	InterlockedExchange16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
+    InterlockedExchange16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
     uint16_t value = 0x0F0F;
     STRICT_EXPECTED_CALL(mock_InterlockedAnd16((volatile SHORT*)&destination, value))
         .SetReturn((uint16_t)0xF0F0);
@@ -168,7 +168,7 @@ TEST_FUNCTION(interlocked_and_64_calls_InterlockedAnd64)
 {
     ///arrange
     volatile uint64_t destination;
-	InterlockedExchange64((volatile LONG64*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
+    InterlockedExchange64((volatile LONG64*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
     uint64_t value = 0x0F0F0F0F0F0F0F0F;
     STRICT_EXPECTED_CALL(mock_InterlockedAnd64((volatile LONG64*)&destination, value))
         .SetReturn(0xF0F0F0F0F0F0F0F0);
@@ -187,7 +187,7 @@ TEST_FUNCTION(interlocked_and_8_calls_InterlockedAdd8)
 {
     ///arrange
     volatile uint8_t destination;
-	InterlockedExchange8((volatile CHAR*)&destination, (uint8_t)0xF0);
+    InterlockedExchange8((volatile CHAR*)&destination, (uint8_t)0xF0);
     uint8_t value = 0x0F;
     STRICT_EXPECTED_CALL(mock_InterlockedAnd8((volatile char*)&destination, value))
         .SetReturn((uint8_t)0xF0);
@@ -206,7 +206,7 @@ TEST_FUNCTION(interlocked_compare_exchange_calls_InterlockedCompareExchange)
 {
     ///arrange
     volatile int32_t destination;
-	InterlockedExchange((volatile LONG*)&destination, INT32_MAX);
+    InterlockedExchange((volatile LONG*)&destination, INT32_MAX);
     int32_t comperand = INT32_MAX;
     int32_t exchange = INT32_MIN;
     STRICT_EXPECTED_CALL(mock_InterlockedCompareExchange((volatile LONG*)&destination, exchange, comperand))
@@ -295,7 +295,7 @@ TEST_FUNCTION(interlocked_compare_exchange_16_calls_InterlockedCompareExchange16
 {
     ///arrange
     volatile int16_t destination;
-	InterlockedExchange16(&destination, INT16_MAX);
+    InterlockedExchange16(&destination, INT16_MAX);
     int16_t comperand = INT16_MAX;
     int16_t exchange = INT16_MIN;
     STRICT_EXPECTED_CALL(mock_InterlockedCompareExchange16((volatile SHORT*)&destination, exchange, comperand))
@@ -315,7 +315,7 @@ TEST_FUNCTION(interlocked_compare_exchange_64_calls_InterlockedCompareExchange64
 {
     ///arrange
     volatile int64_t destination;
-	InterlockedExchange64(&destination, INT64_MAX);
+    InterlockedExchange64(&destination, INT64_MAX);
     int64_t comperand = INT64_MAX;
     int64_t exchange = INT64_MIN;
     STRICT_EXPECTED_CALL(mock_InterlockedCompareExchange64((volatile LONG64*)&destination, exchange, comperand))
@@ -357,7 +357,7 @@ TEST_FUNCTION(interlocked_decrement_calls_InterlockedDecrement)
 {
     ///arrange
     volatile int32_t addend;
-	InterlockedExchange((volatile LONG*)&addend, INT32_MAX);
+    InterlockedExchange((volatile LONG*)&addend, INT32_MAX);
     STRICT_EXPECTED_CALL(mock_InterlockedDecrement((volatile LONG*)&addend))
         .SetReturn(INT32_MAX -1);
 
@@ -375,7 +375,7 @@ TEST_FUNCTION(interlocked_decrement_16_calls_InterlockedDecrement16)
 {
     ///arrange
     volatile int16_t addend;
-	InterlockedExchange16(&addend, INT16_MAX);
+    InterlockedExchange16(&addend, INT16_MAX);
     STRICT_EXPECTED_CALL(mock_InterlockedDecrement16((volatile SHORT*)&addend))
         .SetReturn(INT16_MAX -1);
 
@@ -393,7 +393,7 @@ TEST_FUNCTION(interlocked_decrement_64_calls_InterlockedDecrement64)
 {
     ///arrange
     volatile int64_t addend;
-	InterlockedExchange64(&addend, INT64_MAX);
+    InterlockedExchange64(&addend, INT64_MAX);
     STRICT_EXPECTED_CALL(mock_InterlockedDecrement64((volatile LONG64*)&addend))
         .SetReturn(INT64_MAX - 1);
 
@@ -411,7 +411,7 @@ TEST_FUNCTION(interlocked_exchange_calls_InterlockedExchange)
 {
     ///arrange
     volatile int32_t target;
-	InterlockedExchange((volatile LONG*)&target, INT32_MIN);
+    InterlockedExchange((volatile LONG*)&target, INT32_MIN);
     int32_t value = INT32_MAX;
     STRICT_EXPECTED_CALL(mock_InterlockedExchange((volatile LONG*)&target, value))
         .SetReturn(INT32_MIN);
@@ -430,7 +430,7 @@ TEST_FUNCTION(interlocked_exchange_16_calls_InterlockedExchange16)
 {
     ///arrange
     volatile int16_t target;
-	InterlockedExchange16(&target, INT16_MIN);
+    InterlockedExchange16(&target, INT16_MIN);
     int16_t value = INT16_MAX;
     STRICT_EXPECTED_CALL(mock_InterlockedExchange16((volatile SHORT*)&target, value))
         .SetReturn(INT16_MIN);
@@ -449,7 +449,7 @@ TEST_FUNCTION(interlocked_exchange_64_calls_InterlockedExchange64)
 {
     ///arrange
     volatile int64_t target;
-	InterlockedExchange64(&target, INT64_MIN);
+    InterlockedExchange64(&target, INT64_MIN);
     int64_t value = INT64_MAX;
     STRICT_EXPECTED_CALL(mock_InterlockedExchange64((volatile LONG64*)&target, value))
         .SetReturn(INT64_MIN);
@@ -468,7 +468,7 @@ TEST_FUNCTION(interlocked_exchange_8_calls_InterlockedExchange8)
 {
     ///arrange
     volatile int8_t target;
-	InterlockedExchange8((volatile CHAR*)&target, (CHAR)INT8_MIN);
+    InterlockedExchange8((volatile CHAR*)&target, (CHAR)INT8_MIN);
     int8_t value = INT8_MAX;
     STRICT_EXPECTED_CALL(mock_InterlockedExchange8((volatile char*)&target, value))
         .SetReturn(INT8_MIN);
@@ -487,7 +487,7 @@ TEST_FUNCTION(interlocked_exchange_add_calls_InterlockedExchangeAdd)
 {
     ///arrange
     volatile int32_t addend;
-	InterlockedExchange((volatile LONG*)&addend, INT32_MIN);
+    InterlockedExchange((volatile LONG*)&addend, INT32_MIN);
     int32_t value = INT32_MAX;
     STRICT_EXPECTED_CALL(mock_InterlockedExchangeAdd((volatile LONG*)&addend, value))
         .SetReturn(INT32_MIN);
@@ -506,7 +506,7 @@ TEST_FUNCTION(interlocked_exchange_add_64_calls_InterlockedExchangeAdd64)
 {
     ///arrange
     volatile int64_t addend;
-	InterlockedExchange64(&addend, INT64_MIN);
+    InterlockedExchange64(&addend, INT64_MIN);
     int64_t value = INT64_MAX;
     STRICT_EXPECTED_CALL(mock_InterlockedExchangeAdd64((volatile LONG64*)&addend, value))
         .SetReturn(INT64_MIN);
@@ -545,7 +545,7 @@ TEST_FUNCTION(interlocked_increment_calls_InterlockedIncrement)
 {
     ///arrange
     volatile int32_t addend;
-	InterlockedExchange((volatile LONG*)&addend, INT32_MAX - 1);
+    InterlockedExchange((volatile LONG*)&addend, INT32_MAX - 1);
     STRICT_EXPECTED_CALL(mock_InterlockedIncrement((volatile LONG*)&addend))
         .SetReturn(INT32_MAX);
 
@@ -564,7 +564,7 @@ TEST_FUNCTION(interlocked_increment_16_calls_InterlockedIncrement16)
 {
     ///arrange
     volatile int16_t addend;
-	InterlockedExchange16(&addend, INT16_MAX - 1);
+    InterlockedExchange16(&addend, INT16_MAX - 1);
     STRICT_EXPECTED_CALL(mock_InterlockedIncrement16((volatile SHORT*)&addend))
         .SetReturn(INT16_MAX);
 
@@ -583,7 +583,7 @@ TEST_FUNCTION(interlocked_increment_64_calls_InterlockedIncrement64)
 {
     ///arrange
     volatile int64_t addend;
-	InterlockedExchange64(&addend, INT64_MAX - 1);
+    InterlockedExchange64(&addend, INT64_MAX - 1);
     STRICT_EXPECTED_CALL(mock_InterlockedIncrement64((volatile LONG64*)&addend))
         .SetReturn(INT64_MAX);
 
@@ -602,7 +602,7 @@ TEST_FUNCTION(interlocked_or_calls_InterlockedOr)
 {
     ///arrange
     volatile uint32_t destination;
-	InterlockedExchange((volatile LONG*)&destination, (uint32_t)0xF0F0F0F0);
+    InterlockedExchange((volatile LONG*)&destination, (uint32_t)0xF0F0F0F0);
     uint32_t value = 0x0F0F0F0F;
     STRICT_EXPECTED_CALL(mock_InterlockedOr((volatile LONG*)&destination, value))
         .SetReturn(0xF0F0F0F0);
@@ -621,7 +621,7 @@ TEST_FUNCTION(interlocked_or_16_calls_InterlockedOr16)
 {
     ///arrange
     volatile uint16_t destination;
-	InterlockedExchange16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
+    InterlockedExchange16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
     uint16_t value = 0x0F0F;
     STRICT_EXPECTED_CALL(mock_InterlockedOr16((volatile SHORT*)&destination, value))
         .SetReturn((uint16_t)0xF0F0);
@@ -640,7 +640,7 @@ TEST_FUNCTION(interlocked_or_64_calls_InterlockedOr64)
 {
     ///arrange
     volatile uint64_t destination;
-	InterlockedExchange64((volatile LONG64*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
+    InterlockedExchange64((volatile LONG64*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
     uint64_t value = 0x0F0F0F0F0F0F0F0F;
     STRICT_EXPECTED_CALL(mock_InterlockedOr64((volatile LONG64*)&destination, value))
         .SetReturn(0xF0F0F0F0F0F0F0F0);
@@ -678,7 +678,7 @@ TEST_FUNCTION(interlocked_xor_calls_InterlockedXor)
 {
     ///arrange
     volatile uint32_t destination;
-	InterlockedExchange((volatile LONG*)&destination, (uint32_t)0xF0F0F0F0);
+    InterlockedExchange((volatile LONG*)&destination, (uint32_t)0xF0F0F0F0);
     uint32_t value = 0x0F0F0F0F;
     STRICT_EXPECTED_CALL(mock_InterlockedXor((volatile LONG*)&destination, value))
         .SetReturn(0xF0F0F0F0);
@@ -697,7 +697,7 @@ TEST_FUNCTION(interlocked_xor_16_calls_InterlockedXor16)
 {
     ///arrange
     volatile uint16_t destination;
-	InterlockedExchange16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
+    InterlockedExchange16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
     uint16_t value = 0x0F0F;
     STRICT_EXPECTED_CALL(mock_InterlockedXor16((volatile SHORT*)&destination, value))
         .SetReturn((uint16_t)0xF0F0);
@@ -716,7 +716,7 @@ TEST_FUNCTION(interlocked_xor_64_calls_InterlockedXor64)
 {
     ///arrange
     volatile uint64_t destination;
-	InterlockedExchange64((volatile LONG64*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
+    InterlockedExchange64((volatile LONG64*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
     uint64_t value = 0x0F0F0F0F0F0F0F0F;
     STRICT_EXPECTED_CALL(mock_InterlockedXor64((volatile LONG64*)&destination, value))
         .SetReturn(0xF0F0F0F0F0F0F0F0);
@@ -735,7 +735,7 @@ TEST_FUNCTION(interlocked_xor_8_calls_InterlockedXor8)
 {
     ///arrange
     volatile uint8_t destination;
-	InterlockedExchange8((volatile CHAR*)&destination, (uint8_t)0xF0);
+    InterlockedExchange8((volatile CHAR*)&destination, (uint8_t)0xF0);
     uint8_t value = 0x0F;
     STRICT_EXPECTED_CALL(mock_InterlockedXor8((volatile char*)&destination, value))
         .SetReturn((uint8_t)0xF0);
