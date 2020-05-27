@@ -3,7 +3,7 @@ interlocked linux
 
 ## Overview
 
-`interlocked linux` is the Linux-specific implementation of the `interlocked` module. Each function calls the corresponding `atomic` function from `stdatomic.h`.
+`interlocked linux` is the Linux-specific implementation of the `interlocked` module. Each function calls the corresponding `atomic` function from `stdatomic.h`. The default memory order for `stdatomic.h` functions is `memory_order_seq_cst` which uses a full memory barrier for each operation.
 
 
 ## Exposed API
