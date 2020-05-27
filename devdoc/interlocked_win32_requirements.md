@@ -10,6 +10,7 @@ interlocked Win32
 
 ```c
 MOCKABLE_FUNCTION(, int32_t, interlocked_add, volatile int32_t*, addend, int32_t, value);
+MOCKABLE_FUNCTION(, int64_t, interlocked_add_64, volatile int64_t*, addend, int64_t, value);
 MOCKABLE_FUNCTION(, int32_t, interlocked_and, volatile int32_t*, destination, int32_t, value);
 MOCKABLE_FUNCTION(, int16_t, interlocked_and_16, volatile int16_t*, destination, int16_t, value);
 MOCKABLE_FUNCTION(, int64_t, interlocked_and_64, volatile int64_t*, destination, int64_t, value);
@@ -18,7 +19,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_compare_exchange, volatile int32_t*, de
 MOCKABLE_FUNCTION(, bool, interlocked_compare_exchange_128, volatile int64_t*, destination, int64_t, exchange_high, int64_t, exchange_low, int64_t*, comperand_result);
 MOCKABLE_FUNCTION(, int16_t, interlocked_compare_exchange_16, volatile int16_t*, destination, int16_t, exchange, int16_t, comperand);
 MOCKABLE_FUNCTION(, int64_t, interlocked_compare_exchange_64, volatile int64_t*, destination, int64_t, exchange, int64_t, comperand);
-MOCKABLE_FUNCTION(, void*, interlocked_compare_exchange_pointer, volatile void**, destination, void*, exchange, void*, comperand);
+MOCKABLE_FUNCTION(, void*, interlocked_compare_exchange_pointer, void* volatile*, destination, void*, exchange, void*, comperand);
 MOCKABLE_FUNCTION(, int32_t, interlocked_decrement, volatile int32_t*, addend);
 MOCKABLE_FUNCTION(, int16_t, interlocked_decrement_16, volatile int16_t*, addend);
 MOCKABLE_FUNCTION(, int64_t, interlocked_decrement_64, volatile int64_t*, addend);
@@ -28,7 +29,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_64, volatile int64_t*, target,
 MOCKABLE_FUNCTION(, int8_t, interlocked_exchange_8, volatile int8_t*, target, int8_t, value);
 MOCKABLE_FUNCTION(, int32_t, interlocked_exchange_add, volatile int32_t*, addend, int32_t, value);
 MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_add_64, volatile int64_t*, addend, int64_t, value);
-MOCKABLE_FUNCTION(, void*, interlocked_exchange_pointer, volatile void**, target, void*, value);
+MOCKABLE_FUNCTION(, void*, interlocked_exchange_pointer, void* volatile*, target, void*, value);
 MOCKABLE_FUNCTION(, int32_t, interlocked_increment, volatile int32_t*, addend);
 MOCKABLE_FUNCTION(, int16_t, interlocked_increment_16, volatile int16_t*, addend);
 MOCKABLE_FUNCTION(, int64_t, interlocked_increment_64, volatile int64_t*, addend);
@@ -50,6 +51,15 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_add, volatile int32_t*, addend, int32_t
 **SRS_INTERLOCKED_WIN32_43_001: [** `interlocked_add` shall call `InterlockedAdd` from `windows.h`. **]**
 
 **SRS_INTERLOCKED_WIN32_43_002: [** `interlocked_add` shall return the result of the addition. **]**
+
+## interlocked_add_64
+
+```c
+MOCKABLE_FUNCTION(, int64_t, interlocked_add_64, volatile int64_t*, addend, int64_t, value);
+```
+**SRS_INTERLOCKED_WIN32_43_064: [** `interlocked_add_64` shall call `InterlockedAdd64` from `windows.h`. **]**
+
+**SRS_INTERLOCKED_WIN32_43_065: [** `interlocked_add_64` shall return the result of the addition. **]**
 
 ## interlocked_and
 
@@ -129,7 +139,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_compare_exchange_64, volatile int64_t*,
 ## interlocked_compare_exchange_pointer
 
 ```c
-MOCKABLE_FUNCTION(, void*, interlocked_compare_exchange_pointer, volatile void**, destination, void*, exchange, void*, comperand);
+MOCKABLE_FUNCTION(, void*, interlocked_compare_exchange_pointer, void* volatile*, destination, void*, exchange, void*, comperand);
 
 ```
 **SRS_INTERLOCKED_WIN32_43_019: [** `interlocked_compare_exchange_pointer` shall call `InterlockedCompareExchangePointer` from `windows.h`. **]**
@@ -229,7 +239,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_add_64, volatile int64_t*, add
 ## interlocked_exchange_pointer
 
 ```c
-MOCKABLE_FUNCTION(, void*, interlocked_exchange_pointer, volatile void**, target, void*, value);
+MOCKABLE_FUNCTION(, void*, interlocked_exchange_pointer, void* volatile*, target, void*, value);
 
 ```
 **SRS_INTERLOCKED_WIN32_43_039: [** `interlocked_exchange_pointer` shall call `InterlockedExchangePointer` from `windows.h`. **]**
