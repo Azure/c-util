@@ -13,16 +13,6 @@
 #include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
-static void* my_gballoc_malloc(size_t size)
-{
-    return malloc(size);
-}
-
-static void my_gballoc_free(void* ptr)
-{
-    free(ptr);
-}
-
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_windows.h"
 
@@ -100,8 +90,8 @@ TEST_FUNCTION(interlocked_add_calls_InterlockedAdd)
 
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int32_t, -1, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int32_t, -1, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_064: [ interlocked_add_64 shall call InterlockedAdd64 from windows.h. ]*/
@@ -120,8 +110,8 @@ TEST_FUNCTION(interlocked_add_64_calls_InterlockedAdd64)
 
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, -1, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int64_t, -1, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_003: [interlocked_and shall call InterlockedAnd from windows.h.]*/
@@ -139,8 +129,8 @@ TEST_FUNCTION(interlocked_and_calls_InterlockedAnd)
     uint32_t return_val = (uint32_t)interlocked_and((volatile int32_t*)&destination, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_005: [interlocked_and_16 shall call InterlockedAnd16 from windows.h.]*/
@@ -158,8 +148,8 @@ TEST_FUNCTION(interlocked_and_16_calls_InterlockedAnd16)
     uint16_t return_val = (uint16_t)interlocked_and_16((volatile int16_t*)&destination, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_007: [interlocked_and_64 shall call InterlockedAnd64 from windows.h.]*/
@@ -177,8 +167,8 @@ TEST_FUNCTION(interlocked_and_64_calls_InterlockedAnd64)
     uint64_t return_val = (uint64_t)interlocked_and_64((volatile int64_t*)&destination, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_009: [interlocked_and_8 shall call InterlockedAnd8 from windows.h.]*/
@@ -196,8 +186,8 @@ TEST_FUNCTION(interlocked_and_8_calls_InterlockedAdd8)
     uint8_t return_val = (uint8_t)interlocked_and_8((volatile int8_t*)&destination, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_011: [interlocked_compare_exchange shall call InterlockedCompareExchange from windows.h.]*/
@@ -216,8 +206,8 @@ TEST_FUNCTION(interlocked_compare_exchange_calls_InterlockedCompareExchange)
     int32_t return_val = interlocked_compare_exchange(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val, "Return value is incorrect.");
 }
 
 #ifdef _WIN64
@@ -247,8 +237,8 @@ TEST_FUNCTION(interlocked_compare_exchange_128_calls_InterlockedCompareExchange1
     bool return_val = interlocked_compare_exchange_128(destination, exchange_high, exchange_low, comperand_result);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_IS_TRUE(return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_IS_TRUE(return_val, "Return value is incorrect.");
 
     ///cleanup
     free((void*)destination);
@@ -280,8 +270,8 @@ TEST_FUNCTION(interlocked_compare_exchange_128_calls_InterlockedCompareExchange1
     bool return_val = interlocked_compare_exchange_128(destination, exchange_high, exchange_low, comperand_result);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_IS_FALSE(return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_IS_FALSE(return_val, "Return value is incorrect.");
 
     ///cleanup
     free((void*)destination);
@@ -305,8 +295,8 @@ TEST_FUNCTION(interlocked_compare_exchange_16_calls_InterlockedCompareExchange16
     int16_t return_val = interlocked_compare_exchange_16(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_017: [interlocked_compare_exchange_64 shall call InterlockedCompareExchange64 from windows.h.]*/
@@ -325,8 +315,8 @@ TEST_FUNCTION(interlocked_compare_exchange_64_calls_InterlockedCompareExchange64
     int64_t return_val = interlocked_compare_exchange_64(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_019: [interlocked_compare_exchange_pointer shall call InterlockedCompareExchangePointer from windows.h.]*/
@@ -347,8 +337,8 @@ TEST_FUNCTION(interlocked_compare_exchange_pointer_calls_InterlockedCompareExcha
     void* return_val = interlocked_compare_exchange_pointer(&destination, exchange, comperand);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(void_ptr, &value1, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(void_ptr, &value1, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_021: [interlocked_decrement shall call InterlockedDecrement from windows.h.]*/
@@ -365,8 +355,8 @@ TEST_FUNCTION(interlocked_decrement_calls_InterlockedDecrement)
     int32_t return_val = interlocked_decrement(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX -1, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX -1, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_023: [interlocked_decrement_16 shall call InterlockedDecrement16 from windows.h.]*/
@@ -383,8 +373,8 @@ TEST_FUNCTION(interlocked_decrement_16_calls_InterlockedDecrement16)
     int16_t return_val = interlocked_decrement_16(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX -1, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX -1, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_025: [interlocked_decrement_64 shall call InterlockedDecrement64 from windows.h.]*/
@@ -401,8 +391,8 @@ TEST_FUNCTION(interlocked_decrement_64_calls_InterlockedDecrement64)
     int64_t return_val = interlocked_decrement_64(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX - 1, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX - 1, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_027: [interlocked_exchange shall call InterlockedExchange from windows.h.]*/
@@ -420,8 +410,8 @@ TEST_FUNCTION(interlocked_exchange_calls_InterlockedExchange)
     int32_t return_val = interlocked_exchange(&target, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_029: [interlocked_exchange_16 shall call InterlockedExchange16 from windows.h.]*/
@@ -439,8 +429,8 @@ TEST_FUNCTION(interlocked_exchange_16_calls_InterlockedExchange16)
     int16_t return_val = interlocked_exchange_16(&target, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MIN, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_031: [interlocked_exchange_64 shall call InterlockedExchange64 from windows.h.]*/
@@ -458,8 +448,8 @@ TEST_FUNCTION(interlocked_exchange_64_calls_InterlockedExchange64)
     int64_t return_val = interlocked_exchange_64(&target, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_033: [interlocked_exchange_8 shall call InterlockedExchange8 from windows.h.]*/
@@ -477,8 +467,8 @@ TEST_FUNCTION(interlocked_exchange_8_calls_InterlockedExchange8)
     int8_t return_val = interlocked_exchange_8(&target, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int8_t, INT8_MIN, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int8_t, INT8_MIN, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_035: [interlocked_exchange_add shall call InterlockedExchangeAdd from windows.h.]*/
@@ -496,8 +486,8 @@ TEST_FUNCTION(interlocked_exchange_add_calls_InterlockedExchangeAdd)
     int32_t return_val = interlocked_exchange_add(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_037: [interlocked_exchange_add_64 shall call InterlockedExchangeAdd64 from windows.h.]*/
@@ -515,8 +505,8 @@ TEST_FUNCTION(interlocked_exchange_add_64_calls_InterlockedExchangeAdd64)
     int64_t return_val = interlocked_exchange_add_64(&addend, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_039: [interlocked_exchange_pointer shall call InterlockedExchangePointer from windows.h.]*/
@@ -535,8 +525,8 @@ TEST_FUNCTION(interlocked_exchange_pointer_calls_InterlockedExchagePointer)
     void* return_val = interlocked_exchange_pointer(&target, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(void_ptr, &value1, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(void_ptr, &value1, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_041: [interlocked_increment shall call InterlockedIncrement from windows.h.]*/
@@ -554,8 +544,8 @@ TEST_FUNCTION(interlocked_increment_calls_InterlockedIncrement)
     int32_t return_val = interlocked_increment(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_043: [interlocked_increment_16 shall call InterlockedIncrement16 from windows.h.]*/
@@ -573,8 +563,8 @@ TEST_FUNCTION(interlocked_increment_16_calls_InterlockedIncrement16)
     int16_t return_val = interlocked_increment_16(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_045: [interlocked_increment_64 shall call InterlockedIncrement64 from windows.h.]*/
@@ -592,8 +582,8 @@ TEST_FUNCTION(interlocked_increment_64_calls_InterlockedIncrement64)
     int64_t return_val = interlocked_increment_64(&addend);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_047: [interlocked_or shall call InterlockedOr from windows.h.]*/
@@ -611,8 +601,8 @@ TEST_FUNCTION(interlocked_or_calls_InterlockedOr)
     uint32_t return_val = (uint32_t)interlocked_or((volatile int32_t*)&destination, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_049: [interlocked_or_16 shall call InterlockedOr16 from windows.h.]*/
@@ -630,8 +620,8 @@ TEST_FUNCTION(interlocked_or_16_calls_InterlockedOr16)
     uint16_t return_val = (uint16_t)interlocked_or_16((volatile int16_t*)&destination, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_051: [interlocked_or_64 shall call InterlockedOr64 from windows.h.]*/
@@ -649,8 +639,8 @@ TEST_FUNCTION(interlocked_or_64_calls_InterlockedOr64)
     uint64_t return_val = (uint64_t)interlocked_or_64((volatile int64_t*)&destination, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_053: [interlocked_or_8 shall call InterlockedOr8 from windows.h.]*/
@@ -668,8 +658,8 @@ TEST_FUNCTION(interlocked_or_8_calls_InterlockedOr8)
     uint8_t return_val = (uint8_t)interlocked_or_8((volatile int8_t*)&destination, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_055: [interlocked_xor shall call InterlockedXor from windows.h.]*/
@@ -687,8 +677,8 @@ TEST_FUNCTION(interlocked_xor_calls_InterlockedXor)
     uint32_t return_val = (uint32_t)interlocked_xor((volatile int32_t*)&destination, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_057: [interlocked_xor_16 shall call InterlockedXor16 from windows.h.]*/
@@ -706,8 +696,8 @@ TEST_FUNCTION(interlocked_xor_16_calls_InterlockedXor16)
     uint16_t return_val = (uint16_t)interlocked_xor_16((volatile int16_t*)&destination, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_059: [interlocked_xor_64 shall call InterlockedXor64 from windows.h.]*/
@@ -725,8 +715,8 @@ TEST_FUNCTION(interlocked_xor_64_calls_InterlockedXor64)
     uint64_t return_val = (uint64_t)interlocked_xor_64((volatile int64_t*)&destination, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val, "Return value is incorrect.");
 }
 
 /*Tests_SRS_INTERLOCKED_WIN32_43_061: [interlocked_xor_8 shall call InterlockedXor8 from windows.h.]*/
@@ -744,8 +734,8 @@ TEST_FUNCTION(interlocked_xor_8_calls_InterlockedXor8)
     uint8_t return_val = (uint8_t)interlocked_xor_8((volatile int8_t*)&destination, value);
 
     ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val, "Return value is incorrect.");
 }
 
 END_TEST_SUITE(interlocked_win32_unittests)
