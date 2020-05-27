@@ -55,7 +55,7 @@ TEST_FUNCTION(interlocked_add_does_addition)
 {
     ///arrange
     volatile int32_t addend;
-	interlocked_exchange(&addend, INT32_MAX);
+    interlocked_exchange(&addend, INT32_MAX);
     int32_t value = INT32_MIN;
 
     ///act
@@ -72,7 +72,7 @@ TEST_FUNCTION(interlocked_add_overflows_upper_bound)
 {
     ///arrange
     volatile int32_t addend;
-	interlocked_exchange(&addend, INT32_MAX);
+    interlocked_exchange(&addend, INT32_MAX);
     int32_t value = 1;
 
     ///act
@@ -89,7 +89,7 @@ TEST_FUNCTION(interlocked_add_underflows_lower_bound)
 {
     ///arrange
     volatile int32_t addend;
-	interlocked_exchange(&addend, INT32_MIN);
+    interlocked_exchange(&addend, INT32_MIN);
     int32_t value = -1;
 
     ///act
@@ -106,7 +106,7 @@ TEST_FUNCTION(interlocked_add_64_does_addition)
 {
     ///arrange
     volatile int64_t addend;
-	interlocked_exchange_64(&addend, INT64_MAX);
+    interlocked_exchange_64(&addend, INT64_MAX);
     int64_t value = INT64_MIN;
 
     ///act
@@ -123,7 +123,7 @@ TEST_FUNCTION(interlocked_add_64_overflows_upper_bound)
 {
     ///arrange
     volatile int64_t addend;
-	interlocked_exchange_64(&addend, INT64_MAX);
+    interlocked_exchange_64(&addend, INT64_MAX);
     int64_t value = 1;
 
     ///act
@@ -140,7 +140,7 @@ TEST_FUNCTION(interlocked_add_64_underflows_lower_bound)
 {
     ///arrange
     volatile int64_t addend;
-	interlocked_exchange_64(&addend, INT64_MIN);
+    interlocked_exchange_64(&addend, INT64_MIN);
     int64_t value = -1;
 
     ///act
@@ -157,7 +157,7 @@ TEST_FUNCTION(interlocked_and_does_bitwise_and)
 {
     ///arrange
     volatile uint32_t destination;
-	interlocked_exchange((volatile int32_t*)&destination, (uint32_t)0xF0F0F0F0);
+    interlocked_exchange((volatile int32_t*)&destination, (uint32_t)0xF0F0F0F0);
     uint32_t value = 0x0F0F0FFF;
 
     ///act
@@ -174,7 +174,7 @@ TEST_FUNCTION(interlocked_and_16_does_bitwise_and)
 {
     ///arrange
     volatile uint16_t destination;
-	interlocked_exchange_16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
+    interlocked_exchange_16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
     uint16_t value = 0x0FFF;
 
     ///act
@@ -192,7 +192,7 @@ TEST_FUNCTION(interlocked_and_64_does_bitwise_and)
 {
     ///arrange
     volatile uint64_t destination;
-	interlocked_exchange_64((volatile int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
+    interlocked_exchange_64((volatile int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
     uint64_t value = 0x0F0F0F0F0F0F0FFF;
 
     ///act
@@ -209,7 +209,7 @@ TEST_FUNCTION(interlocked_and_8_does_bitwise_and)
 {
     ///arrange
     volatile uint8_t destination;
-	interlocked_exchange_8((volatile int8_t*)&destination, (uint8_t)0xF0);
+    interlocked_exchange_8((volatile int8_t*)&destination, (uint8_t)0xF0);
     uint8_t value = 0xAF;
 
     ///act
@@ -226,7 +226,7 @@ TEST_FUNCTION(interlocked_compare_exchange_exchanges_when_equal)
 {
     ///arrange
     volatile int32_t destination;
-	interlocked_exchange(&destination, INT32_MAX);
+    interlocked_exchange(&destination, INT32_MAX);
     int32_t comperand = INT32_MAX;
     int32_t exchange = INT32_MIN;
 
@@ -244,7 +244,7 @@ TEST_FUNCTION(interlocked_compare_exchange_does_not_exchange_when_not_equal)
 {
     ///arrange
     volatile int32_t destination;
-	interlocked_exchange(&destination, INT32_MAX);
+    interlocked_exchange(&destination, INT32_MAX);
     int32_t comperand = INT32_MIN;
     int32_t exchange = INT32_MIN;
 
@@ -330,7 +330,7 @@ TEST_FUNCTION(interlocked_compare_exchange_16_exchanges_when_equal)
 {
     ///arrange
     volatile int16_t destination;
-	interlocked_exchange_16(&destination, INT16_MAX);
+    interlocked_exchange_16(&destination, INT16_MAX);
     int16_t comperand = INT16_MAX;
     int16_t exchange = INT16_MIN;
 
@@ -348,7 +348,7 @@ TEST_FUNCTION(interlocked_compare_exchange_16_does_not_exchange_when_not_equal)
 {
     ///arrange
     volatile int16_t destination;
-	interlocked_exchange_16(&destination, INT16_MAX);
+    interlocked_exchange_16(&destination, INT16_MAX);
     int16_t comperand = INT16_MIN;
     int16_t exchange = INT16_MIN;
 
@@ -366,7 +366,7 @@ TEST_FUNCTION(interlocked_compare_exchange_64_exchanges_when_equal)
 {
     ///arrange
     volatile int64_t destination;
-	interlocked_exchange_64(&destination, INT64_MAX);
+    interlocked_exchange_64(&destination, INT64_MAX);
     int64_t comperand = INT64_MAX;
     int64_t exchange = INT64_MIN;
 
@@ -384,7 +384,7 @@ TEST_FUNCTION(interlocked_compare_exchange_64_does_not_exchange_when_not_equal)
 {
     ///arrange
     volatile int64_t destination;
-	interlocked_exchange_64(&destination, INT64_MAX);
+    interlocked_exchange_64(&destination, INT64_MAX);
     int64_t comperand = INT64_MIN;
     int64_t exchange = INT64_MIN;
 
@@ -442,7 +442,7 @@ TEST_FUNCTION(interlocked_decrement_upper_bound)
 {
     ///arrange
     volatile int32_t addend;
-	interlocked_exchange(&addend, INT32_MAX);
+    interlocked_exchange(&addend, INT32_MAX);
 
     ///act
     int32_t return_val = interlocked_decrement(&addend);
@@ -458,7 +458,7 @@ TEST_FUNCTION(interlocked_decrement_lower_bound)
 {
     ///arrange
     volatile int32_t addend;
-	interlocked_exchange(&addend, INT32_MIN + 1);
+    interlocked_exchange(&addend, INT32_MIN + 1);
 
     ///act
     int32_t return_val = interlocked_decrement(&addend);
@@ -473,7 +473,7 @@ TEST_FUNCTION(interlocked_decrement_underflows_lower_bound)
 {
     ///arrange
     volatile int32_t addend;
-	interlocked_exchange(&addend, INT32_MIN);
+    interlocked_exchange(&addend, INT32_MIN);
 
     ///act
     int32_t return_val = interlocked_decrement(&addend);
@@ -490,7 +490,7 @@ TEST_FUNCTION(interlocked_decrement_16_upper_bound)
 {
     ///arrange
     volatile int16_t addend;
-	interlocked_exchange_16(&addend, INT16_MAX);
+    interlocked_exchange_16(&addend, INT16_MAX);
 
     ///act
     int16_t return_val = interlocked_decrement_16(&addend);
@@ -506,7 +506,7 @@ TEST_FUNCTION(interlocked_decrement_16_lower_bound)
 {
     ///arrange
     volatile int16_t addend;
-	interlocked_exchange_16(&addend, INT16_MIN + 1);
+    interlocked_exchange_16(&addend, INT16_MIN + 1);
 
     ///act
     int16_t return_val = interlocked_decrement_16(&addend);
@@ -522,7 +522,7 @@ TEST_FUNCTION(interlocked_decrement_16_underflows_lower_bound)
 {
     ///arrange
     volatile int16_t addend;
-	interlocked_exchange_16(&addend, INT16_MIN);
+    interlocked_exchange_16(&addend, INT16_MIN);
 
     ///act
     int16_t return_val = interlocked_decrement_16(&addend);
@@ -538,7 +538,7 @@ TEST_FUNCTION(interlocked_decrement_64_upper_bound)
 {
     ///arrange
     volatile int64_t addend;
-	interlocked_exchange_64(&addend, INT64_MAX);
+    interlocked_exchange_64(&addend, INT64_MAX);
 
     ///act
     int64_t return_val = interlocked_decrement_64(&addend);
@@ -554,7 +554,7 @@ TEST_FUNCTION(interlocked_decrement_64_lower_bound)
 {
     ///arrange
     volatile int64_t addend;
-	interlocked_exchange_64(&addend, INT64_MIN + 1);
+    interlocked_exchange_64(&addend, INT64_MIN + 1);
 
     ///act
     int64_t return_val = interlocked_decrement_64(&addend);
@@ -570,7 +570,7 @@ TEST_FUNCTION(interlocked_decrement_64_underflows_lower_bound)
 {
     ///arrange
     volatile int64_t addend;
-	interlocked_exchange_64(&addend, INT64_MIN);
+    interlocked_exchange_64(&addend, INT64_MIN);
 
     ///act
     int64_t return_val = interlocked_decrement_64(&addend);
@@ -586,7 +586,7 @@ TEST_FUNCTION(interlocked_exchange_sets_target)
 {
     ///arrange
     volatile int32_t target;
-	interlocked_exchange(&target, INT32_MIN);
+    interlocked_exchange(&target, INT32_MIN);
     int32_t value = INT32_MAX;
 
     ///act
@@ -603,7 +603,7 @@ TEST_FUNCTION(interlocked_exchange_16_sets_target)
 {
     ///arrange
     volatile int16_t target;
-	interlocked_exchange_16(&target, INT16_MIN);
+    interlocked_exchange_16(&target, INT16_MIN);
     int16_t value = INT16_MAX;
 
     ///act
@@ -620,7 +620,7 @@ TEST_FUNCTION(interlocked_exchange_64_sets_target)
 {
     ///arrange
     volatile int64_t target;
-	interlocked_exchange_64(&target, INT64_MIN);
+    interlocked_exchange_64(&target, INT64_MIN);
     int64_t value = INT64_MAX;
 
     ///act
@@ -637,7 +637,7 @@ TEST_FUNCTION(interlocked_exchange_8_sets_target)
 {
     ///arrange
     volatile int8_t target;
-	interlocked_exchange_8(&target, INT8_MIN);
+    interlocked_exchange_8(&target, INT8_MIN);
     int8_t value = INT8_MAX;
 
     ///act
@@ -654,7 +654,7 @@ TEST_FUNCTION(interlocked_exchange_add_sets_target_to_sum)
 {
     ///arrange
     volatile int32_t addend;
-	interlocked_exchange(&addend, INT32_MIN);
+    interlocked_exchange(&addend, INT32_MIN);
     int32_t value = INT32_MAX;
 
     ///act
@@ -671,7 +671,7 @@ TEST_FUNCTION(interlocked_exchange_add_overflows_upper_bound)
 {
     ///arrange
     volatile int32_t addend;
-	interlocked_exchange(&addend, INT32_MAX);
+    interlocked_exchange(&addend, INT32_MAX);
     int32_t value = 1;
 
     ///act
@@ -688,7 +688,7 @@ TEST_FUNCTION(interlocked_exchange_add_underflows_lower_bound)
 {
     ///arrange
     volatile int32_t addend;
-	interlocked_exchange(&addend, INT32_MIN);
+    interlocked_exchange(&addend, INT32_MIN);
     int32_t value = -1;
 
     ///act
@@ -705,7 +705,7 @@ TEST_FUNCTION(interlocked_exchange_add_64_sets_target_to_sum)
 {
     ///arrange
     volatile int64_t addend;
-	interlocked_exchange_64(&addend, INT64_MIN);
+    interlocked_exchange_64(&addend, INT64_MIN);
     int64_t value = INT64_MAX;
 
     ///act
@@ -722,7 +722,7 @@ TEST_FUNCTION(interlocked_exchange_add_64_overflows_upper_bound)
 {
     ///arrange
     volatile int64_t addend;
-	interlocked_exchange_64(&addend, INT64_MAX);
+    interlocked_exchange_64(&addend, INT64_MAX);
     int64_t value = 1;
 
     ///act
@@ -739,7 +739,7 @@ TEST_FUNCTION(interlocked_exchange_add_64_underflows_lower_bound)
 {
     ///arrange
     volatile int64_t addend;
-	interlocked_exchange_64(&addend, INT64_MIN);
+    interlocked_exchange_64(&addend, INT64_MIN);
     int64_t value = -1;
 
     ///act
@@ -774,7 +774,7 @@ TEST_FUNCTION(interlocked_increment_upper_bound)
 {
     ///arrange
     volatile int32_t addend;
-	interlocked_exchange(&addend, INT32_MAX-1);
+    interlocked_exchange(&addend, INT32_MAX-1);
 
     ///act
     int32_t return_val = interlocked_increment(&addend);
@@ -790,7 +790,7 @@ TEST_FUNCTION(interlocked_increment_lower_bound)
 {
     ///arrange
     volatile int32_t addend;
-	interlocked_exchange(&addend, INT32_MIN);
+    interlocked_exchange(&addend, INT32_MIN);
 
     ///act
     int32_t return_val = interlocked_increment(&addend);
@@ -807,7 +807,7 @@ TEST_FUNCTION(interlocked_increment_overflows_upper_bound)
 {
     ///arrange
     volatile int32_t addend;
-	interlocked_exchange(&addend, INT32_MAX);
+    interlocked_exchange(&addend, INT32_MAX);
 
     ///act
     int32_t return_val = interlocked_increment(&addend);
@@ -823,7 +823,7 @@ TEST_FUNCTION(interlocked_increment_16_upper_bound)
 {
     ///arrange
     volatile int16_t addend;
-	interlocked_exchange_16(&addend, INT16_MAX - 1);
+    interlocked_exchange_16(&addend, INT16_MAX - 1);
 
     ///act
     int16_t return_val = interlocked_increment_16(&addend);
@@ -839,7 +839,7 @@ TEST_FUNCTION(interlocked_increment_16_lower_bound)
 {
     ///arrange
     volatile int16_t addend;
-	interlocked_exchange_16(&addend, INT16_MIN);
+    interlocked_exchange_16(&addend, INT16_MIN);
 
     ///act
     int16_t return_val = interlocked_increment_16(&addend);
@@ -855,7 +855,7 @@ TEST_FUNCTION(interlocked_increment_16_overflows_upper_bound)
 {
     ///arrange
     volatile int16_t addend;
-	interlocked_exchange_16(&addend, INT16_MAX);
+    interlocked_exchange_16(&addend, INT16_MAX);
 
     ///act
     int16_t return_val = interlocked_increment_16(&addend);
@@ -871,7 +871,7 @@ TEST_FUNCTION(interlocked_increment_64_upper_bound)
 {
     ///arrange
     volatile int64_t addend;
-	interlocked_exchange_64(&addend, INT64_MAX - 1);
+    interlocked_exchange_64(&addend, INT64_MAX - 1);
 
     ///act
     int64_t return_val = interlocked_increment_64(&addend);
@@ -887,7 +887,7 @@ TEST_FUNCTION(interlocked_increment_64_lower_bound)
 {
     ///arrange
     volatile int64_t addend;
-	interlocked_exchange_64(&addend, INT64_MIN);
+    interlocked_exchange_64(&addend, INT64_MIN);
 
     ///act
     int64_t return_val = interlocked_increment_64(&addend);
@@ -904,7 +904,7 @@ TEST_FUNCTION(interlocked_increment_64_overflows_upper_bound)
 {
     ///arrange
     volatile int64_t addend;
-	interlocked_exchange_64(&addend, INT64_MAX);
+    interlocked_exchange_64(&addend, INT64_MAX);
 
     ///act
     int64_t return_val = interlocked_increment_64(&addend);
@@ -920,7 +920,7 @@ TEST_FUNCTION(interlocked_or_does_bitwise_or)
 {
     ///arrange
     volatile uint32_t destination;
-	interlocked_exchange((volatile int32_t*)&destination, (uint32_t)0xF0F0F0F0);
+    interlocked_exchange((volatile int32_t*)&destination, (uint32_t)0xF0F0F0F0);
     uint32_t value = 0x0F0F0F0F;
 
     ///act
@@ -937,7 +937,7 @@ TEST_FUNCTION(interlocked_or_16_does_bitwise_or)
 {
     ///arrange
     volatile uint16_t destination;
-	interlocked_exchange_16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
+    interlocked_exchange_16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
     uint16_t value = 0x0F0F;
 
     ///act
@@ -955,7 +955,7 @@ TEST_FUNCTION(interlocked_or_64_does_bitwise_or)
 {
     ///arrange
     volatile uint64_t destination;
-	interlocked_exchange_64((volatile int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
+    interlocked_exchange_64((volatile int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
     uint64_t value = 0x0F0F0F0F0F0F0F0F;
 
     ///act
@@ -972,7 +972,7 @@ TEST_FUNCTION(interlocked_or_8_does_bitwise_or)
 {
     ///arrange
     volatile uint8_t destination;
-	interlocked_exchange_8((volatile int8_t*)&destination, (uint8_t)0xF0);
+    interlocked_exchange_8((volatile int8_t*)&destination, (uint8_t)0xF0);
     uint8_t value = 0x0F;
 
     ///act
@@ -989,7 +989,7 @@ TEST_FUNCTION(interlocked_xor_does_bitwise_xor)
 {
     ///arrange
     volatile uint32_t destination;
-	interlocked_exchange((volatile int32_t*)&destination, (uint32_t)0xF0F0F0FF);
+    interlocked_exchange((volatile int32_t*)&destination, (uint32_t)0xF0F0F0FF);
     uint32_t value = 0x0F0F0F0F;
 
     ///act
@@ -1006,7 +1006,7 @@ TEST_FUNCTION(interlocked_xor_16_does_bitwise_xor)
 {
     ///arrange
     volatile uint16_t destination;
-	interlocked_exchange_16((volatile int16_t*)&destination, (uint16_t)0xF0FF);
+    interlocked_exchange_16((volatile int16_t*)&destination, (uint16_t)0xF0FF);
     uint16_t value = 0x0F0F;
 
     ///act
@@ -1024,7 +1024,7 @@ TEST_FUNCTION(interlocked_xor_64_does_bitwise_xor)
 {
     ///arrange
     volatile uint64_t destination;
-	interlocked_exchange_64((volatile int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0FF);
+    interlocked_exchange_64((volatile int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0FF);
     uint64_t value = 0x0F0F0F0F0F0F0F0F;
 
     ///act
@@ -1041,7 +1041,7 @@ TEST_FUNCTION(interlocked_xor_8_does_bitwise_xor)
 {
     ///arrange
     volatile uint8_t destination;
-	interlocked_exchange_8((volatile int8_t*)&destination, (uint8_t)0xFF);
+    interlocked_exchange_8((volatile int8_t*)&destination, (uint8_t)0xFF);
     uint8_t value = 0x0F;
 
     ///act
