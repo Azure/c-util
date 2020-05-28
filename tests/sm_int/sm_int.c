@@ -739,24 +739,38 @@ sm_exec_begin
 sm_barrier_begin
 */
 
-#define THREAD_TO_BACK_DELAY 1000
+#define THREAD_DELAY 1000
+
+/*forward*/
+typedef struct SM_RESULT_AND_NEXT_STATE_AFTER_API_CALL_TAG
+{
+    SM_RESULT expected_sm_result;
+    SM_STATES sm_state_after_api;
+}SM_RESULT_AND_NEXT_STATE_AFTER_API_CALL;
 
 typedef struct SM_GO_TO_STATE_TAG
 {
     SM_HANDLE sm;
     uint32_t targetState;
-    HANDLE threadTo;
-    HANDLE threadBack;
+    const SM_RESULT_AND_NEXT_STATE_AFTER_API_CALL* expected;
+    HANDLE threadTo; /*this thread switches the state to the state which is intended to have when sm_..._begin API are called. Then the thread might block (because the state switch is waiting on some draining) or might proceed to end*/
+    HANDLE threadBack; /*this thread unblocks threadTo and the main thread. Main thread might become blocked because the API it is calling might be waiting - such is the case when waiting for a drain to happen*/
+
+    HANDLE targetStateAPICalledInNextLine; /*event set when the target state will be switched in the next line of code. That call might or not return. For example when in the case of wanting to reach the state of SM_OPENED_DRAINING_TO_BARRIER. The call doesn't return until all the sm_exec_end have been called*/
+
+    HANDLE targetAPICalledInNextLine; /*event set just before calling the API in a specific state. This is needed because some of the APIs are blocking (such as calling sm_close_begin when a barrier is executing)*/
 }SM_GO_TO_STATE;
 
-static DWORD WINAPI switchesState(
+
+static DWORD WINAPI switchesTo(
     LPVOID lpThreadParameter
 )
 {
     SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)lpThreadParameter;
 
-    LogInfo("set state thread: will now switch state to %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED + goToState->targetState)));
+    LogInfo("switchesTo thread: will now switch state to %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED + goToState->targetState)));
 
+    ASSERT_IS_TRUE(SetEvent(goToState->targetStateAPICalledInNextLine));
     switch (goToState->targetState)
     {
         case 0:/*SM_CREATED*/
@@ -781,7 +795,8 @@ static DWORD WINAPI switchesState(
 
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_exec_begin(goToState->sm));
 
-            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_barrier_begin(goToState->sm)); /*switches to draining mode*/
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_barrier_begin(goToState->sm)); /*switches to draining mode - and stays there, because sm_exec_end was not called yet */
+            LogInfo("switches state thread: returning from sm_barrier_begin(goToState->sm)");
             break;
 
         }
@@ -793,6 +808,7 @@ static DWORD WINAPI switchesState(
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_exec_begin(goToState->sm));
 
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_close_begin(goToState->sm)); /*switches to draining mode*/
+            LogInfo("switchesTo thread: returning from sm_close_begin(goToState->sm)");
 
             break;
         }
@@ -819,15 +835,13 @@ static DWORD WINAPI switchesState(
         }
     }
 
-    
-
     return 0;
 }
 
 
 static void sm_gotostate(SM_GO_TO_STATE* goToState)
 {
-    goToState->threadTo = CreateThread(NULL, 0, switchesState, goToState, 0, NULL);
+    goToState->threadTo = CreateThread(NULL, 0, switchesTo, goToState, 0, NULL);
     ASSERT_IS_NOT_NULL(goToState->threadTo);
     /*depending on the requested state, the thread might have finished by now...*/
 }
@@ -838,25 +852,29 @@ static DWORD WINAPI switchesToCreated(
 )
 {
     SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)lpThreadParameter;
-    
-    Sleep(2* THREAD_TO_BACK_DELAY);
 
-    LogInfo("thread reset sate: will now switch state back to %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED)));
+    /*waits on 1 handles that says the API is about to be called. It waits 1 second then it resumes executiong */
 
-    switch (goToState->targetState)
+    ASSERT_ARE_EQUAL(uint32_t, WAIT_OBJECT_0, WaitForSingleObject(goToState->targetAPICalledInNextLine, INFINITE));
+
+    LogInfo("switchesToCreated thread : will now switch state back from %" PRI_MU_ENUM " to %" PRI_MU_ENUM " after sleeping %" PRIu32 "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(goToState->expected->sm_state_after_api)), MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED)), THREAD_DELAY);
+
+    Sleep(THREAD_DELAY);
+
+    switch (goToState->expected->sm_state_after_api)
     {
-        case 0:/*SM_CREATED*/
+        case SM_CREATED:
         {
             break;
         }
-        case 1:/*SM_OPENING*/
+        case SM_OPENING:
         {
             sm_open_end(goToState->sm, true);
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_close_begin(goToState->sm));
             sm_close_end(goToState->sm);
             break;
         }
-        case 2:/*SM_OPENED*/
+        case SM_OPENED:
         {
             if (sm_close_begin(goToState->sm) == SM_EXEC_GRANTED)
             {
@@ -865,11 +883,17 @@ static DWORD WINAPI switchesToCreated(
             
             break;
         }
-        case 3:/*SM_OPENED_DRAINING_TO_BARRIER*/
+        case SM_OPENED_DRAINING_TO_BARRIER:
         {
             sm_exec_end(goToState->sm);
-            Sleep(THREAD_TO_BACK_DELAY);
+            /*calling sm_exec_end will unblock sm_barrier_begin from the switchesToThread (if any)*/
+
+            Sleep(THREAD_DELAY);
+
             sm_barrier_end(goToState->sm);
+            /*returns to SM_OPENED...*/
+
+            Sleep(THREAD_DELAY);
 
             if (sm_close_begin(goToState->sm) == SM_EXEC_GRANTED)
             {
@@ -878,14 +902,15 @@ static DWORD WINAPI switchesToCreated(
             break;
 
         }
-        case 4:/*SM_OPENED_DRAINING_TO_CLOSE*/
+        case SM_OPENED_DRAINING_TO_CLOSE:
         {
             sm_exec_end(goToState->sm);
+            /*unblocks sm_close_begin in the switchesState thread*/
+            
             sm_close_end(goToState->sm);
-
             break;
         }
-        case 5:/*SM_OPENED_BARRIER*/
+        case SM_OPENED_BARRIER:
         {
             sm_barrier_end(goToState->sm);
 
@@ -895,8 +920,12 @@ static DWORD WINAPI switchesToCreated(
             }
             break;
         }
-        case 6:/*SM_CLOSING*/
+        case SM_CLOSING:
         {
+            sm_exec_end(goToState->sm);
+            Sleep(THREAD_DELAY);
+            sm_barrier_end(goToState->sm);
+            Sleep(THREAD_DELAY);
             sm_close_end(goToState->sm);
             break;
         }
@@ -906,6 +935,9 @@ static DWORD WINAPI switchesToCreated(
             break;
         }
     }
+
+    LogInfo("switchesToCreated thread : state switched back to %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED)));
+
     return 0;
 }
 
@@ -930,16 +962,16 @@ static void sm_gofromstate(SM_GO_TO_STATE* goToState)
 
 TEST_FUNCTION(STATE_and_API)
 {
-    SM_RESULT expected[][4]=
+    SM_RESULT_AND_NEXT_STATE_AFTER_API_CALL expected[][4]=
     {
-                                                /*sm_open_begin*/       /*sm_close_begin*/      /*sm_exec_begin*/       /*sm_barrier_begin*/
-        /*SM_CREATED*/                      {   SM_EXEC_GRANTED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED     },
-        /*SM_OPENING*/                      {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED     },
-        /*SM_OPENED*/                       {   SM_EXEC_REFUSED,        SM_EXEC_GRANTED,        SM_EXEC_GRANTED,        SM_EXEC_GRANTED     },
-        /*SM_OPENED_DRAINING_TO_BARRIER*/   {   SM_EXEC_REFUSED,        SM_EXEC_GRANTED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED     },
-        /*SM_OPENED_DRAINING_TO_CLOSE*/     {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED     },
-        /*SM_OPENED_BARRIER*/               {   SM_EXEC_REFUSED,        SM_EXEC_GRANTED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED     },
-        /*SM_CLOSING*/                      {   SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED,        SM_EXEC_REFUSED     },
+                                                /*sm_open_begin*/                                    /*sm_close_begin*/                              /*sm_exec_begin*/                                    /*sm_barrier_begin*/
+        /*SM_CREATED*/                      {   {SM_EXEC_GRANTED, SM_OPENING},                       {SM_EXEC_REFUSED, SM_CREATED},                  {SM_EXEC_REFUSED, SM_CREATED},                       {SM_EXEC_REFUSED, SM_CREATED}},
+        /*SM_OPENING*/                      {   {SM_EXEC_REFUSED, SM_OPENING},                       {SM_EXEC_REFUSED, SM_OPENING},                  {SM_EXEC_REFUSED, SM_OPENING},                       {SM_EXEC_REFUSED, SM_OPENING}},
+        /*SM_OPENED*/                       {   {SM_EXEC_REFUSED, SM_OPENED},                        {SM_EXEC_GRANTED, SM_CLOSING},                  {SM_EXEC_GRANTED, SM_OPENED},                        {SM_EXEC_GRANTED, SM_OPENED_BARRIER}},
+        /*SM_OPENED_DRAINING_TO_BARRIER*/   {   {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER},    {SM_EXEC_GRANTED, SM_CLOSING},                  {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER},    {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER}},
+        /*SM_OPENED_DRAINING_TO_CLOSE*/     {   {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE},      {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE}, {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE},      {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE}},
+        /*SM_OPENED_BARRIER*/               {   {SM_EXEC_REFUSED, SM_OPENED_BARRIER},                {SM_EXEC_GRANTED, SM_CLOSING       },           {SM_EXEC_REFUSED, SM_OPENED_BARRIER},                {SM_EXEC_REFUSED, SM_OPENED_BARRIER}},
+        /*SM_CLOSING*/                      {   {SM_EXEC_REFUSED, SM_CLOSING},                       {SM_EXEC_REFUSED, SM_CLOSING      },            {SM_EXEC_REFUSED, SM_CLOSING},                       {SM_EXEC_REFUSED, SM_CLOSING}}
     };
 
     for (uint32_t i = 0 ; i < sizeof(expected) / sizeof(expected[0]); i++)
@@ -947,52 +979,55 @@ TEST_FUNCTION(STATE_and_API)
         for (uint32_t j = 0; j < sizeof(expected[0]) / sizeof(expected[0][0]); j++)
         {
             SM_GO_TO_STATE goToState;
+            goToState.targetStateAPICalledInNextLine = CreateEvent(NULL, FALSE, FALSE, NULL);
+            ASSERT_IS_NOT_NULL(goToState.targetStateAPICalledInNextLine);
+
+            goToState.targetAPICalledInNextLine = CreateEvent(NULL, FALSE, FALSE, NULL);
+            ASSERT_IS_NOT_NULL(goToState.targetAPICalledInNextLine);
+
+            goToState.expected = &expected[i][j];
+
             goToState.sm = sm_create(NULL);
             ASSERT_IS_NOT_NULL(goToState.sm);
             goToState.targetState = i;
 
-            LogInfo("going to state =%" PRI_MU_ENUM "; calling=%" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
+            LogInfo("\n\ngoing to state =%" PRI_MU_ENUM "; will call=%" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
             sm_gotostate(&goToState);
             sm_gofromstate(&goToState);
 
-            Sleep(THREAD_TO_BACK_DELAY);
+            ASSERT_IS_TRUE(WaitForSingleObject(goToState.targetStateAPICalledInNextLine, INFINITE)==WAIT_OBJECT_0);
+            
+            LogInfo("main thread: sleeping %" PRIu32 " miliseconds letting switchesTo thread finish its call", THREAD_DELAY);
+            Sleep(THREAD_DELAY);
+
+            LogInfo("went to state =%" PRI_MU_ENUM "; calling=%" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
 
             switch (j)
             {
                 case 0:/*sm_open_begin*/
                 {
-                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j], sm_open_begin(goToState.sm));
-                    if (expected[i][j] == SM_EXEC_GRANTED)
-                    {
-                        sm_open_end(goToState.sm, true);
-                    }
+                    ASSERT_IS_TRUE(SetEvent(goToState.targetAPICalledInNextLine));
+                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_open_begin(goToState.sm));
                     break;
                 }
                 case 1:/*sm_close_begin*/
                 {
-                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j], sm_close_begin(goToState.sm));
-                    if (expected[i][j] == SM_EXEC_GRANTED)
-                    {
-                        sm_close_end(goToState.sm);
-                    }
+                    ASSERT_IS_TRUE(SetEvent(goToState.targetAPICalledInNextLine));
+                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_close_begin(goToState.sm));
+                    sm_close_end(goToState.sm);
                     break;
                 }
                 case 2:/*sm_exec_begin*/
                 {
-                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j], sm_exec_begin(goToState.sm));
-                    if (expected[i][j] == SM_EXEC_GRANTED)
-                    {
-                        sm_exec_end(goToState.sm);
-                    }
+                    ASSERT_IS_TRUE(SetEvent(goToState.targetAPICalledInNextLine));
+                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_exec_begin(goToState.sm));
+                    sm_exec_end(goToState.sm);
                     break;
                 }
                 case 3:/*sm_barrier_begin*/
                 {
-                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j], sm_barrier_begin(goToState.sm));
-                    if (expected[i][j] == SM_EXEC_GRANTED)
-                    {
-                        sm_barrier_end(goToState.sm);
-                    }
+                    ASSERT_IS_TRUE(SetEvent(goToState.targetAPICalledInNextLine));
+                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_barrier_begin(goToState.sm));
                     break;
                 }
                 default:
@@ -1001,12 +1036,17 @@ TEST_FUNCTION(STATE_and_API)
                 }
             }
 
+            LogInfo("went to state =%" PRI_MU_ENUM "; and called =%" PRI_MU_ENUM " cleaner thread might already have run", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
+
             ASSERT_IS_TRUE(WaitForSingleObject(goToState.threadTo, INFINITE) == WAIT_OBJECT_0);
             (void)CloseHandle(goToState.threadTo);
             
             ASSERT_IS_TRUE(WaitForSingleObject(goToState.threadBack, INFINITE) == WAIT_OBJECT_0);
             (void)CloseHandle(goToState.threadBack);
 
+
+            (void)CloseHandle(goToState.targetStateAPICalledInNextLine);
+            (void)CloseHandle(goToState.targetAPICalledInNextLine);
             sm_destroy(goToState.sm);
         }
     }
