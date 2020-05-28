@@ -16,45 +16,45 @@ The interface is based on the Windows [Interlocked API](https://docs.microsoft.c
 ## Exposed API
 
 ```c
-MOCKABLE_FUNCTION(, int32_t, interlocked_add, volatile int32_t*, addend, int32_t, value);
-MOCKABLE_FUNCTION(, int64_t, interlocked_add_64, volatile int64_t*, addend, int64_t, value);
-MOCKABLE_FUNCTION(, int32_t, interlocked_and, volatile int32_t*, destination, int32_t, value);
-MOCKABLE_FUNCTION(, int16_t, interlocked_and_16, volatile int16_t*, destination, int16_t, value);
-MOCKABLE_FUNCTION(, int64_t, interlocked_and_64, volatile int64_t*, destination, int64_t, value);
-MOCKABLE_FUNCTION(, int8_t, interlocked_and_8, volatile int8_t*, destination, int8_t, value);
-MOCKABLE_FUNCTION(, int32_t, interlocked_compare_exchange, volatile int32_t*, destination, int32_t, exchange, int32_t, comperand);
-MOCKABLE_FUNCTION(, bool, interlocked_compare_exchange_128, volatile int64_t*, destination, int64_t, exchange_high, int64_t, exchange_low, int64_t*, comperand_result);
-MOCKABLE_FUNCTION(, int16_t, interlocked_compare_exchange_16, volatile int16_t*, destination, int16_t, exchange, int16_t, comperand);
-MOCKABLE_FUNCTION(, int64_t, interlocked_compare_exchange_64, volatile int64_t*, destination, int64_t, exchange, int64_t, comperand);
+MOCKABLE_FUNCTION(, int32_t, interlocked_add, volatile_atomic int32_t*, addend, int32_t, value);
+MOCKABLE_FUNCTION(, int64_t, interlocked_add_64, volatile_atomic int64_t*, addend, int64_t, value);
+MOCKABLE_FUNCTION(, int32_t, interlocked_and, volatile_atomic int32_t*, destination, int32_t, value);
+MOCKABLE_FUNCTION(, int16_t, interlocked_and_16, volatile_atomic int16_t*, destination, int16_t, value);
+MOCKABLE_FUNCTION(, int64_t, interlocked_and_64, volatile_atomic int64_t*, destination, int64_t, value);
+MOCKABLE_FUNCTION(, int8_t, interlocked_and_8, volatile_atomic int8_t*, destination, int8_t, value);
+MOCKABLE_FUNCTION(, int32_t, interlocked_compare_exchange, volatile_atomic int32_t*, destination, int32_t, exchange, int32_t, comperand);
+MOCKABLE_FUNCTION(, bool, interlocked_compare_exchange_128, volatile_atomic int64_t*, destination, int64_t, exchange_high, int64_t, exchange_low, int64_t*, comperand_result);
+MOCKABLE_FUNCTION(, int16_t, interlocked_compare_exchange_16, volatile_atomic int16_t*, destination, int16_t, exchange, int16_t, comperand);
+MOCKABLE_FUNCTION(, int64_t, interlocked_compare_exchange_64, volatile_atomic int64_t*, destination, int64_t, exchange, int64_t, comperand);
 MOCKABLE_FUNCTION(, void*, interlocked_compare_exchange_pointer, void* volatile*, destination, void*, exchange, void*, comperand);
-MOCKABLE_FUNCTION(, int32_t, interlocked_decrement, volatile int32_t*, addend);
-MOCKABLE_FUNCTION(, int16_t, interlocked_decrement_16, volatile int16_t*, addend);
-MOCKABLE_FUNCTION(, int64_t, interlocked_decrement_64, volatile int64_t*, addend);
-MOCKABLE_FUNCTION(, int32_t, interlocked_exchange, volatile int32_t*, target, int32_t, value);
-MOCKABLE_FUNCTION(, int16_t, interlocked_exchange_16, volatile int16_t*, target, int16_t, value);
-MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_64, volatile int64_t*, target, int64_t, value);
-MOCKABLE_FUNCTION(, int8_t, interlocked_exchange_8, volatile int8_t*, target, int8_t, value);
-MOCKABLE_FUNCTION(, int32_t, interlocked_exchange_add, volatile int32_t*, addend, int32_t, value);
-MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_add_64, volatile int64_t*, addend, int64_t, value);
+MOCKABLE_FUNCTION(, int32_t, interlocked_decrement, volatile_atomic int32_t*, addend);
+MOCKABLE_FUNCTION(, int16_t, interlocked_decrement_16, volatile_atomic int16_t*, addend);
+MOCKABLE_FUNCTION(, int64_t, interlocked_decrement_64, volatile_atomic int64_t*, addend);
+MOCKABLE_FUNCTION(, int32_t, interlocked_exchange, volatile_atomic int32_t*, target, int32_t, value);
+MOCKABLE_FUNCTION(, int16_t, interlocked_exchange_16, volatile_atomic int16_t*, target, int16_t, value);
+MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_64, volatile_atomic int64_t*, target, int64_t, value);
+MOCKABLE_FUNCTION(, int8_t, interlocked_exchange_8, volatile_atomic int8_t*, target, int8_t, value);
+MOCKABLE_FUNCTION(, int32_t, interlocked_exchange_add, volatile_atomic int32_t*, addend, int32_t, value);
+MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_add_64, volatile_atomic int64_t*, addend, int64_t, value);
 MOCKABLE_FUNCTION(, void*, interlocked_exchange_pointer, void* volatile*, target, void*, value);
-MOCKABLE_FUNCTION(, int32_t, interlocked_increment, volatile int32_t*, addend);
-MOCKABLE_FUNCTION(, int16_t, interlocked_increment_16, volatile int16_t*, addend);
-MOCKABLE_FUNCTION(, int64_t, interlocked_increment_64, volatile int64_t*, addend);
-MOCKABLE_FUNCTION(, int32_t, interlocked_or, volatile int32_t*, destination, int32_t, value);
-MOCKABLE_FUNCTION(, int16_t, interlocked_or_16, volatile int16_t*, destination, int16_t, value);
-MOCKABLE_FUNCTION(, int64_t, interlocked_or_64, volatile int64_t*, destination, int64_t, value);
-MOCKABLE_FUNCTION(, int8_t, interlocked_or_8, volatile int8_t*, destination, int8_t, value);
-MOCKABLE_FUNCTION(, int32_t, interlocked_xor, volatile int32_t*, destination, int32_t, value);
-MOCKABLE_FUNCTION(, int16_t, interlocked_xor_16, volatile int16_t*, destination, int16_t, value);
-MOCKABLE_FUNCTION(, int64_t, interlocked_xor_64, volatile int64_t*, destination, int64_t, value);
-MOCKABLE_FUNCTION(, int8_t, interlocked_xor_8, volatile int8_t*, destination, int8_t, value);
+MOCKABLE_FUNCTION(, int32_t, interlocked_increment, volatile_atomic int32_t*, addend);
+MOCKABLE_FUNCTION(, int16_t, interlocked_increment_16, volatile_atomic int16_t*, addend);
+MOCKABLE_FUNCTION(, int64_t, interlocked_increment_64, volatile_atomic int64_t*, addend);
+MOCKABLE_FUNCTION(, int32_t, interlocked_or, volatile_atomic int32_t*, destination, int32_t, value);
+MOCKABLE_FUNCTION(, int16_t, interlocked_or_16, volatile_atomic int16_t*, destination, int16_t, value);
+MOCKABLE_FUNCTION(, int64_t, interlocked_or_64, volatile_atomic int64_t*, destination, int64_t, value);
+MOCKABLE_FUNCTION(, int8_t, interlocked_or_8, volatile_atomic int8_t*, destination, int8_t, value);
+MOCKABLE_FUNCTION(, int32_t, interlocked_xor, volatile_atomic int32_t*, destination, int32_t, value);
+MOCKABLE_FUNCTION(, int16_t, interlocked_xor_16, volatile_atomic int16_t*, destination, int16_t, value);
+MOCKABLE_FUNCTION(, int64_t, interlocked_xor_64, volatile_atomic int64_t*, destination, int64_t, value);
+MOCKABLE_FUNCTION(, int8_t, interlocked_xor_8, volatile_atomic int8_t*, destination, int8_t, value);
 
 ```
 
 ## interlocked_add
 
 ```c
-MOCKABLE_FUNCTION(, int32_t, interlocked_add, volatile int32_t*, addend, int32_t, value);
+MOCKABLE_FUNCTION(, int32_t, interlocked_add, volatile_atomic int32_t*, addend, int32_t, value);
 ```
 
 **SRS_INTERLOCKED_43_001: [** `interlocked_add` shall atomically add 32-bit integers `*addend` and `value` and store the result in `*addend`.**]**
@@ -64,7 +64,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_add, volatile int32_t*, addend, int32_t
 ## interlocked_add_64
 
 ```c
-MOCKABLE_FUNCTION(, int64_t, interlocked_add_64, volatile int64_t*, addend, int64_t, value);
+MOCKABLE_FUNCTION(, int64_t, interlocked_add_64, volatile_atomic int64_t*, addend, int64_t, value);
 ```
 
 **SRS_INTERLOCKED_43_065: [** `interlocked_add_64` shall atomically add 64-bit integers `*addend` and `value` and store the result in `*addend`. **]**
@@ -74,7 +74,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_add_64, volatile int64_t*, addend, int6
 ## interlocked_and
 
 ```c
-MOCKABLE_FUNCTION(, int32_t, interlocked_and, volatile int32_t*, destination, int32_t, value);
+MOCKABLE_FUNCTION(, int32_t, interlocked_and, volatile_atomic int32_t*, destination, int32_t, value);
 ```
 
 **SRS_INTERLOCKED_43_002: [** `interlocked_and` shall perform an atomic bitwise AND operation on the 32-bit integer values `*destination` and `value` and store the result in `*destination`.**]**
@@ -84,7 +84,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_and, volatile int32_t*, destination, in
 ## interlocked_and_16
 
 ```c
-MOCKABLE_FUNCTION(, int16_t, interlocked_and_16, volatile int16_t*, destination, int16_t, value);
+MOCKABLE_FUNCTION(, int16_t, interlocked_and_16, volatile_atomic int16_t*, destination, int16_t, value);
 ```
 
 **SRS_INTERLOCKED_43_003: [** `interlocked_and_16` shall perform an atomic bitwise AND operation on the 16-bit integer values `*destination` and `value` and store the result in `*destination.`**]**
@@ -94,7 +94,7 @@ MOCKABLE_FUNCTION(, int16_t, interlocked_and_16, volatile int16_t*, destination,
 ## interlocked_and_64
 
 ```c
-MOCKABLE_FUNCTION(, int64_t, interlocked_and_64, volatile int64_t*, destination, int64_t, value);
+MOCKABLE_FUNCTION(, int64_t, interlocked_and_64, volatile_atomic int64_t*, destination, int64_t, value);
 ```
 
 **SRS_INTERLOCKED_43_004: [** `interlocked_and_64` shall perform an atomic bitwise AND operation on the 64-bit integer values `*destination` and `value` and store the result in `*destination`.**]**
@@ -105,7 +105,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_and_64, volatile int64_t*, destination,
 ## interlocked_and_8
 
 ```c
-MOCKABLE_FUNCTION(, int8_t, interlocked_and_8, volatile int8_t*, destination, int8_t, value);
+MOCKABLE_FUNCTION(, int8_t, interlocked_and_8, volatile_atomic int8_t*, destination, int8_t, value);
 ```
 
 **SRS_INTERLOCKED_43_005: [** `interlocked_and_8` shall perform an atomic bitwise AND operation on the 8-bit integer values `*destination` and `value` and store the result in `*destination`**]**
@@ -115,7 +115,7 @@ MOCKABLE_FUNCTION(, int8_t, interlocked_and_8, volatile int8_t*, destination, in
 ## interlocked_compare_exchange
 
 ```c
-MOCKABLE_FUNCTION(, int32_t, interlocked_compare_exchange, volatile int32_t*, destination, int32_t, exchange, int32_t, comperand);
+MOCKABLE_FUNCTION(, int32_t, interlocked_compare_exchange, volatile_atomic int32_t*, destination, int32_t, exchange, int32_t, comperand);
 ```
 
 **SRS_INTERLOCKED_43_006: [** `interlocked_compare_exchange` shall compare the 32-bit integers pointed to by `destination` and `comperand`. If they are equal, `*destination` is set to `exchange`. These operations are performed atomically.***]**
@@ -125,7 +125,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_compare_exchange, volatile int32_t*, de
 ## interlocked_compare_exchange_128
 
 ```c
-MOCKABLE_FUNCTION(, bool, interlocked_compare_exchange_128, volatile int64_t*, destination, int64_t, exchange_high, int64_t, exchange_low, int64_t*, comperand_result);
+MOCKABLE_FUNCTION(, bool, interlocked_compare_exchange_128, volatile_atomic int64_t*, destination, int64_t, exchange_high, int64_t, exchange_low, int64_t*, comperand_result);
 ```
 
 Note: The `destination` and `comperand_result` parameters are arrays of two 64-bit integers considered as a 128-bit fields.
@@ -141,7 +141,7 @@ Note: The `destination` and `comperand_result` parameters are arrays of two 64-b
 ## interlocked_compare_exchange_16
 
 ```c
-MOCKABLE_FUNCTION(, int16_t, interlocked_compare_exchange_16, volatile int16_t*, destination, int16_t, exchange, int16_t, comperand);
+MOCKABLE_FUNCTION(, int16_t, interlocked_compare_exchange_16, volatile_atomic int16_t*, destination, int16_t, exchange, int16_t, comperand);
 ```
 
 **SRS_INTERLOCKED_43_009: [**`interlocked_compare_exchange_16` shall compare the 16-bit integers pointed to by `destination` and `comperand`. If they are equal, `*destination` is set to `exchange`. These operations are performed atomically.**]**
@@ -151,7 +151,7 @@ MOCKABLE_FUNCTION(, int16_t, interlocked_compare_exchange_16, volatile int16_t*,
 ## interlocked_compare_exchange_64
 
 ```c
-MOCKABLE_FUNCTION(, int64_t, interlocked_compare_exchange_64, volatile int64_t*, destination, int64_t, exchange, int64_t, comperand);
+MOCKABLE_FUNCTION(, int64_t, interlocked_compare_exchange_64, volatile_atomic int64_t*, destination, int64_t, exchange, int64_t, comperand);
 ```
 
 **SRS_INTERLOCKED_43_008: [**`interlocked_compare_exchange_64` shall compare the 64-bit integers pointed to by `destination` and `comperand`. If they are equal, `*destination` is set to `exchange`. These operations are performed atomically.**]**
@@ -171,7 +171,7 @@ MOCKABLE_FUNCTION(, void*, interlocked_compare_exchange_pointer, void* volatile*
 ## interlocked_decrement
 
 ```c
-MOCKABLE_FUNCTION(, int32_t, interlocked_decrement, volatile int32_t*, addend);
+MOCKABLE_FUNCTION(, int32_t, interlocked_decrement, volatile_atomic int32_t*, addend);
 ```
 
 **SRS_INTERLOCKED_43_011: [** `interlocked_decrement` shall atomically decrement (decrease by one) the 32-bit variable `*addend`.**]**
@@ -181,7 +181,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_decrement, volatile int32_t*, addend);
 ## interlocked_decrement_16
 
 ```c
-MOCKABLE_FUNCTION(, int16_t, interlocked_decrement_16, volatile int16_t*, addend);
+MOCKABLE_FUNCTION(, int16_t, interlocked_decrement_16, volatile_atomic int16_t*, addend);
 ```
 
 **SRS_INTERLOCKED_43_012: [** `interlocked_decrement_16` shall atomically decrement (decrease by one) the 16-bit variable `*addend`.**]**
@@ -191,7 +191,7 @@ MOCKABLE_FUNCTION(, int16_t, interlocked_decrement_16, volatile int16_t*, addend
 ## interlocked_decrement_64
 
 ```c
-MOCKABLE_FUNCTION(, int64_t, interlocked_decrement_64, volatile int64_t*, addend);
+MOCKABLE_FUNCTION(, int64_t, interlocked_decrement_64, volatile_atomic int64_t*, addend);
 ```
 
 **SRS_INTERLOCKED_43_013: [** `interlocked_decrement_64` shall atomically decrement (decrease by one) the 64-bit variable `*addend`.**]**
@@ -202,7 +202,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_decrement_64, volatile int64_t*, addend
 ## interlocked_exchange
 
 ```c
-MOCKABLE_FUNCTION(, int32_t, interlocked_exchange, volatile int32_t*, target, int32_t, value);
+MOCKABLE_FUNCTION(, int32_t, interlocked_exchange, volatile_atomic int32_t*, target, int32_t, value);
 ```
 
 **SRS_INTERLOCKED_43_014: [** `interlocked_exchange` shall set the 32-bit variable pointed to by `target` to `value` as an atomic operation.**]**
@@ -212,7 +212,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_exchange, volatile int32_t*, target, in
 ## interlocked_exchange_16
 
 ```c
-MOCKABLE_FUNCTION(, int16_t, interlocked_exchange_16, volatile int16_t*, target, int16_t, value);
+MOCKABLE_FUNCTION(, int16_t, interlocked_exchange_16, volatile_atomic int16_t*, target, int16_t, value);
 ```
 
 **SRS_INTERLOCKED_43_015: [** `interlocked_exchange_16` shall set the 16-bit variable pointed to by `target` to `value` as an atomic operation.**]**
@@ -222,7 +222,7 @@ MOCKABLE_FUNCTION(, int16_t, interlocked_exchange_16, volatile int16_t*, target,
 ## interlocked_exchange_64
 
 ```c
-MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_64, volatile int64_t*, target, int64_t, value);
+MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_64, volatile_atomic int64_t*, target, int64_t, value);
 ```
 
 **SRS_INTERLOCKED_43_016: [** `interlocked_exchange_64` shall set the 64-bit variable pointed to by `target` to `value` as an atomic operation.**]**
@@ -232,7 +232,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_64, volatile int64_t*, target,
 ## interlocked_exchange_8
 
 ```c
-MOCKABLE_FUNCTION(, int8_t, interlocked_exchange_8, volatile int8_t*, target, int8_t, value);
+MOCKABLE_FUNCTION(, int8_t, interlocked_exchange_8, volatile_atomic int8_t*, target, int8_t, value);
 ```
 
 **SRS_INTERLOCKED_43_017: [** `interlocked_exchange_8` shall set the 8-bit variable pointed to by `target` to `value` as an atomic operation.**]**
@@ -242,7 +242,7 @@ MOCKABLE_FUNCTION(, int8_t, interlocked_exchange_8, volatile int8_t*, target, in
 ## interlocked_exchange_add
 
 ```c
-MOCKABLE_FUNCTION(, int32_t, interlocked_exchange_add, volatile int32_t*, addend, int32_t, value);
+MOCKABLE_FUNCTION(, int32_t, interlocked_exchange_add, volatile_atomic int32_t*, addend, int32_t, value);
 ```
 
 **SRS_INTERLOCKED_43_018: [** `interlocked_exchange_add` shall perform an atomic addition of the 32-bit values `*addend` and `value` and store the result in `*addend`.**]**
@@ -252,7 +252,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_exchange_add, volatile int32_t*, addend
 ## interlocked_exchange_add_64
 
 ```c
-MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_add_64, volatile int64_t*, addend, int64_t, value);
+MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_add_64, volatile_atomic int64_t*, addend, int64_t, value);
 ```
 
 **SRS_INTERLOCKED_43_019: [** `interlocked_exchange_add_64` shall perform an atomic addition of the 64-bit values `*addend` and `value` and store the result in `*addend`.**]**
@@ -272,7 +272,7 @@ MOCKABLE_FUNCTION(, void*, interlocked_exchange_pointer, void* volatile*, target
 ## interlocked_increment
 
 ```c
-MOCKABLE_FUNCTION(, int32_t, interlocked_increment, volatile int32_t*, addend);
+MOCKABLE_FUNCTION(, int32_t, interlocked_increment, volatile_atomic int32_t*, addend);
 ```
 
 **SRS_INTERLOCKED_43_021: [** `interlocked_increment` shall atomically increment (increase by one) the 32-bit variable `*addend`.**]**
@@ -282,7 +282,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_increment, volatile int32_t*, addend);
 ## interlocked_increment_16
 
 ```c
-MOCKABLE_FUNCTION(, int16_t, interlocked_increment_16, volatile int16_t*, addend);
+MOCKABLE_FUNCTION(, int16_t, interlocked_increment_16, volatile_atomic int16_t*, addend);
 ```
 
 **SRS_INTERLOCKED_43_022: [** `interlocked_increment_16` shall atomically increment (increase by one) the 16-bit variable `*addend`.**]**
@@ -292,7 +292,7 @@ MOCKABLE_FUNCTION(, int16_t, interlocked_increment_16, volatile int16_t*, addend
 ## interlocked_increment_64
 
 ```c
-MOCKABLE_FUNCTION(, int64_t, interlocked_increment_64, volatile int64_t*, addend);
+MOCKABLE_FUNCTION(, int64_t, interlocked_increment_64, volatile_atomic int64_t*, addend);
 ```
 
 **SRS_INTERLOCKED_43_023: [** `interlocked_increment_64` shall atomically increment (increase by one) the 64-bit variable `*addend`.**]**
@@ -302,7 +302,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_increment_64, volatile int64_t*, addend
 ## interlocked_or
 
 ```c
-MOCKABLE_FUNCTION(, int32_t, interlocked_or, volatile int32_t*, destination, int32_t, value);
+MOCKABLE_FUNCTION(, int32_t, interlocked_or, volatile_atomic int32_t*, destination, int32_t, value);
 ```
 
 **SRS_INTERLOCKED_43_024: [** `interlocked_or` shall perform an atomic bitwise OR operation on the 32-bit integers `*destination` and `value` and store the result in `destination`.**]**
@@ -312,7 +312,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_or, volatile int32_t*, destination, int
 ## interlocked_or_16
 
 ```c
-MOCKABLE_FUNCTION(, int16_t, interlocked_or_16, volatile int16_t*, destination, int16_t, value);
+MOCKABLE_FUNCTION(, int16_t, interlocked_or_16, volatile_atomic int16_t*, destination, int16_t, value);
 ```
 
 **SRS_INTERLOCKED_43_025: [** `interlocked_or_16` shall perform an atomic bitwise OR operation on the 16-bit integers `*destination` and `value` and store the result in `destination`.**]**
@@ -322,7 +322,7 @@ MOCKABLE_FUNCTION(, int16_t, interlocked_or_16, volatile int16_t*, destination, 
 ## interlocked_or_64
 
 ```c
-MOCKABLE_FUNCTION(, int64_t, interlocked_or_64, volatile int64_t*, destination, int64_t, value);
+MOCKABLE_FUNCTION(, int64_t, interlocked_or_64, volatile_atomic int64_t*, destination, int64_t, value);
 ```
 
 **SRS_INTERLOCKED_43_026: [** `interlocked_or_64` shall perform an atomic bitwise OR operation on the 64-bit integers `*destination` and `value` and store the result in `destination`.**]**
@@ -333,7 +333,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_or_64, volatile int64_t*, destination, 
 ## interlocked_or_8
 
 ```c
-MOCKABLE_FUNCTION(, int8_t, interlocked_or_8, volatile int8_t*, destination, int8_t, value);
+MOCKABLE_FUNCTION(, int8_t, interlocked_or_8, volatile_atomic int8_t*, destination, int8_t, value);
 ```
 
 **SRS_INTERLOCKED_43_027: [** `interlocked_or_8` shall perform an atomic bitwise OR operation on the 8-bit integers `*destination` and `value` and store the result in `destination`.**]**
@@ -343,7 +343,7 @@ MOCKABLE_FUNCTION(, int8_t, interlocked_or_8, volatile int8_t*, destination, int
 ## interlocked_xor
 
 ```c
-MOCKABLE_FUNCTION(, int32_t, interlocked_xor, volatile int32_t*, destination, int32_t, value);
+MOCKABLE_FUNCTION(, int32_t, interlocked_xor, volatile_atomic int32_t*, destination, int32_t, value);
 ```
 
 **SRS_INTERLOCKED_43_028: [** `interlocked_xor` shall perform an atomic bitwise XOR operation on the 32-bit integers `*destination` and `value` and store the result in `destination`.**]**
@@ -353,7 +353,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_xor, volatile int32_t*, destination, in
 ## interlocked_xor_16
 
 ```c
-MOCKABLE_FUNCTION(, int16_t, interlocked_xor_16, volatile int16_t*, destination, int16_t, value);
+MOCKABLE_FUNCTION(, int16_t, interlocked_xor_16, volatile_atomic int16_t*, destination, int16_t, value);
 ```
 
 **SRS_INTERLOCKED_43_029: [** `interlocked_xor_16` shall perform an atomic bitwise XOR operation on the 16-bit integers `*destination` and `value` and store the result in `destination`.**]**
@@ -363,7 +363,7 @@ MOCKABLE_FUNCTION(, int16_t, interlocked_xor_16, volatile int16_t*, destination,
 ## interlocked_xor_64
 
 ```c
-MOCKABLE_FUNCTION(, int64_t, interlocked_xor_64, volatile int64_t*, destination, int64_t, value);
+MOCKABLE_FUNCTION(, int64_t, interlocked_xor_64, volatile_atomic int64_t*, destination, int64_t, value);
 ```
 
 **SRS_INTERLOCKED_43_030: [** `interlocked_xor_64` shall perform an atomic bitwise XOR operation on the 64-bit integers `*destination` and `value` and store the result in `destination`.**]**
@@ -373,7 +373,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_xor_64, volatile int64_t*, destination,
 ## interlocked_xor_8
 
 ```c
-MOCKABLE_FUNCTION(, int8_t, interlocked_xor_8, volatile int8_t*, destination, int8_t, value);
+MOCKABLE_FUNCTION(, int8_t, interlocked_xor_8, volatile_atomic int8_t*, destination, int8_t, value);
 ```
 
 **SRS_INTERLOCKED_43_031: [** `interlocked_xor_8` shall perform an atomic bitwise XOR operation on the 8-bit integers `*destination` and `value` and store the result in `destination`.**]**
