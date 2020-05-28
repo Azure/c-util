@@ -751,7 +751,7 @@ typedef struct SM_RESULT_AND_NEXT_STATE_AFTER_API_CALL_TAG
 typedef struct SM_GO_TO_STATE_TAG
 {
     SM_HANDLE sm;
-    uint32_t targetState;
+    SM_STATES targetState;
     const SM_RESULT_AND_NEXT_STATE_AFTER_API_CALL* expected;
     HANDLE threadSwitchesTo; /*this thread switches the state to the state which is intended to have when sm_..._begin API are called. Then the thread might block (because the state switch is waiting on some draining) or might proceed to end*/
     HANDLE threadBack; /*this thread unblocks threadSwitchesTo and the main thread. Main thread might become blocked because the API it is calling might be waiting - such is the case when waiting for a drain to happen*/
@@ -768,7 +768,7 @@ static DWORD WINAPI switchesToState(
 {
     SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)lpThreadParameter;
 
-    LogInfo("switchesToState thread: will now switch state to %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED + goToState->targetState)));
+    LogInfo("switchesToState thread: will now switch state to %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, goToState->targetState));
 
     ASSERT_IS_TRUE(SetEvent(goToState->targetStateAPICalledInNextLine));
     switch (goToState->targetState)
@@ -989,9 +989,10 @@ TEST_FUNCTION(STATE_and_API)
 
             goToState.sm = sm_create(NULL);
             ASSERT_IS_NOT_NULL(goToState.sm);
-            goToState.targetState = i + SM_CREATED;
+            goToState.targetState = (SM_STATES)(i + SM_CREATED);
 
-            LogInfo("\n\ngoing to state =%" PRI_MU_ENUM "; will call=%" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
+            LogInfo("\n\n");
+            LogInfo("going to state =%" PRI_MU_ENUM "; will call=%" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, goToState.targetState), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
             sm_switchesToState(&goToState);
             sm_switches_from_state_to_created(&goToState);
 
