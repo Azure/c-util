@@ -26,6 +26,8 @@ TEST_DEFINE_ENUM_TYPE(SM_RESULT, SM_RESULT_VALUES);
 
 #define N_MAX_THREADS MAXIMUM_WAIT_OBJECTS
 
+static double timeSinceTestFunctionStartMs;
+
 typedef struct OPEN_CLOSE_THREADS_TAG
 {
     SM_HANDLE sm;
@@ -521,6 +523,11 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_IS_TRUE(dwNumberOfProcessors * 4 <= N_MAX_THREADS, "for systems with maaany processors, modify N_MAX_THREADS to be bigger");
 }
 
+TEST_FUNCTION_INITIALIZE(function_initialize)
+{
+    timeSinceTestFunctionStartMs = timer_global_get_elapsed_ms();
+}
+
 /*tests aims to mindlessly execute the APIs.
 at least 1 sm_open_begin and at least 1 sm_exec_begin are waited to happen*/
 TEST_FUNCTION(sm_chaos)
@@ -768,7 +775,7 @@ static DWORD WINAPI switchesToState(
 {
     SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)lpThreadParameter;
 
-    LogInfo("switchesToState thread: will now switch state to %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, goToState->targetState));
+    LogInfo("time[s]=%.2f, switchesToState thread: will now switch state to %" PRI_MU_ENUM "", (timer_global_get_elapsed_ms()-timeSinceTestFunctionStartMs)/1000, MU_ENUM_VALUE(SM_STATES, goToState->targetState));
 
     ASSERT_IS_TRUE(SetEvent(goToState->targetStateAPICalledInNextLine));
     switch (goToState->targetState)
@@ -796,7 +803,7 @@ static DWORD WINAPI switchesToState(
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_exec_begin(goToState->sm));
 
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_barrier_begin(goToState->sm)); /*switches to draining mode - and stays there, because sm_exec_end was not called yet */
-            LogInfo("switches state thread: returning from sm_barrier_begin(goToState->sm)");
+            LogInfo("time[s]=%.2f, switches state thread: returning from sm_barrier_begin(goToState->sm)", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000);
             break;
 
         }
@@ -808,7 +815,7 @@ static DWORD WINAPI switchesToState(
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_exec_begin(goToState->sm));
 
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_close_begin(goToState->sm)); /*switches to draining mode*/
-            LogInfo("switchesToState thread: returning from sm_close_begin(goToState->sm)");
+            LogInfo("time[s]=%.2f, switchesToState thread: returning from sm_close_begin(goToState->sm)", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000);
 
             break;
         }
@@ -857,7 +864,7 @@ static DWORD WINAPI switchesFromStateToCreated(
 
     ASSERT_ARE_EQUAL(uint32_t, WAIT_OBJECT_0, WaitForSingleObject(goToState->targetAPICalledInNextLine, INFINITE));
 
-    LogInfo("switchesFromStateToCreated thread : will now switch state back from %" PRI_MU_ENUM " to %" PRI_MU_ENUM " after sleeping %" PRIu32 "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(goToState->expected->sm_state_after_api)), MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED)), THREAD_DELAY);
+    LogInfo("time[s]=%.2f, switchesFromStateToCreated thread : will now switch state back from %" PRI_MU_ENUM " to %" PRI_MU_ENUM " after sleeping %" PRIu32 "", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, MU_ENUM_VALUE(SM_STATES, (SM_STATES)(goToState->expected->sm_state_after_api)), MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED)), THREAD_DELAY);
 
     Sleep(THREAD_DELAY);
 
@@ -936,7 +943,7 @@ static DWORD WINAPI switchesFromStateToCreated(
         }
     }
 
-    LogInfo("switchesFromStateToCreated thread : state switched back to %" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED)));
+    LogInfo("time[s]=%.2f, switchesFromStateToCreated thread : state switched back to %" PRI_MU_ENUM "", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED)));
 
     return 0;
 }
@@ -992,16 +999,16 @@ TEST_FUNCTION(STATE_and_API)
             goToState.targetState = (SM_STATES)(i + SM_CREATED);
 
             LogInfo("\n\n");
-            LogInfo("going to state =%" PRI_MU_ENUM "; will call=%" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, goToState.targetState), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
+            LogInfo("time[s]=%.2f, going to state =%" PRI_MU_ENUM "; will call=%" PRI_MU_ENUM "", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, MU_ENUM_VALUE(SM_STATES, goToState.targetState), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
             sm_switchesToState(&goToState);
             sm_switches_from_state_to_created(&goToState);
 
             ASSERT_IS_TRUE(WaitForSingleObject(goToState.targetStateAPICalledInNextLine, INFINITE)==WAIT_OBJECT_0);
             
-            LogInfo("main thread: sleeping %" PRIu32 " miliseconds letting switchesToState thread finish its call", THREAD_DELAY);
+            LogInfo("time[s]=%.2f, main thread: sleeping %" PRIu32 " miliseconds letting switchesToState thread finish its call", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, THREAD_DELAY);
             Sleep(THREAD_DELAY);
 
-            LogInfo("went to state =%" PRI_MU_ENUM "; calling=%" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
+            LogInfo("time[s]=%.2f, went to state =%" PRI_MU_ENUM "; calling=%" PRI_MU_ENUM "", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
 
             switch (j)
             {
@@ -1037,7 +1044,7 @@ TEST_FUNCTION(STATE_and_API)
                 }
             }
 
-            LogInfo("went to state =%" PRI_MU_ENUM "; and called =%" PRI_MU_ENUM " switchesFromStateToCreated thread might already have run", MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
+            LogInfo("time[s]=%.2f, went to state =%" PRI_MU_ENUM " and called =%" PRI_MU_ENUM " switchesFromStateToCreated thread might already have run", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
 
             ASSERT_IS_TRUE(WaitForSingleObject(goToState.threadSwitchesTo, INFINITE) == WAIT_OBJECT_0);
             (void)CloseHandle(goToState.threadSwitchesTo);
