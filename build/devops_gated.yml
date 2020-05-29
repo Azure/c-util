@@ -62,10 +62,10 @@ jobs:
     displayName: 'Use NuGet 4.3.0 (required for .NET core assemblies)'
 
   - task: CMake@1
-    displayName: 'CMake .. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -G "Visual Studio 15 2017 Win64"'
+    displayName: 'CMake .. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -Dabort_on_fail:bool=ON -G "Visual Studio 15 2017 Win64"'
     inputs:
       workingDirectory: 'build_x64'
-      cmakeArgs: '.. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -G "Visual Studio 15 2017 Win64"'
+      cmakeArgs: '.. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -Dabort_on_fail:bool=ON -G "Visual Studio 15 2017 Win64"'
 
   - task: VSBuild@1
     displayName: 'Build solution build_x64\*.sln'
@@ -122,10 +122,10 @@ jobs:
     displayName: 'Use NuGet 4.3.0 (required for .NET core assemblies)'
 
   - task: CMake@1
-    displayName: 'CMake .. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=ON'
+    displayName: 'CMake .. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=ON -Dabort_on_fail:bool=ON'
     inputs:
       workingDirectory: 'build_x64'
-      cmakeArgs: '.. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=ON'
+      cmakeArgs: '.. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=ON -Dabort_on_fail:bool=ON'
 
   - task: VSBuild@1
     displayName: 'Build solution build_x64\*.sln'
@@ -207,7 +207,7 @@ jobs:
     displayName: CMake
     inputs:
       workingDirectory: 'build_x86'
-      cmakeArgs: '.. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Drun_e2e_tests:bool=ON'
+      cmakeArgs: '.. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Drun_e2e_tests:bool=ON -Dabort_on_fail:bool=ON'
 
   - task: VSBuild@1
     displayName: 'Build solution build_x86\*.sln'
