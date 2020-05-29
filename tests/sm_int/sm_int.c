@@ -769,7 +769,7 @@ typedef struct SM_GO_TO_STATE_TAG
     HANDLE targetStateAPICalledInNextLine; /*event set when the target state will be switched in the next line of code. That call might or not return. For example when in the case of wanting to reach the state of SM_OPENED_DRAINING_TO_BARRIER. The call doesn't return until all the sm_exec_end have been called*/
 
     HANDLE targetAPICalledInNextLine; /*event set just before calling the API in a specific state. This is needed because some of the APIs are blocking (such as calling sm_close_begin when a barrier is executing)*/
-}SM_GO_TO_STATE;
+}SM_GO_TO_STATE; 
 
 
 static DWORD WINAPI switchesToState(
