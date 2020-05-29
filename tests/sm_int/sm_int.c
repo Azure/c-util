@@ -28,6 +28,8 @@ TEST_DEFINE_ENUM_TYPE(SM_RESULT, SM_RESULT_VALUES);
 
 static double timeSinceTestFunctionStartMs;
 
+#define SM_BEGIN_CLOSE_DELAY 100 /*ms time between 2 consecutive sm_close_begin - thus allowing for greater times of "open" state*/
+
 typedef struct OPEN_CLOSE_THREADS_TAG
 {
     SM_HANDLE sm;
@@ -160,6 +162,8 @@ static  DWORD WINAPI callsBeginClose(
         {
             (void)InterlockedIncrement(&data->n_begin_close_refuses);
         }
+
+        Sleep(SM_BEGIN_CLOSE_DELAY);
     }
     return 0;
 }
@@ -188,7 +192,7 @@ static void waitAndDestroyBeginCloseThreads(OPEN_CLOSE_THREADS* data)
     }
 }
 
-static  DWORD WINAPI callsEndClose(
+static DWORD WINAPI callsEndClose(
     LPVOID lpThreadParameter
 )
 {
