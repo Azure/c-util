@@ -28,7 +28,9 @@ TEST_DEFINE_ENUM_TYPE(SM_RESULT, SM_RESULT_VALUES);
 
 static double timeSinceTestFunctionStartMs;
 
-#define SM_BEGIN_CLOSE_DELAY 100 /*ms time between 2 consecutive sm_close_begin - thus allowing for greater times of "open" state*/
+#define SM_BEGIN_CLOSE_DELAY 200 /*ms time between 2 consecutive sm_close_begin - thus allowing for greater times of "open" state*/
+
+#define SM_BEGIN_BARRIER_DELAY (SM_BEGIN_CLOSE_DELAY/10) /*ms time between 2 consecutive sm_barrier_begin - thus allowing for greater times for execs to happen*/
 
 typedef struct OPEN_CLOSE_THREADS_TAG
 {
@@ -245,6 +247,7 @@ static  DWORD WINAPI callsBeginBarrier(
         {
             (void)InterlockedIncrement(&data->n_begin_barrier_refuses);
         }
+        Sleep(SM_BEGIN_BARRIER_DELAY);
     }
     return 0;
 }
