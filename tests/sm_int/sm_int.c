@@ -495,7 +495,7 @@ static DWORD dwNumberOfProcessors;
 #define SM_APIS_VALUES      \
 SM_OPEN_BEGIN,              \
 SM_CLOSE_BEGIN,             \
-SM_BEGIN,                   \
+SM_EXEC_BEGIN,              \
 SM_BARRIER_BEGIN            \
 
 MU_DEFINE_ENUM(SM_APIS, SM_APIS_VALUES)
@@ -521,6 +521,8 @@ TEST_SUITE_INITIALIZE(suite_init)
     GetSystemInfo(&systemInfo);
     dwNumberOfProcessors = systemInfo.dwNumberOfProcessors;
     ASSERT_IS_TRUE(dwNumberOfProcessors * 4 <= N_MAX_THREADS, "for systems with maaany processors, modify N_MAX_THREADS to be bigger");
+
+    LogInfo("dwNumberOfProcessors was detected as %" PRIu32 "", dwNumberOfProcessors);
 }
 
 TEST_FUNCTION_INITIALIZE(function_initialize)
@@ -636,7 +638,7 @@ TEST_FUNCTION(sm_chaos)
 
 TEST_FUNCTION(sm_does_not_block)
 {
-    LogInfo("disabling logging for the duration of sm_does_not_block. Logging takes additional locks that \"might\" help the test pass");
+    LogInfo("disabling logging for the duration of sm_does_not_block. Logging takes additional locks that \"might help\" the test pass");
     LOGGER_LOG toBeRestored = xlogging_get_log_function();
     xlogging_set_log_function(NULL);
 
@@ -833,6 +835,7 @@ static DWORD WINAPI switchesToState(
             sm_open_end(goToState->sm, true);
 
             ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_close_begin(goToState->sm));
+            LogInfo("time[s]=%.2f, switchesToState thread: returning from sm_close_begin(goToState->sm)", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000);
             break;
         }
         default:
@@ -956,8 +959,6 @@ static void sm_switches_from_state_to_created(SM_GO_TO_STATE* goToState)
 }
 
 
-
-
 /*Tests_SRS_SM_02_050: [ If the state is SM_OPENED_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
 /*Tests_SRS_SM_02_051: [ If the state is SM_OPENED_DRAINING_TO_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
 
@@ -999,7 +1000,7 @@ TEST_FUNCTION(STATE_and_API)
             goToState.targetState = (SM_STATES)(i + SM_CREATED);
 
             LogInfo("\n\n");
-            LogInfo("time[s]=%.2f, going to state =%" PRI_MU_ENUM "; will call=%" PRI_MU_ENUM "", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, MU_ENUM_VALUE(SM_STATES, goToState.targetState), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
+            LogInfo("time[s]=%.2f, going to state=%" PRI_MU_ENUM "; will call=%" PRI_MU_ENUM "", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, MU_ENUM_VALUE(SM_STATES, goToState.targetState), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
             sm_switchesToState(&goToState);
             sm_switches_from_state_to_created(&goToState);
 
@@ -1008,7 +1009,7 @@ TEST_FUNCTION(STATE_and_API)
             LogInfo("time[s]=%.2f, main thread: sleeping %" PRIu32 " miliseconds letting switchesToState thread finish its call", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, THREAD_DELAY);
             Sleep(THREAD_DELAY);
 
-            LogInfo("time[s]=%.2f, went to state =%" PRI_MU_ENUM "; calling=%" PRI_MU_ENUM "", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
+            LogInfo("time[s]=%.2f, went to state=%" PRI_MU_ENUM "; calling=%" PRI_MU_ENUM "", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
 
             switch (j)
             {
@@ -1022,7 +1023,6 @@ TEST_FUNCTION(STATE_and_API)
                 {
                     ASSERT_IS_TRUE(SetEvent(goToState.targetAPICalledInNextLine));
                     ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_close_begin(goToState.sm));
-                    sm_close_end(goToState.sm);
                     break;
                 }
                 case 2:/*sm_exec_begin*/
@@ -1044,7 +1044,7 @@ TEST_FUNCTION(STATE_and_API)
                 }
             }
 
-            LogInfo("time[s]=%.2f, went to state =%" PRI_MU_ENUM " and called =%" PRI_MU_ENUM " switchesFromStateToCreated thread might already have run", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
+            LogInfo("time[s]=%.2f, went to state=%" PRI_MU_ENUM " and called =%" PRI_MU_ENUM " switchesFromStateToCreated thread might already have run", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
 
             ASSERT_IS_TRUE(WaitForSingleObject(goToState.threadSwitchesTo, INFINITE) == WAIT_OBJECT_0);
             (void)CloseHandle(goToState.threadSwitchesTo);
@@ -1058,7 +1058,6 @@ TEST_FUNCTION(STATE_and_API)
             sm_destroy(goToState.sm);
         }
     }
-
 }
 
 END_TEST_SUITE(sm_int_tests)
