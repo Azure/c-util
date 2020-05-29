@@ -520,6 +520,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 {
     GetSystemInfo(&systemInfo);
     dwNumberOfProcessors = systemInfo.dwNumberOfProcessors;
+    dwNumberOfProcessors = 2;
     ASSERT_IS_TRUE(dwNumberOfProcessors * 4 <= N_MAX_THREADS, "for systems with maaany processors, modify N_MAX_THREADS to be bigger");
 
     LogInfo("dwNumberOfProcessors was detected as %" PRIu32 "", dwNumberOfProcessors);
@@ -586,7 +587,7 @@ TEST_FUNCTION(sm_chaos)
             ((n_begin_open_grants_local==0) ||(n_begin_grants_local==0))
             )
         {
-            LogInfo("Slept %" PRIu32 " ms, no sign of n_begin_open_grants=%" PRId32 ", n_begin_grants=%" PRId32 "", counterSleep * 1000, n_begin_open_grants_local, n_begin_grants_local);
+            toBeRestored(AZ_LOG_INFO, __FILE__, FUNC_NAME, __LINE__, 0, "Slept %" PRIu32 " ms, no sign of n_begin_open_grants=%" PRId32 ", n_begin_grants=%" PRId32 "\n", counterSleep * 1000, n_begin_open_grants_local, n_begin_grants_local);
             counterSleep++;
             Sleep(1000);
         }
@@ -611,12 +612,12 @@ TEST_FUNCTION(sm_chaos)
 
         /*just in case anything needs to close*/
 
-        LogInfo("nthreads=%" PRIu32 
+        toBeRestored(AZ_LOG_INFO, __FILE__, FUNC_NAME, __LINE__, 0, "nthreads=%" PRIu32
             ", n_begin_open_grants=%" PRIu32 ", n_begin_open_refuses=%" PRIu32 
             ", n_begin_close_grants=%" PRIu32 ", n_begin_close_refuses=%" PRIu32 
             ", n_begin_barrier_grants=%" PRIu32 ", n_begin_barrier_refuses=%" PRIu32
             ", n_begin_grants=%" PRIu32 ", n_begin_refuses=%" PRIu32
-            "",
+            "\n",
             nthreads,
             InterlockedAdd(&data->n_begin_open_grants, 0),
             InterlockedAdd(&data->n_begin_open_refuses, 0),
@@ -674,7 +675,7 @@ TEST_FUNCTION(sm_does_not_block)
             ASSERT_IS_TRUE(sm_open_begin(data->sm) == SM_EXEC_GRANTED);
             sm_open_end(data->sm, true);
 
-            LogInfo("\nnthreads=%" PRIu32 " n_barrier_threads=%" PRIu32 " n_non_barrier_threads=%" PRIu32 "", nthreads, n_barrier_threads, n_non_barrier_threads);
+            toBeRestored(AZ_LOG_INFO, __FILE__, FUNC_NAME, __LINE__, 0, "Info: nthreads=%" PRIu32 " n_barrier_threads=%" PRIu32 " n_non_barrier_threads=%" PRIu32 "\n", nthreads, n_barrier_threads, n_non_barrier_threads);
 
             /*create them barrier threads*/
             for (uint32_t iBarrier = 0; iBarrier < n_barrier_threads; iBarrier++)
@@ -711,7 +712,7 @@ TEST_FUNCTION(sm_does_not_block)
             /*verify the all numbers written by barriers are greater than all previous numbers*/
             verify(data);
 
-            LogInfo("took %f ms, non_barrier_grants=%" PRId32 ", non_barrier_refusals=%" PRId64 " barrier_grants=%" PRId32 ", barrier_refusals=%" PRId64 "", timer_global_get_elapsed_ms() - data->startTimems, 
+            toBeRestored(AZ_LOG_INFO, __FILE__, FUNC_NAME, __LINE__, 0, "Info: took %f ms, non_barrier_grants=%" PRId32 ", non_barrier_refusals=%" PRId64 " barrier_grants=%" PRId32 ", barrier_refusals=%" PRId64 "\n", timer_global_get_elapsed_ms() - data->startTimems,
                 InterlockedAdd(&non_barrier_grants, 0), 
                 InterlockedAdd64(&non_barrier_refusals, 0),
                 InterlockedAdd(&barrier_grants, 0),
