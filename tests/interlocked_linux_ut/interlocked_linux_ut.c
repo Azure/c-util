@@ -4,19 +4,19 @@
 #ifdef __cplusplus
 #include <cstdlib>
 #include <cstddef>
+#include <cstdatomic>
 #else
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdatomic.h>
 #endif
-#include "windows.h"
 #include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
 #include "umock_c/umock_c.h"
-#include "umock_c/umocktypes_windows.h"
+#include "umock_c/umocktypes_stdint.h"
 
-#include "azure_c_util/interlocked.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
@@ -27,18 +27,42 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
 #define ENABLE_MOCKS
+#include "azure_c_util/interlocked.h"
 #include "mock_interlocked.h"
 #undef ENABLE_MOCKS
 
-#ifdef __cplusplus
+static int16_t expected_atomic_compare_exchange_16_value;
+static int counter_16;
+static bool hook_mock_atomic_compare_exchange_16(volatile_atomic int16_t* object, int16_t* expected, int16_t desired)
+{
+    ASSERT_ARE_EQUAL(int16_t, expected_atomic_compare_exchange_16_value, *expected);
+    return counter_16--==0;
 }
-#endif
+
+static int32_t expected_atomic_compare_exchange_32_value;
+static int counter_32;
+static bool hook_mock_atomic_compare_exchange_32(volatile_atomic int32_t* object, int32_t* expected, int32_t desired)
+{
+    ASSERT_ARE_EQUAL(int32_t, expected_atomic_compare_exchange_32_value, *expected);
+    return counter_32--==0;
+}
+
+static int64_t expected_atomic_compare_exchange_64_value;
+static int counter_64;
+static bool hook_mock_atomic_compare_exchange_64(volatile_atomic int64_t* object, int64_t* expected, int64_t desired)
+{
+    ASSERT_ARE_EQUAL(int64_t, expected_atomic_compare_exchange_64_value, *expected);
+    return counter_64--==0;
+}
+
+static void* expected_atomic_compare_exchange_pointer_value;
+static int counter_pointer;
+static bool hook_mock_atomic_compare_exchange_pointer(void* volatile_atomic* object, void** expected, void* desired)
+{
+    ASSERT_ARE_EQUAL(void_ptr, expected_atomic_compare_exchange_pointer_value, *expected);
+    return counter_pointer--==0;
+}
 
 BEGIN_TEST_SUITE(interlocked_linux_unittests)
 
@@ -47,9 +71,11 @@ TEST_SUITE_INITIALIZE(suite_init)
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error));
-    ASSERT_ARE_EQUAL(int, 0, umocktypes_windows_register_types());
-    REGISTER_UMOCK_ALIAS_TYPE(SHORT, int16_t);
-
+    ASSERT_ARE_EQUAL(int, 0, umocktypes_stdint_register_types());
+    REGISTER_GLOBAL_MOCK_HOOK(mock_atomic_compare_exchange_16, hook_mock_atomic_compare_exchange_16);
+    REGISTER_GLOBAL_MOCK_HOOK(mock_atomic_compare_exchange_32, hook_mock_atomic_compare_exchange_32);
+    REGISTER_GLOBAL_MOCK_HOOK(mock_atomic_compare_exchange_64, hook_mock_atomic_compare_exchange_64);
+    REGISTER_GLOBAL_MOCK_HOOK(mock_atomic_compare_exchange_pointer, hook_mock_atomic_compare_exchange_pointer);
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
@@ -74,133 +100,133 @@ TEST_FUNCTION_CLEANUP(cleans)
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_001: [interlocked_add shall call InterlockedAdd from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_002 : [interlocked_add shall return the result of the addition.]*/
-TEST_FUNCTION(interlocked_add_calls_InterlockedAdd)
+
+/*SRS_INTERLOCKED_LINUX_43_001: [ interlocked_add shall call atomic_fetch_add with addend as object and value as operand.]*/
+/*SRS_INTERLOCKED_LINUX_43_002: [ interlocked_add shall return the initial value of *addend plus value. ]*/
+TEST_FUNCTION(interlocked_add_calls_atomic_fetch_add)
 {
     ///arrange
-    volatile int32_t addend;
-    InterlockedExchange((volatile LONG*)&addend, INT32_MAX);
+    volatile_atomic int32_t addend;
+    atomic_exchange(&addend, INT32_MAX);
     int32_t value = INT32_MIN;
-    STRICT_EXPECTED_CALL(mock_InterlockedAdd((volatile LONG*)&addend, value))
-        .SetReturn(-1);
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_add_32(&addend, value))
+        .SetReturn(INT32_MAX);
 
     ///act
     int32_t return_val = interlocked_add(&addend, value);
-
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(int32_t, -1, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_064: [ interlocked_add_64 shall call InterlockedAdd64 from windows.h. ]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_065: [ interlocked_add_64 shall return the result of the addition. ]*/
-TEST_FUNCTION(interlocked_add_64_calls_InterlockedAdd64)
+/*SRS_INTERLOCKED_LINUX_43_064: [ interlocked_add_64 shall call atomic_fetch_add with addend as object and value as operand. ]*/
+/*SRS_INTERLOCKED_LINUX_43_065: [ interlocked_add_64 shall return the initial value of *addend plus value. ]*/
+TEST_FUNCTION(interlocked_add_64_calls_atomic_fetch_add)
 {
     ///arrange
-    volatile int64_t addend;
-    InterlockedExchange64(&addend, INT64_MAX);
+    volatile_atomic int64_t addend;
+    atomic_exchange(&addend, INT64_MAX);
     int64_t value = INT64_MIN;
-    STRICT_EXPECTED_CALL(mock_InterlockedAdd64((volatile LONG64*)&addend, value))
-        .SetReturn(-1);
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_add_64(&addend, value))
+        .SetReturn(INT64_MAX);
 
     ///act
     int64_t return_val = interlocked_add_64(&addend, value);
-
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(int64_t, -1, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_003: [interlocked_and shall call InterlockedAnd from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_004 : [interlocked_and shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_and_calls_InterlockedAnd)
+/*SRS_INTERLOCKED_LINUX_43_003: [ interlocked_and shall call atomic_fetch_and with destination as object and value as operand. ]*/
+/*SRS_INTERLOCKED_LINUX_43_004: [ interlocked_and shall return the initial value of *destination. ]*/
+TEST_FUNCTION(interlocked_and_calls_atomic_fetch_and)
 {
     ///arrange
-    volatile uint32_t destination;
-    InterlockedExchange((volatile LONG*)&destination, (uint32_t)0xF0F0F0F0);
+    volatile_atomic uint32_t destination;
+    atomic_exchange(&destination, (uint32_t)0xF0F0F0F0);
     uint32_t value = 0x0F0F0F0F;
-    STRICT_EXPECTED_CALL(mock_InterlockedAnd((volatile LONG*)&destination, value))
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_and_32(&destination, value))
         .SetReturn(0xF0F0F0F0);
 
     ///act
-    uint32_t return_val = (uint32_t)interlocked_and((volatile int32_t*)&destination, value);
+    uint32_t return_val = (uint32_t)interlocked_and((volatile_atomic int32_t*)&destination, value);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_005: [interlocked_and_16 shall call InterlockedAnd16 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_006 : [interlocked_and_16 shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_and_16_calls_InterlockedAnd16)
+/*SRS_INTERLOCKED_LINUX_43_005: [ interlocked_and_16 shall call atomic_fetch_and with destination as object and value as operand. ]*/
+/*SRS_INTERLOCKED_LINUX_43_006: [ interlocked_and_16 shall return the initial value of *destination. ]*/
+TEST_FUNCTION(interlocked_and_16_calls_atomic_fetch_and)
 {
     ///arrange
-    volatile uint16_t destination;
-    InterlockedExchange16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
+    volatile_atomic uint16_t destination;
+    atomic_exchange(&destination, (uint16_t)0xF0F0);
     uint16_t value = 0x0F0F;
-    STRICT_EXPECTED_CALL(mock_InterlockedAnd16((volatile SHORT*)&destination, value))
-        .SetReturn((uint16_t)0xF0F0);
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_and_16(&destination, value))
+        .SetReturn(0xF0F0);
 
     ///act
-    uint16_t return_val = (uint16_t)interlocked_and_16((volatile int16_t*)&destination, value);
+    uint16_t return_val = (uint16_t)interlocked_and_16((volatile_atomic int16_t*)&destination, value);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_007: [interlocked_and_64 shall call InterlockedAnd64 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_008 : [interlocked_and_64 shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_and_64_calls_InterlockedAnd64)
+/*SRS_INTERLOCKED_LINUX_43_007: [ interlocked_and_64 shall call atomic_fetch_and with destination as object and value as operand. ]*/
+/*SRS_INTERLOCKED_LINUX_43_008: [ interlocked_and_64 shall return the initial value of *destination. ]*/
+TEST_FUNCTION(interlocked_and_64_calls_atomic_fetch_and)
 {
     ///arrange
-    volatile uint64_t destination;
-    InterlockedExchange64((volatile LONG64*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
+    volatile_atomic uint64_t destination;
+    atomic_exchange(&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
     uint64_t value = 0x0F0F0F0F0F0F0F0F;
-    STRICT_EXPECTED_CALL(mock_InterlockedAnd64((volatile LONG64*)&destination, value))
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_and_64(&destination, value))
         .SetReturn(0xF0F0F0F0F0F0F0F0);
 
     ///act
-    uint64_t return_val = (uint64_t)interlocked_and_64((volatile int64_t*)&destination, value);
+    uint64_t return_val = (uint64_t)interlocked_and_64((volatile_atomic int64_t*)&destination, value);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_009: [interlocked_and_8 shall call InterlockedAnd8 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_010 : [interlocked_and_8 shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_and_8_calls_InterlockedAdd8)
+/*SRS_INTERLOCKED_LINUX_43_009: [ interlocked_and_8 shall call atomic_fetch_and with destination as object and value as operand. ]*/
+/*SRS_INTERLOCKED_LINUX_43_010: [ interlocked_and_8 shall return the initial value of *destination. ]*/
+TEST_FUNCTION(interlocked_and_8_calls_atomic_fetch_and)
 {
     ///arrange
-    volatile uint8_t destination;
-    InterlockedExchange8((volatile CHAR*)&destination, (uint8_t)0xF0);
+    volatile_atomic uint8_t destination;
+    atomic_exchange(&destination, (uint8_t)0xF0);
     uint8_t value = 0x0F;
-    STRICT_EXPECTED_CALL(mock_InterlockedAnd8((volatile char*)&destination, value))
-        .SetReturn((uint8_t)0xF0);
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_and_8(&destination, value))
+        .SetReturn(0xF0);
 
     ///act
-    uint8_t return_val = (uint8_t)interlocked_and_8((volatile int8_t*)&destination, value);
+    uint8_t return_val = (uint8_t)interlocked_and_8((volatile_atomic int8_t*)&destination, value);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_011: [interlocked_compare_exchange shall call InterlockedCompareExchange from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_012 : [interlocked_compare_exchange shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_compare_exchange_calls_InterlockedCompareExchange)
+/*SRS_INTERLOCKED_LINUX_43_011: [ interlocked_compare_exchange shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_012: [ interlocked_compare_exchange shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
+TEST_FUNCTION(interlocked_compare_exchange_calls_atomic_compare_exchange_with_destination_equal_to_comperand)
 {
     ///arrange
-    volatile int32_t destination;
-    InterlockedExchange((volatile LONG*)&destination, INT32_MAX);
+    volatile_atomic int32_t destination;
+    atomic_exchange(&destination, INT32_MAX);
     int32_t comperand = INT32_MAX;
     int32_t exchange = INT32_MIN;
-    STRICT_EXPECTED_CALL(mock_InterlockedCompareExchange((volatile LONG*)&destination, exchange, comperand))
-        .SetReturn(INT32_MAX);
+    expected_atomic_compare_exchange_32_value = comperand;
+    counter_32 = 0; //return true the first time
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_32(&destination, IGNORED_ARG, exchange));
 
     ///act
     int32_t return_val = interlocked_compare_exchange(&destination, exchange, comperand);
@@ -210,86 +236,68 @@ TEST_FUNCTION(interlocked_compare_exchange_calls_InterlockedCompareExchange)
     ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val, "Return value is incorrect.");
 }
 
-#ifdef _WIN64
-/*Tests_SRS_INTERLOCKED_LINUX_43_013: [interlocked_compare_exchange_128 shall call InterlockedCompareExchange128 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_014 : [interlocked_compare_exchange_128 shall return true if* comperand_result equals the original value of* destination.]*/
-TEST_FUNCTION(interlocked_compare_exchange_128_calls_InterlockedCompareExchange128_true_case)
+/*SRS_INTERLOCKED_LINUX_43_011: [ interlocked_compare_exchange shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_012: [ interlocked_compare_exchange shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
+/*SRS_INTERLOCKED_LINUX_43_076: [ interlocked_compare_exchange_64 shall call atomic_load if atomic_compare_exchange_strong returns false. ]*/
+/*SRS_INTERLOCKED_LINUX_43_077: [ interlocked_compare_exchange_64 shall return the value returned by atomic_load if the returned value is not equal to comperand. ]*/
+TEST_FUNCTION(interlocked_compare_exchange_calls_atomic_compare_exchange_with_destination_not_equal_to_comperand_and_atomic_load_returns_a_value_not_equal_to_comperand)
 {
     ///arrange
-    volatile int64_t* destination;
-    InterlockedExchangePointer((PVOID volatile*)&destination, malloc(2 * sizeof(int64_t)));
-    ASSERT_IS_NOT_NULL(destination);
-    int64_t* comperand_result = (int64_t*)malloc(2 * sizeof(int64_t));
-    ASSERT_IS_NOT_NULL(comperand_result);
-
-    destination[0] = INT64_MAX;
-    destination[1] = INT64_MIN;
-    comperand_result[0] = INT64_MAX;
-    comperand_result[1] = INT64_MIN;
-
-    int64_t exchange_high = 2;
-    int64_t exchange_low = 3;
-
-    STRICT_EXPECTED_CALL(mock_InterlockedCompareExchange128((volatile LONG64*)destination, exchange_high, exchange_low, comperand_result))
-        .SetReturn(TRUE);
-
+    volatile_atomic int32_t destination;
+    atomic_exchange(&destination, INT32_MAX);
+    int32_t comperand = INT32_MAX;
+    int32_t exchange = INT32_MIN;
+    expected_atomic_compare_exchange_32_value = comperand;
+    counter_32 = 1;//return false the first time
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_32(&destination, IGNORED_ARG, exchange));
+    STRICT_EXPECTED_CALL(mock_atomic_load_32(&destination))
+        .SetReturn(5);
     ///act
-    bool return_val = interlocked_compare_exchange_128(destination, exchange_high, exchange_low, comperand_result);
+    int32_t return_val = interlocked_compare_exchange(&destination, exchange, comperand);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
-    ASSERT_IS_TRUE(return_val, "Return value is incorrect.");
-
-    ///cleanup
-    free((void*)destination);
-    free(comperand_result);
+    ASSERT_ARE_EQUAL(int32_t, 5, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_013: [interlocked_compare_exchange_128 shall call InterlockedCompareExchange128 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_063 : [interlocked_compare_exchange_128 shall return false if* comperand_result does not equal the original value of* destination.]*/
-TEST_FUNCTION(interlocked_compare_exchange_128_calls_InterlockedCompareExchange128_false_case)
+/*SRS_INTERLOCKED_LINUX_43_011: [ interlocked_compare_exchange shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_012: [ interlocked_compare_exchange shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
+/*SRS_INTERLOCKED_LINUX_43_066: [ interlocked_compare_exchange shall call atomic_load if atomic_compare_exchange_strong returns false. ]*/
+/*SRS_INTERLOCKED_LINUX_43_067: [ interlocked_compare_exchange shall return the value returned by atomic_load if the returned value is not equal to comperand. ]*/
+/*SRS_INTERLOCKED_LINUX_43_068: [ interlocked_compare_exchange shall repeat the call to atomic_compare_exchange_strong if the value returned by atomic_load is equal to comperand. ]*/
+TEST_FUNCTION(interlocked_compare_exchange_calls_atomic_compare_exchange_with_destination_not_equal_to_comperand_and_atomic_load_returns_a_value_equal_to_comperand)
 {
     ///arrange
-    volatile int64_t* destination;
-    InterlockedExchangePointer((PVOID volatile*)&destination, malloc(2 * sizeof(int64_t)));
-    int64_t* comperand_result = (int64_t*)malloc(2 * sizeof(int64_t));
-    ASSERT_IS_NOT_NULL(comperand_result);
-
-    destination[0] = INT64_MAX;
-    destination[1] = INT64_MIN;
-    comperand_result[0] = INT64_MAX;
-    comperand_result[1] = INT64_MIN;
-
-    int64_t exchange_high = 2;
-    int64_t exchange_low = 3;
-
-    STRICT_EXPECTED_CALL(mock_InterlockedCompareExchange128((volatile LONG64*)destination, exchange_high, exchange_low, comperand_result))
-        .SetReturn(FALSE);
-
+    volatile_atomic int32_t destination;
+    atomic_exchange(&destination, INT32_MAX);
+    int32_t comperand = INT32_MAX;
+    int32_t exchange = INT32_MIN;
+    expected_atomic_compare_exchange_32_value = comperand;
+    counter_32 = 1;//return false the first time, true the second time
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_32(&destination, IGNORED_ARG, exchange));
+    STRICT_EXPECTED_CALL(mock_atomic_load_32(&destination))
+        .SetReturn(comperand);
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_32(&destination, IGNORED_ARG, exchange));
     ///act
-    bool return_val = interlocked_compare_exchange_128(destination, exchange_high, exchange_low, comperand_result);
+    int32_t return_val = interlocked_compare_exchange(&destination, exchange, comperand);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
-    ASSERT_IS_FALSE(return_val, "Return value is incorrect.");
-
-    ///cleanup
-    free((void*)destination);
-    free(comperand_result);
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val, "Return value is incorrect.");
 }
-#endif
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_015: [interlocked_compare_exchange_16 shall call InterlockedCompareExchange16 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_016 : [interlocked_compare_exchange_16 shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_compare_exchange_16_calls_InterlockedCompareExchange16)
+/*SRS_INTERLOCKED_LINUX_43_069: [ interlocked_compare_exchange_16 shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_070: [ interlocked_compare_exchange_16 shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
+TEST_FUNCTION(interlocked_compare_exchange_16_calls_atomic_compare_exchange_with_destination_equal_to_comperand)
 {
     ///arrange
-    volatile int16_t destination;
-    InterlockedExchange16(&destination, INT16_MAX);
+    volatile_atomic int16_t destination;
+    atomic_exchange(&destination, INT16_MAX);
     int16_t comperand = INT16_MAX;
     int16_t exchange = INT16_MIN;
-    STRICT_EXPECTED_CALL(mock_InterlockedCompareExchange16((volatile SHORT*)&destination, exchange, comperand))
-        .SetReturn(INT16_MAX);
+    expected_atomic_compare_exchange_16_value = comperand;
+    counter_16 = 0; //return true the first time
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_16(&destination, IGNORED_ARG, exchange));
 
     ///act
     int16_t return_val = interlocked_compare_exchange_16(&destination, exchange, comperand);
@@ -299,17 +307,69 @@ TEST_FUNCTION(interlocked_compare_exchange_16_calls_InterlockedCompareExchange16
     ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_017: [interlocked_compare_exchange_64 shall call InterlockedCompareExchange64 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_018 : [interlocked_compare_exchange_64 shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_compare_exchange_64_calls_InterlockedCompareExchange64)
+/*SRS_INTERLOCKED_LINUX_43_069: [ interlocked_compare_exchange_16 shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_070: [ interlocked_compare_exchange_16 shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
+/*SRS_INTERLOCKED_LINUX_43_071: [ interlocked_compare_exchange_16 shall call atomic_load if atomic_compare_exchange_strong returns false. ]*/
+/*SRS_INTERLOCKED_LINUX_43_072: [ interlocked_compare_exchange_16 shall return the value returned by atomic_load if the returned value is not equal to comperand. ]*/
+TEST_FUNCTION(interlocked_compare_exchange_16_calls_atomic_compare_exchange_with_destination_not_equal_to_comperand_and_atomic_load_returns_a_value_not_equal_to_comperand)
 {
     ///arrange
-    volatile int64_t destination;
-    InterlockedExchange64(&destination, INT64_MAX);
+    volatile_atomic int16_t destination;
+    atomic_exchange(&destination, INT16_MAX);
+    int16_t comperand = INT16_MAX;
+    int16_t exchange = INT16_MIN;
+    expected_atomic_compare_exchange_16_value = comperand;
+    counter_16 = 1;//return false the first time
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_16(&destination, IGNORED_ARG, exchange));
+    STRICT_EXPECTED_CALL(mock_atomic_load_16(&destination))
+        .SetReturn(5);
+    ///act
+    int16_t return_val = interlocked_compare_exchange_16(&destination, exchange, comperand);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int16_t, 5, return_val, "Return value is incorrect.");
+}
+
+/*SRS_INTERLOCKED_LINUX_43_069: [ interlocked_compare_exchange_16 shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_070: [ interlocked_compare_exchange_16 shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
+/*SRS_INTERLOCKED_LINUX_43_071: [ interlocked_compare_exchange_16 shall call atomic_load if atomic_compare_exchange_strong returns false. ]*/
+/*SRS_INTERLOCKED_LINUX_43_072: [ interlocked_compare_exchange_16 shall return the value returned by atomic_load if the returned value is not equal to comperand. ]*/
+/*SRS_INTERLOCKED_LINUX_43_073: [ interlocked_compare_exchange_16 shall repeat the call to atomic_compare_exchange_strong if the value returned by atomic_load is equal to comperand. ]*/
+TEST_FUNCTION(interlocked_compare_exchange_16_calls_atomic_compare_exchange_with_destination_not_equal_to_comperand_and_atomic_load_returns_a_value_equal_to_comperand)
+{
+    ///arrange
+    volatile_atomic int16_t destination;
+    atomic_exchange(&destination, INT16_MAX);
+    int16_t comperand = INT16_MAX;
+    int16_t exchange = INT16_MIN;
+    expected_atomic_compare_exchange_16_value = comperand;
+    counter_16 = 1;//return false the first time, true the second time
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_16(&destination, IGNORED_ARG, exchange));
+    STRICT_EXPECTED_CALL(mock_atomic_load_16(&destination))
+        .SetReturn(comperand);
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_16(&destination, IGNORED_ARG, exchange));
+    ///act
+    int16_t return_val = interlocked_compare_exchange_16(&destination, exchange, comperand);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val, "Return value is incorrect.");
+}
+
+
+/*SRS_INTERLOCKED_LINUX_43_074: [ interlocked_compare_exchange_64 shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_075: [ interlocked_compare_exchange_64 shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
+TEST_FUNCTION(interlocked_compare_exchange_64_calls_atomic_compare_exchange_with_destination_equal_to_comperand)
+{
+    ///arrange
+    volatile_atomic int64_t destination;
+    atomic_exchange(&destination, INT64_MAX);
     int64_t comperand = INT64_MAX;
     int64_t exchange = INT64_MIN;
-    STRICT_EXPECTED_CALL(mock_InterlockedCompareExchange64((volatile LONG64*)&destination, exchange, comperand))
-        .SetReturn(INT64_MAX);
+    expected_atomic_compare_exchange_64_value = comperand;
+    counter_64 = 0; //return true the first time
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_64(&destination, IGNORED_ARG, exchange));
 
     ///act
     int64_t return_val = interlocked_compare_exchange_64(&destination, exchange, comperand);
@@ -319,36 +379,141 @@ TEST_FUNCTION(interlocked_compare_exchange_64_calls_InterlockedCompareExchange64
     ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_019: [interlocked_compare_exchange_pointer shall call InterlockedCompareExchangePointer from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_020 : [interlocked_compare_exchange_pointer shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_compare_exchange_pointer_calls_InterlockedCompareExchangePointer)
+/*SRS_INTERLOCKED_LINUX_43_074: [ interlocked_compare_exchange_64 shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_075: [ interlocked_compare_exchange_64 shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
+/*SRS_INTERLOCKED_LINUX_43_076: [ interlocked_compare_exchange_64 shall call atomic_load if atomic_compare_exchange_strong returns false. ]*/
+/*SRS_INTERLOCKED_LINUX_43_077: [ interlocked_compare_exchange_64 shall return the value returned by atomic_load if the returned value is not equal to comperand. ]*/
+TEST_FUNCTION(interlocked_compare_exchange_64_calls_atomic_compare_exchange_with_destination_not_equal_to_comperand_and_atomic_load_returns_a_value_not_equal_to_comperand)
+{
+    ///arrange
+    volatile_atomic int64_t destination;
+    atomic_exchange(&destination, INT64_MAX);
+    int64_t comperand = INT64_MAX;
+    int64_t exchange = INT64_MIN;
+    expected_atomic_compare_exchange_64_value = comperand;
+    counter_64 = 1;//return false the first time
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_64(&destination, IGNORED_ARG, exchange));
+    STRICT_EXPECTED_CALL(mock_atomic_load_64(&destination))
+        .SetReturn(5);
+    ///act
+    int64_t return_val = interlocked_compare_exchange_64(&destination, exchange, comperand);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int64_t, 5, return_val, "Return value is incorrect.");
+}
+
+/*SRS_INTERLOCKED_LINUX_43_074: [ interlocked_compare_exchange_64 shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_075: [ interlocked_compare_exchange_64 shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
+/*SRS_INTERLOCKED_LINUX_43_076: [ interlocked_compare_exchange_64 shall call atomic_load if atomic_compare_exchange_strong returns false. ]*/
+/*SRS_INTERLOCKED_LINUX_43_077: [ interlocked_compare_exchange_64 shall return the value returned by atomic_load if the returned value is not equal to comperand. ]*/
+/*SRS_INTERLOCKED_LINUX_43_078: [ interlocked_compare_exchange_64 shall repeat the call to atomic_compare_exchange_strong if the value returned by atomic_load is equal to comperand. ]*/
+TEST_FUNCTION(interlocked_compare_exchange_64_calls_atomic_compare_exchange_with_destination_not_equal_to_comperand_and_atomic_load_returns_a_value_equal_to_comperand)
+{
+    ///arrange
+    volatile_atomic int64_t destination;
+    atomic_exchange(&destination, INT64_MAX);
+    int64_t comperand = INT64_MAX;
+    int64_t exchange = INT64_MIN;
+    expected_atomic_compare_exchange_64_value = comperand;
+    counter_64 = 1;//return false the first time, true the second time
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_64(&destination, IGNORED_ARG, exchange));
+    STRICT_EXPECTED_CALL(mock_atomic_load_64(&destination))
+        .SetReturn(comperand);
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_64(&destination, IGNORED_ARG, exchange));
+    ///act
+    int64_t return_val = interlocked_compare_exchange_64(&destination, exchange, comperand);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val, "Return value is incorrect.");
+}
+
+/*SRS_INTERLOCKED_LINUX_43_079: [ interlocked_compare_exchange_pointer shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_080: [ interlocked_compare_exchange_pointer shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
+TEST_FUNCTION(interlocked_compare_exchange_pointer_calls_atomic_compare_exchange_with_destination_equal_to_comperand)
 {
     ///arrange
     int value1 = 1;
     int value2 = 2;
-    void* volatile destination;
-    InterlockedExchangePointer((PVOID volatile*)&destination, &value1);
+    void* volatile_atomic destination;
+    atomic_exchange(&destination, &value1);
     void* comperand = &value1;
     void* exchange = &value2;
-    STRICT_EXPECTED_CALL(mock_InterlockedCompareExchangePointer((PVOID volatile*)&destination, exchange, comperand))
-        .SetReturn(&value1);
+    expected_atomic_compare_exchange_pointer_value = comperand;
+    counter_pointer = 0; //return true the first time
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_pointer(&destination, IGNORED_ARG, exchange));
 
     ///act
     void* return_val = interlocked_compare_exchange_pointer(&destination, exchange, comperand);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
-    ASSERT_ARE_EQUAL(void_ptr, &value1, return_val, "Return value is incorrect.");
+    ASSERT_ARE_EQUAL(void_ptr, INT64_MAX, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_021: [interlocked_decrement shall call InterlockedDecrement from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_022 : [interlocked_decrement shall return the resulting 32 - bit integer value.]*/
-TEST_FUNCTION(interlocked_decrement_calls_InterlockedDecrement)
+/*SRS_INTERLOCKED_LINUX_43_079: [ interlocked_compare_exchange_pointer shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_080: [ interlocked_compare_exchange_pointer shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
+/*SRS_INTERLOCKED_LINUX_43_081: [ interlocked_compare_exchange_pointer shall call atomic_load if atomic_compare_exchange_strong returns false. ]*/
+/*SRS_INTERLOCKED_LINUX_43_082: [ interlocked_compare_exchange_pointer shall return the value returned by atomic_load if the returned value is not equal to comperand. ]*/
+TEST_FUNCTION(interlocked_compare_exchange_pointer_calls_atomic_compare_exchange_with_destination_not_equal_to_comperand_and_atomic_load_returns_a_value_not_equal_to_comperand)
 {
     ///arrange
-    volatile int32_t addend;
-    InterlockedExchange((volatile LONG*)&addend, INT32_MAX);
-    STRICT_EXPECTED_CALL(mock_InterlockedDecrement((volatile LONG*)&addend))
+    int value1 = 1;
+    int value2 = 2;
+    void* volatile_atomic destination;
+    atomic_exchange(&destination, &value1);
+    void* comperand = &value1;
+    void* exchange = &value2;
+    expected_atomic_compare_exchange_pointer_value = comperand;
+    counter_pointer = 1;//return false the first time
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_pointer(&destination, IGNORED_ARG, exchange));
+    STRICT_EXPECTED_CALL(mock_atomic_load_pointer(&destination))
+        .SetReturn((void*)5);
+    ///act
+    void* return_val = interlocked_compare_exchange_pointer(&destination, exchange, comperand);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(void_ptr, 5, return_val, "Return value is incorrect.");
+}
+
+/*SRS_INTERLOCKED_LINUX_43_079: [ interlocked_compare_exchange_pointer shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_080: [ interlocked_compare_exchange_pointer shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
+/*SRS_INTERLOCKED_LINUX_43_081: [ interlocked_compare_exchange_pointer shall call atomic_load if atomic_compare_exchange_strong returns false. ]*/
+/*SRS_INTERLOCKED_LINUX_43_082: [ interlocked_compare_exchange_pointer shall return the value returned by atomic_load if the returned value is not equal to comperand. ]*/
+/*SRS_INTERLOCKED_LINUX_43_083: [ interlocked_compare_exchange_pointer shall repeat the call to atomic_compare_exchange_strong if the value returned by atomic_load is equal to comperand. ]*/
+TEST_FUNCTION(interlocked_compare_exchange_pointer_calls_atomic_compare_exchange_with_destination_not_equal_to_comperand_and_atomic_load_returns_a_value_equal_to_comperand)
+{
+    ///arrange
+    int value1 = 1;
+    int value2 = 2;
+    void* volatile_atomic destination;
+    atomic_exchange(&destination, &value1);
+    void* comperand = &value1;
+    void* exchange = &value2;
+    expected_atomic_compare_exchange_pointer_value = comperand;
+    counter_pointer = 1;//return false the first time, true the second time
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_pointer(&destination, IGNORED_ARG, exchange));
+    STRICT_EXPECTED_CALL(mock_atomic_load_pointer(&destination))
+        .SetReturn(comperand);
+    STRICT_EXPECTED_CALL(mock_atomic_compare_exchange_pointer(&destination, IGNORED_ARG, exchange));
+    ///act
+    void* return_val = interlocked_compare_exchange_pointer(&destination, exchange, comperand);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(void_ptr, INT64_MAX, return_val, "Return value is incorrect.");
+}
+
+/*SRS_INTERLOCKED_LINUX_43_021: [ interlocked_decrement shall call atomic_fetch_sub with addend as object and 1 as operand. ]*/
+/*SRS_INTERLOCKED_LINUX_43_022: [ interlocked_decrement shall return *addend minus 1. ]*/
+TEST_FUNCTION(interlocked_decrement_calls_atomic_fetch_sub)
+{
+    ///arrange
+    volatile_atomic int32_t addend;
+    atomic_exchange(&addend, INT32_MAX);
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_sub_32(&addend, 1))
         .SetReturn(INT32_MAX -1);
 
     ///act
@@ -359,14 +524,14 @@ TEST_FUNCTION(interlocked_decrement_calls_InterlockedDecrement)
     ASSERT_ARE_EQUAL(int32_t, INT32_MAX -1, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_023: [interlocked_decrement_16 shall call InterlockedDecrement16 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_024 : [interlocked_decrement_16 shall return the resulting 16 - bit integer value.]*/
-TEST_FUNCTION(interlocked_decrement_16_calls_InterlockedDecrement16)
+/*SRS_INTERLOCKED_LINUX_43_023: [ interlocked_decrement_16 shall call atomic_fetch_sub with addend as object and 1 as operand. ]*/
+/*SRS_INTERLOCKED_LINUX_43_024: [ interlocked_decrement_16 shall return *addend minus 1. ]*/
+TEST_FUNCTION(interlocked_decrement_16_calls_atomic_fetch_sub)
 {
     ///arrange
-    volatile int16_t addend;
-    InterlockedExchange16(&addend, INT16_MAX);
-    STRICT_EXPECTED_CALL(mock_InterlockedDecrement16((volatile SHORT*)&addend))
+    volatile_atomic int16_t addend;
+    atomic_exchange(&addend, INT16_MAX);
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_sub_16(&addend, 1))
         .SetReturn(INT16_MAX -1);
 
     ///act
@@ -377,33 +542,33 @@ TEST_FUNCTION(interlocked_decrement_16_calls_InterlockedDecrement16)
     ASSERT_ARE_EQUAL(int16_t, INT16_MAX -1, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_025: [interlocked_decrement_64 shall call InterlockedDecrement64 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_026 : [interlocked_decrement_64 shall return the resulting 64 - bit integer value.]*/
-TEST_FUNCTION(interlocked_decrement_64_calls_InterlockedDecrement64)
+/*SRS_INTERLOCKED_LINUX_43_025: [ interlocked_decrement_64 shall call atomic_fetch_sub with addend as object and 1 as operand. ]*/
+/*SRS_INTERLOCKED_LINUX_43_026: [ interlocked_decrement_64 shall return *addend minus 1. ]*/
+TEST_FUNCTION(interlocked_decrement_64_calls_atomic_fetch_sub)
 {
     ///arrange
-    volatile int64_t addend;
-    InterlockedExchange64(&addend, INT64_MAX);
-    STRICT_EXPECTED_CALL(mock_InterlockedDecrement64((volatile LONG64*)&addend))
-        .SetReturn(INT64_MAX - 1);
+    volatile_atomic int64_t addend;
+    atomic_exchange(&addend, INT64_MAX);
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_sub_64(&addend, 1))
+        .SetReturn(INT64_MAX -1);
 
     ///act
     int64_t return_val = interlocked_decrement_64(&addend);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX - 1, return_val, "Return value is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX -1, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_027: [interlocked_exchange shall call InterlockedExchange from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_028 : [interlocked_exchange shall return the initial value pointed to by target.]*/
-TEST_FUNCTION(interlocked_exchange_calls_InterlockedExchange)
+/*SRS_INTERLOCKED_LINUX_43_027: [ interlocked_exchange shall call atomic_fetch_sub with target as object and value as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_028: [ interlocked_exchange shall return the initial value pointed to by target. ]*/
+TEST_FUNCTION(interlocked_exchange_calls_atomic_exchange)
 {
     ///arrange
-    volatile int32_t target;
-    InterlockedExchange((volatile LONG*)&target, INT32_MIN);
+    volatile_atomic int32_t target;
+    atomic_exchange(&target, INT32_MIN);
     int32_t value = INT32_MAX;
-    STRICT_EXPECTED_CALL(mock_InterlockedExchange((volatile LONG*)&target, value))
+    STRICT_EXPECTED_CALL(mock_atomic_exchange_32(&target, value))
         .SetReturn(INT32_MIN);
 
     ///act
@@ -414,15 +579,15 @@ TEST_FUNCTION(interlocked_exchange_calls_InterlockedExchange)
     ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_029: [interlocked_exchange_16 shall call InterlockedExchange16 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_030 : [interlocked_exchange_16 shall return the initial value pointed to by target.]*/
-TEST_FUNCTION(interlocked_exchange_16_calls_InterlockedExchange16)
+/*SRS_INTERLOCKED_LINUX_43_029: [ interlocked_exchange_16 shall call atomic_fetch_sub with target as object and value as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_030: [ interlocked_exchange_16 shall return the initial value pointed to by target. ]*/
+TEST_FUNCTION(interlocked_exchange_16_calls_atomic_exchange)
 {
     ///arrange
-    volatile int16_t target;
-    InterlockedExchange16(&target, INT16_MIN);
+    volatile_atomic int16_t target;
+    atomic_exchange(&target, INT16_MIN);
     int16_t value = INT16_MAX;
-    STRICT_EXPECTED_CALL(mock_InterlockedExchange16((volatile SHORT*)&target, value))
+    STRICT_EXPECTED_CALL(mock_atomic_exchange_16(&target, value))
         .SetReturn(INT16_MIN);
 
     ///act
@@ -433,15 +598,15 @@ TEST_FUNCTION(interlocked_exchange_16_calls_InterlockedExchange16)
     ASSERT_ARE_EQUAL(int16_t, INT16_MIN, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_031: [interlocked_exchange_64 shall call InterlockedExchange64 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_032 : [interlocked_exchange_64 shall return the initial value pointed to by target.]*/
-TEST_FUNCTION(interlocked_exchange_64_calls_InterlockedExchange64)
+/*SRS_INTERLOCKED_LINUX_43_031: [ interlocked_exchange_64 shall call atomic_fetch_sub with target as object and value as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_032: [ interlocked_exchange_64 shall return the initial value pointed to by target. ]*/
+TEST_FUNCTION(interlocked_exchange_64_calls_atomic_exchange)
 {
     ///arrange
-    volatile int64_t target;
-    InterlockedExchange64(&target, INT64_MIN);
+    volatile_atomic int64_t target;
+    atomic_exchange(&target, INT64_MIN);
     int64_t value = INT64_MAX;
-    STRICT_EXPECTED_CALL(mock_InterlockedExchange64((volatile LONG64*)&target, value))
+    STRICT_EXPECTED_CALL(mock_atomic_exchange_64(&target, value))
         .SetReturn(INT64_MIN);
 
     ///act
@@ -449,18 +614,18 @@ TEST_FUNCTION(interlocked_exchange_64_calls_InterlockedExchange64)
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
-    ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val, "Return value is incorrect.");
+    ASSERT_ARE_EQUAL(int64_t, INT16_MIN, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_033: [interlocked_exchange_8 shall call InterlockedExchange8 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_034 : [interlocked_exchange_8 shall return the initial value pointed to by target.]*/
-TEST_FUNCTION(interlocked_exchange_8_calls_InterlockedExchange8)
+/*SRS_INTERLOCKED_LINUX_43_033: [ interlocked_exchange_8 shall call atomic_fetch_sub with target as object and value as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_034: [ interlocked_exchange_8 shall return the initial value pointed to by target. ]*/
+TEST_FUNCTION(interlocked_exchange_8_calls_atomic_exchange)
 {
     ///arrange
-    volatile int8_t target;
-    InterlockedExchange8((volatile CHAR*)&target, (CHAR)INT8_MIN);
+    volatile_atomic int8_t target;
+    atomic_exchange(&target, INT8_MIN);
     int8_t value = INT8_MAX;
-    STRICT_EXPECTED_CALL(mock_InterlockedExchange8((volatile char*)&target, value))
+    STRICT_EXPECTED_CALL(mock_atomic_exchange_8(&target, value))
         .SetReturn(INT8_MIN);
 
     ///act
@@ -468,18 +633,18 @@ TEST_FUNCTION(interlocked_exchange_8_calls_InterlockedExchange8)
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
-    ASSERT_ARE_EQUAL(int8_t, INT8_MIN, return_val, "Return value is incorrect.");
+    ASSERT_ARE_EQUAL(int8_t, INT16_MIN, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_035: [interlocked_exchange_add shall call InterlockedExchangeAdd from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_036 : [interlocked_exchange_add shall return the initial value of * addend.]*/
-TEST_FUNCTION(interlocked_exchange_add_calls_InterlockedExchangeAdd)
+/*SRS_INTERLOCKED_LINUX_43_035: [ interlocked_exchange_add shall call atomic_fetch_add with addend as object and value as operand. ]*/
+/*SRS_INTERLOCKED_LINUX_43_036: [ interlocked_exchange_add shall return the initial value of *addend. ]*/
+TEST_FUNCTION(interlocked_exchange_add_calls_atomic_fetch_add)
 {
     ///arrange
-    volatile int32_t addend;
-    InterlockedExchange((volatile LONG*)&addend, INT32_MIN);
+    volatile_atomic int32_t addend;
+    atomic_exchange(&addend, INT32_MIN);
     int32_t value = INT32_MAX;
-    STRICT_EXPECTED_CALL(mock_InterlockedExchangeAdd((volatile LONG*)&addend, value))
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_add_32(&addend, value))
         .SetReturn(INT32_MIN);
 
     ///act
@@ -490,15 +655,15 @@ TEST_FUNCTION(interlocked_exchange_add_calls_InterlockedExchangeAdd)
     ASSERT_ARE_EQUAL(int32_t, INT32_MIN, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_037: [interlocked_exchange_add_64 shall call InterlockedExchangeAdd64 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_038 : [interlocked_exchange_add_64 shall return the initial value of * addend.]*/
-TEST_FUNCTION(interlocked_exchange_add_64_calls_InterlockedExchangeAdd64)
+/*SRS_INTERLOCKED_LINUX_43_037: [ interlocked_exchange_add_64 shall call atomic_fetch_add with addend as object and value as operand. ]*/
+/*SRS_INTERLOCKED_LINUX_43_038: [ interlocked_exchange_add_64 shall return the initial value of *addend. ]*/
+TEST_FUNCTION(interlocked_exchange_add_64_calls_atomic_fetch_add)
 {
     ///arrange
-    volatile int64_t addend;
-    InterlockedExchange64(&addend, INT64_MIN);
+    volatile_atomic int64_t addend;
+    atomic_exchange(&addend, INT64_MIN);
     int64_t value = INT64_MAX;
-    STRICT_EXPECTED_CALL(mock_InterlockedExchangeAdd64((volatile LONG64*)&addend, value))
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_add_64(&addend, value))
         .SetReturn(INT64_MIN);
 
     ///act
@@ -509,16 +674,16 @@ TEST_FUNCTION(interlocked_exchange_add_64_calls_InterlockedExchangeAdd64)
     ASSERT_ARE_EQUAL(int64_t, INT64_MIN, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_039: [interlocked_exchange_pointer shall call InterlockedExchangePointer from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_040 : [interlocked_exchange_pointer shall return the initial address pointed to by the target parameter]*/
-TEST_FUNCTION(interlocked_exchange_pointer_calls_InterlockedExchagePointer)
+/*SRS_INTERLOCKED_LINUX_43_039: [ interlocked_exchange_pointer shall call atomic_fetch_sub with target as object and value as desired. ]*/
+/*SRS_INTERLOCKED_LINUX_43_040: [interlocked_exchange_pointer shall return the initial address pointed to by the target parameter ]*/
+TEST_FUNCTION(interlocked_exchange_pointer_calls_atomic_exchange)
 {
     ///arrange
     int value1 = 1;
     int value2 = 2;
-    void* volatile target = &value1;
+    void* volatile_atomic target = &value1;
     void* value = &value2;
-    STRICT_EXPECTED_CALL(mock_InterlockedExchangePointer((PVOID volatile*)&target, value))
+    STRICT_EXPECTED_CALL(mock_atomic_exchange_pointer(&target, value))
         .SetReturn(&value1);
 
     ///act
@@ -529,213 +694,139 @@ TEST_FUNCTION(interlocked_exchange_pointer_calls_InterlockedExchagePointer)
     ASSERT_ARE_EQUAL(void_ptr, &value1, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_041: [interlocked_increment shall call InterlockedIncrement from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_042 : [interlocked_increment shall return the incremented 32 - bit integer.]*/
-TEST_FUNCTION(interlocked_increment_calls_InterlockedIncrement)
+TEST_FUNCTION(interlocked_or_calls_atomic_fetch_or)
 {
     ///arrange
-    volatile int32_t addend;
-    InterlockedExchange((volatile LONG*)&addend, INT32_MAX - 1);
-    STRICT_EXPECTED_CALL(mock_InterlockedIncrement((volatile LONG*)&addend))
-        .SetReturn(INT32_MAX);
-
-    ///act
-
-    int32_t return_val = interlocked_increment(&addend);
-
-    ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
-    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val, "Return value is incorrect.");
-}
-
-/*Tests_SRS_INTERLOCKED_LINUX_43_043: [interlocked_increment_16 shall call InterlockedIncrement16 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_044 : [interlocked_increment_16 shall return the incremented 16 - bit integer.]*/
-TEST_FUNCTION(interlocked_increment_16_calls_InterlockedIncrement16)
-{
-    ///arrange
-    volatile int16_t addend;
-    InterlockedExchange16(&addend, INT16_MAX - 1);
-    STRICT_EXPECTED_CALL(mock_InterlockedIncrement16((volatile SHORT*)&addend))
-        .SetReturn(INT16_MAX);
-
-    ///act
-
-    int16_t return_val = interlocked_increment_16(&addend);
-
-    ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
-    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val, "Return value is incorrect.");
-}
-
-/*Tests_SRS_INTERLOCKED_LINUX_43_045: [interlocked_increment_64 shall call InterlockedIncrement64 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_046 : [interlocked_increment_64 shall return the incremented 64 - bit integer.]*/
-TEST_FUNCTION(interlocked_increment_64_calls_InterlockedIncrement64)
-{
-    ///arrange
-    volatile int64_t addend;
-    InterlockedExchange64(&addend, INT64_MAX - 1);
-    STRICT_EXPECTED_CALL(mock_InterlockedIncrement64((volatile LONG64*)&addend))
-        .SetReturn(INT64_MAX);
-
-    ///act
-
-    int64_t return_val = interlocked_increment_64(&addend);
-
-    ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
-    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val, "Return value is incorrect.");
-}
-
-/*Tests_SRS_INTERLOCKED_LINUX_43_047: [interlocked_or shall call InterlockedOr from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_048 : [interlocked_or shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_or_calls_InterlockedOr)
-{
-    ///arrange
-    volatile uint32_t destination;
-    InterlockedExchange((volatile LONG*)&destination, (uint32_t)0xF0F0F0F0);
+    volatile_atomic uint32_t destination;
+    atomic_exchange(&destination, (uint32_t)0xF0F0F0F0);
     uint32_t value = 0x0F0F0F0F;
-    STRICT_EXPECTED_CALL(mock_InterlockedOr((volatile LONG*)&destination, value))
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_or_32(&destination, value))
         .SetReturn(0xF0F0F0F0);
 
     ///act
-    uint32_t return_val = (uint32_t)interlocked_or((volatile int32_t*)&destination, value);
+    uint32_t return_val = (uint32_t)interlocked_or((volatile_atomic int32_t*)&destination, value);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_049: [interlocked_or_16 shall call InterlockedOr16 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_050 : [interlocked_or_16 shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_or_16_calls_InterlockedOr16)
+TEST_FUNCTION(interlocked_or_16_calls_atomic_fetch_or)
 {
     ///arrange
-    volatile uint16_t destination;
-    InterlockedExchange16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
+    volatile_atomic uint16_t destination;
+    atomic_exchange(&destination, (uint16_t)0xF0F0);
     uint16_t value = 0x0F0F;
-    STRICT_EXPECTED_CALL(mock_InterlockedOr16((volatile SHORT*)&destination, value))
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_or_16(&destination, value))
         .SetReturn((uint16_t)0xF0F0);
 
     ///act
-    uint16_t return_val = (uint16_t)interlocked_or_16((volatile int16_t*)&destination, value);
+    uint16_t return_val = (uint16_t)interlocked_or_16((volatile_atomic int16_t*)&destination, value);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_051: [interlocked_or_64 shall call InterlockedOr64 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_052 : [interlocked_or_64 shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_or_64_calls_InterlockedOr64)
+TEST_FUNCTION(interlocked_or_64_calls_atomic_fetch_or)
 {
     ///arrange
-    volatile uint64_t destination;
-    InterlockedExchange64((volatile LONG64*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
+    volatile_atomic uint64_t destination;
+    atomic_exchange(&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
     uint64_t value = 0x0F0F0F0F0F0F0F0F;
-    STRICT_EXPECTED_CALL(mock_InterlockedOr64((volatile LONG64*)&destination, value))
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_or_64(&destination, value))
         .SetReturn(0xF0F0F0F0F0F0F0F0);
 
     ///act
-    uint64_t return_val = (uint64_t)interlocked_or_64((volatile int64_t*)&destination, value);
+    uint64_t return_val = (uint64_t)interlocked_or_64((volatile_atomic int64_t*)&destination, value);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_053: [interlocked_or_8 shall call InterlockedOr8 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_054 : [interlocked_or_8 shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_or_8_calls_InterlockedOr8)
+TEST_FUNCTION(interlocked_or_8_calls_atomic_fetch_or)
 {
     ///arrange
-    volatile uint8_t destination;
-    InterlockedExchange8((volatile CHAR*)&destination, (uint8_t)0xF0);
+    volatile_atomic uint8_t destination;
+    atomic_exchange(&destination, (uint8_t)0xF0);
     uint8_t value = 0x0F;
-    STRICT_EXPECTED_CALL(mock_InterlockedOr8((volatile char*)&destination, value))
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_or_8(&destination, value))
         .SetReturn((uint8_t)0xF0);
 
     ///act
-    uint8_t return_val = (uint8_t)interlocked_or_8((volatile int8_t*)&destination, value);
+    uint8_t return_val = (uint8_t)interlocked_or_8((volatile_atomic int8_t*)&destination, value);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_055: [interlocked_xor shall call InterlockedXor from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_056 : [interlocked_xor shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_xor_calls_InterlockedXor)
+TEST_FUNCTION(interlocked_xor_calls_atomic_fetch_xor)
 {
     ///arrange
-    volatile uint32_t destination;
-    InterlockedExchange((volatile LONG*)&destination, (uint32_t)0xF0F0F0F0);
+    volatile_atomic uint32_t destination;
+    atomic_exchange(&destination, (uint32_t)0xF0F0F0F0);
     uint32_t value = 0x0F0F0F0F;
-    STRICT_EXPECTED_CALL(mock_InterlockedXor((volatile LONG*)&destination, value))
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_xor_32(&destination, value))
         .SetReturn(0xF0F0F0F0);
 
     ///act
-    uint32_t return_val = (uint32_t)interlocked_xor((volatile int32_t*)&destination, value);
+    uint32_t return_val = (uint32_t)interlocked_xor((volatile_atomic int32_t*)&destination, value);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_057: [interlocked_xor_16 shall call InterlockedXor16 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_058 : [interlocked_xor_16 shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_xor_16_calls_InterlockedXor16)
+TEST_FUNCTION(interlocked_xor_16_calls_atomic_fetch_xor)
 {
     ///arrange
-    volatile uint16_t destination;
-    InterlockedExchange16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
+    volatile_atomic uint16_t destination;
+    atomic_exchange(&destination, (uint16_t)0xF0F0);
     uint16_t value = 0x0F0F;
-    STRICT_EXPECTED_CALL(mock_InterlockedXor16((volatile SHORT*)&destination, value))
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_xor_16(&destination, value))
         .SetReturn((uint16_t)0xF0F0);
 
     ///act
-    uint16_t return_val = (uint16_t)interlocked_xor_16((volatile int16_t*)&destination, value);
+    uint16_t return_val = (uint16_t)interlocked_xor_16((volatile_atomic int16_t*)&destination, value);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_059: [interlocked_xor_64 shall call InterlockedXor64 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_060 : [interlocked_xor_64 shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_xor_64_calls_InterlockedXor64)
+TEST_FUNCTION(interlocked_xor_64_calls_atomic_fetch_xor)
 {
     ///arrange
-    volatile uint64_t destination;
-    InterlockedExchange64((volatile LONG64*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
+    volatile_atomic uint64_t destination;
+    atomic_exchange(&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
     uint64_t value = 0x0F0F0F0F0F0F0F0F;
-    STRICT_EXPECTED_CALL(mock_InterlockedXor64((volatile LONG64*)&destination, value))
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_xor_64(&destination, value))
         .SetReturn(0xF0F0F0F0F0F0F0F0);
 
     ///act
-    uint64_t return_val = (uint64_t)interlocked_xor_64((volatile int64_t*)&destination, value);
+    uint64_t return_val = (uint64_t)interlocked_xor_64((volatile_atomic int64_t*)&destination, value);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val, "Return value is incorrect.");
 }
 
-/*Tests_SRS_INTERLOCKED_LINUX_43_061: [interlocked_xor_8 shall call InterlockedXor8 from windows.h.]*/
-/*Tests_SRS_INTERLOCKED_LINUX_43_062 : [interlocked_xor_8 shall return the initial value of * destination.]*/
-TEST_FUNCTION(interlocked_xor_8_calls_InterlockedXor8)
+TEST_FUNCTION(interlocked_xor_8_calls_atomic_fetch_xor)
 {
     ///arrange
-    volatile uint8_t destination;
-    InterlockedExchange8((volatile CHAR*)&destination, (uint8_t)0xF0);
+    volatile_atomic uint8_t destination;
+    atomic_exchange(&destination, (uint8_t)0xF0);
     uint8_t value = 0x0F;
-    STRICT_EXPECTED_CALL(mock_InterlockedXor8((volatile char*)&destination, value))
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_xor_8(&destination, value))
         .SetReturn((uint8_t)0xF0);
 
     ///act
-    uint8_t return_val = (uint8_t)interlocked_xor_8((volatile int8_t*)&destination, value);
+    uint8_t return_val = (uint8_t)interlocked_xor_8((volatile_atomic int8_t*)&destination, value);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val, "Return value is incorrect.");
 }
-
 END_TEST_SUITE(interlocked_linux_unittests)

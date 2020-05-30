@@ -18,4 +18,4 @@ set(${theseTestsName}_h_files
 mock_interlocked.h
 )
 
-build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS synchronization)
+build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests")
