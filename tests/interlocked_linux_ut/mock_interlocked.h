@@ -19,6 +19,7 @@
 extern "C" {
 #endif
 
+MOCKABLE_FUNCTION(, int16_t, mock_atomic_fetch_add_16, volatile_atomic int16_t*, object, int16_t, operand);
 MOCKABLE_FUNCTION(, int32_t, mock_atomic_fetch_add_32, volatile_atomic int32_t*, object, int32_t, operand);
 MOCKABLE_FUNCTION(, int64_t, mock_atomic_fetch_add_64, volatile_atomic int64_t*, object, int64_t, operand);
 MOCKABLE_FUNCTION(, int8_t, mock_atomic_fetch_and_8, volatile_atomic int8_t*, object, int8_t, operand);

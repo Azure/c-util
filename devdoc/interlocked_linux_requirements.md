@@ -193,7 +193,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_decrement_64, volatile_atomic int64_t*,
 MOCKABLE_FUNCTION(, int32_t, interlocked_exchange, volatile_atomic int32_t*, target, int32_t, value);
 
 ```
-**SRS_INTERLOCKED_LINUX_43_027: [** `interlocked_exchange` shall call `atomic_fetch_sub` with `target` as `object` and `value` as `desired`. **]**
+**SRS_INTERLOCKED_LINUX_43_027: [** `interlocked_exchange` shall call `atomic_exchange` with `target` as `object` and `value` as `desired`. **]**
 
 **SRS_INTERLOCKED_LINUX_43_028: [** `interlocked_exchange` shall return the initial value pointed to by `target`. **]**
 
@@ -204,7 +204,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_exchange, volatile_atomic int32_t*, tar
 MOCKABLE_FUNCTION(, int16_t, interlocked_exchange_16, volatile_atomic int16_t*, target, int16_t, value);
 
 ```
-**SRS_INTERLOCKED_LINUX_43_029: [** `interlocked_exchange_16` shall call `atomic_fetch_sub` with `target` as `object` and `value` as `desired`. **]**
+**SRS_INTERLOCKED_LINUX_43_029: [** `interlocked_exchange_16` shall call `atomic_exchange` with `target` as `object` and `value` as `desired`. **]**
 
 **SRS_INTERLOCKED_LINUX_43_030: [** `interlocked_exchange_16` shall return the initial value pointed to by `target`. **]**
 
@@ -214,7 +214,7 @@ MOCKABLE_FUNCTION(, int16_t, interlocked_exchange_16, volatile_atomic int16_t*, 
 MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_64, volatile_atomic int64_t*, target, int64_t, value);
 
 ```
-**SRS_INTERLOCKED_LINUX_43_031: [** `interlocked_exchange_64` shall call `atomic_fetch_sub` with `target` as `object` and `value` as `desired`. **]**
+**SRS_INTERLOCKED_LINUX_43_031: [** `interlocked_exchange_64` shall call `atomic_exchange` with `target` as `object` and `value` as `desired`. **]**
 
 **SRS_INTERLOCKED_LINUX_43_032: [** `interlocked_exchange_64` shall return the initial value pointed to by `target`. **]**
 
@@ -224,7 +224,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_64, volatile_atomic int64_t*, 
 MOCKABLE_FUNCTION(, int8_t, interlocked_exchange_8, volatile_atomic int8_t*, target, int8_t, value);
 
 ```
-**SRS_INTERLOCKED_LINUX_43_033: [** `interlocked_exchange_8` shall call `atomic_fetch_sub` with `target` as `object` and `value` as `desired`. **]**
+**SRS_INTERLOCKED_LINUX_43_033: [** `interlocked_exchange_8` shall call `atomic_exchange` with `target` as `object` and `value` as `desired`. **]**
 
 **SRS_INTERLOCKED_LINUX_43_034: [** `interlocked_exchange_8` shall return the initial value pointed to by `target`. **]**
 
