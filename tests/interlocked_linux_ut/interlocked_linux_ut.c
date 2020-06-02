@@ -572,6 +572,8 @@ TEST_FUNCTION(interlocked_exchange_pointer_calls_atomic_exchange)
     ASSERT_ARE_EQUAL(void_ptr, &value1, return_val, "Return value is incorrect.");
 }
 
+/*Tests_SRS_INTERLOCKED_LINUX_43_047: [ interlocked_or shall call atomic_fetch_and with destination as object and value as operand. ]*/
+/*Tests_SRS_INTERLOCKED_LINUX_43_048: [ interlocked_or shall return the initial value of *destination. ]*/
 TEST_FUNCTION(interlocked_or_calls_atomic_fetch_or)
 {
     ///arrange
@@ -589,6 +591,8 @@ TEST_FUNCTION(interlocked_or_calls_atomic_fetch_or)
     ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val, "Return value is incorrect.");
 }
 
+/*Tests_SRS_INTERLOCKED_LINUX_43_049: [ interlocked_or_16 shall call atomic_fetch_and with destination as object and value as operand. ]*/
+/*Tests_SRS_INTERLOCKED_LINUX_43_050: [ interlocked_or_16 shall return the initial value of *destination. ]*/
 TEST_FUNCTION(interlocked_or_16_calls_atomic_fetch_or)
 {
     ///arrange
@@ -606,6 +610,8 @@ TEST_FUNCTION(interlocked_or_16_calls_atomic_fetch_or)
     ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val, "Return value is incorrect.");
 }
 
+/*Tests_SRS_INTERLOCKED_LINUX_43_051: [ interlocked_or_64 shall call atomic_fetch_and with destination as object and value as operand. ]*/
+/*Tests_SRS_INTERLOCKED_LINUX_43_052: [ interlocked_or_64 shall return the initial value of *destination. ]*/
 TEST_FUNCTION(interlocked_or_64_calls_atomic_fetch_or)
 {
     ///arrange
@@ -623,6 +629,8 @@ TEST_FUNCTION(interlocked_or_64_calls_atomic_fetch_or)
     ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val, "Return value is incorrect.");
 }
 
+/*Tests_SRS_INTERLOCKED_LINUX_43_053: [ interlocked_or_8 shall call atomic_fetch_and with destination as object and value as operand. ]*/
+/*Tests_SRS_INTERLOCKED_LINUX_43_054: [ interlocked_or_8 shall return the initial value of *destination. ]*/
 TEST_FUNCTION(interlocked_or_8_calls_atomic_fetch_or)
 {
     ///arrange
@@ -640,6 +648,8 @@ TEST_FUNCTION(interlocked_or_8_calls_atomic_fetch_or)
     ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val, "Return value is incorrect.");
 }
 
+/*Tests_SRS_INTERLOCKED_LINUX_43_055: [ interlocked_xor shall call atomic_fetch_and with destination as object and value as operand. ]*/
+/*Tests_SRS_INTERLOCKED_LINUX_43_056: [ interlocked_xor shall return the initial value of *destination. ]*/
 TEST_FUNCTION(interlocked_xor_calls_atomic_fetch_xor)
 {
     ///arrange
@@ -657,6 +667,8 @@ TEST_FUNCTION(interlocked_xor_calls_atomic_fetch_xor)
     ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val, "Return value is incorrect.");
 }
 
+/*Tests_SRS_INTERLOCKED_LINUX_43_057: [ interlocked_xor_16 shall call atomic_fetch_and with destination as object and value as operand. ]*/
+/*Tests_SRS_INTERLOCKED_LINUX_43_058: [ interlocked_xor_16 shall return the initial value of *destination. ]*/
 TEST_FUNCTION(interlocked_xor_16_calls_atomic_fetch_xor)
 {
     ///arrange
@@ -674,6 +686,8 @@ TEST_FUNCTION(interlocked_xor_16_calls_atomic_fetch_xor)
     ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val, "Return value is incorrect.");
 }
 
+/*Tests_SRS_INTERLOCKED_LINUX_43_059: [ interlocked_xor_64 shall call atomic_fetch_and with destination as object and value as operand. ]*/
+/*Tests_SRS_INTERLOCKED_LINUX_43_060: [ interlocked_xor_64 shall return the initial value of *destination. ]*/
 TEST_FUNCTION(interlocked_xor_64_calls_atomic_fetch_xor)
 {
     ///arrange
@@ -691,6 +705,8 @@ TEST_FUNCTION(interlocked_xor_64_calls_atomic_fetch_xor)
     ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val, "Return value is incorrect.");
 }
 
+/*Tests_SRS_INTERLOCKED_LINUX_43_061: [ interlocked_xor_8 shall call atomic_fetch_and with destination as object and value as operand. ]*/
+/*Tests_SRS_INTERLOCKED_LINUX_43_062: [ interlocked_xor_8 shall return the initial value of *destination. ]*/
 TEST_FUNCTION(interlocked_xor_8_calls_atomic_fetch_xor)
 {
     ///arrange
