@@ -17,7 +17,7 @@ jobs:
     displayName: 'Git submodule update'
     inputs:
       filename: 'C:\Program Files\Git\bin\git.exe'
-      arguments: 'submodule update --init --force'
+      arguments: 'submodule update --init --force --recursive'
 
   - task: BatchScript@1
     displayName: 'Git submodule clean'
@@ -98,7 +98,7 @@ jobs:
     displayName: 'Git submodule update'
     inputs:
       filename: 'C:\Program Files\Git\bin\git.exe'
-      arguments: 'submodule update --init --force'
+      arguments: 'submodule update --init --force --recursive'
 
   - task: BatchScript@1
     displayName: 'Git submodule clean'
@@ -159,7 +159,7 @@ jobs:
     displayName: 'Git submodule update'
     inputs:
       filename: 'C:\Program Files\Git\bin\git.exe'
-      arguments: 'submodule update --init --force'
+      arguments: 'submodule update --init --force --recursive'
 
   - task: BatchScript@1
     displayName: 'Git submodule clean'
@@ -266,7 +266,7 @@ jobs:
     displayName: 'Git submodule update'
     inputs:
       filename: 'C:\Program Files\Git\bin\git.exe'
-      arguments: 'submodule update --init --force deps/azure-c-build-tools'
+      arguments: 'submodule update --init --force --recursive deps/azure-c-build-tools'
 
   - task: BatchScript@1
     displayName: 'Git submodule clean'
