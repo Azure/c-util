@@ -130,104 +130,104 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_64, volatile_atomic 
 IMPLEMENT_MOCKABLE_FUNCTION(, int8_t, interlocked_exchange_8, volatile_atomic int8_t*, target, int8_t, value)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_033: [ interlocked_exchange_8 shall call atomic_exchange with target as object and value as desired. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_034: [ interlocked_exchange_8 shall return the initial value pointed to by target. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_034: [ interlocked_exchange_8 shall return the initial value pointed to by target. ]*/
     return atomic_exchange(target, value);
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int32_t, interlocked_exchange_add, volatile_atomic int32_t*, addend, int32_t, value)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_035: [ interlocked_exchange_add shall call atomic_fetch_add with addend as object and value as operand. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_036: [ interlocked_exchange_add shall return the initial value of *addend. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_036: [ interlocked_exchange_add shall return the initial value of *addend. ]*/
     return atomic_fetch_add(addend, value);
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_add_64, volatile_atomic int64_t*, addend, int64_t, value)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_037: [ interlocked_exchange_add_64 shall call atomic_fetch_add with addend as object and value as operand. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_038: [ interlocked_exchange_add_64 shall return the initial value of *addend. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_038: [ interlocked_exchange_add_64 shall return the initial value of *addend. ]*/
     return atomic_fetch_add(addend, value);
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, void*, interlocked_exchange_pointer, void* volatile_atomic*, target, void*, value)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_039: [ interlocked_exchange_pointer shall call atomic_fetch_sub with target as object and value as desired. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_040: [interlocked_exchange_pointer shall return the initial address pointed to by the target parameter ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_040: [interlocked_exchange_pointer shall return the initial address pointed to by the target parameter ]*/
     return atomic_exchange(target, value);
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int32_t, interlocked_increment, volatile_atomic int32_t*, addend)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_041: [ interlocked_increment shall call atomic_fetch_add with addend as object and 1 as operand. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_042: [ interlocked_increment shall return the initial value of *addend plus 1. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_042: [ interlocked_increment shall return the initial value of *addend plus 1. ]*/
     return atomic_fetch_add(addend, 1) + 1;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int16_t, interlocked_increment_16, volatile_atomic int16_t*, addend)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_043: [ interlocked_increment_16 shall call atomic_fetch_add with addend as object and 1 as operand. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_044: [ interlocked_increment_16 shall return the initial value of *addend plus 1. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_044: [ interlocked_increment_16 shall return the initial value of *addend plus 1. ]*/
     return atomic_fetch_add(addend, 1) + 1;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int64_t, interlocked_increment_64, volatile_atomic int64_t*, addend)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_045: [ interlocked_increment_64 shall call atomic_fetch_add with addend as object and 1 as operand. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_046: [ interlocked_increment_64 shall return the initial value of *addend plus 1. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_046: [ interlocked_increment_64 shall return the initial value of *addend plus 1. ]*/
     return atomic_fetch_add(addend, 1) + 1;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int32_t, interlocked_or, volatile_atomic int32_t*, destination, int32_t, value)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_047: [ interlocked_or shall call atomic_fetch_and with destination as object and value as operand. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_048: [ interlocked_or shall return the initial value of *destination. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_048: [ interlocked_or shall return the initial value of *destination. ]*/
     return atomic_fetch_or(destination, value);
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int16_t, interlocked_or_16, volatile_atomic int16_t*, destination, int16_t, value)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_049: [ interlocked_or_16 shall call atomic_fetch_and with destination as object and value as operand. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_050: [ interlocked_or_16 shall return the initial value of *destination. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_050: [ interlocked_or_16 shall return the initial value of *destination. ]*/
     return atomic_fetch_or(destination, value);
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int64_t, interlocked_or_64, volatile_atomic int64_t*, destination, int64_t, value)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_051: [ interlocked_or_64 shall call atomic_fetch_and with destination as object and value as operand. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_052: [ interlocked_or_64 shall return the initial value of *destination. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_052: [ interlocked_or_64 shall return the initial value of *destination. ]*/
     return atomic_fetch_or(destination, value);
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int8_t, interlocked_or_8, volatile_atomic int8_t*, destination, int8_t, value)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_053: [ interlocked_or_8 shall call atomic_fetch_and with destination as object and value as operand. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_054: [ interlocked_or_8 shall return the initial value of *destination. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_054: [ interlocked_or_8 shall return the initial value of *destination. ]*/
     return atomic_fetch_or(destination, value);
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int32_t, interlocked_xor, volatile_atomic int32_t*, destination, int32_t, value)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_055: [ interlocked_xor shall call atomic_fetch_and with destination as object and value as operand. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_056: [ interlocked_xor shall return the initial value of *destination. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_056: [ interlocked_xor shall return the initial value of *destination. ]*/
     return atomic_fetch_xor(destination, value);
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int16_t, interlocked_xor_16, volatile_atomic int16_t*, destination, int16_t, value)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_057: [ interlocked_xor_16 shall call atomic_fetch_and with destination as object and value as operand. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_058: [ interlocked_xor_16 shall return the initial value of *destination. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_058: [ interlocked_xor_16 shall return the initial value of *destination. ]*/
     return atomic_fetch_xor(destination, value);
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int64_t, interlocked_xor_64, volatile_atomic int64_t*, destination, int64_t, value)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_059: [ interlocked_xor_64 shall call atomic_fetch_and with destination as object and value as operand. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_060: [ interlocked_xor_64 shall return the initial value of *destination. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_060: [ interlocked_xor_64 shall return the initial value of *destination. ]*/
     return atomic_fetch_xor(destination, value);
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int8_t, interlocked_xor_8, volatile_atomic int8_t*, destination, int8_t, value)
 {
     /*Codes_SRS_INTERLOCKED_LINUX_43_061: [ interlocked_xor_8 shall call atomic_fetch_and with destination as object and value as operand. ]*/
-	/*Codes_SRS_INTERLOCKED_LINUX_43_062: [ interlocked_xor_8 shall return the initial value of *destination. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_062: [ interlocked_xor_8 shall return the initial value of *destination. ]*/
     return atomic_fetch_xor(destination, value);
 }
