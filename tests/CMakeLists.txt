@@ -1,6 +1,7 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+cmake_policy(SET CMP0057 NEW)
 add_subdirectory(reals)
 
 if(${run_unittests})
@@ -37,8 +38,9 @@ if(${run_unittests})
 endif()
 
 if(${run_int_tests})
-    
-    add_subdirectory(interlocked_int)
+    if(WIN32 OR c_std_11 IN_LIST CMAKE_C_COMPILE_FEATURES)
+        add_subdirectory(interlocked_int)
+    endif()
     if(WIN32)
         add_subdirectory(string_utils_int)
         add_subdirectory(sm_int)

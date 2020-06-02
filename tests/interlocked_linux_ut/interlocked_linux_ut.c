@@ -3,11 +3,11 @@
 
 #ifdef __cplusplus
 #include <cstdlib>
-#include <cstddef>
+#include <cstdint>
 #include <cstdatomic>
 #else
 #include <stdlib.h>
-#include <stddef.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <stdatomic.h>
 #endif
@@ -37,36 +37,28 @@ static int16_t expected_atomic_compare_exchange_16_value;
 static bool hook_mock_atomic_compare_exchange_16(volatile_atomic int16_t* object, int16_t* expected, int16_t desired)
 {
     ASSERT_ARE_EQUAL(int16_t, expected_atomic_compare_exchange_16_value, *expected);
-    int16_t original_expected = *expected;
-    *expected = *object;
-    return original_expected == *object;
+    return atomic_compare_exchange_strong(object, expected, desired);
 }
 
 static int32_t expected_atomic_compare_exchange_32_value;
 static bool hook_mock_atomic_compare_exchange_32(volatile_atomic int32_t* object, int32_t* expected, int32_t desired)
 {
     ASSERT_ARE_EQUAL(int32_t, expected_atomic_compare_exchange_32_value, *expected);
-    int32_t original_expected = *expected;
-    *expected = *object;
-    return original_expected == *object;
+    return atomic_compare_exchange_strong(object, expected, desired);
 }
 
 static int64_t expected_atomic_compare_exchange_64_value;
 static bool hook_mock_atomic_compare_exchange_64(volatile_atomic int64_t* object, int64_t* expected, int64_t desired)
 {
     ASSERT_ARE_EQUAL(int64_t, expected_atomic_compare_exchange_64_value, *expected);
-    int64_t original_expected = *expected;
-    *expected = *object;
-    return original_expected == *object;
+    return atomic_compare_exchange_strong(object, expected, desired);
 }
 
 static void* expected_atomic_compare_exchange_pointer_value;
 static bool hook_mock_atomic_compare_exchange_pointer(void* volatile_atomic* object, void** expected, void* desired)
 {
     ASSERT_ARE_EQUAL(void_ptr, expected_atomic_compare_exchange_pointer_value, *expected);
-    void* original_expected = *expected;
-    *expected = *object;
-    return original_expected == *object;
+    return atomic_compare_exchange_strong(object, expected, desired);
 }
 
 BEGIN_TEST_SUITE(interlocked_linux_unittests)
@@ -571,6 +563,64 @@ TEST_FUNCTION(interlocked_exchange_pointer_calls_atomic_exchange)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
     ASSERT_ARE_EQUAL(void_ptr, &value1, return_val, "Return value is incorrect.");
 }
+
+/*Tests_SRS_INTERLOCKED_LINUX_43_041: [ interlocked_increment shall call atomic_fetch_add with addend as object and 1 as operand. ]*/
+/*Tests_SRS_INTERLOCKED_LINUX_43_042: [ interlocked_increment shall return the initial value of *addend plus 1. ]*/
+TEST_FUNCTION(interlocked_increment_calls_atomic_fetch_add)
+{
+    ///arrange
+    volatile_atomic int32_t addend;
+    atomic_exchange(&addend, INT32_MAX - 1);
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_add_32(&addend, 1))
+        .SetReturn(INT32_MAX - 1);
+
+    ///act
+
+    int32_t return_val = interlocked_increment(&addend);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int32_t, INT32_MAX, return_val, "Return value is incorrect.");
+}
+
+/*Tests_SRS_INTERLOCKED_LINUX_43_043: [ interlocked_increment_16 shall call atomic_fetch_add with addend as object and 1 as operand. ]*/
+/*Tests_SRS_INTERLOCKED_LINUX_43_044: [ interlocked_increment_16 shall return the initial value of *addend plus 1. ]*/
+TEST_FUNCTION(interlocked_increment_16_calls_atomic_fetch_add)
+{
+    ///arrange
+    volatile_atomic int16_t addend;
+    atomic_exchange(&addend, INT16_MAX - 1);
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_add_16(&addend, 1))
+        .SetReturn(INT16_MAX - 1);
+
+    ///act
+
+    int16_t return_val = interlocked_increment_16(&addend);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int16_t, INT16_MAX, return_val, "Return value is incorrect.");
+}
+
+/*Tests_SRS_INTERLOCKED_LINUX_43_045: [ interlocked_increment_64 shall call atomic_fetch_add with addend as object and 1 as operand. ]*/
+/*Tests_SRS_INTERLOCKED_LINUX_43_046: [ interlocked_increment_64 shall return the initial value of *addend plus 1. ]*/
+TEST_FUNCTION(interlocked_increment_64_calls_atomic_fetch_add)
+{
+    ///arrange
+    volatile_atomic int64_t addend;
+    atomic_exchange(&addend, INT64_MAX - 1);
+    STRICT_EXPECTED_CALL(mock_atomic_fetch_add_64(&addend, 1))
+        .SetReturn(INT64_MAX - 1);
+
+    ///act
+
+    int64_t return_val = interlocked_increment_64(&addend);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls(), "Actual calls differ from expected calls");
+    ASSERT_ARE_EQUAL(int64_t, INT64_MAX, return_val, "Return value is incorrect.");
+}
+
 
 /*Tests_SRS_INTERLOCKED_LINUX_43_047: [ interlocked_or shall call atomic_fetch_and with destination as object and value as operand. ]*/
 /*Tests_SRS_INTERLOCKED_LINUX_43_048: [ interlocked_or shall return the initial value of *destination. ]*/
