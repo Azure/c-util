@@ -52,100 +52,37 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int8_t, interlocked_and_8, volatile_atomic int8_t*
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int32_t, interlocked_compare_exchange, volatile_atomic int32_t*, destination, int32_t, exchange, int32_t, comperand)
 {
-    while(true)
-    {
-        int32_t comperand_copy = comperand;
-        /*Codes_SRS_INTERLOCKED_LINUX_43_011: [ interlocked_compare_exchange shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
-        /*Codes_SRS_INTERLOCKED_LINUX_43_012: [ interlocked_compare_exchange shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
-        if(atomic_compare_exchange_strong(destination, &comperand_copy, exchange))
-        {
-            return comperand;
-        }
-        else
-        {
-            /*Codes_SRS_INTERLOCKED_LINUX_43_066: [ interlocked_compare_exchange shall call atomic_load if atomic_compare_exchange_strong returns false. ]*/
-            int32_t loaded_value = atomic_load(destination);
-            if(loaded_value != comperand)
-            {
-                /*Codes_SRS_INTERLOCKED_LINUX_43_067: [ interlocked_compare_exchange shall return the value returned by atomic_load if the returned value is not equal to comperand. ]*/
-                return loaded_value;
-            }
-        }
-        /*Codes_SRS_INTERLOCKED_LINUX_43_068: [ interlocked_compare_exchange shall repeat the call to atomic_compare_exchange_strong if the value returned by atomic_load is equal to comperand. ]*/
-    }
+
+    /*Codes_SRS_INTERLOCKED_LINUX_43_011: [ interlocked_compare_exchange shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_012: [ interlocked_compare_exchange shall return comperand. ]*/
+    atomic_compare_exchange_strong(destination, &comperand, exchange);
+    return comperand;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int16_t, interlocked_compare_exchange_16, volatile_atomic int16_t*, destination, int16_t, exchange, int16_t, comperand)
 {
-    while(true)
-    {
-        int16_t comperand_copy = comperand;
-        /*Codes_SRS_INTERLOCKED_LINUX_43_069: [ interlocked_compare_exchange_16 shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
-        /*Codes_SRS_INTERLOCKED_LINUX_43_070: [ interlocked_compare_exchange_16 shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
-        if(atomic_compare_exchange_strong(destination, &comperand_copy, exchange))
-        {
-            return comperand;
-        }
-        else
-        {
-            /*Codes_SRS_INTERLOCKED_LINUX_43_071: [ interlocked_compare_exchange_16 shall call atomic_load if atomic_compare_exchange_strong returns false. ]*/
-            int16_t loaded_value = atomic_load(destination);
-            if(loaded_value != comperand)
-            {
-                /*Codes_SRS_INTERLOCKED_LINUX_43_072: [ interlocked_compare_exchange_16 shall return the value returned by atomic_load if the returned value is not equal to comperand. ]*/
-                return loaded_value;
-            }
-        }
-        /*Codes_SRS_INTERLOCKED_LINUX_43_073: [ interlocked_compare_exchange_16 shall repeat the call to atomic_compare_exchange_strong if the value returned by atomic_load is equal to comperand. ]*/
-    }
+
+    /*Codes_SRS_INTERLOCKED_LINUX_43_069: [ interlocked_compare_exchange_16 shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_070: [ interlocked_compare_exchange_16 shall return comperand. ]*/
+    atomic_compare_exchange_strong(destination, &comperand, exchange);
+    return comperand;
 }
 IMPLEMENT_MOCKABLE_FUNCTION(, int64_t, interlocked_compare_exchange_64, volatile_atomic int64_t*, destination, int64_t, exchange, int64_t, comperand)
 {
-    while(true)
-    {
-        int64_t comperand_copy = comperand;
-        /*Codes_SRS_INTERLOCKED_LINUX_43_074: [ interlocked_compare_exchange_64 shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
-        /*Codes_SRS_INTERLOCKED_LINUX_43_075: [ interlocked_compare_exchange_64 shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
-        if(atomic_compare_exchange_strong(destination, &comperand_copy, exchange))
-        {
-            return comperand;
-        }
-        else
-        {
-            /*Codes_SRS_INTERLOCKED_LINUX_43_076: [ interlocked_compare_exchange_64 shall call atomic_load if atomic_compare_exchange_strong returns false. ]*/
-            int64_t loaded_value = atomic_load(destination);
-            if(loaded_value != comperand)
-            {
-                /*Codes_SRS_INTERLOCKED_LINUX_43_077: [ interlocked_compare_exchange_64 shall return the value returned by atomic_load if the returned value is not equal to comperand. ]*/
-                return loaded_value;
-            }
-        }
-        /*Codes_SRS_INTERLOCKED_LINUX_43_078: [ interlocked_compare_exchange_64 shall repeat the call to atomic_compare_exchange_strong if the value returned by atomic_load is equal to comperand. ]*/
-    }
+   
+    /*Codes_SRS_INTERLOCKED_LINUX_43_074: [ interlocked_compare_exchange_64 shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_075: [ interlocked_compare_exchange_64 shall return comperand. ]*/
+    atomic_compare_exchange_strong(destination, &comperand, exchange);
+    return comperand;
+        
 }
 IMPLEMENT_MOCKABLE_FUNCTION(, void*, interlocked_compare_exchange_pointer, void* volatile_atomic*, destination, void*, exchange, void*, comperand)
 {
-    while(true)
-    {
-        void* comperand_copy = comperand;
-        /*Codes_SRS_INTERLOCKED_LINUX_43_079: [ interlocked_compare_exchange_pointer shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
-        /*Codes_SRS_INTERLOCKED_LINUX_43_080: [ interlocked_compare_exchange_pointer shall return a value equal to comperand if and only if atomic_compare_exchange_strong returns true. ]*/
-        if(atomic_compare_exchange_strong(destination, &comperand_copy, exchange))
-        {
-            return comperand;
-        }
-        else
-        {
-            /*Codes_SRS_INTERLOCKED_LINUX_43_081: [ interlocked_compare_exchange_pointer shall call atomic_load if atomic_compare_exchange_strong returns false. ]*/
-            void* loaded_value = atomic_load(destination);
-            if(loaded_value != comperand)
-            {
-                /*Codes_SRS_INTERLOCKED_LINUX_43_082: [ interlocked_compare_exchange_pointer shall return the value returned by atomic_load if the returned value is not equal to comperand. ]*/
-                return loaded_value;
-            }
-        }
-        /*Codes_SRS_INTERLOCKED_LINUX_43_083: [ interlocked_compare_exchange_pointer shall repeat the call to atomic_compare_exchange_strong if the value returned by atomic_load is equal to comperand. ]*/
-    }
+
+    /*Codes_SRS_INTERLOCKED_LINUX_43_079: [ interlocked_compare_exchange_pointer shall call atomic_compare_exchange_strong with destination as object, &comperand as expected and exchange as desired. ]*/
+    /*Codes_SRS_INTERLOCKED_LINUX_43_080: [ interlocked_compare_exchange_pointer shall return comperand. ]*/
+    atomic_compare_exchange_strong(destination, &comperand, exchange);
+    return comperand;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int32_t, interlocked_decrement, volatile_atomic int32_t*, addend)
