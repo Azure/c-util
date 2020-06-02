@@ -103,13 +103,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_compare_exchange, volatile_atomic int32
 ```
 **SRS_INTERLOCKED_LINUX_43_011: [** `interlocked_compare_exchange` shall call `atomic_compare_exchange_strong` with `destination` as `object`, `&comperand` as `expected` and `exchange` as `desired`. **]**
 
-**SRS_INTERLOCKED_LINUX_43_012: [** `interlocked_compare_exchange` shall return a value equal to `comperand` if and only if `atomic_compare_exchange_strong` returns `true`. **]**
-
-**SRS_INTERLOCKED_LINUX_43_066: [** `interlocked_compare_exchange` shall call `atomic_fetch` if `atomic_compare_exchange_strong` returns `false`. **]**
-
-**SRS_INTERLOCKED_LINUX_43_067: [** `interlocked_compare_exchange` shall return the value returned by `atomic_fetch` if the returned value is not equal to `comperand`. **]**
-
-**SRS_INTERLOCKED_LINUX_43_068: [** `interlocked_compare_exchange` shall repeat the call to `atomic_compare_exchange_strong` if the value returned by `atomic_fetch` is equal to `comperand`. **]**
+**SRS_INTERLOCKED_LINUX_43_012: [** `interlocked_compare_exchange` shall return a value equal to `comperand`. **]**
 
 ## interlocked_compare_exchange_16
 
@@ -118,13 +112,7 @@ MOCKABLE_FUNCTION(, int16_t, interlocked_compare_exchange_16, volatile_atomic in
 ```
 **SRS_INTERLOCKED_LINUX_43_069: [** `interlocked_compare_exchange_16` shall call `atomic_compare_exchange_strong` with `destination` as `object`, `&comperand` as `expected` and `exchange` as `desired`. **]**
 
-**SRS_INTERLOCKED_LINUX_43_070: [** `interlocked_compare_exchange_16` shall return a value equal to `comperand` if and only if `atomic_compare_exchange_strong` returns `true`. **]**
-
-**SRS_INTERLOCKED_LINUX_43_071: [** `interlocked_compare_exchange_16` shall call `atomic_fetch` if `atomic_compare_exchange_strong` returns `false`. **]**
-
-**SRS_INTERLOCKED_LINUX_43_072: [** `interlocked_compare_exchange_16` shall return the value returned by `atomic_fetch` if the returned value is not equal to `comperand`. **]**
-
-**SRS_INTERLOCKED_LINUX_43_073: [** `interlocked_compare_exchange_16` shall repeat the call to `atomic_compare_exchange_strong` if the value returned by `atomic_fetch` is equal to `comperand`. **]**
+**SRS_INTERLOCKED_LINUX_43_070: [** `interlocked_compare_exchange_16` shall return a value equal to `comperand`. **]**
 
 ## interlocked_compare_exchange_64
 
@@ -134,13 +122,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_compare_exchange_64, volatile_atomic in
 ```
 **SRS_INTERLOCKED_LINUX_43_074: [** `interlocked_compare_exchange_64` shall call `atomic_compare_exchange_strong` with `destination` as `object`, `&comperand` as `expected` and `exchange` as `desired`. **]**
 
-**SRS_INTERLOCKED_LINUX_43_075: [** `interlocked_compare_exchange_64` shall return a value equal to `comperand` if and only if `atomic_compare_exchange_strong` returns `true`. **]**
-
-**SRS_INTERLOCKED_LINUX_43_076: [** `interlocked_compare_exchange_64` shall call `atomic_fetch` if `atomic_compare_exchange_strong` returns `false`. **]**
-
-**SRS_INTERLOCKED_LINUX_43_077: [** `interlocked_compare_exchange_64` shall return the value returned by `atomic_fetch` if the returned value is not equal to `comperand`. **]**
-
-**SRS_INTERLOCKED_LINUX_43_078: [** `interlocked_compare_exchange_64` shall repeat the call to `atomic_compare_exchange_strong` if the value returned by `atomic_fetch` is equal to `comperand`. **]**
+**SRS_INTERLOCKED_LINUX_43_075: [** `interlocked_compare_exchange_64` shall return a value equal to `comperand`. **]**
 
 ## interlocked_compare_exchange_pointer
 
@@ -150,13 +132,7 @@ MOCKABLE_FUNCTION(, void*, interlocked_compare_exchange_pointer, void* volatile_
 ```
 **SRS_INTERLOCKED_LINUX_43_079: [** `interlocked_compare_exchange_pointer` shall call `atomic_compare_exchange_strong` with `destination` as `object`, `&comperand` as `expected` and `exchange` as `desired`. **]**
 
-**SRS_INTERLOCKED_LINUX_43_080: [** `interlocked_compare_exchange_pointer` shall return a value equal to `comperand` if and only if `atomic_compare_exchange_strong` returns `true`. **]**
-
-**SRS_INTERLOCKED_LINUX_43_081: [** `interlocked_compare_exchange_pointer` shall call `atomic_fetch` if `atomic_compare_exchange_strong` returns `false`. **]**
-
-**SRS_INTERLOCKED_LINUX_43_082: [** `interlocked_compare_exchange_pointer` shall return the value returned by `atomic_fetch` if the returned value is not equal to `comperand`. **]**
-
-**SRS_INTERLOCKED_LINUX_43_083: [** `interlocked_compare_exchange_pointer` shall repeat the call to `atomic_compare_exchange_strong` if the value returned by `atomic_fetch` is equal to `comperand`. **]**
+**SRS_INTERLOCKED_LINUX_43_080: [** `interlocked_compare_exchange_pointer` shall return a value equal to `comperand`. **]**
 
 ## interlocked_decrement
 
@@ -193,7 +169,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_decrement_64, volatile_atomic int64_t*,
 MOCKABLE_FUNCTION(, int32_t, interlocked_exchange, volatile_atomic int32_t*, target, int32_t, value);
 
 ```
-**SRS_INTERLOCKED_LINUX_43_027: [** `interlocked_exchange` shall call `atomic_fetch_sub` with `target` as `object` and `value` as `desired`. **]**
+**SRS_INTERLOCKED_LINUX_43_027: [** `interlocked_exchange` shall call `atomic_exchange` with `target` as `object` and `value` as `desired`. **]**
 
 **SRS_INTERLOCKED_LINUX_43_028: [** `interlocked_exchange` shall return the initial value pointed to by `target`. **]**
 
@@ -204,7 +180,7 @@ MOCKABLE_FUNCTION(, int32_t, interlocked_exchange, volatile_atomic int32_t*, tar
 MOCKABLE_FUNCTION(, int16_t, interlocked_exchange_16, volatile_atomic int16_t*, target, int16_t, value);
 
 ```
-**SRS_INTERLOCKED_LINUX_43_029: [** `interlocked_exchange_16` shall call `atomic_fetch_sub` with `target` as `object` and `value` as `desired`. **]**
+**SRS_INTERLOCKED_LINUX_43_029: [** `interlocked_exchange_16` shall call `atomic_exchange` with `target` as `object` and `value` as `desired`. **]**
 
 **SRS_INTERLOCKED_LINUX_43_030: [** `interlocked_exchange_16` shall return the initial value pointed to by `target`. **]**
 
@@ -214,7 +190,7 @@ MOCKABLE_FUNCTION(, int16_t, interlocked_exchange_16, volatile_atomic int16_t*, 
 MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_64, volatile_atomic int64_t*, target, int64_t, value);
 
 ```
-**SRS_INTERLOCKED_LINUX_43_031: [** `interlocked_exchange_64` shall call `atomic_fetch_sub` with `target` as `object` and `value` as `desired`. **]**
+**SRS_INTERLOCKED_LINUX_43_031: [** `interlocked_exchange_64` shall call `atomic_exchange` with `target` as `object` and `value` as `desired`. **]**
 
 **SRS_INTERLOCKED_LINUX_43_032: [** `interlocked_exchange_64` shall return the initial value pointed to by `target`. **]**
 
@@ -224,7 +200,7 @@ MOCKABLE_FUNCTION(, int64_t, interlocked_exchange_64, volatile_atomic int64_t*, 
 MOCKABLE_FUNCTION(, int8_t, interlocked_exchange_8, volatile_atomic int8_t*, target, int8_t, value);
 
 ```
-**SRS_INTERLOCKED_LINUX_43_033: [** `interlocked_exchange_8` shall call `atomic_fetch_sub` with `target` as `object` and `value` as `desired`. **]**
+**SRS_INTERLOCKED_LINUX_43_033: [** `interlocked_exchange_8` shall call `atomic_exchange` with `target` as `object` and `value` as `desired`. **]**
 
 **SRS_INTERLOCKED_LINUX_43_034: [** `interlocked_exchange_8` shall return the initial value pointed to by `target`. **]**
 

@@ -54,7 +54,7 @@ TEST_FUNCTION_CLEANUP(d)
 TEST_FUNCTION(interlocked_add_does_addition)
 {
     ///arrange
-    volatile int32_t addend;
+    volatile_atomic int32_t addend;
     interlocked_exchange(&addend, INT32_MAX);
     int32_t value = INT32_MIN;
 
@@ -71,7 +71,7 @@ TEST_FUNCTION(interlocked_add_does_addition)
 TEST_FUNCTION(interlocked_add_overflows_upper_bound)
 {
     ///arrange
-    volatile int32_t addend;
+    volatile_atomic int32_t addend;
     interlocked_exchange(&addend, INT32_MAX);
     int32_t value = 1;
 
@@ -88,7 +88,7 @@ TEST_FUNCTION(interlocked_add_overflows_upper_bound)
 TEST_FUNCTION(interlocked_add_underflows_lower_bound)
 {
     ///arrange
-    volatile int32_t addend;
+    volatile_atomic int32_t addend;
     interlocked_exchange(&addend, INT32_MIN);
     int32_t value = -1;
 
@@ -105,7 +105,7 @@ TEST_FUNCTION(interlocked_add_underflows_lower_bound)
 TEST_FUNCTION(interlocked_add_64_does_addition)
 {
     ///arrange
-    volatile int64_t addend;
+    volatile_atomic int64_t addend;
     interlocked_exchange_64(&addend, INT64_MAX);
     int64_t value = INT64_MIN;
 
@@ -122,7 +122,7 @@ TEST_FUNCTION(interlocked_add_64_does_addition)
 TEST_FUNCTION(interlocked_add_64_overflows_upper_bound)
 {
     ///arrange
-    volatile int64_t addend;
+    volatile_atomic int64_t addend;
     interlocked_exchange_64(&addend, INT64_MAX);
     int64_t value = 1;
 
@@ -139,7 +139,7 @@ TEST_FUNCTION(interlocked_add_64_overflows_upper_bound)
 TEST_FUNCTION(interlocked_add_64_underflows_lower_bound)
 {
     ///arrange
-    volatile int64_t addend;
+    volatile_atomic int64_t addend;
     interlocked_exchange_64(&addend, INT64_MIN);
     int64_t value = -1;
 
@@ -156,15 +156,15 @@ TEST_FUNCTION(interlocked_add_64_underflows_lower_bound)
 TEST_FUNCTION(interlocked_and_does_bitwise_and)
 {
     ///arrange
-    volatile uint32_t destination;
-    interlocked_exchange((volatile int32_t*)&destination, (uint32_t)0xF0F0F0F0);
+    volatile_atomic uint32_t destination;
+    interlocked_exchange((volatile_atomic int32_t*)&destination, (uint32_t)0xF0F0F0F0);
     uint32_t value = 0x0F0F0FFF;
 
     ///act
-    uint32_t return_val = (uint32_t)interlocked_and((volatile int32_t*)&destination, (int32_t)value);
+    uint32_t return_val = (uint32_t)interlocked_and((volatile_atomic int32_t*)&destination, (int32_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint32_t, 0x000000F0, interlocked_or((volatile int32_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint32_t, 0x000000F0, interlocked_or((volatile_atomic int32_t*)&destination, 0), "Result stored in *destination is incorrect.");
     ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val, "Return value is incorrect");
 }
 
@@ -173,16 +173,16 @@ TEST_FUNCTION(interlocked_and_does_bitwise_and)
 TEST_FUNCTION(interlocked_and_16_does_bitwise_and)
 {
     ///arrange
-    volatile uint16_t destination;
-    interlocked_exchange_16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
+    volatile_atomic uint16_t destination;
+    interlocked_exchange_16((volatile_atomic int16_t*)&destination, (uint16_t)0xF0F0);
     uint16_t value = 0x0FFF;
 
     ///act
-    uint16_t return_val = (uint16_t)interlocked_and_16((volatile int16_t*)&destination, (int16_t)value);
+    uint16_t return_val = (uint16_t)interlocked_and_16((volatile_atomic int16_t*)&destination, (int16_t)value);
 
 
     ///assert
-    ASSERT_ARE_EQUAL(uint16_t, 0x00F0, interlocked_or_16((volatile int16_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint16_t, 0x00F0, interlocked_or_16((volatile_atomic int16_t*)&destination, 0), "Result stored in *destination is incorrect.");
     ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val, "Return value is incorrect");
 }
 
@@ -191,15 +191,15 @@ TEST_FUNCTION(interlocked_and_16_does_bitwise_and)
 TEST_FUNCTION(interlocked_and_64_does_bitwise_and)
 {
     ///arrange
-    volatile uint64_t destination;
-    interlocked_exchange_64((volatile int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
+    volatile_atomic uint64_t destination;
+    interlocked_exchange_64((volatile_atomic int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
     uint64_t value = 0x0F0F0F0F0F0F0FFF;
 
     ///act
-    uint64_t return_val = (uint64_t)interlocked_and_64((volatile int64_t*)&destination, (int64_t)value);
+    uint64_t return_val = (uint64_t)interlocked_and_64((volatile_atomic int64_t*)&destination, (int64_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint64_t, 0x00000000000000F0, interlocked_or_64((volatile int64_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint64_t, 0x00000000000000F0, interlocked_or_64((volatile_atomic int64_t*)&destination, 0), "Result stored in *destination is incorrect.");
     ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val, "Return value is incorrect");
 }
 
@@ -208,15 +208,15 @@ TEST_FUNCTION(interlocked_and_64_does_bitwise_and)
 TEST_FUNCTION(interlocked_and_8_does_bitwise_and)
 {
     ///arrange
-    volatile uint8_t destination;
-    interlocked_exchange_8((volatile int8_t*)&destination, (uint8_t)0xF0);
+    volatile_atomic uint8_t destination;
+    interlocked_exchange_8((volatile_atomic int8_t*)&destination, (uint8_t)0xF0);
     uint8_t value = 0xAF;
 
     ///act
-    uint8_t return_val = (uint8_t)interlocked_and_8((volatile int8_t*)&destination, (int8_t)value);
+    uint8_t return_val = (uint8_t)interlocked_and_8((volatile_atomic int8_t*)&destination, (int8_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint8_t, 0xA0, interlocked_or_8((volatile int8_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint8_t, 0xA0, interlocked_or_8((volatile_atomic int8_t*)&destination, 0), "Result stored in *destination is incorrect.");
     ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val, "Return value is incorrect");
 }
 
@@ -225,7 +225,7 @@ TEST_FUNCTION(interlocked_and_8_does_bitwise_and)
 TEST_FUNCTION(interlocked_compare_exchange_exchanges_when_equal)
 {
     ///arrange
-    volatile int32_t destination;
+    volatile_atomic int32_t destination;
     interlocked_exchange(&destination, INT32_MAX);
     int32_t comperand = INT32_MAX;
     int32_t exchange = INT32_MIN;
@@ -243,7 +243,7 @@ TEST_FUNCTION(interlocked_compare_exchange_exchanges_when_equal)
 TEST_FUNCTION(interlocked_compare_exchange_does_not_exchange_when_not_equal)
 {
     ///arrange
-    volatile int32_t destination;
+    volatile_atomic int32_t destination;
     interlocked_exchange(&destination, INT32_MAX);
     int32_t comperand = INT32_MIN;
     int32_t exchange = INT32_MIN;
@@ -263,8 +263,8 @@ TEST_FUNCTION(interlocked_compare_exchange_does_not_exchange_when_not_equal)
 TEST_FUNCTION(interlocked_compare_exchange_128_exchanges_when_equal)
 {
     ///arrange
-    volatile int64_t* destination;
-    interlocked_exchange_pointer((void* volatile*)&destination, malloc(2 * sizeof(int64_t)));
+    volatile_atomic int64_t* destination;
+    interlocked_exchange_pointer((void* volatile_atomic*)&destination, malloc(2 * sizeof(int64_t)));
     int64_t* comperand_result = (int64_t*)malloc(2 * sizeof(int64_t));
 
     destination[0] = INT64_MAX;
@@ -296,8 +296,8 @@ TEST_FUNCTION(interlocked_compare_exchange_128_exchanges_when_equal)
 TEST_FUNCTION(interlocked_compare_exchange_128_does_not_exchange_when_not_equal)
 {
     ///arrange
-    volatile int64_t* destination;
-    interlocked_exchange_pointer((void* volatile*)&destination, malloc(2 * sizeof(int64_t)));
+    volatile_atomic int64_t* destination;
+    interlocked_exchange_pointer((void* volatile_atomic*)&destination, malloc(2 * sizeof(int64_t)));
     int64_t* comperand_result = (int64_t*)malloc(2 * sizeof(int64_t));
 
     destination[0] = INT64_MAX;
@@ -329,7 +329,7 @@ TEST_FUNCTION(interlocked_compare_exchange_128_does_not_exchange_when_not_equal)
 TEST_FUNCTION(interlocked_compare_exchange_16_exchanges_when_equal)
 {
     ///arrange
-    volatile int16_t destination;
+    volatile_atomic int16_t destination;
     interlocked_exchange_16(&destination, INT16_MAX);
     int16_t comperand = INT16_MAX;
     int16_t exchange = INT16_MIN;
@@ -347,7 +347,7 @@ TEST_FUNCTION(interlocked_compare_exchange_16_exchanges_when_equal)
 TEST_FUNCTION(interlocked_compare_exchange_16_does_not_exchange_when_not_equal)
 {
     ///arrange
-    volatile int16_t destination;
+    volatile_atomic int16_t destination;
     interlocked_exchange_16(&destination, INT16_MAX);
     int16_t comperand = INT16_MIN;
     int16_t exchange = INT16_MIN;
@@ -365,7 +365,7 @@ TEST_FUNCTION(interlocked_compare_exchange_16_does_not_exchange_when_not_equal)
 TEST_FUNCTION(interlocked_compare_exchange_64_exchanges_when_equal)
 {
     ///arrange
-    volatile int64_t destination;
+    volatile_atomic int64_t destination;
     interlocked_exchange_64(&destination, INT64_MAX);
     int64_t comperand = INT64_MAX;
     int64_t exchange = INT64_MIN;
@@ -383,7 +383,7 @@ TEST_FUNCTION(interlocked_compare_exchange_64_exchanges_when_equal)
 TEST_FUNCTION(interlocked_compare_exchange_64_does_not_exchange_when_not_equal)
 {
     ///arrange
-    volatile int64_t destination;
+    volatile_atomic int64_t destination;
     interlocked_exchange_64(&destination, INT64_MAX);
     int64_t comperand = INT64_MIN;
     int64_t exchange = INT64_MIN;
@@ -403,7 +403,7 @@ TEST_FUNCTION(interlocked_compare_exchange_pointer_exchanges_when_equal)
     ///arrange
     int value1 = 1;
     int value2 = 2;
-    void* volatile destination;
+    void* volatile_atomic destination;
     interlocked_exchange_pointer(&destination, &value1);
     void* comperand = &value1;
     void* exchange = &value2;
@@ -423,7 +423,7 @@ TEST_FUNCTION(interlocked_compare_exchange_pointer_does_not_exchange_when_not_eq
     ///arrange
     int value1 = 1;
     int value2 = 2;
-    void* volatile destination;
+    void* volatile_atomic destination;
     interlocked_exchange_pointer(&destination, &value1);
     void* comperand = &value2;
     void* exchange = &value2;
@@ -441,7 +441,7 @@ TEST_FUNCTION(interlocked_compare_exchange_pointer_does_not_exchange_when_not_eq
 TEST_FUNCTION(interlocked_decrement_upper_bound)
 {
     ///arrange
-    volatile int32_t addend;
+    volatile_atomic int32_t addend;
     interlocked_exchange(&addend, INT32_MAX);
 
     ///act
@@ -457,7 +457,7 @@ TEST_FUNCTION(interlocked_decrement_upper_bound)
 TEST_FUNCTION(interlocked_decrement_lower_bound)
 {
     ///arrange
-    volatile int32_t addend;
+    volatile_atomic int32_t addend;
     interlocked_exchange(&addend, INT32_MIN + 1);
 
     ///act
@@ -472,7 +472,7 @@ TEST_FUNCTION(interlocked_decrement_lower_bound)
 TEST_FUNCTION(interlocked_decrement_underflows_lower_bound)
 {
     ///arrange
-    volatile int32_t addend;
+    volatile_atomic int32_t addend;
     interlocked_exchange(&addend, INT32_MIN);
 
     ///act
@@ -489,7 +489,7 @@ TEST_FUNCTION(interlocked_decrement_underflows_lower_bound)
 TEST_FUNCTION(interlocked_decrement_16_upper_bound)
 {
     ///arrange
-    volatile int16_t addend;
+    volatile_atomic int16_t addend;
     interlocked_exchange_16(&addend, INT16_MAX);
 
     ///act
@@ -505,7 +505,7 @@ TEST_FUNCTION(interlocked_decrement_16_upper_bound)
 TEST_FUNCTION(interlocked_decrement_16_lower_bound)
 {
     ///arrange
-    volatile int16_t addend;
+    volatile_atomic int16_t addend;
     interlocked_exchange_16(&addend, INT16_MIN + 1);
 
     ///act
@@ -521,7 +521,7 @@ TEST_FUNCTION(interlocked_decrement_16_lower_bound)
 TEST_FUNCTION(interlocked_decrement_16_underflows_lower_bound)
 {
     ///arrange
-    volatile int16_t addend;
+    volatile_atomic int16_t addend;
     interlocked_exchange_16(&addend, INT16_MIN);
 
     ///act
@@ -537,7 +537,7 @@ TEST_FUNCTION(interlocked_decrement_16_underflows_lower_bound)
 TEST_FUNCTION(interlocked_decrement_64_upper_bound)
 {
     ///arrange
-    volatile int64_t addend;
+    volatile_atomic int64_t addend;
     interlocked_exchange_64(&addend, INT64_MAX);
 
     ///act
@@ -553,7 +553,7 @@ TEST_FUNCTION(interlocked_decrement_64_upper_bound)
 TEST_FUNCTION(interlocked_decrement_64_lower_bound)
 {
     ///arrange
-    volatile int64_t addend;
+    volatile_atomic int64_t addend;
     interlocked_exchange_64(&addend, INT64_MIN + 1);
 
     ///act
@@ -569,7 +569,7 @@ TEST_FUNCTION(interlocked_decrement_64_lower_bound)
 TEST_FUNCTION(interlocked_decrement_64_underflows_lower_bound)
 {
     ///arrange
-    volatile int64_t addend;
+    volatile_atomic int64_t addend;
     interlocked_exchange_64(&addend, INT64_MIN);
 
     ///act
@@ -585,7 +585,7 @@ TEST_FUNCTION(interlocked_decrement_64_underflows_lower_bound)
 TEST_FUNCTION(interlocked_exchange_sets_target)
 {
     ///arrange
-    volatile int32_t target;
+    volatile_atomic int32_t target;
     interlocked_exchange(&target, INT32_MIN);
     int32_t value = INT32_MAX;
 
@@ -602,7 +602,7 @@ TEST_FUNCTION(interlocked_exchange_sets_target)
 TEST_FUNCTION(interlocked_exchange_16_sets_target)
 {
     ///arrange
-    volatile int16_t target;
+    volatile_atomic int16_t target;
     interlocked_exchange_16(&target, INT16_MIN);
     int16_t value = INT16_MAX;
 
@@ -619,7 +619,7 @@ TEST_FUNCTION(interlocked_exchange_16_sets_target)
 TEST_FUNCTION(interlocked_exchange_64_sets_target)
 {
     ///arrange
-    volatile int64_t target;
+    volatile_atomic int64_t target;
     interlocked_exchange_64(&target, INT64_MIN);
     int64_t value = INT64_MAX;
 
@@ -636,7 +636,7 @@ TEST_FUNCTION(interlocked_exchange_64_sets_target)
 TEST_FUNCTION(interlocked_exchange_8_sets_target)
 {
     ///arrange
-    volatile int8_t target;
+    volatile_atomic int8_t target;
     interlocked_exchange_8(&target, INT8_MIN);
     int8_t value = INT8_MAX;
 
@@ -653,7 +653,7 @@ TEST_FUNCTION(interlocked_exchange_8_sets_target)
 TEST_FUNCTION(interlocked_exchange_add_sets_target_to_sum)
 {
     ///arrange
-    volatile int32_t addend;
+    volatile_atomic int32_t addend;
     interlocked_exchange(&addend, INT32_MIN);
     int32_t value = INT32_MAX;
 
@@ -670,7 +670,7 @@ TEST_FUNCTION(interlocked_exchange_add_sets_target_to_sum)
 TEST_FUNCTION(interlocked_exchange_add_overflows_upper_bound)
 {
     ///arrange
-    volatile int32_t addend;
+    volatile_atomic int32_t addend;
     interlocked_exchange(&addend, INT32_MAX);
     int32_t value = 1;
 
@@ -687,7 +687,7 @@ TEST_FUNCTION(interlocked_exchange_add_overflows_upper_bound)
 TEST_FUNCTION(interlocked_exchange_add_underflows_lower_bound)
 {
     ///arrange
-    volatile int32_t addend;
+    volatile_atomic int32_t addend;
     interlocked_exchange(&addend, INT32_MIN);
     int32_t value = -1;
 
@@ -704,7 +704,7 @@ TEST_FUNCTION(interlocked_exchange_add_underflows_lower_bound)
 TEST_FUNCTION(interlocked_exchange_add_64_sets_target_to_sum)
 {
     ///arrange
-    volatile int64_t addend;
+    volatile_atomic int64_t addend;
     interlocked_exchange_64(&addend, INT64_MIN);
     int64_t value = INT64_MAX;
 
@@ -721,7 +721,7 @@ TEST_FUNCTION(interlocked_exchange_add_64_sets_target_to_sum)
 TEST_FUNCTION(interlocked_exchange_add_64_overflows_upper_bound)
 {
     ///arrange
-    volatile int64_t addend;
+    volatile_atomic int64_t addend;
     interlocked_exchange_64(&addend, INT64_MAX);
     int64_t value = 1;
 
@@ -738,7 +738,7 @@ TEST_FUNCTION(interlocked_exchange_add_64_overflows_upper_bound)
 TEST_FUNCTION(interlocked_exchange_add_64_underflows_lower_bound)
 {
     ///arrange
-    volatile int64_t addend;
+    volatile_atomic int64_t addend;
     interlocked_exchange_64(&addend, INT64_MIN);
     int64_t value = -1;
 
@@ -757,7 +757,7 @@ TEST_FUNCTION(interlocked_exchange_pointer_sets_target)
     ///arrange
     int value1 = 1;
     int value2 = 2;
-    void* volatile target = &value1;
+    void* volatile_atomic target = &value1;
     void* value = &value2;
 
     ///act
@@ -773,7 +773,7 @@ TEST_FUNCTION(interlocked_exchange_pointer_sets_target)
 TEST_FUNCTION(interlocked_increment_upper_bound)
 {
     ///arrange
-    volatile int32_t addend;
+    volatile_atomic int32_t addend;
     interlocked_exchange(&addend, INT32_MAX-1);
 
     ///act
@@ -789,7 +789,7 @@ TEST_FUNCTION(interlocked_increment_upper_bound)
 TEST_FUNCTION(interlocked_increment_lower_bound)
 {
     ///arrange
-    volatile int32_t addend;
+    volatile_atomic int32_t addend;
     interlocked_exchange(&addend, INT32_MIN);
 
     ///act
@@ -806,7 +806,7 @@ TEST_FUNCTION(interlocked_increment_lower_bound)
 TEST_FUNCTION(interlocked_increment_overflows_upper_bound)
 {
     ///arrange
-    volatile int32_t addend;
+    volatile_atomic int32_t addend;
     interlocked_exchange(&addend, INT32_MAX);
 
     ///act
@@ -822,7 +822,7 @@ TEST_FUNCTION(interlocked_increment_overflows_upper_bound)
 TEST_FUNCTION(interlocked_increment_16_upper_bound)
 {
     ///arrange
-    volatile int16_t addend;
+    volatile_atomic int16_t addend;
     interlocked_exchange_16(&addend, INT16_MAX - 1);
 
     ///act
@@ -838,7 +838,7 @@ TEST_FUNCTION(interlocked_increment_16_upper_bound)
 TEST_FUNCTION(interlocked_increment_16_lower_bound)
 {
     ///arrange
-    volatile int16_t addend;
+    volatile_atomic int16_t addend;
     interlocked_exchange_16(&addend, INT16_MIN);
 
     ///act
@@ -854,7 +854,7 @@ TEST_FUNCTION(interlocked_increment_16_lower_bound)
 TEST_FUNCTION(interlocked_increment_16_overflows_upper_bound)
 {
     ///arrange
-    volatile int16_t addend;
+    volatile_atomic int16_t addend;
     interlocked_exchange_16(&addend, INT16_MAX);
 
     ///act
@@ -870,7 +870,7 @@ TEST_FUNCTION(interlocked_increment_16_overflows_upper_bound)
 TEST_FUNCTION(interlocked_increment_64_upper_bound)
 {
     ///arrange
-    volatile int64_t addend;
+    volatile_atomic int64_t addend;
     interlocked_exchange_64(&addend, INT64_MAX - 1);
 
     ///act
@@ -886,7 +886,7 @@ TEST_FUNCTION(interlocked_increment_64_upper_bound)
 TEST_FUNCTION(interlocked_increment_64_lower_bound)
 {
     ///arrange
-    volatile int64_t addend;
+    volatile_atomic int64_t addend;
     interlocked_exchange_64(&addend, INT64_MIN);
 
     ///act
@@ -903,7 +903,7 @@ TEST_FUNCTION(interlocked_increment_64_lower_bound)
 TEST_FUNCTION(interlocked_increment_64_overflows_upper_bound)
 {
     ///arrange
-    volatile int64_t addend;
+    volatile_atomic int64_t addend;
     interlocked_exchange_64(&addend, INT64_MAX);
 
     ///act
@@ -919,15 +919,15 @@ TEST_FUNCTION(interlocked_increment_64_overflows_upper_bound)
 TEST_FUNCTION(interlocked_or_does_bitwise_or)
 {
     ///arrange
-    volatile uint32_t destination;
-    interlocked_exchange((volatile int32_t*)&destination, (uint32_t)0xF0F0F0F0);
+    volatile_atomic uint32_t destination;
+    interlocked_exchange((volatile_atomic int32_t*)&destination, (uint32_t)0xF0F0F0F0);
     uint32_t value = 0x0F0F0F0F;
 
     ///act
-    uint32_t return_val = (uint32_t)interlocked_or((volatile int32_t*)&destination, (int32_t)value);
+    uint32_t return_val = (uint32_t)interlocked_or((volatile_atomic int32_t*)&destination, (int32_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint32_t, 0xFFFFFFFF, interlocked_or((volatile int32_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint32_t, 0xFFFFFFFF, interlocked_or((volatile_atomic int32_t*)&destination, 0), "Result stored in *destination is incorrect.");
     ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0F0, return_val, "Return value is incorrect");
 }
 
@@ -936,16 +936,16 @@ TEST_FUNCTION(interlocked_or_does_bitwise_or)
 TEST_FUNCTION(interlocked_or_16_does_bitwise_or)
 {
     ///arrange
-    volatile uint16_t destination;
-    interlocked_exchange_16((volatile int16_t*)&destination, (uint16_t)0xF0F0);
+    volatile_atomic uint16_t destination;
+    interlocked_exchange_16((volatile_atomic int16_t*)&destination, (uint16_t)0xF0F0);
     uint16_t value = 0x0F0F;
 
     ///act
-    uint16_t return_val = (uint16_t)interlocked_or_16((volatile int16_t*)&destination, (int16_t)value);
+    uint16_t return_val = (uint16_t)interlocked_or_16((volatile_atomic int16_t*)&destination, (int16_t)value);
 
 
     ///assert
-    ASSERT_ARE_EQUAL(uint16_t, 0xFFFF, interlocked_or_16((volatile int16_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint16_t, 0xFFFF, interlocked_or_16((volatile_atomic int16_t*)&destination, 0), "Result stored in *destination is incorrect.");
     ASSERT_ARE_EQUAL(uint16_t, 0xF0F0, return_val, "Return value is incorrect");
 }
 
@@ -954,15 +954,15 @@ TEST_FUNCTION(interlocked_or_16_does_bitwise_or)
 TEST_FUNCTION(interlocked_or_64_does_bitwise_or)
 {
     ///arrange
-    volatile uint64_t destination;
-    interlocked_exchange_64((volatile int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
+    volatile_atomic uint64_t destination;
+    interlocked_exchange_64((volatile_atomic int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0F0);
     uint64_t value = 0x0F0F0F0F0F0F0F0F;
 
     ///act
-    uint64_t return_val = (uint64_t)interlocked_or_64((volatile int64_t*)&destination, (int64_t)value);
+    uint64_t return_val = (uint64_t)interlocked_or_64((volatile_atomic int64_t*)&destination, (int64_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint64_t, 0xFFFFFFFFFFFFFFFF, interlocked_or_64((volatile int64_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint64_t, 0xFFFFFFFFFFFFFFFF, interlocked_or_64((volatile_atomic int64_t*)&destination, 0), "Result stored in *destination is incorrect.");
     ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0F0, return_val, "Return value is incorrect");
 }
 
@@ -971,15 +971,15 @@ TEST_FUNCTION(interlocked_or_64_does_bitwise_or)
 TEST_FUNCTION(interlocked_or_8_does_bitwise_or)
 {
     ///arrange
-    volatile uint8_t destination;
-    interlocked_exchange_8((volatile int8_t*)&destination, (uint8_t)0xF0);
+    volatile_atomic uint8_t destination;
+    interlocked_exchange_8((volatile_atomic int8_t*)&destination, (uint8_t)0xF0);
     uint8_t value = 0x0F;
 
     ///act
-    uint8_t return_val = (uint8_t)interlocked_or_8((volatile int8_t*)&destination, (int8_t)value);
+    uint8_t return_val = (uint8_t)interlocked_or_8((volatile_atomic int8_t*)&destination, (int8_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint8_t, 0xFF, interlocked_or_8((volatile int8_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint8_t, 0xFF, interlocked_or_8((volatile_atomic int8_t*)&destination, 0), "Result stored in *destination is incorrect.");
     ASSERT_ARE_EQUAL(uint8_t, 0xF0, return_val, "Return value is incorrect");
 }
 
@@ -988,15 +988,15 @@ TEST_FUNCTION(interlocked_or_8_does_bitwise_or)
 TEST_FUNCTION(interlocked_xor_does_bitwise_xor)
 {
     ///arrange
-    volatile uint32_t destination;
-    interlocked_exchange((volatile int32_t*)&destination, (uint32_t)0xF0F0F0FF);
+    volatile_atomic uint32_t destination;
+    interlocked_exchange((volatile_atomic int32_t*)&destination, (uint32_t)0xF0F0F0FF);
     uint32_t value = 0x0F0F0F0F;
 
     ///act
-    uint32_t return_val = (uint32_t)interlocked_xor((volatile int32_t*)&destination, (int32_t)value);
+    uint32_t return_val = (uint32_t)interlocked_xor((volatile_atomic int32_t*)&destination, (int32_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint32_t, 0xFFFFFFF0, interlocked_or((volatile int32_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint32_t, 0xFFFFFFF0, interlocked_or((volatile_atomic int32_t*)&destination, 0), "Result stored in *destination is incorrect.");
     ASSERT_ARE_EQUAL(uint32_t, 0xF0F0F0FF, return_val, "Return value is incorrect");
 }
 
@@ -1005,16 +1005,16 @@ TEST_FUNCTION(interlocked_xor_does_bitwise_xor)
 TEST_FUNCTION(interlocked_xor_16_does_bitwise_xor)
 {
     ///arrange
-    volatile uint16_t destination;
-    interlocked_exchange_16((volatile int16_t*)&destination, (uint16_t)0xF0FF);
+    volatile_atomic uint16_t destination;
+    interlocked_exchange_16((volatile_atomic int16_t*)&destination, (uint16_t)0xF0FF);
     uint16_t value = 0x0F0F;
 
     ///act
-    uint16_t return_val = (uint16_t)interlocked_xor_16((volatile int16_t*)&destination, (int16_t)value);
+    uint16_t return_val = (uint16_t)interlocked_xor_16((volatile_atomic int16_t*)&destination, (int16_t)value);
 
 
     ///assert
-    ASSERT_ARE_EQUAL(uint16_t, 0xFFF0, interlocked_or_16((volatile int16_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint16_t, 0xFFF0, interlocked_or_16((volatile_atomic int16_t*)&destination, 0), "Result stored in *destination is incorrect.");
     ASSERT_ARE_EQUAL(uint16_t, 0xF0FF, return_val, "Return value is incorrect");
 }
 
@@ -1023,15 +1023,15 @@ TEST_FUNCTION(interlocked_xor_16_does_bitwise_xor)
 TEST_FUNCTION(interlocked_xor_64_does_bitwise_xor)
 {
     ///arrange
-    volatile uint64_t destination;
-    interlocked_exchange_64((volatile int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0FF);
+    volatile_atomic uint64_t destination;
+    interlocked_exchange_64((volatile_atomic int64_t*)&destination, (uint64_t)0xF0F0F0F0F0F0F0FF);
     uint64_t value = 0x0F0F0F0F0F0F0F0F;
 
     ///act
-    uint64_t return_val = (uint64_t)interlocked_xor_64((volatile int64_t*)&destination, (int64_t)value);
+    uint64_t return_val = (uint64_t)interlocked_xor_64((volatile_atomic int64_t*)&destination, (int64_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint64_t, 0xFFFFFFFFFFFFFFF0, interlocked_or_64((volatile int64_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint64_t, 0xFFFFFFFFFFFFFFF0, interlocked_or_64((volatile_atomic int64_t*)&destination, 0), "Result stored in *destination is incorrect.");
     ASSERT_ARE_EQUAL(uint64_t, 0xF0F0F0F0F0F0F0FF, return_val, "Return value is incorrect");
 }
 
@@ -1040,15 +1040,15 @@ TEST_FUNCTION(interlocked_xor_64_does_bitwise_xor)
 TEST_FUNCTION(interlocked_xor_8_does_bitwise_xor)
 {
     ///arrange
-    volatile uint8_t destination;
-    interlocked_exchange_8((volatile int8_t*)&destination, (uint8_t)0xFF);
+    volatile_atomic uint8_t destination;
+    interlocked_exchange_8((volatile_atomic int8_t*)&destination, (uint8_t)0xFF);
     uint8_t value = 0x0F;
 
     ///act
-    uint8_t return_val = (uint8_t)interlocked_xor_8((volatile int8_t*)&destination, (int8_t)value);
+    uint8_t return_val = (uint8_t)interlocked_xor_8((volatile_atomic int8_t*)&destination, (int8_t)value);
 
     ///assert
-    ASSERT_ARE_EQUAL(uint8_t, 0xF0, interlocked_or_8((volatile int8_t*)&destination, 0), "Result stored in *destination is incorrect.");
+    ASSERT_ARE_EQUAL(uint8_t, 0xF0, interlocked_or_8((volatile_atomic int8_t*)&destination, 0), "Result stored in *destination is incorrect.");
     ASSERT_ARE_EQUAL(uint8_t, 0xFF, return_val, "Return value is incorrect");
 }
 

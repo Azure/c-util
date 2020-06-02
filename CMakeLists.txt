@@ -41,6 +41,11 @@ if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/
         include_directories(deps/azure-macro-utils-c/inc)
 endif()
 
+if ((NOT TARGET azure_c_logging) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-logging/CMakeLists.txt))
+        add_subdirectory(deps/azure-c-logging)
+        include_directories(deps/azure-c-logging/inc)
+endif()
+
 if ((NOT TARGET ctest) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-ctest/CMakeLists.txt))
         add_subdirectory(deps/azure-ctest)
         include_directories(deps/azure-ctest/inc)
@@ -54,11 +59,6 @@ endif()
 if ((NOT TARGET umock_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMakeLists.txt))
         add_subdirectory(deps/umock-c)
         include_directories(deps/umock-c/inc)
-endif()
-
-if ((NOT TARGET azure_c_logging) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-logging/CMakeLists.txt))
-        add_subdirectory(deps/azure-c-logging)
-        include_directories(deps/azure-c-logging/inc)
 endif()
 
 # This function focuses on setting files which are unique to a given hardware platform.
@@ -178,6 +178,7 @@ if(MSVC)
     target_link_libraries(azure_c_util synchronization azure_c_logging)
     include_directories(${CMAKE_CURRENT_LIST_DIR}/pal/windows)
 else()
+    target_link_libraries(azure_c_util azure_c_logging)
     target_include_directories(azure_c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/linux>)
     include_directories(${CMAKE_CURRENT_LIST_DIR}/pal/linux)
 endif()
