@@ -94,7 +94,7 @@ jobs:
     - vstest
 
   steps:
-  - task: BatchScript@1z
+  - task: BatchScript@1
     displayName: 'Git submodule update'
     inputs:
       filename: 'C:\Program Files\Git\bin\git.exe'
