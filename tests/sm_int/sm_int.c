@@ -638,7 +638,7 @@ TEST_FUNCTION(sm_chaos)
 
         ASSERT_IS_TRUE(InterlockedAdd(&data->n_begin_open_grants, 0) >= 1);
     }
-
+    sm_destroy(data->sm);
     free(data);
 
     xlogging_set_log_function(toBeRestored);
