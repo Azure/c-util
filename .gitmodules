@@ -19,3 +19,4 @@
 [submodule "deps/azure-c-pal"]
 	path = deps/azure-c-pal
 	url = https://github.com/azure/azure-c-pal
+	branch = reals

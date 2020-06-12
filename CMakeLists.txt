@@ -20,11 +20,14 @@ set(original_run_e2e_tests ${run_e2e_tests})
 set(original_run_unittests ${run_unittests})
 set(original_run_int_tests ${run_int_tests})
 set(original_run_traceability ${run_traceability})
+set(original_run_perf_tests ${run_perf_tests})
+
 
 set(run_e2e_tests OFF)
 set(run_unittests OFF)
 set(run_int_tests OFF)
 set(run_traceability OFF)
+set(run_perf_tests OFF)
 
 if ((NOT TARGET azure_c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-build-tools/CMakeLists.txt))
         add_subdirectory(deps/azure-c-build-tools)
@@ -63,7 +66,7 @@ endif()
 
 if ((NOT TARGET azure_c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-pal/CMakeLists.txt))
         add_subdirectory(deps/azure-c-pal)
-        include_directories(deps/azure-c-pal/inc)
+        include_directories(deps/azure-c-pal/interfaces/inc)
 endif()
 
 # This function focuses on setting files which are unique to a given hardware platform.
@@ -91,7 +94,6 @@ set(azure_c_util_c_files
     ./src/constbuffer_array.c
     ./src/constbuffer_array_batcher_nv.c
     ./src/doublylinkedlist.c
-    ./src/gballoc.c
     ./src/map.c
     ./src/memory_data.c
     ./src/singlylinkedlist.c
@@ -116,6 +118,7 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/strings_types.h
     ./inc/azure_c_util/thandle.h
     ./inc/azure_c_util/thandle_stdlib.h
+    ./inc/azure_c_util/uuid.h
     ${SM_H_FILE}
 )
 
@@ -147,6 +150,7 @@ set(run_e2e_tests ${original_run_e2e_tests})
 set(run_unittests ${original_run_unittests})
 set(run_int_tests ${original_run_int_tests})
 set(run_traceability ${original_run_traceability})
+set(run_perf_tests ${original_run_perf_tests})
 
 if((WIN32) AND (${run_traceability}))
     #add traceability custom target

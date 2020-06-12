@@ -15,8 +15,8 @@
 #include "umock_c/umock_c_negative_tests.h"
 
 #define ENABLE_MOCKS
-#include "azure_c_util/gballoc.h"
-#include "azure_c_util/uniqueid.h"
+#include "gballoc.h"
+#include "uniqueid.h"
 #undef ENABLE_MOCKS
 
 #include "azure_c_util/uuid.h"

@@ -12,6 +12,7 @@ set(azure_c_util_reals_c_files
     real_memory_data.c
     real_singlylinkedlist.c
     real_uuid.c
+    real_sm.c
 )
 
 set(azure_c_util_reals_h_files
@@ -30,9 +31,11 @@ set(azure_c_util_reals_h_files
     real_singlylinkedlist.h
     real_uuid.h
     real_uuid_renames.h
+    real_sm.h
+    real_sm_renames.h
 )
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)
 add_library(azure_c_util_reals ${azure_c_util_reals_c_files} ${azure_c_util_reals_h_files})
 target_include_directories(azure_c_util_reals PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests/reals>)
-target_link_libraries(azure_c_util_reals azure_c_logging)
+target_link_libraries(azure_c_util_reals azure_c_logging azure_c_pal azure_c_pal_reals)

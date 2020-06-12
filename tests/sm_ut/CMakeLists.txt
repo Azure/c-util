@@ -17,5 +17,5 @@ set(${theseTestsName}_h_files
 ../../inc/azure_c_util/sm.h
 )
 
-build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS synchronization azure_c_util_reals)
+build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS synchronization azure_c_pal_reals)
 

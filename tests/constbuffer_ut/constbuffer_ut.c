@@ -25,7 +25,7 @@ void my_gballoc_free(void* ptr)
 #define ENABLE_MOCKS
 #include "umock_c/umock_c.h"
 #include "azure_c_util/buffer_.h"
-#include "azure_c_util/gballoc.h"
+#include "gballoc.h"
 
 #undef ENABLE_MOCKS
 #include "azure_c_util/constbuffer.h"

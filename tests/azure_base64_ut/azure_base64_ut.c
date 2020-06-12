@@ -32,7 +32,7 @@ static void my_gballoc_free(void* ptr)
 }
 
 #define ENABLE_MOCKS
-#include "azure_c_util/gballoc.h"
+#include "gballoc.h"
 #undef ENABLE_MOCKS
 
 #include "azure_c_util/azure_base64.h"

@@ -29,7 +29,7 @@ void real_free(void* ptr)
 
 #include "azure_c_util/constbuffer.h"
 #include "azure_c_util/constbuffer_array.h"
-#include "azure_c_util/gballoc.h"
+#include "gballoc.h"
 #include "azure_c_util/memory_data.h"
 
 #undef ENABLE_MOCKS

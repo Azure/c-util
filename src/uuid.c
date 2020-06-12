@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "azure_macro_utils/macro_utils.h"
-#include "azure_c_util/gballoc.h"
-#include "azure_c_util/uuid.h"
-#include "azure_c_util/uniqueid.h"
+#include "gballoc.h"
+#include "uniqueid.h"
 #include "azure_c_logging/xlogging.h"
+#include "azure_c_util/uuid.h"
 
 #define UUID_STRING_LENGTH          36
 #define UUID_STRING_SIZE            (UUID_STRING_LENGTH + 1)
