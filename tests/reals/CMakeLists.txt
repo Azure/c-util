@@ -12,7 +12,6 @@ set(azure_c_util_reals_c_files
     real_memory_data.c
     real_singlylinkedlist.c
     real_uuid.c
-    real_sm.c
 )
 
 set(azure_c_util_reals_h_files
@@ -31,9 +30,12 @@ set(azure_c_util_reals_h_files
     real_singlylinkedlist.h
     real_uuid.h
     real_uuid_renames.h
-    real_sm.h
-    real_sm_renames.h
 )
+
+if(MSVC)
+    set(azure_c_util_reals_c_files real_sm.c)
+    set(azure_c_util_reals_h_files real_sm.h real_sm_renames.h)
+endif()
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)
 add_library(azure_c_util_reals ${azure_c_util_reals_c_files} ${azure_c_util_reals_h_files})
