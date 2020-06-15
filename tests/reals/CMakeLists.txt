@@ -3,6 +3,16 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
+if(MSVC)
+set(REAL_SM_C_FILES
+    real_sm.c
+)
+set(REAL_SM_H_FILES
+    real_sm.h
+    real_sm_renames.h
+)
+endif()
+
 set(azure_c_util_reals_c_files
     real_constbuffer.c
     real_constbuffer_array.c
@@ -12,6 +22,7 @@ set(azure_c_util_reals_c_files
     real_memory_data.c
     real_singlylinkedlist.c
     real_uuid.c
+    ${REAL_SM_C_FILES}
 )
 
 set(azure_c_util_reals_h_files
@@ -30,12 +41,8 @@ set(azure_c_util_reals_h_files
     real_singlylinkedlist.h
     real_uuid.h
     real_uuid_renames.h
+    ${REAL_SM_H_FILES}
 )
-
-if(MSVC)
-    set(azure_c_util_reals_c_files real_sm.c)
-    set(azure_c_util_reals_h_files real_sm.h real_sm_renames.h)
-endif()
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)
 add_library(azure_c_util_reals ${azure_c_util_reals_c_files} ${azure_c_util_reals_h_files})
