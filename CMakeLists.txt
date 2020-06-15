@@ -66,7 +66,7 @@ endif()
 
 if ((NOT TARGET azure_c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-pal/CMakeLists.txt))
         add_subdirectory(deps/azure-c-pal)
-        include_directories(deps/azure-c-pal/interfaces/inc)
+        include_directories(${C_PAL_INC_FOLDER})
 endif()
 
 # This function focuses on setting files which are unique to a given hardware platform.
