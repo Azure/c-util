@@ -5,12 +5,12 @@
 #include <inttypes.h>
 
 #include "azure_macro_utils/macro_utils.h"
-#include "azure_c_util/gballoc.h"
+#include "gballoc.h"
 #include "azure_c_logging/xlogging.h"
 
 #include "azure_c_util/constbuffer.h"
 #include "azure_c_util/constbuffer_array.h"
-#include "azure_c_util/refcount.h"
+#include "refcount.h"
 
 typedef struct CONSTBUFFER_ARRAY_HANDLE_DATA_TAG
 {

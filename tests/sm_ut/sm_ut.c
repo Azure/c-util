@@ -28,8 +28,8 @@ void my_gballoc_free(void* ptr)
 
 #define ENABLE_MOCKS
 
-#include "azure_c_util/gballoc.h"
-#include "azure_c_util/interlocked_hl.h"
+#include "gballoc.h"
+#include "interlocked_hl.h"
 #undef ENABLE_MOCKS
 
 #include "real_interlocked_hl.h"

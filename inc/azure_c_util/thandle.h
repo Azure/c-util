@@ -13,7 +13,7 @@
 #include "azure_c_logging/xlogging.h"
 
 #include "azure_c_util/containing_record.h"
-#include "refcount_os.h"
+#include "refcount.h"
 
 #ifdef THANDLE_MALLOC_FUNCTION
     #ifndef THANDLE_FREE_FUNCTION

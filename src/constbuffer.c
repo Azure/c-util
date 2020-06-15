@@ -4,9 +4,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "azure_macro_utils/macro_utils.h"
-#include "azure_c_util/gballoc.h"
+#include "gballoc.h"
 #include "azure_c_logging/xlogging.h"
-#include "azure_c_util/refcount.h"
+#include "refcount.h"
 
 #include "azure_c_util/constbuffer.h"
 

@@ -66,7 +66,7 @@ void real_free(void* ptr)
 }
 
 #define ENABLE_MOCKS
-#include "azure_c_util/gballoc.h"
+#include "gballoc.h"
 #undef ENABLE_MOCKS
 
 #include "azure_c_util/crt_abstractions.h"

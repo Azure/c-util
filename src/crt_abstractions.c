@@ -11,7 +11,7 @@
 #include <math.h>
 #include <errno.h>
 #include "azure_macro_utils/macro_utils.h"
-#include "azure_c_util/gballoc.h"
+#include "gballoc.h"
 #include "azure_c_util/crt_abstractions.h"
 
 // VS 2008 does not have INFINITY and all the nice goodies...

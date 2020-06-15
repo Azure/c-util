@@ -16,8 +16,8 @@
 
 #include "azure_macro_utils/macro_utils.h"
 
-#include "azure_c_util/timer.h"
-#include "azure_c_util/interlocked_hl.h"
+#include "timer.h"
+#include "interlocked_hl.h"
 #include "azure_c_logging/xlogging.h"
 
 #include "azure_c_util/sm.h"
@@ -638,7 +638,7 @@ TEST_FUNCTION(sm_chaos)
 
         ASSERT_IS_TRUE(InterlockedAdd(&data->n_begin_open_grants, 0) >= 1);
     }
-
+    sm_destroy(data->sm);
     free(data);
 
     xlogging_set_log_function(toBeRestored);

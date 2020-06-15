@@ -25,4 +25,4 @@ set(${theseTestsName}_h_files
     ../reals/real_memory_data_renames.h
 )
 
-build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests")
+build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS azure_c_pal)
