@@ -96,6 +96,7 @@ set(azure_c_util_c_files
     ./src/doublylinkedlist.c
     ./src/map.c
     ./src/memory_data.c
+    ./src/rc_string.c
     ./src/singlylinkedlist.c
     ./src/strings.c
     ./src/thandle_stdlib.c
@@ -114,6 +115,7 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/map.h
     ./inc/azure_c_util/memory_data.h
     ./inc/azure_c_util/singlylinkedlist.h
+    ./inc/azure_c_util/rc_string.h
     ./inc/azure_c_util/strings.h
     ./inc/azure_c_util/strings_types.h
     ./inc/azure_c_util/thandle.h
