@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
-#include "gballoc.h"
+#include "azure_c_pal/gballoc.h"
 #include "azure_c_logging/xlogging.h"
 #include "azure_c_util/constbuffer_array_batcher_nv.h"
 #include "azure_c_util/memory_data.h"

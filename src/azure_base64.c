@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "gballoc.h"
+#include "azure_c_pal/gballoc.h"
 #include "azure_c_util/azure_base64.h"
 #include "azure_c_logging/xlogging.h"
 

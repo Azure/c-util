@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "azure_macro_utils/macro_utils.h"
-#include "gballoc.h"
-#include "uniqueid.h"
+#include "azure_c_pal/gballoc.h"
+#include "azure_c_pal/uniqueid.h"
 #include "azure_c_logging/xlogging.h"
 #include "azure_c_util/uuid.h"
 

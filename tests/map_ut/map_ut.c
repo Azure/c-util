@@ -92,7 +92,7 @@ STRING_HANDLE my_STRING_new_JSON(const char* source)
     return (STRING_HANDLE)malloc(1);
 }
 
-#include "gballoc.h"
+#include "azure_c_pal/gballoc.h"
 
 #undef ENABLE_MOCKS
 

@@ -54,7 +54,7 @@ void my_gballoc_free(void* ptr)
 MOCK_FUNCTION_WITH_CODE(, bool, test_match_function, LIST_ITEM_HANDLE, list_item, const void*, match_context)
 MOCK_FUNCTION_END(true);
 
-#include "gballoc.h"
+#include "azure_c_pal/gballoc.h"
 
 #undef ENABLE_MOCKS
 

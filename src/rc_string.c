@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #include "azure_macro_utils/macro_utils.h"
-#include "gballoc.h"
+#include "azure_c_pal/gballoc.h"
 #include "azure_c_util/rc_string.h"
 #include "azure_c_logging/xlogging.h"
 
