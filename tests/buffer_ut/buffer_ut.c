@@ -72,7 +72,7 @@ void my_gballoc_free(void* ptr)
 }
 
 #define ENABLE_MOCKS
-#include "gballoc.h"
+#include "azure_c_pal/gballoc.h"
 
 #define ALLOCATION_SIZE             16
 #define TOTAL_ALLOCATION_SIZE       32

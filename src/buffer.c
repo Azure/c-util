@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "gballoc.h"
+#include "azure_c_pal/gballoc.h"
 #include "azure_c_util/buffer_.h"
 #include "azure_c_logging/xlogging.h"
 
