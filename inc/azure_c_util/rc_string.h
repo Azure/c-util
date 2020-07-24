@@ -25,7 +25,11 @@ extern "C"
 
     THANDLE_TYPE_DECLARE(RC_STRING);
 
+    typedef void (*RC_STRING_FREE_FUNC)(void* context);
+
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*, string);
+    MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_move_memory, const char*, string);
+    MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_custom_free, const char*, string, RC_STRING_FREE_FUNC, free_func, void*, free_func_context);
 
 #ifdef __cplusplus
 }
