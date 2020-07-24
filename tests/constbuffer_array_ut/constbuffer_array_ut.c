@@ -29,9 +29,12 @@ static void my_gballoc_free(void* s)
 
 #define ENABLE_MOCKS
 #include "azure_c_pal/gballoc.h"
+#include "azure_c_pal/interlocked.h"
 #include "azure_c_util/constbuffer.h"
-#include "../src/constbuffer.c"
 #undef ENABLE_MOCKS
+
+#include "real_interlocked.h"
+#include "real_constbuffer.h"
 
 #include "azure_c_util/constbuffer_array.h"
 
@@ -79,7 +82,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     result = umocktypes_bool_register_types();
     ASSERT_ARE_EQUAL(int, 0, result, "umocktypes_bool_register_types");
 
-    REGISTER_GLOBAL_INTERFACE_HOOKS(constbuffer);
+    REGISTER_CONSTBUFFER_GLOBAL_MOCK_HOOK();
 
     REGISTER_UMOCK_ALIAS_TYPE(CONSTBUFFER_HANDLE, void*);
 
@@ -89,6 +92,8 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+
+    REGISTER_INTERLOCKED_GLOBAL_MOCK_HOOK();
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -105,22 +110,22 @@ TEST_FUNCTION_INITIALIZE(method_init)
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
 
-    TEST_CONSTBUFFER_HANDLE_1 = UMOCK_REAL(CONSTBUFFER_Create)(&one, sizeof(char));
+    TEST_CONSTBUFFER_HANDLE_1 = real_CONSTBUFFER_Create(&one, sizeof(char));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_1);
 
-    TEST_CONSTBUFFER_HANDLE_2 = UMOCK_REAL(CONSTBUFFER_Create)(two, sizeof(two));
+    TEST_CONSTBUFFER_HANDLE_2 = real_CONSTBUFFER_Create(two, sizeof(two));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_2);
 
-    TEST_CONSTBUFFER_HANDLE_3 = UMOCK_REAL(CONSTBUFFER_Create)(three, sizeof(three));
+    TEST_CONSTBUFFER_HANDLE_3 = real_CONSTBUFFER_Create(three, sizeof(three));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_3);
 
-    TEST_CONSTBUFFER_HANDLE_4 = UMOCK_REAL(CONSTBUFFER_Create)(four, sizeof(four));
+    TEST_CONSTBUFFER_HANDLE_4 = real_CONSTBUFFER_Create(four, sizeof(four));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_4);
 
-    TEST_CONSTBUFFER_HANDLE_5 = UMOCK_REAL(CONSTBUFFER_Create)(five, sizeof(five));
+    TEST_CONSTBUFFER_HANDLE_5 = real_CONSTBUFFER_Create(five, sizeof(five));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_5);
 
-    TEST_CONSTBUFFER_HANDLE_6 = UMOCK_REAL(CONSTBUFFER_Create)(six, sizeof(six));
+    TEST_CONSTBUFFER_HANDLE_6 = real_CONSTBUFFER_Create(six, sizeof(six));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_6);
 
     umock_c_reset_all_calls();
@@ -129,12 +134,12 @@ TEST_FUNCTION_INITIALIZE(method_init)
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
 {
-    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_6);
-    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_5);
-    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_4);
-    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_3);
-    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_2);
-    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_1);
+    real_CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_6);
+    real_CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_5);
+    real_CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_4);
+    real_CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_3);
+    real_CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_2);
+    real_CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_1);
     umock_c_negative_tests_deinit();
     TEST_MUTEX_RELEASE(test_serialize_mutex);
 }
@@ -142,6 +147,8 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 static void constbuffer_array_create_empty_inert_path(void)
 {
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
+        .CallCannotFail();
 }
 
 /* constbuffer_array_create */
@@ -159,6 +166,7 @@ TEST_FUNCTION(constbuffer_array_create_succeeds)
     test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
 
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1));
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_2));
 
@@ -203,6 +211,7 @@ TEST_FUNCTION(constbuffer_array_create_with_0_buffer_count_succeeds)
     test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
 
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1));
 
     ///act
     constbuffer_array = constbuffer_array_create(test_buffers, 0);
@@ -280,6 +289,7 @@ TEST_FUNCTION(constbuffer_array_create_with_move_buffers_succeeds)
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1));
 
     ///act
     constbuffer_array = constbuffer_array_create_with_move_buffers(test_buffers, 2);
@@ -362,16 +372,19 @@ TEST_FUNCTION(constbuffer_array_create_empty_unhappy_paths)
     umock_c_negative_tests_snapshot();
     for (i = 0; i < umock_c_negative_tests_call_count(); i++)
     {
-        CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
 
-        umock_c_negative_tests_reset();
-        umock_c_negative_tests_fail_call(i);
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
 
-        ///act
-        constbuffer_array = constbuffer_array_create_empty();
+            ///act
+            constbuffer_array = constbuffer_array_create_empty();
 
-        ///assert
-        ASSERT_IS_NULL(constbuffer_array);
+            ///assert
+            ASSERT_IS_NULL(constbuffer_array);
+        }
     }
 }
 
@@ -457,6 +470,8 @@ static void TEST_constbuffer_array_dec_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_
 static void constbuffer_array_create_from_array_array_inert_path(uint32_t existing_item_count)
 {
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
+        .CallCannotFail();
     for (uint32_t i = 0; i < existing_item_count; i++)
     {
         STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(IGNORED_ARG));
@@ -970,6 +985,8 @@ TEST_FUNCTION(constbuffer_array_add_front_with_constbuffer_handle_NULL_fails)
 static void constbuffer_array_add_front_inert_path(void)
 {
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
+        .CallCannotFail();
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1));
 }
 
@@ -1106,6 +1123,8 @@ TEST_FUNCTION(constbuffer_array_remove_front_with_constbuffer_array_handle_empty
 static void constbuffer_array_remove_front_inert_path(uint32_t nExistingItems)
 {
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
+        .CallCannotFail();
     // clone front buffer
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(IGNORED_ARG));
     if (nExistingItems > 0)
@@ -1595,6 +1614,8 @@ TEST_FUNCTION(constbuffer_array_inc_ref_increments_the_ref_count_for_empty_buffe
     ///arrange
     CONSTBUFFER_ARRAY_HANDLE TEST_CONSTBUFFER_ARRAY_HANDLE = TEST_constbuffer_array_create_empty();
 
+    STRICT_EXPECTED_CALL(interlocked_increment(IGNORED_ARG));
+
     ///act
     constbuffer_array_inc_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
 
@@ -1618,6 +1639,8 @@ TEST_FUNCTION(constbuffer_array_inc_ref_increments_the_ref_count)
 
     constbuffer_array = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
     umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(interlocked_increment(IGNORED_ARG));
 
     ///act
     constbuffer_array_inc_ref(constbuffer_array);
@@ -1666,6 +1689,8 @@ TEST_FUNCTION(constbuffer_array_dec_ref_does_not_free_when_references_are_still_
     constbuffer_array_inc_ref(afterAdd2);
     umock_c_reset_all_calls();
 
+    STRICT_EXPECTED_CALL(interlocked_decrement(IGNORED_ARG));
+
     ///act
     constbuffer_array_dec_ref(afterAdd2);
 
@@ -1688,6 +1713,7 @@ TEST_FUNCTION(constbuffer_array_dec_ref_frees)
     CONSTBUFFER_ARRAY_HANDLE afterAdd2 = TEST_constbuffer_array_add_front(afterAdd1, 1, TEST_CONSTBUFFER_HANDLE_2);
     umock_c_reset_all_calls();
 
+    STRICT_EXPECTED_CALL(interlocked_decrement(IGNORED_ARG));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));

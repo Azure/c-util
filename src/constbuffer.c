@@ -6,7 +6,7 @@
 #include "azure_macro_utils/macro_utils.h"
 #include "azure_c_pal/gballoc.h"
 #include "azure_c_logging/xlogging.h"
-#include "azure_c_pal/refcount.h"
+#include "azure_c_pal/interlocked.h"
 
 #include "azure_c_util/constbuffer.h"
 
@@ -21,7 +21,7 @@ MU_DEFINE_ENUM(CONSTBUFFER_TYPE, CONSTBUFFER_TYPE_VALUES)
 typedef struct CONSTBUFFER_HANDLE_DATA_TAG
 {
     CONSTBUFFER alias;
-    COUNT_TYPE count;
+    volatile_atomic int32_t count;
     CONSTBUFFER_TYPE buffer_type;
     CONSTBUFFER_CUSTOM_FREE_FUNC custom_free_func;
     void* custom_free_func_context;
@@ -47,7 +47,7 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
     }
     else
     {
-        INIT_REF_VAR(result->count);
+        (void)interlocked_exchange(&result->count, 1);
 
         /*Codes_SRS_CONSTBUFFER_02_002: [Otherwise, CONSTBUFFER_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
         result->alias.size = size;
@@ -136,7 +136,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemo
             result->buffer_type = CONSTBUFFER_TYPE_MEMORY_MOVED;
 
             /* Codes_SRS_CONSTBUFFER_01_003: [ The non-NULL handle returned by CONSTBUFFER_CreateWithMoveMemory shall have its ref count set to "1". ]*/
-            INIT_REF_VAR(result->count);
+            (void)interlocked_exchange(&result->count, 1);
         }
     }
 
@@ -181,7 +181,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFr
             result->custom_free_func_context = customFreeFuncContext;
 
             /* Codes_SRS_CONSTBUFFER_01_010: [ The non-NULL handle returned by CONSTBUFFER_CreateWithCustomFree shall have its ref count set to 1. ]*/
-            INIT_REF_VAR(result->count);
+            (void)interlocked_exchange(&result->count, 1);
         }
     }
 
@@ -224,11 +224,11 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAn
             result->alias.size = size;
 
             /*Codes_SRS_CONSTBUFFER_02_030: [ CONSTBUFFER_CreateFromOffsetAndSize shall increment the reference count of handle. ]*/
-            INC_REF_VAR(handle->count);
+            (void)interlocked_increment(&handle->count);
             result->originalHandle = handle;
 
             /*Codes_SRS_CONSTBUFFER_02_029: [ CONSTBUFFER_CreateFromOffsetAndSize shall set the ref count of the newly created CONSTBUFFER_HANDLE to the initial value. ]*/
-            INIT_REF_VAR(result->count);
+            (void)interlocked_exchange(&result->count, 1);
 
             /*Codes_SRS_CONSTBUFFER_02_031: [ CONSTBUFFER_CreateFromOffsetAndSize shall succeed and return a non-NULL value. ]*/
         }
@@ -283,7 +283,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, cons
     else
     {
         /*Codes_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_IncRef shall increment the reference count.]*/
-        INC_REF_VAR(constbufferHandle->count);
+        (void)interlocked_increment(&constbufferHandle->count);
     }
 }
 
@@ -307,7 +307,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTB
 static void CONSTBUFFER_DecRef_internal(CONSTBUFFER_HANDLE constbufferHandle)
 {
     /*Codes_SRS_CONSTBUFFER_02_016: [Otherwise, CONSTBUFFER_DecRef shall decrement the refcount on the constbufferHandle handle.]*/
-    if (DEC_REF_VAR(constbufferHandle->count) == DEC_RETURN_ZERO)
+    if (interlocked_decrement(&constbufferHandle->count) == 0)
     {
         if (constbufferHandle->buffer_type == CONSTBUFFER_TYPE_MEMORY_MOVED)
         {

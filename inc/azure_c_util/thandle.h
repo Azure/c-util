@@ -37,7 +37,7 @@
     typedef const T* const volatile THANDLE(T);
 
 #define THANDLE_EXTRA_FIELDS(type) \
-    volatile COUNT_TYPE, refCount, \
+    volatile_atomic int32_t, refCount, \
     void(*dispose)(type*) , \
 
 /*given a previous type T, this is the name of the type that has T wrapped*/
@@ -106,7 +106,7 @@ static T* THANDLE_MALLOC(T)(void(*dispose)(T*))                                 
     {                                                                                                                                                               \
         /*Codes_SRS_THANDLE_02_014: [ THANDLE_MALLOC shall initialize the reference count to 1, store dispose and return a T* . ]*/                                 \
         handle_impl->dispose = dispose;                                                                                                                             \
-        INIT_REF_VAR(handle_impl->refCount);                                                                                                                        \
+        (void)interlocked_exchange(&handle_impl->refCount,1);                                                                                                       \
         result = &(handle_impl->data);                                                                                                                              \
     }                                                                                                                                                               \
     return result;                                                                                                                                                  \
@@ -117,7 +117,7 @@ Example: write REAL_BSDL_LOG_STRUCTURE_INSPECT(temp) in the Visual Studio watch 
 #define THANDLE_INSPECT_MACRO(T) \
 const THANDLE_WRAPPER_TYPE_NAME(T)* const THANDLE_INSPECT(T)(THANDLE(T) t)                                                                                          \
 {                                                                                                                                                                   \
-    return containingRecord(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                                                                 \
+    return CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                                                                \
 }                                                                                                                                                                   \
 
 #define THANDLE_MALLOC_WITH_EXTRA_SIZE_MACRO(T)                                                                                                                     \
@@ -145,7 +145,7 @@ static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(T)(void(*dispose)(T*), size_t extra_siz
         {                                                                                                                                                           \
             /*Codes_SRS_THANDLE_02_021: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall initialize the reference count to 1, store dispose and return a T*. ]*/              \
             handle_impl->dispose = dispose;                                                                                                                         \
-            INIT_REF_VAR(handle_impl->refCount);                                                                                                                    \
+            (void)interlocked_exchange(&handle_impl->refCount,1);                                                                                                   \
             result = &(handle_impl->data);                                                                                                                          \
         }                                                                                                                                                           \
     }                                                                                                                                                               \
@@ -157,7 +157,7 @@ static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(T)(const T* source, void(*dis
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
     if(                                                                                                                                                             \
-        /*Codes_SRS_THANDLE_02_025: [ If source is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/                                            \
+        /*Codes_SRS_THANDLE_02_025: [ If source is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/                                       \
         (source == NULL)                                                                                                                                            \
     )                                                                                                                                                               \
     {                                                                                                                                                               \
@@ -168,11 +168,11 @@ static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(T)(const T* source, void(*dis
     {                                                                                                                                                               \
         /*Codes_SRS_THANDLE_02_031: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall call get_sizeof to get the needed size to store T. ]*/                                 \
         size_t sizeof_source = get_sizeof(source);                                                                                                                  \
-        /*Codes_SRS_THANDLE_02_026: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall allocate memory. ]*/                                                                        \
+        /*Codes_SRS_THANDLE_02_026: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall allocate memory. ]*/                                                                   \
         THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)THANDLE_MALLOC_FUNCTION(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) - sizeof(T) + sizeof_source); \
         if (handle_impl == NULL)                                                                                                                                    \
         {                                                                                                                                                           \
-            /*Codes_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/                                \
+            /*Codes_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/                           \
             LogError("error in malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                                                                  \
                 sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) - sizeof(T) + sizeof_source);                                                                                  \
             result = NULL;                                                                                                                                          \
@@ -181,19 +181,19 @@ static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(T)(const T* source, void(*dis
         {                                                                                                                                                           \
             if(copy==NULL)                                                                                                                                          \
             {                                                                                                                                                       \
-                /*Codes_SRS_THANDLE_02_027: [ If copy is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall memcpy the content of source in allocated memory. ]*/          \
+                /*Codes_SRS_THANDLE_02_027: [ If copy is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall memcpy the content of source in allocated memory. ]*/     \
                 (void)memcpy(&(handle_impl->data), source, sizeof_source);                                                                                          \
                 handle_impl->dispose = dispose;                                                                                                                     \
-                /*Codes_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/             \
-                INIT_REF_VAR(handle_impl->refCount);                                                                                                                \
+                /*Codes_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/        \
+                (void)interlocked_exchange(&handle_impl->refCount,1);                                                                                               \
                 result = &(handle_impl->data);                                                                                                                      \
             }                                                                                                                                                       \
             else                                                                                                                                                    \
             {                                                                                                                                                       \
-                /*Codes_SRS_THANDLE_02_028: [ If copy is not NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall call copy to copy source into allocated memory. ]*/        \
+                /*Codes_SRS_THANDLE_02_028: [ If copy is not NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall call copy to copy source into allocated memory. ]*/   \
                 if (copy(&handle_impl->data, source) != 0)                                                                                                          \
                 {                                                                                                                                                   \
-                    /*Codes_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/                        \
+                    /*Codes_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/                   \
                     LogError("failure in copy(&handle_impl->data=%p, source=%p)", &handle_impl->data, source);                                                      \
                     THANDLE_FREE_FUNCTION(handle_impl);                                                                                                             \
                     result = NULL;                                                                                                                                  \
@@ -201,8 +201,8 @@ static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(T)(const T* source, void(*dis
                 else                                                                                                                                                \
                 {                                                                                                                                                   \
                     handle_impl->dispose = dispose;                                                                                                                 \
-                    /*Codes_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/         \
-                    INIT_REF_VAR(handle_impl->refCount);                                                                                                            \
+                    /*Codes_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/    \
+                    (void)interlocked_exchange(&handle_impl->refCount,1);                                                                                           \
                     result = &(handle_impl->data);                                                                                                                  \
                 }                                                                                                                                                   \
             }                                                                                                                                                       \
@@ -236,7 +236,7 @@ static void THANDLE_FREE(T)(T* t)                                               
     else                                                                                                                                                            \
     {                                                                                                                                                               \
         /*Codes_SRS_THANDLE_02_017: [ THANDLE_FREE shall free the allocated memory by THANDLE_MALLOC. ]*/                                                           \
-        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = containingRecord(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                        \
+        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
         THANDLE_FREE_FUNCTION(handle_impl);                                                                                                                         \
     }                                                                                                                                                               \
 }                                                                                                                                                                   \
@@ -253,8 +253,8 @@ void THANDLE_DEC_REF(T)(THANDLE(T) t)                                           
     else                                                                                                                                                            \
     {                                                                                                                                                               \
         /*Codes_SRS_THANDLE_02_002: [ THANDLE_DEC_REF shall decrement the ref count of t. ]*/                                                                       \
-        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = containingRecord(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                        \
-        if (DEC_REF_VAR(handle_impl->refCount) == DEC_RETURN_ZERO)                                                                                                  \
+        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
+        if (interlocked_decrement(&handle_impl->refCount) == 0)                                                                                                     \
         {                                                                                                                                                           \
             /*Codes_SRS_THANDLE_02_003: [ If the ref count of t reaches 0 then THANDLE_DEC_REF shall call dispose (if not NULL) and free the used memory. ]*/       \
             if(handle_impl->dispose!=NULL)                                                                                                                          \
@@ -279,8 +279,8 @@ void THANDLE_INC_REF(T)(THANDLE(T) t)                                           
     else                                                                                                                                                            \
     {                                                                                                                                                               \
         /*Codes_SRS_THANDLE_02_005: [ THANDLE_INC_REF shall increment the reference count of t. ]*/                                                                 \
-        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = containingRecord(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                        \
-        INC_REF_VAR(handle_impl->refCount);                                                                                                                         \
+        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
+        (void)interlocked_increment(&handle_impl->refCount);                                                                                                        \
     }                                                                                                                                                               \
 }                                                                                                                                                                   \
 
