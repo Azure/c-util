@@ -140,8 +140,9 @@ jobs:
     displayName: 'VsTest - testAssemblies'
     inputs:
       testAssemblyVer2: |
-          **\*test*.dll
-          !**\obj\**
+          **\*_ut_*.dll
+          **\*_int_*.dll
+          **\*_perf_*.dll
       vsTestVersion: 15.0
       runTestsInIsolation: true
 
@@ -296,7 +297,6 @@ jobs:
     displayName: 'Build traceabilitytool only'
     inputs:
       solution: 'build\azure_c_util.sln'
-      vsVersion: 16.0
       platform: x64
       configuration: RelWithDebInfo
       msbuildArgs: '/t:restore /t:traceabilitytool'
