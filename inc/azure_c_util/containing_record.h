@@ -16,6 +16,12 @@
 // Calculate the address of the base of the structure given its type, and an
 // address of a field within the structure.
 //
-#define containingRecord(address, type, field) ((type *)((uintptr_t)(address) - offsetof(type,field)))
+
+#ifdef WIN32
+/*windows.h brings CONTAINING_RECORD*/
+#include "windows.h"
+#else
+#define CONTAINING_RECORD(address, type, field) ((type *)((uintptr_t)(address) - offsetof(type,field)))
+#endif
 
 #endif /* CONTAINING_RECORD_H */

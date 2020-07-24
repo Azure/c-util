@@ -433,7 +433,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, constbuffer_array_dec_ref, CONSTBUFFER_ARRAY
     else
     {
         /* Codes_SRS_CONSTBUFFER_ARRAY_01_016: [ Otherwise constbuffer_array_dec_ref shall decrement the reference count for constbuffer_array_handle. ]*/
-        if (DEC_REF(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle) == DEC_RETURN_ZERO)
+        if (DEC_REF(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle) == 0)
         {
             uint32_t i;
 
