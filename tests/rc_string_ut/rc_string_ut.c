@@ -9,11 +9,27 @@
 #include <stddef.h>
 #endif
 
+static void* my_gballoc_malloc(size_t size)
+{
+    return malloc(size);
+}
+
+static void my_gballoc_free(void* s)
+{
+    free(s);
+}
+
 #include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
 #include "umock_c/umock_c_negative_tests.h"
 #include "umock_c/umocktypes_charptr.h"
+
+#define ENABLE_MOCKS
+#include "azure_c_pal/gballoc.h"
+#undef ENABLE_MOCKS
+
+#include "azure_c_util/thandle.h"
 
 #include "azure_c_util/rc_string.h"
 
@@ -26,40 +42,457 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
+// this function is used for tests just to make sure we do not confuse it with regular malloc
+MOCK_FUNCTION_WITH_CODE(, void*, test_malloc_func, size_t, size_needed)
+MOCK_FUNCTION_END((unsigned char*)my_gballoc_malloc(size_needed + 1) + 1)
+
+MOCK_FUNCTION_WITH_CODE(, void, test_free_func, void*, context)
+    my_gballoc_free((unsigned char*)context - 1);
+MOCK_FUNCTION_END()
+
+MOCK_FUNCTION_WITH_CODE(, void, test_free_func_do_nothing, void*, context)
+MOCK_FUNCTION_END()
+
 BEGIN_TEST_SUITE(rc_string_unittests)
 
-    TEST_SUITE_INITIALIZE(suite_initialize)
-    {
-        g_testByTest = TEST_MUTEX_CREATE();
-        ASSERT_IS_NOT_NULL(g_testByTest);
+TEST_SUITE_INITIALIZE(suite_initialize)
+{
+    g_testByTest = TEST_MUTEX_CREATE();
+    ASSERT_IS_NOT_NULL(g_testByTest);
 
-        ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error));
-        ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types());
+    ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error));
+    ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types());
+
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
+}
+
+TEST_SUITE_CLEANUP(suite_cleanup)
+{
+    umock_c_deinit();
+
+    TEST_MUTEX_DESTROY(g_testByTest);
+}
+
+TEST_FUNCTION_INITIALIZE(function_init)
+{
+    if (TEST_MUTEX_ACQUIRE(g_testByTest))
+    {
+        ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
     }
 
-    TEST_SUITE_CLEANUP(suite_cleanup)
-    {
-        umock_c_deinit();
+    ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
 
-        TEST_MUTEX_DESTROY(g_testByTest);
-    }
+    umock_c_reset_all_calls();
+}
 
-    TEST_FUNCTION_INITIALIZE(function_init)
+TEST_FUNCTION_CLEANUP(function_cleanup)
+{
+    umock_c_negative_tests_deinit();
+    TEST_MUTEX_RELEASE(g_testByTest);
+}
+
+/* rc_string_create */
+
+/*Tests_SRS_RC_STRING_01_001: [ If string is NULL, rc_string_create shall fail and return NULL. ]*/
+TEST_FUNCTION(rc_string_create_with_NULL_fails)
+{
+    // arrange
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create(NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(rc_string);
+}
+
+/* Tests_SRS_RC_STRING_01_002: [ Otherwise, rc_string_create shall determine the length of string. ]*/
+/* Tests_SRS_RC_STRING_01_003: [ rc_string_create shall allocate memory for the THANDLE(RC_STRING), ensuring all the bytes in string can be copied (including the zero terminator). ]*/
+/* Tests_SRS_RC_STRING_01_004: [ rc_string_create shall copy the string memory (including the NULL terminator). ]*/
+/* Tests_SRS_RC_STRING_01_005: [ rc_string_create shall succeed and return a non-NULL handle. ]*/
+TEST_FUNCTION(rc_string_create_succeeds)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create("gogu");
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(rc_string);
+    ASSERT_ARE_EQUAL(char_ptr, "gogu", rc_string->string);
+
+    // cleanup
+    THANDLE_DEC_REF(RC_STRING)(rc_string);
+}
+
+/* Tests_SRS_RC_STRING_01_002: [ Otherwise, rc_string_create shall determine the length of string. ]*/
+/* Tests_SRS_RC_STRING_01_003: [ rc_string_create shall allocate memory for the THANDLE(RC_STRING), ensuring all the bytes in string can be copied (including the zero terminator). ]*/
+/* Tests_SRS_RC_STRING_01_004: [ rc_string_create shall copy the string memory (including the NULL terminator). ]*/
+/* Tests_SRS_RC_STRING_01_005: [ rc_string_create shall succeed and return a non-NULL handle. ]*/
+TEST_FUNCTION(rc_string_create_with_empty_string_succeeds)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create("");
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(rc_string);
+    ASSERT_ARE_EQUAL(char_ptr, "", rc_string->string);
+
+    // cleanup
+    THANDLE_DEC_REF(RC_STRING)(rc_string);
+}
+
+/* Tests_SRS_RC_STRING_01_006: [ If any error occurs, rc_string_create shall fail and return NULL. ]*/
+TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_also_fails)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    umock_c_negative_tests_snapshot();
+
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
     {
-        if (TEST_MUTEX_ACQUIRE(g_testByTest))
+        if (umock_c_negative_tests_can_call_fail(i))
         {
-            ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            // act
+            THANDLE(RC_STRING) rc_string = rc_string_create("gogu");
+
+            ///assert
+            ASSERT_IS_NULL(rc_string, "On failed call %zu", i);
         }
-
-        ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
-
-        umock_c_reset_all_calls();
     }
+}
 
-    TEST_FUNCTION_CLEANUP(function_cleanup)
+/* rc_string_create_with_move_memory */
+
+/* Tests_SRS_RC_STRING_01_007: [ If string is NULL, rc_string_create_with_move_memory shall fail and return NULL. ]*/
+TEST_FUNCTION(rc_string_create_with_move_memory_with_NULL_fails)
+{
+    // arrange
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_move_memory(NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(rc_string);
+}
+
+/* Tests_SRS_RC_STRING_01_008: [ Otherwise, rc_string_create_with_move_memory shall allocate memory for the THANDLE(RC_STRING). ]*/
+/* Tests_SRS_RC_STRING_01_009: [ rc_string_create_with_move_memory shall associate string with the new handle. ]*/
+/* Tests_SRS_RC_STRING_01_010: [ rc_string_create_with_move_memory shall succeed and return a non-NULL handle. ]*/
+TEST_FUNCTION(rc_string_create_with_move_memory_succeeds)
+{
+    // arrange
+    const char const_test_string[] = "goguletz";
+    char* test_string = (char*)my_gballoc_malloc(sizeof(const_test_string));
+    ASSERT_IS_NOT_NULL(test_string);
+
+    (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_move_memory(test_string);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(rc_string);
+    ASSERT_ARE_EQUAL(void_ptr, test_string, rc_string->string);
+
+    // cleanup
+    THANDLE_DEC_REF(RC_STRING)(rc_string);
+}
+
+/* Tests_SRS_RC_STRING_01_008: [ Otherwise, rc_string_create_with_move_memory shall allocate memory for the THANDLE(RC_STRING). ]*/
+/* Tests_SRS_RC_STRING_01_009: [ rc_string_create_with_move_memory shall associate string with the new handle. ]*/
+/* Tests_SRS_RC_STRING_01_010: [ rc_string_create_with_move_memory shall succeed and return a non-NULL handle. ]*/
+TEST_FUNCTION(rc_string_create_with_move_memory_with_empty_string_succeeds)
+{
+    // arrange
+    const char const_test_string[] = "";
+    char* test_string = (char*)my_gballoc_malloc(sizeof(const_test_string));
+    ASSERT_IS_NOT_NULL(test_string);
+
+    (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_move_memory(test_string);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(rc_string);
+    ASSERT_ARE_EQUAL(void_ptr, test_string, rc_string->string);
+
+    // cleanup
+    THANDLE_DEC_REF(RC_STRING)(rc_string);
+}
+
+/* Tests_SRS_RC_STRING_01_020: [ When the THANDLE(RC_STRING) reference count reaches 0, string shall be free with free. ]*/
+TEST_FUNCTION(a_string_created_with_rc_string_create_with_move_memory_frees_the_original_memory_with_free)
+{
+    // arrange
+    const char const_test_string[] = "goguletz";
+    char* test_string = (char*)my_gballoc_malloc(sizeof(const_test_string));
+    ASSERT_IS_NOT_NULL(test_string);
+
+    (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
+
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_move_memory(test_string);
+    ASSERT_IS_NOT_NULL(rc_string);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(free(test_string));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+
+    // act
+    THANDLE_DEC_REF(RC_STRING)(rc_string);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_RC_STRING_01_011: [ If any error occurs, rc_string_create_with_move_memory shall fail and return NULL. ]*/
+TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_move_memory_also_fails)
+{
+    // arrange
+    const char const_test_string[] = "";
+
+    char* test_string = (char*)my_gballoc_malloc(sizeof(const_test_string));
+    ASSERT_IS_NOT_NULL(test_string);
+
+    (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    umock_c_negative_tests_snapshot();
+
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
     {
-        umock_c_negative_tests_deinit();
-        TEST_MUTEX_RELEASE(g_testByTest);
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            // act
+            THANDLE(RC_STRING) rc_string = rc_string_create_with_move_memory(test_string);
+
+            ///assert
+            ASSERT_IS_NULL(rc_string, "On failed call %zu", i);
+        }
     }
+
+    // cleanup
+    my_gballoc_free(test_string);
+}
+
+/* rc_string_create_with_custom_free */
+
+/* Tests_SRS_RC_STRING_01_012: [ If string is NULL, rc_string_create_with_custom_free shall fail and return NULL. ]*/
+TEST_FUNCTION(rc_string_create_with_custom_free_with_NULL_string_fails)
+{
+    // arrange
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_custom_free(NULL, test_free_func, (void*)4242);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(rc_string);
+}
+
+/* Tests_SRS_RC_STRING_01_013: [ If free_func is NULL, rc_string_create_with_custom_free shall fail and return NULL. ]*/
+TEST_FUNCTION(rc_string_create_with_custom_free_with_NULL_free_func_fails)
+{
+    // arrange
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_custom_free(NULL, test_free_func, (void*)4242);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(rc_string);
+}
+
+/* Tests_SRS_RC_STRING_01_015: [ rc_string_create_with_custom_free shall allocate memory for the THANDLE(RC_STRING). ]*/
+/* Tests_SRS_RC_STRING_01_016: [ rc_string_create_with_custom_free shall associate string, free_func and free_func_context with the new handle. ]*/
+/* Tests_SRS_RC_STRING_01_017: [ rc_string_create_with_custom_free shall succeed and return a non-NULL handle. ]*/
+TEST_FUNCTION(rc_string_create_with_custom_free_succeeds)
+{
+    // arrange
+    const char const_test_string[] = "goguletz";
+    char* test_string = (char*)test_malloc_func(sizeof(const_test_string));
+    ASSERT_IS_NOT_NULL(test_string);
+
+    (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_custom_free(test_string, test_free_func, test_string);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(rc_string);
+    ASSERT_ARE_EQUAL(void_ptr, test_string, rc_string->string);
+
+    // cleanup
+    THANDLE_DEC_REF(RC_STRING)(rc_string);
+}
+
+/* Tests_SRS_RC_STRING_01_015: [ rc_string_create_with_custom_free shall allocate memory for the THANDLE(RC_STRING). ]*/
+/* Tests_SRS_RC_STRING_01_016: [ rc_string_create_with_custom_free shall associate string, free_func and free_func_context with the new handle. ]*/
+/* Tests_SRS_RC_STRING_01_017: [ rc_string_create_with_custom_free shall succeed and return a non-NULL handle. ]*/
+TEST_FUNCTION(rc_string_create_with_custom_free_with_empty_string_succeeds)
+{
+    // arrange
+    const char const_test_string[] = "";
+    char* test_string = (char*)test_malloc_func(sizeof(const_test_string));
+    ASSERT_IS_NOT_NULL(test_string);
+
+    (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_custom_free(test_string, test_free_func, test_string);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(rc_string);
+    ASSERT_ARE_EQUAL(void_ptr, test_string, rc_string->string);
+
+    // cleanup
+    THANDLE_DEC_REF(RC_STRING)(rc_string);
+}
+
+/* Tests_SRS_RC_STRING_01_014: [ free_func_context shall be allowed to be NULL. ]*/
+TEST_FUNCTION(rc_string_create_with_custom_free_with_do_nothing_free_and_NULL_context_succeeds)
+{
+    // arrange
+    const char const_test_string[] = "";
+    char* test_string = (char*)test_malloc_func(sizeof(const_test_string));
+    ASSERT_IS_NOT_NULL(test_string);
+
+    (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_custom_free(test_string, test_free_func_do_nothing, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(rc_string);
+    ASSERT_ARE_EQUAL(void_ptr, test_string, rc_string->string);
+
+    // cleanup
+    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    // because the free function does nothing, we need to free this here
+    test_free_func(test_string);
+}
+
+/* Tests_SRS_RC_STRING_01_019: [ If any error occurs, rc_string_create_with_custom_free shall fail and return NULL. ]*/
+TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_custom_free_also_fails)
+{
+    // arrange
+    const char const_test_string[] = "";
+    char* test_string = (char*)test_malloc_func(sizeof(const_test_string));
+    ASSERT_IS_NOT_NULL(test_string);
+
+    (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    umock_c_negative_tests_snapshot();
+
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            // act
+            THANDLE(RC_STRING) rc_string = rc_string_create_with_custom_free(test_string, test_free_func, test_string);
+
+            ///assert
+            ASSERT_IS_NULL(rc_string, "On failed call %zu", i);
+        }
+    }
+
+    // cleanup
+    test_free_func(test_string);
+}
+
+/* Tests_SRS_RC_STRING_01_018: [ When the THANDLE(RC_STRING) reference count reaches 0, free_func shall be called with free_func_context to free the memory used by string. ]*/
+TEST_FUNCTION(when_reference_count_reaches_0_the_custom_free_function_is_called)
+{
+    // arrange
+    const char const_test_string[] = "";
+    char* test_string = (char*)test_malloc_func(sizeof(const_test_string));
+    ASSERT_IS_NOT_NULL(test_string);
+
+    (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
+
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_custom_free(test_string, test_free_func, test_string);
+    ASSERT_IS_NOT_NULL(rc_string);
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_free_func(test_string));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+
+    // act
+    THANDLE_DEC_REF(RC_STRING)(rc_string);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_RC_STRING_01_018: [ When the THANDLE(RC_STRING) reference count reaches 0, free_func shall be called with free_func_context to free the memory used by string. ]*/
+TEST_FUNCTION(when_reference_count_reaches_0_the_custom_free_function_is_called_context_NULL)
+{
+    // arrange
+    const char const_test_string[] = "";
+    char* test_string = (char*)test_malloc_func(sizeof(const_test_string));
+    ASSERT_IS_NOT_NULL(test_string);
+
+    (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
+
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_custom_free(test_string, test_free_func_do_nothing, NULL);
+    ASSERT_IS_NOT_NULL(rc_string);
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_free_func_do_nothing(NULL));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+
+    // act
+    THANDLE_DEC_REF(RC_STRING)(rc_string);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    test_free_func(test_string);
+}
 
 END_TEST_SUITE(rc_string_unittests)
