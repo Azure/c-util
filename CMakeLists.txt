@@ -89,7 +89,6 @@ include_directories(${UMOCK_C_INC_FOLDER})
 set(azure_c_util_c_files
     ./src/azure_base64.c
     ./src/buffer.c
-    ./src/crt_abstractions.c
     ./src/constbuffer.c
     ./src/constbuffer_array.c
     ./src/constbuffer_array_batcher_nv.c
@@ -110,7 +109,6 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/constbuffer.h
     ./inc/azure_c_util/constbuffer_array.h
     ./inc/azure_c_util/constbuffer_array_batcher_nv.h
-    ./inc/azure_c_util/crt_abstractions.h
     ./inc/azure_c_util/doublylinkedlist.h
     ./inc/azure_c_util/map.h
     ./inc/azure_c_util/memory_data.h

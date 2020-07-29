@@ -6,7 +6,8 @@
 
 #include "azure_macro_utils/macro_utils.h"
 
-#include "azure_c_pal/gballoc.h"
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
 
 #include "azure_c_util/thandle.h"
 
@@ -19,8 +20,8 @@
 MU_DEFINE_STRUCT(LL, LL_FIELDS);
 
 
-#define THANDLE_MALLOC_FUNCTION gballoc_malloc
-#define THANDLE_FREE_FUNCTION gballoc_free
+#define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_FREE_FUNCTION gballoc_hl_free
 THANDLE_TYPE_DEFINE(LL);
 #undef THANDLE_MALLOC_FUNCTION
 #undef THANDLE_FREE_FUNCTION

@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#define GBALLOC_H
 
 #define singlylinkedlist_create real_singlylinkedlist_create
 #define singlylinkedlist_destroy real_singlylinkedlist_destroy

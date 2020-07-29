@@ -2,10 +2,15 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
-#include "azure_c_pal/gballoc.h"
+
 #include "azure_c_logging/xlogging.h"
-#include "azure_c_util/constbuffer_array_batcher_nv.h"
+
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
+
 #include "azure_c_util/memory_data.h"
+
+#include "azure_c_util/constbuffer_array_batcher_nv.h"
 
 CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_nv_batch(CONSTBUFFER_ARRAY_HANDLE* payloads, uint32_t count)
 {
