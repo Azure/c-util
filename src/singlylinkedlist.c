@@ -12,7 +12,6 @@
 
 #include "azure_c_util/singlylinkedlist.h"
 
-
 typedef struct LIST_ITEM_INSTANCE_TAG
 {
     const void* item;

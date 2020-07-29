@@ -36,6 +36,7 @@ set(azure_c_util_reals_h_files
     real_memory_data.h
     real_memory_data_renames.h
     real_singlylinkedlist.h
+    real_singlylinkedlist_renames.h
     real_uuid.h
     real_uuid_renames.h
     ${REAL_SM_H_FILES}
