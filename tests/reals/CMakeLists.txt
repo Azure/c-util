@@ -45,4 +45,4 @@ set(azure_c_util_reals_h_files
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)
 add_library(azure_c_util_reals ${azure_c_util_reals_c_files} ${azure_c_util_reals_h_files})
 target_include_directories(azure_c_util_reals PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests/reals>)
-target_link_libraries(azure_c_util_reals azure_c_logging azure_c_pal azure_c_pal_reals)
+target_link_libraries(azure_c_util_reals azure_c_logging azure_c_pal_reals)
