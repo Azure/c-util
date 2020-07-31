@@ -76,6 +76,8 @@ void my_gballoc_free(void* ptr)
 #include "azure_c_pal/gballoc_hl_redirect.h"
 #undef ENABLE_MOCKS
 
+#include "real_gballoc_hl.h"
+
 #include "azure_c_util/buffer_.h"
 
 #define ALLOCATION_SIZE             16
@@ -103,6 +105,9 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
 
     TEST_SUITE_INITIALIZE(setsBufferTempSize)
     {
+
+        ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
+
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -120,6 +125,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         umock_c_deinit();
 
         TEST_MUTEX_DESTROY(g_testByTest);
+
+        real_gballoc_hl_deinit();
     }
 
     TEST_FUNCTION_INITIALIZE(function_init)

@@ -20,6 +20,8 @@
 #include "azure_c_pal/uniqueid.h"
 #undef ENABLE_MOCKS
 
+#include "real_gballoc_hl.h"
+
 #include "azure_c_util/uuid.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
@@ -74,6 +76,8 @@ TEST_SUITE_INITIALIZE(suite_init)
 {
     int result;
 
+    ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
+
     result = umock_c_init(on_umock_c_error);
     ASSERT_ARE_EQUAL(int, 0, result);
 
@@ -90,6 +94,8 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 {
     umock_c_deinit();
     TEST_MUTEX_DESTROY(g_testByTest);
+
+    real_gballoc_hl_deinit();
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)

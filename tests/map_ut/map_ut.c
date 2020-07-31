@@ -97,6 +97,8 @@ STRING_HANDLE my_STRING_new_JSON(const char* source)
 
 #undef ENABLE_MOCKS
 
+#include "real_gballoc_hl.h"
+
 #include "azure_c_util/map.h"
 
 TEST_DEFINE_ENUM_TYPE(MAP_RESULT, MAP_RESULT_VALUES)
@@ -160,6 +162,8 @@ BEGIN_TEST_SUITE(map_unittests)
     {
         int result;
 
+        ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
+
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -184,6 +188,8 @@ BEGIN_TEST_SUITE(map_unittests)
         umock_c_deinit();
 
         TEST_MUTEX_DESTROY(g_testByTest);
+
+        real_gballoc_hl_deinit();
     }
 
     TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
