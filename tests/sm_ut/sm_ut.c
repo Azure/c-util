@@ -13,26 +13,17 @@
 
 #include "testrunnerswitcher.h"
 
-void* my_gballoc_malloc(size_t size)
-{
-    return malloc(size);
-}
-
-void my_gballoc_free(void* ptr)
-{
-    free(ptr);
-}
-
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_windows.h"
 
 #define ENABLE_MOCKS
-
-#include "azure_c_pal/gballoc.h"
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
 #include "azure_c_pal/interlocked_hl.h"
 #undef ENABLE_MOCKS
 
 #include "real_interlocked_hl.h"
+#include "real_gballoc_hl.h"
 
 #include "azure_c_util/sm.h"
 
@@ -55,7 +46,7 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(SM_RESULT, SM_RESULT_VALUES);
 static SM_HANDLE TEST_sm_create(void)
 {
     SM_HANDLE result;
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     result = sm_create("a");
     ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -74,9 +65,7 @@ TEST_SUITE_INITIALIZE(setsBufferTempSize)
 
     umocktypes_windows_register_types();
 
-    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
-    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
-
+    REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
     REGISTER_INTERLOCKED_HL_GLOBAL_MOCK_HOOK();
 
     REGISTER_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT);
@@ -110,7 +99,7 @@ TEST_FUNCTION_CLEANUP(cleans)
 TEST_FUNCTION(sm_create_with_name_NULL_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
     ///act
     SM_HANDLE sm = sm_create(NULL);
@@ -128,7 +117,7 @@ TEST_FUNCTION(sm_create_with_name_NULL_succeeds)
 TEST_FUNCTION(sm_create_with_name_non_NULL_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
     ///act
     SM_HANDLE sm = sm_create("bleeding edge");
@@ -145,7 +134,7 @@ TEST_FUNCTION(sm_create_with_name_non_NULL_succeeds)
 TEST_FUNCTION(sm_create_unhappy_path)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
         .SetReturn(NULL);
 
     ///act
@@ -179,7 +168,7 @@ TEST_FUNCTION(sm_destroy_in_SM_CREATED_succeeds)
     ///arrange
     SM_HANDLE sm = TEST_sm_create();
 
-    STRICT_EXPECTED_CALL(gballoc_free(sm));
+    STRICT_EXPECTED_CALL(free(sm));
 
     ///act
     sm_destroy(sm);

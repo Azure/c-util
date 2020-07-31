@@ -26,7 +26,8 @@ static void my_gballoc_free(void* s)
 #include "umock_c/umocktypes_charptr.h"
 
 #define ENABLE_MOCKS
-#include "azure_c_pal/gballoc.h"
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
 #undef ENABLE_MOCKS
 
 #include "azure_c_util/thandle.h"
@@ -63,10 +64,10 @@ TEST_SUITE_INITIALIZE(suite_initialize)
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error));
     ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types());
 
-    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
-    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+    REGISTER_GLOBAL_MOCK_HOOK(malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(free, my_gballoc_free);
 
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)

@@ -29,12 +29,14 @@ void real_free(void* ptr)
 
 #include "azure_c_util/constbuffer.h"
 #include "azure_c_util/constbuffer_array.h"
-#include "azure_c_pal/gballoc.h"
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
 #include "azure_c_util/memory_data.h"
-
 #undef ENABLE_MOCKS
 
 #include "azure_c_util/constbuffer_array_batcher_nv.h"
+
+#include "real_gballoc_hl.h"
 
 #include "../reals/real_constbuffer.h"
 #include "../reals/real_constbuffer_array.h"
@@ -64,8 +66,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     result = umocktypes_stdint_register_types();
     ASSERT_ARE_EQUAL(int, 0, result, "umocktypes_stdint_register_types failed");
 
-    REGISTER_GLOBAL_MOCK_HOOK(malloc, real_malloc);
-    REGISTER_GLOBAL_MOCK_HOOK(free, real_free);
+    REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
 
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(constbuffer_array_create_empty, NULL);

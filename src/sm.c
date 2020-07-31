@@ -11,7 +11,8 @@
 #include "azure_macro_utils/macro_utils.h"
 
 #include "azure_c_logging/xlogging.h"
-#include "azure_c_pal/gballoc.h"
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
 #include "azure_c_pal/interlocked_hl.h"
 
 #include "azure_c_util/sm.h"

@@ -28,13 +28,15 @@ static void my_gballoc_free(void* s)
 #include "umock_c/umock_c_negative_tests.h"
 
 #define ENABLE_MOCKS
-#include "azure_c_pal/gballoc.h"
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
 #include "azure_c_pal/interlocked.h"
 #include "azure_c_util/constbuffer.h"
 #undef ENABLE_MOCKS
 
 #include "real_interlocked.h"
 #include "real_constbuffer.h"
+#include "real_gballoc_hl.h"
 
 #include "azure_c_util/constbuffer_array.h"
 
@@ -88,10 +90,9 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(CONSTBUFFER_GetContent, NULL);
 
-    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
+    REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
 
-    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
 
     REGISTER_INTERLOCKED_GLOBAL_MOCK_HOOK();
 }
@@ -146,7 +147,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 
 static void constbuffer_array_create_empty_inert_path(void)
 {
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
         .CallCannotFail();
 }
@@ -165,7 +166,7 @@ TEST_FUNCTION(constbuffer_array_create_succeeds)
     test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
     test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1));
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_2));
@@ -210,7 +211,7 @@ TEST_FUNCTION(constbuffer_array_create_with_0_buffer_count_succeeds)
 
     test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1));
 
     ///act
@@ -234,7 +235,7 @@ TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_create_fails)
     test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
     test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1));
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_2));
 
@@ -422,7 +423,7 @@ static CONSTBUFFER_ARRAY_HANDLE TEST_constbuffer_array_add_front(CONSTBUFFER_ARR
     uint32_t i;
     CONSTBUFFER_ARRAY_HANDLE result;
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     for (i = 0; i < nExistingBuffers; i++)
     {
         STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(constbuffer_handle));
@@ -440,7 +441,7 @@ static CONSTBUFFER_ARRAY_HANDLE TEST_constbuffer_array_remove_front(CONSTBUFFER_
     CONSTBUFFER_ARRAY_HANDLE result;
 
     ASSERT_IS_TRUE(nExistingBuffers > 0);
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     for (i = 0; i < nExistingBuffers-1; i++)
     {
         STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(IGNORED_ARG));
@@ -460,7 +461,7 @@ static void TEST_constbuffer_array_dec_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_
         STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
     }
 
-    STRICT_EXPECTED_CALL(gballoc_free(constbuffer_array));
+    STRICT_EXPECTED_CALL(free(constbuffer_array));
     constbuffer_array_dec_ref(constbuffer_array);
     umock_c_reset_all_calls();
 }
@@ -469,7 +470,7 @@ static void TEST_constbuffer_array_dec_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_
 
 static void constbuffer_array_create_from_array_array_inert_path(uint32_t existing_item_count)
 {
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
         .CallCannotFail();
     for (uint32_t i = 0; i < existing_item_count; i++)
@@ -934,7 +935,7 @@ TEST_FUNCTION(constbuffer_array_create_from_array_array_fails_if_malloc_fails)
     buffer_array[0] = TEST_constbuffer_array_create(2, 0);
     buffer_array[1] = TEST_constbuffer_array_create(2, 2);
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
         .SetReturn(NULL);
 
     ///act
@@ -984,7 +985,7 @@ TEST_FUNCTION(constbuffer_array_add_front_with_constbuffer_handle_NULL_fails)
 
 static void constbuffer_array_add_front_inert_path(void)
 {
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
         .CallCannotFail();
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1));
@@ -1122,7 +1123,7 @@ TEST_FUNCTION(constbuffer_array_remove_front_with_constbuffer_array_handle_empty
 
 static void constbuffer_array_remove_front_inert_path(uint32_t nExistingItems)
 {
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
         .CallCannotFail();
     // clone front buffer
@@ -1716,7 +1717,7 @@ TEST_FUNCTION(constbuffer_array_dec_ref_frees)
     STRICT_EXPECTED_CALL(interlocked_decrement(IGNORED_ARG));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     ///act
     constbuffer_array_dec_ref(afterAdd2);

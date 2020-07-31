@@ -25,9 +25,12 @@ void my_gballoc_free(void* ptr)
 
 #define ENABLE_MOCKS
 #include "umock_c/umock_c.h"
-#include "azure_c_pal/gballoc.h"
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
 
 #undef ENABLE_MOCKS
+
+#include "real_gballoc_hl.h"
 
 #include "azure_c_util/thandle.h"
 #include "thandle_user.h"
@@ -59,8 +62,8 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 MU_DEFINE_STRUCT(A_B, A_B_FIELDS);
 
 
-#define THANDLE_MALLOC_FUNCTION gballoc_malloc
-#define THANDLE_FREE_FUNCTION gballoc_free
+#define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -103,8 +106,8 @@ static void dispose_A_S(A_S* a_s)
     free(a_s->s);
 }
 
-#define THANDLE_MALLOC_FUNCTION gballoc_malloc
-#define THANDLE_FREE_FUNCTION gballoc_free
+#define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -128,8 +131,8 @@ static size_t get_sizeof_A_FLEX(const A_FLEX* source)
     return sizeof(A_FLEX) + source->n * sizeof(int);
 }
 
-#define THANDLE_MALLOC_FUNCTION gballoc_malloc
-#define THANDLE_FREE_FUNCTION gballoc_free
+#define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -183,8 +186,8 @@ static size_t get_sizeof_A_S_FLEX(const A_S_FLEX* source)
     return sizeof(A_S_FLEX) + source->n * sizeof(int);
 }
 
-#define THANDLE_MALLOC_FUNCTION gballoc_malloc
-#define THANDLE_FREE_FUNCTION gballoc_free
+#define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -205,8 +208,7 @@ TEST_SUITE_INITIALIZE(setsBufferTempSize)
 
     umock_c_init(on_umock_c_error);
 
-    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
-    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+    REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
@@ -238,8 +240,8 @@ TEST_FUNCTION_CLEANUP(cleans)
 TEST_FUNCTION(thandle_user_create_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
 
     ///act
     THANDLE(LL) ll = ll_create(TEST_A, TEST_S);
@@ -257,7 +259,7 @@ TEST_FUNCTION(thandle_user_create_succeeds)
 TEST_FUNCTION(thandle_user_create_fails_when_thandle_malloc_fails)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
         .SetReturn(NULL); /*this is THANDLE_MALLOC*/
 
     ///act
@@ -277,8 +279,8 @@ TEST_FUNCTION(thandle_user_create_fails_when_thandle_malloc_fails)
 TEST_FUNCTION(thandle_flex_user_create_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
 
     ///act
     THANDLE(LL_FLEX) ll = ll_flex_create(TEST_A, TEST_S, 10);
@@ -295,7 +297,7 @@ TEST_FUNCTION(thandle_flex_user_create_succeeds)
 TEST_FUNCTION(thandle_flex_user_create_fails_when_thandle_malloc_fails)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
         .SetReturn(NULL); /*this is THANDLE_MALLOC_WITH_EXTRA_SIZE*/
 
     ///act
@@ -344,8 +346,8 @@ TEST_FUNCTION(THANDLE_DEC_REF_with_t_NULL_returns)
 TEST_FUNCTION(THANDLE_DEC_REF_decrements)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
     THANDLE(LL) ll = ll_create(TEST_A, TEST_S);
     ASSERT_IS_NOT_NULL(ll);
     THANDLE_INC_REF(LL)(ll); /*intentionally setting the ref count to 2*/
@@ -367,15 +369,15 @@ TEST_FUNCTION(THANDLE_DEC_REF_decrements)
 TEST_FUNCTION(THANDLE_DEC_REF_decrements_and_frees_resources)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
     THANDLE(LL) ll = ll_create(TEST_A, TEST_S);
     ASSERT_IS_NOT_NULL(ll);
     THANDLE_INC_REF(LL)(ll); /*intentionally setting the ref count to 2*/
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /*this is the copy of s that is freed*/
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /*this is THANDLE_MALLOC's memory that gets freed*/
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is the copy of s that is freed*/
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is THANDLE_MALLOC's memory that gets freed*/
 
     ///act
     THANDLE_DEC_REF(LL)(ll);
@@ -439,8 +441,8 @@ TEST_FUNCTION(THANDLE_ASSIGN_with_t1_NULL_t2_NULL)
 TEST_FUNCTION(THANDLE_ASSIGN_with_t1_NULL_t2_not_NULL)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
     THANDLE(LL) t2 = ll_create(TEST_A, TEST_S);
     ASSERT_IS_NOT_NULL(t2);
 
@@ -463,16 +465,16 @@ TEST_FUNCTION(THANDLE_ASSIGN_with_t1_NULL_t2_not_NULL)
 TEST_FUNCTION(THANDLE_ASSIGN_with_t1_not_NULL_t2_NULL)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
     THANDLE(LL) t1 = ll_create(TEST_A, TEST_S);
     ASSERT_IS_NOT_NULL(t1);
 
     THANDLE(LL) t2 = NULL;
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /*this is the copy of s*/
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /*this is THANDLE_MALLOC's memory that gets freed*/
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is the copy of s*/
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is THANDLE_MALLOC's memory that gets freed*/
 
     ///act
     THANDLE_ASSIGN(LL)(&t1, t2);
@@ -488,20 +490,20 @@ TEST_FUNCTION(THANDLE_ASSIGN_with_t1_not_NULL_t2_NULL)
 TEST_FUNCTION(THANDLE_ASSIGN_with_t1_not_NULL_t2_not_NULL)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
     THANDLE(LL) t1 = ll_create(TEST_A, TEST_S);
     ASSERT_IS_NOT_NULL(t1);
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S2_DEFINE))); /*this is the copy of s2*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S2_DEFINE))); /*this is the copy of s2*/
     THANDLE(LL) t2 = ll_create(TEST_A, TEST_S2);
     ASSERT_IS_NOT_NULL(t2);
    
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /*this is the copy of s that goes away*/
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /*this is THANDLE_MALLOC's memory that gets freed*/
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is the copy of s that goes away*/
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is THANDLE_MALLOC's memory that gets freed*/
 
     ///act
     THANDLE_ASSIGN(LL)(&t1, t2);
@@ -521,8 +523,8 @@ TEST_FUNCTION(THANDLE_ASSIGN_with_t1_not_NULL_t2_not_NULL)
 TEST_FUNCTION(THANDLE_INITIALIZE_with_lvalue_NULL_returns)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
     THANDLE(LL) t2 = ll_create(TEST_A, TEST_S);
     ASSERT_IS_NOT_NULL(t2);
     umock_c_reset_all_calls();
@@ -559,8 +561,8 @@ TEST_FUNCTION(THANDLE_INITIALIZE_with_rvalue_NULL_succeeds)
 TEST_FUNCTION(THANDLE_INITIALIZE_with_lvalue_non_NULL_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
     THANDLE(LL) t1 = ll_create(TEST_A, TEST_S);
     THANDLE(LL) t2 = NULL;
     ASSERT_IS_NOT_NULL(t1);
@@ -585,14 +587,14 @@ TEST_FUNCTION(THANDLE_INITIALIZE_with_lvalue_non_NULL_succeeds)
 TEST_FUNCTION(THANDLE_FREE_frees_memory)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
     THANDLE(LL) t1 = ll_create(TEST_A, TEST_S);
     ASSERT_IS_NOT_NULL(t1);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /*this is the copy of s that goes away*/
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /*this is THANDLE_MALLOC's memory that gets freed*/
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is the copy of s that goes away*/
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is THANDLE_MALLOC's memory that gets freed*/
     ///act
 
     THANDLE_DEC_REF(LL)(t1);
@@ -636,8 +638,8 @@ TEST_FUNCTION(THANDLE_GET_T_with_t_NULL_returns_NULL)
 TEST_FUNCTION(THANDLE_GET_T_with_t_not_NULL_returns_original_pointer) /*direct testing is not really possible (GET_T is static) but shall be inferred by the actions of _increment_a and _get_a*/
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
     THANDLE(LL) ll = ll_create(TEST_A, TEST_S);
     ASSERT_IS_NOT_NULL(ll);
     int incremented;
@@ -657,7 +659,7 @@ TEST_FUNCTION(THANDLE_GET_T_with_t_not_NULL_returns_original_pointer) /*direct t
 /*returns a pointer to an array of 2 THANDLE(LL)*/
 static void builds_out_arg(THANDLE(LL)** x)
 {
-    *x = (THANDLE(LL)*)gballoc_malloc(sizeof(THANDLE(LL)) * 2);
+    *x = (THANDLE(LL)*)my_gballoc_malloc(sizeof(THANDLE(LL)) * 2);
     ASSERT_IS_NOT_NULL(*x);
 }
 
@@ -680,7 +682,7 @@ TEST_FUNCTION(THANDLE_T_can_build_an_array)
     THANDLE_DEC_REF(LL)(arr[0]);
     THANDLE_DEC_REF(LL)(arr[1]);
 
-    gballoc_free((void*)arr);
+    my_gballoc_free((void*)arr);
 }
 
 /*Tests_SRS_THANDLE_02_025: [ If source is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/
@@ -708,7 +710,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_with_copy_NULL_succeeds)
     a_b.a = 2;
     a_b.b = 3;
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
 
     ///act
     THANDLE(A_B) result = THANDLE_CREATE_FROM_CONTENT(A_B)(&a_b, NULL, NULL);
@@ -735,8 +737,8 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_DISPOSE_with_non_NULL_succeeds)
     a_s.a = 22;
     a_s.s = copy;
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is sprintf_char in copy_A_S, also known as "copy"*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is sprintf_char in copy_A_S, also known as "copy"*/
 
     ///act
     THANDLE(A_S) result = THANDLE_CREATE_FROM_CONTENT(A_S)(&a_s, dispose_A_S, copy_A_S);
@@ -761,7 +763,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_when_THANDLE_MALLOC_FUNCTION_fail
     a_s.a = 22;
     a_s.s = copy;
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)) /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is THANDLE_MALLOC*/
         .SetReturn(NULL);
 
     ///act
@@ -784,10 +786,10 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_when_copy_fails_it_fails)
     a_s.a = 22;
     a_s.s = copy;
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)) /*this is malloc in copy_A_S, aslo known as "copy"*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is malloc in copy_A_S, aslo known as "copy"*/
         .SetReturn(NULL);
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
 
     ///act
     THANDLE(A_S) result = THANDLE_CREATE_FROM_CONTENT(A_S)(&a_s, dispose_A_S, copy_A_S);
@@ -813,7 +815,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof)
         source->p[i] = i * i;
     }
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
 
     ///act
     THANDLE(A_FLEX) copy = THANDLE_CREATE_FROM_CONTENT_FLEX(A_FLEX)(source, NULL, NULL, get_sizeof_A_FLEX);
@@ -848,8 +850,8 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof_2)
         source->p[i] = i * i;
     }
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is malloc for the string*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is malloc for the string*/
 
     ///act
     THANDLE(A_S_FLEX) copy = THANDLE_CREATE_FROM_CONTENT_FLEX(A_S_FLEX)(source, dispose_A_S_FLEX, copy_A_S_FLEX, get_sizeof_A_S_FLEX);
@@ -872,8 +874,8 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof_2)
 TEST_FUNCTION(THANDLE_MOVE_with_t1_NULL_returns)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     THANDLE(LL) ll2 = ll_create(2, "2");
     ASSERT_IS_NOT_NULL(ll2);
     umock_c_reset_all_calls();
@@ -892,8 +894,8 @@ TEST_FUNCTION(THANDLE_MOVE_with_t1_NULL_returns)
 TEST_FUNCTION(THANDLE_MOVE_with_t2_NULL_returns)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     THANDLE(LL) ll1 = ll_create(1, "1");
     ASSERT_IS_NOT_NULL(ll1);
     umock_c_reset_all_calls();
@@ -930,8 +932,8 @@ TEST_FUNCTION(THANDLE_MOVE_with_star_t1_NULL_and_star_t2_not_NULL)
     ///arrange
     THANDLE(LL) ll1 = NULL;
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     THANDLE(LL) ll2 = ll_create(2, "2");
     ASSERT_IS_NOT_NULL(ll2);
     umock_c_reset_all_calls();
@@ -952,8 +954,8 @@ TEST_FUNCTION(THANDLE_MOVE_with_star_t1_NULL_and_star_t2_not_NULL)
 TEST_FUNCTION(THANDLE_MOVE_with_star_t1_not_NULL_and_star_t2_NULL)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     THANDLE(LL) ll1 = ll_create(1, "1");
     ASSERT_IS_NOT_NULL(ll1);
 
@@ -961,8 +963,8 @@ TEST_FUNCTION(THANDLE_MOVE_with_star_t1_not_NULL_and_star_t2_NULL)
 
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /*ll1 goes poof!*/
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /**/
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*ll1 goes poof!*/
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /**/
 
     ///act
     THANDLE_MOVE(LL)(&ll1, &ll2);
@@ -979,19 +981,19 @@ TEST_FUNCTION(THANDLE_MOVE_with_star_t1_not_NULL_and_star_t2_NULL)
 TEST_FUNCTION(THANDLE_MOVE_with_star_t1_not_NULL_and_star_t2_not_NULL)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     THANDLE(LL) ll1 = ll_create(1, "1");
     ASSERT_IS_NOT_NULL(ll1);
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     THANDLE(LL) ll2 = ll_create(2, "2");
     ASSERT_IS_NOT_NULL(ll2);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /*ll1 string*/
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG)); /*ll1 goes poof!*/
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*ll1 string*/
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*ll1 goes poof!*/
 
     ///act
     THANDLE_MOVE(LL)(&ll1, &ll2);
