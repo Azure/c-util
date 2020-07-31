@@ -76,8 +76,6 @@ void my_gballoc_free(void* ptr)
 #include "azure_c_pal/gballoc_hl_redirect.h"
 #undef ENABLE_MOCKS
 
-#include "real_gballoc_hl.h"
-
 #include "azure_c_util/buffer_.h"
 
 #define ALLOCATION_SIZE             16
