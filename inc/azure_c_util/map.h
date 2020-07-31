@@ -13,13 +13,13 @@
 #include <cstddef>
 #else
 #include <stddef.h>
+#include <stdbool.h>
 #endif
 
 #include "azure_macro_utils/macro_utils.h"
 #include "azure_c_util/strings.h"
-#include "azure_c_util/crt_abstractions.h"
-#include "umock_c/umock_c_prod.h"
 
+#include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
 extern "C"
 {

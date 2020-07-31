@@ -11,7 +11,6 @@ set(${theseTestsName}_test_files
 
 set(${theseTestsName}_c_files
     ../../src/map.c
-    ../../src/crt_abstractions.c
 )
 
 set(${theseTestsName}_h_files

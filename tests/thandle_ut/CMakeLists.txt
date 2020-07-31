@@ -22,5 +22,5 @@ thandle_user.h
 thandle_flex_user.h
 )
 
-build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS azure_c_pal)
+build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS azure_c_pal azure_c_pal_reals)
 

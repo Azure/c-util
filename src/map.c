@@ -3,10 +3,17 @@
 
 #include <stdlib.h>
 #include "azure_macro_utils/macro_utils.h"
-#include "azure_c_pal/gballoc.h"
-#include "azure_c_util/map.h"
+
 #include "azure_c_logging/xlogging.h"
+
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
+#include "azure_c_pal/string_utils.h"
+
 #include "azure_c_util/strings.h"
+
+#include "azure_c_util/map.h"
+
 
 MU_DEFINE_ENUM_STRINGS(MAP_RESULT, MAP_RESULT_VALUES);
 
@@ -71,7 +78,7 @@ static char** Map_CloneVector(const char*const * source, size_t count)
         size_t i;
         for (i = 0; i < count; i++)
         {
-            if (mallocAndStrcpy_s(result + i, source[i]) != 0)
+            if ((result[i] = sprintf_char("%s", source[i])) == NULL)
             {
                 break;
             }
@@ -300,7 +307,7 @@ static int insertNewKeyValue(MAP_HANDLE_DATA* handleData, const char* key, const
     }
     else
     {
-        if (mallocAndStrcpy_s(&(handleData->keys[handleData->count - 1]), key) != 0)
+        if ((handleData->keys[handleData->count - 1] = sprintf_char("%s", key)) == NULL)
         {
             Map_DecreaseStorageKeysValues(handleData);
             LogError("unable to mallocAndStrcpy_s");
@@ -308,7 +315,7 @@ static int insertNewKeyValue(MAP_HANDLE_DATA* handleData, const char* key, const
         }
         else
         {
-            if (mallocAndStrcpy_s(&(handleData->values[handleData->count - 1]), value) != 0)
+            if((handleData->values[handleData->count - 1] = sprintf_char("%s", value)) == NULL)
             {
                 free(handleData->keys[handleData->count - 1]);
                 Map_DecreaseStorageKeysValues(handleData);

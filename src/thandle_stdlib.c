@@ -3,6 +3,9 @@
 
 #include <stdlib.h>
 
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
+
 #include "azure_c_util/thandle_stdlib.h"
 
 /*this file exists to "not allow" thandle mockable calls to "malloc". When THANDLE calls malloc - and malloc is mocked - an unexpected actual call to malloc appears*/
