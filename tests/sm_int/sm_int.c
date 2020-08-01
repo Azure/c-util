@@ -18,6 +18,7 @@
 
 #include "azure_c_pal/timer.h"
 #include "azure_c_pal/interlocked_hl.h"
+#include "azure_c_pal/gballoc_hl.h"
 #include "azure_c_logging/xlogging.h"
 
 #include "azure_c_util/sm.h"
@@ -525,12 +526,18 @@ BEGIN_TEST_SUITE(sm_int_tests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
+    ASSERT_ARE_EQUAL(int, 0, gballoc_hl_init(NULL, NULL));
     GetSystemInfo(&systemInfo);
     dwNumberOfProcessors = systemInfo.dwNumberOfProcessors;
     dwNumberOfProcessors = 2;
     ASSERT_IS_TRUE(dwNumberOfProcessors * 4 <= N_MAX_THREADS, "for systems with maaany processors, modify N_MAX_THREADS to be bigger");
 
     LogInfo("dwNumberOfProcessors was detected as %" PRIu32 "", dwNumberOfProcessors);
+}
+
+TEST_SUITE_CLEANUP(suite_cleanup)
+{
+    gballoc_hl_deinit();
 }
 
 TEST_FUNCTION_INITIALIZE(function_initialize)

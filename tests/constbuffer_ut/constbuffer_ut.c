@@ -95,6 +95,9 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
 
     TEST_SUITE_INITIALIZE(setsBufferTempSize)
     {
+        
+        ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
+
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -112,6 +115,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         umock_c_deinit();
 
         TEST_MUTEX_DESTROY(g_testByTest);
+
+        real_gballoc_hl_deinit();
     }
 
     TEST_FUNCTION_INITIALIZE(f)

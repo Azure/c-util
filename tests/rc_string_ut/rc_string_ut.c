@@ -32,6 +32,8 @@ static void my_gballoc_free(void* s)
 
 #include "azure_c_util/thandle.h"
 
+#include "real_gballoc_hl.h"
+
 #include "azure_c_util/rc_string.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
@@ -58,6 +60,9 @@ BEGIN_TEST_SUITE(rc_string_unittests)
 
 TEST_SUITE_INITIALIZE(suite_initialize)
 {
+
+    ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
+
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -75,6 +80,8 @@ TEST_SUITE_CLEANUP(suite_cleanup)
     umock_c_deinit();
 
     TEST_MUTEX_DESTROY(g_testByTest);
+
+    real_gballoc_hl_deinit();
 }
 
 TEST_FUNCTION_INITIALIZE(function_init)
