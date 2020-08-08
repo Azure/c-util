@@ -9,14 +9,16 @@
 #include <stdbool.h>
 #endif
 
+#include "real_gballoc_ll.h"
+
 static void* my_gballoc_malloc(size_t size)
 {
-    return malloc(size);
+    return real_gballoc_ll_malloc(size);
 }
 
 static void my_gballoc_free(void* s)
 {
-    free(s);
+    real_gballoc_ll_free(s);
 }
 
 #include "azure_macro_utils/macro_utils.h"

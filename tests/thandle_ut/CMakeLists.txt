@@ -12,12 +12,10 @@ ${theseTestsName}.c
 set(${theseTestsName}_c_files
 thandle_user.c
 thandle_flex_user.c
-../../src/thandle_stdlib.c
 )
 
 set(${theseTestsName}_h_files
 ../../inc/azure_c_util/thandle.h
-../../inc/azure_c_util/thandle_stdlib.h
 thandle_user.h
 thandle_flex_user.h
 )

@@ -69,6 +69,31 @@ if ((NOT TARGET azure_c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-
         include_directories(${C_PAL_INC_FOLDER})
 endif()
 
+#add mimalloc build
+if (
+    (NOT TARGET mimalloc-obj) AND 
+    (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/mimalloc/CMakeLists.txt)
+    )
+        set(MI_BUILD_SHARED OFF CACHE BOOL "Build shared library" FORCE) #not building a dll allows building on 32 bit, otherwise there's some errors on init.c about not finding a imported symbol
+        set(MI_BUILD_TESTS OFF CACHE BOOL "Build test executables" FORCE) 
+        #for mimalloc disable this warning: Warning C4459: declaration of 'os_page_size' hides global declaration
+        #for mimalloc disable this warning: Warning C4100: 'try_alignment': unreferenced formal parameter
+        #for mimalloc disable this warning: warning C4505: 'mi_os_get_aligned_hint': unreferenced local function has been removed
+
+        set(PREV_CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+        set(PREV_CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+        if(WIN32)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4459 /wd4100 /wd4505")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4459 /wd4100 /wd4505")
+        endif()
+
+        add_subdirectory(deps/mimalloc)
+        include_directories(deps/mimalloc/include)
+        
+        set(CMAKE_C_FLAGS ${PREV_CMAKE_C_FLAGS})
+        set(CMAKE_CXX_FLAGS ${PREV_CMAKE_CXX_FLAGS})
+endif()
+
 # This function focuses on setting files which are unique to a given hardware platform.
 # The choice of tlsio is not unique per-platform, and is set in the main CMakeLists.txt
 function(set_platform_files c_util_dir)
@@ -98,7 +123,6 @@ set(azure_c_util_c_files
     ./src/rc_string.c
     ./src/singlylinkedlist.c
     ./src/strings.c
-    ./src/thandle_stdlib.c
     ./src/uuid.c
     ${SM_C_FILE}
 )
@@ -117,7 +141,6 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/strings.h
     ./inc/azure_c_util/strings_types.h
     ./inc/azure_c_util/thandle.h
-    ./inc/azure_c_util/thandle_stdlib.h
     ./inc/azure_c_util/uuid.h
     ${SM_H_FILE}
 )

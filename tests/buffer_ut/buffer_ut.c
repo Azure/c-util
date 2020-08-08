@@ -15,6 +15,8 @@
 
 #include "testrunnerswitcher.h"
 
+#include "real_gballoc_ll.h"
+
 static size_t currentmalloc_call = 0;
 static size_t whenShallmalloc_fail = 0;
 
@@ -33,12 +35,12 @@ void* my_gballoc_malloc(size_t size)
         }
         else
         {
-            result = malloc(size);
+            result = real_gballoc_ll_malloc(size);
         }
     }
     else
     {
-        result = malloc(size);
+        result = real_gballoc_ll_malloc(size);
     }
     return result;
 }
@@ -55,12 +57,12 @@ void* my_gballoc_realloc(void* ptr, size_t size)
         }
         else
         {
-            result = realloc(ptr, size);
+            result = real_gballoc_ll_realloc(ptr, size);
         }
     }
     else
     {
-        result = realloc(ptr, size);
+        result = real_gballoc_ll_realloc(ptr, size);
     }
 
     return result;
@@ -68,7 +70,7 @@ void* my_gballoc_realloc(void* ptr, size_t size)
 
 void my_gballoc_free(void* ptr)
 {
-    free(ptr);
+    real_gballoc_ll_free(ptr);
 }
 
 #define ENABLE_MOCKS
@@ -1696,8 +1698,8 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
 
         //cleanup
         BUFFER_delete(buffer);
-        my_gballoc_free(expected);
-        my_gballoc_free(actual);
+        umockalloc_free(expected);
+        umockalloc_free(actual);
     }
 
     /* Tests_SRS_BUFFER_07_002: [ If handle is NULL BUFFER_fill shall return a non-zero value. ] */
