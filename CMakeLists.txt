@@ -64,11 +64,6 @@ if ((NOT TARGET umock_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMak
         include_directories(deps/umock-c/inc)
 endif()
 
-if ((NOT TARGET azure_c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-pal/CMakeLists.txt))
-        add_subdirectory(deps/azure-c-pal)
-        include_directories(${C_PAL_INC_FOLDER})
-endif()
-
 #add mimalloc build
 if (
     (NOT TARGET mimalloc-obj) AND 
@@ -93,6 +88,13 @@ if (
         set(CMAKE_C_FLAGS ${PREV_CMAKE_C_FLAGS})
         set(CMAKE_CXX_FLAGS ${PREV_CMAKE_CXX_FLAGS})
 endif()
+
+if ((NOT TARGET azure_c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-pal/CMakeLists.txt))
+        add_subdirectory(deps/azure-c-pal)
+        include_directories(${C_PAL_INC_FOLDER})
+endif()
+
+
 
 # This function focuses on setting files which are unique to a given hardware platform.
 # The choice of tlsio is not unique per-platform, and is set in the main CMakeLists.txt
