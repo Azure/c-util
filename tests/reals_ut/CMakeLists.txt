@@ -7,4 +7,4 @@ set(${theseTestsName}_test_files
     ${theseTestsName}.c
 )
 
-build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS azure_c_util azure_c_util_reals azure_c_pal)
+build_test_artifacts(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS azure_c_util azure_c_util_reals azure_c_pal)
