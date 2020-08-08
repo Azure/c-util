@@ -27,8 +27,7 @@
     #ifdef THANDLE_FREE_FUNCTION
         #error THANDLE_MALLOC_FUNCTION and THANDLE_FREE_FUNCTION must be both defined or both not defined
     #else
-        /*include the "stock" implementation*/
-        #include "azure_c_util/thandle_stdlib.h"
+        /*then use whatever malloc and free expand to*/
     #endif
 #endif
 

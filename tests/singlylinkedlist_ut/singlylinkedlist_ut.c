@@ -11,6 +11,8 @@
 #include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
+#include "real_gballoc_ll.h"
+
 static size_t currentmalloc_call = 0;
 static size_t whenShallmalloc_fail = 0;
 
@@ -29,19 +31,19 @@ void* my_gballoc_malloc(size_t size)
         }
         else
         {
-            result = malloc(size);
+            result = real_gballoc_ll_malloc(size);
         }
     }
     else
     {
-        result = malloc(size);
+        result = real_gballoc_ll_malloc(size);
     }
     return result;
 }
 
 void my_gballoc_free(void* ptr)
 {
-    free(ptr);
+    real_gballoc_ll_free(ptr);
 }
 
 #include "umock_c/umock_c.h"

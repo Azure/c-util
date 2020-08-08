@@ -16,4 +16,4 @@ set(${theseTestsName}_h_files
     ../../inc/azure_c_util/constbuffer_array.h
 )
 
-build_c_tests(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS azure_c_pal azure_c_pal_reals azure_c_util_reals)
+build_test_artifacts(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS azure_c_pal azure_c_pal_reals azure_c_util_reals)

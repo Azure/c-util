@@ -20,3 +20,6 @@
 	path = deps/azure-c-pal
 	url = https://github.com/azure/azure-c-pal
 	branch = master
+[submodule "deps/mimalloc"]
+	path = deps/mimalloc
+	url = https://github.com/microsoft/mimalloc

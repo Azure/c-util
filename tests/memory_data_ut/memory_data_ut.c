@@ -13,6 +13,10 @@
 
 #include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
+
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
+
 #include "azure_c_util/uuid.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
@@ -27,6 +31,8 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
+
+
 
 BEGIN_TEST_SUITE(memory_data_ut)
 
