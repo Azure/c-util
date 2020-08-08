@@ -74,11 +74,6 @@ if ((NOT TARGET azure_c_logging) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azur
         include_directories(deps/azure-c-logging/inc)
 endif()
 
-if ((NOT TARGET azure_c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-pal/CMakeLists.txt))
-        add_subdirectory(deps/azure-c-pal)
-        include_directories(${C_PAL_INC_FOLDER})
-endif()
-
 if ((NOT TARGET ctest) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-ctest/CMakeLists.txt))
         add_subdirectory(deps/azure-ctest)
         include_directories(deps/azure-ctest/inc)
@@ -92,6 +87,11 @@ endif()
 if ((NOT TARGET umock_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMakeLists.txt))
         add_subdirectory(deps/umock-c)
         include_directories(deps/umock-c/inc)
+endif()
+
+if ((NOT TARGET azure_c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-pal/CMakeLists.txt))
+        add_subdirectory(deps/azure-c-pal)
+        include_directories(${C_PAL_INC_FOLDER})
 endif()
 
 # This function focuses on setting files which are unique to a given hardware platform.
