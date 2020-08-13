@@ -19,6 +19,7 @@ set(azure_c_util_reals_c_files
     real_constbuffer_array_batcher_nv.c
     real_doublylinkedlist.c
     real_memory_data.c
+    real_rc_string.c
     real_singlylinkedlist.c
     real_uuid.c
     ${REAL_SM_C_FILES}
@@ -35,6 +36,8 @@ set(azure_c_util_reals_h_files
     real_doublylinkedlist_renames.h
     real_memory_data.h
     real_memory_data_renames.h
+    real_rc_string.h
+    real_rc_string_renames.h
     real_singlylinkedlist.h
     real_singlylinkedlist_renames.h
     real_uuid.h
