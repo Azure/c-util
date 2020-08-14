@@ -88,6 +88,11 @@
 /*given a previous type T (and its THANDLE(T)), THANDLE_MOVE introduces a new name for a function that moves a handle to another handle. Move does not increment the ref count, and NULLs the source*/
 #define THANDLE_MOVE(T) MU_C2(T,_MOVE)
 
+/*given a previous type T (and its THANDLE(T)), THANDLE_INITIALIZE_MOVE introduces a new name for a function that moves a handle to another handle.
+INITIALIZE_MOVE does not increment the ref count, and NULLs the source.
+INITIALIZE_MOVE assumes that destination is not initialized and thus it does not decrement the destination ref count */
+#define THANDLE_INITIALIZE_MOVE(T) MU_C2(T,_INITIALIZE_MOVE)
+
 /*given a previous type T, this introduces THANDLE_MALLOC macro to create its wrapper, initialize refCount to 1, and remember the dispose function*/
 
 #define THANDLE_MALLOC_MACRO(T) \
@@ -411,6 +416,34 @@ void THANDLE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2 )                         
     }                                                                                                                                                               \
 }                                                                                                                                                                   \
 
+/*given a previous type T, this introduces THANDLE_INITIALIZE_MOVE_MACRO macro to move a handle (*t1=t2, *t2=NULL)*/
+#define THANDLE_INITIALIZE_MOVE_MACRO(T)                                                                                                                            \
+void THANDLE_INITIALIZE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2 )                                                                                                  \
+{                                                                                                                                                                   \
+    if(                                                                                                                                                             \
+        /*Codes_SRS_THANDLE_01_001: [ If t1 is NULL then THANDLE_INITIALIZE_MOVE shall return. ]*/                                                                  \
+        (t1 == NULL) ||                                                                                                                                             \
+        /*Codes_SRS_THANDLE_01_002: [ If t2 is NULL then THANDLE_INITIALIZE_MOVE shall return. ]*/                                                                  \
+        (t2 == NULL)                                                                                                                                                \
+    )                                                                                                                                                               \
+    {                                                                                                                                                               \
+        LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") * t1=%p, THANDLE(" MU_TOSTRING(T) ") t2=%p", t1, t2 );                                               \
+    }                                                                                                                                                               \
+    else                                                                                                                                                            \
+    {                                                                                                                                                               \
+        if (*t2 == NULL)                                                                                                                                            \
+        {                                                                                                                                                           \
+            /*Codes_SRS_THANDLE_01_003: [ If *t2 is NULL then THANDLE_INITIALIZE_MOVE shall THANDLE_DEC_REF *t1, set *t1 to NULL and return. ]*/                    \
+            *(T const**)t1 = NULL;                                                                                                                                  \
+        }                                                                                                                                                           \
+        else                                                                                                                                                        \
+        {                                                                                                                                                           \
+            /*Codes_SRS_THANDLE_01_004: [ If *t2 is not NULL then THANDLE_INITIALIZE_MOVE shall set *t1 to *t2, set *t2 to NULL and return. ]*/                     \
+            *(T const**)t1 = *t2;                                                                                                                                   \
+            *(T const**)t2 = NULL;                                                                                                                                  \
+        }                                                                                                                                                           \
+    }                                                                                                                                                               \
+}                                                                                                                                                                   \
 
 /*given a previous type T, this introduces a wrapper type that contains T (and other fields) and defines the functions of that type T*/
 #define THANDLE_TYPE_DEFINE(T) \
@@ -427,6 +460,7 @@ void THANDLE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2 )                         
     THANDLE_GET_T_MACRO(T)                                                                                                                                          \
     THANDLE_INSPECT_MACRO(T)                                                                                                                                        \
     THANDLE_MOVE_MACRO(T)                                                                                                                                           \
+    THANDLE_INITIALIZE_MOVE_MACRO(T)                                                                                                                                \
 
 /*macro to be used in headers*/                                                                                       \
 /*introduces an incomplete type based on a MU_DEFINE_STRUCT(T...) previously defined;*/                               \
@@ -437,6 +471,7 @@ void THANDLE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2 )                         
     MOCKABLE_FUNCTION(, void, THANDLE_ASSIGN(T), THANDLE(T) *, t1, THANDLE(T), t2 );                                  \
     MOCKABLE_FUNCTION(, void, THANDLE_INITIALIZE(T), THANDLE(T) *, t1, THANDLE(T), t2 );                              \
     MOCKABLE_FUNCTION(, void, THANDLE_MOVE(T), THANDLE(T) *, t1, THANDLE(T)*, t2 );                                   \
+    MOCKABLE_FUNCTION(, void, THANDLE_INITIALIZE_MOVE(T), THANDLE(T) *, t1, THANDLE(T)*, t2 );                        \
 
 #endif /*THANDLE_H*/
 
