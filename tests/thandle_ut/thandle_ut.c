@@ -1011,6 +1011,138 @@ TEST_FUNCTION(THANDLE_MOVE_with_star_t1_not_NULL_and_star_t2_not_NULL)
     THANDLE_DEC_REF(LL)(ll1);
 }
 
+/* THANDLE_INITIALIZE_MOVE_MACRO */
+
+/*Tests_SRS_THANDLE_01_001: [ If t1 is NULL then THANDLE_INITIALIZE_MOVE shall return. ]*/
+TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_t1_NULL_returns)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    THANDLE(LL) ll2 = ll_create(2, "2");
+    ASSERT_IS_NOT_NULL(ll2);
+    umock_c_reset_all_calls();
+
+    ///act
+    THANDLE_INITIALIZE_MOVE(LL)(NULL, &ll2);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    THANDLE_DEC_REF(LL)(ll2);
+}
+
+/*Tests_SRS_THANDLE_01_002: [ If t2 is NULL then THANDLE_INITIALIZE_MOVE shall return. ]*/
+TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_t2_NULL_returns)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    THANDLE(LL) ll1 = ll_create(1, "1");
+    ASSERT_IS_NOT_NULL(ll1);
+    umock_c_reset_all_calls();
+
+    ///act
+    THANDLE_INITIALIZE_MOVE(LL)(&ll1, NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    THANDLE_DEC_REF(LL)(ll1);
+}
+
+/*Tests_SRS_THANDLE_01_003: [ If *t2 is NULL then THANDLE_INITIALIZE_MOVE shall THANDLE_DEC_REF *t1, set *t1 to NULL and return. ]*/
+TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_star_t1_NULL_and_star_t2_NULL_returns)
+{
+    ///arrange
+    THANDLE(LL) ll1 = NULL;
+    THANDLE(LL) ll2 = NULL;
+
+    ///act
+    THANDLE_INITIALIZE_MOVE(LL)(&ll1, &ll2);
+
+    ///assert
+    ASSERT_IS_NULL(ll1);
+    ASSERT_IS_NULL(ll2);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_THANDLE_01_004: [ If *t2 is not NULL then THANDLE_INITIALIZE_MOVE shall set *t1 to *t2, set *t2 to NULL and return. ]*/
+TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_star_t1_NULL_and_star_t2_not_NULL)
+{
+    ///arrange
+    THANDLE(LL) ll1 = NULL;
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    THANDLE(LL) ll2 = ll_create(2, "2");
+    ASSERT_IS_NOT_NULL(ll2);
+    umock_c_reset_all_calls();
+
+    ///act
+    THANDLE_INITIALIZE_MOVE(LL)(&ll1, &ll2);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(ll1);
+    ASSERT_IS_NULL(ll2);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    THANDLE_DEC_REF(LL)(ll1);
+}
+
+/* Tests_SRS_THANDLE_01_003: [ If *t2 is NULL then THANDLE_INITIALIZE_MOVE shall THANDLE_DEC_REF *t1, set *t1 to NULL and return. ]*/
+TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_star_t1_not_NULL_and_star_t2_NULL)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    THANDLE(LL) ll1 = (LL*)0x4242; /* some dummy value */
+    ASSERT_IS_NOT_NULL(ll1);
+
+    THANDLE(LL) ll2 = NULL;
+
+    umock_c_reset_all_calls();
+
+    ///act
+    THANDLE_INITIALIZE_MOVE(LL)(&ll1, &ll2);
+
+    ///assert
+    ASSERT_IS_NULL(ll1);
+    ASSERT_IS_NULL(ll2);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+/* Tests_SRS_THANDLE_01_004: [ If *t2 is not NULL then THANDLE_INITIALIZE_MOVE shall set *t1 to *t2, set *t2 to NULL and return. ]*/
+TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_star_t1_not_NULL_and_star_t2_not_NULL)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    THANDLE(LL) ll1 = (LL*)0x4242; // some dummy value
+    ASSERT_IS_NOT_NULL(ll1);
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    THANDLE(LL) ll2 = ll_create(2, "2");
+    ASSERT_IS_NOT_NULL(ll2);
+    umock_c_reset_all_calls();
+
+    ///act
+    THANDLE_INITIALIZE_MOVE(LL)(&ll1, &ll2);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(ll1);
+    ASSERT_IS_NULL(ll2);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    THANDLE_DEC_REF(LL)(ll1);
+}
 
 END_TEST_SUITE(thandle_unittests)
 
