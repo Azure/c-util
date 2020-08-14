@@ -1053,7 +1053,7 @@ TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_t2_NULL_returns)
     THANDLE_DEC_REF(LL)(ll1);
 }
 
-/*Tests_SRS_THANDLE_01_003: [ If *t2 is NULL then THANDLE_INITIALIZE_MOVE shall THANDLE_DEC_REF *t1, set *t1 to NULL and return. ]*/
+/*Tests_SRS_THANDLE_01_003: [ If *t2 is NULL then THANDLE_INITIALIZE_MOVE shall set *t1 to NULL and return. ]*/
 TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_star_t1_NULL_and_star_t2_NULL_returns)
 {
     ///arrange
@@ -1093,7 +1093,7 @@ TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_star_t1_NULL_and_star_t2_not_NULL)
     THANDLE_DEC_REF(LL)(ll1);
 }
 
-/* Tests_SRS_THANDLE_01_003: [ If *t2 is NULL then THANDLE_INITIALIZE_MOVE shall THANDLE_DEC_REF *t1, set *t1 to NULL and return. ]*/
+/*Tests_SRS_THANDLE_01_003: [ If *t2 is NULL then THANDLE_INITIALIZE_MOVE shall set *t1 to NULL and return. ]*/
 TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_star_t1_not_NULL_and_star_t2_NULL)
 {
     ///arrange
