@@ -237,6 +237,6 @@ void THANDLE_INITIALIZE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2)
 
 **SRS_THANDLE_01_002: [** If `t2` is `NULL` then `THANDLE_INITIALIZE_MOVE` shall return. **]**
 
-**SRS_THANDLE_01_003: [** If `*t2` is `NULL` then `THANDLE_INITIALIZE_MOVE` shall `THANDLE_DEC_REF` `*t1`, set `*t1` to `NULL` and return. **]**
+**SRS_THANDLE_01_003: [** If `*t2` is `NULL` then `THANDLE_INITIALIZE_MOVE` shall set `*t1` to `NULL` and return. **]**
 
 **SRS_THANDLE_01_004: [** If `*t2` is not `NULL` then `THANDLE_INITIALIZE_MOVE` shall set `*t1` to `*t2`, set `*t2` to `NULL` and return. **]**

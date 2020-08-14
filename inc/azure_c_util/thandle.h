@@ -433,7 +433,7 @@ void THANDLE_INITIALIZE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2 )              
     {                                                                                                                                                               \
         if (*t2 == NULL)                                                                                                                                            \
         {                                                                                                                                                           \
-            /*Codes_SRS_THANDLE_01_003: [ If *t2 is NULL then THANDLE_INITIALIZE_MOVE shall THANDLE_DEC_REF *t1, set *t1 to NULL and return. ]*/                    \
+            /*Codes_SRS_THANDLE_01_003: [ If *t2 is NULL then THANDLE_INITIALIZE_MOVE shall set *t1 to NULL and return. ]*/                                         \
             *(T const**)t1 = NULL;                                                                                                                                  \
         }                                                                                                                                                           \
         else                                                                                                                                                        \
