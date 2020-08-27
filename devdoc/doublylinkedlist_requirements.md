@@ -32,7 +32,7 @@ extern PDLIST_ENTRY DList_RemoveHeadList(PDLIST_ENTRY listHead);
 // address of a field within the structure.
 //
 
-#define containingRecord(address, type, field) ((type *)((char *)(address) - offsetof(type,field)))
+#define CONTAINING_RECORD(address, type, field) ((type *)((char *)(address) - offsetof(type,field)))
 ```
 
 ### DList_InitializeListHead

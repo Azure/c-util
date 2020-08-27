@@ -3,10 +3,13 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "azure_c_util/gballoc.h"
-#include "azure_c_util/azure_base64.h"
+
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
+
 #include "azure_c_logging/xlogging.h"
 
+#include "azure_c_util/azure_base64.h"
 
 #define splitInt(intVal, bytePos)   (char)((intVal >> (bytePos << 3)) & 0xFF)
 #define joinChars(a, b, c, d) (uint32_t)((uint32_t)a + ((uint32_t)b << 8) + ((uint32_t)c << 16) + ((uint32_t)d << 24))

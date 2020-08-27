@@ -49,7 +49,7 @@ The type is const - so the following incorrect assignment fails at compile time:
 #define THANDLE_TYPE_DECLARE(T)
 ```
 
-`THANDLE_TYPE_DECLARE` introduces several functions that can be used with `THANDLE(T)` type. These are `THANDLE_DEC_REF(T)`, `THANDLE_INC_REF(T)`, `THANDLE_ASSIGN(T)`, `THANDLE_INITIALIZE(T)`, `THANDLE_MOVE(T)`.
+`THANDLE_TYPE_DECLARE` introduces several functions that can be used with `THANDLE(T)` type. These are `THANDLE_DEC_REF(T)`, `THANDLE_INC_REF(T)`, `THANDLE_ASSIGN(T)`, `THANDLE_INITIALIZE(T)`, `THANDLE_MOVE(T)`, `THANDLE_INITIALIZE_MOVE(T)`.
 
 ###  THANDLE_DEC_REF(T)
 ```c
@@ -224,3 +224,19 @@ void THANDLE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2)
 **SRS_THANDLE_02_037: [** If `*t1` is not `NULL` and `*t2` is `NULL` then `THANDLE_MOVE` shall `THANDLE_DEC_REF` `*t1`, set `*t1` to `NULL` and return. **]**
 
 **SRS_THANDLE_02_038: [** If `*t1` is not `NULL` and `*t2` is not `NULL` then `THANDLE_MOVE` shall `THANDLE_DEC_REF` `*t1`, set `*t1` to `*t2`, set `*t2` to `NULL` and return. **]**
+
+###  THANDLE_INITIALIZE_MOVE_MACRO(T)
+```c
+THANDLE_INITIALIZE_MOVE_MACRO(T)
+void THANDLE_INITIALIZE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2)
+```
+
+`THANDLE_INITIALIZE_MOVE` moves `*t2` under `*t1` and NULLs *t2, assuming that `t1` is not initialized. 
+
+**SRS_THANDLE_01_001: [** If `t1` is `NULL` then `THANDLE_INITIALIZE_MOVE` shall return. **]**
+
+**SRS_THANDLE_01_002: [** If `t2` is `NULL` then `THANDLE_INITIALIZE_MOVE` shall return. **]**
+
+**SRS_THANDLE_01_003: [** If `*t2` is `NULL` then `THANDLE_INITIALIZE_MOVE` shall set `*t1` to `NULL` and return. **]**
+
+**SRS_THANDLE_01_004: [** If `*t2` is not `NULL` then `THANDLE_INITIALIZE_MOVE` shall set `*t1` to `*t2`, set `*t2` to `NULL` and return. **]**

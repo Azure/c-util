@@ -5,7 +5,8 @@
 
 #include "azure_macro_utils/macro_utils.h"
 
-#include "azure_c_util/gballoc.h"
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
 
 #include "azure_c_util/thandle.h"
 
@@ -16,15 +17,11 @@
     char*, s,                   \
     size_t, theMany[]
 
-#ifdef _MSC_VER
-    /*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/en-us/library/b6fae073.aspx*/
-#pragma warning(disable:4200)
-#endif
 MU_DEFINE_STRUCT(LL_FLEX, LL_FLEX_FIELDS);
 
 
-#define THANDLE_MALLOC_FUNCTION gballoc_malloc
-#define THANDLE_FREE_FUNCTION gballoc_free
+#define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_FREE_FUNCTION gballoc_hl_free
 THANDLE_TYPE_DEFINE(LL_FLEX);
 #undef THANDLE_MALLOC_FUNCTION
 #undef THANDLE_FREE_FUNCTION

@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "azure_c_util/doublylinkedlist.h"
+#include "azure_c_util/containing_record.h"
 #include "testrunnerswitcher.h"
 
 typedef struct simpleItem_tag
@@ -145,35 +146,35 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
         ASSERT_ARE_EQUAL(int, 0, DList_IsListEmpty(&listHead));
         currentEntry = listHead.Flink;
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp1.link);
-        ASSERT_ARE_EQUAL(short, (short)1, containingRecord(currentEntry, simpleItem, link)->index);
+        ASSERT_ARE_EQUAL(short, (short)1, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
         currentEntry = currentEntry->Flink;
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp2.link);
-        ASSERT_ARE_EQUAL(short, (short)2, containingRecord(currentEntry, simpleItem, link)->index);
+        ASSERT_ARE_EQUAL(short, (short)2, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
         currentEntry = currentEntry->Flink;
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp4.link);
-        ASSERT_ARE_EQUAL(short, (short)4, containingRecord(currentEntry, simpleItem, link)->index);
+        ASSERT_ARE_EQUAL(short, (short)4, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
         currentEntry = currentEntry->Flink;
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp5.link);
-        ASSERT_ARE_EQUAL(short, (short)5, containingRecord(currentEntry, simpleItem, link)->index);
+        ASSERT_ARE_EQUAL(short, (short)5, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
         currentEntry = currentEntry->Flink;
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &listHead);
 
         // Now back
         currentEntry = listHead.Blink;
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp5.link);
-        ASSERT_ARE_EQUAL(short, (short)5, containingRecord(currentEntry, simpleItem, link)->index);
+        ASSERT_ARE_EQUAL(short, (short)5, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
 #ifdef _MSC_VER
 #pragma warning(suppress: 6011) /* test code, should crash if this is truly NULL */
 #endif
         currentEntry = currentEntry->Blink;
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp4.link);
-        ASSERT_ARE_EQUAL(short, (short)4, containingRecord(currentEntry, simpleItem, link)->index);
+        ASSERT_ARE_EQUAL(short, (short)4, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
         currentEntry = currentEntry->Blink;
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp2.link);
-        ASSERT_ARE_EQUAL(short, (short)2, containingRecord(currentEntry, simpleItem, link)->index);
+        ASSERT_ARE_EQUAL(short, (short)2, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
         currentEntry = currentEntry->Blink;
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp1.link);
-        ASSERT_ARE_EQUAL(short, (short)1, containingRecord(currentEntry, simpleItem, link)->index);
+        ASSERT_ARE_EQUAL(short, (short)1, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
         currentEntry = currentEntry->Blink;
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &listHead);
     }

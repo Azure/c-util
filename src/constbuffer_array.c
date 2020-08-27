@@ -5,22 +5,23 @@
 #include <inttypes.h>
 
 #include "azure_macro_utils/macro_utils.h"
-#include "azure_c_util/gballoc.h"
+
 #include "azure_c_logging/xlogging.h"
 
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
+#include "azure_c_pal/refcount.h"
+
 #include "azure_c_util/constbuffer.h"
+
 #include "azure_c_util/constbuffer_array.h"
-#include "azure_c_util/refcount.h"
+
 
 typedef struct CONSTBUFFER_ARRAY_HANDLE_DATA_TAG
 {
     uint32_t nBuffers;
     bool created_with_moved_memory;
     CONSTBUFFER_HANDLE* buffers;
-#ifdef _MSC_VER
-    /*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/en-us/library/b6fae073.aspx*/
-#pragma warning(disable:4200)
-#endif
     CONSTBUFFER_HANDLE buffers_memory[];
 } CONSTBUFFER_ARRAY_HANDLE_DATA;
 
@@ -437,7 +438,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, constbuffer_array_dec_ref, CONSTBUFFER_ARRAY
     else
     {
         /* Codes_SRS_CONSTBUFFER_ARRAY_01_016: [ Otherwise constbuffer_array_dec_ref shall decrement the reference count for constbuffer_array_handle. ]*/
-        if (DEC_REF(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle) == DEC_RETURN_ZERO)
+        if (DEC_REF(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle) == 0)
         {
             uint32_t i;
 

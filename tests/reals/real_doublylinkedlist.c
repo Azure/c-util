@@ -3,6 +3,5 @@
 
 #include "real_doublylinkedlist_renames.h"
 
-#define GBALLOC_H
 
 #include "doublylinkedlist.c"

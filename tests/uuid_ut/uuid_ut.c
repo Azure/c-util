@@ -15,9 +15,12 @@
 #include "umock_c/umock_c_negative_tests.h"
 
 #define ENABLE_MOCKS
-#include "azure_c_util/gballoc.h"
-#include "azure_c_util/uniqueid.h"
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
+#include "azure_c_pal/uniqueid.h"
 #undef ENABLE_MOCKS
+
+#include "real_gballoc_hl.h"
 
 #include "azure_c_util/uuid.h"
 
@@ -73,6 +76,8 @@ TEST_SUITE_INITIALIZE(suite_init)
 {
     int result;
 
+    ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
+
     result = umock_c_init(on_umock_c_error);
     ASSERT_ARE_EQUAL(int, 0, result);
 
@@ -87,7 +92,10 @@ TEST_SUITE_INITIALIZE(suite_init)
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
+    umock_c_deinit();
     TEST_MUTEX_DESTROY(g_testByTest);
+
+    real_gballoc_hl_deinit();
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
@@ -100,6 +108,7 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
+    umock_c_negative_tests_deinit();
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
@@ -187,9 +196,6 @@ TEST_FUNCTION(UUID_generate_failure_checks)
         // assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result, temp_str);
     }
-
-    umock_c_negative_tests_reset();
-    umock_c_negative_tests_deinit();
 }
 
 // Tests_SRS_UUID_09_011: [ If uuid is NULL, UUID_to_string shall return a non-zero value ]

@@ -20,11 +20,14 @@ set(original_run_e2e_tests ${run_e2e_tests})
 set(original_run_unittests ${run_unittests})
 set(original_run_int_tests ${run_int_tests})
 set(original_run_traceability ${run_traceability})
+set(original_run_perf_tests ${run_perf_tests})
+
 
 set(run_e2e_tests OFF)
 set(run_unittests OFF)
 set(run_int_tests OFF)
 set(run_traceability OFF)
+set(run_perf_tests OFF)
 
 if ((NOT TARGET azure_c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-build-tools/CMakeLists.txt))
         add_subdirectory(deps/azure-c-build-tools)
@@ -36,9 +39,39 @@ enable_testing()
 
 set(C_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 
+#add mimalloc build
+if (
+    (NOT TARGET mimalloc-obj) AND 
+    (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/mimalloc/CMakeLists.txt)
+    )
+        set(MI_BUILD_SHARED OFF CACHE BOOL "Build shared library" FORCE) #not building a dll allows building on 32 bit, otherwise there's some errors on init.c about not finding a imported symbol
+        set(MI_BUILD_TESTS OFF CACHE BOOL "Build test executables" FORCE) 
+        #for mimalloc disable this warning: Warning C4459: declaration of 'os_page_size' hides global declaration
+        #for mimalloc disable this warning: Warning C4100: 'try_alignment': unreferenced formal parameter
+        #for mimalloc disable this warning: warning C4505: 'mi_os_get_aligned_hint': unreferenced local function has been removed
+
+        set(PREV_CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+        set(PREV_CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+        if(WIN32)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4459 /wd4100 /wd4505")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4459 /wd4100 /wd4505")
+        endif()
+
+        add_subdirectory(deps/mimalloc)
+        include_directories(deps/mimalloc/include)
+        
+        set(CMAKE_C_FLAGS ${PREV_CMAKE_C_FLAGS})
+        set(CMAKE_CXX_FLAGS ${PREV_CMAKE_CXX_FLAGS})
+endif()
+
 if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
         add_subdirectory(deps/azure-macro-utils-c)
         include_directories(deps/azure-macro-utils-c/inc)
+endif()
+
+if ((NOT TARGET azure_c_logging) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-logging/CMakeLists.txt))
+        add_subdirectory(deps/azure-c-logging)
+        include_directories(deps/azure-c-logging/inc)
 endif()
 
 if ((NOT TARGET ctest) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-ctest/CMakeLists.txt))
@@ -56,38 +89,22 @@ if ((NOT TARGET umock_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMak
         include_directories(deps/umock-c/inc)
 endif()
 
-if ((NOT TARGET azure_c_logging) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-logging/CMakeLists.txt))
-        add_subdirectory(deps/azure-c-logging)
-        include_directories(deps/azure-c-logging/inc)
+if ((NOT TARGET azure_c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-pal/CMakeLists.txt))
+        add_subdirectory(deps/azure-c-pal)
+        include_directories(${C_PAL_INC_FOLDER})
 endif()
 
 # This function focuses on setting files which are unique to a given hardware platform.
 # The choice of tlsio is not unique per-platform, and is set in the main CMakeLists.txt
 function(set_platform_files c_util_dir)
     if(WIN32)
-        set(INTERLOCKED_HL_C_FILE ${c_util_dir}/adapters/interlocked_hl_win32.c PARENT_SCOPE)
-        set(LOCK_C_FILE ${c_util_dir}/adapters/lock_win32.c PARENT_SCOPE)
-        set(PLATFORM_C_FILE ${c_util_dir}/adapters/platform_win32.c PARENT_SCOPE)
-        set(THREAD_C_FILE ${c_util_dir}/adapters/threadapi_win32.c PARENT_SCOPE)
-        set(TIMER_C_FILE ${c_util_dir}/adapters/timer.c PARENT_SCOPE)
-        set(UNIQUEID_C_FILE ${c_util_dir}/adapters/uniqueid_win32.c PARENT_SCOPE)
-        set(STRING_UTILS_C_FILE ${c_util_dir}/adapters/string_utils.c PARENT_SCOPE)
-        set(SRW_LOCK_C_FILE ${c_util_dir}/adapters/srw_lock.c PARENT_SCOPE)
         set(SM_C_FILE ${c_util_dir}/src/sm.c PARENT_SCOPE)
         set(SM_H_FILE ${c_util_dir}/inc/azure_c_util/sm.h PARENT_SCOPE)
     else()
-        set(LOCK_C_FILE ${c_util_dir}/adapters/lock_pthreads.c PARENT_SCOPE)
-        set(PLATFORM_C_FILE ${c_util_dir}/adapters/platform_linux.c PARENT_SCOPE)
-        set(THREAD_C_FILE ${c_util_dir}/adapters/threadapi_pthreads.c PARENT_SCOPE)
-        set(UNIQUEID_C_FILE ${c_util_dir}/adapters/uniqueid_stub.c PARENT_SCOPE)
         set(SM_C_FILE) #there's no SM for linux
         set(SM_H_FILE) #there's no SM for linux
     endif()
-    
-    if(WIN32 OR MACOSX OR LINUX)
-        set (ENVIRONMENT_VARIABLE_C_FILE ${c_util_dir}/adapters/envvariable.c PARENT_SCOPE)
-    endif()
-endfunction(set_platform_files)
+ endfunction(set_platform_files)
 
 #Setup the platform files
 set_platform_files(${CMAKE_CURRENT_LIST_DIR})
@@ -95,88 +112,46 @@ set_platform_files(${CMAKE_CURRENT_LIST_DIR})
 include_directories(${UMOCK_C_INC_FOLDER})
 
 set(azure_c_util_c_files
-    ./adapters/agenttime.c
     ./src/azure_base64.c
     ./src/buffer.c
-    ./src/crt_abstractions.c
     ./src/constbuffer.c
     ./src/constbuffer_array.c
     ./src/constbuffer_array_batcher_nv.c
     ./src/doublylinkedlist.c
-    ./src/gballoc.c
     ./src/map.c
     ./src/memory_data.c
+    ./src/rc_string.c
     ./src/singlylinkedlist.c
     ./src/strings.c
-    ./src/thandle_stdlib.c
     ./src/uuid.c
-    ${LOCK_C_FILE}
-    ${SRW_LOCK_C_FILE}
     ${SM_C_FILE}
-    ${TIMER_C_FILE}
-    ${STRING_UTILS_C_FILE}
-    ${THREAD_C_FILE}
-    ${UNIQUEID_C_FILE}
-    ${ENVIRONMENT_VARIABLE_C_FILE}
-    ${PLATFORM_C_FILE}
-    ${INTERLOCKED_HL_C_FILE}
 )
 
 set(azure_c_util_h_files
-    ./inc/azure_c_util/agenttime.h
     ./inc/azure_c_util/azure_base64.h
     ./inc/azure_c_util/buffer_.h
     ./inc/azure_c_util/constbuffer.h
     ./inc/azure_c_util/constbuffer_array.h
     ./inc/azure_c_util/constbuffer_array_batcher_nv.h
-    ./inc/azure_c_util/crt_abstractions.h
     ./inc/azure_c_util/doublylinkedlist.h
-    ./inc/azure_c_util/envvariable.h
-    ./inc/azure_c_util/gballoc.h
-    ./inc/azure_c_util/lock.h
     ./inc/azure_c_util/map.h
     ./inc/azure_c_util/memory_data.h
-    ./inc/azure_c_util/platform.h
-    ./inc/azure_c_util/refcount.h
     ./inc/azure_c_util/singlylinkedlist.h
-    ./inc/azure_c_util/srw_lock.h
-    ./inc/azure_c_util/string_utils.h
+    ./inc/azure_c_util/rc_string.h
     ./inc/azure_c_util/strings.h
     ./inc/azure_c_util/strings_types.h
-    ./inc/azure_c_util/timer.h
-    ./inc/azure_c_util/threadapi.h
     ./inc/azure_c_util/thandle.h
-    ./inc/azure_c_util/thandle_stdlib.h
-    ./inc/azure_c_util/uniqueid.h
     ./inc/azure_c_util/uuid.h
-    ./inc/azure_c_util/interlocked_hl.h
     ${SM_H_FILE}
 )
 
 FILE(GLOB azure_c_util_md_files "devdoc/*.md")
 SOURCE_GROUP(devdoc FILES ${azure_c_util_md_files})
 
-if(MSVC)
-    set(azure_c_util_h_files ${azure_c_util_h_files}
-        ./pal/windows/refcount_os.h
-    )
-else()
-    set(azure_c_util_h_files ${azure_c_util_h_files}
-        ./pal/linux/refcount_os.h
-    )
-endif()
-
 #this is the product (a library)
 add_library(azure_c_util ${azure_c_util_c_files} ${azure_c_util_h_files} ${azure_c_util_md_files})
 
-if(MSVC)
-    target_include_directories(azure_c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/windows>)
-    target_link_libraries(azure_c_util synchronization azure_c_logging)
-    include_directories(${CMAKE_CURRENT_LIST_DIR}/pal/windows)
-else()
-    target_include_directories(azure_c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/pal/linux>)
-    include_directories(${CMAKE_CURRENT_LIST_DIR}/pal/linux)
-endif()
+target_link_libraries(azure_c_util azure_c_pal)
 
 target_include_directories(azure_c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc>)
 
@@ -190,17 +165,6 @@ if(${use_applessl})
     set(azure_c_util_target_libs ${azure_c_util_target_libs} ${cf_foundation} ${cf_network})
 endif()
 
-if(WIN32)
-    set(azure_c_util_target_libs ${azure_c_util_target_libs} rpcrt4.lib)
-endif()
-
-if(LINUX)
-    set(azure_c_util_target_libs ${azure_c_util_target_libs} pthread m rt)
-    set(azure_c_util_target_libs ${azure_c_util_target_libs} uuid)
-endif()
-
-target_link_libraries(azure_c_util ${azure_c_util_target_libs})
-
 include_directories(${MACRO_UTILS_INC_FOLDER})
 include_directories(${UMOCK_C_INC_FOLDER})
 include_directories(${CMAKE_CURRENT_LIST_DIR}/inc)
@@ -209,6 +173,7 @@ set(run_e2e_tests ${original_run_e2e_tests})
 set(run_unittests ${original_run_unittests})
 set(run_int_tests ${original_run_int_tests})
 set(run_traceability ${original_run_traceability})
+set(run_perf_tests ${original_run_perf_tests})
 
 if((WIN32) AND (${run_traceability}))
     #add traceability custom target

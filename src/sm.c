@@ -4,14 +4,16 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <stdbool.h>
 
 #include "windows.h"
 
 #include "azure_macro_utils/macro_utils.h"
 
 #include "azure_c_logging/xlogging.h"
-#include "azure_c_util/gballoc.h"
-#include "azure_c_util/interlocked_hl.h"
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
+#include "azure_c_pal/interlocked_hl.h"
 
 #include "azure_c_util/sm.h"
 
@@ -31,19 +33,16 @@ MU_DEFINE_ENUM(SM_STATE, SM_STATE_VALUES)
 
 #define SM_CLOSE_BIT        (1<<7)
 
+/*a PRI macro for the SM state*/
 #define PRI_SM_STATE "" PRI_MU_ENUM " SM_CLOSE_BIT=%d"
 
+/*a VALUE macro corresponding to PRI_SM_STATE - it takes SM_HANDLE_DATA.state as argument*/
 #define SM_STATE_VALUE(state) MU_ENUM_VALUE(SM_STATE, (SM_STATE)((state) & SM_STATE_MASK)), (((state)&SM_CLOSE_BIT)>0)
 
 typedef struct SM_HANDLE_DATA_TAG
 {
     volatile LONG state;
     volatile LONG non_barrier_call_count; /*number of API calls to non-barriers*/
-#ifdef _MSC_VER
-/*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/en-us/library/b6fae073.aspx*/
-#pragma warning(disable:4200)
-#endif
-
     char name[]; /*used in printing "who this is"*/
 }SM_HANDLE_DATA;
 
@@ -145,7 +144,7 @@ int sm_open_begin(SM_HANDLE sm)
     return result;
 }
 
-void sm_open_end(SM_HANDLE sm)
+void sm_open_end(SM_HANDLE sm, bool success)
 {
     /*Codes_SRS_SM_02_010: [ If sm is NULL then sm_open_end shall return. ]*/
     if (sm == NULL)
@@ -162,14 +161,29 @@ void sm_open_end(SM_HANDLE sm)
         }
         else
         {
-            /*Codes_SRS_SM_02_042: [ sm_open_end shall switch the state to SM_OPENED. ]*/
-            if (InterlockedCompareExchange(&sm->state, state - SM_OPENING + SM_OPENED + SM_STATE_INCREMENT, state) != state)
+            if (success)
             {
-                LogError("sm name=%s. sm_open_end state changed meanwhile (it was%" PRI_SM_STATE ", likely competing threads.", sm->name, SM_STATE_VALUE(state));
+                /*Codes_SRS_SM_02_074: [ If success is true then sm_open_end shall switch the state to SM_OPENED. ]*/
+                if (InterlockedCompareExchange(&sm->state, state - SM_OPENING + SM_OPENED + SM_STATE_INCREMENT, state) != state)
+                {
+                    LogError("sm name=%s. sm_open_end state changed meanwhile (it was %" PRI_SM_STATE ", likely competing threads.", sm->name, SM_STATE_VALUE(state));
+                }
+                else
+                {
+                    /*we are done*/
+                }
             }
             else
             {
-                /*we are done*/
+                /*Codes_SRS_SM_02_075: [ If success is false then sm_open_end shall switch the state to SM_CREATED. ]*/
+                if (InterlockedCompareExchange(&sm->state, state - SM_OPENING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
+                {
+                    LogError("sm name=%s. sm_open_end state changed meanwhile (it was %" PRI_SM_STATE ", likely competing threads.", sm->name, SM_STATE_VALUE(state));
+                }
+                else
+                {
+                    /*we are done*/
+                }
             }
         }
     }

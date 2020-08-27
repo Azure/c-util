@@ -16,28 +16,17 @@
 #include "umock_c/umock_c.h"
 #include "umock_c/umock_c_negative_tests.h"
 
-static void* my_gballoc_malloc(size_t size)
-{
-    return malloc(size);
-}
-
-static void* my_gballoc_realloc(void* ptr, size_t size)
-{
-    return realloc(ptr, size);
-}
-
-static void my_gballoc_free(void* ptr)
-{
-    free(ptr);
-}
-
 #define ENABLE_MOCKS
-#include "azure_c_util/gballoc.h"
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
 #undef ENABLE_MOCKS
 
-#include "azure_c_util/azure_base64.h"
 #include "azure_c_util/strings.h"
 #include "azure_c_util/buffer_.h"
+
+#include "real_gballoc_hl.h"
+
+#include "azure_c_util/azure_base64.h"
 
 static const struct
 {
@@ -1484,15 +1473,15 @@ BEGIN_TEST_SUITE(base64_unittests)
 
 TEST_SUITE_INITIALIZE(TestSuiteInitialize)
 {
+
+    ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
+
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
     umock_c_init(on_umock_c_error);
 
-    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
-    REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
-    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+    REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
@@ -1500,6 +1489,8 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
     umock_c_deinit();
 
     TEST_MUTEX_DESTROY(g_testByTest);
+
+    real_gballoc_hl_deinit();
 }
 
 TEST_FUNCTION_INITIALIZE(f)

@@ -32,9 +32,12 @@ void my_gballoc_free(void* ptr)
 
 #define ENABLE_MOCKS
 
-#include "azure_c_util/gballoc.h"
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
 
 #undef ENABLE_MOCKS
+
+#include "real_gballoc_hl.h"
 
 #include "azure_c_util/strings.h"
 
@@ -87,6 +90,8 @@ BEGIN_TEST_SUITE(strings_unittests)
 
     TEST_SUITE_INITIALIZE(setsBufferTempSize)
     {
+        ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
+
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -95,13 +100,9 @@ BEGIN_TEST_SUITE(strings_unittests)
         REGISTER_UMOCK_ALIAS_TYPE(STRING_HANDLE, void*);
         ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types() );
 
-        REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
-        REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
-
-        REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
-        REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_realloc, NULL);
-
-        REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+        REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(realloc, NULL);
     }
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
@@ -109,6 +110,8 @@ BEGIN_TEST_SUITE(strings_unittests)
         umock_c_deinit();
 
         TEST_MUTEX_DESTROY(g_testByTest);
+
+        real_gballoc_hl_deinit();
     }
 
     TEST_FUNCTION_INITIALIZE(function_init)
@@ -136,9 +139,9 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///arrange
         STRING_HANDLE g_hString;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_malloc(1));
+        STRICT_EXPECTED_CALL(malloc(1));
 
         ///act
         g_hString = STRING_new();
@@ -159,9 +162,9 @@ BEGIN_TEST_SUITE(strings_unittests)
         size_t count;
         size_t index;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_malloc(1));
+        STRICT_EXPECTED_CALL(malloc(1));
 
         umock_c_negative_tests_snapshot();
 
@@ -210,7 +213,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         strncpy(szTestString, TEST_STRING_VALUE, nLen);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument(1);
 
         ///act
@@ -230,9 +233,9 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///arrange
         STRING_HANDLE g_hString;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_STRING_VALUE) + 1));
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_STRING_VALUE) + 1));
 
         ///act
         g_hString = STRING_construct(TEST_STRING_VALUE);
@@ -253,8 +256,8 @@ BEGIN_TEST_SUITE(strings_unittests)
         size_t count;
         size_t index;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_STRING_VALUE) + 1));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_STRING_VALUE) + 1));
 
         umock_c_negative_tests_snapshot();
 
@@ -299,9 +302,9 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///arrange
         STRING_HANDLE g_hString;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_malloc(2 + strlen(TEST_STRING_VALUE) + 1));
+        STRICT_EXPECTED_CALL(malloc(2 + strlen(TEST_STRING_VALUE) + 1));
 
         ///act
         g_hString = STRING_new_quoted(TEST_STRING_VALUE);
@@ -320,8 +323,8 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///arrange
         STRING_HANDLE g_hString;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(gballoc_malloc(2 + strlen(TEST_STRING_VALUE) + 1));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc(2 + strlen(TEST_STRING_VALUE) + 1));
 
         umock_c_negative_tests_snapshot();
 
@@ -337,9 +340,6 @@ BEGIN_TEST_SUITE(strings_unittests)
             //assert
             ASSERT_IS_NULL(g_hString, "STRING_new failure in test %zu/%zu", index, count);
         }
-
-        ///cleanup
-        STRING_delete(g_hString);
     }
 
     /* Tests_SRS_STRING_07_009: [STRING_new_quoted shall return a NULL STRING_HANDLE if the supplied const char* is NULL.] */
@@ -378,8 +378,8 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///arrange
         STRING_HANDLE str_handle;
 
-        EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
-        EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+        EXPECTED_CALL(malloc(IGNORED_ARG));
+        EXPECTED_CALL(malloc(IGNORED_ARG));
 
         ///act
         str_handle = STRING_construct_sprintf(FORMAT_STRING, TEST_STRING_VALUE);
@@ -400,8 +400,8 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///arrange
         STRING_HANDLE str_handle;
 
-        EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
-        EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+        EXPECTED_CALL(malloc(IGNORED_ARG));
+        EXPECTED_CALL(malloc(IGNORED_ARG));
 
         ///act
         str_handle = STRING_construct_sprintf(EMPTY_STRING);
@@ -423,8 +423,8 @@ BEGIN_TEST_SUITE(strings_unittests)
         size_t count;
         size_t index;
 
-        EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
-        EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+        EXPECTED_CALL(malloc(IGNORED_ARG));
+        EXPECTED_CALL(malloc(IGNORED_ARG));
 
         umock_c_negative_tests_snapshot();
 
@@ -458,7 +458,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, strlen(INITIAL_STRING_VALUE) + strlen(TEST_STRING_VALUE) + 1))
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, strlen(INITIAL_STRING_VALUE) + strlen(TEST_STRING_VALUE) + 1))
             .IgnoreArgument(1);
 
         ///act
@@ -537,7 +537,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         STRING_copy(g_hString, TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, strlen(TEST_STRING_VALUE) + strlen(TEST_STRING_VALUE)+1))
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, strlen(TEST_STRING_VALUE) + strlen(TEST_STRING_VALUE)+1))
             .IgnoreArgument(1)
             .IgnoreArgument(2);
 
@@ -561,7 +561,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         STRING_HANDLE hAppend = STRING_construct(TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, strlen(INITIAL_STRING_VALUE) + strlen(TEST_STRING_VALUE) + 1))
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, strlen(INITIAL_STRING_VALUE) + strlen(TEST_STRING_VALUE) + 1))
             .IgnoreArgument(1);
 
         ///act
@@ -638,7 +638,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, strlen(TEST_STRING_VALUE) + 1))
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, strlen(TEST_STRING_VALUE) + 1))
             .IgnoreArgument(1);
 
         ///act
@@ -706,7 +706,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, strlen(TEST_STRING_VALUE) + 1))
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, strlen(TEST_STRING_VALUE) + 1))
             .SetReturn(NULL);
 
         ///act
@@ -729,7 +729,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, NUMBER_OF_CHAR_TOCOPY + 1))
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, NUMBER_OF_CHAR_TOCOPY + 1))
             .IgnoreArgument(1);
 
         ///act
@@ -786,7 +786,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, 1))
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1))
             .IgnoreArgument(1);
 
         ///act
@@ -810,7 +810,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, NUMBER_OF_CHAR_TOCOPY + 1))
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, NUMBER_OF_CHAR_TOCOPY + 1))
             .SetReturn(NULL);
 
         ///act
@@ -833,7 +833,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         g_hString = STRING_construct(TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, 2 + strlen(TEST_STRING_VALUE) + 1))
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 + strlen(TEST_STRING_VALUE) + 1))
             .IgnoreArgument(1);
 
         ///act
@@ -859,7 +859,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         str_handle = STRING_construct(TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, 2 + strlen(TEST_STRING_VALUE) + 1))
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 + strlen(TEST_STRING_VALUE) + 1))
             .IgnoreArgument(1);
 
         umock_c_negative_tests_snapshot();
@@ -920,9 +920,9 @@ BEGIN_TEST_SUITE(strings_unittests)
         const char* s;
         STRING_HANDLE g_hString;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_malloc(strlen(TEST_STRING_VALUE) + 1));
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_STRING_VALUE) + 1));
 
         ///act
         g_hString = STRING_construct(TEST_STRING_VALUE);
@@ -945,7 +945,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         g_hString = STRING_construct(TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, 1))
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1))
             .IgnoreArgument(1);
 
         ///act
@@ -969,7 +969,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         g_hString = STRING_construct(TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, 1))
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1))
             .SetReturn(NULL);
 
         ///act
@@ -1016,9 +1016,9 @@ BEGIN_TEST_SUITE(strings_unittests)
         g_hString = STRING_new();
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
             .IgnoreArgument(1);
 
         ///act
@@ -1082,9 +1082,9 @@ BEGIN_TEST_SUITE(strings_unittests)
         STRING_HANDLE hSource = STRING_construct("aa");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("aa")));
+        STRICT_EXPECTED_CALL(malloc(sizeof("aa")));
 
         ///act
         result = STRING_clone(hSource);
@@ -1125,9 +1125,9 @@ BEGIN_TEST_SUITE(strings_unittests)
         str_handle = STRING_construct("aa");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_malloc(sizeof("aa")));
+        STRICT_EXPECTED_CALL(malloc(sizeof("aa")));
 
         umock_c_negative_tests_snapshot();
 
@@ -1186,9 +1186,9 @@ BEGIN_TEST_SUITE(strings_unittests)
         ///arrange
         STRING_HANDLE result;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_malloc(3))
+        STRICT_EXPECTED_CALL(malloc(3))
             .IgnoreArgument(1);
 
         ///act
@@ -1208,9 +1208,9 @@ BEGIN_TEST_SUITE(strings_unittests)
     {
         ///arrange
         STRING_HANDLE result;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_malloc(4))
+        STRICT_EXPECTED_CALL(malloc(4))
             .IgnoreArgument(1);
 
         ///act
@@ -1232,9 +1232,9 @@ BEGIN_TEST_SUITE(strings_unittests)
         size_t count;
         size_t index;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_malloc(3))
+        STRICT_EXPECTED_CALL(malloc(3))
             .IgnoreArgument(1);
 
         umock_c_negative_tests_snapshot();
@@ -1410,9 +1410,9 @@ BEGIN_TEST_SUITE(strings_unittests)
             STRING_HANDLE result;
             umock_c_reset_all_calls();
 
-            STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+            STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
                 .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(gballoc_malloc(strlen(JSONtests[i].expectedJSON) + 1));
+            STRICT_EXPECTED_CALL(malloc(strlen(JSONtests[i].expectedJSON) + 1));
 
             ///act
             result = STRING_new_JSON(JSONtests[i].source);
@@ -1433,8 +1433,8 @@ BEGIN_TEST_SUITE(strings_unittests)
         size_t count;
         size_t index;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)).IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(gballoc_malloc(strlen("ab") + 2+1));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)).IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(strlen("ab") + 2+1));
 
         umock_c_negative_tests_snapshot();
 
@@ -1495,10 +1495,10 @@ BEGIN_TEST_SUITE(strings_unittests)
     {
         ///arrange
         STRING_HANDLE result;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument_size();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(1 + 1));
+        STRICT_EXPECTED_CALL(malloc(1 + 1));
 
         ///act
         result = STRING_from_byte_array((const unsigned char*)"a", 1);
@@ -1517,10 +1517,10 @@ BEGIN_TEST_SUITE(strings_unittests)
     {
         ///arrange
         STRING_HANDLE result;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument_size();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(1 + 0));
+        STRICT_EXPECTED_CALL(malloc(1 + 0));
 
         ///act
         result = STRING_from_byte_array(NULL, 0);
@@ -1539,13 +1539,13 @@ BEGIN_TEST_SUITE(strings_unittests)
     {
         ///arrange
         STRING_HANDLE result;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument_size();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(1 + 1))
+        STRICT_EXPECTED_CALL(malloc(1 + 1))
             .SetReturn(NULL);
 
-        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
             .IgnoreArgument_ptr();
 
         ///act
@@ -1563,7 +1563,7 @@ BEGIN_TEST_SUITE(strings_unittests)
     {
         ///arrange
         STRING_HANDLE result;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
             .IgnoreArgument_size()
             .SetReturn(NULL);
 
@@ -1621,7 +1621,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
         umock_c_reset_all_calls();
 
-        EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, IGNORED_ARG));
+        EXPECTED_CALL(realloc(IGNORED_ARG, IGNORED_ARG));
 
         ///act
         str_result = STRING_sprintf(str_handle, FORMAT_STRING, TEST_STRING_VALUE);
@@ -1670,7 +1670,7 @@ BEGIN_TEST_SUITE(strings_unittests)
 
         umock_c_reset_all_calls();
 
-        EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, IGNORED_ARG));
+        EXPECTED_CALL(realloc(IGNORED_ARG, IGNORED_ARG));
 
         umock_c_negative_tests_snapshot();
 

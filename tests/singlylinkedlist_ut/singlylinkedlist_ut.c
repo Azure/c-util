@@ -11,6 +11,8 @@
 #include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
+#include "real_gballoc_ll.h"
+
 static size_t currentmalloc_call = 0;
 static size_t whenShallmalloc_fail = 0;
 
@@ -29,19 +31,19 @@ void* my_gballoc_malloc(size_t size)
         }
         else
         {
-            result = malloc(size);
+            result = real_gballoc_ll_malloc(size);
         }
     }
     else
     {
-        result = malloc(size);
+        result = real_gballoc_ll_malloc(size);
     }
     return result;
 }
 
 void my_gballoc_free(void* ptr)
 {
-    free(ptr);
+    real_gballoc_ll_free(ptr);
 }
 
 #include "umock_c/umock_c.h"
@@ -54,7 +56,8 @@ void my_gballoc_free(void* ptr)
 MOCK_FUNCTION_WITH_CODE(, bool, test_match_function, LIST_ITEM_HANDLE, list_item, const void*, match_context)
 MOCK_FUNCTION_END(true);
 
-#include "azure_c_util/gballoc.h"
+#include "azure_c_pal/gballoc_hl.h"
+#include "azure_c_pal/gballoc_hl_redirect.h"
 
 #undef ENABLE_MOCKS
 
@@ -85,8 +88,8 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_UMOCK_ALIAS_TYPE(LIST_ITEM_HANDLE, void*);
 
-    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
-    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_hl_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_hl_free, my_gballoc_free);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -118,7 +121,7 @@ TEST_FUNCTION(when_underlying_calls_succeed_singlylinkedlist_create_succeeds)
 {
     // arrange
     SINGLYLINKEDLIST_HANDLE result;
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
     // act
     result = singlylinkedlist_create();
@@ -136,7 +139,7 @@ TEST_FUNCTION(when_underlying_malloc_fails_singlylinkedlist_create_fails)
 {
     // arrange
     SINGLYLINKEDLIST_HANDLE result;
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
         .SetReturn((void*)NULL);
 
     // act
@@ -156,7 +159,7 @@ TEST_FUNCTION(singlylinkedlist_destroy_on_a_non_null_handle_frees_resources)
     SINGLYLINKEDLIST_HANDLE handle = singlylinkedlist_create();
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
     singlylinkedlist_destroy(handle);
@@ -223,7 +226,7 @@ TEST_FUNCTION(singlylinkedlist_add_adds_the_item_and_returns_a_non_NULL_handle)
     LIST_ITEM_HANDLE head;
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
     // act
     result = singlylinkedlist_add(list, &x);
@@ -254,7 +257,7 @@ TEST_FUNCTION(singlylinkedlist_add_when_an_item_is_in_the_singlylinkedlist_adds_
     (void)singlylinkedlist_add(list, &x1);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
     // act
     result = singlylinkedlist_add(list, &x2);
@@ -283,7 +286,7 @@ TEST_FUNCTION(when_the_underlying_malloc_fails_singlylinkedlist_add_fails)
     LIST_ITEM_HANDLE result;
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
         .SetReturn((void*)NULL);
 
     // act
@@ -695,7 +698,7 @@ TEST_FUNCTION(singlylinkedlist_remove_when_one_item_is_in_the_list_succeeds)
     item = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
     result = singlylinkedlist_remove(list, item);
@@ -780,7 +783,7 @@ TEST_FUNCTION(singlylinkedlist_remove_first_of_2_items_succeeds)
     LIST_ITEM_HANDLE item1 = singlylinkedlist_add(list, &x1);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
     result = singlylinkedlist_remove(list, item1);
@@ -806,7 +809,7 @@ TEST_FUNCTION(singlylinkedlist_remove_second_of_2_items_succeeds)
     item2 = singlylinkedlist_add(list, &x2);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
     result = singlylinkedlist_remove(list, item2);
@@ -1246,7 +1249,7 @@ TEST_FUNCTION(singlylinkedlist_add_head_succeeds)
     LIST_ITEM_HANDLE head;
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
     // act
     result = singlylinkedlist_add_head(list, &x);
@@ -1274,8 +1277,8 @@ TEST_FUNCTION(singlylinkedlist_add_head_succeeds_two_times)
     LIST_ITEM_HANDLE head;
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
     // act
     result1 = singlylinkedlist_add_head(list, &x1);
@@ -1330,7 +1333,7 @@ TEST_FUNCTION(singlylinkedlist_add_head_fails_when_malloc_fails)
     LIST_ITEM_HANDLE head;
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
         .SetReturn(NULL);
 
     // act

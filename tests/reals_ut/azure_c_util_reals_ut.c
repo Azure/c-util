@@ -6,36 +6,27 @@
 #define REGISTER_GLOBAL_MOCK_HOOK(original, real) \
     (original == real) ? (void)0 : (void)1;
 
-#include "../tests/reals/real_constbuffer.h"
-#include "../tests/reals/real_constbuffer_array.h"
-#include "../tests/reals/real_constbuffer_array_batcher_nv.h"
-#include "../tests/reals/real_crt_abstractions.h"
-#include "../tests/reals/real_doublylinkedlist.h"
-#include "../tests/reals/real_memory_data.h"
-#include "../tests/reals/real_singlylinkedlist.h"
-#include "../tests/reals/real_uuid.h"
-#include "../tests/reals/real_threadapi.h"
+#include "../reals/real_constbuffer.h"
+#include "../reals/real_constbuffer_array.h"
+#include "../reals/real_constbuffer_array_batcher_nv.h"
+#include "../reals/real_doublylinkedlist.h"
+#include "../reals/real_memory_data.h"
+#include "../reals/real_rc_string.h"
+#include "../reals/real_singlylinkedlist.h"
+#include "../reals/real_uuid.h"
 
 #include "azure_c_util/constbuffer.h"
 #include "azure_c_util/constbuffer_array.h"
 #include "azure_c_util/constbuffer_array_batcher_nv.h"
-#include "azure_c_util/crt_abstractions.h"
 #include "azure_c_util/doublylinkedlist.h"
 #include "azure_c_util/memory_data.h"
+#include "azure_c_util/rc_string.h"
 #include "azure_c_util/singlylinkedlist.h"
 #include "azure_c_util/uuid.h"
-#include "azure_c_util/threadapi.h"
 
 #if defined _MSC_VER
-#include "../tests/reals/real_srw_lock.h"
-#include "../tests/reals/real_string_utils.h"
-#include "../tests/reals/real_timer.h"
-#include "../tests/reals/real_interlocked_hl.h"
-
-#include "azure_c_util/srw_lock.h"
-#include "azure_c_util/string_utils.h"
-#include "azure_c_util/timer.h"
-#include "azure_c_util/interlocked_hl.h"
+#include "../reals/real_sm.h"
+#include "azure_c_util/sm.h"
 #endif
 
 BEGIN_TEST_SUITE(azure_c_util_reals_ut)
@@ -50,22 +41,18 @@ TEST_FUNCTION(check_all_c_util_reals)
     REGISTER_CONSTBUFFER_GLOBAL_MOCK_HOOK();
     REGISTER_CONSTBUFFER_ARRAY_GLOBAL_MOCK_HOOK();
     REGISTER_CONSTBUFFER_ARRAY_BATCHER_GLOBAL_MOCK_HOOK();
-    REGISTER_CRT_ABSTRACTIONS_GLOBAL_MOCK_HOOKS();
     REGISTER_DOUBLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
     REGISTER_MEMORY_DATA_GLOBAL_MOCK_HOOK();
+    REGISTER_RC_STRING_GLOBAL_MOCK_HOOKS();
     REGISTER_SINGLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
     REGISTER_UUID_GLOBAL_MOCK_HOOK();
-    REGISTER_THREADAPI_GLOBAL_MOCK_HOOK();
 
 #if defined _MSC_VER
-    REGISTER_SRW_LOCK_GLOBAL_MOCK_HOOK();
-    REGISTER_STRING_UTILS_GLOBAL_MOCK_HOOK();
-    REGISTER_TIMER_GLOBAL_MOCK_HOOK();
-    REGISTER_INTERLOCKED_HL_GLOBAL_MOCK_HOOK();
+    REGISTER_SM_GLOBAL_MOCK_HOOK();
 #endif
 
     // assert
-    // no explicit assert, if it builds it works
+    // no explicit assert. if it builds, it works
 }
 
 END_TEST_SUITE(azure_c_util_reals_ut)
