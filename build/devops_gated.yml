@@ -302,6 +302,6 @@ jobs:
     displayName: 'Run traceability tool'
     inputs:
       filename: 'build/deps/azure-c-build-tools/traceabilitytool/RelWithDebInfo/traceabilitytool.exe'
-      arguments: '-i $(Build.SourcesDirectory) -buildcheck -e deps'
+      arguments: '-i $(Build.SourcesDirectory) -buildcheck -e $(Build.SourcesDirectory)\deps'
       modifyEnvironment: false
       workingFolder: '$(Build.SourcesDirectory)'
