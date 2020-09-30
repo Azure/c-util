@@ -3,6 +3,13 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
+# canon way of using azure-c-util from another repo is below. It assumes the using repo has placed azure-c-util in "deps"
+
+#if ((NOT TARGET azure_c_util) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-util/CMakeLists.txt))
+#    add_subdirectory(deps/azure-c-util)
+#    include_directories(${C_UTIL_INC_FOLDER})
+#endif() 
+
 if (TARGET azure_c_util)
     RETURN()
 endif()
@@ -22,7 +29,6 @@ set(original_run_int_tests ${run_int_tests})
 set(original_run_traceability ${run_traceability})
 set(original_run_perf_tests ${run_perf_tests})
 
-
 set(run_e2e_tests OFF)
 set(run_unittests OFF)
 set(run_int_tests OFF)
@@ -30,16 +36,40 @@ set(run_traceability OFF)
 set(run_perf_tests OFF)
 
 if ((NOT TARGET azure_c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-build-tools/CMakeLists.txt))
-        add_subdirectory(deps/azure-c-build-tools)
-endif()
-set_default_build_options()
+    add_subdirectory(deps/azure-c-build-tools)
+    set_default_build_options()
+endif() 
 
-include(CTest)
-enable_testing()
+if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
+    add_subdirectory(deps/azure-macro-utils-c)
+    include_directories(${MACRO_UTILS_INC_FOLDER})
+endif() 
 
-set(C_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
+if ((NOT TARGET azure_c_logging) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-logging/CMakeLists.txt))
+    add_subdirectory(deps/azure-c-logging)
+    include_directories(deps/azure-c-logging/inc)
+endif() 
 
-#add mimalloc build
+if ((NOT TARGET ctest) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-ctest/CMakeLists.txt))
+    add_subdirectory(deps/azure-ctest)
+    include_directories(${CTEST_INC_FOLDER})
+endif() 
+
+if ((NOT TARGET testrunnerswitcher) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-testrunnerswitcher/CMakeLists.txt))
+    add_subdirectory(deps/azure-c-testrunnerswitcher)
+    include_directories(${TESTRUNNERSWITCHER_INC_FOLDER})
+endif() 
+
+if ((NOT TARGET umock_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMakeLists.txt))
+    add_subdirectory(deps/umock-c)
+    include_directories(${UMOCK_C_INC_FOLDER})
+endif() 
+
+if ((NOT TARGET azure_c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-pal/CMakeLists.txt))
+    add_subdirectory(deps/azure-c-pal)
+    include_directories(${C_PAL_INC_FOLDER})
+endif() 
+
 if (
     (NOT TARGET mimalloc-obj) AND 
     (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/mimalloc/CMakeLists.txt)
@@ -64,35 +94,42 @@ if (
         set(CMAKE_CXX_FLAGS ${PREV_CMAKE_CXX_FLAGS})
 endif()
 
-if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
-        add_subdirectory(deps/azure-macro-utils-c)
-        include_directories(deps/azure-macro-utils-c/inc)
+if (
+    (WIN32) AND
+    (NOT TARGET jemalloc) AND 
+    (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/jemalloc/README)
+    )
+    set(PREV_CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+    set(PREV_CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+    set(PREV_CMAKE_STATIC_LINKER_FLAGS ${CMAKE_STATIC_LINKER_FLAGS})
+
+    if(WIN32)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4100 /wd4127 /wd4459 /wd4201 /wd4456 /wd4457 /wd4702 /wd4244 /wd4701 /wd4706 /wd4703 /wd4189 /wd4267 /wd4204 /wd4565 /wd4310 /wd4334 /wd4028 /DJEMALLOC_NO_PRIVATE_NAMESPACE /D_REENTRANT /DJEMALLOC_EXPORT= /D_LIB")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4100 /wd4127 /wd4459 /wd4201 /wd4456 /wd4457 /wd4702 /wd4244 /wd4701 /wd4706 /wd4703 /wd4189 /wd4267 /wd4204 /wd4565 /wd4310 /wd4334 /wd4028 /DJEMALLOC_NO_PRIVATE_NAMESPACE /D_REENTRANT /DJEMALLOC_EXPORT= /D_LIB")
+        set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /IGNORE:4221")
+    endif()
+
+    add_subdirectory(jemalloc_build)
+
+    set(CMAKE_C_FLAGS ${PREV_CMAKE_C_FLAGS})
+    set(CMAKE_CXX_FLAGS ${PREV_CMAKE_CXX_FLAGS})
+    set(CMAKE_STATIC_LINKER_FLAGS ${PREV_CMAKE_STATIC_LINKER_FLAGS})
+
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /DJEMALLOC_NO_PRIVATE_NAMESPACE /D_REENTRANT /DJEMALLOC_EXPORT= /D_LIB")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DJEMALLOC_NO_PRIVATE_NAMESPACE /D_REENTRANT /DJEMALLOC_EXPORT= /D_LIB")
+
 endif()
 
-if ((NOT TARGET azure_c_logging) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-logging/CMakeLists.txt))
-        add_subdirectory(deps/azure-c-logging)
-        include_directories(deps/azure-c-logging/inc)
-endif()
+set(run_e2e_tests ${original_run_e2e_tests})
+set(run_unittests ${original_run_unittests})
+set(run_int_tests ${original_run_int_tests})
+set(run_traceability ${original_run_traceability})
+set(run_perf_tests ${original_run_perf_tests})
 
-if ((NOT TARGET ctest) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-ctest/CMakeLists.txt))
-        add_subdirectory(deps/azure-ctest)
-        include_directories(deps/azure-ctest/inc)
-endif()
+include(CTest)
+enable_testing()
 
-if ((NOT TARGET testrunnerswitcher) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-testrunnerswitcher/CMakeLists.txt))
-        add_subdirectory(deps/azure-c-testrunnerswitcher)
-        include_directories(deps/azure-c-testrunnerswitcher/inc)
-endif()
-
-if ((NOT TARGET umock_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMakeLists.txt))
-        add_subdirectory(deps/umock-c)
-        include_directories(deps/umock-c/inc)
-endif()
-
-if ((NOT TARGET azure_c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-pal/CMakeLists.txt))
-        add_subdirectory(deps/azure-c-pal)
-        include_directories(${C_PAL_INC_FOLDER})
-endif()
+set(C_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 
 # This function focuses on setting files which are unique to a given hardware platform.
 # The choice of tlsio is not unique per-platform, and is set in the main CMakeLists.txt
@@ -169,11 +206,6 @@ include_directories(${MACRO_UTILS_INC_FOLDER})
 include_directories(${UMOCK_C_INC_FOLDER})
 include_directories(${CMAKE_CURRENT_LIST_DIR}/inc)
 
-set(run_e2e_tests ${original_run_e2e_tests})
-set(run_unittests ${original_run_unittests})
-set(run_int_tests ${original_run_int_tests})
-set(run_traceability ${original_run_traceability})
-set(run_perf_tests ${original_run_perf_tests})
 
 if((WIN32) AND (${run_traceability}))
     #add traceability custom target
