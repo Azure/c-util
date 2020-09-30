@@ -65,7 +65,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_IS_NOT_NULL(test_serialize_mutex);
 
     result = umock_c_init(on_umock_c_error);
-	ASSERT_ARE_EQUAL(int, 0, result, "umock_c_init failed");
+    ASSERT_ARE_EQUAL(int, 0, result, "umock_c_init failed");
 
     result = umocktypes_stdint_register_types();
     ASSERT_ARE_EQUAL(int, 0, result, "umocktypes_stdint_register_types failed");
