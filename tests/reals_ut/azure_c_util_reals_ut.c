@@ -10,6 +10,7 @@
 #include "../reals/real_constbuffer_array.h"
 #include "../reals/real_constbuffer_array_batcher_nv.h"
 #include "../reals/real_doublylinkedlist.h"
+#include "../reals/real_interlocked_hl.h"
 #include "../reals/real_memory_data.h"
 #include "../reals/real_rc_string.h"
 #include "../reals/real_singlylinkedlist.h"
@@ -19,6 +20,7 @@
 #include "azure_c_util/constbuffer_array.h"
 #include "azure_c_util/constbuffer_array_batcher_nv.h"
 #include "azure_c_util/doublylinkedlist.h"
+#include "azure_c_util/interlocked_hl.h"
 #include "azure_c_util/memory_data.h"
 #include "azure_c_util/rc_string.h"
 #include "azure_c_util/singlylinkedlist.h"
@@ -42,6 +44,7 @@ TEST_FUNCTION(check_all_c_util_reals)
     REGISTER_CONSTBUFFER_ARRAY_GLOBAL_MOCK_HOOK();
     REGISTER_CONSTBUFFER_ARRAY_BATCHER_GLOBAL_MOCK_HOOK();
     REGISTER_DOUBLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
+    REGISTER_INTERLOCKED_HL_GLOBAL_MOCK_HOOK();
     REGISTER_MEMORY_DATA_GLOBAL_MOCK_HOOK();
     REGISTER_RC_STRING_GLOBAL_MOCK_HOOKS();
     REGISTER_SINGLYLINKEDLIST_GLOBAL_MOCK_HOOKS();

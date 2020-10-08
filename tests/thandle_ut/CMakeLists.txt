@@ -20,5 +20,5 @@ thandle_user.h
 thandle_flex_user.h
 )
 
-build_test_artifacts(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS azure_c_pal azure_c_pal_reals)
+build_test_artifacts(${theseTestsName} ON "tests/azure_c_util" ADDITIONAL_LIBS azure_c_pal azure_c_pal_reals)
 
