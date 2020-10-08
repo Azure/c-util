@@ -15,4 +15,4 @@ set(${theseTestsName}_cpp_files
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} ON "tests/azure_c_util_tests" ADDITIONAL_LIBS azure_c_util azure_c_pal)
+build_test_artifacts(${theseTestsName} ON "tests/azure_c_util" ADDITIONAL_LIBS azure_c_util azure_c_pal)

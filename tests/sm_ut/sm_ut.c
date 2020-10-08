@@ -14,12 +14,14 @@
 #include "testrunnerswitcher.h"
 
 #include "umock_c/umock_c.h"
-#include "umock_c/umocktypes_windows.h"
+#include "umock_c/umocktypes_stdint.h"
+
+#include "azure_c_pal/interlocked.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_pal/gballoc_hl.h"
 #include "azure_c_pal/gballoc_hl_redirect.h"
-#include "azure_c_pal/interlocked_hl.h"
+#include "azure_c_util/interlocked_hl.h"
 #undef ENABLE_MOCKS
 
 #include "real_interlocked_hl.h"
@@ -65,7 +67,7 @@ TEST_SUITE_INITIALIZE(setsBufferTempSize)
 
     umock_c_init(on_umock_c_error);
 
-    umocktypes_windows_register_types();
+    umocktypes_stdint_register_types();
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
     REGISTER_INTERLOCKED_HL_GLOBAL_MOCK_HOOK();
@@ -345,7 +347,7 @@ TEST_FUNCTION(sm_close_begin_in_SM_OPENED_succeeds)
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
     sm_open_end(sm, true);
 
-    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE));
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX));
 
     ///act
     result = sm_close_begin(sm);
@@ -371,7 +373,7 @@ TEST_FUNCTION(sm_close_begin_with_SM_CLOSE_BIT_refuses)
     sm_open_end(sm, true);
 
     /*sets SM_CLOSE_BIT to 1*/
-    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE));
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX));
     result = sm_close_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
 
@@ -417,7 +419,7 @@ TEST_FUNCTION(sm_close_begin_after_close_begin_close_end_open_begin_open_end_suc
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
     sm_open_end(sm, true);
 
-    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE));
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX));
 
     result = sm_close_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
@@ -429,7 +431,7 @@ TEST_FUNCTION(sm_close_begin_after_close_begin_close_end_open_begin_open_end_suc
 
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE));
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX));
 
     ///act
     result = sm_close_begin(sm);
@@ -456,7 +458,7 @@ TEST_FUNCTION(sm_close_unhappy_path)
 
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE))
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX))
         .SetReturn(INTERLOCKED_HL_ERROR);
 
     ///act
@@ -509,7 +511,7 @@ TEST_FUNCTION(sm_close_end_switches_state_to_SM_CREATED) /*allows sm_open_begin 
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
     sm_open_end(sm, true);
 
-    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE));
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX));
 
     result = sm_close_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
@@ -726,7 +728,7 @@ TEST_FUNCTION(sm_barrier_begin_returns_SM_EXEC_GRANTED)
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
     sm_open_end(sm, true);
 
-    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE));
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX));
 
     ///act
     result1 = sm_barrier_begin(sm);
@@ -755,7 +757,7 @@ TEST_FUNCTION(sm_barrier_begin_fails_when_interlocked_fails)
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
     sm_open_end(sm, true);
 
-    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE))
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX))
         .SetReturn(INTERLOCKED_HL_ERROR);
 
     ///act
@@ -807,7 +809,7 @@ TEST_FUNCTION(sm_barrier_begin_switched_to_SM_OPENED)
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
     sm_open_end(sm, true);
 
-    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, INFINITE));
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX));
     result = sm_barrier_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
 

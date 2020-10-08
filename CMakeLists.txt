@@ -155,6 +155,7 @@ set(azure_c_util_c_files
     ./src/constbuffer_array.c
     ./src/constbuffer_array_batcher_nv.c
     ./src/doublylinkedlist.c
+    ./src/interlocked_hl.c
     ./src/map.c
     ./src/memory_data.c
     ./src/rc_string.c
@@ -171,6 +172,7 @@ set(azure_c_util_h_files
     ./inc/azure_c_util/constbuffer_array.h
     ./inc/azure_c_util/constbuffer_array_batcher_nv.h
     ./inc/azure_c_util/doublylinkedlist.h
+    ./inc/azure_c_util/interlocked_hl.h
     ./inc/azure_c_util/map.h
     ./inc/azure_c_util/memory_data.h
     ./inc/azure_c_util/singlylinkedlist.h
