@@ -66,10 +66,10 @@ typedef  struct ADDEND_CEILING_AND_VALUE_TAG
     int64_t Value;
 } ADDEND_CEILING_AND_VALUE;
 
-static bool hook_wait_on_address(volatile_atomic int32_t* address, int32_t* compare_address, uint32_t milliseconds)
+static bool hook_wait_on_address(volatile_atomic int32_t* address, int32_t compare_value, uint32_t milliseconds)
 {
     (void)address;
-    (void)compare_address;
+    (void)compare_value;
     (void)milliseconds;
     return true;
 }
