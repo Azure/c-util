@@ -14,6 +14,7 @@ typedef struct CONSTBUFFER_ARRAY_HANDLE_DATA_TAG* CONSTBUFFER_ARRAY_HANDLE;
 
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create, const CONSTBUFFER_HANDLE*, buffers, uint32_t, buffer_count);
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_with_move_buffers, CONSTBUFFER_HANDLE*, buffers, uint32_t, buffer_count);
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_buffer_index_and_count, CONSTBUFFER_ARRAY_HANDLE, original, uint32_t, start_buffer_index, uint32_t, buffer_count);
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_empty);
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_array_array, const CONSTBUFFER_ARRAY_HANDLE*, buffer_arrays, uint32_t, buffer_array_count);
 
@@ -72,6 +73,30 @@ Note: `constbuffer_array_create_with_move_buffers` does not increment the refere
 **SRS_CONSTBUFFER_ARRAY_01_031: [** On success `constbuffer_array_create_with_move_buffers` shall return a non-`NULL` handle. **]**
 
 **SRS_CONSTBUFFER_ARRAY_01_030: [** If any error occurs, `constbuffer_array_create_with_move_buffers` shall fail and return `NULL`. **]**
+
+### constbuffer_array_create_from_buffer_index_and_count
+
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_buffer_index_and_count, CONSTBUFFER_ARRAY_HANDLE, original, uint32_t, start_buffer_index, uint32_t, buffer_count);
+```
+
+`constbuffer_array_create_from_buffer_index_and_count` creates a new const buffer array which is a subset of the existing array in `original`.
+
+Note: `constbuffer_array_create_from_buffer_index_and_count` does not increment the reference count of the buffer handles in `original`, it just increments the reference count on `original`.
+
+**SRS_CONSTBUFFER_ARRAY_42_010: [** If `original` is `NULL` then `constbuffer_array_create_from_buffer_index_and_count` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_011: [** If `start_buffer_index` is greater than the number of buffers in `original` then `constbuffer_array_create_from_buffer_index_and_count` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_012: [** If `start_buffer_index + buffer_count` is greater than the number of buffers in `original` then `constbuffer_array_create_from_buffer_index_and_count` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_013: [** `constbuffer_array_create_from_buffer_index_and_count` shall allocate memory for a new `CONSTBUFFER_ARRAY_HANDLE`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_014: [** `constbuffer_array_create_from_buffer_index_and_count` shall increment the reference count on `original`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_015: [** `constbuffer_array_create_from_buffer_index_and_count` shall return a non-`NULL` handle. **]**
+
+**SRS_CONSTBUFFER_ARRAY_42_016: [** If any error occurs then `constbuffer_array_create_from_buffer_index_and_count` shall fail and return `NULL`. **]**
 
 ### constbuffer_array_create_empty
 
