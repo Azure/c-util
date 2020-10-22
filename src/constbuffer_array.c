@@ -142,54 +142,54 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
     return result;
 }
 
-static void constbuffer_array_offset_and_count_free(void* context)
+static void constbuffer_array_buffer_index_and_count_free(void* context)
 {
     CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle = context;
     constbuffer_array_dec_ref(constbuffer_array_handle);
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_offset_and_count, CONSTBUFFER_ARRAY_HANDLE, original, uint32_t, offset, uint32_t, buffer_count)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_buffer_index_and_count, CONSTBUFFER_ARRAY_HANDLE, original, uint32_t, start_buffer_index, uint32_t, buffer_count)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
 
     if (original == NULL)
     {
-        /* Codes_SRS_CONSTBUFFER_ARRAY_42_010: [ If original is NULL then constbuffer_array_create_from_offset_and_count shall fail and return NULL. ]*/
-        LogError("Invalid arguments: CONSTBUFFER_ARRAY_HANDLE original=%p, uint32_t offset=%" PRIu32 ", uint32_t buffer_count=%" PRIu32,
-            original, offset, buffer_count);
+        /* Codes_SRS_CONSTBUFFER_ARRAY_42_010: [ If original is NULL then constbuffer_array_create_from_buffer_index_and_count shall fail and return NULL. ]*/
+        LogError("Invalid arguments: CONSTBUFFER_ARRAY_HANDLE original=%p, uint32_t start_buffer_index=%" PRIu32 ", uint32_t buffer_count=%" PRIu32,
+            original, start_buffer_index, buffer_count);
         result = NULL;
     }
     else if (
-        /* Codes_SRS_CONSTBUFFER_ARRAY_42_011: [ If offset is greater than the number of buffers in original then constbuffer_array_create_from_offset_and_count shall fail and return NULL. ]*/
-        offset > original->nBuffers ||
-        /* Codes_SRS_CONSTBUFFER_ARRAY_42_012: [ If offset + buffer_count is greater than the number of buffers in original then constbuffer_array_create_from_offset_and_count shall fail and return NULL. ]*/
-        offset + buffer_count > original->nBuffers
+        /* Codes_SRS_CONSTBUFFER_ARRAY_42_011: [ If start_buffer_index is greater than the number of buffers in original then constbuffer_array_create_from_buffer_index_and_count shall fail and return NULL. ]*/
+        start_buffer_index > original->nBuffers ||
+        /* Codes_SRS_CONSTBUFFER_ARRAY_42_012: [ If start_buffer_index + buffer_count is greater than the number of buffers in original then constbuffer_array_create_from_buffer_index_and_count shall fail and return NULL. ]*/
+        start_buffer_index + buffer_count > original->nBuffers
         )
     {
 
-        LogError("Invalid arguments: CONSTBUFFER_ARRAY_HANDLE original=%p (nBuffers=%" PRIu32 "), uint32_t offset=%" PRIu32 ", uint32_t buffer_count=%" PRIu32,
-            original, original->nBuffers, offset, buffer_count);
+        LogError("Invalid arguments: CONSTBUFFER_ARRAY_HANDLE original=%p (nBuffers=%" PRIu32 "), uint32_t start_buffer_index=%" PRIu32 ", uint32_t buffer_count=%" PRIu32,
+            original, original->nBuffers, start_buffer_index, buffer_count);
         result = NULL;
     }
     else
     {
-        /* Codes_SRS_CONSTBUFFER_ARRAY_42_013: [ constbuffer_array_create_from_offset_and_count shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_42_013: [ constbuffer_array_create_from_buffer_index_and_count shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
         result = REFCOUNT_TYPE_CREATE(CONSTBUFFER_ARRAY_HANDLE_DATA); /*implicit 0*/
         if (result == NULL)
         {
-            /* Codes_SRS_CONSTBUFFER_ARRAY_42_016: [ If any error occurs then constbuffer_array_create_from_offset_and_count shall fail and return NULL. ]*/
+            /* Codes_SRS_CONSTBUFFER_ARRAY_42_016: [ If any error occurs then constbuffer_array_create_from_buffer_index_and_count shall fail and return NULL. ]*/
             LogError("failure allocating const buffer array");
             /*return as is*/
         }
         else
         {
-            /* Codes_SRS_CONSTBUFFER_ARRAY_42_014: [ constbuffer_array_create_from_offset_and_count shall increment the reference count on original. ]*/
+            /* Codes_SRS_CONSTBUFFER_ARRAY_42_014: [ constbuffer_array_create_from_buffer_index_and_count shall increment the reference count on original. ]*/
             INC_REF(CONSTBUFFER_ARRAY_HANDLE_DATA, original);
 
-            /* Codes_SRS_CONSTBUFFER_ARRAY_42_015: [ constbuffer_array_create_from_offset_and_count shall return a non-NULL handle. ]*/
-            result->custom_free = constbuffer_array_offset_and_count_free;
+            /* Codes_SRS_CONSTBUFFER_ARRAY_42_015: [ constbuffer_array_create_from_buffer_index_and_count shall return a non-NULL handle. ]*/
+            result->custom_free = constbuffer_array_buffer_index_and_count_free;
             result->custom_free_context = original;
-            result->buffers = &(original->buffers[offset]);
+            result->buffers = &(original->buffers[start_buffer_index]);
             result->nBuffers = buffer_count;
         }
     }

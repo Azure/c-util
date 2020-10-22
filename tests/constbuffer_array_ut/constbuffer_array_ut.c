@@ -72,7 +72,7 @@ static void constbuffer_array_create_empty_inert_path(void)
         .CallCannotFail();
 }
 
-static void constbuffer_array_create_from_offset_and_count_inert_path(void)
+static void constbuffer_array_create_from_buffer_index_and_count_inert_path(void)
 {
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
@@ -499,24 +499,24 @@ TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_create_with_move_buff
     free(test_buffers);
 }
 
-/* constbuffer_array_create_from_offset_and_count */
+/* constbuffer_array_create_from_buffer_index_and_count */
 
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_010: [ If original is NULL then constbuffer_array_create_from_offset_and_count shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_NULL_original_fails)
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_010: [ If original is NULL then constbuffer_array_create_from_buffer_index_and_count shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_with_NULL_original_fails)
 {
     ///arrange
     CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
 
     ///act
-    constbuffer_array = constbuffer_array_create_from_offset_and_count(NULL, 0, 0);
+    constbuffer_array = constbuffer_array_create_from_buffer_index_and_count(NULL, 0, 0);
 
     ///assert
     ASSERT_IS_NULL(constbuffer_array);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_011: [ If offset is greater than the number of buffers in original then constbuffer_array_create_from_offset_and_count shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_greater_than_buffer_count_fails)
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_011: [ If start_buffer_index is greater than the number of buffers in original then constbuffer_array_create_from_buffer_index_and_count shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_with_start_buffer_index_greater_than_buffer_count_fails)
 {
     // arrange
     CONSTBUFFER_HANDLE test_buffers[3];
@@ -531,7 +531,7 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_greater
     umock_c_reset_all_calls();
 
     // act
-    constbuffer_array = constbuffer_array_create_from_offset_and_count(original, 4, 0);
+    constbuffer_array = constbuffer_array_create_from_buffer_index_and_count(original, 4, 0);
 
     // assert
     ASSERT_IS_NULL(constbuffer_array);
@@ -541,8 +541,8 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_greater
     constbuffer_array_dec_ref(original);
 }
 
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_011: [ If offset is greater than the number of buffers in original then constbuffer_array_create_from_offset_and_count shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_greater_than_buffer_count_for_empty_original_fails)
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_011: [ If start_buffer_index is greater than the number of buffers in original then constbuffer_array_create_from_buffer_index_and_count shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_with_start_buffer_index_greater_than_buffer_count_for_empty_original_fails)
 {
     // arrange
     CONSTBUFFER_ARRAY_HANDLE original;
@@ -552,7 +552,7 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_greater
     umock_c_reset_all_calls();
 
     // act
-    constbuffer_array = constbuffer_array_create_from_offset_and_count(original, 1, 0);
+    constbuffer_array = constbuffer_array_create_from_buffer_index_and_count(original, 1, 0);
 
     // assert
     ASSERT_IS_NULL(constbuffer_array);
@@ -562,8 +562,8 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_greater
     constbuffer_array_dec_ref(original);
 }
 
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_012: [ If offset + buffer_count is greater than the number of buffers in original then constbuffer_array_create_from_offset_and_count shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_plus_count_greater_than_buffer_count_fails)
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_012: [ If start_buffer_index + buffer_count is greater than the number of buffers in original then constbuffer_array_create_from_buffer_index_and_count shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_with_start_buffer_index_plus_count_greater_than_buffer_count_fails)
 {
     // arrange
     CONSTBUFFER_HANDLE test_buffers[3];
@@ -578,7 +578,7 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_plus_co
     umock_c_reset_all_calls();
 
     // act
-    constbuffer_array = constbuffer_array_create_from_offset_and_count(original, 1, 3);
+    constbuffer_array = constbuffer_array_create_from_buffer_index_and_count(original, 1, 3);
 
     // assert
     ASSERT_IS_NULL(constbuffer_array);
@@ -588,10 +588,10 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_plus_co
     constbuffer_array_dec_ref(original);
 }
 
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_013: [ constbuffer_array_create_from_offset_and_count shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_014: [ constbuffer_array_create_from_offset_and_count shall increment the reference count on original. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_015: [ constbuffer_array_create_from_offset_and_count shall return a non-NULL handle. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeeds_full_array)
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_013: [ constbuffer_array_create_from_buffer_index_and_count shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_014: [ constbuffer_array_create_from_buffer_index_and_count shall increment the reference count on original. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_015: [ constbuffer_array_create_from_buffer_index_and_count shall return a non-NULL handle. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_full_array)
 {
     // arrange
     CONSTBUFFER_HANDLE test_buffers[3];
@@ -605,10 +605,10 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeed
     original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
     umock_c_reset_all_calls();
 
-    constbuffer_array_create_from_offset_and_count_inert_path();
+    constbuffer_array_create_from_buffer_index_and_count_inert_path();
 
     // act
-    constbuffer_array = constbuffer_array_create_from_offset_and_count(original, 0, 3);
+    constbuffer_array = constbuffer_array_create_from_buffer_index_and_count(original, 0, 3);
 
     // assert
     ASSERT_IS_NOT_NULL(constbuffer_array);
@@ -627,10 +627,10 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeed
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_013: [ constbuffer_array_create_from_offset_and_count shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_014: [ constbuffer_array_create_from_offset_and_count shall increment the reference count on original. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_015: [ constbuffer_array_create_from_offset_and_count shall return a non-NULL handle. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeeds_middle_buffers_only)
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_013: [ constbuffer_array_create_from_buffer_index_and_count shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_014: [ constbuffer_array_create_from_buffer_index_and_count shall increment the reference count on original. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_015: [ constbuffer_array_create_from_buffer_index_and_count shall return a non-NULL handle. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_middle_buffers_only)
 {
     // arrange
     CONSTBUFFER_HANDLE test_buffers[4];
@@ -645,10 +645,10 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeed
     original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
     umock_c_reset_all_calls();
 
-    constbuffer_array_create_from_offset_and_count_inert_path();
+    constbuffer_array_create_from_buffer_index_and_count_inert_path();
 
     // act
-    constbuffer_array = constbuffer_array_create_from_offset_and_count(original, 1, 2);
+    constbuffer_array = constbuffer_array_create_from_buffer_index_and_count(original, 1, 2);
 
     // assert
     ASSERT_IS_NOT_NULL(constbuffer_array);
@@ -666,10 +666,10 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeed
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_013: [ constbuffer_array_create_from_offset_and_count shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_014: [ constbuffer_array_create_from_offset_and_count shall increment the reference count on original. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_015: [ constbuffer_array_create_from_offset_and_count shall return a non-NULL handle. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeeds_0_buffer_count)
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_013: [ constbuffer_array_create_from_buffer_index_and_count shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_014: [ constbuffer_array_create_from_buffer_index_and_count shall increment the reference count on original. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_015: [ constbuffer_array_create_from_buffer_index_and_count shall return a non-NULL handle. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_0_buffer_count)
 {
     // arrange
     CONSTBUFFER_HANDLE test_buffers[4];
@@ -684,10 +684,10 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeed
     original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
     umock_c_reset_all_calls();
 
-    constbuffer_array_create_from_offset_and_count_inert_path();
+    constbuffer_array_create_from_buffer_index_and_count_inert_path();
 
     // act
-    constbuffer_array = constbuffer_array_create_from_offset_and_count(original, 2, 0);
+    constbuffer_array = constbuffer_array_create_from_buffer_index_and_count(original, 2, 0);
 
     // assert
     ASSERT_IS_NOT_NULL(constbuffer_array);
@@ -702,10 +702,10 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeed
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_013: [ constbuffer_array_create_from_offset_and_count shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_014: [ constbuffer_array_create_from_offset_and_count shall increment the reference count on original. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_015: [ constbuffer_array_create_from_offset_and_count shall return a non-NULL handle. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeeds_0_buffer_count_offset_at_end_of_original)
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_013: [ constbuffer_array_create_from_buffer_index_and_count shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_014: [ constbuffer_array_create_from_buffer_index_and_count shall increment the reference count on original. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_015: [ constbuffer_array_create_from_buffer_index_and_count shall return a non-NULL handle. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_0_buffer_count_start_buffer_index_at_end_of_original)
 {
     // arrange
     CONSTBUFFER_HANDLE test_buffers[4];
@@ -720,10 +720,10 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeed
     original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
     umock_c_reset_all_calls();
 
-    constbuffer_array_create_from_offset_and_count_inert_path();
+    constbuffer_array_create_from_buffer_index_and_count_inert_path();
 
     // act
-    constbuffer_array = constbuffer_array_create_from_offset_and_count(original, 3, 0);
+    constbuffer_array = constbuffer_array_create_from_buffer_index_and_count(original, 3, 0);
 
     // assert
     ASSERT_IS_NOT_NULL(constbuffer_array);
@@ -738,10 +738,10 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeed
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_013: [ constbuffer_array_create_from_offset_and_count shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_014: [ constbuffer_array_create_from_offset_and_count shall increment the reference count on original. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_015: [ constbuffer_array_create_from_offset_and_count shall return a non-NULL handle. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeeds_when_nested_calls)
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_013: [ constbuffer_array_create_from_buffer_index_and_count shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_014: [ constbuffer_array_create_from_buffer_index_and_count shall increment the reference count on original. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_015: [ constbuffer_array_create_from_buffer_index_and_count shall return a non-NULL handle. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_when_nested_calls)
 {
     // arrange
     CONSTBUFFER_HANDLE test_buffers[4];
@@ -758,18 +758,18 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeed
     original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
     umock_c_reset_all_calls();
 
-    constbuffer_array_create_from_offset_and_count_inert_path();
-    constbuffer_array_create_from_offset_and_count_inert_path();
-    constbuffer_array_create_from_offset_and_count_inert_path();
+    constbuffer_array_create_from_buffer_index_and_count_inert_path();
+    constbuffer_array_create_from_buffer_index_and_count_inert_path();
+    constbuffer_array_create_from_buffer_index_and_count_inert_path();
 
     // act
-    constbuffer_array_1_2_3 = constbuffer_array_create_from_offset_and_count(original, 0, 3);
+    constbuffer_array_1_2_3 = constbuffer_array_create_from_buffer_index_and_count(original, 0, 3);
     ASSERT_IS_NOT_NULL(constbuffer_array_1_2_3);
 
-    constbuffer_array_2_3 = constbuffer_array_create_from_offset_and_count(constbuffer_array_1_2_3, 1, 2);
+    constbuffer_array_2_3 = constbuffer_array_create_from_buffer_index_and_count(constbuffer_array_1_2_3, 1, 2);
     ASSERT_IS_NOT_NULL(constbuffer_array_2_3);
 
-    constbuffer_array_2 = constbuffer_array_create_from_offset_and_count(constbuffer_array_2_3, 0, 1);
+    constbuffer_array_2 = constbuffer_array_create_from_buffer_index_and_count(constbuffer_array_2_3, 0, 1);
     ASSERT_IS_NOT_NULL(constbuffer_array_2);
 
     // assert
@@ -801,8 +801,8 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_succeed
     constbuffer_array_dec_ref(constbuffer_array_2);
 }
 
-/*Tests_SRS_CONSTBUFFER_ARRAY_42_016: [ If any error occurs then constbuffer_array_create_from_offset_and_count shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_fails_when_underlying_functions_fail)
+/*Tests_SRS_CONSTBUFFER_ARRAY_42_016: [ If any error occurs then constbuffer_array_create_from_buffer_index_and_count shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_fails_when_underlying_functions_fail)
 {
     // arrange
     CONSTBUFFER_HANDLE test_buffers[4];
@@ -817,7 +817,7 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_fails_w
     original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
     umock_c_reset_all_calls();
 
-    constbuffer_array_create_from_offset_and_count_inert_path();
+    constbuffer_array_create_from_buffer_index_and_count_inert_path();
 
     umock_c_negative_tests_snapshot();
     for (i = 0; i < umock_c_negative_tests_call_count(); i++)
@@ -830,7 +830,7 @@ TEST_FUNCTION(constbuffer_array_create_from_offset_and_count_with_offset_fails_w
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            constbuffer_array = constbuffer_array_create_from_offset_and_count(original, 1, 2);
+            constbuffer_array = constbuffer_array_create_from_buffer_index_and_count(original, 1, 2);
 
             ///assert
             ASSERT_IS_NULL(constbuffer_array);
