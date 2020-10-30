@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include "azure_c_util/doublylinkedlist.h"
-#include "azure_c_util/containing_record.h"
+#include "c_util/doublylinkedlist.h"
+#include "c_util/containing_record.h"
 #include "testrunnerswitcher.h"
 
 typedef struct simpleItem_tag

@@ -22,7 +22,7 @@ static void my_gballoc_free(void* s)
     free(s);
 }
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
@@ -32,13 +32,13 @@ static TEST_MUTEX_HANDLE g_testByTest;
 #include "umock_c/umocktypes_bool.h"
 
 #define ENABLE_MOCKS
-#include "azure_c_pal/interlocked.h"
-#include "azure_c_pal/sync.h"
+#include "c_pal/interlocked.h"
+#include "c_pal/sync.h"
 #undef ENABLE_MOCKS
 
 #include "real_interlocked.h"
 #include "real_sync.h"
-#include "azure_c_util/interlocked_hl.h"
+#include "c_util/interlocked_hl.h"
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)

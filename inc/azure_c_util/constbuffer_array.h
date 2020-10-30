@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #endif
 
-#include "azure_c_util/constbuffer.h"
+#include "c_util/constbuffer.h"
 
 #include "umock_c/umock_c_prod.h"
 

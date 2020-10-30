@@ -7,6 +7,6 @@
 int main(void)
 {
     size_t failedTestCount = 0;
-    RUN_TEST_SUITE(azure_c_util_reals_ut, failedTestCount);
+    RUN_TEST_SUITE(c_util_reals_ut, failedTestCount);
     return failedTestCount;
 }

@@ -4,7 +4,7 @@
 #ifndef THANDLE_FLEX_USER_H
 #define THANDLE_FLEX_USER_H
 
-#include "azure_c_util/thandle.h"
+#include "c_util/thandle.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -11,10 +11,10 @@ set(${theseTestsName}_c_files
 )
 
 set(${theseTestsName}_h_files
-../../inc/azure_c_util/interlocked_hl.h
+../../inc/c_util/interlocked_hl.h
 ../mocked/inc/windows.h
 )
 
 include_directories(BEFORE SYSTEM ../mocked/inc)
 
-build_test_artifacts(${theseTestsName} ON "tests/azure_c_util" ADDITIONAL_LIBS azure_c_pal azure_c_pal_reals)
+build_test_artifacts(${theseTestsName} ON "tests/c_util" ADDITIONAL_LIBS c_pal c_pal_reals)

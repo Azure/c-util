@@ -10,7 +10,7 @@
 #include <stdint.h>
 #endif
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 
@@ -33,8 +33,8 @@
         CONSTBUFFER_ARRAY_HANDLE_contain_same \
 )
 
-#include "azure_c_util/constbuffer.h"
-#include "azure_c_util/constbuffer_array.h"
+#include "c_util/constbuffer.h"
+#include "c_util/constbuffer_array.h"
 
 #ifdef __cplusplus
 extern "C" {

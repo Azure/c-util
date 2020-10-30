@@ -4,7 +4,7 @@
 #ifndef REAL_SM_H
 #define REAL_SM_H
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 
@@ -22,7 +22,7 @@
         sm_barrier_end                                  \
     )
 
-#include "azure_c_util/sm.h"
+#include "c_util/sm.h"
 
 #ifdef __cplusplus
 extern "C" {

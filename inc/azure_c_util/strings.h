@@ -11,7 +11,7 @@
 #endif
 
 #include "umock_c/umock_c_prod.h"
-#include "azure_c_util/strings_types.h"
+#include "c_util/strings_types.h"
 
 #ifdef __cplusplus
 extern "C"

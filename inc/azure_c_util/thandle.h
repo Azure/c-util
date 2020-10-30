@@ -7,14 +7,14 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 #include "umock_c/umock_c_prod.h"
 
-#include "azure_c_logging/xlogging.h"
+#include "c_logging/xlogging.h"
 
-#include "azure_c_pal/interlocked.h"
+#include "c_pal/interlocked.h"
 
-#include "azure_c_util/containing_record.h"
+#include "c_util/containing_record.h"
 
 
 #ifdef THANDLE_MALLOC_FUNCTION

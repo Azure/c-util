@@ -15,8 +15,8 @@
 #include <stddef.h>
 #endif
 
-#include "azure_c_util/strings.h"
-#include "azure_c_util/buffer_.h"
+#include "c_util/strings.h"
+#include "c_util/buffer_.h"
 
 #include "umock_c/umock_c_prod.h"
 

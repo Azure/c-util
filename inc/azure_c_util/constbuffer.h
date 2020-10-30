@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #endif
 
-#include "azure_c_util/buffer_.h"
+#include "c_util/buffer_.h"
 
 #include "umock_c/umock_c_prod.h"
 

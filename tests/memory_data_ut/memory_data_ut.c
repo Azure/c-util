@@ -11,20 +11,20 @@
 #include <stdint.h>
 #endif
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
-#include "azure_c_pal/gballoc_hl.h"
-#include "azure_c_pal/gballoc_hl_redirect.h"
+#include "c_pal/gballoc_hl.h"
+#include "c_pal/gballoc_hl_redirect.h"
 
-#include "azure_c_util/uuid.h"
+#include "c_util/uuid.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_stdint.h"
 
-#include "azure_c_util/memory_data.h"
+#include "c_util/memory_data.h"
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)

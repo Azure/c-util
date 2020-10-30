@@ -4,9 +4,9 @@
 #ifndef REAL_RC_STRING_H
 #define REAL_RC_STRING_H
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 
-#include "azure_c_util/rc_string.h"
+#include "c_util/rc_string.h"
 
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 

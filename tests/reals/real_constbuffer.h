@@ -4,7 +4,7 @@
 #ifndef REAL_CONSTBUFFER_H
 #define REAL_CONSTBUFFER_H
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 
@@ -31,7 +31,7 @@ extern "C"
 #include <stdbool.h>
 #endif
 
-#include "azure_c_util/constbuffer.h"
+#include "c_util/constbuffer.h"
 
 CONSTBUFFER_HANDLE real_CONSTBUFFER_Create(const unsigned char* source, size_t size);
 

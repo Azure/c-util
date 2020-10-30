@@ -4,7 +4,7 @@
 #ifndef REAL_INTERLOCKED_HL_H
 #define REAL_INTERLOCKED_HL_H
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 
@@ -18,8 +18,8 @@
         InterlockedHL_CompareExchange64If \
     )
 
-#include "azure_c_pal/interlocked.h"
-#include "azure_c_util/interlocked_hl.h"
+#include "c_pal/interlocked.h"
+#include "c_util/interlocked_hl.h"
 
 #ifdef __cplusplus
 extern "C" {

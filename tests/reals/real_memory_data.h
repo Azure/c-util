@@ -4,9 +4,9 @@
 #ifndef REAL_MEMORY_DATA_H
 #define REAL_MEMORY_DATA_H
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 
-#include "azure_c_util/uuid.h"
+#include "c_util/uuid.h"
 
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 

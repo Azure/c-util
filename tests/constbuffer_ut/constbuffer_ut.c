@@ -9,7 +9,7 @@
 #include <stddef.h>
 #endif
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
 #include "real_gballoc_ll.h"
@@ -25,14 +25,14 @@ void my_gballoc_free(void* ptr)
 
 #define ENABLE_MOCKS
 #include "umock_c/umock_c.h"
-#include "azure_c_util/buffer_.h"
-#include "azure_c_pal/gballoc_hl.h"
-#include "azure_c_pal/gballoc_hl_redirect.h"
+#include "c_util/buffer_.h"
+#include "c_pal/gballoc_hl.h"
+#include "c_pal/gballoc_hl_redirect.h"
 #undef ENABLE_MOCKS
 
 #include "real_gballoc_hl.h"
 
-#include "azure_c_util/constbuffer.h"
+#include "c_util/constbuffer.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 

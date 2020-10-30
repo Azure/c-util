@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #endif
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_charptr.h"
@@ -15,14 +15,14 @@
 #include "umock_c/umock_c_negative_tests.h"
 
 #define ENABLE_MOCKS
-#include "azure_c_pal/gballoc_hl.h"
-#include "azure_c_pal/gballoc_hl_redirect.h"
-#include "azure_c_pal/uniqueid.h"
+#include "c_pal/gballoc_hl.h"
+#include "c_pal/gballoc_hl_redirect.h"
+#include "c_pal/uniqueid.h"
 #undef ENABLE_MOCKS
 
 #include "real_gballoc_hl.h"
 
-#include "azure_c_util/uuid.h"
+#include "c_util/uuid.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 

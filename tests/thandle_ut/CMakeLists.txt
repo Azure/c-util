@@ -15,10 +15,10 @@ thandle_flex_user.c
 )
 
 set(${theseTestsName}_h_files
-../../inc/azure_c_util/thandle.h
+../../inc/c_util/thandle.h
 thandle_user.h
 thandle_flex_user.h
 )
 
-build_test_artifacts(${theseTestsName} ON "tests/azure_c_util" ADDITIONAL_LIBS azure_c_pal azure_c_pal_reals)
+build_test_artifacts(${theseTestsName} ON "tests/c_util" ADDITIONAL_LIBS c_pal c_pal_reals)
 

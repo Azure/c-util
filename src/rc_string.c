@@ -3,16 +3,16 @@
 
 #include <stdlib.h>
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 
-#include "azure_c_logging/xlogging.h"
+#include "c_logging/xlogging.h"
 
-#include "azure_c_pal/gballoc_hl.h"
-#include "azure_c_pal/gballoc_hl_redirect.h"
+#include "c_pal/gballoc_hl.h"
+#include "c_pal/gballoc_hl_redirect.h"
 
-#include "azure_c_util/thandle.h"
+#include "c_util/thandle.h"
 
-#include "azure_c_util/rc_string.h"
+#include "c_util/rc_string.h"
 
 #define THANDLE_MALLOC_FUNCTION malloc
 #define THANDLE_FREE_FUNCTION free
