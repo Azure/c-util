@@ -3,9 +3,9 @@
 
 #include <inttypes.h>
 
-#include "azure_c_util/uuid.h"
+#include "c_util/uuid.h"
 
-#include "azure_c_util/memory_data.h"
+#include "c_util/memory_data.h"
 
 IMPLEMENT_MOCKABLE_FUNCTION(, void, read_uint8_t, const unsigned char*, source, uint8_t*, destination)
 {

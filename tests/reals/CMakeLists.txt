@@ -13,7 +13,7 @@ set(REAL_SM_H_FILES
 )
 endif()
 
-set(azure_c_util_reals_c_files
+set(c_util_reals_c_files
     real_constbuffer.c
     real_constbuffer_array.c
     real_constbuffer_array_batcher_nv.c
@@ -26,7 +26,7 @@ set(azure_c_util_reals_c_files
     ${REAL_SM_C_FILES}
 )
 
-set(azure_c_util_reals_h_files
+set(c_util_reals_h_files
     real_constbuffer.h
     real_constbuffer_renames.h
     real_constbuffer_array.h
@@ -49,6 +49,6 @@ set(azure_c_util_reals_h_files
 )
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)
-add_library(azure_c_util_reals ${azure_c_util_reals_c_files} ${azure_c_util_reals_h_files})
-target_include_directories(azure_c_util_reals PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests/reals>)
-target_link_libraries(azure_c_util_reals azure_c_logging azure_c_pal_reals)
+add_library(c_util_reals ${c_util_reals_c_files} ${c_util_reals_h_files})
+target_include_directories(c_util_reals PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests/reals>)
+target_link_libraries(c_util_reals c_logging c_pal_reals)

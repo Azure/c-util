@@ -4,17 +4,17 @@
 #include <stdbool.h>
 #include <inttypes.h>
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 
-#include "azure_c_logging/xlogging.h"
+#include "c_logging/xlogging.h"
 
-#include "azure_c_pal/gballoc_hl.h"
-#include "azure_c_pal/gballoc_hl_redirect.h"
-#include "azure_c_pal/refcount.h"
+#include "c_pal/gballoc_hl.h"
+#include "c_pal/gballoc_hl_redirect.h"
+#include "c_pal/refcount.h"
 
-#include "azure_c_util/constbuffer.h"
+#include "c_util/constbuffer.h"
 
-#include "azure_c_util/constbuffer_array.h"
+#include "c_util/constbuffer_array.h"
 
 typedef void(*CONSTBUFFER_ARRAY_CUSTOM_FREE_FUNC)(void* context);
 

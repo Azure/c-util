@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #endif
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
 #include "real_gballoc_ll.h"
@@ -48,7 +48,7 @@ void my_gballoc_free(void* ptr)
 
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_bool.h"
-#include "azure_c_util/singlylinkedlist.h"
+#include "c_util/singlylinkedlist.h"
 
 #define ENABLE_MOCKS
 
@@ -56,8 +56,8 @@ void my_gballoc_free(void* ptr)
 MOCK_FUNCTION_WITH_CODE(, bool, test_match_function, LIST_ITEM_HANDLE, list_item, const void*, match_context)
 MOCK_FUNCTION_END(true);
 
-#include "azure_c_pal/gballoc_hl.h"
-#include "azure_c_pal/gballoc_hl_redirect.h"
+#include "c_pal/gballoc_hl.h"
+#include "c_pal/gballoc_hl_redirect.h"
 
 #undef ENABLE_MOCKS
 

@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #endif
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 
 #include "real_gballoc_ll.h"
 static size_t currentmalloc_call = 0;
@@ -74,7 +74,7 @@ static TEST_MUTEX_HANDLE g_testByTest;
 
 #define ENABLE_MOCKS
 
-#include "azure_c_util/strings.h"
+#include "c_util/strings.h"
 
 STRING_HANDLE my_STRING_construct(const char* psz)
 {
@@ -93,14 +93,14 @@ STRING_HANDLE my_STRING_new_JSON(const char* source)
     return (STRING_HANDLE)malloc(1);
 }
 
-#include "azure_c_pal/gballoc_hl.h"
-#include "azure_c_pal/gballoc_hl_redirect.h"
+#include "c_pal/gballoc_hl.h"
+#include "c_pal/gballoc_hl_redirect.h"
 
 #undef ENABLE_MOCKS
 
 #include "real_gballoc_hl.h"
 
-#include "azure_c_util/map.h"
+#include "c_util/map.h"
 
 TEST_DEFINE_ENUM_TYPE(MAP_RESULT, MAP_RESULT_VALUES)
 IMPLEMENT_UMOCK_C_ENUM_TYPE(MAP_RESULT, MAP_RESULT_VALUES);

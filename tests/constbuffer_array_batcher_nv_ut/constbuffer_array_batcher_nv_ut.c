@@ -8,7 +8,7 @@
 #include <inttypes.h>
 #endif
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 
 #include "real_gballoc_ll.h"
 
@@ -29,14 +29,14 @@ void real_free(void* ptr)
 
 #define ENABLE_MOCKS
 
-#include "azure_c_util/constbuffer.h"
-#include "azure_c_util/constbuffer_array.h"
-#include "azure_c_pal/gballoc_hl.h"
-#include "azure_c_pal/gballoc_hl_redirect.h"
-#include "azure_c_util/memory_data.h"
+#include "c_util/constbuffer.h"
+#include "c_util/constbuffer_array.h"
+#include "c_pal/gballoc_hl.h"
+#include "c_pal/gballoc_hl_redirect.h"
+#include "c_util/memory_data.h"
 #undef ENABLE_MOCKS
 
-#include "azure_c_util/constbuffer_array_batcher_nv.h"
+#include "c_util/constbuffer_array_batcher_nv.h"
 
 #include "real_gballoc_hl.h"
 

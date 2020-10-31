@@ -12,7 +12,7 @@
 #include <stdint.h>
 #endif
 
-#include "azure_c_util/containing_record.h"
+#include "c_util/containing_record.h"
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus

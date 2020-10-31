@@ -3,18 +3,18 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-# canon way of using azure-c-util from another repo is below. It assumes the using repo has placed azure-c-util in "deps"
+# canon way of using c-util from another repo is below. It assumes the using repo has placed c-util in "deps"
 
-#if ((NOT TARGET azure_c_util) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-util/CMakeLists.txt))
-#    add_subdirectory(deps/azure-c-util)
+#if ((NOT TARGET c_util) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-util/CMakeLists.txt))
+#    add_subdirectory(deps/c-util)
 #    include_directories(${C_UTIL_INC_FOLDER})
 #endif() 
 
-if (TARGET azure_c_util)
+if (TARGET c_util)
     RETURN()
 endif()
 
-project(azure_c_util)
+project(c_util)
 
 #the following variables are project-wide and can be used with cmake-gui
 option(run_unittests "set run_unittests to ON to run unittests (default is OFF)" OFF)
@@ -35,28 +35,28 @@ set(run_int_tests OFF)
 set(run_traceability OFF)
 set(run_perf_tests OFF)
 
-if ((NOT TARGET azure_c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-build-tools/CMakeLists.txt))
-    add_subdirectory(deps/azure-c-build-tools)
+if ((NOT TARGET c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-build-tools/CMakeLists.txt))
+    add_subdirectory(deps/c-build-tools)
     set_default_build_options()
 endif() 
 
-if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
-    add_subdirectory(deps/azure-macro-utils-c)
+if ((NOT TARGET macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/macro-utils-c/CMakeLists.txt))
+    add_subdirectory(deps/macro-utils-c)
     include_directories(${MACRO_UTILS_INC_FOLDER})
 endif() 
 
-if ((NOT TARGET azure_c_logging) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-logging/CMakeLists.txt))
-    add_subdirectory(deps/azure-c-logging)
-    include_directories(deps/azure-c-logging/inc)
+if ((NOT TARGET c_logging) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-logging/CMakeLists.txt))
+    add_subdirectory(deps/c-logging)
+    include_directories(deps/c-logging/inc)
 endif() 
 
-if ((NOT TARGET ctest) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-ctest/CMakeLists.txt))
-    add_subdirectory(deps/azure-ctest)
+if ((NOT TARGET ctest) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/ctest/CMakeLists.txt))
+    add_subdirectory(deps/ctest)
     include_directories(${CTEST_INC_FOLDER})
 endif() 
 
-if ((NOT TARGET testrunnerswitcher) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-testrunnerswitcher/CMakeLists.txt))
-    add_subdirectory(deps/azure-c-testrunnerswitcher)
+if ((NOT TARGET testrunnerswitcher) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-testrunnerswitcher/CMakeLists.txt))
+    add_subdirectory(deps/c-testrunnerswitcher)
     include_directories(${TESTRUNNERSWITCHER_INC_FOLDER})
 endif() 
 
@@ -65,8 +65,8 @@ if ((NOT TARGET umock_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMak
     include_directories(${UMOCK_C_INC_FOLDER})
 endif() 
 
-if ((NOT TARGET azure_c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-c-pal/CMakeLists.txt))
-    add_subdirectory(deps/azure-c-pal)
+if ((NOT TARGET c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-pal/CMakeLists.txt))
+    add_subdirectory(deps/c-pal)
     include_directories(${C_PAL_INC_FOLDER})
 endif() 
 
@@ -136,7 +136,7 @@ set(C_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what
 function(set_platform_files c_util_dir)
     if(WIN32)
         set(SM_C_FILE ${c_util_dir}/src/sm.c PARENT_SCOPE)
-        set(SM_H_FILE ${c_util_dir}/inc/azure_c_util/sm.h PARENT_SCOPE)
+        set(SM_H_FILE ${c_util_dir}/inc/c_util/sm.h PARENT_SCOPE)
     else()
         set(SM_C_FILE) #there's no SM for linux
         set(SM_H_FILE) #there's no SM for linux
@@ -148,7 +148,7 @@ set_platform_files(${CMAKE_CURRENT_LIST_DIR})
 
 include_directories(${UMOCK_C_INC_FOLDER})
 
-set(azure_c_util_c_files
+set(c_util_c_files
     ./src/azure_base64.c
     ./src/buffer.c
     ./src/constbuffer.c
@@ -165,43 +165,43 @@ set(azure_c_util_c_files
     ${SM_C_FILE}
 )
 
-set(azure_c_util_h_files
-    ./inc/azure_c_util/azure_base64.h
-    ./inc/azure_c_util/buffer_.h
-    ./inc/azure_c_util/constbuffer.h
-    ./inc/azure_c_util/constbuffer_array.h
-    ./inc/azure_c_util/constbuffer_array_batcher_nv.h
-    ./inc/azure_c_util/doublylinkedlist.h
-    ./inc/azure_c_util/interlocked_hl.h
-    ./inc/azure_c_util/map.h
-    ./inc/azure_c_util/memory_data.h
-    ./inc/azure_c_util/singlylinkedlist.h
-    ./inc/azure_c_util/rc_string.h
-    ./inc/azure_c_util/strings.h
-    ./inc/azure_c_util/strings_types.h
-    ./inc/azure_c_util/thandle.h
-    ./inc/azure_c_util/uuid.h
+set(c_util_h_files
+    ./inc/c_util/azure_base64.h
+    ./inc/c_util/buffer_.h
+    ./inc/c_util/constbuffer.h
+    ./inc/c_util/constbuffer_array.h
+    ./inc/c_util/constbuffer_array_batcher_nv.h
+    ./inc/c_util/doublylinkedlist.h
+    ./inc/c_util/interlocked_hl.h
+    ./inc/c_util/map.h
+    ./inc/c_util/memory_data.h
+    ./inc/c_util/singlylinkedlist.h
+    ./inc/c_util/rc_string.h
+    ./inc/c_util/strings.h
+    ./inc/c_util/strings_types.h
+    ./inc/c_util/thandle.h
+    ./inc/c_util/uuid.h
     ${SM_H_FILE}
 )
 
-FILE(GLOB azure_c_util_md_files "devdoc/*.md")
-SOURCE_GROUP(devdoc FILES ${azure_c_util_md_files})
+FILE(GLOB c_util_md_files "devdoc/*.md")
+SOURCE_GROUP(devdoc FILES ${c_util_md_files})
 
 #this is the product (a library)
-add_library(azure_c_util ${azure_c_util_c_files} ${azure_c_util_h_files} ${azure_c_util_md_files})
+add_library(c_util ${c_util_c_files} ${c_util_h_files} ${c_util_md_files})
 
-target_link_libraries(azure_c_util azure_c_pal)
+target_link_libraries(c_util c_pal)
 
-target_include_directories(azure_c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc>)
+target_include_directories(c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc>)
 
-set(azure_c_util_target_libs)
+set(c_util_target_libs)
 
 if(${logerror_captures_stack_traces})
-    set(azure_c_util_target_libs ${azure_c_util_target_libs} Dbghelp)
+    set(c_util_target_libs ${c_util_target_libs} Dbghelp)
 endif()
 
 if(${use_applessl})
-    set(azure_c_util_target_libs ${azure_c_util_target_libs} ${cf_foundation} ${cf_network})
+    set(c_util_target_libs ${c_util_target_libs} ${cf_foundation} ${cf_network})
 endif()
 
 include_directories(${MACRO_UTILS_INC_FOLDER})
@@ -211,13 +211,13 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/inc)
 
 if((WIN32) AND (${run_traceability}))
     #add traceability custom target
-    add_custom_target(azure_c_util_traceability ALL
+    add_custom_target(c_util_traceability ALL
         COMMAND traceabilitytool -buildcheck -e ${CMAKE_CURRENT_LIST_DIR}/deps -i ${CMAKE_CURRENT_LIST_DIR})
-    add_dependencies(azure_c_util_traceability traceabilitytool)
+    add_dependencies(c_util_traceability traceabilitytool)
 endif()
 
 add_subdirectory(tests)
 
 include(CMakePackageConfigHelpers)
 
-compileTargetAsC99(azure_c_util)
+compileTargetAsC99(c_util)

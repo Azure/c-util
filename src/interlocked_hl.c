@@ -4,11 +4,11 @@
 #include <inttypes.h>
 #include <limits.h>
 
-#include "azure_c_logging/xlogging.h"
+#include "c_logging/xlogging.h"
 
-#include "azure_c_pal/interlocked.h"
-#include "azure_c_pal/sync.h"
-#include "azure_c_util/interlocked_hl.h"
+#include "c_pal/interlocked.h"
+#include "c_pal/sync.h"
+#include "c_util/interlocked_hl.h"
 
 MU_DEFINE_ENUM_STRINGS(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES)
 

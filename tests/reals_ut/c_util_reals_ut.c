@@ -16,22 +16,22 @@
 #include "../reals/real_singlylinkedlist.h"
 #include "../reals/real_uuid.h"
 
-#include "azure_c_util/constbuffer.h"
-#include "azure_c_util/constbuffer_array.h"
-#include "azure_c_util/constbuffer_array_batcher_nv.h"
-#include "azure_c_util/doublylinkedlist.h"
-#include "azure_c_util/interlocked_hl.h"
-#include "azure_c_util/memory_data.h"
-#include "azure_c_util/rc_string.h"
-#include "azure_c_util/singlylinkedlist.h"
-#include "azure_c_util/uuid.h"
+#include "c_util/constbuffer.h"
+#include "c_util/constbuffer_array.h"
+#include "c_util/constbuffer_array_batcher_nv.h"
+#include "c_util/doublylinkedlist.h"
+#include "c_util/interlocked_hl.h"
+#include "c_util/memory_data.h"
+#include "c_util/rc_string.h"
+#include "c_util/singlylinkedlist.h"
+#include "c_util/uuid.h"
 
 #if defined _MSC_VER
 #include "../reals/real_sm.h"
-#include "azure_c_util/sm.h"
+#include "c_util/sm.h"
 #endif
 
-BEGIN_TEST_SUITE(azure_c_util_reals_ut)
+BEGIN_TEST_SUITE(c_util_reals_ut)
 
 // this test makes sure that the mappings work
 // (there is a real_ function corresponding to the original)
@@ -58,4 +58,4 @@ TEST_FUNCTION(check_all_c_util_reals)
     // no explicit assert. if it builds, it works
 }
 
-END_TEST_SUITE(azure_c_util_reals_ut)
+END_TEST_SUITE(c_util_reals_ut)

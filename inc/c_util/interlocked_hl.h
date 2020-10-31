@@ -11,8 +11,8 @@
 #include <stdint.h>
 #endif
 
-#include "azure_macro_utils/macro_utils.h"
-#include "azure_c_pal/interlocked.h"
+#include "macro_utils/macro_utils.h"
+#include "c_pal/interlocked.h"
 
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus

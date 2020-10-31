@@ -24,7 +24,7 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
 #include "umock_c/umock_c_negative_tests.h"
@@ -32,14 +32,14 @@ void my_gballoc_free(void* ptr)
 
 #define ENABLE_MOCKS
 
-#include "azure_c_pal/gballoc_hl.h"
-#include "azure_c_pal/gballoc_hl_redirect.h"
+#include "c_pal/gballoc_hl.h"
+#include "c_pal/gballoc_hl_redirect.h"
 
 #undef ENABLE_MOCKS
 
 #include "real_gballoc_hl.h"
 
-#include "azure_c_util/strings.h"
+#include "c_util/strings.h"
 
 static const char TEST_STRING_VALUE []= "DataValueTest";
 static const char INITIAL_STRING_VALUE []= "Initial_";

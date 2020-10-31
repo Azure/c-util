@@ -6,13 +6,13 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "azure_macro_utils/macro_utils.h"
-#include "azure_c_pal/gballoc_hl.h"
-#include "azure_c_pal/gballoc_hl_redirect.h"
+#include "macro_utils/macro_utils.h"
+#include "c_pal/gballoc_hl.h"
+#include "c_pal/gballoc_hl_redirect.h"
 
-#include "azure_c_logging/xlogging.h"
+#include "c_logging/xlogging.h"
 
-#include "azure_c_util/strings.h"
+#include "c_util/strings.h"
 
 
 static const char hexToASCII[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };

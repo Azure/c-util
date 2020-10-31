@@ -14,8 +14,8 @@ set(${theseTestsName}_c_files
 )
 
 set(${theseTestsName}_h_files
-../../inc/azure_c_util/sm.h
+../../inc/c_util/sm.h
 )
 
-build_test_artifacts(${theseTestsName} ON "tests/azure_c_util" ADDITIONAL_LIBS synchronization azure_c_pal azure_c_pal_reals azure_c_util_reals)
+build_test_artifacts(${theseTestsName} ON "tests/c_util" ADDITIONAL_LIBS synchronization c_pal c_pal_reals c_util_reals)
 
