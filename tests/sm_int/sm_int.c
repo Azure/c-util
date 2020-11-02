@@ -10,21 +10,26 @@
 #include <stdlib.h>
 #endif
 
-#include "windows.h"
-
 #include "testrunnerswitcher.h"
 
 #include "macro_utils/macro_utils.h"
 
 #include "c_pal/timer.h"
 #include "c_pal/gballoc_hl.h"
+#include "c_pal/threadapi.h"
+#include "c_pal/interlocked.h"
+#include "c_util/interlocked_hl.h"
 #include "c_logging/xlogging.h"
 
 #include "c_util/sm.h"
 
 TEST_DEFINE_ENUM_TYPE(SM_RESULT, SM_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
-#define N_MAX_THREADS MAXIMUM_WAIT_OBJECTS
+#define N_MAX_THREADS 64
+
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
 static double timeSinceTestFunctionStartMs;
 
@@ -37,50 +42,50 @@ typedef struct OPEN_CLOSE_THREADS_TAG
     SM_HANDLE sm;
     double startTime_ms;
 
-    HANDLE beginOpenThreads[N_MAX_THREADS];
-    HANDLE endOpenThreads[N_MAX_THREADS];
-    volatile LONG n_begin_open_grants;
-    volatile LONG n_begin_open_refuses;
+    THREAD_HANDLE beginOpenThreads[N_MAX_THREADS];
+    THREAD_HANDLE endOpenThreads[N_MAX_THREADS];
+    volatile_atomic int32_t n_begin_open_grants;
+    volatile_atomic int32_t n_begin_open_refuses;
     uint32_t n_begin_open_threads;
     uint32_t n_end_open_threads;
 
-    HANDLE beginCloseThreads[N_MAX_THREADS];
-    HANDLE endCloseThreads[N_MAX_THREADS];
-    volatile LONG n_begin_close_grants;
-    volatile LONG n_begin_close_refuses;
+    THREAD_HANDLE beginCloseThreads[N_MAX_THREADS];
+    THREAD_HANDLE endCloseThreads[N_MAX_THREADS];
+    volatile_atomic int32_t n_begin_close_grants;
+    volatile_atomic int32_t n_begin_close_refuses;
     uint32_t n_begin_close_threads;
     uint32_t n_end_close_threads;
 
-    HANDLE beginBarrierThreads[N_MAX_THREADS];
-    HANDLE endBarrierThreads[N_MAX_THREADS];
-    volatile LONG n_begin_barrier_grants;
-    volatile LONG n_begin_barrier_refuses;
+    THREAD_HANDLE beginBarrierThreads[N_MAX_THREADS];
+    THREAD_HANDLE endBarrierThreads[N_MAX_THREADS];
+    volatile_atomic int32_t n_begin_barrier_grants;
+    volatile_atomic int32_t n_begin_barrier_refuses;
     uint32_t n_begin_barrier_threads;
     uint32_t n_end_barrier_threads;
 
-    HANDLE beginThreads[N_MAX_THREADS];
-    volatile LONG n_begin_grants;
-    volatile LONG n_begin_refuses;
+    THREAD_HANDLE beginThreads[N_MAX_THREADS];
+    volatile_atomic int32_t n_begin_grants;
+    volatile_atomic int32_t n_begin_refuses;
     uint32_t n_begin_threads;
 
-    volatile LONG threadsShouldFinish; /*this test is time bound*/
+    volatile_atomic int32_t threadsShouldFinish; /*this test is time bound*/
 } OPEN_CLOSE_THREADS;
 
-static  DWORD WINAPI callsBeginOpen(
-    LPVOID lpThreadParameter
+static int callsBeginOpen(
+    void* lpThreadParameter
 )
 {
     OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
 
-    while (InterlockedAdd(&data->threadsShouldFinish, 0) == 0)
+    while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
         if (sm_open_begin(data->sm) == SM_EXEC_GRANTED)
         {
-            (void)InterlockedIncrement(&data->n_begin_open_grants);
+            (void)interlocked_increment(&data->n_begin_open_grants);
         }
         else
         {
-            (void)InterlockedIncrement(&data->n_begin_open_refuses);
+            (void)interlocked_increment(&data->n_begin_open_refuses);
         }
     }
     return 0;
@@ -91,32 +96,26 @@ static void createBeginOpenThreads(OPEN_CLOSE_THREADS* data)
     uint32_t iBeginOpen;
     for (iBeginOpen = 0; iBeginOpen < data->n_begin_open_threads; iBeginOpen++)
     {
-        data->beginOpenThreads[iBeginOpen] = CreateThread(NULL, 0, callsBeginOpen, data, 0, NULL);
-        ASSERT_IS_NOT_NULL(data->beginOpenThreads[iBeginOpen]);
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&data->beginOpenThreads[iBeginOpen], callsBeginOpen, data));
     }
 }
 
 static void waitAndDestroyBeginOpenThreads(OPEN_CLOSE_THREADS* data)
 {
-    if (data->n_begin_open_threads > 0)
-    {
-        DWORD dw = WaitForMultipleObjects(data->n_begin_open_threads, data->beginOpenThreads, TRUE, INFINITE);
-        ASSERT_IS_TRUE((WAIT_OBJECT_0 <= dw) && (dw <= WAIT_OBJECT_0 + data->n_begin_open_threads));
-    }
-
     for (uint32_t iBeginOpen = 0; iBeginOpen < data->n_begin_open_threads; iBeginOpen++)
     {
-        (void)CloseHandle(data->beginOpenThreads[iBeginOpen]);
+        int dont_care;
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(data->beginOpenThreads[iBeginOpen], &dont_care));
     }
 }
 
-static  DWORD WINAPI callsEndOpen(
-    LPVOID lpThreadParameter
+static int callsEndOpen(
+    void* lpThreadParameter
 )
 {
     OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
 
-    while (InterlockedAdd(&data->threadsShouldFinish, 0) == 0)
+    while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
         sm_open_end(data->sm, (rand()%2==0));
     }
@@ -128,44 +127,38 @@ static void createEndOpenThreads(OPEN_CLOSE_THREADS* data)
     uint32_t iEndOpen;
     for (iEndOpen = 0; iEndOpen < data->n_end_open_threads; iEndOpen++)
     {
-        data->endOpenThreads[iEndOpen] = CreateThread(NULL, 0, callsEndOpen, data, 0, NULL);
-        ASSERT_IS_NOT_NULL(data->endOpenThreads[iEndOpen]);
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&data->endOpenThreads[iEndOpen], callsEndOpen, data));
     }
 }
 
 static void waitAndDestroyEndOpenThreads(OPEN_CLOSE_THREADS* data)
 {
-    if (data->n_end_open_threads > 0)
-    {
-        DWORD dw = WaitForMultipleObjects(data->n_end_open_threads, data->endOpenThreads, TRUE, INFINITE);
-        ASSERT_IS_TRUE((WAIT_OBJECT_0 <= dw) && (dw <= WAIT_OBJECT_0 + data->n_end_open_threads));
-    }
-
     for (uint32_t iEndOpen = 0; iEndOpen < data->n_end_open_threads; iEndOpen++)
     {
-        (void)CloseHandle(data->endOpenThreads[iEndOpen]);
+        int dont_care;
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(data->endOpenThreads[iEndOpen], &dont_care));
     }
 }
 
 
-static  DWORD WINAPI callsBeginClose(
-    LPVOID lpThreadParameter
+static int callsBeginClose(
+    void* lpThreadParameter
 )
 {
     OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
 
-    while (InterlockedAdd(&data->threadsShouldFinish, 0) == 0)
+    while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
         if (sm_close_begin(data->sm) == SM_EXEC_GRANTED)
         {
-            (void)InterlockedIncrement(&data->n_begin_close_grants);
+            (void)interlocked_increment(&data->n_begin_close_grants);
         }
         else
         {
-            (void)InterlockedIncrement(&data->n_begin_close_refuses);
+            (void)interlocked_increment(&data->n_begin_close_refuses);
         }
 
-        Sleep(SM_BEGIN_CLOSE_DELAY);
+        ThreadAPI_Sleep(SM_BEGIN_CLOSE_DELAY);
     }
     return 0;
 }
@@ -175,32 +168,26 @@ static void createBeginCloseThreads(OPEN_CLOSE_THREADS* data)
     uint32_t iBeginClose;
     for (iBeginClose = 0; iBeginClose < data->n_begin_close_threads; iBeginClose++)
     {
-        data->beginCloseThreads[iBeginClose] = CreateThread(NULL, 0, callsBeginClose, data, 0, NULL);
-        ASSERT_IS_NOT_NULL(data->beginCloseThreads[iBeginClose]);
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&data->beginCloseThreads[iBeginClose], callsBeginClose, data));
     }
 }
 
 static void waitAndDestroyBeginCloseThreads(OPEN_CLOSE_THREADS* data)
 {
-    if (data->n_begin_close_threads > 0)
-    {
-        DWORD dw = WaitForMultipleObjects(data->n_begin_close_threads, data->beginCloseThreads, TRUE, INFINITE);
-        ASSERT_IS_TRUE((WAIT_OBJECT_0 <= dw) && (dw <= WAIT_OBJECT_0 + data->n_begin_close_threads));
-    }
-
     for (uint32_t iBeginClose = 0; iBeginClose < data->n_begin_close_threads; iBeginClose++)
     {
-        (void)CloseHandle(data->beginCloseThreads[iBeginClose]);
+        int dont_care;
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(data->beginCloseThreads[iBeginClose], &dont_care));
     }
 }
 
-static DWORD WINAPI callsEndClose(
-    LPVOID lpThreadParameter
+static int callsEndClose(
+    void* lpThreadParameter
 )
 {
     OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
 
-    while (InterlockedAdd(&data->threadsShouldFinish, 0) == 0)
+    while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
         sm_close_end(data->sm); /*might as well fail*/
     }
@@ -212,42 +199,36 @@ static void createEndCloseThreads(OPEN_CLOSE_THREADS* data)
     uint32_t iEndClose;
     for (iEndClose = 0; iEndClose < data->n_end_close_threads; iEndClose++)
     {
-        data->endCloseThreads[iEndClose] = CreateThread(NULL, 0, callsEndClose, data, 0, NULL);
-        ASSERT_IS_NOT_NULL(data->endCloseThreads[iEndClose]);
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&data->endCloseThreads[iEndClose], callsEndClose, data));
     }
 }
 
 static void waitAndDestroyEndCloseThreads(OPEN_CLOSE_THREADS* data)
 {
-    if (data->n_end_close_threads > 0)
-    {
-        DWORD dw = WaitForMultipleObjects(data->n_end_close_threads, data->endCloseThreads, TRUE, INFINITE);
-        ASSERT_IS_TRUE((WAIT_OBJECT_0 <= dw) && (dw <= WAIT_OBJECT_0 + data->n_end_close_threads));
-    }
-
     for (uint32_t iEndClose = 0; iEndClose < data->n_end_close_threads; iEndClose++)
     {
-        (void)CloseHandle(data->endCloseThreads[iEndClose]);
+        int dont_care;
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(data->endCloseThreads[iEndClose], &dont_care));
     }
 }
 
-static  DWORD WINAPI callsBeginBarrier(
-    LPVOID lpThreadParameter
+static int callsBeginBarrier(
+    void* lpThreadParameter
 )
 {
     OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
 
-    while (InterlockedAdd(&data->threadsShouldFinish, 0) == 0)
+    while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
         if (sm_barrier_begin(data->sm) == SM_EXEC_GRANTED)
         {
-            (void)InterlockedIncrement(&data->n_begin_barrier_grants);
+            (void)interlocked_increment(&data->n_begin_barrier_grants);
         }
         else
         {
-            (void)InterlockedIncrement(&data->n_begin_barrier_refuses);
+            (void)interlocked_increment(&data->n_begin_barrier_refuses);
         }
-        Sleep(SM_BEGIN_BARRIER_DELAY);
+        ThreadAPI_Sleep(SM_BEGIN_BARRIER_DELAY);
     }
     return 0;
 }
@@ -257,32 +238,26 @@ static void createBeginBarrierThreads(OPEN_CLOSE_THREADS* data)
     uint32_t iBeginBarrier;
     for (iBeginBarrier = 0; iBeginBarrier < data->n_begin_barrier_threads; iBeginBarrier++)
     {
-        data->beginBarrierThreads[iBeginBarrier] = CreateThread(NULL, 0, callsBeginBarrier, data, 0, NULL);
-        ASSERT_IS_NOT_NULL(data->beginBarrierThreads[iBeginBarrier]);
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&data->beginBarrierThreads[iBeginBarrier], callsBeginBarrier, data));
     }
 }
 
 static void waitAndDestroyBeginBarrierThreads(OPEN_CLOSE_THREADS* data)
 {
-    if (data->n_begin_barrier_threads > 0)
-    {
-        DWORD dw = WaitForMultipleObjects(data->n_begin_barrier_threads, data->beginBarrierThreads, TRUE, INFINITE);
-        ASSERT_IS_TRUE((WAIT_OBJECT_0 <= dw) && (dw <= WAIT_OBJECT_0 + data->n_begin_barrier_threads));
-    }
-
     for (uint32_t iBeginBarrier = 0; iBeginBarrier < data->n_begin_barrier_threads; iBeginBarrier++)
     {
-        (void)CloseHandle(data->beginBarrierThreads[iBeginBarrier]);
+        int dont_care;
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(data->beginBarrierThreads[iBeginBarrier], &dont_care));
     }
 }
 
-static  DWORD WINAPI callsEndBarrier(
-    LPVOID lpThreadParameter
+static int callsEndBarrier(
+    void* lpThreadParameter
 )
 {
     OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
 
-    while (InterlockedAdd(&data->threadsShouldFinish, 0) == 0)
+    while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
         sm_barrier_end(data->sm); /*might as well fail*/
     }
@@ -294,36 +269,30 @@ static void createEndBarrierThreads(OPEN_CLOSE_THREADS* data)
     uint32_t iEndBarrier;
     for (iEndBarrier = 0; iEndBarrier < data->n_end_barrier_threads; iEndBarrier++)
     {
-        data->endBarrierThreads[iEndBarrier] = CreateThread(NULL, 0, callsEndBarrier, data, 0, NULL);
-        ASSERT_IS_NOT_NULL(data->endBarrierThreads[iEndBarrier]);
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&data->endBarrierThreads[iEndBarrier], callsEndBarrier, data));
     }
 }
 
 static void waitAndDestroyEndBarrierThreads(OPEN_CLOSE_THREADS* data)
 {
-    if (data->n_end_barrier_threads > 0)
-    {
-        DWORD dw = WaitForMultipleObjects(data->n_end_barrier_threads, data->endBarrierThreads, TRUE, INFINITE);
-        ASSERT_IS_TRUE((WAIT_OBJECT_0 <= dw) && (dw <= WAIT_OBJECT_0 + data->n_end_barrier_threads));
-    }
-
     for (uint32_t iEndBarrier = 0; iEndBarrier < data->n_end_barrier_threads; iEndBarrier++)
     {
-        (void)CloseHandle(data->endBarrierThreads[iEndBarrier]);
+        int dont_care;
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(data->endBarrierThreads[iEndBarrier], &dont_care));
     }
 }
 
-static  DWORD WINAPI callsBeginAndEnd(
-    LPVOID lpThreadParameter
+static int callsBeginAndEnd(
+    void* lpThreadParameter
 )
 {
     OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
 
-    while (InterlockedAdd(&data->threadsShouldFinish, 0) == 0)
+    while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
         if (sm_exec_begin(data->sm) == SM_EXEC_GRANTED)
         {
-            (void)InterlockedIncrement(&data->n_begin_grants);
+            (void)interlocked_increment(&data->n_begin_grants);
             double startTime = timer_global_get_elapsed_ms();
             uint32_t pretend_to_do_something_time_in_ms = rand() % 10;
             while (timer_global_get_elapsed_ms() - startTime < pretend_to_do_something_time_in_ms)
@@ -334,7 +303,7 @@ static  DWORD WINAPI callsBeginAndEnd(
         }
         else
         {
-            (void)InterlockedIncrement(&data->n_begin_refuses);
+            (void)interlocked_increment(&data->n_begin_refuses);
         }
     }
     return 0;
@@ -345,22 +314,16 @@ static void createBeginAndEndThreads(OPEN_CLOSE_THREADS* data)
     uint32_t iBegin;
     for (iBegin = 0; iBegin < data->n_begin_threads; iBegin++)
     {
-        data->beginThreads[iBegin] = CreateThread(NULL, 0, callsBeginAndEnd, data, 0, NULL);
-        ASSERT_IS_NOT_NULL(data->beginThreads[iBegin]);
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&data->beginThreads[iBegin], callsBeginAndEnd, data));
     }
 }
 
 static void waitAndDestroyBeginAndEndThreads(OPEN_CLOSE_THREADS* data)
 {
-    if (data->n_begin_threads > 0)
-    {
-        DWORD dw = WaitForMultipleObjects(data->n_begin_threads, data->beginThreads, TRUE, INFINITE);
-        ASSERT_IS_TRUE((WAIT_OBJECT_0 <= dw) && (dw <= WAIT_OBJECT_0 + data->n_begin_threads));
-    }
-
     for (uint32_t iBegin = 0; iBegin < data->n_begin_threads; iBegin++)
     {
-        (void)CloseHandle(data->beginThreads[iBegin]);
+        int dont_care;
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(data->beginThreads[iBegin], &dont_care));
     }
 }
 
@@ -379,25 +342,25 @@ static void waitAndDestroyBeginAndEndThreads(OPEN_CLOSE_THREADS* data)
 /*a non barrier thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
 /*a thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
 
-static volatile LONG barrier_grants = 0;
-static volatile LONG64 barrier_refusals = 0; /*this is just for giggles*/
+static volatile_atomic int32_t barrier_grants = 0;
+static volatile_atomic int64_t barrier_refusals = 0; /*this is just for giggles*/
 
-static volatile LONG non_barrier_grants = 0;
-static volatile LONG64 non_barrier_refusals = 0;
+static volatile_atomic int32_t non_barrier_grants = 0;
+static volatile_atomic int64_t non_barrier_refusals = 0;
 
 typedef struct ONE_WRITE_TAG
 {
-    LONG what_was_source;
+    int32_t what_was_source;
     bool is_barrier;
 }ONE_WRITE;
 
 typedef struct THREADS_COMMON_TAG
 {
-    volatile LONG nFinishedThreads;
+    volatile_atomic int32_t nFinishedThreads;
     SM_HANDLE sm;
 
-    volatile LONG source_of_numbers;
-    volatile LONG current_index;
+    volatile_atomic int32_t source_of_numbers;
+    volatile_atomic int32_t current_index;
     ONE_WRITE writes[ARRAY_SIZE];
 
     double startTimems;
@@ -410,19 +373,19 @@ typedef struct THREADS_COMMON_TAG
 
 MU_DEFINE_ENUM(THREAD_TYPE, THREAD_TYPE_VALUE)
 
-static DWORD WINAPI barrier_thread(
-    LPVOID lpThreadParameter
+static int barrier_thread(
+    void* lpThreadParameter
 )
 {
     THREADS_COMMON* data = (THREADS_COMMON*)lpThreadParameter;
     /*a non barrier thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
-    while (InterlockedAdd(&data->current_index, 0) < ARRAY_SIZE)
+    while (interlocked_add(&data->current_index, 0) < ARRAY_SIZE)
     {
         if (sm_barrier_begin(data->sm) == SM_EXEC_GRANTED)
         {
-            LONG index = InterlockedIncrement(&data->current_index) - 1;
-            LONG source = InterlockedIncrement(&data->source_of_numbers);
-            (void)InterlockedIncrement(&barrier_grants);
+            int32_t index = interlocked_increment(&data->current_index) - 1;
+            int32_t source = interlocked_increment(&data->source_of_numbers);
+            (void)interlocked_increment(&barrier_grants);
 
             if (index >= ARRAY_SIZE)
             {
@@ -436,25 +399,25 @@ static DWORD WINAPI barrier_thread(
         }
         else
         {
-            (void)InterlockedIncrement64(&barrier_refusals);
+            (void)interlocked_increment_64(&barrier_refusals);
         }
     }
     return 0;
 }
 
-static  DWORD WINAPI non_barrier_thread(
-    LPVOID lpThreadParameter
+static int non_barrier_thread(
+    void* lpThreadParameter
 )
 {
     THREADS_COMMON* data = (THREADS_COMMON*)lpThreadParameter;
     /*a non barrier thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
-    while (InterlockedAdd(&data->current_index, 0) < ARRAY_SIZE)
+    while (interlocked_add(&data->current_index, 0) < ARRAY_SIZE)
     {
         if (sm_exec_begin(data->sm) == SM_EXEC_GRANTED)
         {
-            LONG index = InterlockedIncrement(&data->current_index) - 1;
-            LONG source = InterlockedIncrement(&data->source_of_numbers);
-            (void)InterlockedIncrement(&non_barrier_grants);
+            int32_t index = interlocked_increment(&data->current_index) - 1;
+            int32_t source = interlocked_increment(&data->source_of_numbers);
+            (void)interlocked_increment(&non_barrier_grants);
 
             if (index >= ARRAY_SIZE)
             {
@@ -469,7 +432,7 @@ static  DWORD WINAPI non_barrier_thread(
         else
         {
             /*not granted execution, so just hammer*/
-            (void)InterlockedIncrement64(&non_barrier_refusals);
+            (void)interlocked_increment_64(&non_barrier_refusals);
         }
     }
     return 0;
@@ -478,7 +441,7 @@ static  DWORD WINAPI non_barrier_thread(
 static void verify(THREADS_COMMON* data) /*ASSERTS*/
 {
     volatile size_t i;
-    volatile LONG maxBeforeBarrier = -1;
+    volatile_atomic int32_t maxBeforeBarrier = -1;
     for (i = 0; i < ARRAY_SIZE; i++)
     {
         if (!data->writes[i].is_barrier)
@@ -496,8 +459,7 @@ static void verify(THREADS_COMMON* data) /*ASSERTS*/
     }
 }
 
-static SYSTEM_INFO systemInfo;
-static DWORD dwNumberOfProcessors;
+static uint32_t dwNumberOfProcessors;
 
 #define SM_APIS_VALUES      \
 SM_OPEN_BEGIN,              \
@@ -526,9 +488,13 @@ BEGIN_TEST_SUITE(sm_int_tests)
 TEST_SUITE_INITIALIZE(suite_init)
 {
     ASSERT_ARE_EQUAL(int, 0, gballoc_hl_init(NULL, NULL));
-    GetSystemInfo(&systemInfo);
+#if _MSC_VER // for now for Windows get the processor count - this should go in PAL somehow
+    SYSTEM_INFO systemInfo;
+    (void)GetSystemInfo(&systemInfo);
     dwNumberOfProcessors = systemInfo.dwNumberOfProcessors;
+#else
     dwNumberOfProcessors = 2;
+#endif
     ASSERT_IS_TRUE(dwNumberOfProcessors * 4 <= N_MAX_THREADS, "for systems with maaany processors, modify N_MAX_THREADS to be bigger");
 
     LogInfo("dwNumberOfProcessors was detected as %" PRIu32 "", dwNumberOfProcessors);
@@ -560,9 +526,9 @@ TEST_FUNCTION(sm_chaos)
 
     data->startTime_ms = timer_global_get_elapsed_ms();
 
-    (void)InterlockedExchange(&data->threadsShouldFinish, 0);
+    (void)interlocked_exchange(&data->threadsShouldFinish, 0);
 
-    for (uint32_t nthreads = 1; nthreads <= min(4 * dwNumberOfProcessors, N_MAX_THREADS); nthreads*=2)
+    for (uint32_t nthreads = 1; nthreads <= MIN(4 * dwNumberOfProcessors, N_MAX_THREADS); nthreads*=2)
     {
         data->n_begin_open_threads = nthreads;
         data->n_end_open_threads = nthreads;
@@ -572,15 +538,15 @@ TEST_FUNCTION(sm_chaos)
         data->n_end_barrier_threads = nthreads;
         data->n_begin_threads = nthreads;
         
-        (void)InterlockedExchange(&data->threadsShouldFinish, 0);
-        (void)InterlockedExchange(&data->n_begin_open_grants, 0);
-        (void)InterlockedExchange(&data->n_begin_open_refuses, 0);
-        (void)InterlockedExchange(&data->n_begin_close_grants, 0);
-        (void)InterlockedExchange(&data->n_begin_close_refuses, 0);
-        (void)InterlockedExchange(&data->n_begin_barrier_grants, 0);
-        (void)InterlockedExchange(&data->n_begin_barrier_refuses, 0);
-        (void)InterlockedExchange(&data->n_begin_grants, 0);
-        (void)InterlockedExchange(&data->n_begin_refuses, 0);
+        (void)interlocked_exchange(&data->threadsShouldFinish, 0);
+        (void)interlocked_exchange(&data->n_begin_open_grants, 0);
+        (void)interlocked_exchange(&data->n_begin_open_refuses, 0);
+        (void)interlocked_exchange(&data->n_begin_close_grants, 0);
+        (void)interlocked_exchange(&data->n_begin_close_refuses, 0);
+        (void)interlocked_exchange(&data->n_begin_barrier_grants, 0);
+        (void)interlocked_exchange(&data->n_begin_barrier_refuses, 0);
+        (void)interlocked_exchange(&data->n_begin_grants, 0);
+        (void)interlocked_exchange(&data->n_begin_refuses, 0);
 
         createBeginOpenThreads(data);
         createEndOpenThreads(data);
@@ -590,22 +556,22 @@ TEST_FUNCTION(sm_chaos)
         createEndBarrierThreads(data);
         createBeginAndEndThreads(data);
 
-        Sleep(1000);
+        ThreadAPI_Sleep(1000);
         uint32_t counterSleep = 1;
-        LONG n_begin_open_grants_local;
-        LONG n_begin_grants_local;
+        int32_t n_begin_open_grants_local;
+        int32_t n_begin_grants_local;
         while (
-            (n_begin_open_grants_local=InterlockedAdd(&data->n_begin_open_grants, 0)), 
-            (n_begin_grants_local = InterlockedAdd(&data->n_begin_grants, 0)),
+            (n_begin_open_grants_local=interlocked_add(&data->n_begin_open_grants, 0)), 
+            (n_begin_grants_local = interlocked_add(&data->n_begin_grants, 0)),
             ((n_begin_open_grants_local==0) ||(n_begin_grants_local==0))
             )
         {
             toBeRestored(AZ_LOG_INFO, __FILE__, FUNC_NAME, __LINE__, 0, "Slept %" PRIu32 " ms, no sign of n_begin_open_grants=%" PRId32 ", n_begin_grants=%" PRId32 "\n", counterSleep * 1000, n_begin_open_grants_local, n_begin_grants_local);
             counterSleep++;
-            Sleep(1000);
+            ThreadAPI_Sleep(1000);
         }
 
-        (void)InterlockedExchange(&data->threadsShouldFinish, 1);
+        (void)interlocked_exchange(&data->threadsShouldFinish, 1);
 
         waitAndDestroyBeginAndEndThreads(data);
 
@@ -632,17 +598,17 @@ TEST_FUNCTION(sm_chaos)
             ", n_begin_grants=%" PRIu32 ", n_begin_refuses=%" PRIu32
             "\n",
             nthreads,
-            InterlockedAdd(&data->n_begin_open_grants, 0),
-            InterlockedAdd(&data->n_begin_open_refuses, 0),
-            InterlockedAdd(&data->n_begin_close_grants, 0),
-            InterlockedAdd(&data->n_begin_close_refuses, 0),
-            InterlockedAdd(&data->n_begin_barrier_grants, 0),
-            InterlockedAdd(&data->n_begin_barrier_refuses, 0),
-            InterlockedAdd(&data->n_begin_grants, 0),
-            InterlockedAdd(&data->n_begin_refuses, 0)
+            interlocked_add(&data->n_begin_open_grants, 0),
+            interlocked_add(&data->n_begin_open_refuses, 0),
+            interlocked_add(&data->n_begin_close_grants, 0),
+            interlocked_add(&data->n_begin_close_refuses, 0),
+            interlocked_add(&data->n_begin_barrier_grants, 0),
+            interlocked_add(&data->n_begin_barrier_refuses, 0),
+            interlocked_add(&data->n_begin_grants, 0),
+            interlocked_add(&data->n_begin_refuses, 0)
         );
 
-        ASSERT_IS_TRUE(InterlockedAdd(&data->n_begin_open_grants, 0) >= 1);
+        ASSERT_IS_TRUE(interlocked_add(&data->n_begin_open_grants, 0) >= 1);
     }
     sm_destroy(data->sm);
     free(data);
@@ -663,24 +629,24 @@ TEST_FUNCTION(sm_does_not_block)
     ASSERT_IS_NOT_NULL(data->sm);
 
     ///act
-    for (uint32_t nthreads = 1; nthreads <= min(4 * dwNumberOfProcessors, N_MAX_THREADS); nthreads*=2)
+    for (uint32_t nthreads = 1; nthreads <= MIN(4 * dwNumberOfProcessors, N_MAX_THREADS); nthreads*=2)
     {
         for(uint32_t n_barrier_threads=0; n_barrier_threads<=nthreads; n_barrier_threads+=4)
         {
             uint32_t n_non_barrier_threads = nthreads - n_barrier_threads;
 
-            HANDLE barrierThreads[N_MAX_THREADS];
+            THREAD_HANDLE barrierThreads[N_MAX_THREADS];
             (void)memset(barrierThreads, 0, sizeof(barrierThreads));
 
-            HANDLE nonBarrierThreads[N_MAX_THREADS];
+            THREAD_HANDLE nonBarrierThreads[N_MAX_THREADS];
             (void)memset(nonBarrierThreads, 0, sizeof(nonBarrierThreads));
 
-            (void)InterlockedExchange(&non_barrier_grants, 0);
-            (void)InterlockedExchange64(&non_barrier_refusals, 0);
-            (void)InterlockedExchange(&barrier_grants, 0);
-            (void)InterlockedExchange64(&barrier_refusals, 0);
-            (void)InterlockedExchange(&data->source_of_numbers, 0);
-            (void)InterlockedExchange(&data->current_index, 0);
+            (void)interlocked_exchange(&non_barrier_grants, 0);
+            (void)interlocked_exchange_64(&non_barrier_refusals, 0);
+            (void)interlocked_exchange(&barrier_grants, 0);
+            (void)interlocked_exchange_64(&barrier_refusals, 0);
+            (void)interlocked_exchange(&data->source_of_numbers, 0);
+            (void)interlocked_exchange(&data->current_index, 0);
             (void)memset(data->writes, 0, sizeof(data->writes));
 
             data->startTimems = timer_global_get_elapsed_ms();
@@ -693,43 +659,41 @@ TEST_FUNCTION(sm_does_not_block)
             /*create them barrier threads*/
             for (uint32_t iBarrier = 0; iBarrier < n_barrier_threads; iBarrier++)
             {
-                barrierThreads[iBarrier] = CreateThread(NULL, 0, barrier_thread, data, 0, NULL);
-                ASSERT_IS_NOT_NULL(barrierThreads[iBarrier]);
+                ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&barrierThreads[iBarrier], barrier_thread, data));
             }
 
             /*create them non barrier threads*/
             for (uint32_t iNonBarrier = 0; iNonBarrier < n_non_barrier_threads; iNonBarrier++)
             {
-                nonBarrierThreads[iNonBarrier] = CreateThread(NULL, 0, non_barrier_thread, data, 0, NULL);
-                ASSERT_IS_NOT_NULL(nonBarrierThreads[iNonBarrier]);
+                ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&nonBarrierThreads[iNonBarrier], non_barrier_thread, data));
             }
 
             /*wait for them threads to finish*/
             if (n_barrier_threads > 0)
             {
-                uint32_t waitResult = WaitForMultipleObjects(n_barrier_threads, barrierThreads, TRUE, INFINITE);
-                ASSERT_IS_TRUE(
-                    (WAIT_OBJECT_0 <= waitResult) &&
-                    (waitResult <= WAIT_OBJECT_0 + n_barrier_threads - 1)
-                );
+                for (uint32_t iBarrier = 0; iBarrier < n_barrier_threads; iBarrier++)
+                {
+                    int dont_care;
+                    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(barrierThreads[iBarrier], &dont_care));
+                }
             }
             if (n_non_barrier_threads > 0)
             {
-                uint32_t waitResult = WaitForMultipleObjects(n_non_barrier_threads, nonBarrierThreads, TRUE, INFINITE);
-                ASSERT_IS_TRUE(
-                    (WAIT_OBJECT_0 <= waitResult) &&
-                    (waitResult <= WAIT_OBJECT_0 + n_barrier_threads - 1)
-                );
+                for (uint32_t iNonBarrier = 0; iNonBarrier < n_non_barrier_threads; iNonBarrier++)
+                {
+                    int dont_care;
+                    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(nonBarrierThreads[iNonBarrier], &dont_care));
+                }
             }
 
             /*verify the all numbers written by barriers are greater than all previous numbers*/
             verify(data);
 
             toBeRestored(AZ_LOG_INFO, __FILE__, FUNC_NAME, __LINE__, 0, "Info: took %f ms, non_barrier_grants=%" PRId32 ", non_barrier_refusals=%" PRId64 " barrier_grants=%" PRId32 ", barrier_refusals=%" PRId64 "\n", timer_global_get_elapsed_ms() - data->startTimems,
-                InterlockedAdd(&non_barrier_grants, 0), 
-                InterlockedAdd64(&non_barrier_refusals, 0),
-                InterlockedAdd(&barrier_grants, 0),
-                InterlockedAdd64(&barrier_refusals, 0));
+                interlocked_add(&non_barrier_grants, 0), 
+                interlocked_add_64(&non_barrier_refusals, 0),
+                interlocked_add(&barrier_grants, 0),
+                interlocked_add_64(&barrier_refusals, 0));
 
             ASSERT_IS_TRUE(sm_close_begin(data->sm) == SM_EXEC_GRANTED);
             sm_close_end(data->sm);
@@ -776,24 +740,24 @@ typedef struct SM_GO_TO_STATE_TAG
     SM_HANDLE sm;
     SM_STATES targetState;
     const SM_RESULT_AND_NEXT_STATE_AFTER_API_CALL* expected;
-    HANDLE threadSwitchesTo; /*this thread switches the state to the state which is intended to have when sm_..._begin API are called. Then the thread might block (because the state switch is waiting on some draining) or might proceed to end*/
-    HANDLE threadBack; /*this thread unblocks threadSwitchesTo and the main thread. Main thread might become blocked because the API it is calling might be waiting - such is the case when waiting for a drain to happen*/
+    THREAD_HANDLE threadSwitchesTo; /*this thread switches the state to the state which is intended to have when sm_..._begin API are called. Then the thread might block (because the state switch is waiting on some draining) or might proceed to end*/
+    THREAD_HANDLE threadBack; /*this thread unblocks threadSwitchesTo and the main thread. Main thread might become blocked because the API it is calling might be waiting - such is the case when waiting for a drain to happen*/
 
-    HANDLE targetStateAPICalledInNextLine; /*event set when the target state will be switched in the next line of code. That call might or not return. For example when in the case of wanting to reach the state of SM_OPENED_DRAINING_TO_BARRIER. The call doesn't return until all the sm_exec_end have been called*/
+    volatile_atomic int32_t targetStateAPICalledInNextLine; /*event set when the target state will be switched in the next line of code. That call might or not return. For example when in the case of wanting to reach the state of SM_OPENED_DRAINING_TO_BARRIER. The call doesn't return until all the sm_exec_end have been called*/
 
-    HANDLE targetAPICalledInNextLine; /*event set just before calling the API in a specific state. This is needed because some of the APIs are blocking (such as calling sm_close_begin when a barrier is executing)*/
+    volatile_atomic int32_t targetAPICalledInNextLine; /*event set just before calling the API in a specific state. This is needed because some of the APIs are blocking (such as calling sm_close_begin when a barrier is executing)*/
 }SM_GO_TO_STATE; 
 
 
-static DWORD WINAPI switchesToState(
-    LPVOID lpThreadParameter
+static int switchesToState(
+    void* lpThreadParameter
 )
 {
     SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)lpThreadParameter;
 
     LogInfo("time[s]=%.2f, switchesToState thread: will now switch state to %" PRI_MU_ENUM "", (timer_global_get_elapsed_ms()-timeSinceTestFunctionStartMs)/1000, MU_ENUM_VALUE(SM_STATES, goToState->targetState));
 
-    ASSERT_IS_TRUE(SetEvent(goToState->targetStateAPICalledInNextLine));
+    (void)interlocked_exchange(&goToState->targetStateAPICalledInNextLine, 1);
     switch (goToState->targetState)
     {
         case SM_CREATED:
@@ -865,25 +829,24 @@ static DWORD WINAPI switchesToState(
 
 static void sm_switchesToState(SM_GO_TO_STATE* goToState)
 {
-    goToState->threadSwitchesTo = CreateThread(NULL, 0, switchesToState, goToState, 0, NULL);
-    ASSERT_IS_NOT_NULL(goToState->threadSwitchesTo);
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&goToState->threadSwitchesTo, switchesToState, goToState));
     /*depending on the requested state, the thread might have finished by now...*/
 }
 
 
-static DWORD WINAPI switchesFromStateToCreated(
-    LPVOID lpThreadParameter
+static int switchesFromStateToCreated(
+    void* lpThreadParameter
 )
 {
     SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)lpThreadParameter;
 
     /*waits on 1 handles that says the API is about to be called. It waits 1 second then it resumes executiong */
 
-    ASSERT_ARE_EQUAL(uint32_t, WAIT_OBJECT_0, WaitForSingleObject(goToState->targetAPICalledInNextLine, INFINITE));
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&goToState->targetAPICalledInNextLine, 1, UINT32_MAX));
 
     LogInfo("time[s]=%.2f, switchesFromStateToCreated thread : will now switch state back from %" PRI_MU_ENUM " to %" PRI_MU_ENUM " after sleeping %" PRIu32 "", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, MU_ENUM_VALUE(SM_STATES, (SM_STATES)(goToState->expected->sm_state_after_api)), MU_ENUM_VALUE(SM_STATES, (SM_STATES)(SM_CREATED)), THREAD_DELAY);
 
-    Sleep(THREAD_DELAY);
+    ThreadAPI_Sleep(THREAD_DELAY);
 
     switch (goToState->expected->sm_state_after_api)
     {
@@ -912,12 +875,12 @@ static DWORD WINAPI switchesFromStateToCreated(
             sm_exec_end(goToState->sm);
             /*calling sm_exec_end will unblock sm_barrier_begin from the switchesToThread (if any)*/
 
-            Sleep(THREAD_DELAY);
+            ThreadAPI_Sleep(THREAD_DELAY);
 
             sm_barrier_end(goToState->sm);
             /*returns to SM_OPENED...*/
 
-            Sleep(THREAD_DELAY);
+            ThreadAPI_Sleep(THREAD_DELAY);
 
             if (sm_close_begin(goToState->sm) == SM_EXEC_GRANTED)
             {
@@ -947,9 +910,9 @@ static DWORD WINAPI switchesFromStateToCreated(
         case SM_CLOSING:
         {
             sm_exec_end(goToState->sm);
-            Sleep(THREAD_DELAY);
+            ThreadAPI_Sleep(THREAD_DELAY);
             sm_barrier_end(goToState->sm);
-            Sleep(THREAD_DELAY);
+            ThreadAPI_Sleep(THREAD_DELAY);
             sm_close_end(goToState->sm);
             break;
         }
@@ -967,8 +930,7 @@ static DWORD WINAPI switchesFromStateToCreated(
 
 static void sm_switches_from_state_to_created(SM_GO_TO_STATE* goToState)
 {
-    goToState->threadBack = CreateThread(NULL, 0, switchesFromStateToCreated, goToState, 0, NULL);
-    ASSERT_IS_NOT_NULL(goToState->threadBack);
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&goToState->threadBack, switchesFromStateToCreated, goToState));
     /*depending on the requested state, the thread might have finished by now...*/
 }
 
@@ -1001,11 +963,9 @@ TEST_FUNCTION(STATE_and_API)
         for (uint32_t j = 0; j < sizeof(expected[0]) / sizeof(expected[0][0]); j++)
         {
             SM_GO_TO_STATE goToState;
-            goToState.targetStateAPICalledInNextLine = CreateEvent(NULL, FALSE, FALSE, NULL);
-            ASSERT_IS_NOT_NULL(goToState.targetStateAPICalledInNextLine);
+            (void)interlocked_exchange(&goToState.targetStateAPICalledInNextLine, 0);
 
-            goToState.targetAPICalledInNextLine = CreateEvent(NULL, FALSE, FALSE, NULL);
-            ASSERT_IS_NOT_NULL(goToState.targetAPICalledInNextLine);
+            (void)interlocked_exchange(&goToState.targetAPICalledInNextLine, 0);
 
             goToState.expected = &expected[i][j];
 
@@ -1018,10 +978,10 @@ TEST_FUNCTION(STATE_and_API)
             sm_switchesToState(&goToState);
             sm_switches_from_state_to_created(&goToState);
 
-            ASSERT_IS_TRUE(WaitForSingleObject(goToState.targetStateAPICalledInNextLine, INFINITE)==WAIT_OBJECT_0);
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&goToState.targetStateAPICalledInNextLine, 1, UINT32_MAX));
             
             LogInfo("time[s]=%.2f, main thread: sleeping %" PRIu32 " miliseconds letting switchesToState thread finish its call", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, THREAD_DELAY);
-            Sleep(THREAD_DELAY);
+            ThreadAPI_Sleep(THREAD_DELAY);
 
             LogInfo("time[s]=%.2f, went to state=%" PRI_MU_ENUM "; calling=%" PRI_MU_ENUM "", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
 
@@ -1029,26 +989,26 @@ TEST_FUNCTION(STATE_and_API)
             {
                 case 0:/*sm_open_begin*/
                 {
-                    ASSERT_IS_TRUE(SetEvent(goToState.targetAPICalledInNextLine));
+                    (void)interlocked_exchange(&goToState.targetAPICalledInNextLine, 1);
                     ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_open_begin(goToState.sm));
                     break;
                 }
                 case 1:/*sm_close_begin*/
                 {
-                    ASSERT_IS_TRUE(SetEvent(goToState.targetAPICalledInNextLine));
+                    (void)interlocked_exchange(&goToState.targetAPICalledInNextLine, 1);
                     ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_close_begin(goToState.sm));
                     break;
                 }
                 case 2:/*sm_exec_begin*/
                 {
-                    ASSERT_IS_TRUE(SetEvent(goToState.targetAPICalledInNextLine));
+                    (void)interlocked_exchange(&goToState.targetAPICalledInNextLine, 1);
                     ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_exec_begin(goToState.sm));
                     sm_exec_end(goToState.sm);
                     break;
                 }
                 case 3:/*sm_barrier_begin*/
                 {
-                    ASSERT_IS_TRUE(SetEvent(goToState.targetAPICalledInNextLine));
+                    (void)interlocked_exchange(&goToState.targetAPICalledInNextLine, 1);
                     ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_barrier_begin(goToState.sm));
                     break;
                 }
@@ -1060,15 +1020,10 @@ TEST_FUNCTION(STATE_and_API)
 
             LogInfo("time[s]=%.2f, went to state=%" PRI_MU_ENUM " and called =%" PRI_MU_ENUM " switchesFromStateToCreated thread might already have run", (timer_global_get_elapsed_ms() - timeSinceTestFunctionStartMs) / 1000, MU_ENUM_VALUE(SM_STATES, (SM_STATES)(i + SM_CREATED)), MU_ENUM_VALUE(SM_APIS, (SM_APIS)(j + SM_OPEN_BEGIN)));
 
-            ASSERT_IS_TRUE(WaitForSingleObject(goToState.threadSwitchesTo, INFINITE) == WAIT_OBJECT_0);
-            (void)CloseHandle(goToState.threadSwitchesTo);
-            
-            ASSERT_IS_TRUE(WaitForSingleObject(goToState.threadBack, INFINITE) == WAIT_OBJECT_0);
-            (void)CloseHandle(goToState.threadBack);
+            int dont_care;
+            ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(goToState.threadSwitchesTo, &dont_care));
+            ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(goToState.threadBack, &dont_care));
 
-
-            (void)CloseHandle(goToState.targetStateAPICalledInNextLine);
-            (void)CloseHandle(goToState.targetAPICalledInNextLine);
             sm_destroy(goToState.sm);
         }
     }
