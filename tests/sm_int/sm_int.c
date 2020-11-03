@@ -328,7 +328,12 @@ static void waitAndDestroyBeginAndEndThreads(OPEN_CLOSE_THREADS* data)
     }
 }
 
+#ifdef _MSC_VER
 #define ARRAY_SIZE 1000000
+#else
+// on Linux because we run with Helgrind and DRD this will be waaaay slower, so reduce the number of items
+#define ARRAY_SIZE 50000
+#endif
 
 /*how many threads maximum. This needs to be slightly higher than the number of CPU threads because we want to see interrupted threads*/
 /*the tests will start from 1*/
