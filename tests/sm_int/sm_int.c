@@ -18,6 +18,7 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/threadapi.h"
 #include "c_pal/interlocked.h"
+#include "c_pal/sysinfo.h"
 #include "c_util/interlocked_hl.h"
 #include "c_logging/xlogging.h"
 
@@ -488,13 +489,7 @@ BEGIN_TEST_SUITE(sm_int_tests)
 TEST_SUITE_INITIALIZE(suite_init)
 {
     ASSERT_ARE_EQUAL(int, 0, gballoc_hl_init(NULL, NULL));
-#if _MSC_VER // for now for Windows get the processor count - this should go in PAL somehow
-    SYSTEM_INFO systemInfo;
-    (void)GetSystemInfo(&systemInfo);
-    dwNumberOfProcessors = systemInfo.dwNumberOfProcessors;
-#else
-    dwNumberOfProcessors = 2;
-#endif
+    dwNumberOfProcessors = sysinfo_get_processor_count();
     ASSERT_IS_TRUE(dwNumberOfProcessors * 4 <= N_MAX_THREADS, "for systems with maaany processors, modify N_MAX_THREADS to be bigger");
 
     LogInfo("dwNumberOfProcessors was detected as %" PRIu32 "", dwNumberOfProcessors);
