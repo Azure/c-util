@@ -465,7 +465,7 @@ static void verify(THREADS_COMMON* data) /*ASSERTS*/
     }
 }
 
-static uint32_t dwNumberOfProcessors;
+static uint32_t numberOfProcessors;
 
 #define SM_APIS_VALUES      \
 SM_OPEN_BEGIN,              \
@@ -494,10 +494,14 @@ BEGIN_TEST_SUITE(sm_int_tests)
 TEST_SUITE_INITIALIZE(suite_init)
 {
     ASSERT_ARE_EQUAL(int, 0, gballoc_hl_init(NULL, NULL));
-    dwNumberOfProcessors = sysinfo_get_processor_count();
-    ASSERT_IS_TRUE(dwNumberOfProcessors * 4 <= N_MAX_THREADS, "for systems with maaany processors, modify N_MAX_THREADS to be bigger");
+#if _MSC_VER
+    numberOfProcessors = sysinfo_get_processor_count();
+    ASSERT_IS_TRUE(numberOfProcessors * 4 <= N_MAX_THREADS, "for systems with maaany processors, modify N_MAX_THREADS to be bigger");
+#else
+    numberOfProcessors = 2;
+#endif
 
-    LogInfo("dwNumberOfProcessors was detected as %" PRIu32 "", dwNumberOfProcessors);
+    LogInfo("numberOfProcessors was detected as %" PRIu32 "", numberOfProcessors);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -528,7 +532,7 @@ TEST_FUNCTION(sm_chaos)
 
     (void)interlocked_exchange(&data->threadsShouldFinish, 0);
 
-    for (uint32_t nthreads = 1; nthreads <= MIN(4 * dwNumberOfProcessors, N_MAX_THREADS); nthreads*=2)
+    for (uint32_t nthreads = 1; nthreads <= MIN(4 * numberOfProcessors, N_MAX_THREADS); nthreads*=2)
     {
         data->n_begin_open_threads = nthreads;
         data->n_end_open_threads = nthreads;
@@ -629,7 +633,7 @@ TEST_FUNCTION(sm_does_not_block)
     ASSERT_IS_NOT_NULL(data->sm);
 
     ///act
-    for (uint32_t nthreads = 1; nthreads <= MIN(4 * dwNumberOfProcessors, N_MAX_THREADS); nthreads*=2)
+    for (uint32_t nthreads = 1; nthreads <= MIN(4 * numberOfProcessors, N_MAX_THREADS); nthreads*=2)
     {
         for(uint32_t n_barrier_threads=0; n_barrier_threads<=nthreads; n_barrier_threads+=4)
         {
