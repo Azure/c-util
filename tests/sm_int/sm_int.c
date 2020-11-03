@@ -28,7 +28,7 @@ TEST_DEFINE_ENUM_TYPE(SM_RESULT, SM_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
-#define N_MAX_THREADS 64
+#define N_MAX_THREADS 256
 
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
@@ -752,7 +752,7 @@ static int switchesToState(
 
     LogInfo("time[s]=%.2f, switchesToState thread: will now switch state to %" PRI_MU_ENUM "", (timer_global_get_elapsed_ms()-timeSinceTestFunctionStartMs)/1000, MU_ENUM_VALUE(SM_STATES, goToState->targetState));
 
-    (void)interlocked_exchange(&goToState->targetStateAPICalledInNextLine, 1);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWake(&goToState->targetStateAPICalledInNextLine, 1));
     switch (goToState->targetState)
     {
         case SM_CREATED:
@@ -984,26 +984,26 @@ TEST_FUNCTION(STATE_and_API)
             {
                 case 0:/*sm_open_begin*/
                 {
-                    (void)interlocked_exchange(&goToState.targetAPICalledInNextLine, 1);
+                    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWake(&goToState.targetAPICalledInNextLine, 1));
                     ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_open_begin(goToState.sm));
                     break;
                 }
                 case 1:/*sm_close_begin*/
                 {
-                    (void)interlocked_exchange(&goToState.targetAPICalledInNextLine, 1);
+                    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWake(&goToState.targetAPICalledInNextLine, 1));
                     ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_close_begin(goToState.sm));
                     break;
                 }
                 case 2:/*sm_exec_begin*/
                 {
-                    (void)interlocked_exchange(&goToState.targetAPICalledInNextLine, 1);
+                    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWake(&goToState.targetAPICalledInNextLine, 1));
                     ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_exec_begin(goToState.sm));
                     sm_exec_end(goToState.sm);
                     break;
                 }
                 case 3:/*sm_barrier_begin*/
                 {
-                    (void)interlocked_exchange(&goToState.targetAPICalledInNextLine, 1);
+                    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWake(&goToState.targetAPICalledInNextLine, 1));
                     ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_barrier_begin(goToState.sm));
                     break;
                 }
