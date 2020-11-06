@@ -73,10 +73,10 @@ typedef struct OPEN_CLOSE_THREADS_TAG
 } OPEN_CLOSE_THREADS;
 
 static int callsBeginOpen(
-    void* lpThreadParameter
+    void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
+    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -111,10 +111,10 @@ static void waitAndDestroyBeginOpenThreads(OPEN_CLOSE_THREADS* data)
 }
 
 static int callsEndOpen(
-    void* lpThreadParameter
+    void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
+    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -143,10 +143,10 @@ static void waitAndDestroyEndOpenThreads(OPEN_CLOSE_THREADS* data)
 
 
 static int callsBeginClose(
-    void* lpThreadParameter
+    void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
+    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -183,10 +183,10 @@ static void waitAndDestroyBeginCloseThreads(OPEN_CLOSE_THREADS* data)
 }
 
 static int callsEndClose(
-    void* lpThreadParameter
+    void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
+    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -214,10 +214,10 @@ static void waitAndDestroyEndCloseThreads(OPEN_CLOSE_THREADS* data)
 }
 
 static int callsBeginBarrier(
-    void* lpThreadParameter
+    void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
+    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -253,10 +253,10 @@ static void waitAndDestroyBeginBarrierThreads(OPEN_CLOSE_THREADS* data)
 }
 
 static int callsEndBarrier(
-    void* lpThreadParameter
+    void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
+    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -284,10 +284,10 @@ static void waitAndDestroyEndBarrierThreads(OPEN_CLOSE_THREADS* data)
 }
 
 static int callsBeginAndEnd(
-    void* lpThreadParameter
+    void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)lpThreadParameter;
+    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -332,7 +332,7 @@ static void waitAndDestroyBeginAndEndThreads(OPEN_CLOSE_THREADS* data)
 #define ARRAY_SIZE 1000000
 #else
 // on Linux because we run with Helgrind and DRD this will be waaaay slower, so reduce the number of items
-#define ARRAY_SIZE 50000
+#define ARRAY_SIZE 10000
 #endif
 
 /*how many threads maximum. This needs to be slightly higher than the number of CPU threads because we want to see interrupted threads*/
@@ -380,10 +380,10 @@ typedef struct THREADS_COMMON_TAG
 MU_DEFINE_ENUM(THREAD_TYPE, THREAD_TYPE_VALUE)
 
 static int barrier_thread(
-    void* lpThreadParameter
+    void* arg
 )
 {
-    THREADS_COMMON* data = (THREADS_COMMON*)lpThreadParameter;
+    THREADS_COMMON* data = (THREADS_COMMON*)arg;
     /*a non barrier thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
     while (interlocked_add(&data->current_index, 0) < ARRAY_SIZE)
     {
@@ -412,10 +412,10 @@ static int barrier_thread(
 }
 
 static int non_barrier_thread(
-    void* lpThreadParameter
+    void* arg
 )
 {
-    THREADS_COMMON* data = (THREADS_COMMON*)lpThreadParameter;
+    THREADS_COMMON* data = (THREADS_COMMON*)arg;
     /*a non barrier thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
     while (interlocked_add(&data->current_index, 0) < ARRAY_SIZE)
     {
@@ -498,6 +498,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     numberOfProcessors = sysinfo_get_processor_count();
     ASSERT_IS_TRUE(numberOfProcessors * 4 <= N_MAX_THREADS, "for systems with maaany processors, modify N_MAX_THREADS to be bigger");
 #else
+    // unfortunately on Linux we need to limit the amount of procs we use otherwise Helgrind and DRD will take forever
     numberOfProcessors = 2;
 #endif
 
@@ -754,10 +755,10 @@ typedef struct SM_GO_TO_STATE_TAG
 
 
 static int switchesToState(
-    void* lpThreadParameter
+    void* arg
 )
 {
-    SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)lpThreadParameter;
+    SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)arg;
 
     LogInfo("time[s]=%.2f, switchesToState thread: will now switch state to %" PRI_MU_ENUM "", (timer_global_get_elapsed_ms()-timeSinceTestFunctionStartMs)/1000, MU_ENUM_VALUE(SM_STATES, goToState->targetState));
 
@@ -839,10 +840,10 @@ static void sm_switchesToState(SM_GO_TO_STATE* goToState)
 
 
 static int switchesFromStateToCreated(
-    void* lpThreadParameter
+    void* arg
 )
 {
-    SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)lpThreadParameter;
+    SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)arg;
 
     /*waits on 1 handles that says the API is about to be called. It waits 1 second then it resumes executiong */
 
@@ -937,7 +938,6 @@ static void sm_switches_from_state_to_created(SM_GO_TO_STATE* goToState)
     ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&goToState->threadBack, switchesFromStateToCreated, goToState));
     /*depending on the requested state, the thread might have finished by now...*/
 }
-
 
 /*Tests_SRS_SM_02_050: [ If the state is SM_OPENED_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
 /*Tests_SRS_SM_02_051: [ If the state is SM_OPENED_DRAINING_TO_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
