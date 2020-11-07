@@ -88,6 +88,7 @@ static int callsBeginOpen(
         {
             (void)interlocked_increment(&data->n_begin_open_refuses);
         }
+        ThreadAPI_Sleep(0);
     }
     return 0;
 }
@@ -119,6 +120,7 @@ static int callsEndOpen(
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
         sm_open_end(data->sm, (rand()%2==0));
+        ThreadAPI_Sleep(0);
     }
     return 0;
 }
@@ -191,6 +193,7 @@ static int callsEndClose(
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
         sm_close_end(data->sm); /*might as well fail*/
+        ThreadAPI_Sleep(0);
     }
     return 0;
 }
@@ -261,6 +264,7 @@ static int callsEndBarrier(
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
         sm_barrier_end(data->sm); /*might as well fail*/
+        ThreadAPI_Sleep(0);
     }
     return 0;
 }
@@ -294,12 +298,8 @@ static int callsBeginAndEnd(
         if (sm_exec_begin(data->sm) == SM_EXEC_GRANTED)
         {
             (void)interlocked_increment(&data->n_begin_grants);
-            double startTime = timer_global_get_elapsed_ms();
             uint32_t pretend_to_do_something_time_in_ms = rand() % 10;
-            while (timer_global_get_elapsed_ms() - startTime < pretend_to_do_something_time_in_ms)
-            {
-                /*well-pretend*/
-            }
+            ThreadAPI_Sleep(pretend_to_do_something_time_in_ms);
             sm_exec_end(data->sm);
         }
         else
@@ -328,12 +328,12 @@ static void waitAndDestroyBeginAndEndThreads(OPEN_CLOSE_THREADS* data)
     }
 }
 
-#ifdef _MSC_VER
+//#ifdef _MSC_VER
 #define ARRAY_SIZE 1000000
-#else
-// on Linux because we run with Helgrind and DRD this will be waaaay slower, so reduce the number of items
-#define ARRAY_SIZE 10000
-#endif
+//#else
+//// on Linux because we run with Helgrind and DRD this will be waaaay slower, so reduce the number of items
+//#define ARRAY_SIZE 100000
+//#endif
 
 /*how many threads maximum. This needs to be slightly higher than the number of CPU threads because we want to see interrupted threads*/
 /*the tests will start from 1*/
@@ -533,7 +533,7 @@ TEST_FUNCTION(sm_chaos)
 
     (void)interlocked_exchange(&data->threadsShouldFinish, 0);
 
-    for (uint32_t nthreads = 1; nthreads <= MIN(4 * numberOfProcessors, N_MAX_THREADS); nthreads*=2)
+    for (uint32_t nthreads = 1; nthreads <= MIN(numberOfProcessors, N_MAX_THREADS); nthreads*=2)
     {
         data->n_begin_open_threads = nthreads;
         data->n_end_open_threads = nthreads;
@@ -731,7 +731,7 @@ sm_exec_begin
 sm_barrier_begin
 */
 
-#define THREAD_DELAY 1000
+#define THREAD_DELAY 500
 
 /*forward*/
 typedef struct SM_RESULT_AND_NEXT_STATE_AFTER_API_CALL_TAG
