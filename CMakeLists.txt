@@ -131,21 +131,6 @@ enable_testing()
 
 set(C_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 
-# This function focuses on setting files which are unique to a given hardware platform.
-# The choice of tlsio is not unique per-platform, and is set in the main CMakeLists.txt
-function(set_platform_files c_util_dir)
-    if(WIN32)
-        set(SM_C_FILE ${c_util_dir}/src/sm.c PARENT_SCOPE)
-        set(SM_H_FILE ${c_util_dir}/inc/c_util/sm.h PARENT_SCOPE)
-    else()
-        set(SM_C_FILE) #there's no SM for linux
-        set(SM_H_FILE) #there's no SM for linux
-    endif()
- endfunction(set_platform_files)
-
-#Setup the platform files
-set_platform_files(${CMAKE_CURRENT_LIST_DIR})
-
 include_directories(${UMOCK_C_INC_FOLDER})
 
 set(c_util_c_files
@@ -160,6 +145,7 @@ set(c_util_c_files
     ./src/memory_data.c
     ./src/rc_string.c
     ./src/singlylinkedlist.c
+    ./src/sm.c
     ./src/strings.c
     ./src/uuid.c
     ${SM_C_FILE}
@@ -175,8 +161,9 @@ set(c_util_h_files
     ./inc/c_util/interlocked_hl.h
     ./inc/c_util/map.h
     ./inc/c_util/memory_data.h
-    ./inc/c_util/singlylinkedlist.h
     ./inc/c_util/rc_string.h
+    ./inc/c_util/singlylinkedlist.h
+    ./inc/c_util/sm.h
     ./inc/c_util/strings.h
     ./inc/c_util/strings_types.h
     ./inc/c_util/thandle.h

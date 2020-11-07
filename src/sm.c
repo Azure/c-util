@@ -6,14 +6,14 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "windows.h"
-
 #include "macro_utils/macro_utils.h"
 
 #include "c_logging/xlogging.h"
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/interlocked.h"
+#include "c_pal/threadapi.h"
+#include "c_pal/sync.h"
 #include "c_util/interlocked_hl.h"
 
 #include "c_util/sm.h"
@@ -109,7 +109,7 @@ void sm_destroy(SM_HANDLE sm)
     }
 }
 
-int sm_open_begin(SM_HANDLE sm)
+SM_RESULT sm_open_begin(SM_HANDLE sm)
 {
     SM_RESULT result;
     if (sm == NULL)
@@ -240,7 +240,7 @@ static SM_RESULT sm_close_begin_internal(SM_HANDLE sm)
                 ((state & SM_STATE_MASK) == SM_OPENED_DRAINING_TO_BARRIER)
                 )
             {
-                Sleep(1);
+                ThreadAPI_Sleep(1);
             }
             else
             {
@@ -344,7 +344,7 @@ SM_RESULT sm_exec_begin(SM_HANDLE sm)
                 int32_t n = interlocked_decrement(&sm->non_barrier_call_count);
                 if (n == 0)
                 {
-                    WakeByAddressSingle((void*)&sm->non_barrier_call_count);
+                    wake_by_address_single(&sm->non_barrier_call_count);
                 }
                 result = SM_EXEC_REFUSED;
             }
@@ -400,7 +400,7 @@ void sm_exec_end(SM_HANDLE sm)
                         /*Codes_SRS_SM_02_063: [ If n reaches 0 then sm_exec_end shall signal that. ]*/
                         if (n - 1 == 0)
                         {
-                            WakeByAddressSingle((void*)&sm->non_barrier_call_count);
+                            wake_by_address_single(&sm->non_barrier_call_count);
                         }
                         break;
                     }
