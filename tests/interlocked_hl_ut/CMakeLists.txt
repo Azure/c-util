@@ -12,7 +12,6 @@ set(${theseTestsName}_c_files
 
 set(${theseTestsName}_h_files
 ../../inc/c_util/interlocked_hl.h
-../mocked/inc/windows.h
 )
 
 include_directories(BEFORE SYSTEM ../mocked/inc)
