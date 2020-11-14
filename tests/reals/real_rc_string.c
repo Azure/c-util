@@ -4,5 +4,6 @@
 
 #include "real_rc_string_renames.h"
 #include "real_gballoc_hl_renames.h"
+#include "real_interlocked_renames.h"
 
 #include "../../src/rc_string.c"
