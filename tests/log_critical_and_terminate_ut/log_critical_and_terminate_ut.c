@@ -3,8 +3,10 @@
 
 #ifdef __cplusplus
 #include <cstdlib>
+#include <cinttypes>
 #else
 #include <stdlib.h>
+#include <inttypes.h>
 #endif
 
 #include "macro_utils/macro_utils.h"
@@ -69,6 +71,20 @@ BEGIN_TEST_SUITE(log_critical_and_terminate_unittests)
 
         ///act
         LogCriticalAndTerminate("Test");
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    }
+
+    /* Tests_SRS_LOG_CRITICAL_AND_TERMINATE_01_001: [ LogCriticalAndTerminate shall call ps_util_terminate_process. ]*/
+    TEST_FUNCTION(LogCriticalAndTerminate_with_some_args_succeeds)
+    {
+        ///arrange
+        uint32_t x = 42;
+        STRICT_EXPECTED_CALL(ps_util_terminate_process());
+
+        ///act
+        LogCriticalAndTerminate("Test with x=%" PRIu32 "", x);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
