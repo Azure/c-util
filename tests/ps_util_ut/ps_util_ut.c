@@ -16,8 +16,16 @@ static TEST_MUTEX_HANDLE g_testByTest;
 
 #include "c_util/ps_util.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 MOCK_FUNCTION_WITH_CODE(, void, mock_abort)
 MOCK_FUNCTION_END()
+
+#ifdef __cplusplus
+}
+#endif
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
