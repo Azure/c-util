@@ -71,16 +71,4 @@ BEGIN_TEST_SUITE(log_critical_and_terminate_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
-    TEST_FUNCTION(LogCriticalAndTerminate_with_HRESULT_succeeds)
-    {
-        ///arrange
-        STRICT_EXPECTED_CALL(log_critical_terminate_process());
-
-        ///act
-        LogWithHResult(LogCriticalAndTerminate)("Test");
-
-        ///assert
-        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    }
-
 END_TEST_SUITE(log_critical_and_terminate_unittests)

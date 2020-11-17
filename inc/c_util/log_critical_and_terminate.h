@@ -21,14 +21,6 @@ extern "C" {
         work_around_bs_utils_never_returning ? log_critical_terminate_process():(void)0; \
     } while(0)
 
-#define LogHResultCriticalAndTerminate(FORMAT, ...) \
-    do \
-    { \
-        static volatile int work_around_bs_utils_never_returning = 1; \
-        LogHRESULTCriticalWithFormat(FORMAT, ##__VA_ARGS__); \
-        work_around_bs_utils_never_returning ? log_critical_terminate_process():(void)0; \
-    } while(0)
-
 MOCKABLE_FUNCTION(, void, log_critical_terminate_process);
 
 #ifdef __cplusplus
