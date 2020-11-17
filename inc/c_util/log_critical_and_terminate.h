@@ -7,6 +7,8 @@
 
 #include "c_logging/xlogging.h"
 
+#include "c_util/ps_util.h"
+
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
@@ -18,7 +20,8 @@ extern "C" {
     { \
         static volatile int work_around_bs_utils_never_returning = 1; \
         LogError(FORMAT, ##__VA_ARGS__); \
-        work_around_bs_utils_never_returning ? log_critical_terminate_process():(void)0; \
+        /* Codes_SRS_LOG_CRITICAL_AND_TERMINATE_01_001: [ LogCriticalAndTerminate shall call ps_util_terminate_process. ]*/ \
+        work_around_bs_utils_never_returning ? ps_util_terminate_process():(void)0; \
     } while(0)
 
 MOCKABLE_FUNCTION(, void, log_critical_terminate_process);

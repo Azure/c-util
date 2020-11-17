@@ -12,13 +12,15 @@
 #include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
 
-static TEST_MUTEX_HANDLE g_testByTest;
-
 #define ENABLE_MOCKS
+
+#include "c_util/ps_util.h"
+
+#undef ENABLE_MOCKS
 
 #include "c_util/log_critical_and_terminate.h"
 
-#undef ENABLE_MOCKS
+static TEST_MUTEX_HANDLE g_testByTest;
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
@@ -59,10 +61,11 @@ BEGIN_TEST_SUITE(log_critical_and_terminate_unittests)
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
+    /* Tests_SRS_LOG_CRITICAL_AND_TERMINATE_01_001: [ LogCriticalAndTerminate shall call ps_util_terminate_process. ]*/
     TEST_FUNCTION(LogCriticalAndTerminate_succeeds)
     {
         ///arrange
-        STRICT_EXPECTED_CALL(log_critical_terminate_process());
+        STRICT_EXPECTED_CALL(ps_util_terminate_process());
 
         ///act
         LogCriticalAndTerminate("Test");

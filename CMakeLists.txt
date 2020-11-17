@@ -141,7 +141,6 @@ set(c_util_c_files
     ./src/constbuffer_array_batcher_nv.c
     ./src/doublylinkedlist.c
     ./src/interlocked_hl.c
-    ./src/log_critical_and_terminate.c
     ./src/map.c
     ./src/memory_data.c
     ./src/ps_util.c

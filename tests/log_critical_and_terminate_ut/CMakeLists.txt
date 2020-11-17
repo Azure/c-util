@@ -10,10 +10,10 @@ set(${theseTestsName}_test_files
 )
 
 set(${theseTestsName}_c_files
-    ../../src/log_critical_and_terminate.c
 )
 
 set(${theseTestsName}_h_files
+    ../../inc/c_util/log_critical_and_terminate.h
 )
 
 build_test_artifacts(${theseTestsName} ON "tests/c_util")

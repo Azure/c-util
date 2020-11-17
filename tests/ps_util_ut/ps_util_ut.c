@@ -58,7 +58,7 @@ BEGIN_TEST_SUITE(ps_util_unittests)
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
-    /* Tests_SRS_PS_UTIL_01_001: [ `ps_util_terminate_process` shall call `abort`. ]*/
+    /* Tests_SRS_PS_UTIL_01_001: [ ps_util_terminate_process shall call abort. ]*/
     TEST_FUNCTION(ps_util_calls_abort)
     {
         ///arrange
