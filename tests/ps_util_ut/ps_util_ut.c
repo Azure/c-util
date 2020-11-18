@@ -20,7 +20,7 @@ static TEST_MUTEX_HANDLE g_testByTest;
 extern "C" {
 #endif
 
-MOCK_FUNCTION_WITH_CODE(, void, mock_abort)
+MOCK_FUNCTION_WITH_CODE(, void, mock_abort);
 MOCK_FUNCTION_END()
 
 #ifdef __cplusplus
