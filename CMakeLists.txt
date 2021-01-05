@@ -140,6 +140,7 @@ set(c_util_c_files
     ./src/constbuffer_array.c
     ./src/constbuffer_array_batcher_nv.c
     ./src/doublylinkedlist.c
+    ./src/external_command_helper.c
     ./src/interlocked_hl.c
     ./src/map.c
     ./src/memory_data.c
@@ -159,6 +160,7 @@ set(c_util_h_files
     ./inc/c_util/constbuffer_array.h
     ./inc/c_util/constbuffer_array_batcher_nv.h
     ./inc/c_util/doublylinkedlist.h
+    ./inc/c_util/external_command_helper.h
     ./inc/c_util/interlocked_hl.h
     ./inc/c_util/log_critical_and_terminate.h
     ./inc/c_util/map.h

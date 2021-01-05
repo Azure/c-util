@@ -1,0 +1,68 @@
+﻿`external_command_helper` requirements
+================
+
+## Overview
+
+`external_command_helper` is a module that can execute another command and parse its output.
+
+It will execute the command and read the output over a pipe to an array of strings. It also returns the exit code of the command.
+
+The callers can parse and convert the actual output lines as needed.
+
+Assumptions:
+ - Each line of output is limited to 2048 characters (for now as there are no places where we expect it to be longer).
+
+## Exposed API
+
+```c
+#define EXTERNAL_COMMAND_RESULT_VALUES \
+        EXTERNAL_COMMAND_OK, \
+        EXTERNAL_COMMAND_INVALID_ARGS, \
+        EXTERNAL_COMMAND_ERROR
+
+MU_DEFINE_ENUM(EXTERNAL_COMMAND_RESULT, EXTERNAL_COMMAND_RESULT_VALUES)
+
+MOCKABLE_FUNCTION(, EXTERNAL_COMMAND_RESULT, external_command_helper_execute, const char*, command, RC_STRING_ARRAY**, lines, int*, return_code);
+```
+
+### external_command_helper_execute
+
+```c
+MOCKABLE_FUNCTION(, EXTERNAL_COMMAND_RESULT, external_command_helper_execute, const char*, command, RC_STRING_ARRAY**, lines, int*, return_code);
+```
+
+`external_command_helper_execute` executes the specified `command` and returns an array of the output lines to `lines` and the exit code of the command to `return_code`. It does not validate the output in any way.
+
+If `command` is `NULL` then `external_command_helper_execute` shall fail and return `EXTERNAL_COMMAND_INVALID_ARGS`.
+
+If `command` is empty string then `external_command_helper_execute` shall fail and return `EXTERNAL_COMMAND_INVALID_ARGS`.
+
+If `lines` is `NULL` then `external_command_helper_execute` shall fail and return `EXTERNAL_COMMAND_INVALID_ARGS`.
+
+If `return_code` is `NULL` then `external_command_helper_execute` shall fail and return `EXTERNAL_COMMAND_INVALID_ARGS`.
+
+`external_command_helper_execute` shall call `popen` to execute the `command` and open a read pipe.
+
+`external_command_helper_execute` shall read each line of output into a 2048 byte buffer.
+
+ - If a line of output exceeds 2048 bytes then `external_command_helper_execute` shall fail and return `EXTERNAL_COMMAND_ERROR`.
+
+ - `external_command_helper_execute` shall remove the trailing new line.
+
+ - `external_command_helper_execute` shall allocate an array of `THANDLE(RC_STRING)` or grow the existing array to fit the new line.
+
+ - `external_command_helper_execute` shall allocate a `THANDLE(RC_STRING)` of the line by calling `rc_string_create` and store it in the array.
+
+`external_command_helper_execute` shall call `rc_string_array_create` with the count of output lines returned.
+
+`external_command_helper_execute` shall move all of the strings into the allocated `RC_STRING_ARRAY`.
+
+`external_command_helper_execute` shall call `pclose` to close the pipe and get the exit code of the command.
+
+`external_command_helper_execute` shall store the exit code of the command in `return_code`.
+
+`external_command_helper_execute` shall store the allocated `RC_STRING_ARRAY` in `lines`.
+
+`external_command_helper_execute` shall succeed and return `EXTERNAL_COMMAND_OK`.
+
+If there are any other errors then `external_command_helper_execute` shall fail and return `EXTERNAL_COMMAND_ERROR`.
