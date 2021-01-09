@@ -84,7 +84,7 @@ static const char* test_command = "my_program.exe -arg1 -arg2";
 
 TEST_DEFINE_ENUM_TYPE(EXTERNAL_COMMAND_RESULT, EXTERNAL_COMMAND_RESULT_VALUES);
 
-static char temp_file_name[L_tmpnam_s];
+static char temp_file_name[L_tmpnam];
 static FILE* last_opened_file_handle;
 static bool pclose_is_pending;
 
@@ -122,8 +122,7 @@ static FILE* hook_popen(
     pclose_is_pending = true;
 
     // Pick a file name
-    errno_t tmpnam_result = tmpnam_s(temp_file_name, L_tmpnam_s);
-    ASSERT_ARE_EQUAL(int, 0, tmpnam_result);
+    ASSERT_IS_NOT_NULL(tmpnam(temp_file_name));
 
     // Open file to fill with test data
     FILE* temp = fopen(temp_file_name, "w");
