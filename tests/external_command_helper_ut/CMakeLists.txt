@@ -3,6 +3,7 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
+compileAsC11()
 set(theseTestsName external_command_helper_ut)
 
 set(${theseTestsName}_test_files
