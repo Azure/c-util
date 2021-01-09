@@ -128,7 +128,7 @@ static FILE* hook_popen(
     FILE* temp = fopen(temp_file_name, "w");
 
     int fputs_result = fputs(test_data_to_report_as_output, temp);
-    ASSERT_ARE_EQUAL(int, 0, fputs_result);
+    ASSERT_IS_TRUE(fputs_result >= 0);
 
     int fclose_result = fclose(temp);
     ASSERT_ARE_EQUAL(int, 0, fclose_result);
