@@ -13,6 +13,7 @@
 #include "../reals/real_interlocked_hl.h"
 #include "../reals/real_memory_data.h"
 #include "../reals/real_rc_string.h"
+#include "../reals/real_rc_string_array.h"
 #include "../reals/real_singlylinkedlist.h"
 #include "../reals/real_uuid.h"
 
@@ -23,6 +24,7 @@
 #include "c_util/interlocked_hl.h"
 #include "c_util/memory_data.h"
 #include "c_util/rc_string.h"
+#include "c_util/rc_string_array.h"
 #include "c_util/singlylinkedlist.h"
 #include "c_util/uuid.h"
 

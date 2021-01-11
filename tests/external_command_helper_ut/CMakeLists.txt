@@ -10,7 +10,7 @@ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-../../src/external_command_helper.c
+mocked_external_command_helper.c
 )
 
 set(${theseTestsName}_h_files
