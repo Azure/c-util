@@ -35,6 +35,8 @@ static void my_gballoc_free(void* ptr)
 #include "umock_c/umocktypes_stdint.h"
 #include "umock_c/umock_c_negative_tests.h"
 
+#include "c_logging/xlogging.h"
+
 #define ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
@@ -94,11 +96,9 @@ static int hook_pclose(FILE* stream)
     ASSERT_IS_TRUE(pclose_is_pending, "mocked version of pclose should not have been called without a matching popen");
 
     // Close and delete the temp file
-    int result = fclose(stream);
+    ASSERT_ARE_EQUAL(int, 0, fclose(stream));
+
     remove(temp_file_name);
-
-    ASSERT_ARE_EQUAL(int, 0, result);
-
     LogInfo("Deleted temp file: %s", temp_file_name);
 
     last_opened_file_handle = NULL;
@@ -127,11 +127,9 @@ static FILE* hook_popen(
     // Open file to fill with test data
     FILE* temp = fopen(temp_file_name, "w");
 
-    int fputs_result = fputs(test_data_to_report_as_output, temp);
-    ASSERT_IS_TRUE(fputs_result >= 0);
+    ASSERT_IS_TRUE(fputs(test_data_to_report_as_output, temp) >= 0);
 
-    int fclose_result = fclose(temp);
-    ASSERT_ARE_EQUAL(int, 0, fclose_result);
+    ASSERT_ARE_EQUAL(int, 0, fclose(temp));
 
     // Open file for caller
     result = fopen(temp_file_name, mode);
@@ -514,6 +512,12 @@ TEST_FUNCTION(external_command_helper_execute_with_5_lines_fails_when_underlying
 
             // assert
             ASSERT_ARE_EQUAL(EXTERNAL_COMMAND_RESULT, EXTERNAL_COMMAND_ERROR, result, "On failed call %zu", i);
+
+            // If we fail _popen, our mock hook actually requires some cleanup
+            if (pclose_is_pending)
+            {
+                hook_pclose(last_opened_file_handle);
+            }
         }
     }
 }
