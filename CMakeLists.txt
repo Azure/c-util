@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 2.8.11)
 #if ((NOT TARGET c_util) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-util/CMakeLists.txt))
 #    add_subdirectory(deps/c-util)
 #    include_directories(${C_UTIL_INC_FOLDER})
-#endif() 
+#endif()
 
 if (TARGET c_util)
     RETURN()
@@ -35,47 +35,52 @@ set(run_int_tests OFF)
 set(run_traceability OFF)
 set(run_perf_tests OFF)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/Debug)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/Release)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/RelWithDebInfo)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR}/MinSizeRel)
+
 if ((NOT TARGET c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-build-tools/CMakeLists.txt))
     add_subdirectory(deps/c-build-tools)
     set_default_build_options()
-endif() 
+endif()
 
 if ((NOT TARGET macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/macro-utils-c/CMakeLists.txt))
     add_subdirectory(deps/macro-utils-c)
     include_directories(${MACRO_UTILS_INC_FOLDER})
-endif() 
+endif()
 
 if ((NOT TARGET c_logging) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-logging/CMakeLists.txt))
     add_subdirectory(deps/c-logging)
     include_directories(deps/c-logging/inc)
-endif() 
+endif()
 
 if ((NOT TARGET ctest) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/ctest/CMakeLists.txt))
     add_subdirectory(deps/ctest)
     include_directories(${CTEST_INC_FOLDER})
-endif() 
+endif()
 
 if ((NOT TARGET testrunnerswitcher) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-testrunnerswitcher/CMakeLists.txt))
     add_subdirectory(deps/c-testrunnerswitcher)
     include_directories(${TESTRUNNERSWITCHER_INC_FOLDER})
-endif() 
+endif()
 
 if ((NOT TARGET umock_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMakeLists.txt))
     add_subdirectory(deps/umock-c)
     include_directories(${UMOCK_C_INC_FOLDER})
-endif() 
+endif()
 
 if ((NOT TARGET c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-pal/CMakeLists.txt))
     add_subdirectory(deps/c-pal)
     include_directories(${C_PAL_INC_FOLDER})
-endif() 
+endif()
 
 if (
-    (NOT TARGET mimalloc-obj) AND 
+    (NOT TARGET mimalloc-obj) AND
     (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/mimalloc/CMakeLists.txt)
     )
         set(MI_BUILD_SHARED OFF CACHE BOOL "Build shared library" FORCE) #not building a dll allows building on 32 bit, otherwise there's some errors on init.c about not finding a imported symbol
-        set(MI_BUILD_TESTS OFF CACHE BOOL "Build test executables" FORCE) 
+        set(MI_BUILD_TESTS OFF CACHE BOOL "Build test executables" FORCE)
         #for mimalloc disable this warning: Warning C4459: declaration of 'os_page_size' hides global declaration
         #for mimalloc disable this warning: Warning C4100: 'try_alignment': unreferenced formal parameter
         #for mimalloc disable this warning: warning C4505: 'mi_os_get_aligned_hint': unreferenced local function has been removed
@@ -89,14 +94,14 @@ if (
 
         add_subdirectory(deps/mimalloc)
         include_directories(deps/mimalloc/include)
-        
+
         set(CMAKE_C_FLAGS ${PREV_CMAKE_C_FLAGS})
         set(CMAKE_CXX_FLAGS ${PREV_CMAKE_CXX_FLAGS})
 endif()
 
 if (
     (WIN32) AND
-    (NOT TARGET jemalloc) AND 
+    (NOT TARGET jemalloc) AND
     (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/jemalloc/README)
     )
     set(PREV_CMAKE_C_FLAGS ${CMAKE_C_FLAGS})

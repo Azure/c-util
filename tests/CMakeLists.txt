@@ -27,5 +27,7 @@ if(${run_unittests})
 endif()
 
 if(${run_int_tests})
+    add_subdirectory(external_command_sample)
+    build_test_folder(external_command_helper_int)
     build_test_folder(sm_int)
 endif()

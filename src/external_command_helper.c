@@ -4,6 +4,10 @@
 #include <inttypes.h>
 #include <stdio.h>
 
+#if !_WIN32
+#include <errno.h>
+#endif
+
 #include "macro_utils/macro_utils.h"
 
 #include "c_logging/xlogging.h"
@@ -20,6 +24,11 @@
 #if _WIN32
 #define popen _popen
 #define pclose _pclose
+#define POPEN_MODE "rt"
+#define PCLOSE_RETURN_SHIFT 0
+#else
+#define POPEN_MODE "r"
+#define PCLOSE_RETURN_SHIFT 8
 #endif
 
 MU_DEFINE_ENUM_STRINGS(EXTERNAL_COMMAND_RESULT, EXTERNAL_COMMAND_RESULT_VALUES);
@@ -50,12 +59,16 @@ IMPLEMENT_MOCKABLE_FUNCTION(, EXTERNAL_COMMAND_RESULT, external_command_helper_e
         LogInfo("Executing command: '%s'", command);
 
         /*Codes_SRS_EXTERNAL_COMMAND_HELPER_42_005: [ external_command_helper_execute shall call popen to execute the command and open a read pipe. ]*/
-        FILE* command_pipe = popen(command, "rt");
+        FILE* command_pipe = popen(command, POPEN_MODE);
 
         if (command_pipe == NULL)
         {
             /*Codes_SRS_EXTERNAL_COMMAND_HELPER_42_017: [ If there are any other errors then external_command_helper_execute shall fail and return EXTERNAL_COMMAND_ERROR. ]*/
-            LogError("popen(\"%s\", \"rt\") failed", command);
+            #if _WIN32
+            LogError("popen(\"%s\", \"" MU_TOSTRING(POPEN_MODE) "\") failed", command);
+            #else
+            LogError("popen(\"%s\", \"" MU_TOSTRING(POPEN_MODE) "\") failed errno=%d", command, errno);
+            #endif
             result = EXTERNAL_COMMAND_ERROR;
         }
         else
@@ -167,7 +180,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, EXTERNAL_COMMAND_RESULT, external_command_helper_e
                         line_array = NULL;
 
                         /*Codes_SRS_EXTERNAL_COMMAND_HELPER_42_014: [ external_command_helper_execute shall store the exit code of the command in return_code. ]*/
-                        *return_code = command_exit;
+                        *return_code = command_exit >> PCLOSE_RETURN_SHIFT;
 
                         /*Codes_SRS_EXTERNAL_COMMAND_HELPER_42_015: [ external_command_helper_execute shall store the allocated RC_STRING_ARRAY in lines. ]*/
                         *lines = rc_string_array_temp;
