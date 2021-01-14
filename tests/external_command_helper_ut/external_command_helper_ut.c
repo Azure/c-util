@@ -69,6 +69,15 @@ MOCKABLE_FUNCTION(, FILE*, mocked_popen,
 
 #include "c_util/external_command_helper.h"
 
+
+#if _WIN32
+#define POPEN_MODE "rt"
+#define PCLOSE_RETURN_SHIFT 0
+#else
+#define POPEN_MODE "r"
+#define PCLOSE_RETURN_SHIFT 8
+#endif
+
 static TEST_MUTEX_HANDLE test_serialize_mutex;
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
@@ -142,7 +151,7 @@ static FILE* hook_popen(
 
 static void expect_run_command(FILE** captured_file_handle)
 {
-    STRICT_EXPECTED_CALL(mocked_popen(test_command, "rt"))
+    STRICT_EXPECTED_CALL(mocked_popen(test_command, POPEN_MODE))
         .CaptureReturn(captured_file_handle);
 }
 
@@ -155,7 +164,7 @@ static void expect_read_line(const char* line)
 
 static void expect_end_command(FILE** captured_file_handle, int exit_code)
 {
-    pclose_override_return = exit_code;
+    pclose_override_return = exit_code << PCLOSE_RETURN_SHIFT;
     STRICT_EXPECTED_CALL(mocked_pclose(IGNORED_ARG))
         .ValidateArgumentValue_stream(captured_file_handle)
         .CallCannotFail();
@@ -189,6 +198,8 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_HOOK(malloc, my_gballoc_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(realloc, my_gballoc_realloc);
     REGISTER_GLOBAL_MOCK_HOOK(free, my_gballoc_free);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(realloc, NULL);
 
     REGISTER_GLOBAL_MOCK_HOOK(mocked_pclose, hook_pclose);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(mocked_pclose, -1);
