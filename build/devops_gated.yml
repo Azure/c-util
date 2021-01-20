@@ -250,7 +250,7 @@ jobs:
   - task: BatchScript@1
     displayName: 'Run traceability tool'
     inputs:
-      filename: 'build/RelWithDebInfo/traceabilitytool.exe'
+      filename: 'build/deps/c-build-tools/traceabilitytool/RelWithDebInfo/traceabilitytool.exe'
       arguments: '-i $(Build.SourcesDirectory) -buildcheck -e $(Build.SourcesDirectory)\deps'
       modifyEnvironment: false
       workingFolder: '$(Build.SourcesDirectory)'
