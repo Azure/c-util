@@ -3,7 +3,6 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-if(MSVC)
 set(REAL_SM_C_FILES
     real_sm.c
 )
@@ -11,7 +10,6 @@ set(REAL_SM_H_FILES
     real_sm.h
     real_sm_renames.h
 )
-endif()
 
 set(c_util_reals_c_files
     real_constbuffer.c
