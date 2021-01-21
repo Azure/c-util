@@ -6,7 +6,7 @@
 #include "real_interlocked_hl_renames.h"
 #include "real_gballoc_hl_renames.h"
 #include "real_threadapi_renames.h"
-
+#include "real_sync_renames.h"
 #include "real_sm_renames.h"
 
 #include "../../src/sm.c"
