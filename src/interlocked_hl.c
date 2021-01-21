@@ -4,7 +4,7 @@
 #include <inttypes.h>
 #include <stddef.h>                 // for NULL
 
-#include "umock_c/umock_c_prod.h"   // for MU_COUNT_ARG_0, MU_DISPATCH_EMPTY...
+#include "umock_c/umock_c_prod.h"
 
 #include "c_logging/xlogging.h"
 
