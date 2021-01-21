@@ -2,7 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <inttypes.h>
-#include <limits.h>
+#include <stddef.h>                 // for NULL
+
+#include "umock_c/umock_c_prod.h"   // for MU_COUNT_ARG_0, MU_DISPATCH_EMPTY...
 
 #include "c_logging/xlogging.h"
 
