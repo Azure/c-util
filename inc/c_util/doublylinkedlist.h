@@ -4,15 +4,6 @@
 #ifndef DOUBLYLINKEDLIST_H
 #define DOUBLYLINKEDLIST_H
 
-#ifdef __cplusplus
-#include <cstddef>
-#include <cstdint>
-#else
-#include <stddef.h>
-#include <stdint.h>
-#endif
-
-#include "c_util/containing_record.h"
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus

@@ -2,6 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <inttypes.h>
+#include <string.h>                // for memcpy
+
+#include "umock_c/umock_c_prod.h"
 
 #include "c_util/uuid.h"
 

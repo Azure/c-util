@@ -1,7 +1,6 @@
 // Copyright(C) Microsoft Corporation.All rights reserved.
 
 #include <inttypes.h>
-#include <stddef.h>
 #include <stdio.h>
 
 int main(int argc, char** argv)
@@ -20,7 +19,7 @@ int main(int argc, char** argv)
             else
             {
                 // Simple program just echos the arguments back
-                printf("%s\n", argv[i]);
+                (void)printf("%s\n", argv[i]);
             }
         }
     }

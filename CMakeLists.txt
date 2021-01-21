@@ -201,7 +201,7 @@ include_directories(${UMOCK_C_INC_FOLDER})
 include_directories(${CMAKE_CURRENT_LIST_DIR}/inc)
 
 
-if((WIN32) AND (${run_traceability}))
+if((CMAKE_GENERATOR MATCHES "Visual Studio") AND (${run_traceability}))
     #add traceability custom target
     add_custom_target(c_util_traceability ALL
         COMMAND traceabilitytool -buildcheck -e ${CMAKE_CURRENT_LIST_DIR}/deps -i ${CMAKE_CURRENT_LIST_DIR})
