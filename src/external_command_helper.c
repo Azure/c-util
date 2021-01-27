@@ -139,7 +139,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, EXTERNAL_COMMAND_RESULT, external_command_helper_e
                 if (failed || pclose_return != 0)
                 {
                     /*Codes_SRS_EXTERNAL_COMMAND_HELPER_42_017: [ If there are any other errors then external_command_helper_execute shall fail and return EXTERNAL_COMMAND_ERROR. ]*/
-                    LogError("Failure while processing output (exit code=%d)", command_exit);
+                    LogError("Failure while processing output (exit code=%d)", (pclose_return == 0) ? command_exit : INT_MIN);
                     result = EXTERNAL_COMMAND_ERROR;
                 }
                 else
