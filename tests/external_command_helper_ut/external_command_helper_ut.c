@@ -40,24 +40,9 @@ static void my_gballoc_free(void* ptr)
 #define ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
+#include "c_pal/pipe.h"
 #include "c_util/rc_string.h"
 #include "c_util/rc_string_array.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-MOCKABLE_FUNCTION(, int, mocked_pclose,
-    FILE*, stream);
-
-MOCKABLE_FUNCTION(, FILE*, mocked_popen,
-    const char*, command,
-    const char*, mode);
-
-#ifdef __cplusplus
-}
-#endif
-
 #undef ENABLE_MOCKS
 
 // Must include umock_c_prod so mocks are not expanded in real_rc_string
@@ -68,15 +53,6 @@ MOCKABLE_FUNCTION(, FILE*, mocked_popen,
 #include "real_rc_string_array.h"
 
 #include "c_util/external_command_helper.h"
-
-
-#if _WIN32
-#define POPEN_MODE "rt"
-#define PCLOSE_RETURN_SHIFT 0
-#else
-#define POPEN_MODE "r"
-#define PCLOSE_RETURN_SHIFT 8
-#endif
 
 static TEST_MUTEX_HANDLE test_serialize_mutex;
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
@@ -99,8 +75,8 @@ static char temp_file_name[L_tmpnam];
 static FILE* last_opened_file_handle;
 static bool pclose_is_pending;
 
-static int pclose_override_return;
-static int hook_pclose(FILE* stream)
+static int pclose_override_exit_code;
+static int hook_pclose(FILE* stream, int* exit_code)
 {
     ASSERT_IS_TRUE(pclose_is_pending, "mocked version of pclose should not have been called without a matching popen");
 
@@ -113,19 +89,19 @@ static int hook_pclose(FILE* stream)
     last_opened_file_handle = NULL;
     pclose_is_pending = false;
 
-    return pclose_override_return;
+    *exit_code = pclose_override_exit_code;
+
+    return 0;
 }
 
 static char* test_data_to_report_as_output;
 
 static FILE* hook_popen(
-    char const* command,
-    char const* mode)
+    char const* command)
 {
     FILE* result;
 
     (void)command;
-    (void)mode;
 
     ASSERT_IS_FALSE(pclose_is_pending, "mocked version of popen only supports one call at a time");
     pclose_is_pending = true;
@@ -141,7 +117,7 @@ static FILE* hook_popen(
     ASSERT_ARE_EQUAL(int, 0, fclose(temp));
 
     // Open file for caller
-    result = fopen(temp_file_name, mode);
+    result = fopen(temp_file_name, "r");
     last_opened_file_handle = result;
 
     LogInfo("Created temp file: %s", temp_file_name);
@@ -151,7 +127,7 @@ static FILE* hook_popen(
 
 static void expect_run_command(FILE** captured_file_handle)
 {
-    STRICT_EXPECTED_CALL(mocked_popen(test_command, POPEN_MODE))
+    STRICT_EXPECTED_CALL(pipe_popen(test_command))
         .CaptureReturn(captured_file_handle);
 }
 
@@ -164,10 +140,9 @@ static void expect_read_line(const char* line)
 
 static void expect_end_command(FILE** captured_file_handle, int exit_code)
 {
-    pclose_override_return = exit_code << PCLOSE_RETURN_SHIFT;
-    STRICT_EXPECTED_CALL(mocked_pclose(IGNORED_ARG))
-        .ValidateArgumentValue_stream(captured_file_handle)
-        .CallCannotFail();
+    pclose_override_exit_code = exit_code;
+    STRICT_EXPECTED_CALL(pipe_pclose(IGNORED_ARG, IGNORED_ARG))
+        .ValidateArgumentValue_stream(captured_file_handle);
 }
 
 static void expect_store_lines(uint32_t line_count)
@@ -201,10 +176,10 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(realloc, NULL);
 
-    REGISTER_GLOBAL_MOCK_HOOK(mocked_pclose, hook_pclose);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mocked_pclose, -1);
-    REGISTER_GLOBAL_MOCK_HOOK(mocked_popen, hook_popen);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mocked_popen, NULL);
+    REGISTER_GLOBAL_MOCK_HOOK(pipe_pclose, hook_pclose);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(pipe_pclose, -1);
+    REGISTER_GLOBAL_MOCK_HOOK(pipe_popen, hook_popen);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(pipe_popen, NULL);
 
     REGISTER_UMOCK_ALIAS_TYPE(FILE*, void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(RC_STRING), void*);
@@ -227,7 +202,7 @@ TEST_FUNCTION_INITIALIZE(method_init)
     }
 
     test_data_to_report_as_output = "";
-    pclose_override_return = 0;
+    pclose_override_exit_code = 0;
 
     umock_c_reset_all_calls();
     umock_c_negative_tests_init();
@@ -297,14 +272,14 @@ TEST_FUNCTION(external_command_helper_execute_with_NULL_return_code_fails)
     ASSERT_ARE_EQUAL(EXTERNAL_COMMAND_RESULT, EXTERNAL_COMMAND_INVALID_ARGS, result);
 }
 
-/*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_005: [ external_command_helper_execute shall call popen to execute the command and open a read pipe. ]*/
+/*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_005: [ external_command_helper_execute shall call pipe_popen to execute the command and open a read pipe. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_006: [ external_command_helper_execute shall read each line of output into a 2048 byte buffer. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_008: [ external_command_helper_execute shall remove the trailing new line. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_009: [ external_command_helper_execute shall allocate an array of THANDLE(RC_STRING) or grow the existing array to fit the new line. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_010: [ external_command_helper_execute shall allocate a THANDLE(RC_STRING) of the line by calling rc_string_create and store it in the array. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_011: [ external_command_helper_execute shall call rc_string_array_create with the count of output lines returned. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_012: [ external_command_helper_execute shall move all of the strings into the allocated RC_STRING_ARRAY. ]*/
-/*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_013: [ external_command_helper_execute shall call pclose to close the pipe and get the exit code of the command. ]*/
+/*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_013: [ external_command_helper_execute shall call pipe_pclose to close the pipe and get the exit code of the command. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_014: [ external_command_helper_execute shall store the exit code of the command in return_code. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_015: [ external_command_helper_execute shall store the allocated RC_STRING_ARRAY in lines. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_016: [ external_command_helper_execute shall succeed and return EXTERNAL_COMMAND_OK. ]*/
@@ -337,14 +312,14 @@ TEST_FUNCTION(external_command_helper_execute_succeeds_returns_1_line)
     real_rc_string_array_destroy(lines);
 }
 
-/*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_005: [ external_command_helper_execute shall call popen to execute the command and open a read pipe. ]*/
+/*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_005: [ external_command_helper_execute shall call pipe_popen to execute the command and open a read pipe. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_006: [ external_command_helper_execute shall read each line of output into a 2048 byte buffer. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_008: [ external_command_helper_execute shall remove the trailing new line. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_009: [ external_command_helper_execute shall allocate an array of THANDLE(RC_STRING) or grow the existing array to fit the new line. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_010: [ external_command_helper_execute shall allocate a THANDLE(RC_STRING) of the line by calling rc_string_create and store it in the array. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_011: [ external_command_helper_execute shall call rc_string_array_create with the count of output lines returned. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_012: [ external_command_helper_execute shall move all of the strings into the allocated RC_STRING_ARRAY. ]*/
-/*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_013: [ external_command_helper_execute shall call pclose to close the pipe and get the exit code of the command. ]*/
+/*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_013: [ external_command_helper_execute shall call pipe_pclose to close the pipe and get the exit code of the command. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_014: [ external_command_helper_execute shall store the exit code of the command in return_code. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_015: [ external_command_helper_execute shall store the allocated RC_STRING_ARRAY in lines. ]*/
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_016: [ external_command_helper_execute shall succeed and return EXTERNAL_COMMAND_OK. ]*/
@@ -524,10 +499,11 @@ TEST_FUNCTION(external_command_helper_execute_with_5_lines_fails_when_underlying
             // assert
             ASSERT_ARE_EQUAL(EXTERNAL_COMMAND_RESULT, EXTERNAL_COMMAND_ERROR, result, "On failed call %zu", i);
 
-            // If we fail _popen, our mock hook actually requires some cleanup
+            // If we fail popen, our mock hook actually requires some cleanup
             if (pclose_is_pending)
             {
-                hook_pclose(last_opened_file_handle);
+                int ignore;
+                hook_pclose(last_opened_file_handle, &ignore);
             }
         }
     }
