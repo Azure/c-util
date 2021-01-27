@@ -41,7 +41,7 @@ MOCKABLE_FUNCTION(, EXTERNAL_COMMAND_RESULT, external_command_helper_execute, co
 
 **SRS_EXTERNAL_COMMAND_HELPER_42_004: [** If `return_code` is `NULL` then `external_command_helper_execute` shall fail and return `EXTERNAL_COMMAND_INVALID_ARGS`. **]**
 
-**SRS_EXTERNAL_COMMAND_HELPER_42_005: [** `external_command_helper_execute` shall call `popen` to execute the `command` and open a read pipe. **]**
+**SRS_EXTERNAL_COMMAND_HELPER_42_005: [** `external_command_helper_execute` shall call `pipe_popen` to execute the `command` and open a read pipe. **]**
 
 **SRS_EXTERNAL_COMMAND_HELPER_42_006: [** `external_command_helper_execute` shall read each line of output into a 2048 byte buffer. **]**
 
@@ -57,7 +57,7 @@ MOCKABLE_FUNCTION(, EXTERNAL_COMMAND_RESULT, external_command_helper_execute, co
 
 **SRS_EXTERNAL_COMMAND_HELPER_42_012: [** `external_command_helper_execute` shall move all of the strings into the allocated `RC_STRING_ARRAY`. **]**
 
-**SRS_EXTERNAL_COMMAND_HELPER_42_013: [** `external_command_helper_execute` shall call `pclose` to close the pipe and get the exit code of the command. **]**
+**SRS_EXTERNAL_COMMAND_HELPER_42_013: [** `external_command_helper_execute` shall call `pipe_pclose` to close the pipe and get the exit code of the command. **]**
 
 **SRS_EXTERNAL_COMMAND_HELPER_42_014: [** `external_command_helper_execute` shall store the exit code of the command in `return_code`. **]**
 
