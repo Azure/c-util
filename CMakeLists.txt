@@ -1,7 +1,9 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-cmake_minimum_required(VERSION 2.8.11)
+if(NOT DEFINED CMAKE_MINIMUM_REQUIRED_VERSION)
+    cmake_minimum_required(VERSION 3.18)
+endif()
 
 # canon way of using c-util from another repo is below. It assumes the using repo has placed c-util in "deps"
 
@@ -20,6 +22,7 @@ project(c_util)
 option(run_unittests "set run_unittests to ON to run unittests (default is OFF)" OFF)
 option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF). Chsare dutility does not have any e2e tests, but the option needs to exist to evaluate in IF statements" OFF)
 option(run_int_tests "set run_int_tests to ON to integration tests (default is OFF)." OFF)
+option(run_perf_tests "set run_perf_tests to ON to build performance tests (default is OFF)." OFF)
 option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is ON)" ON)
 option(run_traceability "run traceability tool (default is ON)" ON)
 
