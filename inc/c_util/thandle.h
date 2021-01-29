@@ -118,7 +118,7 @@ static T* THANDLE_MALLOC(T)(void(*dispose)(T*))                                 
     return result;                                                                                                                                                  \
 }                                                                                                                                                                   \
 
-/*this is only useful during debugging: from a THANDLE(T) it returns THANDLE_WRAPPER_TYPE_NAME(T) - which can be viewed in debugger - useful for seeing refCount. 
+/*this is only useful during debugging: from a THANDLE(T) it returns THANDLE_WRAPPER_TYPE_NAME(T) - which can be viewed in debugger - useful for seeing refCount.
 Example: write REAL_BSDL_LOG_STRUCTURE_INSPECT(temp) in the Visual Studio watch window, where REAL_BSDL_LOG_STRUCTURE is a previously THANDLE'd type               */
 #define THANDLE_INSPECT_MACRO(T) \
 const THANDLE_WRAPPER_TYPE_NAME(T)* const THANDLE_INSPECT(T)(THANDLE(T) t)                                                                                          \
@@ -162,10 +162,10 @@ static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(T)(void(*dispose)(T*), size_t extra_siz
 static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(T)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source), size_t(*get_sizeof)(const T* source)) \
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
-    if(                                                                                                                                                             \
+    if (                                                                                                                                                            \
         /*Codes_SRS_THANDLE_02_025: [ If source is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/                                       \
         (source == NULL)                                                                                                                                            \
-    )                                                                                                                                                               \
+        )                                                                                                                                                           \
     {                                                                                                                                                               \
         LogError("invalid arguments const " MU_TOSTRING(T) "* source=%p, void(*dispose)(" MU_TOSTRING(T) "*)=%p, int(*copy)(" MU_TOSTRING(T) "* destination, const " MU_TOSTRING(T) "* source)=%p", source, dispose, copy); \
         result = NULL;                                                                                                                                              \
@@ -185,7 +185,7 @@ static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(T)(const T* source, void(*dis
         }                                                                                                                                                           \
         else                                                                                                                                                        \
         {                                                                                                                                                           \
-            if(copy==NULL)                                                                                                                                          \
+            if (copy==NULL)                                                                                                                                         \
             {                                                                                                                                                       \
                 /*Codes_SRS_THANDLE_02_027: [ If copy is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall memcpy the content of source in allocated memory. ]*/     \
                 (void)memcpy(&(handle_impl->data), source, sizeof_source);                                                                                          \
@@ -215,7 +215,7 @@ static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(T)(const T* source, void(*dis
         }                                                                                                                                                           \
     }                                                                                                                                                               \
     return result;                                                                                                                                                  \
-}  
+}
 
 #define THANDLE_CREATE_FROM_CONTENT_MACRO(T)                                                                                                                        \
 static size_t THANDLE_GET_SIZEOF(T)(const T* t)                                                                                                                     \
@@ -252,7 +252,7 @@ static void THANDLE_FREE(T)(T* t)                                               
 void THANDLE_DEC_REF(T)(THANDLE(T) t)                                                                                                                               \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_001: [ If t is NULL then THANDLE_DEC_REF shall return. ]*/                                                                               \
-    if(t == NULL)                                                                                                                                                   \
+    if (t == NULL)                                                                                                                                                  \
     {                                                                                                                                                               \
         LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") t=%p", t);                                                                                           \
     }                                                                                                                                                               \
@@ -263,7 +263,7 @@ void THANDLE_DEC_REF(T)(THANDLE(T) t)                                           
         if (interlocked_decrement(&handle_impl->refCount) == 0)                                                                                                     \
         {                                                                                                                                                           \
             /*Codes_SRS_THANDLE_02_003: [ If the ref count of t reaches 0 then THANDLE_DEC_REF shall call dispose (if not NULL) and free the used memory. ]*/       \
-            if(handle_impl->dispose!=NULL)                                                                                                                          \
+            if (handle_impl->dispose!=NULL)                                                                                                                         \
             {                                                                                                                                                       \
                 handle_impl->dispose(&handle_impl->data);                                                                                                           \
             }                                                                                                                                                       \
@@ -278,7 +278,7 @@ void THANDLE_DEC_REF(T)(THANDLE(T) t)                                           
 void THANDLE_INC_REF(T)(THANDLE(T) t)                                                                                                                               \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_004: [ If t is NULL then THANDLE_INC_REF shall return. ]*/                                                                               \
-    if(t == NULL)                                                                                                                                                   \
+    if (t == NULL)                                                                                                                                                  \
     {                                                                                                                                                               \
         LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") t=%p", t);                                                                                           \
     }                                                                                                                                                               \
@@ -292,10 +292,10 @@ void THANDLE_INC_REF(T)(THANDLE(T) t)                                           
 
 /*given a previous type T, this introduces THANDLE_ASSIGN macro to assign a handle to another handle*/
 #define THANDLE_ASSIGN_MACRO(T)                                                                                                                                     \
-void THANDLE_ASSIGN(T)(THANDLE(T) * t1, THANDLE(T) t2 )                                                                                                             \
+void THANDLE_ASSIGN(T)(THANDLE(T) * t1, THANDLE(T) t2)                                                                                                              \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_006: [ If t1 is NULL then THANDLE_ASSIGN shall return. ]*/                                                                               \
-    if(t1 == NULL)                                                                                                                                                  \
+    if (t1 == NULL)                                                                                                                                                 \
     {                                                                                                                                                               \
         LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") * t1=%p, THANDLE(" MU_TOSTRING(T) ") t2=%p", t1, t2 );                                               \
     }                                                                                                                                                               \
@@ -312,7 +312,7 @@ void THANDLE_ASSIGN(T)(THANDLE(T) * t1, THANDLE(T) t2 )                         
             {                                                                                                                                                       \
                 /*Codes_SRS_THANDLE_02_008: [ If *t1 is NULL and t2 is not NULL then THANDLE_ASSIGN shall increment the reference count of t2 and store t2 in *t1. ]*/ \
                 THANDLE_INC_REF(T)(t2);                                                                                                                             \
-                * (T const**)t1 = t2;                                                                                                                               \
+                *(T const**)t1 = t2;                                                                                                                                \
             }                                                                                                                                                       \
         }                                                                                                                                                           \
         else                                                                                                                                                        \
@@ -321,14 +321,14 @@ void THANDLE_ASSIGN(T)(THANDLE(T) * t1, THANDLE(T) t2 )                         
             {                                                                                                                                                       \
                 /*Codes_SRS_THANDLE_02_009: [ If *t1 is not NULL and t2 is NULL then THANDLE_ASSIGN shall decrement the reference count of *t1 and store NULL in *t1. ]*/ \
                 THANDLE_DEC_REF(T)(*t1);                                                                                                                            \
-                * (T const**)t1 = t2;                                                                                                                               \
+                *(T const**)t1 = t2;                                                                                                                                \
             }                                                                                                                                                       \
             else                                                                                                                                                    \
             {                                                                                                                                                       \
                 /*Codes_SRS_THANDLE_02_010: [ If *t1 is not NULL and t2 is not NULL then THANDLE_ASSIGN shall increment the reference count of t2, shall decrement the reference count of *t1 and store t2 in *t1. ]*/ \
                 THANDLE_INC_REF(T)(t2);                                                                                                                             \
                 THANDLE_DEC_REF(T)(*t1);                                                                                                                            \
-                * (T const**)t1 = t2;                                                                                                                               \
+                *(T const**)t1 = t2;                                                                                                                                \
             }                                                                                                                                                       \
         }                                                                                                                                                           \
     }                                                                                                                                                               \
@@ -336,26 +336,25 @@ void THANDLE_ASSIGN(T)(THANDLE(T) * t1, THANDLE(T) t2 )                         
 
 /*given a previous type T, this introduces THANDLE_INITIALIZE macro to initialize a handle value*/
 #define THANDLE_INITIALIZE_MACRO(T)                                                                                                                                 \
-void THANDLE_INITIALIZE(T)(THANDLE(T) * lvalue, THANDLE(T) rvalue )                                                                                                 \
+void THANDLE_INITIALIZE(T)(THANDLE(T) * lvalue, THANDLE(T) rvalue)                                                                                                  \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_011: [ If lvalue is NULL then THANDLE_INITIALIZE shall return. ]*/                                                                       \
-    if(lvalue == NULL)                                                                                                                                              \
+    if (lvalue == NULL)                                                                                                                                             \
     {                                                                                                                                                               \
         LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") * lvalue=%p, THANDLE(" MU_TOSTRING(T) ") rvalue=%p", lvalue, rvalue );                               \
     }                                                                                                                                                               \
     else                                                                                                                                                            \
     {                                                                                                                                                               \
-        /*Codes_SRS_THANDLE_02_018: [ If rvalue is NULL then THANDLE_INITIALIZE shall store NULL in *lvalue. ]*/                                                    \
-        if(rvalue == NULL)                                                                                                                                          \
+        if (rvalue == NULL)                                                                                                                                         \
         {                                                                                                                                                           \
-            LogInfo("THANDLE_INITIALIZE called with rvalue NULL");                                                                                                  \
+            /*Codes_SRS_THANDLE_02_018: [ If rvalue is NULL then THANDLE_INITIALIZE shall store NULL in *lvalue. ]*/                                                \
         }                                                                                                                                                           \
         else                                                                                                                                                        \
         {                                                                                                                                                           \
             /*Codes_SRS_THANDLE_02_012: [ THANDLE_INITIALIZE shall increment the reference count of rvalue and store it in *lvalue. ]*/                             \
             THANDLE_INC_REF(T)(rvalue);                                                                                                                             \
         }                                                                                                                                                           \
-        * (T const**)lvalue = rvalue;                                                                                                                               \
+        *(T const**)lvalue = rvalue;                                                                                                                                \
     }                                                                                                                                                               \
 }                                                                                                                                                                   \
 
@@ -370,14 +369,14 @@ static T* THANDLE_GET_T(T)(THANDLE(T) t)                                        
 
 /*given a previous type T, this introduces THANDLE_MOVE macro to move a handle (*t1=t2, *t2=NULL)*/
 #define THANDLE_MOVE_MACRO(T)                                                                                                                                       \
-void THANDLE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2 )                                                                                                             \
+void THANDLE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2)                                                                                                              \
 {                                                                                                                                                                   \
-    if(                                                                                                                                                             \
+    if (                                                                                                                                                            \
         /*Codes_SRS_THANDLE_02_033: [ If t1 is NULL then THANDLE_MOVE shall return. ]*/                                                                             \
         (t1 == NULL) ||                                                                                                                                             \
         /*Codes_SRS_THANDLE_02_034: [ If t2 is NULL then THANDLE_MOVE shall return. ]*/                                                                             \
         (t2 == NULL)                                                                                                                                                \
-    )                                                                                                                                                               \
+        )                                                                                                                                                           \
     {                                                                                                                                                               \
         LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") * t1=%p, THANDLE(" MU_TOSTRING(T) ") t2=%p", t1, t2 );                                               \
     }                                                                                                                                                               \
@@ -418,14 +417,14 @@ void THANDLE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2 )                         
 
 /*given a previous type T, this introduces THANDLE_INITIALIZE_MOVE_MACRO macro to move a handle (*t1=t2, *t2=NULL)*/
 #define THANDLE_INITIALIZE_MOVE_MACRO(T)                                                                                                                            \
-void THANDLE_INITIALIZE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2 )                                                                                                  \
+void THANDLE_INITIALIZE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2)                                                                                                   \
 {                                                                                                                                                                   \
-    if(                                                                                                                                                             \
+    if (                                                                                                                                                            \
         /*Codes_SRS_THANDLE_01_001: [ If t1 is NULL then THANDLE_INITIALIZE_MOVE shall return. ]*/                                                                  \
         (t1 == NULL) ||                                                                                                                                             \
         /*Codes_SRS_THANDLE_01_002: [ If t2 is NULL then THANDLE_INITIALIZE_MOVE shall return. ]*/                                                                  \
         (t2 == NULL)                                                                                                                                                \
-    )                                                                                                                                                               \
+        )                                                                                                                                                           \
     {                                                                                                                                                               \
         LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") * t1=%p, THANDLE(" MU_TOSTRING(T) ") t2=%p", t1, t2 );                                               \
     }                                                                                                                                                               \
