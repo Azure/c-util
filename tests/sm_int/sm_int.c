@@ -28,8 +28,6 @@ TEST_DEFINE_ENUM_TYPE(SM_RESULT, SM_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
-#define XTEST_FUNCTION(x) void x(void)
-
 #define N_MAX_THREADS 256
 
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
@@ -643,7 +641,7 @@ TEST_FUNCTION(sm_chaos)
     xlogging_set_log_function(toBeRestored);
 }
 
-XTEST_FUNCTION(sm_does_not_block)
+TEST_FUNCTION(sm_does_not_block)
 {
     LogInfo("disabling logging for the duration of sm_does_not_block. Logging takes additional locks that \"might help\" the test pass");
     LOGGER_LOG toBeRestored = xlogging_get_log_function();
@@ -970,7 +968,7 @@ static void sm_switches_from_state_to_created(SM_GO_TO_STATE* goToState)
 /*at time=THREAD_TO_BACK_DELAY  an API is executed, result is collected and asserted*/
 /*at time = 2*THREAD_TO_BACK_DELAY the second thread unblocks execution and reverts execution to SM_CREATED*/
 
-XTEST_FUNCTION(STATE_and_API)
+TEST_FUNCTION(STATE_and_API)
 {
     SM_RESULT_AND_NEXT_STATE_AFTER_API_CALL expected[][4]=
     {
