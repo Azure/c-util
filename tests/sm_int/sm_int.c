@@ -28,6 +28,8 @@ TEST_DEFINE_ENUM_TYPE(SM_RESULT, SM_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
+#define XTEST_FUNCTION(x) void x(void)
+
 #define N_MAX_THREADS 256
 
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
@@ -136,11 +138,20 @@ static void createEndOpenThreads(OPEN_CLOSE_THREADS* data)
 
 static void waitAndDestroyEndOpenThreads(OPEN_CLOSE_THREADS* data)
 {
+    /*this function needs to be called after waitAndDestroyBeginOpenThreads. Reason is: if it is called before, then 1 of the callsBeginOpen might execute, thus switching the state to OPENING.*/
+    /*so:*/
+    /*at this moment at best there is 1 sm_open_begin (sm_open_begin is mutually exclusive with self) that did not yet have its partner sm_open_end called.*/
+    /*note: the loop below does not guarantee that any one of spawned threads calls it*/
+    /*here' how that might not happen: all callsEndOpen threads are Sleeping. Then they (all of them) wake up, they evaluate the condition "threadsShouldFinish", find it true, and exit.*/
+    /*thus leaving the open_end not called*/
     for (uint32_t iEndOpen = 0; iEndOpen < data->n_end_open_threads; iEndOpen++)
     {
         int dont_care;
         ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(data->endOpenThreads[iEndOpen], &dont_care));
     }
+    /*and in case the above comment happens and there's 1 sm_open_begin that is not matched by 1 sm_open_end we will call it here. If there isn't, still call it - it is harmless at this moment.*/
+    sm_open_end(data->sm, true);
+    
 }
 
 
@@ -209,11 +220,19 @@ static void createEndCloseThreads(OPEN_CLOSE_THREADS* data)
 
 static void waitAndDestroyEndCloseThreads(OPEN_CLOSE_THREADS* data)
 {
+    /*this function needs to be called after waitAndDestroyBeginCloseThreads. Reason is: if it is called before, then 1 of the callsBeginClose might execute, thus switching the state to CLOSING.*/
+    /*so:*/
+    /*at this moment at best there is 1 sm_close_begin (sm_close_begin is mutually exclusive with self) that did not yet have its partner sm_close_end called.*/
+    /*note: the loop below does not guarantee that any one of spawned threads calls it*/
+    /*here' how that might not happen: all callsEndClose threads are Sleeping. Then they (all of them) wake up, they evaluate the condition "threadsShouldFinish", find it true, and exit.*/
+    /*thus leaving the sm_close_end not called*/
     for (uint32_t iEndClose = 0; iEndClose < data->n_end_close_threads; iEndClose++)
     {
         int dont_care;
         ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(data->endCloseThreads[iEndClose], &dont_care));
     }
+    /*and in case the above comment happens and there's 1 sm_close_begin that is not matched by 1 sm_close_end we will call it here. If there isn't, still call it - it is harmless at this moment.*/
+    sm_close_end(data->sm);
 }
 
 static int callsBeginBarrier(
@@ -280,11 +299,19 @@ static void createEndBarrierThreads(OPEN_CLOSE_THREADS* data)
 
 static void waitAndDestroyEndBarrierThreads(OPEN_CLOSE_THREADS* data)
 {
+    /*this function needs to be called after waitAndDestroyBeginBarrierThreads. Reason is: if it is called before, then 1 of the callsBeginBarrier might execute, thus switching the state to BARRIER.*/
+    /*so:*/
+    /*at this moment at best there is 1 sm_barrier_begin (sm_barrier_begin is mutually exclusive with self) that did not yet have its partner sm_barrier_end called.*/
+    /*note: the loop below does not guarantee that any one of spawned threads calls it*/
+    /*here' how that might not happen: all callsEndBarrier threads are Sleeping. Then they (all of them) wake up, they evaluate the condition "threadsShouldFinish", find it true, and exit.*/
+    /*thus leaving the sm_barrier_end not called*/
     for (uint32_t iEndBarrier = 0; iEndBarrier < data->n_end_barrier_threads; iEndBarrier++)
     {
         int dont_care;
         ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(data->endBarrierThreads[iEndBarrier], &dont_care));
     }
+    /*and in case the above comment happens and there's 1 sm_barrier_begin that is not matched by 1 sm_barrier_end we will call it here. If there isn't, still call it - it is harmless at this moment.*/
+    sm_barrier_end(data->sm); /*might as well fail*/
 }
 
 static int callsBeginAndEnd(
@@ -580,19 +607,14 @@ TEST_FUNCTION(sm_chaos)
 
         waitAndDestroyBeginAndEndThreads(data);
 
-        /*there might be a sm_barrier_begin that is not followed by a sm_barrier_end. So this is calling it "just in case"*/
-        
-        sm_barrier_end(data->sm);
-
-        /*there might be a sm_open_begin that is not followed by a sm_open_end. So this is calling it "just in case"*/
-        sm_open_end(data->sm, true);
-
-        waitAndDestroyEndBarrierThreads(data);
         waitAndDestroyBeginBarrierThreads(data);
-        waitAndDestroyEndCloseThreads(data);
+        waitAndDestroyEndBarrierThreads(data);
+        
         waitAndDestroyBeginCloseThreads(data);
-        waitAndDestroyEndOpenThreads(data);
+        waitAndDestroyEndCloseThreads(data);
+        
         waitAndDestroyBeginOpenThreads(data);
+        waitAndDestroyEndOpenThreads(data);
 
         /*just in case anything needs to close*/
 
@@ -621,7 +643,7 @@ TEST_FUNCTION(sm_chaos)
     xlogging_set_log_function(toBeRestored);
 }
 
-TEST_FUNCTION(sm_does_not_block)
+XTEST_FUNCTION(sm_does_not_block)
 {
     LogInfo("disabling logging for the duration of sm_does_not_block. Logging takes additional locks that \"might help\" the test pass");
     LOGGER_LOG toBeRestored = xlogging_get_log_function();
@@ -948,7 +970,7 @@ static void sm_switches_from_state_to_created(SM_GO_TO_STATE* goToState)
 /*at time=THREAD_TO_BACK_DELAY  an API is executed, result is collected and asserted*/
 /*at time = 2*THREAD_TO_BACK_DELAY the second thread unblocks execution and reverts execution to SM_CREATED*/
 
-TEST_FUNCTION(STATE_and_API)
+XTEST_FUNCTION(STATE_and_API)
 {
     SM_RESULT_AND_NEXT_STATE_AFTER_API_CALL expected[][4]=
     {
