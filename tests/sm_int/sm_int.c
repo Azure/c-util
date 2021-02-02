@@ -140,7 +140,7 @@ static void waitAndDestroyEndOpenThreads(OPEN_CLOSE_THREADS* data)
     /*so:*/
     /*at this moment at best there is 1 sm_open_begin (sm_open_begin is mutually exclusive with self) that did not yet have its partner sm_open_end called.*/
     /*note: the loop below does not guarantee that any one of spawned threads calls it*/
-    /*here' how that might not happen: all callsEndOpen threads are Sleeping. Then they (all of them) wake up, they evaluate the condition "threadsShouldFinish", find it true, and exit.*/
+    /*here's how that might not happen: all callsEndOpen threads are Sleeping. Then they (all of them) wake up, they evaluate the condition "threadsShouldFinish", find it true, and exit.*/
     /*thus leaving the open_end not called*/
     for (uint32_t iEndOpen = 0; iEndOpen < data->n_end_open_threads; iEndOpen++)
     {
@@ -222,7 +222,7 @@ static void waitAndDestroyEndCloseThreads(OPEN_CLOSE_THREADS* data)
     /*so:*/
     /*at this moment at best there is 1 sm_close_begin (sm_close_begin is mutually exclusive with self) that did not yet have its partner sm_close_end called.*/
     /*note: the loop below does not guarantee that any one of spawned threads calls it*/
-    /*here' how that might not happen: all callsEndClose threads are Sleeping. Then they (all of them) wake up, they evaluate the condition "threadsShouldFinish", find it true, and exit.*/
+    /*here's how that might not happen: all callsEndClose threads are Sleeping. Then they (all of them) wake up, they evaluate the condition "threadsShouldFinish", find it true, and exit.*/
     /*thus leaving the sm_close_end not called*/
     for (uint32_t iEndClose = 0; iEndClose < data->n_end_close_threads; iEndClose++)
     {
@@ -301,7 +301,7 @@ static void waitAndDestroyEndBarrierThreads(OPEN_CLOSE_THREADS* data)
     /*so:*/
     /*at this moment at best there is 1 sm_barrier_begin (sm_barrier_begin is mutually exclusive with self) that did not yet have its partner sm_barrier_end called.*/
     /*note: the loop below does not guarantee that any one of spawned threads calls it*/
-    /*here' how that might not happen: all callsEndBarrier threads are Sleeping. Then they (all of them) wake up, they evaluate the condition "threadsShouldFinish", find it true, and exit.*/
+    /*here's how that might not happen: all callsEndBarrier threads are Sleeping. Then they (all of them) wake up, they evaluate the condition "threadsShouldFinish", find it true, and exit.*/
     /*thus leaving the sm_barrier_end not called*/
     for (uint32_t iEndBarrier = 0; iEndBarrier < data->n_end_barrier_threads; iEndBarrier++)
     {
