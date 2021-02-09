@@ -28,11 +28,12 @@ extern "C"
     typedef void (*RC_STRING_FREE_FUNC)(void* context);
 
     #define PRI_RC_STRING "s"
-    #define RC_STRING_VALUE(rc) (((rc) == NULL) ? "NULL" : MU_P_OR_NULL(rc->string)) \
+    #define RC_STRING_VALUE(rc) (((rc) == NULL) ? "NULL" : MU_P_OR_NULL(rc->string))
 
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*, string);
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_move_memory, const char*, string);
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_custom_free, const char*, string, RC_STRING_FREE_FUNC, free_func, void*, free_func_context);
+    MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_recreate, THANDLE(RC_STRING), self);
 
 #ifdef __cplusplus
 }

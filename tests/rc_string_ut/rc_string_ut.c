@@ -503,4 +503,98 @@ TEST_FUNCTION(when_reference_count_reaches_0_the_custom_free_function_is_called_
     test_free_func(test_string);
 }
 
+/*Tests_SRS_RC_STRING_02_001: [ If self is NULL then rc_string_recreate shall return. ]*/
+TEST_FUNCTION(rc_string_recreate_with_self_NULL_returns)
+{
+    ///arrange
+
+    ///act
+    rc_string_recreate(NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_RC_STRING_02_002: [ rc_string_recreate shall perform same steps as rc_string_create to return a THANDLE(RC_STRING) with the same content as source. ]*/
+TEST_FUNCTION(rc_string_recreate_succeeds_1)
+{
+    ///arrange
+    const char source[] = "bla";
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    THANDLE(RC_STRING) rc_string = rc_string_create(source);
+    ASSERT_IS_NOT_NULL(rc_string);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(char_ptr, source, rc_string->string);
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    ///act
+    THANDLE(RC_STRING) same = rc_string_recreate(rc_string);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(same);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(char_ptr, source, same->string);
+
+    ///clean
+    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    THANDLE_DEC_REF(RC_STRING)(same);
+}
+
+/*Tests_SRS_RC_STRING_02_004: [ If creating the temporary THANDLE(RC_STRING) fails then rc_string_recreate shall return. ]*/
+TEST_FUNCTION(rc_string_recreate_fails_when_malloc_fails)
+{
+    ///arrange
+    const char source[] = "bla";
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    THANDLE(RC_STRING) rc_string = rc_string_create(source);
+    ASSERT_IS_NOT_NULL(rc_string);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(char_ptr, source, rc_string->string);
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+        .SetReturn(NULL);
+
+    ///act
+    THANDLE(RC_STRING) same = rc_string_recreate(rc_string);
+
+    ///assert
+    ASSERT_IS_NULL(same);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(char_ptr, source, rc_string->string);
+
+    ///clean
+    THANDLE_DEC_REF(RC_STRING)(rc_string);
+}
+
+/*Tests_SRS_RC_STRING_02_002: [ rc_string_recreate shall perform same steps as rc_string_create to return a THANDLE(RC_STRING) with the same content as source. ]*/
+/*tests wants to see that a recreation can be done on a inc_ref'd handle*/
+TEST_FUNCTION(rc_string_recreate_succeeds_2)
+{
+    ///arrange
+    const char source[] = "bla2";
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    THANDLE(RC_STRING) rc_string = rc_string_create(source);
+    ASSERT_IS_NOT_NULL(rc_string);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(char_ptr, source, rc_string->string);
+
+    THANDLE_INC_REF(RC_STRING)(rc_string);
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    ///act
+    THANDLE(RC_STRING) same = rc_string_recreate(rc_string);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(same);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(char_ptr, same->string, rc_string->string);
+
+    ///clean
+    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    THANDLE_DEC_REF(RC_STRING)(same);
+}
+
 END_TEST_SUITE(rc_string_unittests)

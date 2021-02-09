@@ -65,6 +65,33 @@ static void rc_string_dispose(RC_STRING* content)
     }
 }
 
+static THANDLE(RC_STRING) rc_string_create_impl(const char* string)
+{
+    /* Codes_SRS_RC_STRING_01_002: [ Otherwise, rc_string_create shall determine the length of string. ]*/
+    size_t string_length = strlen(string);
+    size_t string_length_with_terminator = string_length + 1;
+
+    /* Codes_SRS_RC_STRING_01_003: [ rc_string_create shall allocate memory for the THANDLE(RC_STRING), ensuring all the bytes in string can be copied (including the zero terminator). ]*/
+    THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator);
+    if (temp_result == NULL)
+    {
+        /* Codes_SRS_RC_STRING_01_006: [ If any error occurs, rc_string_create shall fail and return NULL. ]*/
+        LogError("THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING) failed, extra size is %zu, string_length_with_terminator=%zu", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, string_length_with_terminator);
+    }
+    else
+    {
+        RC_STRING_INTERNAL* rc_string_internal = RC_STRING_INTERNAL_FROM_RC_STRING(THANDLE_GET_T(RC_STRING)(temp_result));
+        rc_string_internal->rc_string.string = rc_string_internal->copied_string;
+        rc_string_internal->storage_type = STRING_STORAGE_TYPE_COPIED;
+
+        /* Codes_SRS_RC_STRING_01_004: [ rc_string_create shall copy the string memory (including the NULL terminator). ]*/
+        (void)memcpy(rc_string_internal->copied_string, string, string_length_with_terminator);
+
+        /* Codes_SRS_RC_STRING_01_005: [ rc_string_create shall succeed and return a non-NULL handle. ]*/
+    }
+    return temp_result;
+}
+
 IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*, string)
 {
     THANDLE(RC_STRING) result = NULL;
@@ -76,29 +103,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*,
     }
     else
     {
-        /* Codes_SRS_RC_STRING_01_002: [ Otherwise, rc_string_create shall determine the length of string. ]*/
-        size_t string_length = strlen(string);
-        size_t string_length_with_terminator = string_length + 1;
-
-        /* Codes_SRS_RC_STRING_01_003: [ rc_string_create shall allocate memory for the THANDLE(RC_STRING), ensuring all the bytes in string can be copied (including the zero terminator). ]*/
-        THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator);
-        if (temp_result == NULL)
-        {
-            /* Codes_SRS_RC_STRING_01_006: [ If any error occurs, rc_string_create shall fail and return NULL. ]*/
-            LogError("THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING) failed, extra size is %zu, string_length_with_terminator=%zu", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, string_length_with_terminator);
-        }
-        else
-        {
-            RC_STRING_INTERNAL* rc_string_internal = RC_STRING_INTERNAL_FROM_RC_STRING(THANDLE_GET_T(RC_STRING)(temp_result));
-            rc_string_internal->rc_string.string = rc_string_internal->copied_string;
-            rc_string_internal->storage_type = STRING_STORAGE_TYPE_COPIED;
-
-            /* Codes_SRS_RC_STRING_01_004: [ rc_string_create shall copy the string memory (including the NULL terminator). ]*/
-            (void)memcpy(rc_string_internal->copied_string, string, string_length_with_terminator);
-
-            /* Codes_SRS_RC_STRING_01_005: [ rc_string_create shall succeed and return a non-NULL handle. ]*/
-            THANDLE_MOVE(RC_STRING)(&result, &temp_result);
-        }
+        return rc_string_create_impl(string);
     }
 
     return result;
@@ -177,5 +182,24 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_custom_f
         }
     }
 
+    return result;
+}
+
+
+THANDLE(RC_STRING) rc_string_recreate(THANDLE(RC_STRING) self)
+{
+    THANDLE(RC_STRING) result;
+    if (self == NULL)
+    {
+        /*do nothing*/
+        LogError("invalid argument THANDLE(RC_STRING) self=%p", self);
+        THANDLE_INITIALIZE(RC_STRING)(&result, NULL);
+    }
+    else
+    {
+        THANDLE(RC_STRING) temp = rc_string_create_impl(self->string);
+        THANDLE_INITIALIZE_MOVE(RC_STRING)(&result, &temp);
+        /*return as is*/
+    }
     return result;
 }
