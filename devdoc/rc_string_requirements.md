@@ -23,6 +23,7 @@
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*, string);
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_move_memory, const char*, string);
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_custom_free, const char*, string, RC_STRING_FREE_FUNC, free_func, void*, free_func_context);
+    MOCKABLE_FUNCTION(, void, rc_string_recreate, THANDLE(RC_STRING), self);
 ```
 
 ## rc_string_create
@@ -88,3 +89,17 @@ MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_custom_free, const
 **SRS_RC_STRING_01_018: [** When the `THANDLE(RC_STRING)` reference count reaches 0, `free_func` shall be called with `free_func_context` to free the memory used by `string`. **]**
 
 **SRS_RC_STRING_01_019: [** If any error occurs, `rc_string_create_with_custom_free` shall fail and return `NULL`. **]**
+
+### rc_string_recreate
+```c
+MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_recreate, THANDLE(RC_STRING), source);
+```
+
+`rc_string_recreate` copies `self`'s string by content. This allows detaching the original `source`'s underlying storage, for example, if it was previously created by `rc_string_create_with_custom_free` from a `CONSTBUFFER_HANDLE`.
+
+**SRS_RC_STRING_02_001: [** If `source` is `NULL` then `rc_string_recreate` shall return `NULL`. **]**
+
+**SRS_RC_STRING_02_002: [** `rc_string_recreate` shall perform same steps as `rc_string_create` to return a `THANDLE(RC_STRING)` with the same content as `source`. **]**
+
+
+
