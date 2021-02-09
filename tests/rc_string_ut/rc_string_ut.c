@@ -541,7 +541,7 @@ TEST_FUNCTION(rc_string_recreate_succeeds_1)
     THANDLE_DEC_REF(RC_STRING)(same);
 }
 
-/*Tests_SRS_RC_STRING_02_004: [ If creating the temporary THANDLE(RC_STRING) fails then rc_string_recreate shall return. ]*/
+/*Tests_SRS_RC_STRING_02_002: [ rc_string_recreate shall perform same steps as rc_string_create to return a THANDLE(RC_STRING) with the same content as source. ]*/
 TEST_FUNCTION(rc_string_recreate_fails_when_malloc_fails)
 {
     ///arrange

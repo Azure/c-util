@@ -99,6 +99,7 @@ MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_recreate, THANDLE(RC_STRING), 
 
 **SRS_RC_STRING_02_001: [** If `source` is `NULL` then `rc_string_recreate` shall return `NULL`. **]**
 
+**SRS_RC_STRING_02_002: [** `rc_string_recreate` shall perform same steps as `rc_string_create` to return a `THANDLE(RC_STRING)` with the same content as `source`. **]**
 
 
 
