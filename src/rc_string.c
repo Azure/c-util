@@ -188,19 +188,25 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_custom_f
 
 THANDLE(RC_STRING) rc_string_recreate(THANDLE(RC_STRING) self)
 {
-    THANDLE(RC_STRING) result;
+    THANDLE(RC_STRING) result = NULL;
     if (self == NULL)
     {
         /*Codes_SRS_RC_STRING_02_001: [ If source is NULL then rc_string_recreate shall return NULL. ]*/
         LogError("invalid argument THANDLE(RC_STRING) self=%p", self);
-        THANDLE_INITIALIZE(RC_STRING)(&result, NULL);
+        /*return as is, that is, NULL*/
     }
     else
     {
         /*Codes_SRS_RC_STRING_02_002: [ rc_string_recreate shall perform same steps as rc_string_create to return a THANDLE(RC_STRING) with the same content as source. ]*/
         THANDLE(RC_STRING) temp = rc_string_create_impl(self->string);
-        THANDLE_INITIALIZE_MOVE(RC_STRING)(&result, &temp);
-        /*return as is*/
+
+        if (temp == NULL)
+        {
+            LogError("unable to recreate the string %" PRI_RC_STRING " with individual storage", RC_STRING_VALUE(self));
+        }
+
+        /*in any case (NULL, non-NULL) return it*/
+        THANDLE_INITIALIZE_MOVE(RC_STRING)(&result, &temp); 
     }
     return result;
 }
