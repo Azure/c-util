@@ -156,39 +156,47 @@ void sm_open_end(SM_HANDLE sm, bool success)
     }
     else
     {
-        /*Codes_SRS_SM_02_041: [ If state is not SM_OPENING then sm_open_end shall return. ]*/
-        int32_t state = interlocked_add(&sm->state, 0);
-        if ((state & SM_STATE_MASK) != SM_OPENING)
+        do
         {
-            LogError("sm name=%s. cannot sm_open_end that which is in %" PRI_SM_STATE " state", sm->name, SM_STATE_VALUE(state));
-        }
-        else
-        {
-            if (success)
+            /*Codes_SRS_SM_02_041: [ If state is not SM_OPENING then sm_open_end shall return. ]*/
+            int32_t state = interlocked_add(&sm->state, 0);
+            if ((state & SM_STATE_MASK) != SM_OPENING)
             {
-                /*Codes_SRS_SM_02_074: [ If success is true then sm_open_end shall switch the state to SM_OPENED. ]*/
-                if (interlocked_compare_exchange(&sm->state, state - SM_OPENING + SM_OPENED + SM_STATE_INCREMENT, state) != state)
-                {
-                    LogError("sm name=%s. sm_open_end state changed meanwhile (it was %" PRI_SM_STATE ", likely competing threads.", sm->name, SM_STATE_VALUE(state));
-                }
-                else
-                {
-                    /*we are done*/
-                }
+                LogError("sm name=%s. cannot sm_open_end that which is in %" PRI_SM_STATE " state", sm->name, SM_STATE_VALUE(state));
+                break;
             }
             else
             {
-                /*Codes_SRS_SM_02_075: [ If success is false then sm_open_end shall switch the state to SM_CREATED and reset the SM_FAULTED_BIT to 0. ]*/
-                if (interlocked_compare_exchange(&sm->state, (state & ~(uint32_t)SM_FAULTED_BIT) - SM_OPENING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
+                if (success)
                 {
-                    LogError("sm name=%s. sm_open_end state changed meanwhile (it was %" PRI_SM_STATE ", likely competing threads.", sm->name, SM_STATE_VALUE(state));
+                    /*Codes_SRS_SM_02_074: [ If success is true then sm_open_end shall switch the state to SM_OPENED. ]*/
+                    if (interlocked_compare_exchange(&sm->state, state - SM_OPENING + SM_OPENED + SM_STATE_INCREMENT, state) != state)
+                    {
+                        LogError("sm name=%s. sm_open_end state changed meanwhile (it was %" PRI_SM_STATE ", likely competing threads.", sm->name, SM_STATE_VALUE(state));
+                        // This likely means a fault happened, try again to be sure
+                    }
+                    else
+                    {
+                        /*we are done*/
+                        break;
+                    }
                 }
                 else
                 {
-                    /*we are done*/
+                    /*Codes_SRS_SM_02_075: [ If success is false then sm_open_end shall switch the state to SM_CREATED and reset the SM_FAULTED_BIT to 0. ]*/
+                    if (interlocked_compare_exchange(&sm->state, (state & ~(uint32_t)SM_FAULTED_BIT) - SM_OPENING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
+                    {
+                        LogError("sm name=%s. sm_open_end state changed meanwhile (it was %" PRI_SM_STATE ", likely competing threads.", sm->name, SM_STATE_VALUE(state));
+                        // This likely means a fault happened, try again to be sure
+                    }
+                    else
+                    {
+                        /*we are done*/
+                        break;
+                    }
                 }
             }
-        }
+        } while (1);
     }
 }
 

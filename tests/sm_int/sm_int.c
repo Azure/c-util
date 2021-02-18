@@ -4,10 +4,12 @@
 #ifdef __cplusplus
 #include <cinttypes>
 #include <cstdlib>
+#include <ctime>
 #else
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <time.h>
 #endif
 
 #include "testrunnerswitcher.h"
@@ -488,6 +490,7 @@ static int callsBeginAndEnd(
 )
 {
     OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
+    srand((unsigned int)time(NULL));
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -528,12 +531,14 @@ static int callsFault(
 )
 {
     OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
+    srand((unsigned int)time(NULL));
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
         uint32_t time_before_next_fault = rand() % 300;
         ThreadAPI_Sleep(time_before_next_fault);
         sm_fault(data->sm);
+        (void)interlocked_increment(&data->n_faults);
     }
     return 0;
 }
@@ -867,7 +872,7 @@ TEST_FUNCTION(sm_chaos)
 
     xlogging_set_log_function(toBeRestored);
 }
-
+#if 0
 TEST_FUNCTION(sm_does_not_block)
 {
     LogInfo("disabling logging for the duration of sm_does_not_block. Logging takes additional locks that \"might help\" the test pass");
@@ -1361,5 +1366,5 @@ TEST_FUNCTION(STATE_and_API)
         }
     }
 }
-
+#endif
 END_TEST_SUITE(sm_int_tests)
