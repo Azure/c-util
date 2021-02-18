@@ -15,6 +15,7 @@
 #include "c_pal/threadapi.h"
 #include "c_pal/sync.h"
 #include "c_util/interlocked_hl.h"
+#include "c_util/log_critical_and_terminate.h"
 
 #include "c_util/sm.h"
 
@@ -396,6 +397,8 @@ void sm_exec_end(SM_HANDLE sm)
                 int32_t n = interlocked_add(&sm->non_barrier_call_count, 0);
                 if (n <= 0)
                 {
+                    /*Codes_SRS_SM_42_010: [ If n would decrement below 0, then sm_exec_end shall terminate the process. ]*/
+                    LogCriticalAndTerminate("Unmatched call to sm_exec_end detected!!! Pending call count is invalid");
                     break;
                 }
                 else
@@ -522,16 +525,13 @@ void sm_fault(SM_HANDLE sm)
     {
         // When this function returns the state must be one of the following (in the absence of other threads changing the state):
         //   SM_CREATED
-        //   SM_CLOSING
         //   have SM_FAULTED_BIT set in any other state
         do
         {
             int32_t state = interlocked_add(&sm->state, 0);
             if (
                 /*Codes_SRS_SM_42_006: [ If the state is SM_CREATED then sm_fault shall return. ]*/
-                ((state & SM_STATE_MASK) == SM_CREATED) ||
-                /*Codes_SRS_SM_42_008: [ If the state is SM_CLOSING then sm_fault shall return. ]*/
-                ((state & SM_STATE_MASK) == SM_CLOSING)
+                ((state & SM_STATE_MASK) == SM_CREATED)
                 )
             {
                 LogError("sm name=%s. cannot execute barrier begin when state is %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(state));

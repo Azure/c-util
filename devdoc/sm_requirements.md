@@ -251,6 +251,8 @@ MOCKABLE_FUNCTION(, void, sm_exec_end, SM_HANDLE, sm);
 
 **SRS_SM_02_063: [** If `n` reaches 0 then `sm_exec_end` shall signal that. **]**
 
+**SRS_SM_42_010: [** If `n` would decrement below 0, then `sm_exec_end` shall terminate the process. **]**
+
 ### sm_barrier_begin
 ```c
 MOCKABLE_FUNCTION(, int, sm_barrier_begin, SM_HANDLE, sm);
@@ -299,8 +301,6 @@ MOCKABLE_FUNCTION(, void, sm_fault, SM_HANDLE, sm);
 **SRS_SM_42_004: [** If `sm` is `NULL` then `sm_fault` shall return. **]**
 
 **SRS_SM_42_006: [** If the state is `SM_CREATED` then `sm_fault` shall return. **]**
-
-**SRS_SM_42_008: [** If the state is `SM_CLOSING` then `sm_fault` shall return. **]**
 
 **SRS_SM_42_007: [** `sm_fault` shall set `SM_FAULTED_BIT` to 1. **]**
 

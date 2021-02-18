@@ -22,6 +22,7 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_util/interlocked_hl.h"
+#include "c_util/log_critical_and_terminate.h"
 #undef ENABLE_MOCKS
 
 #include "real_interlocked_hl.h"
@@ -730,6 +731,38 @@ TEST_FUNCTION(sm_exec_end_signals)
 
     ///act
     sm_exec_end(sm);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    result = sm_close_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result); /*if somehow n would be -1... sm_close_end would wait forever...*/
+    sm_close_end(sm);
+
+    ///clean
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_42_010: [ If n would decrement below 0, then sm_exec_end shall terminate the process. ]*/
+TEST_FUNCTION(sm_exec_end_called_additiona_time_terminates_process)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result;
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_open_end(sm, true);
+
+    result = sm_exec_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+
+    sm_exec_end(sm);
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(ps_util_terminate_process());
+
+    ///act
     sm_exec_end(sm);
 
     ///assert
@@ -760,7 +793,6 @@ TEST_FUNCTION(sm_exec_end_works_when_faulted)
     umock_c_reset_all_calls();
 
     ///act
-    sm_exec_end(sm);
     sm_exec_end(sm);
 
     ///assert
@@ -1025,7 +1057,7 @@ TEST_FUNCTION(sm_fault_in_SM_CREATED_returns_can_still_exec_after_open)
     ///assert
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(sm));
     sm_open_end(sm, true);
-    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_exec_begin(sm));
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_exec_begin(sm)); // Not blocked by faulted
     sm_exec_end(sm);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -1033,8 +1065,7 @@ TEST_FUNCTION(sm_fault_in_SM_CREATED_returns_can_still_exec_after_open)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_42_008: [ If the state is SM_CLOSING then sm_fault shall return. ]*/
-TEST_FUNCTION(sm_fault_in_SM_CLOSING_returns_can_still_exec_after_open)
+TEST_FUNCTION(sm_fault_in_SM_CLOSING_will_get_reset)
 {
     ///arrange
     SM_HANDLE sm = TEST_sm_create();
@@ -1057,7 +1088,7 @@ TEST_FUNCTION(sm_fault_in_SM_CLOSING_returns_can_still_exec_after_open)
     sm_close_end(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_open_begin(sm));
     sm_open_end(sm, true);
-    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_exec_begin(sm));
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_exec_begin(sm)); // Not blocked by faulted
     sm_exec_end(sm);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 

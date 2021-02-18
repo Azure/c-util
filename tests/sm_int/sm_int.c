@@ -1183,14 +1183,8 @@ static int switchesFromStateToCreated(
         case SM_OPENED:
         case SM_OPENED_FAULTED:
         {
-            if (sm_close_begin(goToState->sm) == SM_EXEC_GRANTED)
-            {
-                sm_close_end(goToState->sm);
-            }
-            else
-            {
-                ASSERT_FAIL("Why?");
-            }
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_close_begin(goToState->sm));
+            sm_close_end(goToState->sm);
 
             break;
         }
@@ -1207,14 +1201,8 @@ static int switchesFromStateToCreated(
 
             ThreadAPI_Sleep(THREAD_DELAY);
 
-            if (sm_close_begin(goToState->sm) == SM_EXEC_GRANTED)
-            {
-                sm_close_end(goToState->sm);
-            }
-            else
-            {
-                ASSERT_FAIL("Why?");
-            }
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_close_begin(goToState->sm));
+            sm_close_end(goToState->sm);
             break;
 
         }
@@ -1341,13 +1329,20 @@ TEST_FUNCTION(STATE_and_API)
                 {
                     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWake(&goToState.targetAPICalledInNextLine, 1));
                     ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_exec_begin(goToState.sm));
-                    sm_exec_end(goToState.sm);
+                    if (expected[i][j].expected_sm_result == SM_EXEC_GRANTED)
+                    {
+                        sm_exec_end(goToState.sm);
+                    }
                     break;
                 }
                 case SM_BARRIER_BEGIN:/*sm_barrier_begin*/
                 {
                     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWake(&goToState.targetAPICalledInNextLine, 1));
                     ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_barrier_begin(goToState.sm));
+                    if (expected[i][j].expected_sm_result == SM_EXEC_GRANTED)
+                    {
+                        sm_barrier_end(goToState.sm);
+                    }
                     break;
                 }
                 default:
