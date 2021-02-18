@@ -872,7 +872,7 @@ TEST_FUNCTION(sm_chaos)
 
     xlogging_set_log_function(toBeRestored);
 }
-#if 0
+
 TEST_FUNCTION(sm_does_not_block)
 {
     LogInfo("disabling logging for the duration of sm_does_not_block. Logging takes additional locks that \"might help\" the test pass");
@@ -1366,5 +1366,5 @@ TEST_FUNCTION(STATE_and_API)
         }
     }
 }
-#endif
+
 END_TEST_SUITE(sm_int_tests)
