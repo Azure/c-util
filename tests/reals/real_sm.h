@@ -19,7 +19,8 @@
         sm_exec_begin,                                  \
         sm_exec_end,                                    \
         sm_barrier_begin,                               \
-        sm_barrier_end                                  \
+        sm_barrier_end,                                 \
+        sm_fault                                        \
     )
 
 #include "c_util/sm.h"
@@ -42,6 +43,8 @@ void real_sm_exec_end(SM_HANDLE sm);
 
 SM_RESULT real_sm_barrier_begin(SM_HANDLE sm);
 void real_sm_barrier_end(SM_HANDLE sm);
+
+void real_sm_fault(SM_HANDLE sm);
 
 #ifdef __cplusplus
 }

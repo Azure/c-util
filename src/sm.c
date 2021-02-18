@@ -29,16 +29,17 @@
 
 MU_DEFINE_ENUM(SM_STATE, SM_STATE_VALUES)
 
-#define SM_STATE_MASK       ((1<<7)-1) /*127*/
+#define SM_CLOSE_BIT        (1<<7)
+#define SM_FAULTED_BIT      (1<<6)
+#define SM_STATE_MASK       ((1<<6)-1) /*63*/
+
 #define SM_STATE_INCREMENT  (1<<8)  /*256*/ /*at every state change, the state is incremented by this much*/
 
-#define SM_CLOSE_BIT        (1<<7)
-
 /*a PRI macro for the SM state*/
-#define PRI_SM_STATE "" PRI_MU_ENUM " SM_CLOSE_BIT=%d"
+#define PRI_SM_STATE "" PRI_MU_ENUM " SM_CLOSE_BIT=%d, SM_FAULTED_BIT=%d"
 
 /*a VALUE macro corresponding to PRI_SM_STATE - it takes SM_HANDLE_DATA.state as argument*/
-#define SM_STATE_VALUE(state) MU_ENUM_VALUE(SM_STATE, (SM_STATE)((state) & SM_STATE_MASK)), (((state)&SM_CLOSE_BIT)>0)
+#define SM_STATE_VALUE(state) MU_ENUM_VALUE(SM_STATE, (SM_STATE)((state) & SM_STATE_MASK)), (((state)&SM_CLOSE_BIT)>0), (((state)&SM_FAULTED_BIT)>0)
 
 typedef struct SM_HANDLE_DATA_TAG
 {
@@ -55,13 +56,13 @@ MU_DEFINE_ENUM_STRINGS(SM_STATE, SM_STATE_VALUES);
 SM_HANDLE sm_create(const char* name)
 {
     SM_HANDLE result;
-    
+
     /*Codes_SRS_SM_02_001: [ If name is NULL then sm_create shall behave as if name was "NO_NAME". ]*/
     if (name == NULL)
     {
-        name = NO_NAME; 
+        name = NO_NAME;
     }
-    
+
     size_t flexSize = strlen(name) + 1;
 
     /*Codes_SRS_SM_02_002: [ sm_create shall allocate memory for the instance. ]*/
@@ -176,8 +177,8 @@ void sm_open_end(SM_HANDLE sm, bool success)
             }
             else
             {
-                /*Codes_SRS_SM_02_075: [ If success is false then sm_open_end shall switch the state to SM_CREATED. ]*/
-                if (interlocked_compare_exchange(&sm->state, state - SM_OPENING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
+                /*Codes_SRS_SM_02_075: [ If success is false then sm_open_end shall switch the state to SM_CREATED and reset the SM_FAULTED_BIT to 0. ]*/
+                if (interlocked_compare_exchange(&sm->state, (state & ~(uint32_t)SM_FAULTED_BIT) - SM_OPENING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
                 {
                     LogError("sm name=%s. sm_open_end state changed meanwhile (it was %" PRI_SM_STATE ", likely competing threads.", sm->name, SM_STATE_VALUE(state));
                 }
@@ -226,7 +227,7 @@ static SM_RESULT sm_close_begin_internal(SM_HANDLE sm)
                         result = SM_ERROR;
                         break;
                     }
-                    
+
                     /*Codes_SRS_SM_02_049: [ sm_close_begin shall switch the state to SM_CLOSING and return SM_EXEC_GRANTED. ]*/
                     (void)interlocked_add(&sm->state, -SM_OPENED_DRAINING_TO_CLOSE + SM_CLOSING + SM_STATE_INCREMENT);
                     result = SM_EXEC_GRANTED;
@@ -270,30 +271,36 @@ SM_RESULT sm_close_begin(SM_HANDLE sm)
     {
         result = sm_close_begin_internal(sm);
     }
-    
+
     return result;
 }
 
 static void sm_close_end_internal(SM_HANDLE sm)
 {
-    /*Codes_SRS_SM_02_043: [ If the state is not SM_CLOSING then sm_close_end shall return. ]*/
-    int32_t state = interlocked_add(&sm->state, 0);
-    if ((state & SM_STATE_MASK) != SM_CLOSING)
+    do
     {
-        LogError("sm name=%s. cannot sm_close_end_internal that which is in %" PRI_SM_STATE " state", sm->name, SM_STATE_VALUE(state));
-    }
-    else
-    {
-        /*Codes_SRS_SM_02_044: [ sm_close_end shall switch the state to SM_CREATED. ]*/
-        if (interlocked_compare_exchange(&sm->state, state - SM_CLOSING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
+        /*Codes_SRS_SM_02_043: [ If the state is not SM_CLOSING then sm_close_end shall return. ]*/
+        int32_t state = interlocked_add(&sm->state, 0);
+        if ((state & SM_STATE_MASK) != SM_CLOSING)
         {
-            LogError("sm name=%s. state changed meanwhile (it was %" PRI_SM_STATE "), likely competing threads", sm->name, SM_STATE_VALUE(state));
+            LogError("sm name=%s. cannot sm_close_end_internal that which is in %" PRI_SM_STATE " state", sm->name, SM_STATE_VALUE(state));
+            break;
         }
         else
         {
-
+            /*Codes_SRS_SM_42_001: [ sm_close_end shall reset SM_FAULTED_BIT to 0. ]*/
+            /*Codes_SRS_SM_02_044: [ sm_close_end shall switch the state to SM_CREATED. ]*/
+            if (interlocked_compare_exchange(&sm->state, (state & ~(uint32_t)SM_FAULTED_BIT) - SM_CLOSING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
+            {
+                LogError("sm name=%s. state changed meanwhile (it was %" PRI_SM_STATE "), likely competing threads", sm->name, SM_STATE_VALUE(state));
+                // Retry (maybe a fault happened during the close but after we checked the state above?)
+            }
+            else
+            {
+                break;
+            }
         }
-    }
+    } while (1);
 }
 
 void sm_close_end(SM_HANDLE sm)
@@ -325,7 +332,9 @@ SM_RESULT sm_exec_begin(SM_HANDLE sm)
             /*Codes_SRS_SM_02_054: [ If state is not SM_OPENED then sm_exec_begin shall return SM_EXEC_REFUSED. ]*/
             ((state1 & SM_STATE_MASK) != SM_OPENED) ||
             /*Codes_SRS_SM_02_055: [ If SM_CLOSE_BIT is 1 then sm_exec_begin shall return SM_EXEC_REFUSED. ]*/
-            ((state1 & SM_CLOSE_BIT) == SM_CLOSE_BIT)
+            ((state1 & SM_CLOSE_BIT) == SM_CLOSE_BIT) ||
+            /*Codes_SRS_SM_42_002: [ If SM_FAULTED_BIT is 1 then sm_exec_begin shall return SM_EXEC_REFUSED. ]*/
+            ((state1 & SM_FAULTED_BIT) == SM_FAULTED_BIT)
             )
         {
             LogError("sm name=%s. cannot call sm_exec_begin when state is %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(state1));
@@ -426,7 +435,9 @@ SM_RESULT sm_barrier_begin(SM_HANDLE sm)
             /*Codes_SRS_SM_02_064: [ If state is not SM_OPENED then sm_barrier_begin shall return SM_EXEC_REFUSED. ]*/
             ((state & SM_STATE_MASK) != SM_OPENED) ||
             /*Codes_SRS_SM_02_065: [ If SM_CLOSE_BIT is set to 1 then sm_barrier_begin shall return SM_EXEC_REFUSED. ]*/
-            ((state & SM_CLOSE_BIT) == SM_CLOSE_BIT)
+            ((state & SM_CLOSE_BIT) == SM_CLOSE_BIT) ||
+            /*Codes_SRS_SM_42_003: [ If SM_FAULTED_BIT is set to 1 then sm_barrier_begin shall return SM_EXEC_REFUSED. ]*/
+            ((state & SM_FAULTED_BIT) == SM_FAULTED_BIT)
             )
         {
             LogError("sm name=%s. cannot execute barrier begin when state is %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(state));
@@ -473,23 +484,71 @@ void sm_barrier_end(SM_HANDLE sm)
     }
     else
     {
-        int32_t state = interlocked_add(&sm->state, 0);
-        /*Codes_SRS_SM_02_072: [ If state is not SM_OPENED_BARRIER then sm_barrier_end shall return. ]*/
-        if ((state & SM_STATE_MASK) != SM_OPENED_BARRIER)
+        do
         {
-            LogError("sm name=%s. cannot call sm_barrier_end when state is %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(state));
-        }
-        else
-        {
-            /*Codes_SRS_SM_02_073: [ sm_barrier_end shall switch the state to SM_OPENED. ]*/
-            if (interlocked_compare_exchange(&sm->state, state - SM_OPENED_BARRIER + SM_OPENED + SM_STATE_INCREMENT, state) != state)
+            int32_t state = interlocked_add(&sm->state, 0);
+            /*Codes_SRS_SM_02_072: [ If state is not SM_OPENED_BARRIER then sm_barrier_end shall return. ]*/
+            if ((state & SM_STATE_MASK) != SM_OPENED_BARRIER)
             {
-                LogError("sm name=%s. state changed meanwhile (it was %" PRI_SM_STATE "), likely competing threads", sm->name, SM_STATE_VALUE(state));
+                LogError("sm name=%s. cannot call sm_barrier_end when state is %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(state));
+                break;
             }
             else
             {
-                /*it's all fine, we're back to SM_OPENED*/ /*let a close know about that, if any*/
+                /*Codes_SRS_SM_02_073: [ sm_barrier_end shall switch the state to SM_OPENED. ]*/
+                if (interlocked_compare_exchange(&sm->state, state - SM_OPENED_BARRIER + SM_OPENED + SM_STATE_INCREMENT, state) != state)
+                {
+                    LogError("sm name=%s. state changed meanwhile (it was %" PRI_SM_STATE "), likely competing threads", sm->name, SM_STATE_VALUE(state));
+                    // Retry, close may have started or a fault may have happened
+                }
+                else
+                {
+                    /*it's all fine, we're back to SM_OPENED*/ /*let a close know about that, if any*/
+                    break;
+                }
             }
-        }
+        } while (1);
+    }
+}
+
+void sm_fault(SM_HANDLE sm)
+{
+    if (sm == NULL)
+    {
+        /*Codes_SRS_SM_42_004: [ If sm is NULL then sm_fault shall return. ]*/
+        LogError("invalid arg SM_HANDLE sm=%p", sm);
+    }
+    else
+    {
+        // When this function returns the state must be one of the following (in the absence of other threads changing the state):
+        //   SM_CREATED
+        //   SM_CLOSING
+        //   have SM_FAULTED_BIT set in any other state
+        do
+        {
+            int32_t state = interlocked_add(&sm->state, 0);
+            if (
+                /*Codes_SRS_SM_42_006: [ If the state is SM_CREATED then sm_fault shall return. ]*/
+                ((state & SM_STATE_MASK) == SM_CREATED) ||
+                /*Codes_SRS_SM_42_008: [ If the state is SM_CLOSING then sm_fault shall return. ]*/
+                ((state & SM_STATE_MASK) == SM_CLOSING)
+                )
+            {
+                LogError("sm name=%s. cannot execute barrier begin when state is %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(state));
+                break;
+            }
+            else
+            {
+                /*Codes_SRS_SM_42_007: [ sm_fault shall set SM_FAULTED_BIT to 1. ]*/
+                if (interlocked_compare_exchange(&sm->state, (state | SM_FAULTED_BIT) + SM_STATE_INCREMENT, state) != state)
+                {
+                    /*Codes_SRS_SM_42_009: [ While the state changes before setting the bit then sm_fault shall re-evaluate the state. ]*/
+                }
+                else
+                {
+                    break;
+                }
+            }
+        } while (1);
     }
 }

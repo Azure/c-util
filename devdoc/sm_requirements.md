@@ -5,13 +5,15 @@
 
 `State manager` (short:`sm`) is a module the manages the call state for the APIs of a module under the following semantics:
 
-1. the module has 2 step initialization (that is, the module has a _create and a _open APIs). Note: _open can be a do-nothing operation for the case when the user module doesn't have a real _open.
+1. The module has 2 step initialization (that is, the module has a _create and a _open APIs). Note: _open can be a do-nothing operation for the case when the user module doesn't have a real _open.
 
-2. the module's APIs are callable after _open has executed (_open being the exception - it can only be called after _create)
+2. The module's APIs are callable after _open has executed (_open being the exception - it can only be called after _create).
 
-3. the module has a _close function that reverts the effects of _open and allows calling _open again
+3. The module may go into a "faulted" state which disallows all calls, other than closing the module (which resets the faulted state). The "faulted" state means that something catastrophic happened so the module must be closed and re-opened. The "faulted" state is not possible when the module is closed.
 
-4. the APIs that can be called in the _open state can be further divided into 3 categories
+4. The module has a _close function that reverts the effects of _open and allows calling _open again.
+
+5. the APIs that can be called in the _open state can be further divided into 3 categories
 
    a) APIs that can be called in parallel (for example a _read API).
 
@@ -25,7 +27,7 @@
 
     c) `sm_close_begin`. Close blocks the execution of all the other APIs and waits for them to drain.
 
-5. there's no "parking", "queueing", "sleeping", "waiting", "buffering", "saving" or otherwise postponing or delaying the execution of an API: it either starts to execute (for barries execution includes waiting for all the previous APIs to finish executing; for close it means draining everything - barriers or calls alike) or it fails. Retrying is a user-land mechanism.
+6. there's no "parking", "queueing", "sleeping", "waiting", "buffering", "saving" or otherwise postponing or delaying the execution of an API: it either starts to execute (for barriers execution includes waiting for all the previous APIs to finish executing; for close it means draining everything - barriers or calls alike) or it fails. Retrying is a user-land mechanism.
 
 ## Design
 
@@ -33,7 +35,7 @@ Historic context: before `sm` the world had explicit states, such as
 - "OPEN" (where all APIs would be allowed to execute)
 - "OPENING" (marks the transiton from "CREATED" to "OPEN")
 - "CLOSING" (where APIs would be drained - it devolves into "CREATED" once that was done)
-- all sort of other substates of "OPEN" which would not allow other APIs to execute (and once work was done, the substate would revert back to "OPEN").
+- all sorts of other substates of "OPEN" which would not allow other APIs to execute (and once work was done, the substate would revert back to "OPEN").
 
 The world had for every module an explicit "count of API" - which was the total number of ongoing APIs. It would be incremented at the begin of every APIs. Then the API would check if it is executed in the "OPEN" state (substates would have different names). It would be decremented at the end of every API. 
 
@@ -45,9 +47,9 @@ In a multithreaded environment reaching the condition of "let's have 1 executing
 - providing a consistent way of managing "state" across modules (no more individual "ongoingAPIcalls" and "pendingAPIcalls" and "what's the correct order? state before counting or counting before state?")
 - providing progress in all cases for APIs that require their own sub-state undisturbed (that is, APIs that cannot execute in parallel with any other APIs), so no more a problem of "enough luck".
 
-To achieve the above goals, `sm` maintains the following state
-1) the current granted state + 1 bit that is set to 1 when `sm_close_begin` is called.
-2) the number of APIs that did not finish executing (`n`). `n` is incremented at every `sm_exec_begin` and decremented when the user signaled finishing executing by calling `sm_exec_end`.
+To achieve the above goals, `sm` maintains the following state:
+1. the current granted state + 1 bit that is set to 1 when `sm_close_begin` is called and 1 bit that is set to 1 when `sm_fault` is called.
+2. the number of APIs that did not finish executing (`n`). `n` is incremented at every `sm_exec_begin` and decremented when the user signaled finishing executing by calling `sm_exec_end`.
 
 `n` is used to enable drains on the calls. The drains are signaled and they will unblock the execution of a `sm_close_begin` or a `sm_barrier_begin`.
 
@@ -55,9 +57,11 @@ Barriers - since they are exclusive - are realized by switching to a state calle
 
 Close is realized by prohibiting all calls (including competing `sm_close_begin` calls) by setting a bit with `InterlockedOr`. `sm_close_begin` will wait for the state to reach `SM_OPENED` and the number of executing calls to be `0`. This allows an ongoing barrier to finish (and return to `SM_OPENED` state), or the executing APIs to finish.
 
-`sm` will verify all sequence of calls. When a _begin calls is called in an unexpected state, `sm` will refuse to grant the execution. `sm_exec_end` calls do not have a return value, but `sm` does protect internally against mismatched such calls. For example, `n` is decremented by `sm_exec_end`, but `sm` does not allow `n` to reach negative values.
+Fault is realized by prohibiting all calls (except for `sm_close_begin` calls and all `_end` calls) by setting a bit with `InterlockedOr`. `sm_fault` will not set the fault bit if the state is `SM_CREATED` or `SM_CLOSING`. This means that the module cannot fault while it is closed and any currently executing operations can complete.
 
-`n` is a 32 bit value. At the time of writing `sm` it is of no concern an overflow above `INT32_MAX` because that would mean there are more than 2 billion standing requests that have no yet been ended, and the assumption is that something will go wrong in other parts of the system before it goes bad in `sm`.
+`sm` will verify all sequence of calls. When a _begin call is called in an unexpected state, `sm` will refuse to grant the execution. `sm_exec_end` calls do not have a return value, but `sm` does protect internally against mismatched such calls. For example, `n` is decremented by `sm_exec_end`, but `sm` does not allow `n` to reach negative values.
+
+`n` is a 32-bit value. At the time of writing `sm` it is of no concern an overflow above `INT32_MAX` because that would mean there are more than 2 billion standing requests that have no yet been ended, and the assumption is that something will go wrong in other parts of the system before it goes bad in `sm`.
 
 These are the internal state of `sm`:
 - `SM_CREATED` - entered after a call to `sm_create` or `sm_open_end` is called with `success` set to `false`.
@@ -70,7 +74,11 @@ These are the internal state of `sm`:
 
 In addition to the above states, part of the state is the `_close` bit that is set to `1` when `sm_close_begin` has been called. The bit stays `1` until the state is switched to `SM_CLOSING`.
 
-The state is a 32 bit variable. The lowest byte contains the above information. The most significand 3 bytes are an ever increasing counter of calls that is needed to avoid potential ABA problems. That is, a `SM_OPENED` state will be different from `SM_OPENED_STATE` after it went through a `sm_close_begin`/`sm_close_end`/`sm_open_begin`/`sm_open_end`.
+The state is a 32-bit variable. It is made up of the following components:
+- Least-significant 6 bits (values 0-63) represent a state enum value from above (`SM_CREATED`, `SM_OPENING`, `SM_OPENED`, `SM_OPENED_DRAINING_TO_BARRIER`, `SM_OPENED_DRAINING_TO_CLOSE`, `SM_OPENED_BARRIER`, `SM_CLOSING`).
+- The 6th bit (decimal 64) set to 1 when `sm_fault` is called and the state is not `SM_CREATED` and the closing bit is not set. The bit is reset by `sm_close_end`.
+- The 7th bit (decimal 128) set to 1 when `sm_close_begin` is called. The bit is reset by `sm_close_end`.
+- Remaining bits (most-significant 3 bytes, decimal >=256) representing an ever increasing counter of calls that is needed to avoid potential ABA problems. That is, a `SM_OPENED` state will be different from `SM_OPENED_STATE` after it went through a `sm_close_begin`/`sm_close_end`/`sm_open_begin`/`sm_open_end`.
 
 ## Exposed API
 
@@ -98,6 +106,8 @@ MOCKABLE_FUNCTION(, void, sm_exec_end, SM_HANDLE, sm);
 
 MOCKABLE_FUNCTION(, SM_RESULT, sm_barrier_begin, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, void, sm_barrier_end, SM_HANDLE, sm);
+
+MOCKABLE_FUNCTION(, void, sm_fault, SM_HANDLE, sm);
 ```
 
 ### sm_create
@@ -147,7 +157,7 @@ MOCKABLE_FUNCTION(, SM_RESULT, sm_open_begin, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm, bool, success);
 ```
 
-`sm_open_end` informs `sm` that user's "open" state operations have completed and if they were succesfull.
+`sm_open_end` informs `sm` that user's "open" state operations have completed and if they were successful.
 
 **SRS_SM_02_010: [** If `sm` is `NULL` then `sm_open_end` shall return. **]**
 
@@ -155,7 +165,7 @@ MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm, bool, success);
 
 **SRS_SM_02_074: [** If `success` is `true` then `sm_open_end` shall switch the state to `SM_OPENED`. **]**
 
-**SRS_SM_02_075: [** If `success` is `false` then `sm_open_end` shall switch the state to `SM_CREATED`. **]**
+**SRS_SM_02_075: [** If `success` is `false` then `sm_open_end` shall switch the state to `SM_CREATED` and reset the `SM_FAULTED_BIT` to 0. **]**
 
 ### sm_close_begin
 ```c
@@ -165,7 +175,6 @@ MOCKABLE_FUNCTION(, int, sm_close_begin, SM_HANDLE, sm);
 `sm_open_begin` asks from `sm` permission to exit `SM_OPENED` state (or one of its derived state) and return to `SM_CREATED`.
 
 **SRS_SM_02_013: [** If `sm` is `NULL` then `sm_close_begin` shall fail and return `SM_ERROR`. **]**
-
 
 **SRS_SM_02_045: [** `sm_close_begin` shall set `SM_CLOSE_BIT` to 1. **]**
 
@@ -187,7 +196,6 @@ MOCKABLE_FUNCTION(, int, sm_close_begin, SM_HANDLE, sm);
 
 **SRS_SM_02_071: [** If there are any failures then `sm_close_begin` shall fail and return `SM_ERROR`. **]**
 
-
 ### sm_close_end
 ```c
 MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
@@ -198,6 +206,8 @@ MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
 **SRS_SM_02_018: [** If `sm` is `NULL` then `sm_close_end` shall return. **]**
 
 **SRS_SM_02_043: [** If the state is not `SM_CLOSING` then `sm_close_end` shall return. **]**
+
+**SRS_SM_42_001: [** `sm_close_end` shall reset `SM_FAULTED_BIT` to 0. **]**
 
 **SRS_SM_02_044: [** `sm_close_end` shall switch the state to `SM_CREATED`. **]**
 
@@ -213,6 +223,8 @@ MOCKABLE_FUNCTION(, int, sm_exec_begin, SM_HANDLE, sm);
 **SRS_SM_02_054: [** If state is not `SM_OPENED` then `sm_exec_begin` shall return `SM_EXEC_REFUSED`. **]**
 
 **SRS_SM_02_055: [** If `SM_CLOSE_BIT` is 1 then `sm_exec_begin` shall return `SM_EXEC_REFUSED`. **]**
+
+**SRS_SM_42_002: [** If `SM_FAULTED_BIT` is 1 then `sm_exec_begin` shall return `SM_EXEC_REFUSED`. **]**
 
 **SRS_SM_02_056: [** `sm_exec_begin` shall increment `n`. **]**
 
@@ -239,7 +251,6 @@ MOCKABLE_FUNCTION(, void, sm_exec_end, SM_HANDLE, sm);
 
 **SRS_SM_02_063: [** If `n` reaches 0 then `sm_exec_end` shall signal that. **]**
 
-
 ### sm_barrier_begin
 ```c
 MOCKABLE_FUNCTION(, int, sm_barrier_begin, SM_HANDLE, sm);
@@ -252,6 +263,8 @@ MOCKABLE_FUNCTION(, int, sm_barrier_begin, SM_HANDLE, sm);
 **SRS_SM_02_064: [** If state is not `SM_OPENED` then `sm_barrier_begin` shall return `SM_EXEC_REFUSED`. **]**
 
 **SRS_SM_02_065: [** If `SM_CLOSE_BIT` is set to 1 then `sm_barrier_begin` shall return `SM_EXEC_REFUSED`. **]**
+
+**SRS_SM_42_003: [** If `SM_FAULTED_BIT` is set to 1 then `sm_barrier_begin` shall return `SM_EXEC_REFUSED`. **]**
 
 **SRS_SM_02_066: [** `sm_barrier_begin` shall switch the state to `SM_OPENED_DRAINING_TO_BARRIER`. **]**
 
@@ -275,3 +288,20 @@ MOCKABLE_FUNCTION(, void, sm_barrier_end, SM_HANDLE, sm);
 **SRS_SM_02_072: [** If state is not `SM_OPENED_BARRIER` then `sm_barrier_end` shall return. **]**
 
 **SRS_SM_02_073: [** `sm_barrier_end` shall switch the state to `SM_OPENED`. **]**
+
+### sm_fault
+```c
+MOCKABLE_FUNCTION(, void, sm_fault, SM_HANDLE, sm);
+```
+
+`sm_fault` puts `sm` in a faulted state that requires the module to be closed to clear the fault.
+
+**SRS_SM_42_004: [** If `sm` is `NULL` then `sm_fault` shall return. **]**
+
+**SRS_SM_42_006: [** If the state is `SM_CREATED` then `sm_fault` shall return. **]**
+
+**SRS_SM_42_008: [** If the state is `SM_CLOSING` then `sm_fault` shall return. **]**
+
+**SRS_SM_42_007: [** `sm_fault` shall set `SM_FAULTED_BIT` to 1. **]**
+
+**SRS_SM_42_009: [** While the state changes before setting the bit then `sm_fault` shall re-evaluate the state. **]**

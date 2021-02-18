@@ -11,6 +11,7 @@
 #define sm_exec_end         real_sm_exec_end
 #define sm_barrier_begin    real_sm_barrier_begin
 #define sm_barrier_end      real_sm_barrier_end
+#define sm_fault            real_sm_fault
 
 #define SM_RESULT           real_SM_RESULT
 #define SM_STATE            real_SM_STATE
