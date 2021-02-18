@@ -57,7 +57,7 @@ Barriers - since they are exclusive - are realized by switching to a state calle
 
 Close is realized by prohibiting all calls (including competing `sm_close_begin` calls) by setting a bit with `InterlockedOr`. `sm_close_begin` will wait for the state to reach `SM_OPENED` and the number of executing calls to be `0`. This allows an ongoing barrier to finish (and return to `SM_OPENED` state), or the executing APIs to finish.
 
-Fault is realized by prohibiting all calls (except for `sm_close_begin` calls and all `_end` calls) by setting a bit with `InterlockedOr`. `sm_fault` will not set the fault bit if the state is `SM_CREATED` or `SM_CLOSING`. This means that the module cannot fault while it is closed and any currently executing operations can complete.
+Fault is realized by prohibiting all calls (except for `sm_close_begin` calls and all `_end` calls) by setting a bit with `InterlockedOr`. `sm_fault` will not set the fault bit if the state is `SM_CREATED`. This means that the module cannot fault while it is closed and any currently executing operations can complete.
 
 `sm` will verify all sequence of calls. When a _begin call is called in an unexpected state, `sm` will refuse to grant the execution. `sm_exec_end` calls do not have a return value, but `sm` does protect internally against mismatched such calls. For example, `n` is decremented by `sm_exec_end`, but `sm` does not allow `n` to reach negative values.
 
