@@ -9,9 +9,9 @@
 
 2. The module's APIs are callable after _open has executed (_open being the exception - it can only be called after _create).
 
-3. The module may go into a "faulted" state which disallows all calls, other than closing the module (which resets the faulted state). The "faulted" state means that something catastrophic happened so the module must be closed and re-opened. The "faulted" state is not possible when the module is closed.
+3. The module may go into a "faulted" state which disallows all calls, other than closing the module. The "faulted" state means that something catastrophic happened so the module must be closed and destroyed. It is a terminal state and _open will fail.
 
-4. The module has a _close function that reverts the effects of _open and allows calling _open again.
+4. The module has a _close function that reverts the effects of _open and allows calling _open again. Calling _close when the module is "faulted" cleans up the module but leaves it in a "faulted" state.
 
 5. the APIs that can be called in the _open state can be further divided into 3 categories
 
@@ -57,7 +57,7 @@ Barriers - since they are exclusive - are realized by switching to a state calle
 
 Close is realized by prohibiting all calls (including competing `sm_close_begin` calls) by setting a bit with `InterlockedOr`. `sm_close_begin` will wait for the state to reach `SM_OPENED` and the number of executing calls to be `0`. This allows an ongoing barrier to finish (and return to `SM_OPENED` state), or the executing APIs to finish.
 
-Fault is realized by prohibiting all calls (except for `sm_close_begin` calls and all `_end` calls) by setting a bit with `InterlockedOr`. `sm_fault` will not set the fault bit if the state is `SM_CREATED`. This means that the module cannot fault while it is closed and any currently executing operations can complete.
+Fault is realized by prohibiting all calls (except for `sm_close_begin` calls and all `_end` calls) by setting a bit with `InterlockedOr`. This means that any currently executing operations can complete, but the faulted state is terminal.
 
 `sm` will verify all sequence of calls. When a _begin call is called in an unexpected state, `sm` will refuse to grant the execution. `sm_exec_end` calls do not have a return value, but `sm` does protect internally against mismatched such calls. For example, `n` is decremented by `sm_exec_end`, but `sm` does not allow `n` to reach negative values.
 
@@ -76,7 +76,7 @@ In addition to the above states, part of the state is the `_close` bit that is s
 
 The state is a 32-bit variable. It is made up of the following components:
 - Least-significant 6 bits (values 0-63) represent a state enum value from above (`SM_CREATED`, `SM_OPENING`, `SM_OPENED`, `SM_OPENED_DRAINING_TO_BARRIER`, `SM_OPENED_DRAINING_TO_CLOSE`, `SM_OPENED_BARRIER`, `SM_CLOSING`).
-- The 6th bit (decimal 64) set to 1 when `sm_fault` is called and the state is not `SM_CREATED` and the closing bit is not set. The bit is reset by `sm_close_end`.
+- The 6th bit (decimal 64) set to 1 when `sm_fault` is called. The bit is never reset.
 - The 7th bit (decimal 128) set to 1 when `sm_close_begin` is called. The bit is reset by `sm_close_end`.
 - Remaining bits (most-significant 3 bytes, decimal >=256) representing an ever increasing counter of calls that is needed to avoid potential ABA problems. That is, a `SM_OPENED` state will be different from `SM_OPENED_STATE` after it went through a `sm_close_begin`/`sm_close_end`/`sm_open_begin`/`sm_open_end`.
 
@@ -148,6 +148,8 @@ MOCKABLE_FUNCTION(, SM_RESULT, sm_open_begin, SM_HANDLE, sm);
 
 **SRS_SM_02_039: [** If the state is not `SM_CREATED` then `sm_open_begin` shall return `SM_EXEC_REFUSED`. **]**
 
+**SRS_SM_42_011: [** If `SM_FAULTED_BIT` is 1 then `sm_open_begin` shall return `SM_EXEC_REFUSED`. **]**
+
 **SRS_SM_02_040: [** `sm_open_begin` shall switch the state to `SM_OPENING`. **]**
 
 **SRS_SM_02_009: [** `sm_open_begin` shall return `SM_EXEC_GRANTED`. **]**
@@ -165,7 +167,7 @@ MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm, bool, success);
 
 **SRS_SM_02_074: [** If `success` is `true` then `sm_open_end` shall switch the state to `SM_OPENED`. **]**
 
-**SRS_SM_02_075: [** If `success` is `false` then `sm_open_end` shall switch the state to `SM_CREATED` and reset the `SM_FAULTED_BIT` to 0. **]**
+**SRS_SM_02_075: [** If `success` is `false` then `sm_open_end` shall switch the state to `SM_CREATED`. **]**
 
 ### sm_close_begin
 ```c
@@ -206,8 +208,6 @@ MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
 **SRS_SM_02_018: [** If `sm` is `NULL` then `sm_close_end` shall return. **]**
 
 **SRS_SM_02_043: [** If the state is not `SM_CLOSING` then `sm_close_end` shall return. **]**
-
-**SRS_SM_42_001: [** `sm_close_end` shall reset `SM_FAULTED_BIT` to 0. **]**
 
 **SRS_SM_02_044: [** `sm_close_end` shall switch the state to `SM_CREATED`. **]**
 
@@ -296,12 +296,8 @@ MOCKABLE_FUNCTION(, void, sm_barrier_end, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, void, sm_fault, SM_HANDLE, sm);
 ```
 
-`sm_fault` puts `sm` in a faulted state that requires the module to be closed to clear the fault.
+`sm_fault` puts `sm` in a faulted state that cannot be cleared.
 
 **SRS_SM_42_004: [** If `sm` is `NULL` then `sm_fault` shall return. **]**
 
-**SRS_SM_42_006: [** If the state is `SM_CREATED` then `sm_fault` shall return. **]**
-
 **SRS_SM_42_007: [** `sm_fault` shall set `SM_FAULTED_BIT` to 1. **]**
-
-**SRS_SM_42_009: [** While the state changes before setting the bit then `sm_fault` shall re-evaluate the state. **]**

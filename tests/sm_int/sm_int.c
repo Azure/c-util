@@ -95,8 +95,14 @@ static int callsBeginOpen(
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
+        bool is_faulted = (data->n_fault_threads > 0 && interlocked_add(&data->n_faults, 0) > 0);
         if (sm_open_begin(data->sm) == SM_EXEC_GRANTED)
         {
+            if (is_faulted)
+            {
+                ASSERT_FAIL("sm_fault was called, sm_open_begin should have failed!");
+            }
+
             (void)interlocked_increment(&data->begin_open_pending); // now make sure end_open is called
             (void)interlocked_increment(&data->n_begin_open_grants);
         }
@@ -294,8 +300,14 @@ static int callsBeginBarrier(
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
+        bool is_faulted = (data->n_fault_threads > 0 && interlocked_add(&data->n_faults, 0) > 0);
         if (sm_barrier_begin(data->sm) == SM_EXEC_GRANTED)
         {
+            if (is_faulted)
+            {
+                ASSERT_FAIL("sm_fault was called, sm_barrier_begin should have failed!");
+            }
+
             (void)interlocked_increment(&data->begin_barrier_pending); // now make sure end_barrier is called
             (void)interlocked_increment(&data->n_begin_barrier_grants);
         }
@@ -392,8 +404,14 @@ static int callsBeginExec(
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
+        bool is_faulted = (data->n_fault_threads > 0 && interlocked_add(&data->n_faults, 0) > 0);
         if (sm_exec_begin(data->sm) == SM_EXEC_GRANTED)
         {
+            if (is_faulted)
+            {
+                ASSERT_FAIL("sm_fault was called, sm_exec_begin should have failed!");
+            }
+
             int32_t pending_execs = interlocked_increment(&data->begin_exec_pending); // now make sure end_exec is called
 
             // If this were to overflow, the test would probably fail somewhere
@@ -494,8 +512,14 @@ static int callsBeginAndEnd(
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
+        bool is_faulted = (data->n_fault_threads > 0 && interlocked_add(&data->n_faults, 0) > 0);
         if (sm_exec_begin(data->sm) == SM_EXEC_GRANTED)
         {
+            if (is_faulted)
+            {
+                ASSERT_FAIL("sm_fault was called, sm_exec_begin should have failed!");
+            }
+
             (void)interlocked_increment(&data->n_begin_grants);
             uint32_t pretend_to_do_something_time_in_ms = rand() % 10;
             ThreadAPI_Sleep(pretend_to_do_something_time_in_ms);
@@ -535,8 +559,15 @@ static int callsFault(
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
-        uint32_t time_before_next_fault = rand() % 300;
+        uint32_t time_before_next_fault = rand() % 500;
         ThreadAPI_Sleep(time_before_next_fault);
+
+        // No need to make extra fault call if the test is done
+        if (interlocked_add(&data->threadsShouldFinish, 0) != 0)
+        {
+            break;
+        }
+
         sm_fault(data->sm);
         (void)interlocked_increment(&data->n_faults);
     }
@@ -711,6 +742,7 @@ MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(SM_APIS, SM_APIS_VALUES)
 
 #define SM_STATES_VALUES               \
 SM_CREATED,                            \
+SM_CREATED_FAULTED,                    \
 SM_OPENING,                            \
 SM_OPENING_FAULTED,                    \
 SM_OPENED,                             \
@@ -755,8 +787,125 @@ TEST_FUNCTION_INITIALIZE(function_initialize)
 }
 
 /*tests aims to mindlessly execute the APIs.
-at least 1 sm_open_begin and at least 1 sm_exec_begin are waited to happen*/
+The test follows the contract of the API so that begin/end calls are matched
+At least 1 sm_open_begin and at least 1 sm_exec_begin are waited to happen*/
 TEST_FUNCTION(sm_chaos)
+{
+    LogInfo("disabling logging for the duration of sm_chaos. Logging takes additional locks that \"might\" help the test pass");
+    LOGGER_LOG toBeRestored = xlogging_get_log_function();
+    xlogging_set_log_function(NULL);
+
+    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)malloc(sizeof(OPEN_CLOSE_THREADS));
+    ASSERT_IS_NOT_NULL(data);
+
+    data->sm = sm_create(NULL);
+    ASSERT_IS_NOT_NULL(data->sm);
+
+    data->startTime_ms = timer_global_get_elapsed_ms();
+
+    (void)interlocked_exchange(&data->threadsShouldFinish, 0);
+
+    for (uint32_t nthreads = 1; nthreads <= MIN(numberOfProcessors, N_MAX_THREADS); nthreads*=2)
+    {
+        data->n_begin_open_threads = nthreads;
+        data->n_end_open_threads = nthreads;
+        data->n_begin_close_threads = nthreads;
+        data->n_end_close_threads = nthreads;
+        data->n_begin_barrier_threads = nthreads;
+        data->n_end_barrier_threads = nthreads;
+        data->n_begin_and_end_threads = nthreads;
+        data->n_begin_exec_threads = nthreads;
+        data->n_end_exec_threads = nthreads;
+        data->n_fault_threads = 0;
+
+        (void)interlocked_exchange(&data->begin_open_pending, 0);
+        (void)interlocked_exchange(&data->begin_close_pending, 0);
+        (void)interlocked_exchange(&data->begin_barrier_pending, 0);
+        (void)interlocked_exchange(&data->begin_exec_pending, 0);
+
+        (void)interlocked_exchange(&data->threadsShouldFinish, 0);
+        (void)interlocked_exchange(&data->n_begin_open_grants, 0);
+        (void)interlocked_exchange(&data->n_begin_open_refuses, 0);
+        (void)interlocked_exchange(&data->n_begin_close_grants, 0);
+        (void)interlocked_exchange(&data->n_begin_close_refuses, 0);
+        (void)interlocked_exchange(&data->n_begin_barrier_grants, 0);
+        (void)interlocked_exchange(&data->n_begin_barrier_refuses, 0);
+        (void)interlocked_exchange(&data->n_begin_grants, 0);
+        (void)interlocked_exchange(&data->n_begin_refuses, 0);
+        (void)interlocked_exchange(&data->n_faults, 0);
+
+        createBeginOpenThreads(data);
+        createEndOpenThreads(data);
+        createBeginCloseThreads(data);
+        createEndCloseThreads(data);
+        createBeginBarrierThreads(data);
+        createEndBarrierThreads(data);
+        createBeginAndEndThreads(data);
+        createBeginExecThreads(data);
+        createEndExecThreads(data);
+
+        ThreadAPI_Sleep(1000);
+        uint32_t counterSleep = 1;
+        int32_t n_begin_open_grants_local;
+        int32_t n_begin_grants_local;
+        while (
+            (n_begin_open_grants_local = interlocked_add(&data->n_begin_open_grants, 0)),
+            (n_begin_grants_local = interlocked_add(&data->n_begin_grants, 0)),
+            ((n_begin_open_grants_local==0) || (n_begin_grants_local==0))
+            )
+        {
+            toBeRestored(AZ_LOG_INFO, __FILE__, FUNC_NAME, __LINE__, 0, "Slept %" PRIu32 " ms, no sign of n_begin_open_grants=%" PRId32 ", n_begin_grants=%" PRId32 "\n", counterSleep * 1000, n_begin_open_grants_local, n_begin_grants_local);
+            counterSleep++;
+            ThreadAPI_Sleep(1000);
+        }
+
+        (void)interlocked_exchange(&data->threadsShouldFinish, 1);
+
+        waitAndDestroyBeginExecThreads(data);
+        waitAndDestroyEndExecThreads(data);
+        waitAndDestroyBeginAndEndThreads(data);
+
+        waitAndDestroyBeginBarrierThreads(data);
+        waitAndDestroyEndBarrierThreads(data);
+
+        waitAndDestroyBeginCloseThreads(data);
+        waitAndDestroyEndCloseThreads(data);
+
+        waitAndDestroyBeginOpenThreads(data);
+        waitAndDestroyEndOpenThreads(data);
+
+        /*just in case anything needs to close*/
+
+        toBeRestored(AZ_LOG_INFO, __FILE__, FUNC_NAME, __LINE__, 0, "nthreads=%" PRIu32
+            ", n_begin_open_grants=%" PRIu32 ", n_begin_open_refuses=%" PRIu32
+            ", n_begin_close_grants=%" PRIu32 ", n_begin_close_refuses=%" PRIu32
+            ", n_begin_barrier_grants=%" PRIu32 ", n_begin_barrier_refuses=%" PRIu32
+            ", n_begin_grants=%" PRIu32 ", n_begin_refuses=%" PRIu32
+            ", n_faults=%" PRIu32
+            "\n",
+            nthreads,
+            interlocked_add(&data->n_begin_open_grants, 0),
+            interlocked_add(&data->n_begin_open_refuses, 0),
+            interlocked_add(&data->n_begin_close_grants, 0),
+            interlocked_add(&data->n_begin_close_refuses, 0),
+            interlocked_add(&data->n_begin_barrier_grants, 0),
+            interlocked_add(&data->n_begin_barrier_refuses, 0),
+            interlocked_add(&data->n_begin_grants, 0),
+            interlocked_add(&data->n_begin_refuses, 0),
+            interlocked_add(&data->n_faults, 0)
+        );
+
+        ASSERT_IS_TRUE(interlocked_add(&data->n_begin_open_grants, 0) >= 1);
+    }
+    sm_destroy(data->sm);
+    free(data);
+
+    xlogging_set_log_function(toBeRestored);
+}
+
+/*Same as the chaos test but faults occasionally happen
+Test waits for a fault to be called*/
+TEST_FUNCTION(sm_chaos_with_faults)
 {
     LogInfo("disabling logging for the duration of sm_chaos. Logging takes additional locks that \"might\" help the test pass");
     LOGGER_LOG toBeRestored = xlogging_get_log_function();
@@ -814,15 +963,13 @@ TEST_FUNCTION(sm_chaos)
 
         ThreadAPI_Sleep(1000);
         uint32_t counterSleep = 1;
-        int32_t n_begin_open_grants_local;
-        int32_t n_begin_grants_local;
+        int32_t n_faults_local;
         while (
-            (n_begin_open_grants_local = interlocked_add(&data->n_begin_open_grants, 0)),
-            (n_begin_grants_local = interlocked_add(&data->n_begin_grants, 0)),
-            ((n_begin_open_grants_local==0) || (n_begin_grants_local==0))
+            (n_faults_local = interlocked_add(&data->n_faults, 0)),
+            ((n_faults_local == 0))
             )
         {
-            toBeRestored(AZ_LOG_INFO, __FILE__, FUNC_NAME, __LINE__, 0, "Slept %" PRIu32 " ms, no sign of n_begin_open_grants=%" PRId32 ", n_begin_grants=%" PRId32 "\n", counterSleep * 1000, n_begin_open_grants_local, n_begin_grants_local);
+            toBeRestored(AZ_LOG_INFO, __FILE__, FUNC_NAME, __LINE__, 0, "Slept %" PRIu32 " ms, no sign of n_faults=%" PRId32 "\n", counterSleep * 1000, n_faults_local);
             counterSleep++;
             ThreadAPI_Sleep(1000);
         }
@@ -865,7 +1012,7 @@ TEST_FUNCTION(sm_chaos)
             interlocked_add(&data->n_faults, 0)
         );
 
-        ASSERT_IS_TRUE(interlocked_add(&data->n_begin_open_grants, 0) >= 1);
+        ASSERT_IS_TRUE(interlocked_add(&data->n_faults, 0) >= 1);
     }
     sm_destroy(data->sm);
     free(data);
@@ -969,18 +1116,19 @@ TEST_FUNCTION(sm_does_not_block)
 /*below tests aim to see that calling any API produces GRANT/REFUSED from any state*/
 /*these are states
 SM_CREATED	SM_CREATED(1)	SM_STATE_TAG
-SM_OPENING	SM_OPENING(2)	SM_STATE_TAG
-SM_OPENING_FAULTED	SM_OPENING_FAULTED(3)	SM_STATE_TAG
-SM_OPENED	SM_OPENED(4)	SM_STATE_TAG
-SM_OPENED_FAULTED	SM_OPENED_FAULTED(5)	SM_STATE_TAG
-SM_OPENED_DRAINING_TO_BARRIER	SM_OPENED_DRAINING_TO_BARRIER(6)	SM_STATE_TAG
-SM_OPENED_DRAINING_TO_BARRIER_FAULTED	SM_OPENED_DRAINING_TO_BARRIER_FAULTED(7)	SM_STATE_TAG
-SM_OPENED_DRAINING_TO_CLOSE	SM_OPENED_DRAINING_TO_CLOSE(8)	SM_STATE_TAG
-SM_OPENED_DRAINING_TO_CLOSE_FAULTED	SM_OPENED_DRAINING_TO_CLOSE_FAULTED(9)	SM_STATE_TAG
-SM_OPENED_BARRIER	SM_OPENED_BARRIER(10)	SM_STATE_TAG
-SM_OPENED_BARRIER_FAULTED	SM_OPENED_BARRIER_FAULTED(11)	SM_STATE_TAG
-SM_CLOSING	SM_CLOSING(12)	SM_STATE_TAG
-SM_CLOSING_FAULTED	SM_CLOSING_FAULTED(13)	SM_STATE_TAG
+SM_CREATED_FAULTED	SM_CREATED_FAULTED(2)	SM_STATE_TAG
+SM_OPENING	SM_OPENING(3)	SM_STATE_TAG
+SM_OPENING_FAULTED	SM_OPENING_FAULTED(4)	SM_STATE_TAG
+SM_OPENED	SM_OPENED(5)	SM_STATE_TAG
+SM_OPENED_FAULTED	SM_OPENED_FAULTED(6)	SM_STATE_TAG
+SM_OPENED_DRAINING_TO_BARRIER	SM_OPENED_DRAINING_TO_BARRIER(7)	SM_STATE_TAG
+SM_OPENED_DRAINING_TO_BARRIER_FAULTED	SM_OPENED_DRAINING_TO_BARRIER_FAULTED(8)	SM_STATE_TAG
+SM_OPENED_DRAINING_TO_CLOSE	SM_OPENED_DRAINING_TO_CLOSE(9)	SM_STATE_TAG
+SM_OPENED_DRAINING_TO_CLOSE_FAULTED	SM_OPENED_DRAINING_TO_CLOSE_FAULTED(10)	SM_STATE_TAG
+SM_OPENED_BARRIER	SM_OPENED_BARRIER(11)	SM_STATE_TAG
+SM_OPENED_BARRIER_FAULTED	SM_OPENED_BARRIER_FAULTED(12)	SM_STATE_TAG
+SM_CLOSING	SM_CLOSING(13)	SM_STATE_TAG
+SM_CLOSING_FAULTED	SM_CLOSING_FAULTED(14)	SM_STATE_TAG
 
 these are APIs:
 sm_open_begin
@@ -1025,6 +1173,11 @@ static int switchesToState(
     {
         case SM_CREATED:
         {
+            break;
+        }
+        case SM_CREATED_FAULTED:
+        {
+            sm_fault(goToState->sm);
             break;
         }
         case SM_OPENING:
@@ -1156,7 +1309,9 @@ static void sm_switchesToState(SM_GO_TO_STATE* goToState)
     /*depending on the requested state, the thread might have finished by now...*/
 }
 
-
+// Essentially reset the state back to created
+// If the state was faulted, this actually enters the terminal faulted state
+//   In that case, the only difference is that opening is no longer possible
 static int switchesFromStateToCreated(
     void* arg
 )
@@ -1174,6 +1329,7 @@ static int switchesFromStateToCreated(
     switch (goToState->expected->sm_state_after_api)
     {
         case SM_CREATED:
+        case SM_CREATED_FAULTED:
         {
             break;
         }
@@ -1225,10 +1381,8 @@ static int switchesFromStateToCreated(
         {
             sm_barrier_end(goToState->sm);
 
-            if (sm_close_begin(goToState->sm) == SM_EXEC_GRANTED)
-            {
-                sm_close_end(goToState->sm);
-            }
+            ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_close_begin(goToState->sm));
+            sm_close_end(goToState->sm);
             break;
         }
         case SM_CLOSING:
@@ -1261,7 +1415,6 @@ static void sm_switches_from_state_to_created(SM_GO_TO_STATE* goToState)
 
 /*Tests_SRS_SM_02_050: [ If the state is SM_OPENED_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
 /*Tests_SRS_SM_02_051: [ If the state is SM_OPENED_DRAINING_TO_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
-/*Tests_SRS_SM_42_009: [ While the state changes before setting the bit then sm_fault shall re-evaluate the state. ]*/
 
 /*tests different expected returns from different states of SM*/
 /*at time=0                     a thread is started that switched state to the desired state to execute some API. This thread might block there. For example when the "to" state is SM_OPENED_DRAINING_TO_BARRIER. */
@@ -1275,6 +1428,7 @@ TEST_FUNCTION(STATE_and_API)
     {
                                                       /*sm_open_begin*/                                         /*sm_close_begin*/                                      /*sm_exec_begin*/                                         /*sm_barrier_begin*/
         /*SM_CREATED*/                            {   {SM_EXEC_GRANTED, SM_OPENING},                            {SM_EXEC_REFUSED, SM_CREATED},                          {SM_EXEC_REFUSED, SM_CREATED},                            {SM_EXEC_REFUSED, SM_CREATED}},
+        /*SM_CREATED_FAULTED*/                    {   {SM_EXEC_REFUSED, SM_CREATED_FAULTED},                    {SM_EXEC_REFUSED, SM_CREATED_FAULTED},                  {SM_EXEC_REFUSED, SM_CREATED_FAULTED},                    {SM_EXEC_REFUSED, SM_CREATED_FAULTED}},
         /*SM_OPENING*/                            {   {SM_EXEC_REFUSED, SM_OPENING},                            {SM_EXEC_REFUSED, SM_OPENING},                          {SM_EXEC_REFUSED, SM_OPENING},                            {SM_EXEC_REFUSED, SM_OPENING}},
         /*SM_OPENING_FAULTED*/                    {   {SM_EXEC_REFUSED, SM_OPENING_FAULTED},                    {SM_EXEC_REFUSED, SM_OPENING_FAULTED},                  {SM_EXEC_REFUSED, SM_OPENING_FAULTED},                    {SM_EXEC_REFUSED, SM_OPENING_FAULTED}},
         /*SM_OPENED*/                             {   {SM_EXEC_REFUSED, SM_OPENED},                             {SM_EXEC_GRANTED, SM_CLOSING},                          {SM_EXEC_GRANTED, SM_OPENED},                             {SM_EXEC_GRANTED, SM_OPENED_BARRIER}},

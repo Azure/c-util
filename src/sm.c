@@ -122,9 +122,13 @@ SM_RESULT sm_open_begin(SM_HANDLE sm)
     }
     else
     {
-        /*Codes_SRS_SM_02_039: [ If the state is not SM_CREATED then sm_open_begin shall return SM_EXEC_REFUSED. ]*/
         int32_t state = interlocked_add(&sm->state, 0);
-        if ((state & SM_STATE_MASK) != SM_CREATED)
+        if (
+            /*Codes_SRS_SM_02_039: [ If the state is not SM_CREATED then sm_open_begin shall return SM_EXEC_REFUSED. ]*/
+            (state & SM_STATE_MASK) != SM_CREATED ||
+            /*Codes_SRS_SM_42_011: [ If SM_FAULTED_BIT is 1 then sm_open_begin shall return SM_EXEC_REFUSED. ]*/
+            ((state & SM_FAULTED_BIT) == SM_FAULTED_BIT)
+            )
         {
             LogError("sm name=%s. Cannot sm_open_begin that which is in %" PRI_SM_STATE " state", sm->name, SM_STATE_VALUE(state));
             result = SM_EXEC_REFUSED;
@@ -183,8 +187,8 @@ void sm_open_end(SM_HANDLE sm, bool success)
                 }
                 else
                 {
-                    /*Codes_SRS_SM_02_075: [ If success is false then sm_open_end shall switch the state to SM_CREATED and reset the SM_FAULTED_BIT to 0. ]*/
-                    if (interlocked_compare_exchange(&sm->state, (state & ~(uint32_t)SM_FAULTED_BIT) - SM_OPENING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
+                    /*Codes_SRS_SM_02_075: [ If success is false then sm_open_end shall switch the state to SM_CREATED. ]*/
+                    if (interlocked_compare_exchange(&sm->state, state - SM_OPENING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
                     {
                         LogError("sm name=%s. sm_open_end state changed meanwhile (it was %" PRI_SM_STATE ", likely competing threads.", sm->name, SM_STATE_VALUE(state));
                         // This likely means a fault happened, try again to be sure
@@ -297,9 +301,8 @@ static void sm_close_end_internal(SM_HANDLE sm)
         }
         else
         {
-            /*Codes_SRS_SM_42_001: [ sm_close_end shall reset SM_FAULTED_BIT to 0. ]*/
             /*Codes_SRS_SM_02_044: [ sm_close_end shall switch the state to SM_CREATED. ]*/
-            if (interlocked_compare_exchange(&sm->state, (state & ~(uint32_t)SM_FAULTED_BIT) - SM_CLOSING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
+            if (interlocked_compare_exchange(&sm->state, state - SM_CLOSING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
             {
                 LogError("sm name=%s. state changed meanwhile (it was %" PRI_SM_STATE "), likely competing threads", sm->name, SM_STATE_VALUE(state));
                 // Retry (maybe a fault happened during the close but after we checked the state above?)
@@ -531,32 +534,12 @@ void sm_fault(SM_HANDLE sm)
     }
     else
     {
-        // When this function returns the state must be one of the following (in the absence of other threads changing the state):
-        //   SM_CREATED
-        //   have SM_FAULTED_BIT set in any other state
-        do
+        /*Codes_SRS_SM_42_007: [ sm_fault shall set SM_FAULTED_BIT to 1. ]*/
+        int32_t old_state = interlocked_or(&sm->state, SM_FAULTED_BIT);
+
+        if ((old_state & SM_FAULTED_BIT) != SM_FAULTED_BIT)
         {
-            int32_t state = interlocked_add(&sm->state, 0);
-            if (
-                /*Codes_SRS_SM_42_006: [ If the state is SM_CREATED then sm_fault shall return. ]*/
-                ((state & SM_STATE_MASK) == SM_CREATED)
-                )
-            {
-                LogError("sm name=%s. cannot execute barrier begin when state is %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(state));
-                break;
-            }
-            else
-            {
-                /*Codes_SRS_SM_42_007: [ sm_fault shall set SM_FAULTED_BIT to 1. ]*/
-                if (interlocked_compare_exchange(&sm->state, (state | SM_FAULTED_BIT) + SM_STATE_INCREMENT, state) != state)
-                {
-                    /*Codes_SRS_SM_42_009: [ While the state changes before setting the bit then sm_fault shall re-evaluate the state. ]*/
-                }
-                else
-                {
-                    break;
-                }
-            }
-        } while (1);
+            LogError("sm name=%s. Module has entered faulted state from state %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(old_state));
+        }
     }
 }
