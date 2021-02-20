@@ -22,6 +22,7 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_util/interlocked_hl.h"
+#include "c_util/log_critical_and_terminate.h"
 #undef ENABLE_MOCKS
 
 #include "real_interlocked_hl.h"
@@ -157,7 +158,7 @@ TEST_FUNCTION(sm_create_unhappy_path)
 TEST_FUNCTION(sm_destroy_with_sm_NULL_returns)
 {
     ///arrange
-    
+
     ///act
     sm_destroy(NULL);
 
@@ -212,6 +213,27 @@ TEST_FUNCTION(sm_open_begin_in_SM_OPENING_refuses)
 
     ///act
     result = sm_open_begin(sm);
+
+    ///assert
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_42_011: [ If SM_FAULTED_BIT is 1 then sm_open_begin shall return SM_EXEC_REFUSED. ]*/
+TEST_FUNCTION(sm_open_begin_with_SM_FAULTED_BIT_set_refuses)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+
+    sm_fault(sm);
+
+    umock_c_reset_all_calls();
+
+    ///act
+    SM_RESULT result = sm_open_begin(sm);
 
     ///assert
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, result);
@@ -286,7 +308,7 @@ TEST_FUNCTION(sm_open_end_switches_to_SM_OPENED)
     SM_RESULT result1 = sm_exec_begin(sm);
     sm_open_end(sm, true);
     SM_RESULT result2 = sm_exec_begin(sm);
-    
+
     ///assert
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, result1);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result2);
@@ -317,6 +339,31 @@ TEST_FUNCTION(sm_open_end_switches_to_SM_CREATED)
 
     ///clean
     sm_open_end(sm, true);
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_02_075: [ If success is false then sm_open_end shall switch the state to SM_CREATED. ]*/
+TEST_FUNCTION(sm_open_end_switches_to_SM_CREATED_and_leaves_SM_FAULTED_BIT)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_fault(sm);
+
+    ///act
+    SM_RESULT result1 = sm_exec_begin(sm);
+    sm_open_end(sm, false);
+    SM_RESULT result2 = sm_open_begin(sm); /*sm_open_begin can only be executed in SM_CREATED state*/
+    SM_RESULT result3 = sm_exec_begin(sm); /*sm_exec_begin would fail if the fault wasn't reset*/
+
+    ///assert
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, result1);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, result2);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, result3);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
     sm_destroy(sm);
 }
 
@@ -414,7 +461,7 @@ TEST_FUNCTION(sm_close_begin_after_close_begin_close_end_open_begin_open_end_suc
     ///arrange
     SM_HANDLE sm = TEST_sm_create();
     SM_RESULT result;
-    
+
     result = sm_open_begin(sm);
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
     sm_open_end(sm, true);
@@ -463,7 +510,7 @@ TEST_FUNCTION(sm_close_unhappy_path)
 
     ///act
     result = sm_close_begin(sm);
-   
+
     ///assert
     ASSERT_ARE_EQUAL(SM_RESULT, SM_ERROR, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -526,6 +573,37 @@ TEST_FUNCTION(sm_close_end_switches_state_to_SM_CREATED) /*allows sm_open_begin 
     ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     sm_open_end(sm, true);
+
+    ///clean
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_42_012: [ sm_close_end shall not reset the SM_FAULTED_BIT. ]*/
+TEST_FUNCTION(sm_close_end_switches_state_to_SM_CREATED_leaves_SM_FAULTED_BIT_set)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result;
+
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_open_end(sm, true);
+
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX));
+
+    result = sm_close_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+
+    sm_fault(sm);
+
+    umock_c_reset_all_calls();
+
+    ///act
+    sm_close_end(sm);
+
+    ///assert
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, sm_open_begin(sm));
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
     sm_destroy(sm);
@@ -595,6 +673,32 @@ TEST_FUNCTION(sm_exec_begin_succeeds)
     sm_destroy(sm);
 }
 
+/*Tests_SRS_SM_42_007: [ sm_fault shall set SM_FAULTED_BIT to 1. ]*/
+/*Tests_SRS_SM_42_002: [ If SM_FAULTED_BIT is 1 then sm_exec_begin shall return SM_EXEC_REFUSED. ]*/
+TEST_FUNCTION(sm_exec_begin_fails_when_faulted)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result;
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_open_end(sm, true);
+
+    sm_fault(sm);
+
+    umock_c_reset_all_calls();
+
+    ///act
+    result = sm_exec_begin(sm);
+
+    ///assert
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_destroy(sm);
+}
+
 /*Tests_SRS_SM_02_024: [ If sm is NULL then sm_exec_end shall return. ]*/
 TEST_FUNCTION(sm_exec_end_with_sm_NULL_returns)
 {
@@ -645,6 +749,69 @@ TEST_FUNCTION(sm_exec_end_signals)
 
     ///act
     sm_exec_end(sm);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    result = sm_close_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result); /*if somehow n would be -1... sm_close_end would wait forever...*/
+    sm_close_end(sm);
+
+    ///clean
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_42_010: [ If n would decrement below 0, then sm_exec_end shall terminate the process. ]*/
+TEST_FUNCTION(sm_exec_end_called_additional_time_terminates_process)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result;
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_open_end(sm, true);
+
+    result = sm_exec_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+
+    sm_exec_end(sm);
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(ps_util_terminate_process());
+
+    ///act
+    sm_exec_end(sm);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    result = sm_close_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result); /*if somehow n would be -1... sm_close_end would wait forever...*/
+    sm_close_end(sm);
+
+    ///clean
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_42_013: [ sm_exec_end may be called when SM_FAULTED_BIT is 1. ]*/
+TEST_FUNCTION(sm_exec_end_works_when_faulted)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result;
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_open_end(sm, true);
+
+    result = sm_exec_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+
+    sm_fault(sm);
+
+    umock_c_reset_all_calls();
+
+    ///act
     sm_exec_end(sm);
 
     ///assert
@@ -717,6 +884,32 @@ TEST_FUNCTION(sm_barrier_begin_with_SM_CLOSE_BIT_set_refuses)
     sm_destroy(sm);
 }
 
+/*Tests_SRS_SM_42_007: [ sm_fault shall set SM_FAULTED_BIT to 1. ]*/
+/*Tests_SRS_SM_42_003: [ If SM_FAULTED_BIT is set to 1 then sm_barrier_begin shall return SM_EXEC_REFUSED. ]*/
+TEST_FUNCTION(sm_barrier_begin_with_SM_FAULTED_BIT_set_refuses)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result;
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_open_end(sm, true);
+
+    sm_fault(sm);
+
+    umock_c_reset_all_calls();
+
+    ///act
+    result = sm_barrier_begin(sm);
+
+    ///assert
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_destroy(sm);
+}
+
 /*Tests_SRS_SM_02_066: [ sm_barrier_begin shall switch the state to SM_OPENED_DRAINING_TO_BARRIER. ]*/
 /*Tests_SRS_SM_02_069: [ sm_barrier_begin shall switch the state to SM_OPENED_BARRIER and return SM_EXEC_GRANTED. ]*/
 TEST_FUNCTION(sm_barrier_begin_returns_SM_EXEC_GRANTED)
@@ -741,6 +934,32 @@ TEST_FUNCTION(sm_barrier_begin_returns_SM_EXEC_GRANTED)
 
     ///clean
     sm_barrier_end(sm);
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_42_014: [ sm_barrier_end may be called when SM_FAULTED_BIT is 1. ]*/
+TEST_FUNCTION(sm_barrier_end_works_when_faulted)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result;
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_open_end(sm, true);
+
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX));
+
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, sm_barrier_begin(sm));
+
+    sm_fault(sm);
+
+    ///act
+    sm_barrier_end(sm);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
     sm_destroy(sm);
 }
 
@@ -788,7 +1007,7 @@ TEST_FUNCTION(sm_barrier_end_in_SM_CREATED_returns)
 {
     ///arrange
     SM_HANDLE sm = TEST_sm_create();
-    
+
     ///act
     sm_barrier_end(sm);
 
@@ -827,6 +1046,70 @@ TEST_FUNCTION(sm_barrier_begin_switched_to_SM_OPENED)
 
     ///clean
     sm_exec_end(sm);
+    sm_destroy(sm);
+}
+
+//
+// sm_fault
+//
+
+/*Tests_SRS_SM_42_004: [ If sm is NULL then sm_fault shall return. ]*/
+TEST_FUNCTION(sm_fault_with_NULL_sm_returns)
+{
+    ///arrange
+
+    ///act
+    sm_fault(NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_SM_42_007: [ sm_fault shall set SM_FAULTED_BIT to 1. ]*/
+TEST_FUNCTION(sm_fault_in_SM_CREATED_disallows_open)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+
+    ///act
+    sm_fault(sm);
+
+    ///assert
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, sm_open_begin(sm));
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, sm_close_begin(sm));
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_destroy(sm);
+}
+
+/*Tests_SRS_SM_42_007: [ sm_fault shall set SM_FAULTED_BIT to 1. ]*/
+TEST_FUNCTION(sm_fault_in_SM_CLOSING_prevents_open)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+
+    SM_RESULT result;
+
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_open_end(sm, true);
+
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX));
+
+    result = sm_close_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+
+    ///act
+    sm_fault(sm);
+
+    ///assert
+    sm_close_end(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, sm_open_begin(sm));
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, sm_close_begin(sm));
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
     sm_destroy(sm);
 }
 
