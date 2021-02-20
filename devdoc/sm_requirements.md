@@ -211,6 +211,8 @@ MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
 
 **SRS_SM_02_044: [** `sm_close_end` shall switch the state to `SM_CREATED`. **]**
 
+**SRS_SM_42_012: [** `sm_close_end` shall not reset the `SM_FAULTED_BIT`. **]**
+
 ### sm_exec_begin
 ```c
 MOCKABLE_FUNCTION(, int, sm_exec_begin, SM_HANDLE, sm);
@@ -246,6 +248,8 @@ MOCKABLE_FUNCTION(, void, sm_exec_end, SM_HANDLE, sm);
 **SRS_SM_02_060: [** If state is not `SM_OPENED_DRAINING_TO_BARRIER` then `sm_exec_end` shall return. **]**
 
 **SRS_SM_02_061: [** If state is not `SM_OPENED_DRAINING_TO_CLOSE` then `sm_exec_end` shall return. **]**
+
+**SRS_SM_42_013: [** `sm_exec_end` may be called when `SM_FAULTED_BIT` is 1. **]**
 
 **SRS_SM_02_062: [** `sm_exec_end` shall decrement `n` with saturation at 0. **]**
 
@@ -288,6 +292,8 @@ MOCKABLE_FUNCTION(, void, sm_barrier_end, SM_HANDLE, sm);
 **SRS_SM_02_032: [** If `sm` is `NULL` then `sm_barrier_end` shall return. **]**
 
 **SRS_SM_02_072: [** If state is not `SM_OPENED_BARRIER` then `sm_barrier_end` shall return. **]**
+
+**SRS_SM_42_014: [** `sm_barrier_end` may be called when `SM_FAULTED_BIT` is 1. **]**
 
 **SRS_SM_02_073: [** `sm_barrier_end` shall switch the state to `SM_OPENED`. **]**
 

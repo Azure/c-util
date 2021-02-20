@@ -302,6 +302,7 @@ static void sm_close_end_internal(SM_HANDLE sm)
         else
         {
             /*Codes_SRS_SM_02_044: [ sm_close_end shall switch the state to SM_CREATED. ]*/
+            /*Codes_SRS_SM_42_012: [ sm_close_end shall not reset the SM_FAULTED_BIT. ]*/
             if (interlocked_compare_exchange(&sm->state, state - SM_CLOSING + SM_CREATED + SM_STATE_INCREMENT, state) != state)
             {
                 LogError("sm name=%s. state changed meanwhile (it was %" PRI_SM_STATE "), likely competing threads", sm->name, SM_STATE_VALUE(state));
@@ -389,6 +390,7 @@ void sm_exec_end(SM_HANDLE sm)
     else
     {
         int32_t state = interlocked_add(&sm->state, 0);
+        /*Codes_SRS_SM_42_013: [ sm_exec_end may be called when SM_FAULTED_BIT is 1. ]*/
         if (
             /*Codes_SRS_SM_02_059: [ If state is not SM_OPENED then sm_exec_end shall return. ]*/
             ((state & SM_STATE_MASK) != SM_OPENED) &&
@@ -501,9 +503,10 @@ void sm_barrier_end(SM_HANDLE sm)
         do
         {
             int32_t state = interlocked_add(&sm->state, 0);
-            /*Codes_SRS_SM_02_072: [ If state is not SM_OPENED_BARRIER then sm_barrier_end shall return. ]*/
+            /*Codes_SRS_SM_42_014: [ sm_barrier_end may be called when SM_FAULTED_BIT is 1. ]*/
             if ((state & SM_STATE_MASK) != SM_OPENED_BARRIER)
             {
+                /*Codes_SRS_SM_02_072: [ If state is not SM_OPENED_BARRIER then sm_barrier_end shall return. ]*/
                 LogError("sm name=%s. cannot call sm_barrier_end when state is %" PRI_SM_STATE "", sm->name, SM_STATE_VALUE(state));
                 break;
             }

@@ -578,6 +578,7 @@ TEST_FUNCTION(sm_close_end_switches_state_to_SM_CREATED) /*allows sm_open_begin 
     sm_destroy(sm);
 }
 
+/*Tests_SRS_SM_42_012: [ sm_close_end shall not reset the SM_FAULTED_BIT. ]*/
 TEST_FUNCTION(sm_close_end_switches_state_to_SM_CREATED_leaves_SM_FAULTED_BIT_set)
 {
     ///arrange
@@ -793,6 +794,7 @@ TEST_FUNCTION(sm_exec_end_called_additional_time_terminates_process)
     sm_destroy(sm);
 }
 
+/*Tests_SRS_SM_42_013: [ sm_exec_end may be called when SM_FAULTED_BIT is 1. ]*/
 TEST_FUNCTION(sm_exec_end_works_when_faulted)
 {
     ///arrange
@@ -935,6 +937,7 @@ TEST_FUNCTION(sm_barrier_begin_returns_SM_EXEC_GRANTED)
     sm_destroy(sm);
 }
 
+/*Tests_SRS_SM_42_014: [ sm_barrier_end may be called when SM_FAULTED_BIT is 1. ]*/
 TEST_FUNCTION(sm_barrier_end_works_when_faulted)
 {
     ///arrange
