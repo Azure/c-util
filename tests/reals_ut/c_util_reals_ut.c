@@ -33,7 +33,7 @@
 #include "c_util/sm.h"
 #endif
 
-BEGIN_TEST_SUITE(c_util_reals_ut)
+BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 // this test makes sure that the mappings work
 // (there is a real_ function corresponding to the original)
@@ -60,4 +60,4 @@ TEST_FUNCTION(check_all_c_util_reals)
     // no explicit assert. if it builds, it works
 }
 
-END_TEST_SUITE(c_util_reals_ut)
+END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

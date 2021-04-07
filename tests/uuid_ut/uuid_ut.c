@@ -70,7 +70,7 @@ static void register_mock_aliases()
 }
 
 
-BEGIN_TEST_SUITE(uuid_unittests)
+BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
@@ -330,4 +330,4 @@ TEST_FUNCTION(UUID_from_string_succeed)
 // Tests_SRS_UUID_09_009: [ If uuid fails to be generated, UUID_from_string shall return a non-zero value ]
 // To be implemented once sscanf mock is implemented.
 
-END_TEST_SUITE(uuid_unittests)
+END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

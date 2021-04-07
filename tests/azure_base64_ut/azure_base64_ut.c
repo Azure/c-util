@@ -1469,7 +1469,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
-BEGIN_TEST_SUITE(base64_unittests)
+BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(TestSuiteInitialize)
 {
@@ -1886,4 +1886,4 @@ TEST_FUNCTION(when_underlying_calls_fail_Azure_Base64_Decode_fails)
     }
 }
 
-END_TEST_SUITE(base64_unittests);
+END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE);

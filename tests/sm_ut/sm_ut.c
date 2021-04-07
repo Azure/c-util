@@ -57,7 +57,7 @@ static SM_HANDLE TEST_sm_create(void)
     return result;
 }
 
-BEGIN_TEST_SUITE(sm_unittests)
+BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(setsBufferTempSize)
 {
@@ -1113,6 +1113,6 @@ TEST_FUNCTION(sm_fault_in_SM_CLOSING_prevents_open)
     sm_destroy(sm);
 }
 
-END_TEST_SUITE(sm_unittests)
+END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 

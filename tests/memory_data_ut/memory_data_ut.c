@@ -34,7 +34,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 
 
 
-BEGIN_TEST_SUITE(memory_data_ut)
+BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(a)
 {
@@ -639,4 +639,4 @@ TEST_FUNCTION(read_uuid_t_succeeds_2)
     ASSERT_ARE_EQUAL(int, 0, memcmp(source, destination, sizeof(UUID_T)));
 }
 
-END_TEST_SUITE(memory_data_ut)
+END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

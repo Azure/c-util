@@ -55,7 +55,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 }
 
 
-BEGIN_TEST_SUITE(rc_string_array_unittests)
+BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
@@ -284,4 +284,4 @@ TEST_FUNCTION(rc_string_array_destroy_with_10_elements_initialized_frees_everyth
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-END_TEST_SUITE(rc_string_array_unittests)
+END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
