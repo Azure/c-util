@@ -53,7 +53,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
-BEGIN_TEST_SUITE(constbuffer_array_batcher_nv_unittests)
+BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
@@ -1326,4 +1326,4 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_payload_count_0_fails)
     real_CONSTBUFFER_DecRef(test_buffers[0]);
 }
 
-END_TEST_SUITE(constbuffer_array_batcher_nv_unittests)
+END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

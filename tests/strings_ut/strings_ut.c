@@ -86,7 +86,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
-BEGIN_TEST_SUITE(strings_unittests)
+BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
     TEST_SUITE_INITIALIZE(setsBufferTempSize)
     {
@@ -1822,4 +1822,4 @@ BEGIN_TEST_SUITE(strings_unittests)
         STRING_delete(str_handle);
     }
 
-END_TEST_SUITE(strings_unittests)
+END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

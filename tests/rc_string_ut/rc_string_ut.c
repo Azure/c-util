@@ -56,7 +56,7 @@ MOCK_FUNCTION_END()
 MOCK_FUNCTION_WITH_CODE(, void, test_free_func_do_nothing, void*, context)
 MOCK_FUNCTION_END()
 
-BEGIN_TEST_SUITE(rc_string_unittests)
+BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_initialize)
 {
@@ -597,4 +597,4 @@ TEST_FUNCTION(rc_string_recreate_succeeds_2)
     THANDLE_DEC_REF(RC_STRING)(same);
 }
 
-END_TEST_SUITE(rc_string_unittests)
+END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

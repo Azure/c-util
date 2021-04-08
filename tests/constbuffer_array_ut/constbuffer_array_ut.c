@@ -223,7 +223,7 @@ static void validate_sorted_constbuffer_array(CONSTBUFFER_ARRAY_HANDLE constbuff
     }
 }
 
-BEGIN_TEST_SUITE(constbuffer_array_unittests)
+BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
@@ -2510,4 +2510,4 @@ TEST_FUNCTION(CONSTBUFFER_ARRAY_HANDLE_contain_same_with_content_of_buffers_same
 }
 
 
-END_TEST_SUITE(constbuffer_array_unittests)
+END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

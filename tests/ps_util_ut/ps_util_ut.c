@@ -34,7 +34,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
-BEGIN_TEST_SUITE(ps_util_unittests)
+BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
     TEST_SUITE_INITIALIZE(TestClassInitialize)
     {
@@ -79,4 +79,4 @@ BEGIN_TEST_SUITE(ps_util_unittests)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
-END_TEST_SUITE(ps_util_unittests)
+END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

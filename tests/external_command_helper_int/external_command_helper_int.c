@@ -39,7 +39,7 @@ TEST_DEFINE_ENUM_TYPE(EXTERNAL_COMMAND_RESULT, EXTERNAL_COMMAND_RESULT_VALUES);
 #define ADDITIONAL_LINE_COUNT 0
 #endif
 
-BEGIN_TEST_SUITE(external_command_helper_int_tests)
+BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
@@ -157,4 +157,4 @@ TEST_FUNCTION(external_command_helper_runs_with_3_lines_output_returns_1)
     rc_string_array_destroy(lines);
 }
 
-END_TEST_SUITE(external_command_helper_int_tests)
+END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

@@ -155,7 +155,7 @@ static void expect_store_lines(uint32_t line_count)
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 }
 
-BEGIN_TEST_SUITE(external_command_helper_unittests)
+BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
@@ -509,4 +509,4 @@ TEST_FUNCTION(external_command_helper_execute_with_5_lines_fails_when_underlying
     }
 }
 
-END_TEST_SUITE(external_command_helper_unittests)
+END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

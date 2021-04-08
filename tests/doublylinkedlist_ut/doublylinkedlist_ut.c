@@ -19,7 +19,7 @@ static simpleItem simp5 = { 5, { NULL, NULL } };
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
-BEGIN_TEST_SUITE(doublylinkedlist_unittests)
+BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(TestClassInitialize)
 {
@@ -415,4 +415,4 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     }
 
 
-END_TEST_SUITE(doublylinkedlist_unittests)
+END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
