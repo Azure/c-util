@@ -6,6 +6,7 @@ set(c_util_reals_c_files
     real_constbuffer_array.c
     real_constbuffer_array_batcher_nv.c
     real_doublylinkedlist.c
+    real_external_command_helper.c
     real_interlocked_hl.c
     real_memory_data.c
     real_rc_string.c
@@ -24,6 +25,8 @@ set(c_util_reals_h_files
     real_constbuffer_array_batcher_nv_renames.h
     real_doublylinkedlist.h
     real_doublylinkedlist_renames.h
+    real_external_command_helper.h
+    real_external_command_helper_renames.h
     real_interlocked_hl.h
     real_interlocked_hl_renames.h
     real_memory_data.h
