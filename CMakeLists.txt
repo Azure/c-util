@@ -101,6 +101,7 @@ endif()
 if (
     (WIN32) AND
     (NOT TARGET jemalloc) AND
+    (${GBALLOC_LL_TYPE} STREQUAL "JEMALLOC") AND
     (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/jemalloc/README)
     )
     set(PREV_CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
