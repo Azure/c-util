@@ -5,6 +5,8 @@
 
 `thandle_tuple_array` holds an array of structs with `THANDLE(<TYPE>)` members along with the count of array elements. That is, an array of tuples where each tuple field is a `THANDLE`.
 
+**NOTE:** This array itself is not a `THANDLE` and is not reference counted. As an improvement, this array could be made to use `THANDLE` itself.
+
 ## Exposed API
 
 ```c
@@ -60,8 +62,6 @@ MOCKABLE_FUNCTION(, THANDLE_TUPLE_ARRAY_TYPE(name)*, THANDLE_TUPLE_ARRAY_CREATE(
 `THANDLE_TUPLE_ARRAY_CREATE(name)` allocates memory to hold the array of tuples. The array is modifiable by the caller after allocating.
 
 **SRS_THANDLE_TUPLE_ARRAY_42_001: [** `THANDLE_TUPLE_ARRAY_CREATE(name)` shall allocate memory for the array. **]**
-
-**SRS_THANDLE_TUPLE_ARRAY_42_002: [** `THANDLE_TUPLE_ARRAY_CREATE(name)` shall allocate memory for `count` structs which hold the tuple. **]**
 
 **SRS_THANDLE_TUPLE_ARRAY_42_003: [** `THANDLE_TUPLE_ARRAY_CREATE(name)` shall initialize the members of the tuples in the array to `NULL`. **]**
 

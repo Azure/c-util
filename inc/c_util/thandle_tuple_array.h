@@ -34,7 +34,7 @@ extern "C" {
     typedef struct MU_C2B(THANDLE_TUPLE_ARRAY_TYPE(name), _TAG) \
     { \
         const uint32_t count; \
-        name * tuple_array; \
+        name tuple_array[]; \
     } THANDLE_TUPLE_ARRAY_TYPE(name);
 
 #define THANDLE_TUPLE_ARRAY_CREATE(name) MU_C2A(name, _array_create)
@@ -53,36 +53,24 @@ extern "C" {
     { \
         THANDLE_TUPLE_ARRAY_TYPE(name)* result; \
         \
-        /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_001: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall allocate memory for the array. ]*/ \
-        size_t required_size = sizeof(THANDLE_TUPLE_ARRAY_TYPE(name)); \
-        result = (THANDLE_TUPLE_ARRAY_TYPE(name)*)malloc(required_size); \
-        \
-        if (result == NULL) \
+        if (SIZE_MAX / sizeof(name) < count || \
+            SIZE_MAX - count * sizeof(name) < sizeof(THANDLE_TUPLE_ARRAY_TYPE(name))) \
         { \
-            /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_004: [ If there are any errors then THANDLE_TUPLE_ARRAY_CREATE(name) shall fail and return NULL. ]*/ \
-            LogError("malloc(%zu) failed", required_size); \
+            /*Unlikely overflow check*/ \
+            LogError("Overflow for count=%" PRIu32 " with sizeof(" MU_TOSTRING(name) ")=%zu, sizeof(" MU_TOSTRING(THANDLE_TUPLE_ARRAY_TYPE(name)) ")=%zu", \
+                count, sizeof(name), sizeof(THANDLE_TUPLE_ARRAY_TYPE(name))); \
+            result = NULL; \
         } \
         else \
         { \
-            result->tuple_array = NULL; \
-            bool failed = false; \
-            if (count > 0) \
-            { \
-                /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_002: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall allocate memory for count structs which hold the tuple. ]*/ \
-                required_size = count * sizeof(name); \
-                result->tuple_array = (name *)malloc(required_size); \
-                \
-                if (result->tuple_array == NULL) \
-                { \
-                    /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_004: [ If there are any errors then THANDLE_TUPLE_ARRAY_CREATE(name) shall fail and return NULL. ]*/ \
-                    LogError("malloc(%zu) failed for count=%" PRIu32, required_size, count); \
-                    failed = true; \
-                } \
-            } \
+            /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_001: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall allocate memory for the array. ]*/ \
+            size_t required_size = sizeof(THANDLE_TUPLE_ARRAY_TYPE(name)) + count * sizeof(name); \
+            result = (THANDLE_TUPLE_ARRAY_TYPE(name)*)malloc(required_size); \
             \
-            if (failed) \
+            if (result == NULL) \
             { \
-                /* already logged */ \
+                /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_004: [ If there are any errors then THANDLE_TUPLE_ARRAY_CREATE(name) shall fail and return NULL. ]*/ \
+                LogError("malloc(%zu) failed", required_size); \
             } \
             else \
             { \
@@ -128,10 +116,6 @@ extern "C" {
                 MU_FOR_EACH_2(THANDLE_TUPLE_ARRAY_FREE_MEMBER, __VA_ARGS__) \
             } \
             /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_008: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall free the memory allocated in tuple_array. ]*/ \
-            if (tuple_array->tuple_array != NULL) \
-            { \
-                free((void*)tuple_array->tuple_array); \
-            } \
             free(tuple_array); \
         } \
     }

@@ -132,6 +132,7 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_1_field_0_elements_succeeds)
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(uint32_t, 0, result->count);
 
     // cleanup
     THANDLE_TUPLE_ARRAY_DESTROY(TUPLE_ONE)(result);
@@ -150,20 +151,19 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_0_elements_succeeds)
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(uint32_t, 0, result->count);
 
     // cleanup
     THANDLE_TUPLE_ARRAY_DESTROY(TUPLE_THREE)(result);
 }
 
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_001: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall allocate memory for the array. ]*/
-/*Tests_SRS_THANDLE_TUPLE_ARRAY_42_002: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall allocate memory for count structs which hold the tuple. ]*/
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_003: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall initialize the members of the tuples in the array to NULL. ]*/
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_005: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall succeed and return the allocated array. ]*/
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_1_field_1_element_succeeds)
 {
     // arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(TUPLE_ONE)));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
 
     // act
@@ -173,20 +173,19 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_1_field_1_element_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(uint32_t, 1, result->count);
+    ASSERT_IS_NULL(result->tuple_array[0].a);
 
     // cleanup
     THANDLE_TUPLE_ARRAY_DESTROY(TUPLE_ONE)(result);
 }
 
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_001: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall allocate memory for the array. ]*/
-/*Tests_SRS_THANDLE_TUPLE_ARRAY_42_002: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall allocate memory for count structs which hold the tuple. ]*/
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_003: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall initialize the members of the tuples in the array to NULL. ]*/
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_005: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall succeed and return the allocated array. ]*/
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_1_element_succeeds)
 {
     // arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(TUPLE_THREE)));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
@@ -198,20 +197,21 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_1_element_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(uint32_t, 1, result->count);
+    ASSERT_IS_NULL(result->tuple_array[0].foo);
+    ASSERT_IS_NULL(result->tuple_array[0].bar);
+    ASSERT_IS_NULL(result->tuple_array[0].baz);
 
     // cleanup
     THANDLE_TUPLE_ARRAY_DESTROY(TUPLE_THREE)(result);
 }
 
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_001: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall allocate memory for the array. ]*/
-/*Tests_SRS_THANDLE_TUPLE_ARRAY_42_002: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall allocate memory for count structs which hold the tuple. ]*/
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_003: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall initialize the members of the tuples in the array to NULL. ]*/
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_005: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall succeed and return the allocated array. ]*/
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_1_field_10_elements_succeeds)
 {
     // arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(10 * sizeof(TUPLE_ONE)));
     for (uint32_t i = 0; i < 10; i++)
     {
         STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
@@ -224,20 +224,22 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_1_field_10_elements_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(uint32_t, 10, result->count);
+    for (uint32_t i = 0; i < 10; i++)
+    {
+        ASSERT_IS_NULL(result->tuple_array[i].a);
+    }
 
     // cleanup
     THANDLE_TUPLE_ARRAY_DESTROY(TUPLE_ONE)(result);
 }
 
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_001: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall allocate memory for the array. ]*/
-/*Tests_SRS_THANDLE_TUPLE_ARRAY_42_002: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall allocate memory for count structs which hold the tuple. ]*/
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_003: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall initialize the members of the tuples in the array to NULL. ]*/
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_005: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall succeed and return the allocated array. ]*/
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_10_elements_succeeds)
 {
     // arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(10 * sizeof(TUPLE_THREE)));
     for (uint32_t i = 0; i < 10; i++)
     {
         STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
@@ -252,6 +254,12 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_10_elements_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(uint32_t, 10, result->count);
+    for (uint32_t i = 0; i < 10; i++)
+    {
+        ASSERT_IS_NULL(result->tuple_array[i].foo);
+        ASSERT_IS_NULL(result->tuple_array[i].bar);
+        ASSERT_IS_NULL(result->tuple_array[i].baz);
+    }
 
     // cleanup
     THANDLE_TUPLE_ARRAY_DESTROY(TUPLE_THREE)(result);
@@ -262,7 +270,6 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_10_elements_fails_when_un
 {
     // arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(10 * sizeof(TUPLE_THREE)));
     for (uint32_t i = 0; i < 10; i++)
     {
         STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
@@ -376,7 +383,6 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_DESTROY_with_1_field_10_elements_not_initializ
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
     THANDLE_TUPLE_ARRAY_DESTROY(TUPLE_ONE)(tuple_array);
@@ -396,7 +402,6 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_DESTROY_with_3_fields_10_elements_not_initiali
 
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
@@ -427,7 +432,6 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_DESTROY_with_1_field_10_elements_initialized_f
     {
         STRICT_EXPECTED_CALL(THANDLE_DEC_REF(RC_STRING)(tuple_array->tuple_array[i].a));
     }
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
@@ -466,7 +470,6 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_DESTROY_with_3_fields_10_elements_initialized_
         STRICT_EXPECTED_CALL(THANDLE_DEC_REF(RC_STRING)(tuple_array->tuple_array[i].bar));
         STRICT_EXPECTED_CALL(THANDLE_DEC_REF(RC_STRING)(tuple_array->tuple_array[i].baz));
     }
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
