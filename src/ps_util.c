@@ -5,15 +5,14 @@
 
 #include "c_util/ps_util.h"
 
-void ps_util_terminate_process(bool abort_process)
+void ps_util_terminate_process(void)
 {
-    if (abort_process)
-    {
-        /* Codes_SRS_PS_UTIL_01_001: [ ps_util_terminate_process shall call abort. ]*/
-        abort();
-    }
-    else
-    {
-        exit(42);
-    }
+    /* Codes_SRS_PS_UTIL_01_001: [ ps_util_terminate_process shall call abort. ]*/
+    abort();
+}
+
+void ps_util_exit_process(int exit_code)
+{
+    /* Codes_SRS_PS_UTIL_01_002: [ ps_util_exit_process shall call exit, passing exit_code as argument. ]*/
+    exit(exit_code);
 }

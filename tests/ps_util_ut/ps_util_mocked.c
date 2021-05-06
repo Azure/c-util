@@ -4,7 +4,9 @@
 #include <stdlib.h>
 
 void mock_abort(void);
+void mock_exit(int exit_code);
 
 #define abort mock_abort
+#define exit mock_exit
 
 #include "../../src/ps_util.c"

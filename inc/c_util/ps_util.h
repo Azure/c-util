@@ -13,7 +13,8 @@
 extern "C" {
 #endif
 
-MOCKABLE_FUNCTION(, void, ps_util_terminate_process, bool, abort_process);
+MOCKABLE_FUNCTION(, void, ps_util_terminate_process);
+MOCKABLE_FUNCTION(, void, ps_util_exit_process, int, exit_code);
 
 #ifdef __cplusplus
 }
