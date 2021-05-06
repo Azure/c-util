@@ -63,7 +63,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         TEST_MUTEX_RELEASE(g_testByTest);
     }
 
-    /* Tests_SRS_LOG_CRITICAL_AND_TERMINATE_01_001: [ LogCriticalAndTerminate shall call ps_util_terminate_process. ]*/
+    /* Tests_SRS_LOG_CRITICAL_AND_TERMINATE_01_001: [ LogCriticalAndTerminate shall call ps_util_terminate_process, passing true as abort_process. ]*/
     TEST_FUNCTION(LogCriticalAndTerminate_succeeds)
     {
         ///arrange
@@ -76,7 +76,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     }
 
-    /* Tests_SRS_LOG_CRITICAL_AND_TERMINATE_01_001: [ LogCriticalAndTerminate shall call ps_util_terminate_process. ]*/
+    /* Tests_SRS_LOG_CRITICAL_AND_TERMINATE_01_001: [ LogCriticalAndTerminate shall call ps_util_terminate_process, passing true as abort_process. ]*/
     TEST_FUNCTION(LogCriticalAndTerminate_with_some_args_succeeds)
     {
         ///arrange
