@@ -21,4 +21,4 @@
 
 `LogCriticalAndTerminate` emits a critical log and terminates the process.
 
-**SRS_LOG_CRITICAL_AND_TERMINATE_01_001: [** `LogCriticalAndTerminate` shall call `ps_util_terminate_process`. **]**
+**SRS_LOG_CRITICAL_AND_TERMINATE_01_001: [** `LogCriticalAndTerminate` shall call `ps_util_terminate_process`, passing `true` as `abort_process`. **]**
