@@ -1,7 +1,6 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 
 #include <stdlib.h>
-#include <stdbool.h>
 
 #include "c_util/ps_util.h"
 
