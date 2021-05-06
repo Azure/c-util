@@ -22,6 +22,8 @@ extern "C" {
 
 MOCK_FUNCTION_WITH_CODE(, void, mock_abort);
 MOCK_FUNCTION_END()
+MOCK_FUNCTION_WITH_CODE(, void, mock_exit, int, exit_code);
+MOCK_FUNCTION_END()
 
 #ifdef __cplusplus
 }
@@ -67,13 +69,52 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     }
 
     /* Tests_SRS_PS_UTIL_01_001: [ ps_util_terminate_process shall call abort. ]*/
-    TEST_FUNCTION(ps_util_calls_abort)
+    TEST_FUNCTION(ps_util_terminate_process_calls_abort)
     {
         ///arrange
         STRICT_EXPECTED_CALL(mock_abort());
 
         ///act
         ps_util_terminate_process();
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    }
+
+    /* Tests_SRS_PS_UTIL_01_002: [ ps_util_exit_process shall call exit, passing exit_code as argument. ]*/
+    TEST_FUNCTION(ps_util_exit_process_calls_exit)
+    {
+        ///arrange
+        STRICT_EXPECTED_CALL(mock_exit(42));
+
+        ///act
+        ps_util_exit_process(42);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    }
+
+    /* Tests_SRS_PS_UTIL_01_002: [ ps_util_exit_process shall call exit, passing exit_code as argument. ]*/
+    TEST_FUNCTION(ps_util_exit_process_calls_exit_0_exit_code)
+    {
+        ///arrange
+        STRICT_EXPECTED_CALL(mock_exit(0));
+
+        ///act
+        ps_util_exit_process(0);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    }
+
+    /* Tests_SRS_PS_UTIL_01_002: [ ps_util_exit_process shall call exit, passing exit_code as argument. ]*/
+    TEST_FUNCTION(ps_util_exit_process_calls_negative_exit_code)
+    {
+        ///arrange
+        STRICT_EXPECTED_CALL(mock_exit(-43));
+
+        ///act
+        ps_util_exit_process(-43);
 
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
