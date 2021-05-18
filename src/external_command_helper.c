@@ -65,7 +65,6 @@ IMPLEMENT_MOCKABLE_FUNCTION(, EXTERNAL_COMMAND_RESULT, external_command_helper_e
 
             while (fgets(command_output_buffer, COMMAND_OUTPUT_BUFFER_SIZE, command_pipe) != NULL)
             {
-                LogInfo("Command output: %s", command_output_buffer);
                 if (failed)
                 {
                     // Already failed, but it may be helpful to see the full output for debugging
