@@ -14,4 +14,4 @@ set(${theseTestsName}_h_files
     ../../inc/c_util/thandle_tuple_array.h
 )
 
-build_test_artifacts(${theseTestsName} ON "tests/c_util" ADDITIONAL_LIBS c_pal c_util_reals c_pal_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_pal c_util_reals c_pal_reals)

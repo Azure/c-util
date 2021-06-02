@@ -16,4 +16,4 @@ set(${theseTestsName}_c_files
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} ON "tests/c_util" ADDITIONAL_LIBS c_pal c_pal_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_pal c_pal_reals)

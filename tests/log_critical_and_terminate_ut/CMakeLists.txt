@@ -14,4 +14,4 @@ set(${theseTestsName}_h_files
     ../../inc/c_util/log_critical_and_terminate.h
 )
 
-build_test_artifacts(${theseTestsName} ON "tests/c_util")
+build_test_artifacts(${theseTestsName} "tests/c_util")

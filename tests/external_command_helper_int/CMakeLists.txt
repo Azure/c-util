@@ -15,7 +15,7 @@ set(${theseTestsName}_cpp_files
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} ON "tests/c_util" ADDITIONAL_LIBS c_util c_pal)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util c_pal)
 
 if("${building}" STREQUAL "exe")
     add_dependencies(${theseTestsName}_exe external_command_sample)
