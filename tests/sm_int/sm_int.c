@@ -805,7 +805,7 @@ TEST_FUNCTION(sm_chaos)
 
     (void)interlocked_exchange(&data->threadsShouldFinish, 0);
 
-    for (uint32_t nthreads = 1; nthreads <= MIN(numberOfProcessors, 2); nthreads++)
+    for (uint32_t nthreads = 1; nthreads <= 1; nthreads++)
     {
         data->n_begin_open_threads = nthreads;
         data->n_end_open_threads = nthreads;
