@@ -805,7 +805,7 @@ TEST_FUNCTION(sm_chaos)
 
     (void)interlocked_exchange(&data->threadsShouldFinish, 0);
 
-    for (uint32_t nthreads = 1; nthreads <= MIN(numberOfProcessors, N_MAX_THREADS); nthreads*=2)
+    for (uint32_t nthreads = 1; nthreads <= MIN(numberOfProcessors, 4); nthreads++)
     {
         data->n_begin_open_threads = nthreads;
         data->n_end_open_threads = nthreads;
@@ -857,6 +857,11 @@ TEST_FUNCTION(sm_chaos)
             toBeRestored(AZ_LOG_INFO, __FILE__, FUNC_NAME, __LINE__, 0, "Slept %" PRIu32 " ms, no sign of n_begin_open_grants=%" PRId32 ", n_begin_grants=%" PRId32 "\n", counterSleep * 1000, n_begin_open_grants_local, n_begin_grants_local);
             counterSleep++;
             ThreadAPI_Sleep(1000);
+            if (timer_global_get_elapsed_ms() - data->startTime_ms > 10ULL * 60 * 1000 /*maximum runtime of 10 minutes anyway*/)
+            {
+                toBeRestored(AZ_LOG_INFO, __FILE__, FUNC_NAME, __LINE__, 0, "exiting because time is up");
+                (void)interlocked_exchange(&data->threadsShouldFinish, 1);
+            }
         }
 
         (void)interlocked_exchange(&data->threadsShouldFinish, 1);
