@@ -786,6 +786,7 @@ TEST_FUNCTION_INITIALIZE(function_initialize)
     timeSinceTestFunctionStartMs = timer_global_get_elapsed_ms();
 }
 
+#if 0 /*reenable with this task Task 10086393: reenable sm_chaos (https://msazure.visualstudio.com/One/_workitems/edit/10086393)*/
 /*tests aims to mindlessly execute the APIs.
 The test follows the contract of the API so that begin/end calls are matched
 At least 1 sm_open_begin and at least 1 sm_exec_begin are waited to happen*/
@@ -1117,6 +1118,8 @@ TEST_FUNCTION(sm_does_not_block)
 
     xlogging_set_log_function(toBeRestored);
 }
+
+#endif
 
 /*below tests aim to see that calling any API produces GRANT/REFUSED from any state*/
 /*these are states
