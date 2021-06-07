@@ -786,7 +786,6 @@ TEST_FUNCTION_INITIALIZE(function_initialize)
     timeSinceTestFunctionStartMs = timer_global_get_elapsed_ms();
 }
 
-#if 0 /*reenable with this task Task 10086393: reenable sm_chaos (https://msazure.visualstudio.com/One/_workitems/edit/10086393)*/
 /*tests aims to mindlessly execute the APIs.
 The test follows the contract of the API so that begin/end calls are matched
 At least 1 sm_open_begin and at least 1 sm_exec_begin are waited to happen*/
@@ -806,7 +805,7 @@ TEST_FUNCTION(sm_chaos)
 
     (void)interlocked_exchange(&data->threadsShouldFinish, 0);
 
-    for (uint32_t nthreads = 1; nthreads <= 1; nthreads++)
+    for (uint32_t nthreads = 1; nthreads <= MIN(numberOfProcessors, N_MAX_THREADS); nthreads*=2)
     {
         data->n_begin_open_threads = nthreads;
         data->n_end_open_threads = nthreads;
@@ -858,11 +857,6 @@ TEST_FUNCTION(sm_chaos)
             toBeRestored(AZ_LOG_INFO, __FILE__, FUNC_NAME, __LINE__, 0, "Slept %" PRIu32 " ms, no sign of n_begin_open_grants=%" PRId32 ", n_begin_grants=%" PRId32 "\n", counterSleep * 1000, n_begin_open_grants_local, n_begin_grants_local);
             counterSleep++;
             ThreadAPI_Sleep(1000);
-            if (timer_global_get_elapsed_ms() - data->startTime_ms > 10ULL * 60 * 1000 /*maximum runtime of 10 minutes anyway*/)
-            {
-                toBeRestored(AZ_LOG_INFO, __FILE__, FUNC_NAME, __LINE__, 0, "exiting because time is up");
-                (void)interlocked_exchange(&data->threadsShouldFinish, 1);
-            }
         }
 
         (void)interlocked_exchange(&data->threadsShouldFinish, 1);
@@ -1118,8 +1112,6 @@ TEST_FUNCTION(sm_does_not_block)
 
     xlogging_set_log_function(toBeRestored);
 }
-
-#endif
 
 /*below tests aim to see that calling any API produces GRANT/REFUSED from any state*/
 /*these are states
