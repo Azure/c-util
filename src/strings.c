@@ -146,6 +146,9 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
         int length;
         va_start(arg_list, format);
 
+        va_list arg_list_clone;
+        va_copy(arg_list_clone, arg_list);
+
         /* Codes_SRS_STRING_07_041: [STRING_construct_sprintf shall determine the size of the resulting string and allocate the necessary memory.] */
         length = vsnprintf(buf, maxBufSize, format, arg_list);
         va_end(arg_list);
@@ -157,8 +160,7 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
                 result->s = (char*)malloc(length+1);
                 if (result->s != NULL)
                 {
-                    va_start(arg_list, format);
-                    if (vsnprintf(result->s, length+1, format, arg_list) < 0)
+                    if (vsnprintf(result->s, length+1, format, arg_list_clone) < 0)
                     {
                         /* Codes_SRS_STRING_07_040: [If any error is encountered STRING_construct_sprintf shall return NULL.] */
                         free(result->s);
@@ -166,7 +168,6 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
                         result = NULL;
                         LogError("Failure: vsnprintf formatting failed.");
                     }
-                    va_end(arg_list);
                 }
                 else
                 {
@@ -191,6 +192,7 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
             result = NULL;
             LogError("Failure: vsnprintf return 0 length");
         }
+        va_end(arg_list_clone);
     }
     else
     {
@@ -553,6 +555,9 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
         int s2Length;
         va_start(arg_list, format);
 
+        va_list arg_list_clone;
+        va_copy(arg_list_clone, arg_list);
+
         s2Length = vsnprintf(buf, maxBufSize, format, arg_list);
         va_end(arg_list);
         if (s2Length < 0)
@@ -575,8 +580,7 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
             if (temp != NULL)
             {
                 s1->s = temp;
-                va_start(arg_list, format);
-                if (vsnprintf(s1->s + s1Length, s1Length + s2Length + 1, format, arg_list) < 0)
+                if (vsnprintf(s1->s + s1Length, s1Length + s2Length + 1, format, arg_list_clone) < 0)
                 {
                     /* Codes_SRS_STRING_07_043: [If any error is encountered STRING_sprintf shall return a non zero value.] */
                     LogError("Failure vsnprintf formatting error");
@@ -588,7 +592,6 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
                     /* Codes_SRS_STRING_07_044: [On success STRING_sprintf shall return 0.]*/
                     result = 0;
                 }
-                va_end(arg_list);
             }
             else
             {
@@ -597,6 +600,7 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
                 result = MU_FAILURE;
             }
         }
+        va_end(arg_list_clone);
     }
     return result;
 }
