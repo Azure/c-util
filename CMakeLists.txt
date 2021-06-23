@@ -214,6 +214,7 @@ if((CMAKE_GENERATOR MATCHES "Visual Studio") AND (${run_traceability}))
     add_dependencies(c_util_traceability traceabilitytool)
 endif()
 
+add_subdirectory(test_helpers)
 add_subdirectory(tests)
 
 include(CMakePackageConfigHelpers)

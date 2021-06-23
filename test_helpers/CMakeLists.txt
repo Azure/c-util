@@ -1,0 +1,18 @@
+#Copyright (C) Microsoft Corporation. All rights reserved.
+#Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+set(c_util_test_helpers_h_files
+    inc/c_util_test_helpers/rc_string_test_type.h
+    inc/c_util_test_helpers/uuid_test_type.h
+)
+
+set(c_util_test_helpers_c_files
+    src/rc_string_test_type.c
+    src/uuid_test_type.c
+)
+
+include_directories(${CMAKE_CURRENT_LIST_DIR}/inc)
+
+add_library(c_util_test_helpers ${c_util_test_helpers_h_files} ${c_util_test_helpers_c_files})
+target_link_libraries(c_util_test_helpers bs_utils rpcrt4 c_pal c_util_reals)
+target_include_directories(c_util_test_helpers PUBLIC ${CMAKE_CURRENT_LIST_DIR}/inc)
