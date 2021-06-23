@@ -3,13 +3,23 @@
 
 set(c_util_test_helpers_h_files
     inc/c_util_test_helpers/rc_string_test_type.h
-    inc/c_util_test_helpers/uuid_test_type.h
 )
 
 set(c_util_test_helpers_c_files
     src/rc_string_test_type.c
+)
+
+if(WIN32)
+set(c_util_test_helpers_h_files
+    ${c_util_test_helpers_h_files}
+    inc/c_util_test_helpers/uuid_test_type.h
+)
+
+set(c_util_test_helpers_c_files
+    ${c_util_test_helpers_c_files}
     src/uuid_test_type.c
 )
+endif()
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/inc)
 
