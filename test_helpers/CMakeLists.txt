@@ -24,5 +24,5 @@ endif()
 include_directories(${CMAKE_CURRENT_LIST_DIR}/inc)
 
 add_library(c_util_test_helpers ${c_util_test_helpers_h_files} ${c_util_test_helpers_c_files})
-target_link_libraries(c_util_test_helpers rpcrt4 c_pal c_util_reals)
+target_link_libraries(c_util_test_helpers c_pal c_util_reals)
 target_include_directories(c_util_test_helpers PUBLIC ${CMAKE_CURRENT_LIST_DIR}/inc)
