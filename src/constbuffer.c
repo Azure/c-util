@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 #include "macro_utils/macro_utils.h"
 
@@ -12,6 +13,9 @@
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/interlocked.h"
 
+#include "c_util/memory_data.h"
+#include "c_util/constbuffer_format.h"
+#include "c_util/constbuffer_version.h"
 #include "c_util/constbuffer.h"
 
 #define CONSTBUFFER_TYPE_VALUES \
@@ -388,6 +392,182 @@ IMPLEMENT_MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER
                 {
                     /*Codes_SRS_CONSTBUFFER_02_023: [ CONSTBUFFER_HANDLE_contain_same shall return true. ]*/
                     result = true;
+                }
+            }
+        }
+    }
+    return result;
+}
+
+uint32_t CONSTBUFFER_get_serialization_size(CONSTBUFFER_HANDLE source)
+{
+    uint32_t result;
+    if (source == NULL)
+    {
+        LogError("invalid argument CONSTBUFFER_HANDLE source=%p", source);
+        result = 0;
+    }
+    else
+    {
+        if (source->alias.size > UINT32_MAX - sizeof(uint8_t) + sizeof(uint32_t))
+        {
+            LogError("serialization size exceeds UINT32_MAX=%" PRIu32 ". It is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%zu",
+                UINT32_MAX, sizeof(uint8_t), sizeof(uint32_t), source->alias.size);
+            result = 0;
+        }
+        else
+        {
+            result = sizeof(uint8_t) + sizeof(uint32_t) + (uint32_t)source->alias.size;
+        }
+    }
+    return result;
+}
+
+/*THE_LESSER is the smallest of the SIZE_MAX, UINT32_MAX. This is needed because there's a mix of size_t and uint32_t about sizes and */
+/*sizeof(size_t) is not a contant, and that is detrimental to any portable serialization. So the lesser of the two is chosen in the overflow computations.*/
+/*so the smaller type is used for both alloc and for the return value*/
+#if SIZE_MAX > UINT32_MAX
+#define THE_LESSER UINT32_MAX
+#define PRI_THE_LESSER PRIu32
+#else
+#define THE_LESSER SIZE_MAX
+#define PRI_THE_LESSER "zu"
+#endif
+
+unsigned char* CONSTBUFFER_to_buffer(CONSTBUFFER_HANDLE source, CONSTBUFFER_to_buffer_alloc alloc, uint32_t* size)
+{
+    unsigned char* result;
+    if (
+        (source == NULL) ||
+        (size == NULL)
+        )
+    {
+        LogError("invalid arguments CONSTBUFFER_HANDLE source=%p, CONSTBUFFER_to_buffer_alloc alloc=%p, uint32_t* size=%p",
+            source, alloc, size);
+        result = NULL;
+    }
+    else
+    {
+        if (alloc == NULL)
+        {
+            alloc = &malloc;
+        }
+
+        if (THE_LESSER - sizeof(uint8_t) + sizeof(uint32_t) > source->alias.size)
+        {
+            LogError("serialization size exceeds the lesser of (UINT32_MAX, SIZE_MAX)=%" PRI_THE_LESSER ". Serialization size is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%zu",
+                THE_LESSER, sizeof(uint8_t), sizeof(uint32_t), source->alias.size);
+            result = NULL;
+        }
+        else
+        {
+            result = alloc(sizeof(uint8_t) + sizeof(uint32_t) + source->alias.size);
+            if (result == NULL)
+            {
+                LogError("failure in alloc=%p(sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%zu);", 
+                    alloc, sizeof(uint8_t), sizeof(uint32_t), source->alias.size);
+                /*return as is*/
+            }
+            else
+            {
+                write_uint8_t(result + CONSTBUFFER_VERSION_OFFSET, CONSTBUFFER_VERSION);
+                write_uint32_t(result + CONSTBUFFER_SIZE_OFFSET, (uint32_t)source->alias.size);
+                (void)memcpy(result + CONSTBUFFER_CONTENT_OFFSET, source->alias.buffer, source->alias.size);
+                /*return as is*/
+            }
+        }
+    }
+    return result;
+}
+
+CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT CONSTBUFFER_to_fixed_size_buffer(CONSTBUFFER_HANDLE source, unsigned char* destination, uint32_t destination_size, uint32_t* serialized_size)
+{
+    CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT result;
+    
+    if (
+        (source == NULL) ||
+        (destination == NULL) ||
+        (serialized_size == NULL)
+        )
+    {
+        LogError("invalid arguments CONSTBUFFER_HANDLE source=%p, unsigned char* destination=%p, uint32_t destination_size=%" PRIu32 ", uint32_t* serialized_size=%p",
+            source, destination, destination_size, serialized_size);
+        result = CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG;
+    }
+    else
+    {
+        if (THE_LESSER - sizeof(uint8_t) + sizeof(uint32_t) > source->alias.size)
+        {
+            LogError("cannot serialize CONSTBUFFER_HANDLE source=%p because its serialized size (sizeof(uint8_t) + sizeof(uint32_t) + alias->size=%zu) would exceed maximum size of %" PRI_THE_LESSER "",
+                source, source->alias.size, THE_LESSER);
+            result = CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG;
+        }
+        else
+        {
+
+            *serialized_size = (uint32_t)(sizeof(uint8_t) + sizeof(uint32_t) + source->alias.size);
+            if (destination_size < *serialized_size)
+            {
+                LogError("cannot serialize CONSTBUFFER_HANDLE source=%p because its serialized size (sizeof(uint8_t) + sizeof(uint32_t) + alias->size=%zu)=%zu exceeds available destination_size=%" PRIu32 "",
+                    source,  source->alias.size, sizeof(uint8_t) + sizeof(uint32_t) + source->alias.size, destination_size);
+                result = CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INSUFFICIENT_BUFFER;
+            }
+            else
+            {
+                write_uint8_t(destination + CONSTBUFFER_VERSION_OFFSET, CONSTBUFFER_VERSION);
+                write_uint32_t(destination + CONSTBUFFER_SIZE_OFFSET, (uint32_t)source->alias.size);
+                (void)memcpy(destination + CONSTBUFFER_CONTENT_OFFSET, source->alias.buffer, source->alias.size);
+                result = CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_OK;
+            }
+        }
+    }
+    return result;
+}
+
+CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* source, uint32_t size, uint32_t* consumed, CONSTBUFFER_HANDLE* destination)
+{
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+    if (
+        (source == NULL) ||
+        (size < sizeof(uint8_t) + sizeof(uint32_t)) ||
+        (destination == NULL)
+        )
+    {
+        LogError("invalid arguments const unsigned char* source=%p, uint32_t size=%" PRIu32 ", uint32_t* consumed=%p, CONSTBUFFER_HANDLE* destination=%p", 
+            source, size, consumed, destination);
+        result = CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG;
+    }
+    else
+    {
+        uint8_t version;
+        read_uint8_t(source + CONSTBUFFER_VERSION_OFFSET, &version);
+        if (version != CONSTBUFFER_VERSION)
+        {
+            LogError("different version (%" PRIu8 ") detected. This module only knows about version %" PRIu8 "", version, CONSTBUFFER_VERSION);
+            result = CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA;
+        }
+        else
+        {
+            uint32_t content_size;
+            read_uint32_t(source + CONSTBUFFER_SIZE_OFFSET, &content_size);
+            if (size - (sizeof(uint8_t) + sizeof(uint32_t)) < content_size)
+            {
+                LogError("in the buffer at source=%p of size=%" PRIu32 " there are not enough bytes remaining after version and size to construct content from. Serialized content size was computed as %" PRIu32 " but there are only %" PRIu32 " bytes available",
+                    source, size, content_size, (uint32_t)(size - (sizeof(uint8_t) + sizeof(uint32_t))));
+                result = CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA;
+            }
+            else
+            {
+                *destination = CONSTBUFFER_Create(source + CONSTBUFFER_CONTENT_OFFSET, content_size);
+                if (*destination == NULL)
+                {
+                    LogError("failure in CONSTBUFFER_Create(source=%p + CONSTBUFFER_CONTENT_OFFSET=%zu, content_size=%" PRIu32 ")",
+                        source, CONSTBUFFER_CONTENT_OFFSET, content_size);
+                    result = CONSTBUFFER_FROM_BUFFER_RESULT_ERROR;
+                }
+                else
+                {
+                    result = CONSTBUFFER_FROM_BUFFER_RESULT_OK;
                 }
             }
         }

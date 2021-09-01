@@ -32,6 +32,24 @@ typedef struct CONSTBUFFER_TAG
 
 typedef void(*CONSTBUFFER_CUSTOM_FREE_FUNC)(void* context);
 
+/*what function should CONSTBUFFER_HANDLE_to_buffer use to allocate the returned serialized form. NULL means gballoc_hl_malloc.*/
+typedef void*(*CONSTBUFFER_to_buffer_alloc)(size_t size);
+
+#define CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_VALUES \
+    CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_OK, \
+    CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INSUFFICIENT_BUFFER, \
+    CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG
+
+MU_DEFINE_ENUM(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_VALUES)
+
+#define CONSTBUFFER_FROM_BUFFER_RESULT_VALUES   \
+    CONSTBUFFER_FROM_BUFFER_RESULT_OK ,\
+    CONSTBUFFER_FROM_BUFFER_RESULT_ERROR ,\
+    CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG,\
+    CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA
+
+MU_DEFINE_ENUM(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_VALUES)
+
 MOCKABLE_INTERFACE(constbuffer,
     /*this creates a new constbuffer from a memory area*/
     FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, size_t, size),
@@ -53,7 +71,15 @@ MOCKABLE_INTERFACE(constbuffer,
 
     FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle),
 
-    FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right)
+    FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right),
+
+    FUNCTION(, uint32_t, CONSTBUFFER_get_serialization_size, CONSTBUFFER_HANDLE, source),
+
+    FUNCTION(, unsigned char*, CONSTBUFFER_to_buffer, CONSTBUFFER_HANDLE, source, CONSTBUFFER_to_buffer_alloc, alloc, uint32_t*, size),
+
+    FUNCTION(, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_to_fixed_size_buffer, CONSTBUFFER_HANDLE, source, unsigned char*, destination, uint32_t, destination_size, uint32_t*, serialized_size),
+
+    FUNCTION(, CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_from_buffer, const unsigned char*, source, uint32_t, size, uint32_t*, consumed, CONSTBUFFER_HANDLE*, destination);
 )
 
 #ifdef __cplusplus
