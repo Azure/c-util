@@ -28,7 +28,7 @@ typedef struct CONSTBUFFER_HANDLE_DATA_TAG* CONSTBUFFER_HANDLE;
 typedef struct CONSTBUFFER_TAG
 {
     const unsigned char* buffer;
-    size_t size;
+    uint32_t size;
 } CONSTBUFFER;
 
 typedef void(*CONSTBUFFER_CUSTOM_FREE_FUNC)(void* context);
@@ -52,18 +52,18 @@ MU_DEFINE_ENUM(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZ
 
 MOCKABLE_INTERFACE(constbuffer,
     /*this creates a new constbuffer from a memory area*/
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, size_t, size),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, uint32_t, size),
 
     /*this creates a new constbuffer from an existing BUFFER_HANDLE*/
     FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, size_t, size),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, uint32_t, size),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, size_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size),
 
     FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle),
 
@@ -85,7 +85,7 @@ MOCKABLE_INTERFACE(constbuffer,
 
 ###  CONSTBUFFER_Create
 ```c
-MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, size_t, size);
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, uint32_t, size);
 ```
 **SRS_CONSTBUFFER_02_001: [** If `source` is NULL and `size` is different than 0 then CONSTBUFFER_Create shall fail and return NULL. **]**
 
@@ -113,7 +113,7 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HAN
 
 ### CONSTBUFFER_CreateWithMoveMemory
 ```c
-MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, size_t, size);
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, uint32_t, size);
 ```
 
 `CONSTBUFFER_CreateWithMoveMemory` creates a CONST buffer with move semantics for the memory given as argument (if succesfull, the const buffer owns the memory from that point on).
@@ -132,7 +132,7 @@ The memory is assumed to be freeable by a call to `free`.
 ### CONSTBUFFER_CreateWithCustomFree
 
 ```c
-MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, size_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext);
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext);
 ```
 
 `CONSTBUFFER_CreateWithCustomFree` creates a CONST buffer with move semantics for the memory given as argument (if succesfull, the const buffer owns the memory from that point on).
@@ -156,7 +156,7 @@ The memory has to be free by calling the custom free function passed as argument
 
 ### CONSTBUFFER_CreateFromOffsetAndSize
 ```c 
-MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size)
 ```
 
 Given an existing `handle` `CONSTBUFFER_CreateFromOffsetAndSize` creates another `CONSTBUFFER_HANDLE` from `size` bytes  `handle` starting at `offset`.
@@ -179,7 +179,7 @@ Given an existing `handle` `CONSTBUFFER_CreateFromOffsetAndSize` creates another
 
 ### CONSTBUFFER_CreateFromOffsetAndSizeWithCopy
 ```c
-FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
+FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size)
 ```
 
 `CONSTBUFFER_CreateFromOffsetAndSizeWithCopy` creates a new CONSTBUFFER starting with the memory at `offset` in `handle` and having `size` bytes by copying (`memcpy`) those bytes. This creates a new `CONSTBUFFER_HANDLE` with its ref count set to 1.
