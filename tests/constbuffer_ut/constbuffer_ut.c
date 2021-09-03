@@ -2,9 +2,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #ifdef __cplusplus
+#include <cstdint>
 #include <cstdlib>
 #include <cstddef>
 #else
+#include <stdint.h>
 #include <stdlib.h>
 #include <stddef.h>
 #endif
@@ -18,7 +20,7 @@ void* my_gballoc_malloc(size_t size)
     return real_gballoc_ll_malloc(size);
 }
 
-void* my_gballoc_malloc_with_context(size_t size, void* context)
+void* my_gballoc_malloc_with_context(uint32_t size, void* context)
 {
     (void)context;
     return real_gballoc_ll_malloc(size);
@@ -35,7 +37,7 @@ void my_gballoc_free(void* ptr)
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
-MOCKABLE_FUNCTION(, void*, test_alloc, size_t, size, void*, context);
+MOCKABLE_FUNCTION(, void*, test_alloc, uint32_t, size, void*, context);
 
 #undef ENABLE_MOCKS
 
@@ -55,15 +57,15 @@ static const char* buffer3 = "three";
 
 #define BUFFER1_HANDLE (BUFFER_HANDLE)1
 #define BUFFER1_u_char ((unsigned char*)buffer1)
-#define BUFFER1_length strlen(buffer1)
+#define BUFFER1_length (uint32_t)strlen(buffer1)
 
 #define BUFFER2_HANDLE (BUFFER_HANDLE)2
 #define BUFFER2_u_char ((unsigned char*)buffer2)
-#define BUFFER2_length ((size_t)0)
+#define BUFFER2_length ((uint32_t)0)
 
 #define BUFFER3_HANDLE (BUFFER_HANDLE)3
 #define BUFFER3_u_char ((unsigned char*)buffer3)
-#define BUFFER3_length ((size_t)0)
+#define BUFFER3_length ((uint32_t)0)
 
 unsigned char* my_BUFFER_u_char(BUFFER_HANDLE handle)
 {
@@ -105,7 +107,7 @@ TEST_DEFINE_ENUM_TYPE(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RE
 IMPLEMENT_UMOCK_C_ENUM_TYPE(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_VALUES)
 
 #define TEST_ALLOC_CONTEXT (void*)0x9874387 /*random typing*/
-static void* test_alloc_impl(size_t size, void* context)
+static void* test_alloc_impl(uint32_t size, void* context)
 {
     ASSERT_ARE_EQUAL(void_ptr, TEST_ALLOC_CONTEXT, context);
     return my_gballoc_malloc(size);
@@ -122,7 +124,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
     TEST_SUITE_INITIALIZE(setsBufferTempSize)
     {
-        
         ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
 
         g_testByTest = TEST_MUTEX_CREATE();

@@ -2192,7 +2192,7 @@ TEST_FUNCTION(constbuffer_array_get_all_buffers_size_when_buffer_size_bigger_tha
     CONSTBUFFER_ARRAY_HANDLE afterAdd1 = TEST_constbuffer_array_add_front(TEST_CONSTBUFFER_ARRAY_HANDLE, 0, TEST_CONSTBUFFER_HANDLE_1);
     uint32_t all_buffers_size;
     int result;
-    const CONSTBUFFER fake_const_buffer_1 = { (const unsigned char*)0x4242, (size_t)UINT32_MAX + 1 };
+    const CONSTBUFFER fake_const_buffer_1 = { (const unsigned char*)0x4242, UINT32_MAX + 1 };
 
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_1))
         .SetReturn(&fake_const_buffer_1);

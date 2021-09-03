@@ -5,9 +5,11 @@
 #define CONSTBUFFER_H
 
 #ifdef __cplusplus
+#include <cstdint>
 #include <cstddef>
 #else
 #include <stddef.h>
+#include <stdint.h>
 #include <stdbool.h>
 #endif
 
@@ -27,13 +29,13 @@ typedef struct CONSTBUFFER_HANDLE_DATA_TAG* CONSTBUFFER_HANDLE;
 typedef struct CONSTBUFFER_TAG
 {
     const unsigned char* buffer;
-    size_t size;
+    uint32_t size;
 } CONSTBUFFER;
 
 typedef void(*CONSTBUFFER_CUSTOM_FREE_FUNC)(void* context);
 
 /*what function should CONSTBUFFER_HANDLE_to_buffer use to allocate the returned serialized form. NULL means malloc from gballoc_hl_malloc_redirect.h of this lib.*/
-typedef void*(*CONSTBUFFER_to_buffer_alloc)(size_t size, void* context);
+typedef void*(*CONSTBUFFER_to_buffer_alloc)(uint32_t size, void* context);
 
 #define CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_VALUES \
     CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_OK, \
@@ -53,18 +55,18 @@ MU_DEFINE_ENUM(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_VA
 
 MOCKABLE_INTERFACE(constbuffer,
     /*this creates a new constbuffer from a memory area*/
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, size_t, size),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, uint32_t, size),
 
     /*this creates a new constbuffer from an existing BUFFER_HANDLE*/
     FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, size_t, size),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, uint32_t, size),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, size_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size),
 
     FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle),
 

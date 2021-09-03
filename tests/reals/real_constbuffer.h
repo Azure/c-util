@@ -41,15 +41,15 @@ extern "C"
 
 #include "c_util/constbuffer.h"
 
-CONSTBUFFER_HANDLE real_CONSTBUFFER_Create(const unsigned char* source, size_t size);
+CONSTBUFFER_HANDLE real_CONSTBUFFER_Create(const unsigned char* source, uint32_t size);
 
 CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer);
 
-CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateWithMoveMemory(unsigned char* source, size_t size);
+CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateWithMoveMemory(unsigned char* source, uint32_t size);
 
-CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateWithCustomFree(const unsigned char* source, size_t size, CONSTBUFFER_CUSTOM_FREE_FUNC custom_free_func, void* custom_free_func_context);
+CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateWithCustomFree(const unsigned char* source, uint32_t size, CONSTBUFFER_CUSTOM_FREE_FUNC custom_free_func, void* custom_free_func_context);
 
-CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateFromOffsetAndSizeWithCopy(CONSTBUFFER_HANDLE handle, size_t offset, size_t size);
+CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateFromOffsetAndSizeWithCopy(CONSTBUFFER_HANDLE handle, uint32_t offset, uint32_t size);
 
 void real_CONSTBUFFER_IncRef(CONSTBUFFER_HANDLE constbufferHandle);
 
@@ -59,7 +59,7 @@ void real_CONSTBUFFER_DecRef(CONSTBUFFER_HANDLE constbufferHandle);
 
 bool real_CONSTBUFFER_HANDLE_contain_same(CONSTBUFFER_HANDLE left, CONSTBUFFER_HANDLE right);
 
-CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateFromOffsetAndSize(CONSTBUFFER_HANDLE handle, size_t offset, size_t size);
+CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateFromOffsetAndSize(CONSTBUFFER_HANDLE handle, uint32_t offset, uint32_t size);
 
 uint32_t real_CONSTBUFFER_get_serialization_size(CONSTBUFFER_HANDLE source);
 

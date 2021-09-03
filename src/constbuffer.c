@@ -37,7 +37,7 @@ typedef struct CONSTBUFFER_HANDLE_DATA_TAG
     unsigned char storage[]; /*if the memory was copied, this is where the copied memory is. For example in the case of CONSTBUFFER_CreateFromOffsetAndSizeWithCopy. Can have 0 as size.*/
 } CONSTBUFFER_HANDLE_DATA;
 
-static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* source, size_t size)
+static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* source, uint32_t size)
 {
     CONSTBUFFER_HANDLE result;
     /*Codes_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
@@ -49,7 +49,7 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
         /*Codes_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
         /*Codes_SRS_CONSTBUFFER_02_008: [If copying the content fails, then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.] */
         /*Codes_SRS_CONSTBUFFER_02_040: [ If there are any failures then CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
-        LogError("failure in malloc(sizeof(CONSTBUFFER_HANDLE_DATA)=%zu + size=%zu * sizeof(unsigned char)=%zu)",
+        LogError("failure in malloc(sizeof(CONSTBUFFER_HANDLE_DATA)=%zu + size=%" PRIu32 " * sizeof(unsigned char)=%zu)",
             sizeof(CONSTBUFFER_HANDLE_DATA) , size , sizeof(unsigned char));
         /*return as is*/
     }
@@ -79,7 +79,7 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, size_t, size)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, uint32_t, size)
 {
     CONSTBUFFER_HANDLE result;
     /*Codes_SRS_CONSTBUFFER_02_001: [If source is NULL and size is different than 0 then CONSTBUFFER_Create shall fail and return NULL.]*/
@@ -88,7 +88,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsi
         (size != 0)
         )
     {
-        LogError("invalid arguments passes to CONSTBUFFER_Create");
+        LogError("invalid arguments passes to CONSTBUFFER_Create: %p, size: %" PRIu32 "", source, size);
         result = NULL;
     }
     else
@@ -105,26 +105,26 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, 
     /*Codes_SRS_CONSTBUFFER_02_006: [If buffer is NULL then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.]*/
     if (buffer == NULL)
     {
-        LogError("invalid arg passed to CONSTBUFFER_CreateFromBuffer");
+        LogError("invalid arg passed to CONSTBUFFER_CreateFromBuffer buffer: NULL");
         result = NULL;
     }
     else
     {
-        size_t length = BUFFER_length(buffer);
+        uint32_t length = (uint32_t)BUFFER_length(buffer);
         unsigned char* rawBuffer = BUFFER_u_char(buffer);
         result = CONSTBUFFER_Create_Internal(rawBuffer, length);
     }
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, size_t, size)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, uint32_t, size)
 {
     CONSTBUFFER_HANDLE result;
 
     /* Codes_SRS_CONSTBUFFER_01_001: [ If source is NULL and size is different than 0 then CONSTBUFFER_Create shall fail and return NULL. ]*/
     if ((source == NULL) && (size > 0))
     {
-        LogError("Invalid arguments: unsigned char* source=%p, size_t size=%u", source, (unsigned int)size);
+        LogError("Invalid arguments: unsigned char* source=%p, uint32_t size=%" PRIu32 "", source, size);
         result = NULL;
     }
     else
@@ -133,7 +133,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemo
         if (result == NULL)
         {
             /* Codes_SRS_CONSTBUFFER_01_005: [ If any error occurs, CONSTBUFFER_CreateWithMoveMemory shall fail and return NULL. ]*/
-            LogError("malloc failed");
+            LogError("Allocation of CONSTBUFFER_HANDLE_DATA object failed");
         }
         else
         {
@@ -151,7 +151,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemo
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, size_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext)
 {
     CONSTBUFFER_HANDLE result;
 
@@ -164,8 +164,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFr
         (customFreeFunc == NULL)
         )
     {
-        LogError("Invalid arguments: unsigned char* source=%p, size_t size=%u, customFreeFunc=%p, customFreeFuncContext=%p",
-            source, (unsigned int)size, customFreeFunc, customFreeFuncContext);
+        LogError("Invalid arguments: unsigned char* source=%p, uint32_t size=%" PRIu32 ", customFreeFunc=%p, customFreeFuncContext=%p",
+            source, size, customFreeFunc, customFreeFuncContext);
         result = NULL;
     }
     else
@@ -174,7 +174,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFr
         if (result == NULL)
         {
             /* Codes_SRS_CONSTBUFFER_01_011: [ If any error occurs, CONSTBUFFER_CreateWithMoveMemory shall fail and return NULL. ]*/
-            LogError("malloc failed");
+            LogError("Allocation of CONSTBUFFER_HANDLE_DATA object failed");
         }
         else
         {
@@ -196,7 +196,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFr
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size)
 {
     CONSTBUFFER_HANDLE result;
 
@@ -211,7 +211,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAn
         (offset + size > handle->alias.size)
         )
     {
-        LogError("invalid arguments CONSTBUFFER_HANDLE handle=%p, size_t offset=%zu, size_t size=%zu",
+        LogError("invalid arguments CONSTBUFFER_HANDLE handle=%p, uint32_t offset=%" PRIu32 ", uint32_t size=%" PRIu32 "",
             handle, offset, size);
         result = NULL;
     }
@@ -244,7 +244,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAn
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size)
 {
     CONSTBUFFER_HANDLE result;
 
@@ -259,7 +259,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAn
         (offset + size > handle->alias.size)
         )
     {
-        LogError("invalid arguments CONSTBUFFER_HANDLE handle=%p, size_t offset=%zu, size_t size=%zu",
+        LogError("Invalid arguments CONSTBUFFER_HANDLE handle=%p, uint32_t offset=%" PRIu32 ", uint32_t size=%" PRIu32 "",
             handle, offset, size);
         result = NULL;
     }
@@ -268,7 +268,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAn
         result = CONSTBUFFER_Create_Internal(handle->alias.buffer + offset, size);
         if (result == NULL)
         {
-            LogError("failure in CONSTBUFFER_Create_Internal(handle->alias.buffer=%p + offset=%zu, size=%zu)",
+            LogError("failure in CONSTBUFFER_Create_Internal(handle->alias.buffer=%p + offset=%" PRIu32 ", size=%" PRIu32 ")",
                 handle->alias.buffer, offset, size);
             /*return as is*/
         }
@@ -276,7 +276,6 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAn
         {
             /*return as is*/
         }
-
     }
     return result;
 }
@@ -286,7 +285,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, cons
     if (constbufferHandle == NULL)
     {
         /*Codes_SRS_CONSTBUFFER_02_013: [If constbufferHandle is NULL then CONSTBUFFER_IncRef shall return.]*/
-        LogError("Invalid arguments: CONSTBUFFER_HANDLE constbufferHandle=%p", constbufferHandle);
+        LogError("Invalid arguments: CONSTBUFFER_HANDLE constbufferHandle: %p", constbufferHandle);
     }
     else
     {
@@ -302,7 +301,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTB
     {
         /*Codes_SRS_CONSTBUFFER_02_011: [If constbufferHandle is NULL then CONSTBUFFER_GetContent shall return NULL.]*/
         result = NULL;
-        LogError("invalid arg");
+        LogError("Invalid argument constbufferHandle: NULL");
     }
     else
     {
@@ -413,7 +412,7 @@ uint32_t CONSTBUFFER_get_serialization_size(CONSTBUFFER_HANDLE source)
         /*Codes_SRS_CONSTBUFFER_02_042: [ If sizeof(uint8_t) + sizeof(uint32_t) + source's size exceed UINT32_MAX then CONSTBUFFER_get_serialization_size shall fail and return 0. ]*/
         if (source->alias.size > UINT32_MAX - CONSTBUFFER_VERSION_SIZE - CONSTBUFFER_SIZE_SIZE)
         {
-            LogError("serialization size exceeds UINT32_MAX=%" PRIu32 ". It is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%zu",
+            LogError("serialization size exceeds UINT32_MAX=%" PRIu32 ". It is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%" PRIu32 "",
                 UINT32_MAX, CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, source->alias.size);
             result = 0;
         }
@@ -426,23 +425,11 @@ uint32_t CONSTBUFFER_get_serialization_size(CONSTBUFFER_HANDLE source)
     return result;
 }
 
-/*THE_LESSER is the smallest size of the SIZE_MAX, UINT32_MAX. This is needed because 
-1) there's a mix of size_t (malloc) and uint32_t (usage) about sizes
-2) sizeof(size_t) is not a constant
-3) that is detrimental to any portable serialization.
-
-So the lesser of the two is chosen in the overflow computations*/
-#if SIZE_MAX > UINT32_MAX
 #define THE_LESSER UINT32_MAX
 #define PRI_THE_LESSER PRIu32
 typedef uint32_t THE_LESSER_T;
-#else
-#define THE_LESSER SIZE_MAX
-#define PRI_THE_LESSER "zu"
-typedef size_t THE_LESSER_T;
-#endif
 
-static void* calls_malloc(size_t size, void* context)
+static void* calls_malloc(uint32_t size, void* context)
 {
     (void)context;
     return malloc(size);
@@ -474,7 +461,7 @@ unsigned char* CONSTBUFFER_to_buffer(CONSTBUFFER_HANDLE source, CONSTBUFFER_to_b
         if (THE_LESSER - CONSTBUFFER_VERSION_SIZE - CONSTBUFFER_SIZE_SIZE < source->alias.size)
         {
             /*overflow*/
-            LogError("serialization size exceeds the lesser of (UINT32_MAX, SIZE_MAX)=%" PRI_THE_LESSER ". Serialization size is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%zu",
+            LogError("serialization size exceeds the lesser of (UINT32_MAX, SIZE_MAX)=%" PRI_THE_LESSER ". Serialization size is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%" PRIu32 "",
                 THE_LESSER, CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, source->alias.size);
             result = NULL;
         }
@@ -485,7 +472,7 @@ unsigned char* CONSTBUFFER_to_buffer(CONSTBUFFER_HANDLE source, CONSTBUFFER_to_b
             if (result == NULL)
             {
                 /*Codes_SRS_CONSTBUFFER_02_054: [ If there are any failures then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
-                LogError("failure in alloc=%p(sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%zu alloc_context=%p);", 
+                LogError("failure in alloc=%p, (sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%" PRIu32 " alloc_context=%p);",
                     alloc, CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, source->alias.size, alloc_context);
                 /*return as is*/
             }
