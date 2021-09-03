@@ -1584,6 +1584,18 @@ TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_unhappy_path) /*this f
     CONSTBUFFER_DecRef(origin);
 }
 
+/*small tests that check code integrity*/
+TEST_FUNCTION(CONSBUFFER_HANDLE_serialization_constants)
+{
+    ///arrange
+
+    ///act
+
+    ///assert
+    ASSERT_ARE_EQUAL(size_t, 1, CONSTBUFFER_VERSION_SIZE);
+    ASSERT_ARE_EQUAL(size_t, sizeof(uint32_t), CONSTBUFFER_SIZE_SIZE);
+}
+
 /*Tests_SRS_CONSTBUFFER_02_041: [ If source is NULL then CONSTBUFFER_get_serialization_size shall fail and return 0. ]*/
 TEST_FUNCTION(CONSTBUFFER_get_serialization_size_with_source_NULL_fails)
 {
@@ -1719,7 +1731,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_source_NULL_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CONSTBUFFER_02_045: [ If size is NULL then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
+/*Tests_SRS_CONSTBUFFER_02_045: [ If serialized_size is NULL then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_NULL_fails)
 {
     ///arrange
@@ -1779,7 +1791,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_exceeding_UINT32_MAX_fails)
 /*Tests_SRS_CONSTBUFFER_02_050: [ CONSTBUFFER_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1). ]*/
 /*Tests_SRS_CONSTBUFFER_02_051: [ CONSTBUFFER_to_buffer shall write at offsets 1-4 of the allocated memory the value of source->alias.size in network byte order. ]*/
 /*Tests_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
-/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in size the size of the serialization and return the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_malloc_succeeds)
 {
     ///arrange
@@ -1802,7 +1814,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_malloc_succeeds)
     /*version*/
     uint8_t version_from_serialization;
     read_uint8_t(result + CONSTBUFFER_VERSION_OFFSET, &version_from_serialization);
-    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION, version_from_serialization);
+    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION_V1, version_from_serialization);
 
     /*size*/
     uint32_t size_from_serialization;
@@ -1824,7 +1836,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_malloc_succeeds)
 /*Tests_SRS_CONSTBUFFER_02_050: [ CONSTBUFFER_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1). ]*/
 /*Tests_SRS_CONSTBUFFER_02_051: [ CONSTBUFFER_to_buffer shall write at offsets 1-4 of the allocated memory the value of source->alias.size in network byte order. ]*/
 /*Tests_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
-/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in size the size of the serialization and return the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_0_with_malloc_succeeds)
 {
     ///arrange
@@ -1846,7 +1858,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_0_with_malloc_succeeds)
     /*version*/
     uint8_t version_from_serialization;
     read_uint8_t(result + CONSTBUFFER_VERSION_OFFSET, &version_from_serialization);
-    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION, version_from_serialization);
+    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION_V1, version_from_serialization);
 
     /*size*/
     uint32_t size_from_serialization;
@@ -1865,7 +1877,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_0_with_malloc_succeeds)
 /*Tests_SRS_CONSTBUFFER_02_050: [ CONSTBUFFER_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1). ]*/
 /*Tests_SRS_CONSTBUFFER_02_051: [ CONSTBUFFER_to_buffer shall write at offsets 1-4 of the allocated memory the value of source->alias.size in network byte order. ]*/
 /*Tests_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
-/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in size the size of the serialization and return the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_custom_alloc_succeeds)
 {
     ///arrange
@@ -1888,7 +1900,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_custom_alloc_succeeds)
     /*version*/
     uint8_t version_from_serialization;
     read_uint8_t(result + CONSTBUFFER_VERSION_OFFSET, &version_from_serialization);
-    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION, version_from_serialization);
+    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION_V1, version_from_serialization);
 
     /*size*/
     uint32_t size_from_serialization;
@@ -1910,7 +1922,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_custom_alloc_succeeds)
 /*Tests_SRS_CONSTBUFFER_02_050: [ CONSTBUFFER_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1). ]*/
 /*Tests_SRS_CONSTBUFFER_02_051: [ CONSTBUFFER_to_buffer shall write at offsets 1-4 of the allocated memory the value of source->alias.size in network byte order. ]*/
 /*Tests_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
-/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in size the size of the serialization and return the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_2_with_custom_alloc_succeeds)
 {
     ///arrange
@@ -1933,7 +1945,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_2_with_custom_alloc_succeeds)
     /*version*/
     uint8_t version_from_serialization;
     read_uint8_t(result + CONSTBUFFER_VERSION_OFFSET, &version_from_serialization);
-    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION, version_from_serialization);
+    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION_V1, version_from_serialization);
 
     /*size*/
     uint32_t size_from_serialization;
@@ -2132,7 +2144,7 @@ TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_succeeds_1) /*in this case, the s
     /*version*/
     uint8_t serialized_version;
     read_uint8_t(destination + CONSTBUFFER_VERSION_OFFSET, &serialized_version);
-    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION, serialized_version);
+    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION_V1, serialized_version);
 
     /*size*/
     uint32_t size;
@@ -2175,7 +2187,7 @@ TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_succeeds_2) /*in this case, the s
     /*version*/
     uint8_t serialized_version;
     read_uint8_t(destination + CONSTBUFFER_VERSION_OFFSET, &serialized_version);
-    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION, serialized_version);
+    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION_V1, serialized_version);
 
     /*size*/
     uint32_t size;
@@ -2215,7 +2227,7 @@ TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_succeeds_3) /*in this case, an em
     /*version*/
     uint8_t serialized_version;
     read_uint8_t(destination + CONSTBUFFER_VERSION_OFFSET, &serialized_version);
-    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION, serialized_version);
+    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION_V1, serialized_version);
 
     /*size*/
     uint32_t size;

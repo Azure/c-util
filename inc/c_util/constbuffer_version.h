@@ -5,6 +5,6 @@
 #define CONSTBUFFER_VERSION_H
 
 /*this header only exists to provide the current serialization format of CONSTBUFFER*/
-#define CONSTBUFFER_VERSION 1
+#define CONSTBUFFER_VERSION_V1 1
 
 #endif  /* CONSTBUFFER_VERSION_H */
