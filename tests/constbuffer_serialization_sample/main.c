@@ -62,6 +62,8 @@ int main(void)
 
 #define GROW_BY 1000
 
+#define LOCALMAX(x, y) ((x)<(y)?(y):(x))
+
 static void* awesome_alloc(size_t size, void* context)
 {
     /*here context contains a buffer that *might* grow*/
@@ -78,7 +80,7 @@ static void* awesome_alloc(size_t size, void* context)
     else
     {
         (void)printf("realloc!\n");
-        unsigned char* temp = realloc(awesome_alloc_context->buffer, awesome_alloc_context->capacity + max(GROW_BY, size));
+        unsigned char* temp = realloc(awesome_alloc_context->buffer, awesome_alloc_context->capacity + LOCALMAX(GROW_BY, size));
         if (temp == NULL)
         {
             LogError("cannot realloc");
@@ -88,7 +90,7 @@ static void* awesome_alloc(size_t size, void* context)
         {
             awesome_alloc_context->n_reallocs++;
             awesome_alloc_context->buffer = temp;
-            awesome_alloc_context->capacity += max(GROW_BY, size);
+            awesome_alloc_context->capacity += LOCALMAX(GROW_BY, size);
             awesome_alloc_context->size += size;
             return awesome_alloc_context->buffer + awesome_alloc_context->size - size;
         }
