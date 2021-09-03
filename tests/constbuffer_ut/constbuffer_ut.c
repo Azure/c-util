@@ -55,15 +55,15 @@ static const char* buffer3 = "three";
 
 #define BUFFER1_HANDLE (BUFFER_HANDLE)1
 #define BUFFER1_u_char ((unsigned char*)buffer1)
-#define BUFFER1_length strlen(buffer1)
+#define BUFFER1_length (uint32_t)strlen(buffer1)
 
 #define BUFFER2_HANDLE (BUFFER_HANDLE)2
 #define BUFFER2_u_char ((unsigned char*)buffer2)
-#define BUFFER2_length ((size_t)0)
+#define BUFFER2_length ((uint32_t)0)
 
 #define BUFFER3_HANDLE (BUFFER_HANDLE)3
 #define BUFFER3_u_char ((unsigned char*)buffer3)
-#define BUFFER3_length ((size_t)0)
+#define BUFFER3_length ((uint32_t)0)
 
 unsigned char* my_BUFFER_u_char(BUFFER_HANDLE handle)
 {

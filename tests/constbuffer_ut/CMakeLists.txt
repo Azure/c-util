@@ -13,6 +13,7 @@ set(${theseTestsName}_c_files
 )
 
 set(${theseTestsName}_h_files
+../../inc/c_util/constbuffer.h
 )
 
 build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_pal c_pal_reals)

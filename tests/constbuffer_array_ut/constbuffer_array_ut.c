@@ -2183,33 +2183,6 @@ TEST_FUNCTION(constbuffer_array_get_all_buffers_size_max_all_size_succeeds)
     constbuffer_array_dec_ref(afterAdd2);
 }
 
-#if SIZE_MAX > UINT32_MAX
-/* Tests_SRS_CONSTBUFFER_ARRAY_01_021: [ If summing up the sizes results in an uint32_t overflow, shall fail and return a non-zero value. ]*/
-TEST_FUNCTION(constbuffer_array_get_all_buffers_size_when_buffer_size_bigger_than_UINT32_MAX_fails)
-{
-    ///arrange
-    CONSTBUFFER_ARRAY_HANDLE TEST_CONSTBUFFER_ARRAY_HANDLE = TEST_constbuffer_array_create_empty();
-    CONSTBUFFER_ARRAY_HANDLE afterAdd1 = TEST_constbuffer_array_add_front(TEST_CONSTBUFFER_ARRAY_HANDLE, 0, TEST_CONSTBUFFER_HANDLE_1);
-    uint32_t all_buffers_size;
-    int result;
-    const CONSTBUFFER fake_const_buffer_1 = { (const unsigned char*)0x4242, (size_t)UINT32_MAX + 1 };
-
-    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_1))
-        .SetReturn(&fake_const_buffer_1);
-
-    ///act
-    result = constbuffer_array_get_all_buffers_size(afterAdd1, &all_buffers_size);
-
-    ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-
-    // cleanup
-    constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
-    constbuffer_array_dec_ref(afterAdd1);
-}
-#endif
-
 /* Tests_SRS_CONSTBUFFER_ARRAY_01_022: [ Otherwise constbuffer_array_get_all_buffers_size shall write in all_buffers_size the total size of all buffers in the array and return 0. ]*/
 TEST_FUNCTION(constbuffer_array_get_all_buffers_on_empty_const_buffer_array_succeeds)
 {

@@ -551,18 +551,12 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, constbuffer_array_get_all_buffers_size, CONST
         for (i = 0; i < constbuffer_array_handle->nBuffers; i++)
         {
             const CONSTBUFFER* content = CONSTBUFFER_GetContent(constbuffer_array_handle->buffers[i]);
-#if SIZE_MAX > UINT32_MAX
-            if (content->size > UINT32_MAX)
-            {
-                break;
-            }
-#endif
-            if (total_size + (uint32_t)content->size < total_size)
+            if (total_size + content->size < total_size)
             {
                 break;
             }
 
-            total_size += (uint32_t)content->size;
+            total_size += content->size;
         }
 
         if (i < constbuffer_array_handle->nBuffers)
