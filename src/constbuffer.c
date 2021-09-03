@@ -439,7 +439,7 @@ typedef uint32_t THE_LESSER_T;
 #else
 #define THE_LESSER SIZE_MAX
 #define PRI_THE_LESSER "zu"
-#define size_t THE_LESSER_T;
+typedef size_t THE_LESSER_T;
 #endif
 
 static void* calls_malloc(size_t size, void* context)
