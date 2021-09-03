@@ -27,7 +27,7 @@ typedef struct CONSTBUFFER_HANDLE_DATA_TAG* CONSTBUFFER_HANDLE;
 typedef struct CONSTBUFFER_TAG
 {
     const unsigned char* buffer;
-    size_t size;
+    uint32_t size;
 } CONSTBUFFER;
 
 typedef void(*CONSTBUFFER_CUSTOM_FREE_FUNC)(void* context);
