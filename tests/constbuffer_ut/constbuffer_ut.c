@@ -1596,6 +1596,8 @@ TEST_FUNCTION(CONSBUFFER_HANDLE_serialization_constants)
     ASSERT_ARE_EQUAL(size_t, sizeof(uint32_t), CONSTBUFFER_SIZE_SIZE);
 }
 
+/* CONSTBUFFER_get_serialization_size */
+
 /*Tests_SRS_CONSTBUFFER_02_041: [ If source is NULL then CONSTBUFFER_get_serialization_size shall fail and return 0. ]*/
 TEST_FUNCTION(CONSTBUFFER_get_serialization_size_with_source_NULL_fails)
 {
@@ -1715,6 +1717,8 @@ TEST_FUNCTION(CONSTBUFFER_get_serialization_size_with_2_size_succeeds)
     CONSTBUFFER_DecRef(smallest);
 
 }
+
+/* CONSTBUFFER_to_buffer */
 
 /*Tests_SRS_CONSTBUFFER_02_044: [ If source is NULL then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_source_NULL_fails)
@@ -1987,6 +1991,8 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_2_with_custom_alloc_unhappy_path)
     CONSTBUFFER_DecRef(source);
 }
 
+/* CONSTBUFFER_to_fixed_size_buffer */
+
 /*Tests_SRS_CONSTBUFFER_02_055: [ If source is NULL then CONSTBUFFER_to_fixed_size_buffer shall fail and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG. ]*/
 TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_with_source_NULL_fails)
 {
@@ -2242,6 +2248,8 @@ TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_succeeds_3) /*in this case, an em
     ///clean
     CONSTBUFFER_DecRef(source);
 }
+
+/* CONSTBUFFER_from_buffer */
 
 /*Tests_SRS_CONSTBUFFER_02_063: [ If source is NULL then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG. ]*/
 TEST_FUNCTION(CONSTBUFFER_from_buffer_with_source_NULL_fails)
