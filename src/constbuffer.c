@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 #include "macro_utils/macro_utils.h"
 
@@ -12,6 +13,9 @@
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/interlocked.h"
 
+#include "c_util/memory_data.h"
+#include "c_util/constbuffer_format.h"
+#include "c_util/constbuffer_version.h"
 #include "c_util/constbuffer.h"
 
 #define CONSTBUFFER_TYPE_VALUES \
@@ -388,6 +392,250 @@ IMPLEMENT_MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER
                 {
                     /*Codes_SRS_CONSTBUFFER_02_023: [ CONSTBUFFER_HANDLE_contain_same shall return true. ]*/
                     result = true;
+                }
+            }
+        }
+    }
+    return result;
+}
+
+uint32_t CONSTBUFFER_get_serialization_size(CONSTBUFFER_HANDLE source)
+{
+    uint32_t result;
+    /*Codes_SRS_CONSTBUFFER_02_041: [ If source is NULL then CONSTBUFFER_get_serialization_size shall fail and return 0. ]*/
+    if (source == NULL)
+    {
+        LogError("invalid argument CONSTBUFFER_HANDLE source=%p", source);
+        result = 0;
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_02_042: [ If sizeof(uint8_t) + sizeof(uint32_t) + source's size exceed UINT32_MAX then CONSTBUFFER_get_serialization_size shall fail and return 0. ]*/
+        if (source->alias.size > UINT32_MAX - CONSTBUFFER_VERSION_SIZE - CONSTBUFFER_SIZE_SIZE)
+        {
+            LogError("serialization size exceeds UINT32_MAX=%" PRIu32 ". It is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%zu",
+                UINT32_MAX, CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, source->alias.size);
+            result = 0;
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_02_043: [ Otherwise CONSTBUFFER_get_serialization_size shall succeed and return sizeof(uint8_t) + sizeof(uint32_t) + source's size. ]*/
+            result = CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE + (uint32_t)source->alias.size;
+        }
+    }
+    return result;
+}
+
+/*THE_LESSER is the smallest size of the SIZE_MAX, UINT32_MAX. This is needed because 
+1) there's a mix of size_t (malloc) and uint32_t (usage) about sizes
+2) sizeof(size_t) is not a constant
+3) that is detrimental to any portable serialization.
+
+So the lesser of the two is chosen in the overflow computations*/
+#if SIZE_MAX > UINT32_MAX
+#define THE_LESSER UINT32_MAX
+#define PRI_THE_LESSER PRIu32
+typedef uint32_t THE_LESSER_T;
+#else
+#define THE_LESSER SIZE_MAX
+#define PRI_THE_LESSER "zu"
+typedef size_t THE_LESSER_T;
+#endif
+
+static void* calls_malloc(size_t size, void* context)
+{
+    (void)context;
+    return malloc(size);
+}
+
+unsigned char* CONSTBUFFER_to_buffer(CONSTBUFFER_HANDLE source, CONSTBUFFER_to_buffer_alloc alloc, void* alloc_context, uint32_t* serialized_size)
+{
+    unsigned char* result;
+    if (
+        /*Codes_SRS_CONSTBUFFER_02_044: [ If source is NULL then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
+        (source == NULL) ||
+        /*Codes_SRS_CONSTBUFFER_02_045: [ If serialized_size is NULL then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
+        (serialized_size == NULL)
+        )
+    {
+        LogError("invalid arguments CONSTBUFFER_HANDLE source=%p, CONSTBUFFER_to_buffer_alloc alloc=%p, uint32_t* serialized_size=%p",
+            source, alloc, serialized_size);
+        result = NULL;
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_02_046: [ If alloc is NULL then CONSTBUFFER_to_buffer shall use malloc as provided by gballoc_hl_redirect.h. ]*/
+        if (alloc == NULL)
+        {
+            alloc = &calls_malloc;
+        }
+
+        /*Codes_SRS_CONSTBUFFER_02_054: [ If there are any failures then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
+        if (THE_LESSER - CONSTBUFFER_VERSION_SIZE - CONSTBUFFER_SIZE_SIZE < source->alias.size)
+        {
+            /*overflow*/
+            LogError("serialization size exceeds the lesser of (UINT32_MAX, SIZE_MAX)=%" PRI_THE_LESSER ". Serialization size is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%zu",
+                THE_LESSER, CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, source->alias.size);
+            result = NULL;
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_02_049: [ CONSTBUFFER_to_buffer shall allocate memory using alloc for holding the complete serialization. ]*/
+            result = alloc(CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE + source->alias.size, alloc_context);
+            if (result == NULL)
+            {
+                /*Codes_SRS_CONSTBUFFER_02_054: [ If there are any failures then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
+                LogError("failure in alloc=%p(sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%zu alloc_context=%p);", 
+                    alloc, CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, source->alias.size, alloc_context);
+                /*return as is*/
+            }
+            else
+            {
+                /*Codes_SRS_CONSTBUFFER_02_050: [ CONSTBUFFER_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1). ]*/
+                write_uint8_t(result + CONSTBUFFER_VERSION_OFFSET, CONSTBUFFER_VERSION_V1);
+
+                /*Codes_SRS_CONSTBUFFER_02_051: [ CONSTBUFFER_to_buffer shall write at offsets 1-4 of the allocated memory the value of source->alias.size in network byte order. ]*/
+                write_uint32_t(result + CONSTBUFFER_SIZE_OFFSET, (uint32_t)source->alias.size);
+                
+                /*Codes_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
+                (void)memcpy(result + CONSTBUFFER_CONTENT_OFFSET, source->alias.buffer, source->alias.size);
+
+                /*Codes_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
+                *serialized_size = CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE + (THE_LESSER_T)source->alias.size;
+                /*return as is*/
+            }
+        }
+    }
+    return result;
+}
+
+CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT CONSTBUFFER_to_fixed_size_buffer(CONSTBUFFER_HANDLE source, unsigned char* destination, uint32_t destination_size, uint32_t* serialized_size)
+{
+    CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT result;
+    
+    if (
+        /*Codes_SRS_CONSTBUFFER_02_055: [ If source is NULL then CONSTBUFFER_to_fixed_size_buffer shall fail and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG. ]*/
+        (source == NULL) ||
+        /*Codes_SRS_CONSTBUFFER_02_056: [ If destination is NULL then CONSTBUFFER_to_fixed_size_buffer shall fail and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG. ]*/
+        (destination == NULL) ||
+        /*Codes_SRS_CONSTBUFFER_02_057: [ If serialized_size is NULL then CONSTBUFFER_to_fixed_size_buffer shall fail and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG. ]*/
+        (serialized_size == NULL)
+        )
+    {
+        LogError("invalid arguments CONSTBUFFER_HANDLE source=%p, unsigned char* destination=%p, uint32_t destination_size=%" PRIu32 ", uint32_t* serialized_size=%p",
+            source, destination, destination_size, serialized_size);
+        result = CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG;
+    }
+    else
+    {
+        if (UINT32_MAX - (CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE) < source->alias.size)
+        {
+            /*when this is true, an output for "serialized_size" cannot be provided as the complete serialization would exceed UINT32_MAX*/
+            LogError("overflow in computation of output parameter serialized_size");
+
+            /*Codes_SRS_CONSTBUFFER_02_074: [ If there are any failures then CONSTBUFFER_to_fixed_size_buffer shall fail and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_ERROR. ]*/
+            result = CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_ERROR;
+        }
+        else
+        {
+            *serialized_size = CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE + (uint32_t)source->alias.size;
+            /*Codes_SRS_CONSTBUFFER_02_058: [ If the size of serialization exceeds destination_size then CONSTBUFFER_to_fixed_size_buffer shall fail, write in serialized_size how much it would need and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INSUFFICIENT_BUFFER. ]*/
+            if (destination_size < *serialized_size)
+            {
+                LogError("destination=%p does not contain enough bytes for the complete serialization. It only has %" PRIu32 " bytes and there are needed %" PRIu32 " bytes", destination, destination_size, *serialized_size);
+                result = CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INSUFFICIENT_BUFFER;
+            }
+            else
+            {
+                /*Codes_SRS_CONSTBUFFER_02_059: [ CONSTBUFFER_to_fixed_size_buffer shall write at offset 0 of destination the version of serialization (currently 1). ]*/
+                write_uint8_t(destination + CONSTBUFFER_VERSION_OFFSET, CONSTBUFFER_VERSION_V1);
+
+                /*Codes_SRS_CONSTBUFFER_02_060: [ CONSTBUFFER_to_fixed_size_buffer shall write at offset 1 of destination the value of source->alias.size in network byte order. ]*/
+                write_uint32_t(destination + CONSTBUFFER_SIZE_OFFSET, (uint32_t)source->alias.size);
+
+                /*Codes_SRS_CONSTBUFFER_02_061: [ CONSTBUFFER_to_fixed_size_buffer shall copy all the bytes of source->alias.buffer in destination starting at offset 5. ]*/
+                (void)memcpy(destination + CONSTBUFFER_CONTENT_OFFSET, source->alias.buffer, source->alias.size);
+
+                /*Codes_SRS_CONSTBUFFER_02_062: [ CONSTBUFFER_to_fixed_size_buffer shall succeed, write in serialized_size how much it used and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_OK. ]*/
+                result = CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_OK;
+            }
+        }
+    }
+    return result;
+}
+
+CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* source, uint32_t size, uint32_t* consumed, CONSTBUFFER_HANDLE* destination)
+{
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+    if (
+        /*Codes_SRS_CONSTBUFFER_02_063: [ If source is NULL then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG. ]*/
+        (source == NULL) ||
+        /*Codes_SRS_CONSTBUFFER_02_064: [ If consumed is NULL then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG. ]*/
+        (consumed == NULL) ||
+        /*Codes_SRS_CONSTBUFFER_02_065: [ If destination is NULL then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG. ]*/
+        (destination == NULL)
+        )
+    {
+        LogError("invalid arguments const unsigned char* source=%p, uint32_t size=%" PRIu32 ", uint32_t* consumed=%p, CONSTBUFFER_HANDLE* destination=%p", 
+            source, size, consumed, destination);
+        result = CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG;
+    }
+    else
+    {
+        if (size == 0)
+        {
+            /*Codes_SRS_CONSTBUFFER_02_066: [ If size is 0 then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG. ]*/
+            LogError("cannot deserialize from size=%" PRIu32 "", size);
+            result = CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG;
+        }
+        else
+        {
+            uint8_t version;
+            read_uint8_t(source + CONSTBUFFER_VERSION_OFFSET, &version);
+            if (version != CONSTBUFFER_VERSION_V1)
+            {
+                /*Codes_SRS_CONSTBUFFER_02_067: [ If source byte at offset 0 is not 1 (current version) then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA. ]*/
+                LogError("different version (%" PRIu8 ") detected. This module only knows about version %" PRIu8 "", version, CONSTBUFFER_VERSION_V1);
+                result = CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA;
+            }
+            else
+            {
+                /*Codes_SRS_CONSTBUFFER_02_068: [ If source's size is less than sizeof(uint8_t) + sizeof(uint32_t) then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA. ]*/
+                if (size < CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE)
+                {
+                    LogError("cannot deserialize when the numbe of serialized bytes cannot be determined. size=%" PRIu32 "", size);
+                    result = CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA;
+                }
+                else
+                {
+                    /*Codes_SRS_CONSTBUFFER_02_069: [ CONSTBUFFER_from_buffer shall read the number of serialized content bytes from offset 1 of source. ]*/
+                    uint32_t content_size;
+                    read_uint32_t(source + CONSTBUFFER_SIZE_OFFSET, &content_size);
+                    /*Codes_SRS_CONSTBUFFER_02_070: [ If source's size is less than sizeof(uint8_t) + sizeof(uint32_t) + number of content bytes then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA. ]*/
+                    if (size - (CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE) < content_size)
+                    {
+                        LogError("in the buffer at source=%p of size=%" PRIu32 " there are not enough bytes remaining after version and size to construct content from. Serialized content size was computed as %" PRIu32 " but there are only %" PRIu32 " bytes available",
+                            source, size, content_size, (uint32_t)(size - CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE));
+                        result = CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA;
+                    }
+                    else
+                    {
+                        /*Codes_SRS_CONSTBUFFER_02_071: [ CONSTBUFFER_from_buffer shall create a CONSTBUFFER_HANDLE from the bytes at offset 5 of source. ]*/
+                        *destination = CONSTBUFFER_Create_Internal(source + CONSTBUFFER_CONTENT_OFFSET, content_size);
+                        if (*destination == NULL)
+                        {
+                            /*Codes_SRS_CONSTBUFFER_02_073: [ If there are any failures then shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_ERROR. ]*/
+                            LogError("failure in CONSTBUFFER_Create(source=%p + CONSTBUFFER_CONTENT_OFFSET=%zu, content_size=%" PRIu32 ")",
+                                source, CONSTBUFFER_CONTENT_OFFSET, content_size);
+                            result = CONSTBUFFER_FROM_BUFFER_RESULT_ERROR;
+                        }
+                        else
+                        {
+                            /*Codes_SRS_CONSTBUFFER_02_072: [ CONSTBUFFER_from_buffer shall succeed, write in consumed the total number of consumed bytes from source, write in destination the constructed CONSTBUFFER_HANDLE and return CONSTBUFFER_FROM_BUFFER_RESULT_OK. ]*/
+                            *consumed = CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE + content_size;
+                            result = CONSTBUFFER_FROM_BUFFER_RESULT_OK;
+                        }
+                    }
                 }
             }
         }

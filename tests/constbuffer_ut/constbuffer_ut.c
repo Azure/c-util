@@ -18,6 +18,12 @@ void* my_gballoc_malloc(size_t size)
     return real_gballoc_ll_malloc(size);
 }
 
+void* my_gballoc_malloc_with_context(size_t size, void* context)
+{
+    (void)context;
+    return real_gballoc_ll_malloc(size);
+}
+
 void my_gballoc_free(void* ptr)
 {
     real_gballoc_ll_free(ptr);
@@ -28,10 +34,17 @@ void my_gballoc_free(void* ptr)
 #include "c_util/buffer_.h"
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
+
+MOCKABLE_FUNCTION(, void*, test_alloc, size_t, size, void*, context);
+
 #undef ENABLE_MOCKS
 
 #include "real_gballoc_hl.h"
 
+#include "c_util/memory_data.h"
+
+#include "c_util/constbuffer_format.h"
+#include "c_util/constbuffer_version.h"
 #include "c_util/constbuffer.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
@@ -85,6 +98,19 @@ static size_t my_BUFFER_length(BUFFER_HANDLE handle)
 MOCK_FUNCTION_WITH_CODE(, void, test_free_func, void*, context)
 MOCK_FUNCTION_END()
 
+TEST_DEFINE_ENUM_TYPE(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_VALUES)
+IMPLEMENT_UMOCK_C_ENUM_TYPE(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_VALUES)
+
+TEST_DEFINE_ENUM_TYPE(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_VALUES)
+IMPLEMENT_UMOCK_C_ENUM_TYPE(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_VALUES)
+
+#define TEST_ALLOC_CONTEXT (void*)0x9874387 /*random typing*/
+static void* test_alloc_impl(size_t size, void* context)
+{
+    ASSERT_ARE_EQUAL(void_ptr, TEST_ALLOC_CONTEXT, context);
+    return my_gballoc_malloc(size);
+}
+
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
@@ -109,6 +135,10 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
         REGISTER_GLOBAL_MOCK_HOOK(BUFFER_u_char, my_BUFFER_u_char);
         REGISTER_GLOBAL_MOCK_HOOK(BUFFER_length, my_BUFFER_length);
+
+        REGISTER_TYPE(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT);
+        REGISTER_TYPE(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT);
+        REGISTER_GLOBAL_MOCK_HOOK(test_alloc, test_alloc_impl);
     }
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
@@ -1552,6 +1582,995 @@ TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_unhappy_path) /*this f
 
     ///cleanup
     CONSTBUFFER_DecRef(origin);
+}
+
+/*small tests that check code integrity*/
+TEST_FUNCTION(CONSBUFFER_HANDLE_serialization_constants)
+{
+    ///arrange
+
+    ///act
+
+    ///assert
+    ASSERT_ARE_EQUAL(size_t, 1, CONSTBUFFER_VERSION_SIZE);
+    ASSERT_ARE_EQUAL(size_t, sizeof(uint32_t), CONSTBUFFER_SIZE_SIZE);
+}
+
+/* CONSTBUFFER_get_serialization_size */
+
+/*Tests_SRS_CONSTBUFFER_02_041: [ If source is NULL then CONSTBUFFER_get_serialization_size shall fail and return 0. ]*/
+TEST_FUNCTION(CONSTBUFFER_get_serialization_size_with_source_NULL_fails)
+{
+    ///arrange
+    uint32_t result;
+
+    ///act
+    result = CONSTBUFFER_get_serialization_size(NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(uint32_t, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CONSTBUFFER_02_042: [ If sizeof(uint8_t) + sizeof(uint32_t) + source's size exceed UINT32_MAX then CONSTBUFFER_get_serialization_size shall fail and return 0. ]*/
+TEST_FUNCTION(CONSTBUFFER_get_serialization_size_with_too_big_size_fails)
+{
+    ///arrange
+    uint32_t almost4GB = UINT32_MAX - 4; /*this is 4 bytes shy of 4GB. It would not fit.*/
+    unsigned char* toobig = my_gballoc_malloc(almost4GB);
+    if (toobig == NULL)
+    {
+        /*do nothing, let the test pass - not a fault in this module*/
+    }
+    else
+    {
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        CONSTBUFFER_HANDLE toobig_h = CONSTBUFFER_CreateWithMoveMemory(toobig, almost4GB);
+        ASSERT_IS_NOT_NULL(toobig_h);
+        uint32_t result;
+
+        ///act
+        result = CONSTBUFFER_get_serialization_size(toobig_h);
+
+        ///assert
+        ASSERT_ARE_EQUAL(uint32_t, 0, result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///clean
+        CONSTBUFFER_DecRef(toobig_h);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_02_042: [ If sizeof(uint8_t) + sizeof(uint32_t) + source's size exceed UINT32_MAX then CONSTBUFFER_get_serialization_size shall fail and return 0. ]*/
+/*Tests_SRS_CONSTBUFFER_02_043: [ Otherwise CONSTBUFFER_get_serialization_size shall succeed and return sizeof(uint8_t) + sizeof(uint32_t) + source's size. ]*/
+TEST_FUNCTION(CONSTBUFFER_get_serialization_size_with_biggest_size_succeeds)
+{
+    ///arrange
+    uint32_t almost4GB = UINT32_MAX - 5; /*this is 5 bytes shy of 4GB. This is the greatest size for which serialization still works*/
+    unsigned char* toobig = my_gballoc_malloc(almost4GB);
+    if (toobig == NULL)
+    {
+        /*do nothing, let the test pass - not a fault in this module*/
+    }
+    else
+    {
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        CONSTBUFFER_HANDLE toobig_h = CONSTBUFFER_CreateWithMoveMemory(toobig, almost4GB);
+        ASSERT_IS_NOT_NULL(toobig_h);
+        uint32_t result;
+
+        ///act
+        result = CONSTBUFFER_get_serialization_size(toobig_h);
+
+        ///assert
+        ASSERT_ARE_EQUAL(uint32_t, UINT32_MAX, result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///clean
+        CONSTBUFFER_DecRef(toobig_h);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_02_042: [ If sizeof(uint8_t) + sizeof(uint32_t) + source's size exceed UINT32_MAX then CONSTBUFFER_get_serialization_size shall fail and return 0. ]*/
+/*Tests_SRS_CONSTBUFFER_02_043: [ Otherwise CONSTBUFFER_get_serialization_size shall succeed and return sizeof(uint8_t) + sizeof(uint32_t) + source's size. ]*/
+TEST_FUNCTION(CONSTBUFFER_get_serialization_size_with_0_size_succeeds)
+{
+    ///arrange
+    
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    CONSTBUFFER_HANDLE smallest = CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(smallest);
+    uint32_t result;
+
+    ///act
+    result = CONSTBUFFER_get_serialization_size(smallest);
+
+    ///assert
+    ASSERT_ARE_EQUAL(uint32_t, sizeof(uint8_t) + sizeof(uint32_t), result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(smallest);
+    
+}
+
+/*Tests_SRS_CONSTBUFFER_02_042: [ If sizeof(uint8_t) + sizeof(uint32_t) + source's size exceed UINT32_MAX then CONSTBUFFER_get_serialization_size shall fail and return 0. ]*/
+/*Tests_SRS_CONSTBUFFER_02_043: [ Otherwise CONSTBUFFER_get_serialization_size shall succeed and return sizeof(uint8_t) + sizeof(uint32_t) + source's size. ]*/
+TEST_FUNCTION(CONSTBUFFER_get_serialization_size_with_2_size_succeeds)
+{
+    ///arrange
+    unsigned char source[2] = { 1,2 };
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    CONSTBUFFER_HANDLE smallest = CONSTBUFFER_Create(source, sizeof(source));
+    ASSERT_IS_NOT_NULL(smallest);
+    uint32_t result;
+
+    ///act
+    result = CONSTBUFFER_get_serialization_size(smallest);
+
+    ///assert
+    ASSERT_ARE_EQUAL(uint32_t, sizeof(uint8_t) + sizeof(uint32_t) + sizeof(source), result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(smallest);
+
+}
+
+/* CONSTBUFFER_to_buffer */
+
+/*Tests_SRS_CONSTBUFFER_02_044: [ If source is NULL then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_buffer_with_source_NULL_fails)
+{
+    ///arrange
+    uint32_t size;
+    unsigned char* result;
+
+    ///act
+    result = CONSTBUFFER_to_buffer(NULL, my_gballoc_malloc_with_context, NULL, &size);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CONSTBUFFER_02_045: [ If serialized_size is NULL then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_NULL_fails)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    unsigned char s[] = { 1 };
+    CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(s, sizeof(s));
+    ASSERT_IS_NOT_NULL(source);
+    unsigned char* result;
+
+    ///act
+    result = CONSTBUFFER_to_buffer(source, my_gballoc_malloc_with_context, NULL, NULL);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(source);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_054: [ If there are any failures then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_exceeding_UINT32_MAX_fails)
+{
+    ///arrange
+    uint32_t almost4GB = UINT32_MAX - 4; /*this is 4 bytes shy of 4GB. Serialization_size is UINT32_MAX + 1 for almost4GB, which cannot be represented as a uint32_t type*/
+    unsigned char* toobig = my_gballoc_malloc(almost4GB);
+    if (toobig == NULL)
+    {
+        /*do nothing, let the test pass - not a fault in this module*/
+    }
+    else
+    {
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        CONSTBUFFER_HANDLE toobig_h = CONSTBUFFER_CreateWithMoveMemory(toobig, almost4GB);
+        ASSERT_IS_NOT_NULL(toobig_h);
+
+        ///arrange
+        uint32_t serialized_size;
+
+        ///act
+        unsigned char* result;
+
+        ///act
+        result = CONSTBUFFER_to_buffer(toobig_h, NULL, NULL, &serialized_size);
+
+        ///assert
+        ASSERT_IS_NULL(result);
+
+        ///clean
+
+        CONSTBUFFER_DecRef(toobig_h);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_02_046: [ If alloc is NULL then CONSTBUFFER_to_buffer shall use malloc as provided by gballoc_hl_redirect.h. ]*/
+/*Tests_SRS_CONSTBUFFER_02_049: [ CONSTBUFFER_to_buffer shall allocate memory using alloc for holding the complete serialization. ]*/
+/*Tests_SRS_CONSTBUFFER_02_050: [ CONSTBUFFER_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1). ]*/
+/*Tests_SRS_CONSTBUFFER_02_051: [ CONSTBUFFER_to_buffer shall write at offsets 1-4 of the allocated memory the value of source->alias.size in network byte order. ]*/
+/*Tests_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
+/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_malloc_succeeds)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    unsigned char s[] = { 1 };
+    CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(s, sizeof(s));
+    ASSERT_IS_NOT_NULL(source);
+    unsigned char* result;
+    uint32_t size;
+
+    STRICT_EXPECTED_CALL(malloc(sizeof(uint8_t)+sizeof(uint32_t) + sizeof(uint8_t))); /*we only serialize a CONSTBUFFER of 1 character*/
+
+    ///act
+    result = CONSTBUFFER_to_buffer(source, NULL, NULL, &size);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(uint32_t, sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t), size);
+
+    /*version*/
+    uint8_t version_from_serialization;
+    read_uint8_t(result + CONSTBUFFER_VERSION_OFFSET, &version_from_serialization);
+    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION_V1, version_from_serialization);
+
+    /*size*/
+    uint32_t size_from_serialization;
+    read_uint32_t(result + CONSTBUFFER_SIZE_OFFSET, &size_from_serialization);
+    ASSERT_ARE_EQUAL(uint32_t, sizeof(s), size_from_serialization);
+
+    /*content*/
+    ASSERT_IS_TRUE(memcmp(s, result + CONSTBUFFER_CONTENT_OFFSET, sizeof(s)) == 0);
+
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(source);
+    free(result);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_046: [ If alloc is NULL then CONSTBUFFER_to_buffer shall use malloc as provided by gballoc_hl_redirect.h. ]*/
+/*Tests_SRS_CONSTBUFFER_02_049: [ CONSTBUFFER_to_buffer shall allocate memory using alloc for holding the complete serialization. ]*/
+/*Tests_SRS_CONSTBUFFER_02_050: [ CONSTBUFFER_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1). ]*/
+/*Tests_SRS_CONSTBUFFER_02_051: [ CONSTBUFFER_to_buffer shall write at offsets 1-4 of the allocated memory the value of source->alias.size in network byte order. ]*/
+/*Tests_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
+/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_0_with_malloc_succeeds)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(source);
+    unsigned char* result;
+    uint32_t size;
+
+    STRICT_EXPECTED_CALL(malloc(sizeof(uint8_t) + sizeof(uint32_t))); /*we only serialize an empty CONSTBUFFER*/
+
+    ///act
+    result = CONSTBUFFER_to_buffer(source, NULL, NULL, &size);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(uint32_t, sizeof(uint8_t) + sizeof(uint32_t), size);
+
+    /*version*/
+    uint8_t version_from_serialization;
+    read_uint8_t(result + CONSTBUFFER_VERSION_OFFSET, &version_from_serialization);
+    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION_V1, version_from_serialization);
+
+    /*size*/
+    uint32_t size_from_serialization;
+    read_uint32_t(result + CONSTBUFFER_SIZE_OFFSET, &size_from_serialization);
+    ASSERT_ARE_EQUAL(uint32_t, 0, size_from_serialization);
+
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(source);
+    free(result);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_046: [ If alloc is NULL then CONSTBUFFER_to_buffer shall use malloc as provided by gballoc_hl_redirect.h. ]*/
+/*Tests_SRS_CONSTBUFFER_02_049: [ CONSTBUFFER_to_buffer shall allocate memory using alloc for holding the complete serialization. ]*/
+/*Tests_SRS_CONSTBUFFER_02_050: [ CONSTBUFFER_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1). ]*/
+/*Tests_SRS_CONSTBUFFER_02_051: [ CONSTBUFFER_to_buffer shall write at offsets 1-4 of the allocated memory the value of source->alias.size in network byte order. ]*/
+/*Tests_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
+/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_custom_alloc_succeeds)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    unsigned char s[] = { 1 };
+    CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(s, sizeof(s));
+    ASSERT_IS_NOT_NULL(source);
+    unsigned char* result;
+    uint32_t size;
+
+    STRICT_EXPECTED_CALL(test_alloc(sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t), TEST_ALLOC_CONTEXT)); /*we only serialize a CONSTBUFFER of 1 character*/
+
+    ///act
+    result = CONSTBUFFER_to_buffer(source, test_alloc, TEST_ALLOC_CONTEXT, &size);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(uint32_t, sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t), size);
+
+    /*version*/
+    uint8_t version_from_serialization;
+    read_uint8_t(result + CONSTBUFFER_VERSION_OFFSET, &version_from_serialization);
+    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION_V1, version_from_serialization);
+
+    /*size*/
+    uint32_t size_from_serialization;
+    read_uint32_t(result + CONSTBUFFER_SIZE_OFFSET, &size_from_serialization);
+    ASSERT_ARE_EQUAL(uint32_t, sizeof(s), size_from_serialization);
+
+    /*content*/
+    ASSERT_IS_TRUE(memcmp(s, result + CONSTBUFFER_CONTENT_OFFSET, sizeof(s)) == 0);
+
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(source);
+    free(result);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_046: [ If alloc is NULL then CONSTBUFFER_to_buffer shall use malloc as provided by gballoc_hl_redirect.h. ]*/
+/*Tests_SRS_CONSTBUFFER_02_049: [ CONSTBUFFER_to_buffer shall allocate memory using alloc for holding the complete serialization. ]*/
+/*Tests_SRS_CONSTBUFFER_02_050: [ CONSTBUFFER_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1). ]*/
+/*Tests_SRS_CONSTBUFFER_02_051: [ CONSTBUFFER_to_buffer shall write at offsets 1-4 of the allocated memory the value of source->alias.size in network byte order. ]*/
+/*Tests_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
+/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_2_with_custom_alloc_succeeds)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    unsigned char s[] = { 1, 2 };
+    CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(s, sizeof(s));
+    ASSERT_IS_NOT_NULL(source);
+    unsigned char* result;
+    uint32_t size;
+
+    STRICT_EXPECTED_CALL(test_alloc(sizeof(uint8_t) + sizeof(uint32_t) + 2*sizeof(uint8_t), TEST_ALLOC_CONTEXT)); /*we only serialize a CONSTBUFFER of 2 characters*/
+
+    ///act
+    result = CONSTBUFFER_to_buffer(source, test_alloc, TEST_ALLOC_CONTEXT, &size);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(uint32_t, sizeof(uint8_t) + sizeof(uint32_t) + 2*sizeof(uint8_t), size);
+
+    /*version*/
+    uint8_t version_from_serialization;
+    read_uint8_t(result + CONSTBUFFER_VERSION_OFFSET, &version_from_serialization);
+    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION_V1, version_from_serialization);
+
+    /*size*/
+    uint32_t size_from_serialization;
+    read_uint32_t(result + CONSTBUFFER_SIZE_OFFSET, &size_from_serialization);
+    ASSERT_ARE_EQUAL(uint32_t, sizeof(s), size_from_serialization);
+
+    /*content*/
+    ASSERT_IS_TRUE(memcmp(s, result + CONSTBUFFER_CONTENT_OFFSET, sizeof(s)) == 0);
+
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(source);
+    free(result);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_054: [ If there are any failures then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_2_with_custom_alloc_unhappy_path)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    unsigned char s[] = { 1, 2 };
+    CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(s, sizeof(s));
+    ASSERT_IS_NOT_NULL(source);
+    unsigned char* result;
+    uint32_t size;
+
+    STRICT_EXPECTED_CALL(test_alloc(sizeof(uint8_t) + sizeof(uint32_t) + 2 * sizeof(uint8_t), TEST_ALLOC_CONTEXT)) /*we only serialize a CONSTBUFFER of 2 characters*/
+        .SetReturn(NULL);
+
+    ///act
+    result = CONSTBUFFER_to_buffer(source, test_alloc, TEST_ALLOC_CONTEXT, &size);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(source);
+}
+
+/* CONSTBUFFER_to_fixed_size_buffer */
+
+/*Tests_SRS_CONSTBUFFER_02_055: [ If source is NULL then CONSTBUFFER_to_fixed_size_buffer shall fail and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_with_source_NULL_fails)
+{
+    ///arrange
+    unsigned char destination[100];
+    uint32_t size;
+    CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT result;
+
+    ///act
+    result = CONSTBUFFER_to_fixed_size_buffer(NULL, destination, sizeof(destination), &size);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+}
+
+/*Tests_SRS_CONSTBUFFER_02_056: [ If destination is NULL then CONSTBUFFER_to_fixed_size_buffer shall fail and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_with_destination_NULL_fails)
+{
+    ///arrange
+    unsigned char source_bytes[1] = { 1 };
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(source_bytes, sizeof(source_bytes));
+    ASSERT_IS_NOT_NULL(source);
+
+    uint32_t size;
+    CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT result;
+
+    ///act
+    result = CONSTBUFFER_to_fixed_size_buffer(source, NULL, 0, &size);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(source);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_057: [ If serialized_size is NULL then CONSTBUFFER_to_fixed_size_buffer shall fail and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_with_serialized_size_NULL_fails)
+{
+    ///arrange
+    unsigned char source_bytes[1] = { 1 };
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(source_bytes, sizeof(source_bytes));
+    ASSERT_IS_NOT_NULL(source);
+
+    unsigned char destination[100];
+
+    CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT result;
+
+    ///act
+    result = CONSTBUFFER_to_fixed_size_buffer(source, destination, sizeof(destination), NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(source);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_074: [ If there are any failures then CONSTBUFFER_to_fixed_size_buffer shall fail and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_ERROR. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_when_serialized_size_overflows_fails)
+{
+    ///arrange
+    uint32_t almost4GB = UINT32_MAX - 4; /*this is 4 bytes shy of 4GB. Serialization_size is UINT32_MAX + 1 for almost4GB, which cannot be represented as a uint32_t type*/
+    unsigned char* toobig = my_gballoc_malloc(almost4GB);
+    if (toobig == NULL)
+    {
+        /*do nothing, let the test pass - not a fault in this module*/
+    }
+    else
+    {
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        CONSTBUFFER_HANDLE toobig_h = CONSTBUFFER_CreateWithMoveMemory(toobig, almost4GB);
+        ASSERT_IS_NOT_NULL(toobig_h);
+
+        unsigned char* destination = my_gballoc_malloc(UINT32_MAX);
+        if (destination == NULL)
+        {
+            /*not really a fault of this test, let the test pass*/
+        }
+        else
+        {
+            ///arrange
+            uint32_t serialized_size;
+
+            ///act
+            CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT result;
+
+            ///act
+            result = CONSTBUFFER_to_fixed_size_buffer(toobig_h, destination, UINT32_MAX, &serialized_size);
+
+            ///assert
+            ASSERT_ARE_EQUAL(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_ERROR, result);
+            
+            ///clean
+            my_gballoc_free(destination);
+        }
+        CONSTBUFFER_DecRef(toobig_h);
+    }
+}
+
+/*Tests_SRS_CONSTBUFFER_02_058: [ If the size of serialization exceeds destination_size then CONSTBUFFER_to_fixed_size_buffer shall fail, write in serialized_size how much it would need and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INSUFFICIENT_BUFFER. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_that_would_overflow_destination_fails)
+{
+    ///arrange
+    unsigned char source_bytes[1] = { 1 };
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(source_bytes, sizeof(source_bytes));
+    ASSERT_IS_NOT_NULL(source);
+
+    unsigned char destination[5]; /*the above CONSTBUFFER_HANDLE requires 6 bytes...*/
+    uint32_t serialized_size;
+    CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT result;
+
+    ///act
+    result = CONSTBUFFER_to_fixed_size_buffer(source, destination, sizeof(destination), &serialized_size);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INSUFFICIENT_BUFFER, result);
+    ASSERT_ARE_EQUAL(uint32_t, 6, serialized_size);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(source);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_059: [ CONSTBUFFER_to_fixed_size_buffer shall write at offset 0 of destination the version of serialization (currently 1). ]*/
+/*Tests_SRS_CONSTBUFFER_02_060: [ CONSTBUFFER_to_fixed_size_buffer shall write at offset 1 of destination the value of source->alias.size in network byte order. ]*/
+/*Tests_SRS_CONSTBUFFER_02_061: [ CONSTBUFFER_to_fixed_size_buffer shall copy all the bytes of source->alias.buffer in destination starting at offset 5. ]*/
+/*Tests_SRS_CONSTBUFFER_02_062: [ CONSTBUFFER_to_fixed_size_buffer shall succeed, write in serialized_size how much it used and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_OK. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_succeeds_1) /*in this case, the size of the buffer matches perfectly the serialization size*/
+{
+    ///arrange
+    unsigned char source_bytes[1] = { 1 };
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(source_bytes, sizeof(source_bytes));
+    ASSERT_IS_NOT_NULL(source);
+
+    unsigned char destination[6]; /*the above CONSTBUFFER_HANDLE requires 6 bytes...*/
+    uint32_t serialized_size;
+    CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT result;
+
+    ///act
+    result = CONSTBUFFER_to_fixed_size_buffer(source, destination, sizeof(destination), &serialized_size);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_OK, result);
+    ASSERT_ARE_EQUAL(uint32_t, 6, serialized_size);
+
+    /*version*/
+    uint8_t serialized_version;
+    read_uint8_t(destination + CONSTBUFFER_VERSION_OFFSET, &serialized_version);
+    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION_V1, serialized_version);
+
+    /*size*/
+    uint32_t size;
+    read_uint32_t(destination + CONSTBUFFER_SIZE_OFFSET, &size);
+    ASSERT_ARE_EQUAL(uint32_t, 1, size);
+
+    /*content*/
+    ASSERT_IS_TRUE(memcmp(source_bytes, destination + CONSTBUFFER_CONTENT_OFFSET, sizeof(source_bytes)) == 0);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(source);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_059: [ CONSTBUFFER_to_fixed_size_buffer shall write at offset 0 of destination the version of serialization (currently 1). ]*/
+/*Tests_SRS_CONSTBUFFER_02_060: [ CONSTBUFFER_to_fixed_size_buffer shall write at offset 1 of destination the value of source->alias.size in network byte order. ]*/
+/*Tests_SRS_CONSTBUFFER_02_061: [ CONSTBUFFER_to_fixed_size_buffer shall copy all the bytes of source->alias.buffer in destination starting at offset 5. ]*/
+/*Tests_SRS_CONSTBUFFER_02_062: [ CONSTBUFFER_to_fixed_size_buffer shall succeed, write in serialized_size how much it used and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_OK. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_succeeds_2) /*in this case, the size of the buffer exceeds the serialization size*/
+{
+    ///arrange
+    unsigned char source_bytes[1] = { 1 };
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(source_bytes, sizeof(source_bytes));
+    ASSERT_IS_NOT_NULL(source);
+
+    unsigned char destination[7]; /*the above CONSTBUFFER_HANDLE requires 6 bytes...*/
+    uint32_t serialized_size;
+    CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT result;
+
+    ///act
+    result = CONSTBUFFER_to_fixed_size_buffer(source, destination, sizeof(destination), &serialized_size);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_OK, result);
+    ASSERT_ARE_EQUAL(uint32_t, 6, serialized_size);
+
+    /*version*/
+    uint8_t serialized_version;
+    read_uint8_t(destination + CONSTBUFFER_VERSION_OFFSET, &serialized_version);
+    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION_V1, serialized_version);
+
+    /*size*/
+    uint32_t size;
+    read_uint32_t(destination + CONSTBUFFER_SIZE_OFFSET, &size);
+    ASSERT_ARE_EQUAL(uint32_t, 1, size);
+
+    /*content*/
+    ASSERT_IS_TRUE(memcmp(source_bytes, destination + CONSTBUFFER_CONTENT_OFFSET, sizeof(source_bytes)) == 0);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(source);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_059: [ CONSTBUFFER_to_fixed_size_buffer shall write at offset 0 of destination the version of serialization (currently 1). ]*/
+/*Tests_SRS_CONSTBUFFER_02_060: [ CONSTBUFFER_to_fixed_size_buffer shall write at offset 1 of destination the value of source->alias.size in network byte order. ]*/
+/*Tests_SRS_CONSTBUFFER_02_061: [ CONSTBUFFER_to_fixed_size_buffer shall copy all the bytes of source->alias.buffer in destination starting at offset 5. ]*/
+/*Tests_SRS_CONSTBUFFER_02_062: [ CONSTBUFFER_to_fixed_size_buffer shall succeed, write in serialized_size how much it used and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_OK. ]*/
+TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_succeeds_3) /*in this case, an empty constbuffer_handle is serialized*/
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(source);
+
+    unsigned char destination[7]; /*the above CONSTBUFFER_HANDLE requires 5 bytes...*/
+    uint32_t serialized_size;
+    CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT result;
+
+    ///act
+    result = CONSTBUFFER_to_fixed_size_buffer(source, destination, sizeof(destination), &serialized_size);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_OK, result);
+    ASSERT_ARE_EQUAL(uint32_t, 5, serialized_size);
+
+    /*version*/
+    uint8_t serialized_version;
+    read_uint8_t(destination + CONSTBUFFER_VERSION_OFFSET, &serialized_version);
+    ASSERT_ARE_EQUAL(uint8_t, CONSTBUFFER_VERSION_V1, serialized_version);
+
+    /*size*/
+    uint32_t size;
+    read_uint32_t(destination + CONSTBUFFER_SIZE_OFFSET, &size);
+    ASSERT_ARE_EQUAL(uint32_t, 0, size);
+
+    /*content*/
+    /*doesn't have*/
+
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(source);
+}
+
+/* CONSTBUFFER_from_buffer */
+
+/*Tests_SRS_CONSTBUFFER_02_063: [ If source is NULL then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG. ]*/
+TEST_FUNCTION(CONSTBUFFER_from_buffer_with_source_NULL_fails)
+{
+    ///arrange
+    uint32_t consumed;
+    CONSTBUFFER_HANDLE destination;
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+
+    ///act
+    result = CONSTBUFFER_from_buffer(NULL, 6, &consumed, &destination);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CONSTBUFFER_02_064: [ If consumed is NULL then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG. ]*/
+TEST_FUNCTION(CONSTBUFFER_from_buffer_with_consumed_NULL_fails)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE destination;
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+    unsigned char source[10] = { 0 };
+    ///act
+    result = CONSTBUFFER_from_buffer(source, 6, NULL, &destination);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CONSTBUFFER_02_065: [ If destination is NULL then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG. ]*/
+TEST_FUNCTION(CONSTBUFFER_from_buffer_with_destination_NULL_fails)
+{
+    ///arrange
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+    uint32_t consumed;
+    unsigned char source[10] = { 0 };
+    ///act
+    result = CONSTBUFFER_from_buffer(source, 6, &consumed, NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CONSTBUFFER_02_066: [ If size is 0 then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG. ]*/
+TEST_FUNCTION(CONSTBUFFER_from_buffer_with_size_0_fails)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE destination;
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+    uint32_t consumed;
+    unsigned char source[10] = { 0 };
+    ///act
+    result = CONSTBUFFER_from_buffer(source, 0, &consumed, &destination);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CONSTBUFFER_02_067: [ If source byte at offset 0 is not 1 (current version) then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA. ]*/
+TEST_FUNCTION(CONSTBUFFER_from_buffer_with_version_0_fails)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE destination;
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+    uint32_t consumed;
+    unsigned char source[10] = { 0 }; /*note first byte to be 0*/
+    ///act
+    result = CONSTBUFFER_from_buffer(source, sizeof(source), &consumed, &destination);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CONSTBUFFER_02_068: [ If source's size is less than sizeof(uint8_t) + sizeof(uint32_t) then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA. ]*/
+TEST_FUNCTION(CONSTBUFFER_from_buffer_with_insufficient_bytes_fails_1) /*in this case there are not enough bytes for version and size*/
+{
+    ///arrange
+    CONSTBUFFER_HANDLE destination;
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+    uint32_t consumed;
+    unsigned char source[10] = { 1 }; /*note first byte to be 1, rest are 0*/
+    ///act
+    result = CONSTBUFFER_from_buffer(source, sizeof(uint8_t) + sizeof(uint32_t) - 1, &consumed, &destination);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CONSTBUFFER_02_069: [ CONSTBUFFER_from_buffer shall read the number of serialized content bytes from offset 1 of source. ]*/
+/*Tests_SRS_CONSTBUFFER_02_071: [ CONSTBUFFER_from_buffer shall create a CONSTBUFFER_HANDLE from the bytes at offset 5 of source. ]*/
+/*Tests_SRS_CONSTBUFFER_02_072: [ CONSTBUFFER_from_buffer shall succeed, write in consumed the total number of consumed bytes from source, write in destination the constructed CONSTBUFFER_HANDLE and return CONSTBUFFER_FROM_BUFFER_RESULT_OK. ]*/
+TEST_FUNCTION(CONSTBUFFER_from_buffer_with_0_size_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE destination = NULL;
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+    uint32_t consumed;
+    unsigned char source[] = { 
+        1, /*version*/
+        0,0,0,0 /*size = 0*/
+    };
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    ///act
+    result = CONSTBUFFER_from_buffer(source, sizeof(source), &consumed, &destination);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_OK, result);
+    ASSERT_IS_NOT_NULL(destination);
+    ASSERT_ARE_EQUAL(uint32_t, sizeof(uint8_t) + sizeof(uint32_t), consumed);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    /*size*/
+    const CONSTBUFFER* content= CONSTBUFFER_GetContent(destination);
+    ASSERT_ARE_EQUAL(size_t, 0, content->size);
+
+    ///clean
+    CONSTBUFFER_DecRef(destination);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_069: [ CONSTBUFFER_from_buffer shall read the number of serialized content bytes from offset 1 of source. ]*/
+/*Tests_SRS_CONSTBUFFER_02_071: [ CONSTBUFFER_from_buffer shall create a CONSTBUFFER_HANDLE from the bytes at offset 5 of source. ]*/
+/*Tests_SRS_CONSTBUFFER_02_072: [ CONSTBUFFER_from_buffer shall succeed, write in consumed the total number of consumed bytes from source, write in destination the constructed CONSTBUFFER_HANDLE and return CONSTBUFFER_FROM_BUFFER_RESULT_OK. ]*/
+TEST_FUNCTION(CONSTBUFFER_from_buffer_with_0_size_from_bigger_buffer_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE destination = NULL;
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+    uint32_t consumed;
+    unsigned char source[] = {
+        1, /*version*/
+        0,0,0,0, /*size = 0*/
+        8 /*extra byte*/
+    };
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    ///act
+    result = CONSTBUFFER_from_buffer(source, sizeof(source), &consumed, &destination);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_OK, result);
+    ASSERT_IS_NOT_NULL(destination);
+    ASSERT_ARE_EQUAL(uint32_t, sizeof(uint8_t) + sizeof(uint32_t), consumed);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    /*size*/
+    const CONSTBUFFER* content = CONSTBUFFER_GetContent(destination);
+    ASSERT_ARE_EQUAL(size_t, 0, content->size);
+
+    ///clean
+    CONSTBUFFER_DecRef(destination);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_070: [ If source's size is less than sizeof(uint8_t) + sizeof(uint32_t) + number of content bytes then CONSTBUFFER_from_buffer shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA. ]*/
+TEST_FUNCTION(CONSTBUFFER_from_buffer_with_1_size_from_insufficient_buffer_fails)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE destination = NULL;
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+    uint32_t consumed;
+    unsigned char source[] = {
+        1, /*version*/
+        0,0,0,1 /*size = 1*/
+    };
+
+    ///act
+    result = CONSTBUFFER_from_buffer(source, sizeof(source), &consumed, &destination);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_DATA, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    CONSTBUFFER_DecRef(destination);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_069: [ CONSTBUFFER_from_buffer shall read the number of serialized content bytes from offset 1 of source. ]*/
+/*Tests_SRS_CONSTBUFFER_02_071: [ CONSTBUFFER_from_buffer shall create a CONSTBUFFER_HANDLE from the bytes at offset 5 of source. ]*/
+/*Tests_SRS_CONSTBUFFER_02_072: [ CONSTBUFFER_from_buffer shall succeed, write in consumed the total number of consumed bytes from source, write in destination the constructed CONSTBUFFER_HANDLE and return CONSTBUFFER_FROM_BUFFER_RESULT_OK. ]*/
+TEST_FUNCTION(CONSTBUFFER_from_buffer_with_1_size_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE destination = NULL;
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+    uint32_t consumed;
+    unsigned char source[] = {
+        1, /*version*/
+        0,0,0,1,/*size = 1*/
+        0x42
+    };
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    ///act
+    result = CONSTBUFFER_from_buffer(source, sizeof(source), &consumed, &destination);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_OK, result);
+    ASSERT_IS_NOT_NULL(destination);
+    ASSERT_ARE_EQUAL(uint32_t, sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t), consumed);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    /*size*/
+    const CONSTBUFFER* content = CONSTBUFFER_GetContent(destination);
+    ASSERT_ARE_EQUAL(size_t, 1, content->size);
+
+    /*content*/
+    ASSERT_IS_TRUE(memcmp(source + CONSTBUFFER_CONTENT_OFFSET, content->buffer, content->size)==0);
+
+    ///clean
+    CONSTBUFFER_DecRef(destination);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_069: [ CONSTBUFFER_from_buffer shall read the number of serialized content bytes from offset 1 of source. ]*/
+/*Tests_SRS_CONSTBUFFER_02_071: [ CONSTBUFFER_from_buffer shall create a CONSTBUFFER_HANDLE from the bytes at offset 5 of source. ]*/
+/*Tests_SRS_CONSTBUFFER_02_072: [ CONSTBUFFER_from_buffer shall succeed, write in consumed the total number of consumed bytes from source, write in destination the constructed CONSTBUFFER_HANDLE and return CONSTBUFFER_FROM_BUFFER_RESULT_OK. ]*/
+TEST_FUNCTION(CONSTBUFFER_from_buffer_with_1_size_from_greater_size_buffer_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE destination = NULL;
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+    uint32_t consumed;
+    unsigned char source[] = {
+        1, /*version*/
+        0,0,0,1,/*size = 1*/
+        0x42, 0x43 /*0x43 is extraneous*/
+    };
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    ///act
+    result = CONSTBUFFER_from_buffer(source, sizeof(source), &consumed, &destination);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_OK, result);
+    ASSERT_IS_NOT_NULL(destination);
+    ASSERT_ARE_EQUAL(uint32_t, sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t), consumed);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    /*size*/
+    const CONSTBUFFER* content = CONSTBUFFER_GetContent(destination);
+    ASSERT_ARE_EQUAL(size_t, 1, content->size);
+
+    /*content*/
+    ASSERT_IS_TRUE(memcmp(source + CONSTBUFFER_CONTENT_OFFSET, content->buffer, content->size)==0);
+
+    ///clean
+    CONSTBUFFER_DecRef(destination);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_069: [ CONSTBUFFER_from_buffer shall read the number of serialized content bytes from offset 1 of source. ]*/
+/*Tests_SRS_CONSTBUFFER_02_071: [ CONSTBUFFER_from_buffer shall create a CONSTBUFFER_HANDLE from the bytes at offset 5 of source. ]*/
+/*Tests_SRS_CONSTBUFFER_02_072: [ CONSTBUFFER_from_buffer shall succeed, write in consumed the total number of consumed bytes from source, write in destination the constructed CONSTBUFFER_HANDLE and return CONSTBUFFER_FROM_BUFFER_RESULT_OK. ]*/
+TEST_FUNCTION(CONSTBUFFER_from_buffer_with_2_size_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE destination = NULL;
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+    uint32_t consumed;
+    unsigned char source[] = {
+        1, /*version*/
+        0,0,0,2,/*size = 2*/
+        0x42, 0x43
+    };
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
+    ///act
+    result = CONSTBUFFER_from_buffer(source, sizeof(source), &consumed, &destination);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_OK, result);
+    ASSERT_IS_NOT_NULL(destination);
+    ASSERT_ARE_EQUAL(uint32_t, sizeof(uint8_t) + sizeof(uint32_t) + 2*sizeof(uint8_t), consumed);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    /*size*/
+    const CONSTBUFFER* content = CONSTBUFFER_GetContent(destination);
+    ASSERT_ARE_EQUAL(size_t, 2, content->size);
+
+    /*content*/
+    ASSERT_IS_TRUE(memcmp(source + CONSTBUFFER_CONTENT_OFFSET, content->buffer, content->size) == 0);
+
+    ///clean
+    CONSTBUFFER_DecRef(destination);
+}
+
+/*Tests_SRS_CONSTBUFFER_02_073: [ If there are any failures then shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_ERROR. ]*/
+TEST_FUNCTION(CONSTBUFFER_from_buffer_with_2_size_unhappy_path)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE destination = NULL;
+    CONSTBUFFER_FROM_BUFFER_RESULT result;
+    uint32_t consumed;
+    unsigned char source[] = {
+        1, /*version*/
+        0,0,0,2,/*size = 2*/
+        0x42, 0x43
+    };
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+        .SetReturn(NULL);
+
+    ///act
+    result = CONSTBUFFER_from_buffer(source, sizeof(source), &consumed, &destination);
+
+    ///assert
+    ASSERT_ARE_EQUAL(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_ERROR, result);
+    ASSERT_IS_NULL(destination);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

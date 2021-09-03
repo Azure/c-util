@@ -162,6 +162,8 @@ set(c_util_h_files
     ./inc/c_util/azure_base64.h
     ./inc/c_util/buffer_.h
     ./inc/c_util/constbuffer.h
+    ./inc/c_util/constbuffer_format.h
+    ./inc/c_util/constbuffer_version.h
     ./inc/c_util/constbuffer_array.h
     ./inc/c_util/constbuffer_array_batcher_nv.h
     ./inc/c_util/doublylinkedlist.h
