@@ -14,5 +14,9 @@
 #define CONSTBUFFER_DecRef real_CONSTBUFFER_DecRef
 #define CONSTBUFFER_HANDLE_contain_same real_CONSTBUFFER_HANDLE_contain_same
 #define CONSTBUFFER_CreateFromOffsetAndSize real_CONSTBUFFER_CreateFromOffsetAndSize
+#define CONSTBUFFER_get_serialization_size real_CONSTBUFFER_get_serialization_size
+#define CONSTBUFFER_to_buffer real_CONSTBUFFER_to_buffer
+#define CONSTBUFFER_to_fixed_size_buffer real_CONSTBUFFER_to_fixed_size_buffer
+#define CONSTBUFFER_from_buffer real_CONSTBUFFER_from_buffer
 
 #endif // REAL_CONSTBUFFER_RENAMES_H

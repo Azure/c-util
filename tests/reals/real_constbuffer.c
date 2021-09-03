@@ -3,8 +3,8 @@
 
 #include "real_interlocked_renames.h" // IWYU pragma: keep
 #include "real_gballoc_hl_renames.h" // IWYU pragma: keep
+#include "real_memory_data_renames.h" // IWYU pragma: keep
 
 #include "real_constbuffer_renames.h" // IWYU pragma: keep
-
 
 #include "../src/constbuffer.c"

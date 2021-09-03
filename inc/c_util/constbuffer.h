@@ -32,11 +32,12 @@ typedef struct CONSTBUFFER_TAG
 
 typedef void(*CONSTBUFFER_CUSTOM_FREE_FUNC)(void* context);
 
-/*what function should CONSTBUFFER_HANDLE_to_buffer use to allocate the returned serialized form. NULL means gballoc_hl_malloc.*/
-typedef void*(*CONSTBUFFER_to_buffer_alloc)(size_t size);
+/*what function should CONSTBUFFER_HANDLE_to_buffer use to allocate the returned serialized form. NULL means malloc from gballoc_hl_malloc_redirect.h of this lib.*/
+typedef void*(*CONSTBUFFER_to_buffer_alloc)(size_t size, void* context);
 
 #define CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_VALUES \
     CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_OK, \
+    CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_ERROR, \
     CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INSUFFICIENT_BUFFER, \
     CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG
 
@@ -75,11 +76,11 @@ MOCKABLE_INTERFACE(constbuffer,
 
     FUNCTION(, uint32_t, CONSTBUFFER_get_serialization_size, CONSTBUFFER_HANDLE, source),
 
-    FUNCTION(, unsigned char*, CONSTBUFFER_to_buffer, CONSTBUFFER_HANDLE, source, CONSTBUFFER_to_buffer_alloc, alloc, uint32_t*, size),
+    FUNCTION(, unsigned char*, CONSTBUFFER_to_buffer, CONSTBUFFER_HANDLE, source, CONSTBUFFER_to_buffer_alloc, alloc, void*, alloc_context, uint32_t*, size),
 
     FUNCTION(, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_to_fixed_size_buffer, CONSTBUFFER_HANDLE, source, unsigned char*, destination, uint32_t, destination_size, uint32_t*, serialized_size),
 
-    FUNCTION(, CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_from_buffer, const unsigned char*, source, uint32_t, size, uint32_t*, consumed, CONSTBUFFER_HANDLE*, destination);
+    FUNCTION(, CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_from_buffer, const unsigned char*, source, uint32_t, size, uint32_t*, consumed, CONSTBUFFER_HANDLE*, destination)
 )
 
 #ifdef __cplusplus

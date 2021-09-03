@@ -9,6 +9,7 @@ ${theseTestsName}.c
 
 set(${theseTestsName}_c_files
 ../../src/constbuffer.c
+../../src/memory_data.c #don't want any mocks generated for memory_data so grab the real functions for the purpose of testing
 )
 
 set(${theseTestsName}_h_files
