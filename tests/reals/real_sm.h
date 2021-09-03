@@ -15,6 +15,7 @@
         sm_open_begin,                                  \
         sm_open_end,                                    \
         sm_close_begin,                                 \
+        sm_close_begin_with_callback,                   \
         sm_close_end,                                   \
         sm_exec_begin,                                  \
         sm_exec_end,                                    \
@@ -36,6 +37,7 @@ SM_RESULT real_sm_open_begin(SM_HANDLE sm);
 void real_sm_open_end(SM_HANDLE sm, bool success);
 
 SM_RESULT real_sm_close_begin(SM_HANDLE sm);
+SM_RESULT real_sm_close_begin_with_callback(SM_HANDLE sm, ON_CLOSE_DURING_OPENING close_during_open_cb, void* callback_ctx);
 void real_sm_close_end(SM_HANDLE sm);
 
 SM_RESULT real_sm_exec_begin(SM_HANDLE sm);

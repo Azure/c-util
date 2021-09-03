@@ -1,5 +1,4 @@
 # State manager requirements
-================
 
 ## Overview
 
@@ -18,7 +17,7 @@
    a) APIs that can be called in parallel (for example a _read API).
 
    b) APIs that are barrier. (for example _set_content, _flush_all etc). Barrier APIs have the following semantics
-      
+
        i) there can only be 1 barrier API at any given time
 
        ii) the barrier API can only execute when all the previous APIs have stopped executing
@@ -31,7 +30,8 @@
 
 ## Design
 
-Historic context: before `sm` the world had explicit states, such as 
+Historic context: before `sm` the world had explicit states, such as
+
 - "OPEN" (where all APIs would be allowed to execute)
 - "OPENING" (marks the transiton from "CREATED" to "OPEN")
 - "CLOSING" (where APIs would be drained - it devolves into "CREATED" once that was done)
@@ -44,10 +44,12 @@ A substate of "OPEN" would begin execution by switching the state variable to "S
 In a multithreaded environment reaching the condition of "let's have 1 executing API" was sometimes difficult, because other APIs would be insistent to execute too (and the first thing they did was to increment the number of executing APIs... thus blocking the execution of the substate). With enough luck, the number of pending API calls would eventually match 1 and the substate would go happily about its way.
 
 `sm` aims at providing a better solution by:
+
 - providing a consistent way of managing "state" across modules (no more individual "ongoingAPIcalls" and "pendingAPIcalls" and "what's the correct order? state before counting or counting before state?")
 - providing progress in all cases for APIs that require their own sub-state undisturbed (that is, APIs that cannot execute in parallel with any other APIs), so no more a problem of "enough luck".
 
 To achieve the above goals, `sm` maintains the following state:
+
 1. the current granted state + 1 bit that is set to 1 when `sm_close_begin` is called and 1 bit that is set to 1 when `sm_fault` is called.
 2. the number of APIs that did not finish executing (`n`). `n` is incremented at every `sm_exec_begin` and decremented when the user signaled finishing executing by calling `sm_exec_end`.
 
@@ -64,6 +66,7 @@ Fault is realized by prohibiting all calls (except for `sm_close_begin` calls an
 `n` is a 32-bit value. At the time of writing `sm` it is of no concern an overflow above `INT32_MAX` because that would mean there are more than 2 billion standing requests that have no yet been ended, and the assumption is that something will go wrong in other parts of the system before it goes bad in `sm`.
 
 These are the internal state of `sm`:
+
 - `SM_CREATED` - entered after a call to `sm_create` or `sm_open_end` is called with `success` set to `false`.
 - `SM_OPENING` - entered after a call to `sm_open_begin`
 - `SM_OPENED` - entered after `sm_open_end` is called with `success` set to `true`.
@@ -75,6 +78,7 @@ These are the internal state of `sm`:
 In addition to the above states, part of the state is the `_close` bit that is set to `1` when `sm_close_begin` has been called. The bit stays `1` until the state is switched to `SM_CLOSING`.
 
 The state is a 32-bit variable. It is made up of the following components:
+
 - Least-significant 6 bits (values 0-63) represent a state enum value from above (`SM_CREATED`, `SM_OPENING`, `SM_OPENED`, `SM_OPENED_DRAINING_TO_BARRIER`, `SM_OPENED_DRAINING_TO_CLOSE`, `SM_OPENED_BARRIER`, `SM_CLOSING`).
 - The 6th bit (decimal 64) set to 1 when `sm_fault` is called. The bit is never reset.
 - The 7th bit (decimal 128) set to 1 when `sm_close_begin` is called. The bit is reset by `sm_close_end`.
@@ -99,6 +103,7 @@ MOCKABLE_FUNCTION(, SM_RESULT, sm_open_begin, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm, bool, success);
 
 MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin_with_callback, SM_HANDLE, sm, ON_CLOSE_DURING_OPENING, close_during_open_cb, void*, callback_ctx);
 MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
 
 MOCKABLE_FUNCTION(, SM_RESULT, sm_exec_begin, SM_HANDLE, sm);
@@ -111,9 +116,11 @@ MOCKABLE_FUNCTION(, void, sm_fault, SM_HANDLE, sm);
 ```
 
 ### sm_create
+
 ```c
 MOCKABLE_FUNCTION(, SM_HANDLE, sm_create, const char*, name);
 ```
+
 `sm_create` creates a new State manager handle. `name` is used with logging and bears no functional significance.
 
 **SRS_SM_02_001: [** If `name` is `NULL` then `sm_create` shall behave as if `name` was "NO_NAME". **]**
@@ -125,11 +132,12 @@ MOCKABLE_FUNCTION(, SM_HANDLE, sm_create, const char*, name);
 **SRS_SM_02_004: [** If there are any failures then `sm_create` shall fail and return `NULL`. **]**
 
 ### sm_destroy
+
 ```c
 MOCKABLE_FUNCTION(, void, sm_destroy, SM_HANDLE, sm);
 ```
 
-`sm_destroy` frees all used resources. 
+`sm_destroy` frees all used resources.
 
 **SRS_SM_02_005: [** If `sm` is `NULL` then `sm_destroy` shall return. **]**
 
@@ -138,6 +146,7 @@ MOCKABLE_FUNCTION(, void, sm_destroy, SM_HANDLE, sm);
 **SRS_SM_02_006: [** `sm_destroy` shall free all used resources. **]**
 
 ### sm_open_begin
+
 ```c
 MOCKABLE_FUNCTION(, SM_RESULT, sm_open_begin, SM_HANDLE, sm);
 ```
@@ -155,6 +164,7 @@ MOCKABLE_FUNCTION(, SM_RESULT, sm_open_begin, SM_HANDLE, sm);
 **SRS_SM_02_009: [** `sm_open_begin` shall return `SM_EXEC_GRANTED`. **]**
 
 ### sm_open_end
+
 ```c
 MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm, bool, success);
 ```
@@ -170,6 +180,7 @@ MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm, bool, success);
 **SRS_SM_02_075: [** If `success` is `false` then `sm_open_end` shall switch the state to `SM_CREATED`. **]**
 
 ### sm_close_begin
+
 ```c
 MOCKABLE_FUNCTION(, int, sm_close_begin, SM_HANDLE, sm);
 ```
@@ -198,7 +209,17 @@ MOCKABLE_FUNCTION(, int, sm_close_begin, SM_HANDLE, sm);
 
 **SRS_SM_02_071: [** If there are any failures then `sm_close_begin` shall fail and return `SM_ERROR`. **]**
 
+### sm_close_begin_with_callback
+
+```c
+MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin_with_callback, SM_HANDLE, sm, ON_CLOSE_DURING_OPENING, close_during_open_cb, void*, callback_ctx);
+```
+
+`sm_close_begin_with_callback` asks from `sm` permission to exit `SM_OPENED` state (or one of its derived state) and return to `SM_CREATED`.
+
+
 ### sm_close_end
+
 ```c
 MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
 ```
@@ -214,6 +235,7 @@ MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
 **SRS_SM_42_012: [** `sm_close_end` shall not reset the `SM_FAULTED_BIT`. **]**
 
 ### sm_exec_begin
+
 ```c
 MOCKABLE_FUNCTION(, int, sm_exec_begin, SM_HANDLE, sm);
 ```
@@ -235,6 +257,7 @@ MOCKABLE_FUNCTION(, int, sm_exec_begin, SM_HANDLE, sm);
 **SRS_SM_02_058: [** `sm_exec_begin` shall return `SM_EXEC_GRANTED`. **]**
 
 ### sm_exec_end
+
 ```c
 MOCKABLE_FUNCTION(, void, sm_exec_end, SM_HANDLE, sm);
 ```
@@ -258,6 +281,7 @@ MOCKABLE_FUNCTION(, void, sm_exec_end, SM_HANDLE, sm);
 **SRS_SM_42_010: [** If `n` would decrement below 0, then `sm_exec_end` shall terminate the process. **]**
 
 ### sm_barrier_begin
+
 ```c
 MOCKABLE_FUNCTION(, int, sm_barrier_begin, SM_HANDLE, sm);
 ```
@@ -283,6 +307,7 @@ MOCKABLE_FUNCTION(, int, sm_barrier_begin, SM_HANDLE, sm);
 **SRS_SM_02_070: [** If there are any failures then `sm_barrier_begin` shall return `SM_ERROR`. **]**
 
 ### sm_barrier_end
+
 ```c
 MOCKABLE_FUNCTION(, void, sm_barrier_end, SM_HANDLE, sm);
 ```
@@ -298,6 +323,7 @@ MOCKABLE_FUNCTION(, void, sm_barrier_end, SM_HANDLE, sm);
 **SRS_SM_02_073: [** `sm_barrier_end` shall switch the state to `SM_OPENED`. **]**
 
 ### sm_fault
+
 ```c
 MOCKABLE_FUNCTION(, void, sm_fault, SM_HANDLE, sm);
 ```

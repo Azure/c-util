@@ -88,7 +88,7 @@ SM_HANDLE sm_create(const char* name)
 }
 
 /*forwards*/
-static SM_RESULT sm_close_begin_internal(SM_HANDLE sm);
+static SM_RESULT sm_close_begin_internal(SM_HANDLE sm, ON_CLOSE_DURING_OPENING close_during_open_cb, void* callback_ctx);
 static void sm_close_end_internal(SM_HANDLE sm);
 
 void sm_destroy(SM_HANDLE sm)
@@ -101,7 +101,7 @@ void sm_destroy(SM_HANDLE sm)
     else
     {
         /*Codes_SRS_SM_02_038: [ sm_destroy behave as if sm_close_begin would have been called. ]*/
-        if (sm_close_begin_internal(sm) == SM_EXEC_GRANTED)
+        if (sm_close_begin_internal(sm, NULL, NULL) == SM_EXEC_GRANTED)
         {
             sm_close_end_internal(sm);
         }
@@ -204,7 +204,7 @@ void sm_open_end(SM_HANDLE sm, bool success)
     }
 }
 
-static SM_RESULT sm_close_begin_internal(SM_HANDLE sm)
+static SM_RESULT sm_close_begin_internal(SM_HANDLE sm, ON_CLOSE_DURING_OPENING close_during_open_cb, void* callback_ctx)
 {
     SM_RESULT result;
 
@@ -252,14 +252,22 @@ static SM_RESULT sm_close_begin_internal(SM_HANDLE sm)
                 ((state & SM_STATE_MASK) == SM_OPENED_BARRIER) ||
                 /*Codes_SRS_SM_02_051: [ If the state is SM_OPENED_DRAINING_TO_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
                 ((state & SM_STATE_MASK) == SM_OPENED_DRAINING_TO_BARRIER)
-                )
+            )
             {
                 ThreadAPI_Sleep(1);
             }
             else
             {
-                /*Codes_SRS_SM_02_052: [ If the state is any other value then sm_close_begin shall return SM_EXEC_REFUSED. ]*/
-                result = SM_EXEC_REFUSED;
+                if (close_during_open_cb == NULL)
+                {
+                    /*Codes_SRS_SM_02_052: [ If the state is any other value then sm_close_begin shall return SM_EXEC_REFUSED. ]*/
+                    result = SM_EXEC_REFUSED;
+                }
+                else
+                {
+                    close_during_open_cb(callback_ctx);
+                    result = SM_EXEC_GRANTED;
+                }
                 break;
             }
         } while (1);
@@ -272,7 +280,6 @@ static SM_RESULT sm_close_begin_internal(SM_HANDLE sm)
 
 SM_RESULT sm_close_begin(SM_HANDLE sm)
 {
-
     SM_RESULT result;
     /*Codes_SRS_SM_02_013: [ If sm is NULL then sm_close_begin shall fail and return SM_ERROR. ]*/
     if (sm == NULL)
@@ -282,9 +289,23 @@ SM_RESULT sm_close_begin(SM_HANDLE sm)
     }
     else
     {
-        result = sm_close_begin_internal(sm);
+        result = sm_close_begin_internal(sm, NULL, NULL);
     }
+    return result;
+}
 
+SM_RESULT sm_close_begin_with_callback(SM_HANDLE sm, ON_CLOSE_DURING_OPENING close_during_open_cb, void* callback_ctx)
+{
+    SM_RESULT result;
+    if (sm == NULL)
+    {
+        LogError("invalid argument SM_HANDLE sm=%p", sm);
+        result = SM_ERROR;
+    }
+    else
+    {
+        result = sm_close_begin_internal(sm, close_during_open_cb, callback_ctx);
+    }
     return result;
 }
 
