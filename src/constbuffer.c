@@ -206,7 +206,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAn
         /* Codes_SRS_CONSTBUFFER_02_033: [ If offset is greater than handles's size then CONSTBUFFER_CreateFromOffsetAndSize shall fail and return NULL. ]*/
         (offset > handle->alias.size) ||
         /*Codes_SRS_CONSTBUFFER_02_032: [ If there are any failures then CONSTBUFFER_CreateFromOffsetAndSize shall fail and return NULL. ]*/
-        (offset > SIZE_MAX - size) ||
+        (offset > UINT32_MAX - size) ||
         /*Codes_SRS_CONSTBUFFER_02_027: [ If offset + size exceed handles's size then CONSTBUFFER_CreateFromOffsetAndSize shall fail and return NULL. ]*/
         (offset + size > handle->alias.size)
         )
@@ -254,7 +254,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAn
         /*Codes_SRS_CONSTBUFFER_02_035: [ If offset exceeds the capacity of handle then CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
         (offset > handle->alias.size) ||
         /*Codes_SRS_CONSTBUFFER_02_040: [ If there are any failures then CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
-        (offset > SIZE_MAX - size) ||
+        (offset > UINT32_MAX - size) ||
         /*Codes_SRS_CONSTBUFFER_02_036: [ If offset + size exceed the capacity of handle then CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
         (offset + size > handle->alias.size)
         )
@@ -425,10 +425,6 @@ uint32_t CONSTBUFFER_get_serialization_size(CONSTBUFFER_HANDLE source)
     return result;
 }
 
-#define THE_LESSER UINT32_MAX
-#define PRI_THE_LESSER PRIu32
-typedef uint32_t THE_LESSER_T;
-
 static void* calls_malloc(uint32_t size, void* context)
 {
     (void)context;
@@ -458,11 +454,11 @@ unsigned char* CONSTBUFFER_to_buffer(CONSTBUFFER_HANDLE source, CONSTBUFFER_to_b
         }
 
         /*Codes_SRS_CONSTBUFFER_02_054: [ If there are any failures then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
-        if (THE_LESSER - CONSTBUFFER_VERSION_SIZE - CONSTBUFFER_SIZE_SIZE < source->alias.size)
+        if (UINT32_MAX - CONSTBUFFER_VERSION_SIZE - CONSTBUFFER_SIZE_SIZE < source->alias.size)
         {
             /*overflow*/
-            LogError("serialization size exceeds the lesser of (UINT32_MAX, SIZE_MAX)=%" PRI_THE_LESSER ". Serialization size is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%" PRIu32 "",
-                THE_LESSER, CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, source->alias.size);
+            LogError("serialization size exceeds the lesser of (UINT32_MAX, UINT32_MAX)=%" PRIu32 ". Serialization size is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%" PRIu32 "",
+                UINT32_MAX, CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, source->alias.size);
             result = NULL;
         }
         else
@@ -488,7 +484,7 @@ unsigned char* CONSTBUFFER_to_buffer(CONSTBUFFER_HANDLE source, CONSTBUFFER_to_b
                 (void)memcpy(result + CONSTBUFFER_CONTENT_OFFSET, source->alias.buffer, source->alias.size);
 
                 /*Codes_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
-                *serialized_size = CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE + (THE_LESSER_T)source->alias.size;
+                *serialized_size = CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE + (uint32_t)source->alias.size;
                 /*return as is*/
             }
         }
