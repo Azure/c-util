@@ -762,7 +762,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_reset_all_calls();
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source) - 1, SIZE_MAX- sizeof(source) + 2);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, (uint32_t)(sizeof(source) - 1), (uint32_t)(UINT_MAX- sizeof(source) + 2));
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -784,7 +784,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_reset_all_calls();
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source)-1, 2);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, (uint32_t)(sizeof(source)-1), 2);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -811,7 +811,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 0, sizeof(source));
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 0, (uint32_t)(sizeof(source)));
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -874,7 +874,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source) - 1, 1);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, (uint32_t)(sizeof(source) - 1), 1);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -905,7 +905,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, sizeof(source) - 1);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, (uint32_t)(sizeof(source) - 1));
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -937,7 +937,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source), 0);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, (uint32_t)(sizeof(source)), 0);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -966,7 +966,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
             .SetReturn(NULL);
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, sizeof(source) - 1);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, (uint32_t)(sizeof(source) - 1));
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -990,7 +990,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, sizeof(source) - 1);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, (uint32_t)(sizeof(source) - 1));
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
@@ -1025,7 +1025,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, sizeof(source) - 1);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, (uint32_t)(sizeof(source) - 1));
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
