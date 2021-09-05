@@ -33,7 +33,6 @@ int main(void)
         uint32_t size = 1 + (rand() % sizeof(source));
 
         CONSTBUFFER_HANDLE h = CONSTBUFFER_Create(source, size);
-
         if (h == NULL)
         {
             LogError("failure creating CONSTBUFFER_HANDLE h");
@@ -68,12 +67,11 @@ static void* awesome_alloc(size_t size, void* context)
 {
     /*here context contains a buffer that *might* grow*/
     AWESOME_ALLOC_CONTEXT* awesome_alloc_context = context;
-    (void)printf("requesting %zu size where buffer=%p, capacity=%zu, size=%zu\n",
+    (void)printf("requesting %zu size where buffer = %p, capacity = %zu, size = %zu\n",
         size, awesome_alloc_context->buffer, awesome_alloc_context->capacity, awesome_alloc_context->size);
     if (awesome_alloc_context->size + size <= awesome_alloc_context->capacity)
     {
         /*just return previously allocated memory, no new realloc needed*/
-
         awesome_alloc_context->size += size; /*increase usage*/
         return awesome_alloc_context->buffer + awesome_alloc_context->size - size;
     }

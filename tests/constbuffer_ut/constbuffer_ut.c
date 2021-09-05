@@ -2,12 +2,18 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #ifdef __cplusplus
+#include <cstdint>
 #include <cstdlib>
 #include <cstddef>
 #else
+#include <stdint.h>
 #include <stdlib.h>
 #include <stddef.h>
 #endif
+
+#include <limits.h>
+
+#include "umock_c/umocktypes_stdint.h"
 
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
@@ -55,15 +61,15 @@ static const char* buffer3 = "three";
 
 #define BUFFER1_HANDLE (BUFFER_HANDLE)1
 #define BUFFER1_u_char ((unsigned char*)buffer1)
-#define BUFFER1_length strlen(buffer1)
+#define BUFFER1_length (uint32_t)strlen(buffer1)
 
 #define BUFFER2_HANDLE (BUFFER_HANDLE)2
 #define BUFFER2_u_char ((unsigned char*)buffer2)
-#define BUFFER2_length ((size_t)0)
+#define BUFFER2_length ((uint32_t)0)
 
 #define BUFFER3_HANDLE (BUFFER_HANDLE)3
 #define BUFFER3_u_char ((unsigned char*)buffer3)
-#define BUFFER3_length ((size_t)0)
+#define BUFFER3_length ((uint32_t)0)
 
 unsigned char* my_BUFFER_u_char(BUFFER_HANDLE handle)
 {
@@ -122,13 +128,12 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
     TEST_SUITE_INITIALIZE(setsBufferTempSize)
     {
-        
         ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
 
-        g_testByTest = TEST_MUTEX_CREATE();
-        ASSERT_IS_NOT_NULL(g_testByTest);
+        ASSERT_IS_NOT_NULL(g_testByTest = TEST_MUTEX_CREATE());
 
-        umock_c_init(on_umock_c_error);
+        ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error), "umock_c_init");
+        ASSERT_ARE_EQUAL(int, 0, umocktypes_stdint_register_types(), "umocktypes_stdint_register_types failed");
 
         REGISTER_UMOCK_ALIAS_TYPE(BUFFER_HANDLE, void*);
 
@@ -139,7 +144,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         REGISTER_TYPE(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT);
         REGISTER_TYPE(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT);
         REGISTER_GLOBAL_MOCK_HOOK(test_alloc, test_alloc_impl);
-    }
+}
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
@@ -676,7 +681,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///assert
         ASSERT_IS_NOT_NULL(content);
         /*testing the "copy"*/
-        ASSERT_ARE_EQUAL(size_t, BUFFER1_length, content->size);
+        ASSERT_ARE_EQUAL(uint32_t, BUFFER1_length, content->size);
         ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER1_u_char, content->buffer, BUFFER1_length));
         /*testing that it is a copy and not a pointer assignment*/
         ASSERT_ARE_NOT_EQUAL(void_ptr, BUFFER1_u_char, content->buffer);
@@ -749,7 +754,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     }
 
     /*Tests_SRS_CONSTBUFFER_02_032: [ If there are any failures then CONSTBUFFER_CreateFromOffsetAndSize shall fail and return NULL. ]*/
-    TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSize_with_offset_plus_size_equal_to_SIZE_MAX_fail)
+    TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSize_with_offset_plus_size_equal_to_UINT_MAX_fail)
     {
         ///arrange
         CONSTBUFFER_HANDLE origin;
@@ -761,7 +766,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_reset_all_calls();
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source) - 1, SIZE_MAX- sizeof(source) + 2);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, (uint32_t)(sizeof(source) - 1), (uint32_t)(UINT_MAX- sizeof(source) + 2));
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -783,7 +788,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_reset_all_calls();
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source)-1, 2);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, (uint32_t)(sizeof(source)-1), 2);
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -810,7 +815,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 0, sizeof(source));
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 0, (uint32_t)(sizeof(source)));
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -848,7 +853,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         const CONSTBUFFER* content = CONSTBUFFER_GetContent(result);
-        ASSERT_ARE_EQUAL(size_t, 0, content->size);
+        ASSERT_ARE_EQUAL(uint32_t, 0, content->size);
 
         ///cleanup
         CONSTBUFFER_DecRef(origin);
@@ -873,13 +878,13 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source) - 1, 1);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, (uint32_t)(sizeof(source) - 1), 1);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         const CONSTBUFFER* content = CONSTBUFFER_GetContent(result);
-        ASSERT_ARE_EQUAL(size_t, 1, content->size);
+        ASSERT_ARE_EQUAL(uint32_t, 1, content->size);
 
         ///cleanup
         CONSTBUFFER_DecRef(origin);
@@ -904,7 +909,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, sizeof(source) - 1);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, (uint32_t)(sizeof(source) - 1));
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -936,13 +941,13 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source), 0);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, (uint32_t)(sizeof(source)), 0);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         const CONSTBUFFER* content = CONSTBUFFER_GetContent(result);
-        ASSERT_ARE_EQUAL(size_t, 0, content->size);
+        ASSERT_ARE_EQUAL(uint32_t, 0, content->size);
 
         ///cleanup
         CONSTBUFFER_DecRef(origin);
@@ -965,7 +970,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
             .SetReturn(NULL);
 
         ///act
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, sizeof(source) - 1);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, (uint32_t)(sizeof(source) - 1));
 
         ///assert
         ASSERT_IS_NULL(result);
@@ -989,7 +994,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, sizeof(source) - 1);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, (uint32_t)(sizeof(source) - 1));
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
@@ -1024,7 +1029,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, sizeof(source) - 1);
+        CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, (uint32_t)(sizeof(source) - 1));
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
@@ -1474,7 +1479,7 @@ TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_with_offset_exceeding_
 }
 
 /*Tests_SRS_CONSTBUFFER_02_040: [ If there are any failures then CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
-TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_with_offset_plus_size_equal_to_SIZE_MAX_fail)
+TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_with_offset_plus_size_equal_to_UINT_MAX_fail)
 {
     ///arrange
     CONSTBUFFER_HANDLE origin;
@@ -1486,7 +1491,7 @@ TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_with_offset_plus_size_
     umock_c_reset_all_calls();
 
     ///act
-    CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSizeWithCopy(origin, sizeof(source) - 1, SIZE_MAX - sizeof(source) + 2);
+    CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSizeWithCopy(origin, sizeof(source) - 1, UINT32_MAX - sizeof(source) + 2);
 
     ///assert
     ASSERT_IS_NULL(result);
@@ -1519,7 +1524,7 @@ TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_succeeds_1) /*this has
 
     const CONSTBUFFER* content = CONSTBUFFER_GetContent(result);
     ASSERT_IS_NULL(content->buffer);
-    ASSERT_ARE_EQUAL(size_t, 0, content->size);
+    ASSERT_ARE_EQUAL(uint32_t, 0, content->size);
 
     ///cleanup
     CONSTBUFFER_DecRef(origin);
@@ -1550,7 +1555,7 @@ TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_succeeds_2) /*this has
 
     const CONSTBUFFER* content = CONSTBUFFER_GetContent(result);
     ASSERT_IS_NOT_NULL(content->buffer);
-    ASSERT_ARE_EQUAL(size_t, 1, content->size);
+    ASSERT_ARE_EQUAL(uint32_t, 1, content->size);
     ASSERT_ARE_EQUAL(int, 0, memcmp(content->buffer, source, 1));
     
     ///cleanup
@@ -2372,7 +2377,7 @@ TEST_FUNCTION(CONSTBUFFER_from_buffer_with_0_size_succeeds)
 
     /*size*/
     const CONSTBUFFER* content= CONSTBUFFER_GetContent(destination);
-    ASSERT_ARE_EQUAL(size_t, 0, content->size);
+    ASSERT_ARE_EQUAL(uint32_t, 0, content->size);
 
     ///clean
     CONSTBUFFER_DecRef(destination);
@@ -2406,7 +2411,7 @@ TEST_FUNCTION(CONSTBUFFER_from_buffer_with_0_size_from_bigger_buffer_succeeds)
 
     /*size*/
     const CONSTBUFFER* content = CONSTBUFFER_GetContent(destination);
-    ASSERT_ARE_EQUAL(size_t, 0, content->size);
+    ASSERT_ARE_EQUAL(uint32_t, 0, content->size);
 
     ///clean
     CONSTBUFFER_DecRef(destination);
@@ -2463,7 +2468,7 @@ TEST_FUNCTION(CONSTBUFFER_from_buffer_with_1_size_succeeds)
 
     /*size*/
     const CONSTBUFFER* content = CONSTBUFFER_GetContent(destination);
-    ASSERT_ARE_EQUAL(size_t, 1, content->size);
+    ASSERT_ARE_EQUAL(uint32_t, 1, content->size);
 
     /*content*/
     ASSERT_IS_TRUE(memcmp(source + CONSTBUFFER_CONTENT_OFFSET, content->buffer, content->size)==0);
@@ -2500,7 +2505,7 @@ TEST_FUNCTION(CONSTBUFFER_from_buffer_with_1_size_from_greater_size_buffer_succe
 
     /*size*/
     const CONSTBUFFER* content = CONSTBUFFER_GetContent(destination);
-    ASSERT_ARE_EQUAL(size_t, 1, content->size);
+    ASSERT_ARE_EQUAL(uint32_t, 1, content->size);
 
     /*content*/
     ASSERT_IS_TRUE(memcmp(source + CONSTBUFFER_CONTENT_OFFSET, content->buffer, content->size)==0);
@@ -2537,7 +2542,7 @@ TEST_FUNCTION(CONSTBUFFER_from_buffer_with_2_size_succeeds)
 
     /*size*/
     const CONSTBUFFER* content = CONSTBUFFER_GetContent(destination);
-    ASSERT_ARE_EQUAL(size_t, 2, content->size);
+    ASSERT_ARE_EQUAL(uint32_t, 2, content->size);
 
     /*content*/
     ASSERT_IS_TRUE(memcmp(source + CONSTBUFFER_CONTENT_OFFSET, content->buffer, content->size) == 0);

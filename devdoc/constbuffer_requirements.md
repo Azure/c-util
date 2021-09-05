@@ -1,6 +1,4 @@
-ConstBuffer Requirements
-================
-
+# ConstBuffer Requirements
 
 ## Overview
 
@@ -13,13 +11,14 @@ The content of a `CONSTBUFFER_HANDLE` can be serialized and deserialized to a bu
 |-------------|---------|--------|-------------|
 | Content     | version | size   | content     |
 
-
 ## References
+
 [refcount](../inc/refcount.h)
 
 [buffer](buffer_requirements.md)
 
 ## Exposed API
+
 ```c
 /*this is the handle*/
 typedef struct CONSTBUFFER_HANDLE_DATA_TAG* CONSTBUFFER_HANDLE;
@@ -28,13 +27,13 @@ typedef struct CONSTBUFFER_HANDLE_DATA_TAG* CONSTBUFFER_HANDLE;
 typedef struct CONSTBUFFER_TAG
 {
     const unsigned char* buffer;
-    size_t size;
+    uint32_t size;
 } CONSTBUFFER;
 
 typedef void(*CONSTBUFFER_CUSTOM_FREE_FUNC)(void* context);
 
 /*what function should CONSTBUFFER_HANDLE_to_buffer use to allocate the returned serialized form. NULL means malloc from gballoc_hl_malloc_redirect.h*/
-typedef void*(*CONSTBUFFER_to_buffer_alloc)(size_t size);
+typedef void*(*CONSTBUFFER_to_buffer_alloc)(uint32_t size);
 
 #define CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_VALUES \
     CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_OK, \
@@ -52,18 +51,18 @@ MU_DEFINE_ENUM(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZ
 
 MOCKABLE_INTERFACE(constbuffer,
     /*this creates a new constbuffer from a memory area*/
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, size_t, size),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, uint32_t, size),
 
     /*this creates a new constbuffer from an existing BUFFER_HANDLE*/
     FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, size_t, size),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, uint32_t, size),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, size_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size),
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size),
 
     FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle),
 
@@ -83,10 +82,12 @@ MOCKABLE_INTERFACE(constbuffer,
 )
 ```
 
-###  CONSTBUFFER_Create
+### CONSTBUFFER_Create
+
 ```c
-MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, size_t, size);
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, uint32_t, size);
 ```
+
 **SRS_CONSTBUFFER_02_001: [** If `source` is NULL and `size` is different than 0 then CONSTBUFFER_Create shall fail and return NULL. **]**
 
 **SRS_CONSTBUFFER_02_002: [** Otherwise, `CONSTBUFFER_Create` shall create a copy of the memory area pointed to by `source` having `size` bytes. **]**
@@ -98,9 +99,11 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*
 **SRS_CONSTBUFFER_02_005: [** The non-NULL handle returned by `CONSTBUFFER_Create` shall have its ref count set to "1". **]** 
 
 ### CONSTBUFFER_CreateFromBuffer
+
 ```c
 MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer);
 ```
+
 **SRS_CONSTBUFFER_02_006: [** If `buffer` is NULL then `CONSTBUFFER_CreateFromBuffer` shall fail and return NULL. **]**
 
 **SRS_CONSTBUFFER_02_007: [** Otherwise, `CONSTBUFFER_CreateFromBuffer` shall copy the content of `buffer`. **]**
@@ -112,8 +115,9 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HAN
 **SRS_CONSTBUFFER_02_010: [** The non-NULL handle returned by `CONSTBUFFER_CreateFromBuffer` shall have its ref count set to "1". **]** 
 
 ### CONSTBUFFER_CreateWithMoveMemory
+
 ```c
-MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, size_t, size);
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, uint32_t, size);
 ```
 
 `CONSTBUFFER_CreateWithMoveMemory` creates a CONST buffer with move semantics for the memory given as argument (if succesfull, the const buffer owns the memory from that point on).
@@ -132,7 +136,7 @@ The memory is assumed to be freeable by a call to `free`.
 ### CONSTBUFFER_CreateWithCustomFree
 
 ```c
-MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, size_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext);
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext);
 ```
 
 `CONSTBUFFER_CreateWithCustomFree` creates a CONST buffer with move semantics for the memory given as argument (if succesfull, the const buffer owns the memory from that point on).
@@ -155,8 +159,9 @@ The memory has to be free by calling the custom free function passed as argument
 **SRS_CONSTBUFFER_01_011: [** If any error occurs, `CONSTBUFFER_CreateWithMoveMemory` shall fail and return NULL. **]**
 
 ### CONSTBUFFER_CreateFromOffsetAndSize
-```c 
-MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
+
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size)
 ```
 
 Given an existing `handle` `CONSTBUFFER_CreateFromOffsetAndSize` creates another `CONSTBUFFER_HANDLE` from `size` bytes  `handle` starting at `offset`.
@@ -178,8 +183,9 @@ Given an existing `handle` `CONSTBUFFER_CreateFromOffsetAndSize` creates another
 **SRS_CONSTBUFFER_02_032: [** If there are any failures then `CONSTBUFFER_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
 
 ### CONSTBUFFER_CreateFromOffsetAndSizeWithCopy
+
 ```c
-FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
+FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size)
 ```
 
 `CONSTBUFFER_CreateFromOffsetAndSizeWithCopy` creates a new CONSTBUFFER starting with the memory at `offset` in `handle` and having `size` bytes by copying (`memcpy`) those bytes. This creates a new `CONSTBUFFER_HANDLE` with its ref count set to 1.
@@ -198,22 +204,22 @@ FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONS
 
 **SRS_CONSTBUFFER_02_040: [** If there are any failures then `CONSTBUFFER_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
 
-
-
-
-
 ### CONSTBUFFER_IncRef
+
 ```c
 MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle);
 ```
+
 **SRS_CONSTBUFFER_02_013: [** If `constbufferHandle` is NULL then `CONSTBUFFER_IncRef` shall return. **]**
 
 **SRS_CONSTBUFFER_02_014: [** Otherwise, `CONSTBUFFER_IncRef` shall increment the reference count. **]**
 
 ### CONSTBUFFER_DecRef
+
 ```c
 MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHandle);
 ```
+
 **SRS_CONSTBUFFER_02_015: [** If `constbufferHandle` is NULL then `CONSTBUFFER_DecRef` shall do nothing. **]**
 
 **SRS_CONSTBUFFER_02_016: [** Otherwise, `CONSTBUFFER_DecRef` shall decrement the refcount on the `constbufferHandle` handle. **]**
@@ -225,14 +231,17 @@ MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHan
 **SRS_CONSTBUFFER_02_024: [** If the `constbufferHandle` was created by calling `CONSTBUFFER_CreateFromOffsetAndSize` then `CONSTBUFFER_DecRef` shall decrement the ref count of the original `handle` passed to `CONSTBUFFER_CreateFromOffsetAndSize`. **]**
 
 ### CONSTBUFFER_GetContent
+
 ```c
 MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle);
 ```
+
 **SRS_CONSTBUFFER_02_011: [** If `constbufferHandle` is NULL then CONSTBUFFER_GetContent shall return NULL. **]**
 
 **SRS_CONSTBUFFER_02_012: [** Otherwise, `CONSTBUFFER_GetContent` shall return a `const CONSTBUFFER*` that matches byte by byte the original bytes used to created the const buffer and has the same length. **]**
 
 ### CONSTBUFFER_HANDLE_contain_same
+
 ```c
 MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right);
 ```
@@ -252,6 +261,7 @@ MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, l
 **SRS_CONSTBUFFER_02_023: [** `CONSTBUFFER_HANDLE_contain_same` shall return `true`. **]**
 
 ### CONSTBUFFER_get_serialization_size
+
 ```c
 MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_get_serialization_size, CONSTBUFFER_HANDLE, source)
 ```
@@ -264,8 +274,8 @@ MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_get_serialization_size, CONSTBUFFER_HA
 
 **SRS_CONSTBUFFER_02_043: [** Otherwise `CONSTBUFFER_get_serialization_size` shall succeed and return `sizeof(uint8_t)` + `sizeof(uint32_t)` + `source`'s `size`. **]**
 
-
 ### CONSTBUFFER_to_buffer
+
 ```c
 MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_to_buffer, CONSTBUFFER_HANDLE, source, CONSTBUFFER_to_buffer_alloc, alloc, void*, alloc_context, uint32_t*, size),
 ```
@@ -290,8 +300,8 @@ MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_to_buffer, CONSTBUFFER_HANDLE, s
 
 **SRS_CONSTBUFFER_02_054: [** If there are any failures then `CONSTBUFFER_to_buffer` shall fail and return `NULL`. **]**
 
-
 ### CONSTBUFFER_to_fixed_size_buffer
+
 ```c
 CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT CONSTBUFFER_to_fixed_size_buffer(CONSTBUFFER_HANDLE source, unsigned char* destination, uint32_t destination_size, uint32_t* serialized_size)
 ```
@@ -317,6 +327,7 @@ CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT CONSTBUFFER_to_fixed_size_buffer(CONSTBU
 **SRS_CONSTBUFFER_02_074: [** If there are any failures then `CONSTBUFFER_to_fixed_size_buffer` shall fail and return `CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_ERROR`. **]**
 
 ### CONSTBUFFER_from_buffer
+
 ```c
 CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* source, uint32_t size, uint32_t* consumed, CONSTBUFFER_HANDLE* destination)
 ```
@@ -344,4 +355,3 @@ CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* sour
 **SRS_CONSTBUFFER_02_072: [** `CONSTBUFFER_from_buffer` shall succeed, write in `consumed` the total number of consumed bytes from `source`, write in `destination` the constructed `CONSTBUFFER_HANDLE` and return `CONSTBUFFER_FROM_BUFFER_RESULT_OK`. **]**
 
 **SRS_CONSTBUFFER_02_073: [** If there are any failures then shall fail and return `CONSTBUFFER_FROM_BUFFER_RESULT_ERROR`. **]**
-
