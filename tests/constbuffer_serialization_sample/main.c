@@ -10,7 +10,7 @@
 /*below sample contains a working code of how to serialize consecutive CONSTBUFFER_HANDLEs in an ever-growing array using CONSTBUFFER_to_buffer*/
 
 /*forward*/
-static void* awesome_alloc(uint32_t size, void* context);
+static void* awesome_alloc(size_t size, void* context);
 typedef struct AWESOME_ALLOC_CONTEXT_TAG
 {
     unsigned char* buffer;
@@ -63,11 +63,11 @@ int main(void)
 
 #define LOCALMAX(x, y) ((x)<(y)?(y):(x))
 
-static void* awesome_alloc(uint32_t size, void* context)
+static void* awesome_alloc(size_t size, void* context)
 {
     /*here context contains a buffer that *might* grow*/
     AWESOME_ALLOC_CONTEXT* awesome_alloc_context = context;
-    (void)printf("requesting %" PRIu32 " size where buffer = %p, capacity = %zu, size = %zu\n",
+    (void)printf("requesting %zu size where buffer = %p, capacity = %zu, size = %zu\n",
         size, awesome_alloc_context->buffer, awesome_alloc_context->capacity, awesome_alloc_context->size);
     if (awesome_alloc_context->size + size <= awesome_alloc_context->capacity)
     {

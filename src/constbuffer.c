@@ -425,7 +425,7 @@ uint32_t CONSTBUFFER_get_serialization_size(CONSTBUFFER_HANDLE source)
     return result;
 }
 
-static void* calls_malloc(uint32_t size, void* context)
+static void* calls_malloc(size_t size, void* context)
 {
     (void)context;
     return malloc(size);

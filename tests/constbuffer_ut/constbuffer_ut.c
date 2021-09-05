@@ -24,7 +24,7 @@ void* my_gballoc_malloc(size_t size)
     return real_gballoc_ll_malloc(size);
 }
 
-void* my_gballoc_malloc_with_context(uint32_t size, void* context)
+void* my_gballoc_malloc_with_context(size_t size, void* context)
 {
     (void)context;
     return real_gballoc_ll_malloc(size);
@@ -41,7 +41,7 @@ void my_gballoc_free(void* ptr)
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
-MOCKABLE_FUNCTION(, void*, test_alloc, uint32_t, size, void*, context);
+MOCKABLE_FUNCTION(, void*, test_alloc, size_t, size, void*, context);
 
 #undef ENABLE_MOCKS
 
@@ -111,7 +111,7 @@ TEST_DEFINE_ENUM_TYPE(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RE
 IMPLEMENT_UMOCK_C_ENUM_TYPE(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_VALUES)
 
 #define TEST_ALLOC_CONTEXT (void*)0x9874387 /*random typing*/
-static void* test_alloc_impl(uint32_t size, void* context)
+static void* test_alloc_impl(size_t size, void* context)
 {
     ASSERT_ARE_EQUAL(void_ptr, TEST_ALLOC_CONTEXT, context);
     return my_gballoc_malloc(size);

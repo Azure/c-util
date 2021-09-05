@@ -35,7 +35,7 @@ typedef struct CONSTBUFFER_TAG
 typedef void(*CONSTBUFFER_CUSTOM_FREE_FUNC)(void* context);
 
 /*what function should CONSTBUFFER_HANDLE_to_buffer use to allocate the returned serialized form. NULL means malloc from gballoc_hl_malloc_redirect.h of this lib.*/
-typedef void*(*CONSTBUFFER_to_buffer_alloc)(uint32_t size, void* context);
+typedef void*(*CONSTBUFFER_to_buffer_alloc)(size_t size, void* context);
 
 #define CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_VALUES \
     CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_OK, \
