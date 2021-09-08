@@ -27,7 +27,11 @@
         CONSTBUFFER_GetContent, \
         CONSTBUFFER_DecRef, \
         CONSTBUFFER_HANDLE_contain_same, \
-        CONSTBUFFER_CreateFromOffsetAndSize \
+        CONSTBUFFER_CreateFromOffsetAndSize, \
+        CONSTBUFFER_get_serialization_size, \
+        CONSTBUFFER_to_buffer, \
+        CONSTBUFFER_to_fixed_size_buffer, \
+        CONSTBUFFER_from_buffer \
 )
 
 #ifdef __cplusplus
@@ -63,7 +67,7 @@ CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateFromOffsetAndSize(CONSTBUFFER_HANDLE h
 
 uint32_t real_CONSTBUFFER_get_serialization_size(CONSTBUFFER_HANDLE source);
 
-unsigned char* real_CONSTBUFFER_to_buffer(CONSTBUFFER_HANDLE source, CONSTBUFFER_to_buffer_alloc alloc, uint32_t* size);
+unsigned char* real_CONSTBUFFER_to_buffer(CONSTBUFFER_HANDLE source, CONSTBUFFER_to_buffer_alloc alloc, void* alloc_context, uint32_t* serialized_size);
 
 CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT real_CONSTBUFFER_to_fixed_size_buffer(CONSTBUFFER_HANDLE source, unsigned char* destination, uint32_t destination_size, uint32_t* serialized_size);
 
