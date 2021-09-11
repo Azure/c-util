@@ -15,6 +15,7 @@
 
 MU_DEFINE_ENUM(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
+typedef bool (*INTERLOCKED_COMPARE_EXCHANGE_IF)(int32_t target, int32_t exchange);
 typedef bool (*INTERLOCKED_COMPARE_EXCHANGE_64_IF)(int64_t target, int64_t exchange);
 
 MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_Add64WithCeiling, int64_t volatile_atomic*, Addend, int64_t, Ceiling, int64_t, Value, int64_t*, originalAddend)(INTERLOCKED_HL_OK, INTERLOCKED_HL_ERROR);
@@ -22,6 +23,7 @@ MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_SetAndWake
 MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_SetAndWakeAll, int32_t volatile_atomic*, address, int32_t, value)(INTERLOCKED_HL_OK, INTERLOCKED_HL_ERROR);
 MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForValue, int32_t volatile_atomic*, address, int32_t, value, uint32_t, milliseconds)(INTERLOCKED_HL_OK, INTERLOCKED_HL_ERROR);
 MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForNotValue, int32_t volatile_atomic*, address, int32_t, value, uint32_t, milliseconds)(INTERLOCKED_HL_OK, INTERLOCKED_HL_ERROR);
+MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_CompareExchangeIf, int32_t volatile_atomic*, target, int32_t, exchange, INTERLOCKED_COMPARE_EXCHANGE_IF, compare, int32_t*, original_target)(INTERLOCKED_HL_OK, INTERLOCKED_HL_ERROR);
 MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_CompareExchange64If, int64_t volatile_atomic*, target, int64_t, exchange, INTERLOCKED_COMPARE_EXCHANGE_64_IF, compare, int64_t*, original_target)(INTERLOCKED_HL_OK, INTERLOCKED_HL_ERROR);
 ```
 
@@ -93,6 +95,32 @@ MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForNot
 
 **SRS_INTERLOCKED_HL_42_007: [** If `wait_on_address` fails, `InterlockedHL_WaitForNotValue` shall fail and return `INTERLOCKED_HL_ERROR`. **]**
 
+### InterlockedHL_CompareExchangeIf
+```c
+MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_CompareExchangeIf, int32_t volatile_atomic*, target, int32_t, exchange, INTERLOCKED_COMPARE_EXCHANGE_32_IF, compare, int32_t*, original_target)(INTERLOCKED_HL_OK, INTERLOCKED_HL_ERROR);
+```
+
+`InterlockedHL_CompareExchangeIf` attempts to change `target` to `exchange` if `compare` that takes the value of `target` and `exchange` evaluates to `true`. `InterlockedHL_CompareExchangeIf` will write `original_target` with the initial value of `target`.
+If `target` changes while the function executes then `InterlockedHL_CompareExchangeIf` returns `INTERLOCKED_HL_CHANGED` and the calling code can decide to retry/timeout/exponential backoff (for example).
+
+**SRS_INTERLOCKED_HL_01_009: [** If `target` is `NULL` then `InterlockedHL_CompareExchangeIf` shall return fail and return `INTERLOCKED_HL_ERROR`. **]**
+
+**SRS_INTERLOCKED_HL_01_010: [** If `compare` is `NULL` then `InterlockedHL_CompareExchangeIf` shall return fail and return `INTERLOCKED_HL_ERROR`. **]**
+
+**SRS_INTERLOCKED_HL_01_011: [** If `original_target` is `NULL` then `InterlockedHL_CompareExchangeIf` shall return fail and return `INTERLOCKED_HL_ERROR`. **]**
+
+**SRS_INTERLOCKED_HL_01_012: [** `InterlockedHL_CompareExchangeIf` shall acquire the initial value of `target`. **]**
+
+**SRS_INTERLOCKED_HL_01_013: [** If `compare`(`target`, `exchange`) returns `true` then `InterlockedHL_CompareExchangeIf` shall exchange `target` with `exchange`. **]**
+
+**SRS_INTERLOCKED_HL_01_014: [** If `target` changed meanwhile then `InterlockedHL_CompareExchangeIf` shall return `INTERLOCKED_HL_CHANGED` and shall not peform any exchange of values. **]**
+
+**SRS_INTERLOCKED_HL_01_015: [** If `target` did not change meanwhile then `InterlockedHL_CompareExchangeIf` shall return `INTERLOCKED_HL_OK` and shall peform the exchange of values. **]**
+
+**SRS_INTERLOCKED_HL_01_017: [** If `compare` returns `false` then  `InterlockedHL_CompareExchangeIf` shall not perform any exchanges and return `INTERLOCKED_HL_OK`. **]**
+
+**SRS_INTERLOCKED_HL_01_016: [** `original_target` shall be set to the original value of `target`. **]**
+
 ### InterlockedHL_CompareExchange64If
 ```c
 MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_CompareExchange64If, int64_t volatile_atomic*, target, int64_t, exchange, INTERLOCKED_COMPARE_EXCHANGE_64_IF, compare, int64_t*, original_target)(INTERLOCKED_HL_OK, INTERLOCKED_HL_ERROR);
@@ -111,9 +139,9 @@ If `target` changes while the function executes then `InterlockedHL_CompareExcha
 
 **SRS_INTERLOCKED_HL_02_012: [** If `compare`(`target`, `exchange`) returns `true` then `InterlockedHL_CompareExchange64If` shall exchange `target` with `exchange`. **]**
 
-**SRS_INTERLOCKED_HL_02_013: [** If `target` changed meanwhile then `InterlockedHL_CompareExchange64If` shall return return `INTERLOCKED_HL_CHANGED` and shall not peform any exchange of values. **]**
+**SRS_INTERLOCKED_HL_02_013: [** If `target` changed meanwhile then `InterlockedHL_CompareExchange64If` shall return `INTERLOCKED_HL_CHANGED` and shall not peform any exchange of values. **]**
 
-**SRS_INTERLOCKED_HL_02_014: [** If `target` did not change meanwhile then `InterlockedHL_CompareExchange64If` shall return return `INTERLOCKED_HL_OK` and shall peform the exchange of values. **]**
+**SRS_INTERLOCKED_HL_02_014: [** If `target` did not change meanwhile then `InterlockedHL_CompareExchange64If` shall return `INTERLOCKED_HL_OK` and shall peform the exchange of values. **]**
 
 **SRS_INTERLOCKED_HL_02_015: [** If `compare` returns `false` then  `InterlockedHL_CompareExchange64If` shall not perform any exchanges and return `INTERLOCKED_HL_OK`. **]**
 

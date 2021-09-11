@@ -49,7 +49,10 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 #define ENABLE_MOCKS
 #include "umock_c/umock_c_prod.h"
 
-MOCK_FUNCTION_WITH_CODE(, bool, TEST_IS_GREATER, int64_t, original_target, int64_t, exchange)
+MOCK_FUNCTION_WITH_CODE(, bool, TEST_IS_GREATER_32, int32_t, original_target, int32_t, exchange)
+MOCK_FUNCTION_END(original_target < exchange)
+
+MOCK_FUNCTION_WITH_CODE(, bool, TEST_IS_GREATER_64, int64_t, original_target, int64_t, exchange)
 MOCK_FUNCTION_END(original_target<exchange)
 #undef ENABLE_MOCKS
 
@@ -515,15 +518,157 @@ TEST_FUNCTION(when_the_wait_on_address_fails_InterlockedHL_WaitForNotValue_also_
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_ERROR, result);
 }
 
+/* InterlockedHL_CompareExchangeIf */
+
+/* Tests_SRS_INTERLOCKED_HL_01_009: [ If target is NULL then InterlockedHL_CompareExchangeIf shall return fail and return INTERLOCKED_HL_ERROR. ]*/
+TEST_FUNCTION(InterlockedHL_CompareExchangeIf_with_target_NULL_fails)
+{
+    ///arrange
+    int32_t original_target;
+
+    ///act
+    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchangeIf(NULL, 1, TEST_IS_GREATER_32, &original_target);
+
+    ///assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_ERROR, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+/* Tests_SRS_INTERLOCKED_HL_01_010: [ If compare is NULL then InterlockedHL_CompareExchangeIf shall return fail and return INTERLOCKED_HL_ERROR. ]*/
+TEST_FUNCTION(InterlockedHL_CompareExchangeIf_with_compare_NULL_fails)
+{
+    ///arrange
+    int32_t original_target;
+    volatile_atomic int32_t target;
+    (void)interlocked_exchange(&target, 34);
+    umock_c_reset_all_calls();
+
+    ///act
+    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchangeIf(&target, 1, NULL, &original_target);
+
+    ///assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_ERROR, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+/* Tests_SRS_INTERLOCKED_HL_01_011: [ If original_target is NULL then InterlockedHL_CompareExchangeIf shall return fail and return INTERLOCKED_HL_ERROR. ]*/
+TEST_FUNCTION(InterlockedHL_CompareExchangeIf_with_original_target_NULL_fails)
+{
+    ///arrange
+    volatile_atomic int32_t target;
+    (void)interlocked_exchange(&target, 34);
+    umock_c_reset_all_calls();
+
+    ///act
+
+    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchangeIf(&target, 1, TEST_IS_GREATER_32, NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_ERROR, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+/* Tests_SRS_INTERLOCKED_HL_01_012: [ InterlockedHL_CompareExchangeIf shall acquire the initial value of target. ]*/
+/* Tests_SRS_INTERLOCKED_HL_01_013: [ If compare(target, exchange) returns true then InterlockedHL_CompareExchangeIf shall exchange target with exchange. ]*/
+/* Tests_SRS_INTERLOCKED_HL_01_015: [ If target did not change meanwhile then InterlockedHL_CompareExchangeIf shall return INTERLOCKED_HL_OK and shall peform the exchange of values. ]*/
+/* Tests_SRS_INTERLOCKED_HL_01_016: [ original_target shall be set to the original value of target. ]*/
+TEST_FUNCTION(InterlockedHL_CompareExchangeIf_with_compare_true_changed_false_succeeds)
+{
+    ///arrange
+    int32_t original_target;
+    volatile_atomic int32_t target;
+    (void)interlocked_exchange(&target, 34);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(interlocked_add(&target, 0));
+    STRICT_EXPECTED_CALL(TEST_IS_GREATER_32(34, 99));
+    STRICT_EXPECTED_CALL(interlocked_compare_exchange(&target, 99, 34));
+
+    ///act
+
+    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchangeIf(&target, 99, TEST_IS_GREATER_32, &original_target);
+
+    ///assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
+    ASSERT_ARE_EQUAL(int32_t, 34, original_target);
+    ASSERT_ARE_EQUAL(int32_t, 99, target);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+/* Tests_SRS_INTERLOCKED_HL_01_012: [ InterlockedHL_CompareExchangeIf shall acquire the initial value of target. ]*/
+/* Tests_SRS_INTERLOCKED_HL_01_013: [ If compare(target, exchange) returns true then InterlockedHL_CompareExchangeIf shall exchange target with exchange. ]*/
+/* Tests_SRS_INTERLOCKED_HL_01_014: [ If target changed meanwhile then InterlockedHL_CompareExchangeIf shall return INTERLOCKED_HL_CHANGED and shall not peform any exchange of values. ]*/
+/* Tests_SRS_INTERLOCKED_HL_01_016: [ original_target shall be set to the original value of target. ]*/
+TEST_FUNCTION(InterlockedHL_CompareExchangeIf_with_compare_true_changed_true_succeeds)
+{
+    ///arrange
+    int32_t original_target;
+    volatile_atomic int32_t target;
+    (void)interlocked_exchange(&target, 34);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(interlocked_add(&target, 0));
+    STRICT_EXPECTED_CALL(TEST_IS_GREATER_32(34, 99));
+    STRICT_EXPECTED_CALL(interlocked_compare_exchange(&target, 99, 34))
+        .SetReturn(35);
+
+    ///act
+    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchangeIf(&target, 99, TEST_IS_GREATER_32, &original_target);
+
+    ///assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_CHANGED, result);
+    ASSERT_ARE_EQUAL(int32_t, 34, original_target);
+    ASSERT_ARE_EQUAL(int32_t, 34, target);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+/* Tests_SRS_INTERLOCKED_HL_01_012: [ InterlockedHL_CompareExchangeIf shall acquire the initial value of target. ]*/
+/* Tests_SRS_INTERLOCKED_HL_01_017: [ If compare returns false then  InterlockedHL_CompareExchangeIf shall not perform any exchanges and return INTERLOCKED_HL_OK. ]*/
+/* Tests_SRS_INTERLOCKED_HL_01_016: [ original_target shall be set to the original value of target. ]*/
+TEST_FUNCTION(InterlockedHL_CompareExchangeIf_with_compare_false_succeeds)
+{
+    ///arrange
+    int32_t original_target;
+    volatile_atomic int32_t target;
+    (void)interlocked_exchange(&target, 34);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(interlocked_add(&target, 0));
+    STRICT_EXPECTED_CALL(TEST_IS_GREATER_32(34, 33)); /*33 is smaller, no exchanges happen*/
+
+    ///act
+
+    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchangeIf(&target, 33, TEST_IS_GREATER_32, &original_target);
+
+    ///assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
+    ASSERT_ARE_EQUAL(int32_t, 34, original_target);
+    ASSERT_ARE_EQUAL(int32_t, 34, target);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+/* InterlockedHL_CompareExchange64If */
 
 /*Tests_SRS_INTERLOCKED_HL_02_008: [ If target is NULL then InterlockedHL_CompareExchange64If shall return fail and return INTERLOCKED_HL_ERROR. ]*/
-TEST_FUNCTION(interlocked_compare_exchange_64If_with_target_NULL_fails)
+TEST_FUNCTION(InterlockedHL_CompareExchange64If_with_target_NULL_fails)
 {
     ///arrange
     int64_t original_target;
 
     ///act
-    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchange64If(NULL, 1, TEST_IS_GREATER, &original_target);
+    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchange64If(NULL, 1, TEST_IS_GREATER_64, &original_target);
 
     ///assert
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_ERROR, result);
@@ -533,7 +678,7 @@ TEST_FUNCTION(interlocked_compare_exchange_64If_with_target_NULL_fails)
 }
 
 /*Tests_SRS_INTERLOCKED_HL_02_009: [ If compare is NULL then InterlockedHL_CompareExchange64If shall return fail and return INTERLOCKED_HL_ERROR. ]*/
-TEST_FUNCTION(interlocked_compare_exchange_64If_with_compare_NULL_fails)
+TEST_FUNCTION(InterlockedHL_CompareExchange64If_with_compare_NULL_fails)
 {
     ///arrange
     int64_t original_target;
@@ -552,7 +697,7 @@ TEST_FUNCTION(interlocked_compare_exchange_64If_with_compare_NULL_fails)
 }
 
 /*Tests_SRS_INTERLOCKED_HL_02_010: [ If original_target is NULL then InterlockedHL_CompareExchange64If shall return fail and return INTERLOCKED_HL_ERROR. ]*/
-TEST_FUNCTION(interlocked_compare_exchange_64If_with_original_target_NULL_fails)
+TEST_FUNCTION(InterlockedHL_CompareExchange64If_with_original_target_NULL_fails)
 {
     ///arrange
     volatile_atomic int64_t target;
@@ -561,7 +706,7 @@ TEST_FUNCTION(interlocked_compare_exchange_64If_with_original_target_NULL_fails)
 
     ///act
 
-    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchange64If(&target, 1, TEST_IS_GREATER, NULL);
+    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchange64If(&target, 1, TEST_IS_GREATER_64, NULL);
 
     ///assert
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_ERROR, result);
@@ -572,9 +717,9 @@ TEST_FUNCTION(interlocked_compare_exchange_64If_with_original_target_NULL_fails)
 
 /*Tests_SRS_INTERLOCKED_HL_02_011: [ InterlockedHL_CompareExchange64If shall acquire the initial value of target. ]*/
 /*Tests_SRS_INTERLOCKED_HL_02_012: [ If compare(target, exchange) returns true then InterlockedHL_CompareExchange64If shall exchange target with exchange. ]*/
-/*Tests_SRS_INTERLOCKED_HL_02_014: [ If target did not change meanwhile then InterlockedHL_CompareExchange64If shall return return INTERLOCKED_HL_OK and shall peform the exchange of values. ]*/
+/*Tests_SRS_INTERLOCKED_HL_02_014: [ If target did not change meanwhile then InterlockedHL_CompareExchange64If shall return INTERLOCKED_HL_OK and shall peform the exchange of values. ]*/
 /*Tests_SRS_INTERLOCKED_HL_02_016: [ original_target shall be set to the original value of target. ]*/
-TEST_FUNCTION(interlocked_compare_exchange_64If_with_compare_true_changed_false_succeeds)
+TEST_FUNCTION(InterlockedHL_CompareExchange64If_with_compare_true_changed_false_succeeds)
 {
     ///arrange
     int64_t original_target;
@@ -583,12 +728,12 @@ TEST_FUNCTION(interlocked_compare_exchange_64If_with_compare_true_changed_false_
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(interlocked_add_64(&target, 0));
-    STRICT_EXPECTED_CALL(TEST_IS_GREATER(34, 99));
+    STRICT_EXPECTED_CALL(TEST_IS_GREATER_64(34, 99));
     STRICT_EXPECTED_CALL(interlocked_compare_exchange_64(&target, 99, 34));
 
     ///act
 
-    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchange64If(&target, 99, TEST_IS_GREATER, &original_target);
+    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchange64If(&target, 99, TEST_IS_GREATER_64, &original_target);
 
     ///assert
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
@@ -600,10 +745,10 @@ TEST_FUNCTION(interlocked_compare_exchange_64If_with_compare_true_changed_false_
 }
 
 /*Tests_SRS_INTERLOCKED_HL_02_011: [ InterlockedHL_CompareExchange64If shall acquire the initial value of target. ]*/
-/*Tests_SRS_INTERLOCKED_HL_02_015: [ If compare returns false then InterlockedHL_CompareExchange64If shall not perform any exchanges and return INTERLOCKED_HL_OK. ]*/
-/*Tests_SRS_INTERLOCKED_HL_02_013: [ If target changed meanwhile then InterlockedHL_CompareExchange64If shall return return INTERLOCKED_HL_CHANGED and shall not peform any exchange of values. ]*/
+/*Tests_SRS_INTERLOCKED_HL_02_012: [ If compare(target, exchange) returns true then InterlockedHL_CompareExchange64If shall exchange target with exchange. ]*/
+/*Tests_SRS_INTERLOCKED_HL_02_013: [ If target changed meanwhile then InterlockedHL_CompareExchange64If shall return INTERLOCKED_HL_CHANGED and shall not peform any exchange of values. ]*/
 /*Tests_SRS_INTERLOCKED_HL_02_016: [ original_target shall be set to the original value of target. ]*/
-TEST_FUNCTION(interlocked_compare_exchange_64If_with_compare_true_changed_true_succeeds)
+TEST_FUNCTION(InterlockedHL_CompareExchange64If_with_compare_true_changed_true_succeeds)
 {
     ///arrange
     int64_t original_target;
@@ -612,12 +757,12 @@ TEST_FUNCTION(interlocked_compare_exchange_64If_with_compare_true_changed_true_s
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(interlocked_add_64(&target, 0));
-    STRICT_EXPECTED_CALL(TEST_IS_GREATER(34, 99));
+    STRICT_EXPECTED_CALL(TEST_IS_GREATER_64(34, 99));
     STRICT_EXPECTED_CALL(interlocked_compare_exchange_64(&target, 99, 34))
         .SetReturn(35);
 
     ///act
-    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchange64If(&target, 99, TEST_IS_GREATER, &original_target);
+    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchange64If(&target, 99, TEST_IS_GREATER_64, &original_target);
 
     ///assert
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_CHANGED, result);
@@ -629,10 +774,10 @@ TEST_FUNCTION(interlocked_compare_exchange_64If_with_compare_true_changed_true_s
 }
 
 /*Tests_SRS_INTERLOCKED_HL_02_011: [ InterlockedHL_CompareExchange64If shall acquire the initial value of target. ]*/
-/*Tests_SRS_INTERLOCKED_HL_02_012: [ If compare(target, exchange) returns true then InterlockedHL_CompareExchange64If shall exchange target with exchange. ]*/
-/*Tests_SRS_INTERLOCKED_HL_02_013: [ If target changed meanwhile then InterlockedHL_CompareExchange64If shall return return INTERLOCKED_HL_CHANGED and shall not peform any exchange of values. ]*/
+/*Tests_SRS_INTERLOCKED_HL_02_015: [ If compare returns false then  InterlockedHL_CompareExchange64If shall not perform any exchanges and return INTERLOCKED_HL_OK. ]*/
+/*Tests_SRS_INTERLOCKED_HL_02_013: [ If target changed meanwhile then InterlockedHL_CompareExchange64If shall return INTERLOCKED_HL_CHANGED and shall not peform any exchange of values. ]*/
 /*Tests_SRS_INTERLOCKED_HL_02_016: [ original_target shall be set to the original value of target. ]*/
-TEST_FUNCTION(interlocked_compare_exchange_64If_with_compare_false_succeeds)
+TEST_FUNCTION(InterlockedHL_CompareExchange64If_with_compare_false_succeeds)
 {
     ///arrange
     int64_t original_target;
@@ -641,11 +786,11 @@ TEST_FUNCTION(interlocked_compare_exchange_64If_with_compare_false_succeeds)
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(interlocked_add_64(&target, 0));
-    STRICT_EXPECTED_CALL(TEST_IS_GREATER(34, 33)); /*33 is smaller, no exchanges happen*/
+    STRICT_EXPECTED_CALL(TEST_IS_GREATER_64(34, 33)); /*33 is smaller, no exchanges happen*/
 
     ///act
 
-    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchange64If(&target, 33, TEST_IS_GREATER, &original_target);
+    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchange64If(&target, 33, TEST_IS_GREATER_64, &original_target);
 
     ///assert
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
@@ -655,6 +800,9 @@ TEST_FUNCTION(interlocked_compare_exchange_64If_with_compare_false_succeeds)
 
     ///clean
 }
+
+#if 0
+/* InterlockedHL_SetAndWake */
 
 /*Tests_SRS_INTERLOCKED_HL_02_020: [ If address is NULL then InterlockedHL_SetAndWake shall fail and return INTERLOCKED_HL_ERROR. ]*/
 TEST_FUNCTION(InterlockedHL_SetAndWake_with_address_NULL_fails)
@@ -721,5 +869,6 @@ TEST_FUNCTION(InterlockedHL_SetAndWakeAll_succeeds)
     ///assert
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
 }
+#endif
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
