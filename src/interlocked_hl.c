@@ -163,6 +163,53 @@ IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForNotVal
     return result;
 }
 
+IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_CompareExchangeIf, int32_t volatile_atomic*, target, int32_t, exchange, INTERLOCKED_COMPARE_EXCHANGE_IF, compare, int32_t*, original_target)
+{
+    INTERLOCKED_HL_RESULT result;
+    if (
+        /* Codes_SRS_INTERLOCKED_HL_01_009: [ If target is NULL then InterlockedHL_CompareExchangeIf shall return fail and return INTERLOCKED_HL_ERROR. ]*/
+        (target == NULL) ||
+        /* Codes_SRS_INTERLOCKED_HL_01_010: [ If compare is NULL then InterlockedHL_CompareExchangeIf shall return fail and return INTERLOCKED_HL_ERROR. ]*/
+        (compare == NULL) ||
+        /* Codes_SRS_INTERLOCKED_HL_01_011: [ If original_target is NULL then InterlockedHL_CompareExchangeIf shall return fail and return INTERLOCKED_HL_ERROR. ]*/
+        (original_target == NULL)
+        )
+    {
+        LogError("invalid arguments int64_t volatile_atomic* target=%p, int32_t exchange=%" PRId32 ", INTERLOCKED_COMPARE_EXCHANGE_IF compare=%p original_target=%p",
+            target, exchange, compare, original_target);
+        result = INTERLOCKED_HL_ERROR;
+    }
+    else
+    {
+        /* Codes_SRS_INTERLOCKED_HL_01_012: [ InterlockedHL_CompareExchangeIf shall acquire the initial value of target. ]*/
+        int32_t copyOfTarget = interlocked_add(target, 0);
+
+        /* Codes_SRS_INTERLOCKED_HL_01_013: [ If compare(target, exchange) returns true then InterlockedHL_CompareExchangeIf shall exchange target with exchange. ]*/
+        if (compare(copyOfTarget, exchange))
+        {
+            if (interlocked_compare_exchange(target, exchange, copyOfTarget) == copyOfTarget)
+            {
+                /* Codes_SRS_INTERLOCKED_HL_01_015: [ If target did not change meanwhile then InterlockedHL_CompareExchangeIf shall return INTERLOCKED_HL_OK and shall peform the exchange of values. ]*/
+                result = INTERLOCKED_HL_OK;
+            }
+            else
+            {
+                /* Codes_SRS_INTERLOCKED_HL_01_014: [ If target changed meanwhile then InterlockedHL_CompareExchangeIf shall return INTERLOCKED_HL_CHANGED and shall not peform any exchange of values. ]*/
+                result = INTERLOCKED_HL_CHANGED;
+            }
+        }
+        else
+        {
+            /* Codes_SRS_INTERLOCKED_HL_01_017: [ If compare returns false then  InterlockedHL_CompareExchangeIf shall not perform any exchanges and return INTERLOCKED_HL_OK. ]*/
+            result = INTERLOCKED_HL_OK;
+        }
+
+        /* Codes_SRS_INTERLOCKED_HL_01_016: [ original_target shall be set to the original value of target. ]*/
+        *original_target = copyOfTarget;
+    }
+    return result;
+}
+
 IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_CompareExchange64If, int64_t volatile_atomic*, target, int64_t, exchange, INTERLOCKED_COMPARE_EXCHANGE_64_IF, compare, int64_t*, original_target)
 {
     INTERLOCKED_HL_RESULT result;
@@ -175,7 +222,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_CompareExchan
         (original_target == NULL)
         )
     {
-        LogError("invalid arguments int64_t volatile_atomic* target=%p, int64_t exchange=%" PRId64 ", INTERLOCKED_COMPARE_EXCHANGE_IF compare=%p original_target=%p",
+        LogError("invalid arguments int64_t volatile_atomic* target=%p, int64_t exchange=%" PRId64 ", INTERLOCKED_COMPARE_EXCHANGE_64_IF compare=%p original_target=%p",
             target, exchange, compare, original_target);
         result = INTERLOCKED_HL_ERROR;
     }
@@ -187,8 +234,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_CompareExchan
         /*Codes_SRS_INTERLOCKED_HL_02_012: [ If compare(target, exchange) returns true then InterlockedHL_CompareExchange64If shall exchange target with exchange. ]*/
         if (compare(copyOfTarget, exchange))
         {
-            /*Codes_SRS_INTERLOCKED_HL_02_013: [ If target changed meanwhile then InterlockedHL_CompareExchange64If shall return return INTERLOCKED_HL_CHANGED and shall not peform any exchange of values. ]*/
-            /*Codes_SRS_INTERLOCKED_HL_02_014: [ If target did not change meanwhile then InterlockedHL_CompareExchange64If shall return return INTERLOCKED_HL_OK and shall peform the exchange of values. ]*/
+            /*Codes_SRS_INTERLOCKED_HL_02_013: [ If target changed meanwhile then InterlockedHL_CompareExchange64If shall return INTERLOCKED_HL_CHANGED and shall not peform any exchange of values. ]*/
+            /*Codes_SRS_INTERLOCKED_HL_02_014: [ If target did not change meanwhile then InterlockedHL_CompareExchange64If shall return INTERLOCKED_HL_OK and shall peform the exchange of values. ]*/
             if (interlocked_compare_exchange_64(target, exchange, copyOfTarget) == copyOfTarget)
             {
                 result = INTERLOCKED_HL_OK;
