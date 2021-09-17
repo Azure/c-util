@@ -34,6 +34,7 @@ void my_gballoc_free(void* ptr)
 
 #include "c_util/thandle.h"
 #include "thandle_user.h"
+#include "thandle_user_33_characters.h"
 #include "thandle_flex_user.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
@@ -1143,6 +1144,30 @@ TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_star_t1_not_NULL_and_star_t2_not_NULL
     ///clean
     THANDLE_DEC_REF(LL)(ll1);
 }
+
+#if defined(_DEBUG) || defined (DEBUG)
+TEST_FUNCTION(THANDLE_can_be_build_from_a_33_character_type)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    THANDLE(LL3456789012345678901234567890123) ll1 = ll33_create(2);
+    ASSERT_IS_NOT_NULL(ll1);
+    umock_c_reset_all_calls();
+
+    ///act
+    const char* name = ll33_get_name(ll1);
+
+    ///assert
+    /* the type is              LL3456789012345678901234567890123                                                                                                                          */
+    ASSERT_ARE_EQUAL(char_ptr, "LL34567890123456789012345678901", name); /*note how the name comes truncated due to only 32 characters existing in name. Of which 1 is '\0', the last one  */
+
+    ///clean
+    THANDLE_DEC_REF(LL3456789012345678901234567890123)(ll1);
+}
+#endif
+
+
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 

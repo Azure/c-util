@@ -9,12 +9,14 @@ ${theseTestsName}.c
 
 set(${theseTestsName}_c_files
 thandle_user.c
+thandle_user_33_characters.c
 thandle_flex_user.c
 )
 
 set(${theseTestsName}_h_files
 ../../inc/c_util/thandle.h
 thandle_user.h
+thandle_user_33_characters.h
 thandle_flex_user.h
 )
 
