@@ -37,8 +37,7 @@
 #define THANDLE_MACRO(T)                                \
     typedef const T* const volatile THANDLE(T);
 
-#define THANDLE_MAX_NAME_CHAR 32 /*maximum number of characters in a captured THANDLE name*/
-#define THANDLE_MIN(x,y) (((x)<(y))?(x):(y))
+#define THANDLE_MAX_NAME_CHAR 32 /*maximum number of characters in a captured THANDLE type name*/
 
 /*THANDLE carries a name field on debug builds only. Can be inspected with INSPECT function here in a debug environment.*/
 #if defined(_DEBUG) || defined(DEBUG) 
