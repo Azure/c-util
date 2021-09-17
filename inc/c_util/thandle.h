@@ -37,7 +37,20 @@
 #define THANDLE_MACRO(T)                                \
     typedef const T* const volatile THANDLE(T);
 
+#define THANDLE_MAX_NAME_CHAR 32 /*maximum number of characters in a captured THANDLE type name*/
+
+/*THANDLE carries a name field on debug builds only. Can be inspected with INSPECT function here in a debug environment.*/
+#if defined(_DEBUG) || defined(DEBUG) 
+#define THANDLE_DEBUG_EXTRA_FIELDS_NAME char, name[THANDLE_MAX_NAME_CHAR],
+/*destination is intended to be the field "name" from above*/
+#define THANDLE_DEBUG_COPY_NAME(T, destination) (void)snprintf(destination, THANDLE_MAX_NAME_CHAR, "%s", MU_TOSTRING(T));
+#else
+#define THANDLE_DEBUG_EXTRA_FIELDS_NAME  /*well - nothing*/
+#define THANDLE_DEBUG_COPY_NAME(T, destination) /*well - nothing*/
+#endif
+
 #define THANDLE_EXTRA_FIELDS(type) \
+    THANDLE_DEBUG_EXTRA_FIELDS_NAME \
     volatile_atomic int32_t, refCount, \
     void(*dispose)(type*) , \
 
@@ -111,6 +124,7 @@ static T* THANDLE_MALLOC(T)(void(*dispose)(T*))                                 
     else                                                                                                                                                            \
     {                                                                                                                                                               \
         /*Codes_SRS_THANDLE_02_014: [ THANDLE_MALLOC shall initialize the reference count to 1, store dispose and return a T* . ]*/                                 \
+        THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                              \
         handle_impl->dispose = dispose;                                                                                                                             \
         (void)interlocked_exchange(&handle_impl->refCount,1);                                                                                                       \
         result = &(handle_impl->data);                                                                                                                              \
@@ -150,6 +164,7 @@ static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(T)(void(*dispose)(T*), size_t extra_siz
         else                                                                                                                                                        \
         {                                                                                                                                                           \
             /*Codes_SRS_THANDLE_02_021: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall initialize the reference count to 1, store dispose and return a T*. ]*/              \
+            THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                          \
             handle_impl->dispose = dispose;                                                                                                                         \
             (void)interlocked_exchange(&handle_impl->refCount,1);                                                                                                   \
             result = &(handle_impl->data);                                                                                                                          \
@@ -188,6 +203,7 @@ static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(T)(const T* source, void(*dis
             if (copy==NULL)                                                                                                                                         \
             {                                                                                                                                                       \
                 /*Codes_SRS_THANDLE_02_027: [ If copy is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall memcpy the content of source in allocated memory. ]*/     \
+                THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                      \
                 (void)memcpy(&(handle_impl->data), source, sizeof_source);                                                                                          \
                 handle_impl->dispose = dispose;                                                                                                                     \
                 /*Codes_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/        \
