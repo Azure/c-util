@@ -46,7 +46,7 @@
 #define THANDLE_DEBUG_COPY_NAME(T, destination) (void)snprintf(destination, THANDLE_MAX_NAME_CHAR, "%s", MU_TOSTRING(T));
 #else
 #define THANDLE_DEBUG_EXTRA_FIELDS_NAME  /*well - nothing*/
-#define THANDLE_DEBUG_COPY_NAME(T) /*well - nothing*/
+#define THANDLE_DEBUG_COPY_NAME(T, destination) /*well - nothing*/
 #endif
 
 #define THANDLE_EXTRA_FIELDS(type) \
