@@ -4,6 +4,8 @@
 #ifndef REAL_THANDLE_H
 #define REAL_THANDLE_H
 
+#include "real_interlocked.h"
+
 #undef THANDLE_INTERLOCKED_EXCHANGE
 #define THANDLE_INTERLOCKED_EXCHANGE real_interlocked_exchange
 #undef THANDLE_INTERLOCKED_INCREMENT
