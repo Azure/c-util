@@ -5,4 +5,6 @@
 #include "real_gballoc_hl_renames.h" // IWYU pragma: keep
 #include "real_interlocked_renames.h" // IWYU pragma: keep
 
+#include "real_thandle.h" // IWYU pragma: keep
+
 #include "../../src/rc_string.c"
