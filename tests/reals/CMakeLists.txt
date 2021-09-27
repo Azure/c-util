@@ -39,6 +39,7 @@ set(c_util_reals_h_files
     real_singlylinkedlist_renames.h
     real_sm.h
     real_sm_renames.h
+    real_thandle.h
     real_uuid.h
     real_uuid_renames.h
 )
