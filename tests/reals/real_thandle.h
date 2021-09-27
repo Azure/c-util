@@ -4,12 +4,11 @@
 #ifndef REAL_THANDLE_H
 #define REAL_THANDLE_H
 
-#ifdef THANDLE_H
-#error Must include real_thandle.h before thandle.h
-#endif
-
+#undef THANDLE_INTERLOCKED_EXCHANGE
 #define THANDLE_INTERLOCKED_EXCHANGE real_interlocked_exchange
+#undef THANDLE_INTERLOCKED_INCREMENT
 #define THANDLE_INTERLOCKED_INCREMENT real_interlocked_increment
+#undef THANDLE_INTERLOCKED_DECREMENT
 #define THANDLE_INTERLOCKED_DECREMENT real_interlocked_decrement
 
 #include "c_util/thandle.h"
