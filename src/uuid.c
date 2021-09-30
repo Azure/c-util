@@ -18,6 +18,8 @@
 #define __SUCCESS__                 0
 #define UUID_FORMAT_STRING          "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x"
 
+const UUID_T NIL_UUID = { 0 };
+
 int UUID_from_string(const char* uuid_string, UUID_T* uuid)
 {
     int result;
