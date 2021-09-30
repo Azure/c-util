@@ -43,8 +43,6 @@ static TEST_MUTEX_HANDLE g_testByTest;
 TARRAY_TYPE_DECLARE(uint32_t);
 TARRAY_TYPE_DEFINE(uint32_t);
 
-/*TARRAY works with THANDLEs too*/
-
 typedef struct A_TEST_TAG
 {
     int a;
@@ -53,6 +51,7 @@ typedef struct A_TEST_TAG
 THANDLE_TYPE_DECLARE(A_TEST);
 THANDLE_TYPE_DEFINE(A_TEST);
 
+/*TARRAY works with THANDLEs too*/
 TARRAY_TYPE_DECLARE(THANDLE(A_TEST));
 TARRAY_TYPE_DEFINE(THANDLE(A_TEST));
 
@@ -281,7 +280,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_reallocs_does_not_realloc_when_size_is_exac
     TARRAY_ASSIGN(uint32_t)(&arr, NULL);
 }
 
-/*Tests_SRS_TARRAY_02_009: [ If there are any failures then TARRAY_ENSURE_CAPACITY(T) shall fail and return a non-zero value. ]*/
+/*Tests_SRS_TARRAY_02_010: [ If capacity is greater than 2147483648 then TARRAY_ENSURE_CAPACITY(T) shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_with_overflow_capacity_fails)
 {
     ///arrange

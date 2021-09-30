@@ -127,10 +127,11 @@ int TARRAY_ENSURE_CAPACITY(T)(TARRAY(T) tarray, uint32_t capacity)              
         }                                                                                                                                                       \
         else                                                                                                                                                    \
         {                                                                                                                                                       \
+            /*Codes_SRS_TARRAY_02_010: [ If capacity is greater than 2147483648 then TARRAY_ENSURE_CAPACITY(T) shall fail and return a non-zero value. ]*/      \
             if(capacity > (((uint32_t)1)<<31))                                                                                                                  \
             {                                                                                                                                                   \
                 /*Codes_SRS_TARRAY_02_009: [ If there are any failures then TARRAY_ENSURE_CAPACITY(T) shall fail and return a non-zero value. ]*/               \
-                LogError("capacity (%" PRIu32 ")cannot be improved by doubling", capacity);                                                                     \
+                LogError("capacity (%" PRIu32 ") cannot be improved by doubling", capacity);                                                                    \
                 result = MU_FAILURE;                                                                                                                            \
             }                                                                                                                                                   \
             else                                                                                                                                                \
