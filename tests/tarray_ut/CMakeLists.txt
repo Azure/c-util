@@ -8,12 +8,10 @@ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-tarray_user.c
 )
 
 set(${theseTestsName}_h_files
 ../../inc/c_util/tarray.h
-tarray_user.h
 )
 
 build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_pal c_pal_reals)
