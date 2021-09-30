@@ -3,8 +3,10 @@
 
 #ifdef __cplusplus
 #include <cstdlib>
+#include <cstdint>
 #else
 #include <stdlib.h>
+#include <stdint.h>
 #endif
 
 #include "macro_utils/macro_utils.h"
@@ -74,12 +76,9 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
-    int result;
-
     ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
 
-    result = umock_c_init(on_umock_c_error);
-    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error));
 
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
@@ -104,6 +103,9 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
     {
         ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
     }
+
+    umock_c_reset_all_calls();
+    ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
 }
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
@@ -117,8 +119,6 @@ TEST_FUNCTION(UUID_generate_NULL_uuid)
 {
     //Arrange
     int result;
-
-    umock_c_reset_all_calls();
 
     //Act
     result = UUID_generate(NULL);
@@ -138,7 +138,6 @@ TEST_FUNCTION(UUID_generate_succeed)
     int result;
     char uuid_string[UUID_STRING_SIZE];
 
-    umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(malloc(UUID_STRING_SIZE))
         .SetReturn(uuid_string);
     STRICT_EXPECTED_CALL(UniqueId_Generate(uuid_string, UUID_STRING_SIZE));
@@ -170,9 +169,6 @@ TEST_FUNCTION(UUID_generate_failure_checks)
     size_t i;
     char uuid_string[UUID_STRING_SIZE];
 
-    ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
-
-    umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(malloc(UUID_STRING_SIZE))
         .SetReturn(uuid_string);
     STRICT_EXPECTED_CALL(UniqueId_Generate(uuid_string, UUID_STRING_SIZE));
@@ -219,7 +215,6 @@ TEST_FUNCTION(UUID_to_string_succeed)
     char* result;
     char buffer[UUID_STRING_SIZE];
 
-    umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(malloc(UUID_STRING_SIZE * sizeof(char)))
         .SetReturn(buffer);
 
@@ -240,9 +235,6 @@ TEST_FUNCTION(UUID_to_string_failure_checks)
     char buffer[UUID_STRING_SIZE];
     size_t i;
 
-    ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
-
-    umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(malloc(UUID_STRING_SIZE * sizeof(char)))
         .SetReturn(buffer);
 
@@ -275,8 +267,6 @@ TEST_FUNCTION(UUID_from_string_NULL_uuid_string)
     int result;
     UUID_T uuid;
 
-    umock_c_reset_all_calls();
-
     //Act
     result = UUID_from_string(NULL, &uuid);
 
@@ -290,8 +280,6 @@ TEST_FUNCTION(UUID_from_string_NULL_uuid)
 {
     //Arrange
     int result;
-
-    umock_c_reset_all_calls();
 
     //Act
     result = UUID_from_string(TEST_UUID_STRING, NULL);
@@ -308,8 +296,6 @@ TEST_FUNCTION(UUID_from_string_succeed)
     //Arrange
     int result;
     UUID_T uuid;
-
-    umock_c_reset_all_calls();
 
     //Act
     result = UUID_from_string(TEST_UUID_STRING, &uuid);
@@ -329,5 +315,22 @@ TEST_FUNCTION(UUID_from_string_succeed)
 
 // Tests_SRS_UUID_09_009: [ If uuid fails to be generated, UUID_from_string shall return a non-zero value ]
 // To be implemented once sscanf mock is implemented.
+
+/* NIL_UUID */
+
+/* Tests_SRS_UUID_01_001: [ NIL_UUID shall contain all zeroes. ]*/
+TEST_FUNCTION(NIL_UUID_is_filled_with_zeroes)
+{
+    //Arrange
+
+    //Act
+
+    //Assert
+    size_t i;
+    for (i = 0; i < UUID_OCTET_COUNT; i++)
+    {
+        ASSERT_ARE_EQUAL(uint8_t, 0, NIL_UUID[i]);
+    }
+}
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
