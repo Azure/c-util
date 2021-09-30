@@ -21,6 +21,8 @@ extern "C" {
 
 typedef unsigned char UUID_T[16];
 
+extern const UUID_T NIL_UUID;
+
 /* These 2 strings can be conveniently used directly in printf statements
   Notice that PRI_UUID has to be used like any other print format specifier, meaning it
   has to be preceded with % */
