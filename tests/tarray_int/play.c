@@ -38,9 +38,11 @@ PLAY_HANDLE play_create(uint32_t generation)
         else
         {
             play->generation = generation;
+            goto allok;
         }
         free(play);
         play = NULL;
+allok:;
     }
     return play;
 }
