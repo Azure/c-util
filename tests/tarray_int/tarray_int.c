@@ -12,6 +12,7 @@
 #include "macro_utils/macro_utils.h"
 
 #include "testrunnerswitcher.h"
+#include "umock_c/umocktypes_stdint.h"
 
 void* my_gballoc_malloc(size_t size)
 {
@@ -58,6 +59,8 @@ TEST_SUITE_INITIALIZE(it_does_something)
     ASSERT_IS_NOT_NULL(g_testByTest);
 
     umock_c_init(on_umock_c_error);
+
+    ASSERT_ARE_EQUAL(int, 0, umocktypes_stdint_register_types());
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
     REGISTER_TARRAY_UNDO_OP_GLOBAL_MOCK_HOOK();

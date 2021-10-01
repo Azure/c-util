@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifndef THANDLE_H
-#define THANDLE_H
+#ifndef THANDLE2_H
+#define THANDLE2_H
 
-#ifdef THANDLE2_H
+#ifdef THANDLE_H
 #error
 #endif
 
@@ -112,8 +112,8 @@ INITIALIZE_MOVE assumes that destination is not initialized and thus it does not
 
 /*given a previous type T, this introduces THANDLE_MALLOC macro to create its wrapper, initialize refCount to 1, and remember the dispose function*/
 
-#define THANDLE_MALLOC_MACRO(T) \
-static T* THANDLE_MALLOC(T)(void(*dispose)(T*))                                                                                                                     \
+#define THANDLE_MALLOC_MACRO(C, T) \
+static T* THANDLE_MALLOC(C)(void(*dispose)(T*))                                                                                                                     \
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
     /*Codes_SRS_THANDLE_02_013: [ THANDLE_MALLOC shall allocate memory. ]*/                                                                                         \
@@ -138,14 +138,14 @@ static T* THANDLE_MALLOC(T)(void(*dispose)(T*))                                 
 
 /*this is only useful during debugging: from a THANDLE(T) it returns THANDLE_WRAPPER_TYPE_NAME(T) - which can be viewed in debugger - useful for seeing refCount.
 Example: write REAL_BSDL_LOG_STRUCTURE_INSPECT(temp) in the Visual Studio watch window, where REAL_BSDL_LOG_STRUCTURE is a previously THANDLE'd type               */
-#define THANDLE_INSPECT_MACRO(T) \
-const THANDLE_WRAPPER_TYPE_NAME(T)* const THANDLE_INSPECT(T)(THANDLE(T) t)                                                                                          \
+#define THANDLE_INSPECT_MACRO(C, T) \
+const THANDLE_WRAPPER_TYPE_NAME(T)* const THANDLE_INSPECT(C)(THANDLE(T) t)                                                                                          \
 {                                                                                                                                                                   \
     return CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                                                                \
 }                                                                                                                                                                   \
 
-#define THANDLE_MALLOC_WITH_EXTRA_SIZE_MACRO(T)                                                                                                                     \
-static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(T)(void(*dispose)(T*), size_t extra_size)                                                                                  \
+#define THANDLE_MALLOC_WITH_EXTRA_SIZE_MACRO(C, T)                                                                                                                     \
+static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(C)(void(*dispose)(T*), size_t extra_size)                                                                                  \
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
     /*Codes_SRS_THANDLE_02_019: [ If extra_size + sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) would exceed SIZE_MAX then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/ \
@@ -177,8 +177,8 @@ static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(T)(void(*dispose)(T*), size_t extra_siz
     return result;                                                                                                                                                  \
 }                                                                                                                                                                   \
 
-#define THANDLE_CREATE_FROM_CONTENT_FLEX_MACRO(T)                                                                                                                   \
-static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(T)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source), size_t(*get_sizeof)(const T* source)) \
+#define THANDLE_CREATE_FROM_CONTENT_FLEX_MACRO(C, T)                                                                                                                   \
+static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(C)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source), size_t(*get_sizeof)(const T* source)) \
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
     if (                                                                                                                                                            \
@@ -237,22 +237,22 @@ static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(T)(const T* source, void(*dis
     return result;                                                                                                                                                  \
 }
 
-#define THANDLE_CREATE_FROM_CONTENT_MACRO(T)                                                                                                                        \
-static size_t THANDLE_GET_SIZEOF(T)(const T* t)                                                                                                                     \
+#define THANDLE_CREATE_FROM_CONTENT_MACRO(C, T)                                                                                                                        \
+static size_t THANDLE_GET_SIZEOF(C)(const T* t)                                                                                                                     \
 {                                                                                                                                                                   \
     return sizeof(*t);                                                                                                                                              \
 }                                                                                                                                                                   \
-static THANDLE(T) THANDLE_CREATE_FROM_CONTENT(T)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source))                                  \
+static THANDLE(T) THANDLE_CREATE_FROM_CONTENT(C)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source))                                  \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_032: [ THANDLE_CREATE_FROM_CONTENT_FLEX returns what THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T)); returns. ]*/ \
-    return THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T));                                                                       \
+    return THANDLE_CREATE_FROM_CONTENT_FLEX(C)(source, dispose, copy, THANDLE_GET_SIZEOF(C));                                                                       \
 }                                                                                                                                                                   \
 
 
 
 /*given a previous type T, this introduces THANDLE_FREE macro to free all used resources*/
-#define THANDLE_FREE_MACRO(T) \
-static void THANDLE_FREE(T)(T* t)                                                                                                                                   \
+#define THANDLE_FREE_MACRO(C, T) \
+static void THANDLE_FREE(C)(T* t)                                                                                                                                   \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_016: [ If t is NULL then THANDLE_FREE shall return. ]*/                                                                                  \
     if (t == NULL)                                                                                                                                                  \
@@ -268,8 +268,8 @@ static void THANDLE_FREE(T)(T* t)                                               
 }                                                                                                                                                                   \
 
 /*given a previous type T, this introduces THANDLE_DEC_REF macro to decrement the reference count*/
-#define THANDLE_DEC_REF_MACRO(T) \
-void THANDLE_DEC_REF(T)(THANDLE(T) t)                                                                                                                               \
+#define THANDLE_DEC_REF_MACRO(C, T) \
+void THANDLE_DEC_REF(C)(THANDLE(T) t)                                                                                                                               \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_001: [ If t is NULL then THANDLE_DEC_REF shall return. ]*/                                                                               \
     if (t == NULL)                                                                                                                                                  \
@@ -287,15 +287,15 @@ void THANDLE_DEC_REF(T)(THANDLE(T) t)                                           
             {                                                                                                                                                       \
                 handle_impl->dispose(&handle_impl->data);                                                                                                           \
             }                                                                                                                                                       \
-            THANDLE_FREE(T)(&handle_impl->data);                                                                                                                    \
+            THANDLE_FREE(C)(&handle_impl->data);                                                                                                                    \
         }                                                                                                                                                           \
                                                                                                                                                                     \
     }                                                                                                                                                               \
 }                                                                                                                                                                   \
 
 /*given a previous type T, this introduces THANDLE_DEC_REF macro to increment the reference count*/
-#define THANDLE_INC_REF_MACRO(T)                                                                                                                                    \
-void THANDLE_INC_REF(T)(THANDLE(T) t)                                                                                                                               \
+#define THANDLE_INC_REF_MACRO(C, T)                                                                                                                                    \
+void THANDLE_INC_REF(C)(THANDLE(T) t)                                                                                                                               \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_004: [ If t is NULL then THANDLE_INC_REF shall return. ]*/                                                                               \
     if (t == NULL)                                                                                                                                                  \
@@ -311,8 +311,8 @@ void THANDLE_INC_REF(T)(THANDLE(T) t)                                           
 }                                                                                                                                                                   \
 
 /*given a previous type T, this introduces THANDLE_ASSIGN macro to assign a handle to another handle*/
-#define THANDLE_ASSIGN_MACRO(T)                                                                                                                                     \
-void THANDLE_ASSIGN(T)(THANDLE(T) * t1, THANDLE(T) t2)                                                                                                              \
+#define THANDLE_ASSIGN_MACRO(C, T)                                                                                                                                     \
+void THANDLE_ASSIGN(C)(THANDLE(T) * t1, THANDLE(T) t2)                                                                                                              \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_006: [ If t1 is NULL then THANDLE_ASSIGN shall return. ]*/                                                                               \
     if (t1 == NULL)                                                                                                                                                 \
@@ -331,7 +331,7 @@ void THANDLE_ASSIGN(T)(THANDLE(T) * t1, THANDLE(T) t2)                          
             else                                                                                                                                                    \
             {                                                                                                                                                       \
                 /*Codes_SRS_THANDLE_02_008: [ If *t1 is NULL and t2 is not NULL then THANDLE_ASSIGN shall increment the reference count of t2 and store t2 in *t1. ]*/ \
-                THANDLE_INC_REF(T)(t2);                                                                                                                             \
+                THANDLE_INC_REF(C)(t2);                                                                                                                             \
                 *(T const**)t1 = t2;                                                                                                                                \
             }                                                                                                                                                       \
         }                                                                                                                                                           \
@@ -340,14 +340,14 @@ void THANDLE_ASSIGN(T)(THANDLE(T) * t1, THANDLE(T) t2)                          
             if (t2 == NULL)                                                                                                                                         \
             {                                                                                                                                                       \
                 /*Codes_SRS_THANDLE_02_009: [ If *t1 is not NULL and t2 is NULL then THANDLE_ASSIGN shall decrement the reference count of *t1 and store NULL in *t1. ]*/ \
-                THANDLE_DEC_REF(T)(*t1);                                                                                                                            \
+                THANDLE_DEC_REF(C)(*t1);                                                                                                                            \
                 *(T const**)t1 = t2;                                                                                                                                \
             }                                                                                                                                                       \
             else                                                                                                                                                    \
             {                                                                                                                                                       \
                 /*Codes_SRS_THANDLE_02_010: [ If *t1 is not NULL and t2 is not NULL then THANDLE_ASSIGN shall increment the reference count of t2, shall decrement the reference count of *t1 and store t2 in *t1. ]*/ \
-                THANDLE_INC_REF(T)(t2);                                                                                                                             \
-                THANDLE_DEC_REF(T)(*t1);                                                                                                                            \
+                THANDLE_INC_REF(C)(t2);                                                                                                                             \
+                THANDLE_DEC_REF(C)(*t1);                                                                                                                            \
                 *(T const**)t1 = t2;                                                                                                                                \
             }                                                                                                                                                       \
         }                                                                                                                                                           \
@@ -355,8 +355,8 @@ void THANDLE_ASSIGN(T)(THANDLE(T) * t1, THANDLE(T) t2)                          
 }                                                                                                                                                                   \
 
 /*given a previous type T, this introduces THANDLE_INITIALIZE macro to initialize a handle value*/
-#define THANDLE_INITIALIZE_MACRO(T)                                                                                                                                 \
-void THANDLE_INITIALIZE(T)(THANDLE(T) * lvalue, THANDLE(T) rvalue)                                                                                                  \
+#define THANDLE_INITIALIZE_MACRO(C, T)                                                                                                                                 \
+void THANDLE_INITIALIZE(C)(THANDLE(T) * lvalue, THANDLE(T) rvalue)                                                                                                  \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_011: [ If lvalue is NULL then THANDLE_INITIALIZE shall return. ]*/                                                                       \
     if (lvalue == NULL)                                                                                                                                             \
@@ -372,15 +372,15 @@ void THANDLE_INITIALIZE(T)(THANDLE(T) * lvalue, THANDLE(T) rvalue)              
         else                                                                                                                                                        \
         {                                                                                                                                                           \
             /*Codes_SRS_THANDLE_02_012: [ THANDLE_INITIALIZE shall increment the reference count of rvalue and store it in *lvalue. ]*/                             \
-            THANDLE_INC_REF(T)(rvalue);                                                                                                                             \
+            THANDLE_INC_REF(C)(rvalue);                                                                                                                             \
         }                                                                                                                                                           \
         *(T const**)lvalue = rvalue;                                                                                                                                \
     }                                                                                                                                                               \
 }                                                                                                                                                                   \
 
 /*if THANDLE(T) is previously defined, then this macro returns the T* from under the THANDLE(T) */
-#define THANDLE_GET_T_MACRO(T)                                                                                                                                      \
-static T* THANDLE_GET_T(T)(THANDLE(T) t)                                                                                                                            \
+#define THANDLE_GET_T_MACRO(C, T)                                                                                                                                      \
+static T* THANDLE_GET_T(C)(THANDLE(T) t)                                                                                                                            \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_023: [ If t is NULL then THANDLE_GET_T(T) shall return NULL. ]*/                                                                         \
     /*Codes_SRS_THANDLE_02_024: [ THANDLE_GET_T(T) shall return the same pointer as THANDLE_MALLOC/THANDLE_MALLOC_WITH_EXTRA_SIZE returned at the handle creation time. ]*/ \
@@ -388,8 +388,8 @@ static T* THANDLE_GET_T(T)(THANDLE(T) t)                                        
 }
 
 /*given a previous type T, this introduces THANDLE_MOVE macro to move a handle (*t1=t2, *t2=NULL)*/
-#define THANDLE_MOVE_MACRO(T)                                                                                                                                       \
-void THANDLE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2)                                                                                                              \
+#define THANDLE_MOVE_MACRO(C, T)                                                                                                                                       \
+void THANDLE_MOVE(C)(THANDLE(T) * t1, THANDLE(T) * t2)                                                                                                              \
 {                                                                                                                                                                   \
     if (                                                                                                                                                            \
         /*Codes_SRS_THANDLE_02_033: [ If t1 is NULL then THANDLE_MOVE shall return. ]*/                                                                             \
@@ -421,13 +421,13 @@ void THANDLE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2)                          
             if (*t2 == NULL)                                                                                                                                        \
             {                                                                                                                                                       \
                 /*Codes_SRS_THANDLE_02_037: [ If *t1 is not NULL and *t2 is NULL then THANDLE_MOVE shall THANDLE_DEC_REF *t1, set *t1 to NULL and return. ]*/       \
-                THANDLE_DEC_REF(T)(*t1);                                                                                                                            \
+                THANDLE_DEC_REF(C)(*t1);                                                                                                                            \
                 *(T const**)t1 = NULL;                                                                                                                              \
             }                                                                                                                                                       \
             else                                                                                                                                                    \
             {                                                                                                                                                       \
                 /*Codes_SRS_THANDLE_02_038: [ If *t1 is not NULL and *t2 is not NULL then THANDLE_MOVE shall THANDLE_DEC_REF *t1, set *t1 to *t2, set *t2 to NULL and return. ]*/ \
-                THANDLE_DEC_REF(T)(*t1);                                                                                                                            \
+                THANDLE_DEC_REF(C)(*t1);                                                                                                                            \
                 *(T const**)t1 = *t2;                                                                                                                               \
                 *(T const**)t2 = NULL;                                                                                                                              \
             }                                                                                                                                                       \
@@ -436,8 +436,8 @@ void THANDLE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2)                          
 }                                                                                                                                                                   \
 
 /*given a previous type T, this introduces THANDLE_INITIALIZE_MOVE_MACRO macro to move a handle (*t1=t2, *t2=NULL)*/
-#define THANDLE_INITIALIZE_MOVE_MACRO(T)                                                                                                                            \
-void THANDLE_INITIALIZE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2)                                                                                                   \
+#define THANDLE_INITIALIZE_MOVE_MACRO(C, T)                                                                                                                            \
+void THANDLE_INITIALIZE_MOVE(C)(THANDLE(T) * t1, THANDLE(T) * t2)                                                                                                   \
 {                                                                                                                                                                   \
     if (                                                                                                                                                            \
         /*Codes_SRS_THANDLE_01_001: [ If t1 is NULL then THANDLE_INITIALIZE_MOVE shall return. ]*/                                                                  \
@@ -465,32 +465,32 @@ void THANDLE_INITIALIZE_MOVE(T)(THANDLE(T) * t1, THANDLE(T) * t2)               
 }                                                                                                                                                                   \
 
 /*given a previous type T, this introduces a wrapper type that contains T (and other fields) and defines the functions of that type T*/
-#define THANDLE_TYPE_DEFINE(T) \
+#define THANDLE_TYPE_DEFINE(C,T) \
     MU_DEFINE_STRUCT(THANDLE_WRAPPER_TYPE_NAME(T), THANDLE_EXTRA_FIELDS(T), T, data);                                                                               \
-    THANDLE_MALLOC_MACRO(T)                                                                                                                                         \
-    THANDLE_MALLOC_WITH_EXTRA_SIZE_MACRO(T)                                                                                                                         \
-    THANDLE_CREATE_FROM_CONTENT_FLEX_MACRO(T)                                                                                                                       \
-    THANDLE_CREATE_FROM_CONTENT_MACRO(T)                                                                                                                            \
-    THANDLE_FREE_MACRO(T)                                                                                                                                           \
-    THANDLE_DEC_REF_MACRO(T)                                                                                                                                        \
-    THANDLE_INC_REF_MACRO(T)                                                                                                                                        \
-    THANDLE_ASSIGN_MACRO(T)                                                                                                                                         \
-    THANDLE_INITIALIZE_MACRO(T)                                                                                                                                     \
-    THANDLE_GET_T_MACRO(T)                                                                                                                                          \
-    THANDLE_INSPECT_MACRO(T)                                                                                                                                        \
-    THANDLE_MOVE_MACRO(T)                                                                                                                                           \
-    THANDLE_INITIALIZE_MOVE_MACRO(T)                                                                                                                                \
+    THANDLE_MALLOC_MACRO(C, T)                                                                                                                                         \
+    THANDLE_MALLOC_WITH_EXTRA_SIZE_MACRO(C, T)                                                                                                                         \
+    THANDLE_CREATE_FROM_CONTENT_FLEX_MACRO(C, T)                                                                                                                       \
+    THANDLE_CREATE_FROM_CONTENT_MACRO(C, T)                                                                                                                            \
+    THANDLE_FREE_MACRO(C, T)                                                                                                                                           \
+    THANDLE_DEC_REF_MACRO(C, T)                                                                                                                                        \
+    THANDLE_INC_REF_MACRO(C, T)                                                                                                                                        \
+    THANDLE_ASSIGN_MACRO(C, T)                                                                                                                                         \
+    THANDLE_INITIALIZE_MACRO(C, T)                                                                                                                                     \
+    THANDLE_GET_T_MACRO(C, T)                                                                                                                                          \
+    THANDLE_INSPECT_MACRO(C, T)                                                                                                                                        \
+    THANDLE_MOVE_MACRO(C, T)                                                                                                                                           \
+    THANDLE_INITIALIZE_MOVE_MACRO(C, T)                                                                                                                                \
 
 /*macro to be used in headers*/                                                                                       \
 /*introduces an incomplete type based on a MU_DEFINE_STRUCT(T...) previously defined;*/                               \
-#define THANDLE_TYPE_DECLARE(T)                                                                                       \
+#define THANDLE_TYPE_DECLARE(C,T)                                                                                       \
     THANDLE_MACRO(T);                                                                                                 \
-    MOCKABLE_FUNCTION(, void, THANDLE_DEC_REF(T), THANDLE(T), t);                                                     \
-    MOCKABLE_FUNCTION(, void, THANDLE_INC_REF(T), THANDLE(T), t);                                                     \
-    MOCKABLE_FUNCTION(, void, THANDLE_ASSIGN(T), THANDLE(T) *, t1, THANDLE(T), t2 );                                  \
-    MOCKABLE_FUNCTION(, void, THANDLE_INITIALIZE(T), THANDLE(T) *, t1, THANDLE(T), t2 );                              \
-    MOCKABLE_FUNCTION(, void, THANDLE_MOVE(T), THANDLE(T) *, t1, THANDLE(T)*, t2 );                                   \
-    MOCKABLE_FUNCTION(, void, THANDLE_INITIALIZE_MOVE(T), THANDLE(T) *, t1, THANDLE(T)*, t2 );                        \
+    MOCKABLE_FUNCTION(, void, THANDLE_DEC_REF(C), THANDLE(T), t);                                                     \
+    MOCKABLE_FUNCTION(, void, THANDLE_INC_REF(C), THANDLE(T), t);                                                     \
+    MOCKABLE_FUNCTION(, void, THANDLE_ASSIGN(C), THANDLE(T) *, t1, THANDLE(T), t2 );                                  \
+    MOCKABLE_FUNCTION(, void, THANDLE_INITIALIZE(C), THANDLE(T) *, t1, THANDLE(T), t2 );                              \
+    MOCKABLE_FUNCTION(, void, THANDLE_MOVE(C), THANDLE(T) *, t1, THANDLE(T)*, t2 );                                   \
+    MOCKABLE_FUNCTION(, void, THANDLE_INITIALIZE_MOVE(C), THANDLE(T) *, t1, THANDLE(T)*, t2 );                        \
 
-#endif /*THANDLE_H*/
+#endif /*THANDLE2_H*/
 

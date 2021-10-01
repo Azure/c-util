@@ -183,6 +183,7 @@ set(c_util_h_files
     ./inc/c_util/tarray.h
     ./inc/c_util/tarray_ll.h
     ./inc/c_util/thandle.h
+    ./inc/c_util/thandle2.h
     ./inc/c_util/thandle_tuple_array.h
     ./inc/c_util/uuid.h
 )

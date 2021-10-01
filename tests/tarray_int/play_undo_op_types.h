@@ -14,6 +14,8 @@ typedef struct UNDO_OP_TAG
     uint32_t old;
 }UNDO_OP;
 
+typedef UNDO_OP real_UNDO_OP;
+
 #endif /*PLAY_UNDO_OP_TYPES_H*/
 
 

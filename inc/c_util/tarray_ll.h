@@ -10,7 +10,7 @@
 #include <inttypes.h>
 #endif
 
-#include "c_util/thandle.h"
+#include "c_util/thandle2.h"
 
 #include "umock_c/umock_c_prod.h"
 
@@ -75,7 +75,7 @@ TARRAY(T) TARRAY_LL_CREATE(C)(void)                                             
 {                                                                                                                           \
     TARRAY_TYPEDEF_NAME(T)* result;                                                                                         \
     /*Codes_SRS_TARRAY_02_001: [ TARRAY_CREATE(T) shall call THANDLE_MALLOC to allocate the result. ]*/                     \
-    result = THANDLE_MALLOC(TARRAY_TYPEDEF_NAME(T))(TARRAY_LL_FREE_NAME(C));                                                \
+    result = THANDLE_MALLOC(TARRAY_TYPEDEF_NAME(C))(TARRAY_LL_FREE_NAME(C));                                                \
     if(result == NULL)                                                                                                      \
     {                                                                                                                       \
         LogError("failure in malloc(" MU_TOSTRING(TARRAY_TYPEDEF_NAME(T)) "=%zu", sizeof(TARRAY_TYPEDEF_NAME(T)));          \
@@ -97,7 +97,7 @@ TARRAY(T) TARRAY_LL_CREATE(C)(void)                                             
             result->capacity = 1;                                                                                           \
             goto allok;                                                                                                     \
         }                                                                                                                   \
-        THANDLE_FREE(TARRAY_TYPEDEF_NAME(T))(result);                                                                       \
+        THANDLE_FREE(TARRAY_TYPEDEF_NAME(C))(result);                                                                       \
         result = NULL;                                                                                                      \
     }                                                                                                                       \
     allok:;                                                                                                                 \
