@@ -10,8 +10,6 @@
 
 #include "play_undo_op_types.h"
 
-#include "umock_c/umock_c_prod.h"
-
 TARRAY_DEFINE_STRUCT_TYPE(UNDO_OP);
 THANDLE_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(UNDO_OP));
 

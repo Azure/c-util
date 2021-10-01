@@ -29,6 +29,8 @@ typedef struct TARRAY_STRUCT_TYPE_NAME_TAG(T)                                   
     T* arr;                                                                         \
 } TARRAY_TYPEDEF_NAME(T);                                                           \
 
+/*vld.h TARRAY_DEFINE_STRUCT_TYPE cred ca ii trebuie si THANDLE_DEFINE... ceva*/
+
 /*TARRAY is-a THANDLE*/
 /*given a type "T" TARRAY(T) expands to the name of the type. */
 #define TARRAY(T) THANDLE(TARRAY_TYPEDEF_NAME(T))
@@ -173,7 +175,7 @@ int TARRAY_LL_ENSURE_CAPACITY(C)(TARRAY(T) tarray, uint32_t capacity)           
     TARRAY_LL_ENSURE_CAPACITY_DECLARE(C, T)                                                                         \
 
 #define TARRAY_LL_TYPE_DEFINE(C, T)                                                                                 \
-    THANDLE_TYPE_DEFINE(TARRAY_TYPEDEF_NAME(T))                                                                     \
+    /*THANDLE_TYPE_DEFINE(TARRAY_TYPEDEF_NAME(T))                                                                    */ \
     TARRAY_LL_FREE_DEFINE(C, T)                                                                                     \
     TARRAY_LL_CREATE_DEFINE(C, T)                                                                                   \
     TARRAY_LL_ENSURE_CAPACITY_DEFINE(C, T)                                                                             \
