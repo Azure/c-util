@@ -1,0 +1,28 @@
+#Copyright (c) Microsoft. All rights reserved.
+#Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+set(theseTestsName tarray_int)
+
+add_subdirectory(reals)
+
+
+set(${theseTestsName}_test_files
+${theseTestsName}.c
+)
+
+set(${theseTestsName}_c_files
+play.c
+#play_undo_op.c
+play_tarray_undo_op_types.c
+)
+
+set(${theseTestsName}_h_files
+../../inc/c_util/tarray.h
+play.h
+play_undo_op.h
+play_undo_op_types.h
+play_tarray_undo_op_types.h
+)
+
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_pal c_pal_reals tarray_int_reals)
+
