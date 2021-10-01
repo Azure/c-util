@@ -24,6 +24,8 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
+#include "c_pal/interlocked.h"
+
 #define ENABLE_MOCKS
 #include "umock_c/umock_c.h"
 #include "c_pal/gballoc_hl.h"
@@ -61,6 +63,8 @@ TEST_SUITE_INITIALIZE(it_does_something)
     umock_c_init(on_umock_c_error);
 
     ASSERT_ARE_EQUAL(int, 0, umocktypes_stdint_register_types());
+
+    REGISTER_UMOCK_ALIAS_TYPE(TARRAY(UNDO_OP), void*);
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
     REGISTER_TARRAY_UNDO_OP_GLOBAL_MOCK_HOOK();
@@ -103,6 +107,9 @@ TEST_FUNCTION(play_create_succeeds)
     ///assert
     ASSERT_IS_NOT_NULL(play);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    play_destroy(play);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
