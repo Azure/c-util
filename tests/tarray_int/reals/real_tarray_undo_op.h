@@ -36,12 +36,11 @@
 extern "C" {
 #endif
 
-    typedef UNDO_OP real_UNDO_OP;
-
-    /*QWQWQW*/
-
+    
+#include "umock_c/umock_c_prod.h"
+    /*DFDFDF*/
     TARRAY_LL_TYPE_DECLARE(real_UNDO_OP, UNDO_OP);
-    /*WEWEWE*/
+    /*SDSDSD*/
 
 
 #ifdef __cplusplus
