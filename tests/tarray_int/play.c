@@ -37,6 +37,7 @@ PLAY_HANDLE play_create(uint32_t generation)
         }
         else
         {
+            TARRAY_INITIALIZE_MOVE(UNDO_OP)(&play->undo_op, &temp);
             play->generation = generation;
             goto allok;
         }

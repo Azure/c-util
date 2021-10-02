@@ -170,7 +170,7 @@ int TARRAY_LL_ENSURE_CAPACITY(C)(TARRAY(T) tarray, uint32_t capacity)           
 /*macro to be used in headers*/                                                                                     \
 #define TARRAY_LL_TYPE_DECLARE(C, T)                                                                                \
     /*TARRAY_DEFINE_STRUCT_TYPE(T)                                                                                    */\
-    /*THANDLE_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(T))                                                                  */  \
+    THANDLE_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(C), TARRAY_TYPEDEF_NAME(T))                                                                    \
     TARRAY_LL_CREATE_DECLARE(C, T)                                                                                  \
     TARRAY_LL_ENSURE_CAPACITY_DECLARE(C, T)                                                                         \
 
