@@ -25,16 +25,14 @@
     REGISTER_GLOBAL_MOCK_HOOK(TARRAY_DEC_REF(UNDO_OP), TARRAY_LL_DEC_REF(real_UNDO_OP)) \
     REGISTER_GLOBAL_MOCK_HOOK(TARRAY_ASSIGN(UNDO_OP), TARRAY_LL_ASSIGN(real_UNDO_OP)) \
 
+typedef UNDO_OP real_UNDO_OP;
+
+#include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    
-#include "umock_c/umock_c_prod.h"
-    /*DFDFDF*/
     TARRAY_LL_TYPE_DECLARE(real_UNDO_OP, UNDO_OP);
-    /*SDSDSD*/
-
 
 #ifdef __cplusplus
 }

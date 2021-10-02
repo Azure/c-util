@@ -13,12 +13,12 @@
 #include "play_undo_op_types.h"
 #include "play_tarray_undo_op_types.h"
 
+#include "umock_c/umock_c_prod.h"
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-#include "umock_c/umock_c_prod.h"
 
     TARRAY_TYPE_DECLARE(UNDO_OP);
 

@@ -6,14 +6,20 @@
 #ifndef PLAY_H
 #define PLAY_H
 
+#ifdef __cplusplus
+#include <cstdint>
+#else
+#include <stdint.h>
+#endif
+
 #include "macro_utils/macro_utils.h"
+
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-#include "umock_c/umock_c_prod.h"
 
     typedef struct PLAY_HANDLE_DATA_TAG* PLAY_HANDLE;
 

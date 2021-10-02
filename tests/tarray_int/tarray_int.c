@@ -34,10 +34,7 @@ void my_gballoc_free(void* ptr)
 #undef ENABLE_MOCKS
 
 #include "real_gballoc_hl.h"
-
-/*QWQWQW*/
 #include "real_tarray_undo_op.h"
-/*WEWEWE*/
 
 #include "play.h"
 

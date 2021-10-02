@@ -6,14 +6,24 @@
 #ifndef PLAY_TARRAY_UNDO_OP_TYPES_H
 #define PLAY_TARRAY_UNDO_OP_TYPES_H
 
+#include "c_util/thandle2.h"
 #include "c_util/tarray_ll.h"
 
 #include "play_undo_op_types.h"
 
-#include "umock_c/umock_c_prod.h"
-
 TARRAY_DEFINE_STRUCT_TYPE(UNDO_OP);
-THANDLE_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(UNDO_OP), TARRAY_TYPEDEF_NAME(UNDO_OP));
+
+#include "umock_c/umock_c_prod.h"
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+    THANDLE_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(UNDO_OP), TARRAY_TYPEDEF_NAME(UNDO_OP));
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*PLAY_TARRAY_UNDO_OP_TYPES_H*/
 
