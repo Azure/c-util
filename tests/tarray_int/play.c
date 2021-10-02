@@ -18,7 +18,7 @@
 typedef struct PLAY_HANDLE_DATA_TAG
 {
     uint32_t generation;
-    TARRAY(UNDO_OP) undo_op; /* **1** TARRAY needs a TARRAY_TYPE_DECLARE. TARRAY_TYPE_DECLARE contains MOCKABLE_FUNCTIONs so it needs to go into a header*/
+    TARRAY(UNDO_OP) undo_op;
 }PLAY_HANDLE_DATA;
 
 PLAY_HANDLE play_create(uint32_t generation)
@@ -26,7 +26,8 @@ PLAY_HANDLE play_create(uint32_t generation)
     PLAY_HANDLE play = malloc(sizeof(PLAY_HANDLE_DATA));
     if (play == NULL)
     {
-        LogError("failure in malloc(sizeof(PLAY_HANDLE_DATA))");
+        LogError("failure in malloc(sizeof(PLAY_HANDLE_DATA)=%zu)",
+            sizeof(PLAY_HANDLE_DATA));
     }
     else
     {
@@ -52,7 +53,8 @@ void play_destroy(PLAY_HANDLE play)
 {
     if (play == NULL)
     {
-        LogError("invalid arg");
+        LogError("invalid arg PLAY_HANDLE play=%p",
+            play);
     }
     else
     {
