@@ -10,12 +10,14 @@
 #include <inttypes.h>
 #endif
 
+#include "c_pal/interlocked.h"
+
 #include "c_util/thandle_ll.h"
 
 #include "umock_c/umock_c_prod.h"
 
-/*C = code, T = data Type. C is a decoration for code, T is a decoration for Data types. Having 2 decorations allows*/
-/*usage of someapi and real_someapi over the same API_T data type (or otherwise reals is not possible for TARRAY */
+/*file acronyms: C = code, T = data Type. C is a decoration for code, T is a decoration for Data types. Having 2 decorations allows*/
+/*usage of someapi and real_someapi over the same API_T data type (or otherwise reals is not possible for TARRAY)*/
 
 /*TARRAY is backed by a THANDLE build on the structure below*/
 #define TARRAY_STRUCT_TYPE_NAME_TAG(T) MU_C2(TARRAY_TYPEDEF_NAME(T), _TAG)
@@ -28,8 +30,6 @@ typedef struct TARRAY_STRUCT_TYPE_NAME_TAG(T)                                   
     uint32_t capacity;                                                              \
     T* arr;                                                                         \
 } TARRAY_TYPEDEF_NAME(T);                                                           \
-
-/*vld.h TARRAY_DEFINE_STRUCT_TYPE cred ca ii trebuie si THANDLE_DEFINE... ceva*/
 
 /*TARRAY is-a THANDLE*/
 /*given a type "T" TARRAY(T) expands to the name of the type. */
@@ -56,7 +56,7 @@ typedef struct TARRAY_STRUCT_TYPE_NAME_TAG(T)                                   
 
 /*introduces a function definition for freeing the allocated resources for a TARRAY*/
 #define TARRAY_LL_FREE_DEFINE(C, T) \
-static void TARRAY_LL_FREE_NAME(C)(TARRAY_TYPEDEF_NAME(T)* tarray)                                     \
+static void TARRAY_LL_FREE_NAME(C)(TARRAY_TYPEDEF_NAME(T)* tarray)                                  \
 {                                                                                                   \
     if (tarray == NULL)                                                                             \
     {                                                                                               \
@@ -70,8 +70,8 @@ static void TARRAY_LL_FREE_NAME(C)(TARRAY_TYPEDEF_NAME(T)* tarray)              
 }                                                                                                   \
 
 /*introduces a function definition for tarray_create*/
-#define TARRAY_LL_CREATE_DEFINE(C, T)                                                                                          \
-TARRAY(T) TARRAY_LL_CREATE(C)(void)                                                                                            \
+#define TARRAY_LL_CREATE_DEFINE(C, T)                                                                                       \
+TARRAY(T) TARRAY_LL_CREATE(C)(void)                                                                                         \
 {                                                                                                                           \
     TARRAY_TYPEDEF_NAME(T)* result;                                                                                         \
     /*Codes_SRS_TARRAY_02_001: [ TARRAY_CREATE(T) shall call THANDLE_MALLOC to allocate the result. ]*/                     \
@@ -111,8 +111,8 @@ TARRAY(T) TARRAY_LL_CREATE(C)(void)                                             
 #define TARRAY_LL_ENSURE_CAPACITY_DECLARE(C, T) \
 MOCKABLE_FUNCTION(, int, TARRAY_LL_ENSURE_CAPACITY(C), TARRAY(T), tarray, uint32_t, capacity);
 
-#define TARRAY_LL_ENSURE_CAPACITY_DEFINE(C, T)                                                                                                                        \
-int TARRAY_LL_ENSURE_CAPACITY(C)(TARRAY(T) tarray, uint32_t capacity)                                                                                              \
+#define TARRAY_LL_ENSURE_CAPACITY_DEFINE(C, T)                                                                                                                  \
+int TARRAY_LL_ENSURE_CAPACITY(C)(TARRAY(T) tarray, uint32_t capacity)                                                                                           \
 {                                                                                                                                                               \
     int result;                                                                                                                                                 \
     if (tarray == NULL)                                                                                                                                         \
@@ -169,15 +169,15 @@ int TARRAY_LL_ENSURE_CAPACITY(C)(TARRAY(T) tarray, uint32_t capacity)           
 
 /*macro to be used in headers*/                                                                                     \
 #define TARRAY_LL_TYPE_DECLARE(C, T)                                                                                \
-    /*TARRAY_DEFINE_STRUCT_TYPE(T)                                                      /*vld.h remove*/                              \
+    /*hint: have TARRAY_DEFINE_STRUCT_TYPE(T) before TARRAY_LL_TYPE_DECLARE*/                                       \
     THANDLE_LL_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(C), TARRAY_TYPEDEF_NAME(T))                                         \
     TARRAY_LL_CREATE_DECLARE(C, T)                                                                                  \
     TARRAY_LL_ENSURE_CAPACITY_DECLARE(C, T)                                                                         \
 
 #define TARRAY_LL_TYPE_DEFINE(C, T)                                                                                 \
-    /*THANDLE_TYPE_DEFINE(TARRAY_TYPEDEF_NAME(T))                                                                    */ \
+    /*hint: have THANDLE_TYPE_DEFINE(TARRAY_TYPEDEF_NAME(T)) before TARRAY_LL_TYPE_DEFINE*/                         \
     TARRAY_LL_FREE_DEFINE(C, T)                                                                                     \
     TARRAY_LL_CREATE_DEFINE(C, T)                                                                                   \
-    TARRAY_LL_ENSURE_CAPACITY_DEFINE(C, T)                                                                             \
+    TARRAY_LL_ENSURE_CAPACITY_DEFINE(C, T)                                                                          \
 
 #endif  /*TARRAY_LL_H*/

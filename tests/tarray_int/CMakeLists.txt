@@ -21,5 +21,5 @@ play_undo_op_types.h
 play_tarray_undo_op_types.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_pal c_pal_reals tarray_int_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS tarray_int_reals c_pal c_pal_reals)
 
