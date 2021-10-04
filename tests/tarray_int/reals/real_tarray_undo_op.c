@@ -5,7 +5,6 @@
 
 #include "c_util/thandle_ll.h"
 #include "c_util/tarray_ll.h"
-#include "c_util/tarray.h"
 
 #include "real_tarray_undo_op.h"
 
