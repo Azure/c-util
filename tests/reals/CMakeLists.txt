@@ -14,6 +14,7 @@ set(c_util_reals_c_files
     real_singlylinkedlist.c
     real_sm.c
     real_uuid.c
+    real_tarray_undo_op.c
 )
 
 set(c_util_reals_h_files
@@ -41,6 +42,7 @@ set(c_util_reals_h_files
     real_sm_renames.h
     real_uuid.h
     real_uuid_renames.h
+    real_tarray_undo_op.h
 )
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)
