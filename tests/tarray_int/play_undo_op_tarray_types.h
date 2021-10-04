@@ -3,12 +3,14 @@
 
 /*PLAY is a module that pretends to be a production module that will embed a TARRAY in its handle*/
 
-#ifndef PLAY_TARRAY_UNDO_OP_TYPES_H
-#define PLAY_TARRAY_UNDO_OP_TYPES_H
+#ifndef PLAY_UNDO_OP_TARRAY_TYPES_H
+#define PLAY_UNDO_OP_TARRAY_TYPES_H
 
 #include "c_util/thandle_ll.h"
 
 #include "play_undo_op_types.h"
+
+TARRAY_DEFINE_STRUCT_TYPE(UNDO_OP);
 
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
@@ -22,6 +24,6 @@ extern "C"
 }
 #endif
 
-#endif /*PLAY_TARRAY_UNDO_OP_TYPES_H*/
+#endif /*PLAY_UNDO_OP_TARRAY_TYPES_H*/
 
 

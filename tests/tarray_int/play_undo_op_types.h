@@ -18,8 +18,6 @@ typedef struct UNDO_OP_TAG
     uint32_t old;
 }UNDO_OP;
 
-TARRAY_DEFINE_STRUCT_TYPE(UNDO_OP);
-
 #endif /*PLAY_UNDO_OP_TYPES_H*/
 
 
