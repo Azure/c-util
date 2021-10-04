@@ -11,7 +11,7 @@
 #include "c_util/tarray.h"
 
 #include "play_undo_op_types.h"
-#include "play_tarray_undo_op_types.h"
+#include "play_undo_op_tarray_types.h"
 
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus

@@ -18,7 +18,7 @@ set(${theseTestsName}_h_files
 play.h
 play_undo_op.h
 play_undo_op_types.h
-play_tarray_undo_op_types.h
+play_undo_op_tarray_types.h
 )
 
 build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS tarray_int_reals c_pal c_pal_reals)

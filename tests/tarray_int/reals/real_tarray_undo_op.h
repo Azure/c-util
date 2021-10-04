@@ -10,7 +10,7 @@
 #include "c_util/tarray.h"
 
 #include "../play_undo_op_types.h"
-#include "../play_tarray_undo_op_types.h"
+#include "../play_undo_op_tarray_types.h"
 
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 
