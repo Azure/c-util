@@ -11,7 +11,6 @@
 #endif
 
 #include "c_util/thandle_ll.h"
-
 #include "c_util/tarray_ll.h"
 
 #include "umock_c/umock_c_prod.h"

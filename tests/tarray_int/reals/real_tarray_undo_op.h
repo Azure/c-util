@@ -6,7 +6,6 @@
 
 #include "macro_utils/macro_utils.h"
 
-
 #include "c_util/tarray_ll.h"
 #include "c_util/tarray.h"
 

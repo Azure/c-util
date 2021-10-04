@@ -7,11 +7,8 @@
 #define PLAY_TARRAY_UNDO_OP_TYPES_H
 
 #include "c_util/thandle_ll.h"
-#include "c_util/tarray_ll.h"
 
 #include "play_undo_op_types.h"
-
-TARRAY_DEFINE_STRUCT_TYPE(UNDO_OP);
 
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
