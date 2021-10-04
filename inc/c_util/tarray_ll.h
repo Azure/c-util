@@ -10,7 +10,7 @@
 #include <inttypes.h>
 #endif
 
-#include "c_util/thandle2.h"
+#include "c_util/thandle_ll.h"
 
 #include "umock_c/umock_c_prod.h"
 
@@ -169,8 +169,8 @@ int TARRAY_LL_ENSURE_CAPACITY(C)(TARRAY(T) tarray, uint32_t capacity)           
 
 /*macro to be used in headers*/                                                                                     \
 #define TARRAY_LL_TYPE_DECLARE(C, T)                                                                                \
-    /*TARRAY_DEFINE_STRUCT_TYPE(T)                                                                                    */\
-    THANDLE_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(C), TARRAY_TYPEDEF_NAME(T))                                                                    \
+    /*TARRAY_DEFINE_STRUCT_TYPE(T)                                                      /*vld.h remove*/                              \
+    THANDLE_LL_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(C), TARRAY_TYPEDEF_NAME(T))                                         \
     TARRAY_LL_CREATE_DECLARE(C, T)                                                                                  \
     TARRAY_LL_ENSURE_CAPACITY_DECLARE(C, T)                                                                         \
 
