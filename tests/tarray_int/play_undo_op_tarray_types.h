@@ -7,6 +7,7 @@
 #define PLAY_UNDO_OP_TARRAY_TYPES_H
 
 #include "c_util/thandle_ll.h"
+#include "c_util/tarray.h"
 
 #include "play_undo_op_types.h"
 
@@ -19,6 +20,8 @@ extern "C"
 #endif
 
     THANDLE_LL_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(UNDO_OP), TARRAY_TYPEDEF_NAME(UNDO_OP));
+
+    TARRAY_TYPE_DECLARE(UNDO_OP);
 
 #ifdef __cplusplus
 }

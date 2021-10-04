@@ -16,7 +16,6 @@ play.c
 
 set(${theseTestsName}_h_files
 play.h
-play_undo_op.h
 play_undo_op_types.h
 play_undo_op_tarray_types.h
 )

@@ -11,7 +11,7 @@
 #include "c_pal/gballoc_hl_redirect.h"
 
 #include "play_undo_op_types.h"
-#include "play_undo_op.h"
+#include "play_undo_op_tarray_types.h"
 
 #include "play.h"
 

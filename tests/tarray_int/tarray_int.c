@@ -30,7 +30,8 @@ void my_gballoc_free(void* ptr)
 #include "umock_c/umock_c.h"
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
-#include "play_undo_op.h"
+#include "play_undo_op_types.h"
+#include "play_undo_op_tarray_types.h"
 #undef ENABLE_MOCKS
 
 #include "real_gballoc_hl.h"
