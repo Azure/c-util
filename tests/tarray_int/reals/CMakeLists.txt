@@ -7,7 +7,6 @@ set(tarray_int_reals_c_files
 
 set(tarray_int_reals_h_files
     real_tarray_undo_op.h
-    real_tarray_undo_op_renames.h
 )
 
 add_library(tarray_int_reals ${tarray_int_reals_c_files} ${tarray_int_reals_h_files})
