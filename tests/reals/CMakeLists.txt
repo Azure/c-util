@@ -43,6 +43,7 @@ set(c_util_reals_h_files
     real_uuid.h
     real_uuid_renames.h
     real_tarray_undo_op.h
+    real_tarray_undo_op_renames.h
 )
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)

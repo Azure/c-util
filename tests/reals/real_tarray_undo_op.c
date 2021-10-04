@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 
+#include "real_tarray_undo_op_renames.h"
+
 #include "c_util/thandle_ll.h"
 #include "c_util/tarray_ll.h"
 
