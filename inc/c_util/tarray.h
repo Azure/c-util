@@ -15,6 +15,10 @@
 
 #include "umock_c/umock_c_prod.h"
 
+/*TARRAY is-a THANDLE.*/
+/*given a type "T" TARRAY(T) expands to the name of the type. */ /*tarray_int folder in c-util\tests contains a template for usage in tests (with reals)*/
+#define TARRAY(T) TARRAY_LL(T)
+
 #define TARRAY_CREATE_DECLARE(T) TARRAY_LL_CREATE_DECLARE(T, T)
 #define TARRAY_CREATE_DEFINE(T) TARRAY_LL_CREATE_DEFINE(T, T)
 
@@ -26,22 +30,22 @@
 #define TARRAY_CREATE(C) TARRAY_LL_CREATE(C)
 #define TARRAY_ENSURE_CAPACITY(C) TARRAY_LL_ENSURE_CAPACITY(C)
 
-#define TARRAY_INITIALIZE(T) THANDLE_INITIALIZE(TARRAY_TYPEDEF_NAME(T))
-#define TARRAY_ASSIGN(T) THANDLE_ASSIGN(TARRAY_TYPEDEF_NAME(T))
-#define TARRAY_DEC_REF(T) THANDLE_DEC_REF(TARRAY_TYPEDEF_NAME(T))
-#define TARRAY_INC_REF(T) THANDLE_INC_REF(TARRAY_TYPEDEF_NAME(T))
-#define TARRAY_MOVE(T) THANDLE_MOVE(TARRAY_TYPEDEF_NAME(T))
-#define TARRAY_INITIALIZE_MOVE(T) THANDLE_INITIALIZE_MOVE(TARRAY_TYPEDEF_NAME(T))
+#define TARRAY_INITIALIZE(T) TARRAY_LL_INITIALIZE(T)
+#define TARRAY_ASSIGN(T) TARRAY_LL_ASSIGN(T)
+#define TARRAY_DEC_REF(T) TARRAY_LL_DEC_REF(T)
+#define TARRAY_INC_REF(T) TARRAY_LL_INC_REF(T)
+#define TARRAY_MOVE(T) TARRAY_LL_MOVE(T)
+#define TARRAY_INITIALIZE_MOVE(T) TARRAY_LL_INITIALIZE_MOVE(T)
 
 /*macro to be used in headers*/                                                                                     \
 #define TARRAY_TYPE_DECLARE(T)                                                                                      \
-    /*TARRAY_DEFINE_STRUCT_TYPE(T)                                                                                   */ \
-    /*THANDLE_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(T))                                                                   */ \
+    /*hint: have TARRAY_DEFINE_STRUCT_TYPE(T) before TARRAY_TYPE_DECLARE                                         */ \
+    /*hint: have THANDLE_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(T)) before TARRAY_TYPE_DECLARE                         */ \
     TARRAY_CREATE_DECLARE(T)                                                                                        \
     TARRAY_ENSURE_CAPACITY_DECLARE(T)                                                                               \
 
 #define TARRAY_TYPE_DEFINE(T)                                                                                       \
-    /*THANDLE_TYPE_DEFINE(TARRAY_TYPEDEF_NAME(T))                                                                    */ \
+    /*hint: have THANDLE_TYPE_DEFINE(TARRAY_TYPEDEF_NAME(T)) before  TARRAY_TYPE_DEFINE                          */ \
     TARRAY_FREE_DEFINE(T)                                                                                           \
     TARRAY_CREATE_DEFINE(T)                                                                                         \
     TARRAY_ENSURE_CAPACITY_DEFINE(T)                                                                                \

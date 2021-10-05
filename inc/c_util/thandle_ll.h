@@ -16,9 +16,6 @@
 
 #include "c_util/containing_record.h"
 
-/*file acronyms: C = code, T = data Type. C is a decoration for code, T is a decoration for Data types. Having 2 decorations allows*/
-/*usage of someapi and real_someapi over the same API_T data type*/
-
 #ifdef THANDLE_MALLOC_FUNCTION
     #ifndef THANDLE_FREE_FUNCTION
         #error THANDLE_MALLOC_FUNCTION and THANDLE_FREE_FUNCTION must be both defined or both not defined

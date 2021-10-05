@@ -16,9 +16,6 @@
 
 #include "umock_c/umock_c_prod.h"
 
-/*file acronyms: C = code, T = data Type. C is a decoration for code, T is a decoration for Data types. Having 2 decorations allows*/
-/*usage of someapi and real_someapi over the same API_T data type (or otherwise reals is not possible for TARRAY)*/
-
 /*TARRAY is backed by a THANDLE build on the structure below*/
 #define TARRAY_STRUCT_TYPE_NAME_TAG(T) MU_C2(TARRAY_TYPEDEF_NAME(T), _TAG)
 #define TARRAY_TYPEDEF_NAME(T) MU_C2(TARRAY_STRUCT_, T)
@@ -32,8 +29,8 @@ typedef struct TARRAY_STRUCT_TYPE_NAME_TAG(T)                                   
 } TARRAY_TYPEDEF_NAME(T);                                                           \
 
 /*TARRAY is-a THANDLE*/
-/*given a type "T" TARRAY(T) expands to the name of the type. */
-#define TARRAY(T) THANDLE(TARRAY_TYPEDEF_NAME(T))
+/*given a type "T" TARRAY_LL(T) expands to the name of the type. */
+#define TARRAY_LL(T) THANDLE(TARRAY_TYPEDEF_NAME(T))
 
 /*because TARRAY is a THANDLE, all THANDLE's macro APIs are useable with TARRAY.*/
 /*the below are just shortcuts of THANDLE's public ones*/
@@ -44,12 +41,12 @@ typedef struct TARRAY_STRUCT_TYPE_NAME_TAG(T)                                   
 #define TARRAY_LL_MOVE(T) THANDLE_MOVE(TARRAY_TYPEDEF_NAME(T))
 #define TARRAY_LL_INITIALIZE_MOVE(T) THANDLE_INITIALIZE_MOVE(TARRAY_TYPEDEF_NAME(T))
 
-/*introduces a new name for a function that returns a TARRAY(T)*/
+/*introduces a new name for a function that returns a TARRAY_LL(T)*/
 #define TARRAY_LL_CREATE_NAME(C) MU_C2(TARRAY_LL_CREATE_, C)
 #define TARRAY_LL_CREATE(C) TARRAY_LL_CREATE_NAME(C)
 
 /*introduces a function declaration for tarray_create*/
-#define TARRAY_LL_CREATE_DECLARE(C, T) MOCKABLE_FUNCTION(, TARRAY(T), TARRAY_LL_CREATE(C));
+#define TARRAY_LL_CREATE_DECLARE(C, T) MOCKABLE_FUNCTION(, TARRAY_LL(T), TARRAY_LL_CREATE(C));
 
 /*introduces a name for the function that free's a TARRAY when it's ref count got to 0*/
 #define TARRAY_LL_FREE_NAME(C) MU_C2(TARRAY_LL_FREE_, C) 
@@ -71,7 +68,7 @@ static void TARRAY_LL_FREE_NAME(C)(TARRAY_TYPEDEF_NAME(T)* tarray)              
 
 /*introduces a function definition for tarray_create*/
 #define TARRAY_LL_CREATE_DEFINE(C, T)                                                                                       \
-TARRAY(T) TARRAY_LL_CREATE(C)(void)                                                                                         \
+TARRAY_LL(T) TARRAY_LL_CREATE(C)(void)                                                                                      \
 {                                                                                                                           \
     TARRAY_TYPEDEF_NAME(T)* result;                                                                                         \
     /*Codes_SRS_TARRAY_02_001: [ TARRAY_CREATE(T) shall call THANDLE_MALLOC to allocate the result. ]*/                     \
@@ -109,10 +106,10 @@ TARRAY(T) TARRAY_LL_CREATE(C)(void)                                             
 
 /*introduces the declaration of the function that grows the capacity*/
 #define TARRAY_LL_ENSURE_CAPACITY_DECLARE(C, T) \
-MOCKABLE_FUNCTION(, int, TARRAY_LL_ENSURE_CAPACITY(C), TARRAY(T), tarray, uint32_t, capacity);
+MOCKABLE_FUNCTION(, int, TARRAY_LL_ENSURE_CAPACITY(C), TARRAY_LL(T), tarray, uint32_t, capacity);
 
 #define TARRAY_LL_ENSURE_CAPACITY_DEFINE(C, T)                                                                                                                  \
-int TARRAY_LL_ENSURE_CAPACITY(C)(TARRAY(T) tarray, uint32_t capacity)                                                                                           \
+int TARRAY_LL_ENSURE_CAPACITY(C)(TARRAY_LL(T) tarray, uint32_t capacity)                                                                                        \
 {                                                                                                                                                               \
     int result;                                                                                                                                                 \
     if (tarray == NULL)                                                                                                                                         \
