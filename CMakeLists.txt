@@ -180,7 +180,9 @@ set(c_util_h_files
     ./inc/c_util/sm.h
     ./inc/c_util/strings.h
     ./inc/c_util/strings_types.h
+    ./inc/c_util/tarray_ll.h
     ./inc/c_util/tarray.h
+    ./inc/c_util/thandle_ll.h
     ./inc/c_util/thandle.h
     ./inc/c_util/thandle_tuple_array.h
     ./inc/c_util/uuid.h

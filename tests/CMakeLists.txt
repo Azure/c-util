@@ -4,6 +4,7 @@
 add_subdirectory(reals)
 
 if(${run_unittests})
+
     build_test_folder(azure_base64_ut)
     build_test_folder(buffer_ut)
     build_test_folder(constbuffer_ut)
@@ -23,6 +24,8 @@ if(${run_unittests})
     build_test_folder(sm_ut)
     build_test_folder(strings_ut)
     build_test_folder(tarray_ut)
+    add_subdirectory(tarray_int_reals)
+    build_test_folder(tarray_int)
     build_test_folder(thandle_tuple_array_ut)
     build_test_folder(thandle_ut)
     build_test_folder(uuid_ut)
