@@ -22,10 +22,10 @@ extern "C" {
 
     extern int umocktypes_uuid_register_types(void);
 
-    extern char* umocktypes_stringify_uuid(const UUID_T** value);
-    extern int umocktypes_are_equal_uuid(const UUID_T** left, const UUID_T** right);
-    extern int umocktypes_copy_uuid(UUID_T** destination, const UUID_T** source);
-    extern void umocktypes_free_uuid(UUID_T** value);
+    extern char* umocktypes_stringify_uuid(const UUID_T* value);
+    extern int umocktypes_are_equal_uuid(const UUID_T* left, const UUID_T* right);
+    extern int umocktypes_copy_uuid(UUID_T* destination, const UUID_T* source);
+    extern void umocktypes_free_uuid(UUID_T* value);
 
     CTEST_DECLARE_EQUALITY_ASSERTION_FUNCTIONS_FOR_TYPE(uuid_ptr);
 

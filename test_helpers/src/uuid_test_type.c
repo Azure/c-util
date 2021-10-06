@@ -38,7 +38,7 @@ int UUID_T_Compare(const UUID_T left, const UUID_T right)
     return memcmp(left, right, sizeof(UUID_T));
 }
 
-char* umocktypes_stringify_uuid(const UUID_T** value)
+char* umocktypes_stringify_uuid(const UUID_T* value)
 {
     char* result;
 
@@ -68,7 +68,7 @@ char* umocktypes_stringify_uuid(const UUID_T** value)
             }
             else
             {
-                if (sprintf_s(result, length + 1, "%" PRI_UUID, UUID_FORMAT_VALUES(**value)) != (int)length)
+                if (sprintf_s(result, length + 1, "%" PRI_UUID, UUID_FORMAT_VALUES(*value)) != (int)length)
                 {
                     UMOCK_LOG("umocktypes_stringify_uuid: failed to format UUID.");
                     free(result);
@@ -80,7 +80,7 @@ char* umocktypes_stringify_uuid(const UUID_T** value)
     return result;
 }
 
-int umocktypes_are_equal_uuid(const UUID_T** left, const UUID_T** right)
+int umocktypes_are_equal_uuid(const UUID_T* left, const UUID_T* right)
 {
     int result;
 
@@ -104,19 +104,19 @@ int umocktypes_are_equal_uuid(const UUID_T** left, const UUID_T** right)
     {
         result = 1;
     }
-    else if ((**left == NULL) || (**right == NULL))
+    else if ((*left == NULL) || (*right == NULL))
     {
         result = 0;
     }
     else
     {
-        result = (memcmp(**left, **right, sizeof(UUID_T)) == 0) ? 1 : 0;
+        result = (memcmp(*left, *right, sizeof(UUID_T)) == 0) ? 1 : 0;
     }
 
     return result;
 }
 
-int umocktypes_copy_uuid(UUID_T** destination, const UUID_T** source)
+int umocktypes_copy_uuid(UUID_T* destination, const UUID_T* source)
 {
     int result;
 
@@ -128,28 +128,16 @@ int umocktypes_copy_uuid(UUID_T** destination, const UUID_T** source)
     }
     else
     {
-        if (*source == NULL)
-        {
-            *destination = NULL;
-            result = 0;
-        }
-        else
-        {
-            *destination = malloc(sizeof(UUID_T));
-            (void)memcpy(**destination, **source, sizeof(UUID_T));
-            result = 0;
-        }
+        (void)memcpy(*destination, *source, sizeof(UUID_T));
+        result = 0;
     }
 
     return result;
 }
 
-void umocktypes_free_uuid(UUID_T** value)
+void umocktypes_free_uuid(UUID_T* value)
 {
-    if (value)
-    {
-        free(*value);
-    }
+    (void)value;
 }
 
 int umocktypes_uuid_register_types()
