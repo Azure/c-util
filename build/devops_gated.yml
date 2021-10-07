@@ -62,7 +62,7 @@ jobs:
 
   - template: build\templates\real_check.yml@c-build-tools
     parameters:
-      lib: 'build_x64\Debug\c-util.lib'
+      lib: 'build_x64\Debug\c_util.lib'
       reals_lib: 'build_x64\tests\reals\Debug\c_util_reals.lib'
 
   - task: CmdLine@1
