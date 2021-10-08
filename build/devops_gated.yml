@@ -175,6 +175,73 @@ jobs:
       arguments: '-C "Debug" -V --output-on-failure'
       workingFolder: 'build_x86'
 
+- job: Semmle
+  displayName: 'Build with Semmle'
+  pool:
+    name: Azure-MessagingStore-BuildMachinePool
+    demands:
+    - Build
+    - Cmd
+    - msbuild
+    - visualstudio
+
+  steps:
+  - task: BatchScript@1
+    displayName: 'Git submodule update'
+    inputs:
+      filename: 'C:\Program Files\Git\bin\git.exe'
+      arguments: 'submodule update --init --force'
+
+  - task: BatchScript@1
+    displayName: 'Git submodule clean'
+    inputs:
+      filename: 'C:\Program Files\Git\bin\git.exe'
+      arguments: 'submodule foreach --recursive "git clean -xdff"'
+
+  - task: BatchScript@1
+    displayName: 'Git clean'
+    inputs:
+      filename: 'C:\Program Files\Git\bin\git.exe'
+      arguments: 'clean -xdff'
+
+  - task: BatchScript@1
+    displayName: 'Setup VS Vars'
+    inputs:
+      filename: '"c:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat"'
+      modifyEnvironment: true
+
+  - task: CMake@1
+    displayName: 'CMake .. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -Dabort_on_fail:bool=ON -G "Visual Studio 16 2019" -A x64'
+    inputs:
+      workingDirectory: 'build_x64'
+      cmakeArgs: '.. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -Dabort_on_fail:bool=ON -G "Visual Studio 16 2019" -A x64'
+
+  - task: VSBuild@1
+    displayName: 'Build solution build_x64\*.sln'
+    inputs:
+      solution: 'build_x64\*.sln'
+      msbuildArgs: '/t:restore /t:build /p:ForceImportBeforeCppTargets=$(Build.SourcesDirectory)/vld.props'
+      platform: x64
+      configuration: Debug
+      maximumCpuCount: true
+
+  - task: CmdLine@1
+    displayName: 'Run ctest'
+    inputs:
+      filename: ctest
+      arguments: '-C "Debug" -V --output-on-failure'
+      workingFolder: 'build_x64'
+
+  - task: Semmle@1
+    inputs:
+      toolVersion: Latest
+      sourceCodeDirectory: '$(Build.SourcesDirectory)'
+      language: 'cpp'
+      buildCommandsString: '"%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\MSBuild.exe" build_x64\c_util.sln /t:rebuild'
+      querySuite: 'Recommended'
+      timeout: '1800'
+      ram: '16384'
+
 - job: linuxubuntu
   displayName: 'Build Linux Ubuntu'
   pool:
