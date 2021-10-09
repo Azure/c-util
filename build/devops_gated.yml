@@ -211,10 +211,10 @@ jobs:
       modifyEnvironment: true
 
   - task: CMake@1
-    displayName: 'CMake .. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -Dabort_on_fail:bool=ON -Drun_traceability=OFF -G "Visual Studio 16 2019" -A x64'
+    displayName: 'CMake .. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -Dabort_on_fail:bool=ON -Drun_traceability=OFF -Dbuild_traceability_tool:bool=OFF -G "Visual Studio 16 2019" -A x64'
     inputs:
       workingDirectory: 'build_x64'
-      cmakeArgs: '.. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -Dabort_on_fail:bool=ON -Drun_traceability=OFF -G "Visual Studio 16 2019" -A x64'
+      cmakeArgs: '.. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -Duse_cppunittest:bool=OFF -Dabort_on_fail:bool=ON -Drun_traceability=OFF -Dbuild_traceability_tool:bool=OFF -G "Visual Studio 16 2019" -A x64'
 
   - task: Semmle@1
     inputs:
