@@ -180,7 +180,7 @@ static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(C)(const T* source, void(*dis
         /*Codes_SRS_THANDLE_02_031: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall call get_sizeof to get the needed size to store T. ]*/                                 \
         size_t sizeof_source = get_sizeof(source);                                                                                                                  \
         /*Codes_SRS_THANDLE_02_026: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall allocate memory. ]*/                                                                   \
-        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)THANDLE_MALLOC_FUNCTION(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) - sizeof(T) + sizeof_source); \
+        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)THANDLE_MALLOC_FLEX_FUNCTION(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) - sizeof(T), 1, sizeof_source); \
         if (handle_impl == NULL)                                                                                                                                    \
         {                                                                                                                                                           \
             /*Codes_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/                           \

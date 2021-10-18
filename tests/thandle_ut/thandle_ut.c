@@ -708,7 +708,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_with_copy_NULL_succeeds)
     a_b.a = 2;
     a_b.b = 3;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, IGNORED_ARG)); /*this is THANDLE_MALLOC*/
 
     ///act
     THANDLE(A_B) result = THANDLE_CREATE_FROM_CONTENT(A_B)(&a_b, NULL, NULL);
@@ -735,7 +735,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_DISPOSE_with_non_NULL_succeeds)
     a_s.a = 22;
     a_s.s = copy;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, IGNORED_ARG)); /*this is THANDLE_MALLOC*/
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is sprintf_char in copy_A_S, also known as "copy"*/
 
     ///act
@@ -761,7 +761,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_when_THANDLE_MALLOC_FUNCTION_fail
     a_s.a = 22;
     a_s.s = copy;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, IGNORED_ARG)) /*this is THANDLE_MALLOC*/
         .SetReturn(NULL);
 
     ///act
@@ -784,7 +784,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_when_copy_fails_it_fails)
     a_s.a = 22;
     a_s.s = copy;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, IGNORED_ARG)); /*this is THANDLE_MALLOC*/
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is malloc in copy_A_S, aslo known as "copy"*/
         .SetReturn(NULL);
     STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
@@ -813,7 +813,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof)
         source->p[i] = i * i;
     }
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, IGNORED_ARG)); /*this is THANDLE_MALLOC*/
 
     ///act
     THANDLE(A_FLEX) copy = THANDLE_CREATE_FROM_CONTENT_FLEX(A_FLEX)(source, NULL, NULL, get_sizeof_A_FLEX);
@@ -848,7 +848,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof_2)
         source->p[i] = i * i;
     }
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, IGNORED_ARG)); /*this is THANDLE_MALLOC*/
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is malloc for the string*/
 
     ///act
