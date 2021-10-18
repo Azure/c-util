@@ -64,6 +64,7 @@ MU_DEFINE_STRUCT(A_B, A_B_FIELDS);
 
 
 #define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_MALLOC_FLEX_FUNCTION gballoc_hl_malloc_flex
 #define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
@@ -74,6 +75,7 @@ extern "C" {
     }
 #endif
 #undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_MALLOC_FLEX_FUNCTION
 #undef THANDLE_FREE_FUNCTION
 
 
@@ -108,6 +110,7 @@ static void dispose_A_S(A_S* a_s)
 }
 
 #define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_MALLOC_FLEX_FUNCTION gballoc_hl_malloc_flex
 #define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
@@ -118,6 +121,7 @@ extern "C" {
 }
 #endif
 #undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_MALLOC_FLEX_FUNCTION
 #undef THANDLE_FREE_FUNCTION
 
 typedef struct A_FLEX_TAG
@@ -133,6 +137,7 @@ static size_t get_sizeof_A_FLEX(const A_FLEX* source)
 }
 
 #define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_MALLOC_FLEX_FUNCTION gballoc_hl_malloc_flex
 #define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
@@ -143,6 +148,7 @@ extern "C" {
 }
 #endif
 #undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_MALLOC_FLEX_FUNCTION 
 #undef THANDLE_FREE_FUNCTION
 
 
@@ -188,6 +194,7 @@ static size_t get_sizeof_A_S_FLEX(const A_S_FLEX* source)
 }
 
 #define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_MALLOC_FLEX_FUNCTION gballoc_hl_malloc_flex
 #define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
@@ -198,6 +205,7 @@ extern "C" {
 }
 #endif
 #undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_MALLOC_FLEX_FUNCTION
 #undef THANDLE_FREE_FUNCTION
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
@@ -307,21 +315,6 @@ TEST_FUNCTION(thandle_flex_user_create_fails_when_thandle_malloc_fails)
 
     ///act
     THANDLE(LL_FLEX) ll = ll_flex_create(TEST_A, TEST_S, 10);
-
-    ///assert
-    ASSERT_IS_NULL(ll);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///cleanup
-}
-
-/*Tests_SRS_THANDLE_02_019: [ If extra_size + sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) would exceed SIZE_MAX then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/
-TEST_FUNCTION(thandle_flex_user_create_fails_when_SIZE_MAX_is_exceeded)
-{
-    ///arrange
-
-    ///act
-    THANDLE(LL_FLEX) ll = ll_flex_create(TEST_A, TEST_S, SIZE_MAX/sizeof(int));
 
     ///assert
     ASSERT_IS_NULL(ll);

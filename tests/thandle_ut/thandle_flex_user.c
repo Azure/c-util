@@ -21,9 +21,11 @@ MU_DEFINE_STRUCT(LL_FLEX, LL_FLEX_FIELDS);
 
 
 #define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_MALLOC_FLEX_FUNCTION gballoc_hl_malloc_flex
 #define THANDLE_FREE_FUNCTION gballoc_hl_free
 THANDLE_TYPE_DEFINE(LL_FLEX);
 #undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_MALLOC_FLEX_FUNCTION
 #undef THANDLE_FREE_FUNCTION
 
 static void frees_the_string(LL_FLEX* ll)
