@@ -292,7 +292,7 @@ TEST_FUNCTION(thandle_user_create_fails_when_thandle_malloc_fails)
 TEST_FUNCTION(thandle_flex_user_create_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)); /*this is THANDLE_MALLOC*/
     STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
 
     ///act
@@ -310,7 +310,7 @@ TEST_FUNCTION(thandle_flex_user_create_succeeds)
 TEST_FUNCTION(thandle_flex_user_create_fails_when_thandle_malloc_fails)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .SetReturn(NULL); /*this is THANDLE_MALLOC_WITH_EXTRA_SIZE*/
 
     ///act

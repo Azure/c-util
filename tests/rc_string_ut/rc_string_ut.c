@@ -9,9 +9,21 @@
 #include <stddef.h>
 #endif
 
+#include "real_gballoc_ll.h"
+
 static void* my_gballoc_malloc(size_t size)
 {
-    return malloc(size);
+    return real_gballoc_ll_malloc(size);
+}
+
+static void* my_gballoc_malloc_2(size_t nmemb, size_t size)
+{
+    return real_gballoc_ll_malloc_2(nmemb, size);
+}
+
+static void* my_gballoc_malloc_flex(size_t base, size_t nmemb, size_t size)
+{
+    return real_gballoc_ll_malloc_flex(base, nmemb, size);
 }
 
 static void my_gballoc_free(void* s)
@@ -70,6 +82,8 @@ TEST_SUITE_INITIALIZE(suite_initialize)
     ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types());
 
     REGISTER_GLOBAL_MOCK_HOOK(malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(malloc_2, my_gballoc_malloc_2);
+    REGISTER_GLOBAL_MOCK_HOOK(malloc_flex, my_gballoc_malloc_flex);
     REGISTER_GLOBAL_MOCK_HOOK(free, my_gballoc_free);
 
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
@@ -124,15 +138,15 @@ TEST_FUNCTION(rc_string_create_with_NULL_fails)
 TEST_FUNCTION(rc_string_create_succeeds)
 {
     // arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     // act
-    THANDLE(RC_STRING) rc_string = rc_string_create("gogu");
+    THANDLE(RC_STRING) rc_string = rc_string_create("grogu");
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NOT_NULL(rc_string);
-    ASSERT_ARE_EQUAL(char_ptr, "gogu", rc_string->string);
+    ASSERT_ARE_EQUAL(char_ptr, "grogu", rc_string->string);
 
     // cleanup
     THANDLE_DEC_REF(RC_STRING)(rc_string);
@@ -145,7 +159,7 @@ TEST_FUNCTION(rc_string_create_succeeds)
 TEST_FUNCTION(rc_string_create_with_empty_string_succeeds)
 {
     // arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     // act
     THANDLE(RC_STRING) rc_string = rc_string_create("");
@@ -163,7 +177,7 @@ TEST_FUNCTION(rc_string_create_with_empty_string_succeeds)
 TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_also_fails)
 {
     // arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     umock_c_negative_tests_snapshot();
 
@@ -210,7 +224,7 @@ TEST_FUNCTION(rc_string_create_with_move_memory_succeeds)
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     // act
     THANDLE(RC_STRING) rc_string = rc_string_create_with_move_memory(test_string);
@@ -236,7 +250,7 @@ TEST_FUNCTION(rc_string_create_with_move_memory_with_empty_string_succeeds)
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     // act
     THANDLE(RC_STRING) rc_string = rc_string_create_with_move_memory(test_string);
@@ -285,7 +299,7 @@ TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_move_memory_also_
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     umock_c_negative_tests_snapshot();
 
@@ -349,7 +363,7 @@ TEST_FUNCTION(rc_string_create_with_custom_free_succeeds)
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     // act
     THANDLE(RC_STRING) rc_string = rc_string_create_with_custom_free(test_string, test_free_func, test_string);
@@ -376,7 +390,7 @@ TEST_FUNCTION(rc_string_create_with_custom_free_with_empty_string_succeeds)
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     // act
     THANDLE(RC_STRING) rc_string = rc_string_create_with_custom_free(test_string, test_free_func, test_string);
@@ -401,7 +415,7 @@ TEST_FUNCTION(rc_string_create_with_custom_free_with_do_nothing_free_and_NULL_co
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     // act
     THANDLE(RC_STRING) rc_string = rc_string_create_with_custom_free(test_string, test_free_func_do_nothing, NULL);
@@ -427,7 +441,7 @@ TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_custom_free_also_
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     umock_c_negative_tests_snapshot();
 
@@ -520,13 +534,13 @@ TEST_FUNCTION(rc_string_recreate_succeeds_1)
 {
     ///arrange
     const char source[] = "bla";
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
     THANDLE(RC_STRING) rc_string = rc_string_create(source);
     ASSERT_IS_NOT_NULL(rc_string);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(char_ptr, source, rc_string->string);
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     ///act
     THANDLE(RC_STRING) same = rc_string_recreate(rc_string);
@@ -546,13 +560,13 @@ TEST_FUNCTION(rc_string_recreate_fails_when_malloc_fails)
 {
     ///arrange
     const char source[] = "bla";
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
     THANDLE(RC_STRING) rc_string = rc_string_create(source);
     ASSERT_IS_NOT_NULL(rc_string);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(char_ptr, source, rc_string->string);
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)))
         .SetReturn(NULL);
 
     ///act
@@ -573,7 +587,7 @@ TEST_FUNCTION(rc_string_recreate_succeeds_2)
 {
     ///arrange
     const char source[] = "bla2";
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
     THANDLE(RC_STRING) rc_string = rc_string_create(source);
     ASSERT_IS_NOT_NULL(rc_string);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -581,7 +595,7 @@ TEST_FUNCTION(rc_string_recreate_succeeds_2)
 
     THANDLE_INC_REF(RC_STRING)(rc_string);
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     ///act
     THANDLE(RC_STRING) same = rc_string_recreate(rc_string);
