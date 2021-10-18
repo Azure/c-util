@@ -184,8 +184,8 @@ static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(C)(const T* source, void(*dis
         if (handle_impl == NULL)                                                                                                                                    \
         {                                                                                                                                                           \
             /*Codes_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/                           \
-            LogError("error in malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                                                                  \
-                sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) - sizeof(T) + sizeof_source);                                                                                  \
+            LogError("error in " MU_TOSTRING(THANDLE_MALLOC_FLEX_FUNCTION) "(sizeof(THANDLE_WRAPPER_TYPE_NAME(T))=%zu - sizeof(T)=%zu, 1, sizeof_source=%zu)",      \
+                sizeof(THANDLE_WRAPPER_TYPE_NAME(T)), sizeof(T), sizeof_source);                                                                                    \
             result = NULL;                                                                                                                                          \
         }                                                                                                                                                           \
         else                                                                                                                                                        \
