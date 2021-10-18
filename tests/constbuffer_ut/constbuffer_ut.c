@@ -195,7 +195,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         const CONSTBUFFER* content;
 
         ///act
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER1_length, 1));
 
         handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
 
@@ -226,7 +226,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///act
         STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
         STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER1_length, 1));
 
         handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
 
@@ -254,7 +254,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
         STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER1_length, 1))
             .SetReturn(NULL);
 
 
@@ -291,7 +291,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         CONSTBUFFER_HANDLE handle;
 
         ///act
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER1_length, 1))
             .SetReturn(NULL);
 
         handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
@@ -330,7 +330,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         const CONSTBUFFER* content;
 
         ///act
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER2_length, 1));
 
         handle = CONSTBUFFER_Create(BUFFER2_u_char, BUFFER2_length);
 
@@ -355,7 +355,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         const CONSTBUFFER* content;
 
         ///act
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER3_length, 1));
 
         handle = CONSTBUFFER_Create(BUFFER3_u_char, BUFFER3_length);
 
@@ -732,7 +732,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -759,7 +759,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -781,7 +781,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -806,7 +806,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -838,7 +838,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -869,7 +869,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -900,7 +900,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -932,7 +932,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -960,7 +960,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -987,7 +987,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1022,7 +1022,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1060,7 +1060,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1099,7 +1099,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1457,7 +1457,7 @@ TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_with_offset_exceeding_
     ///arrange
     CONSTBUFFER_HANDLE origin;
     const char source[] = "source";
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
     origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
     ASSERT_IS_NOT_NULL(origin);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1484,7 +1484,7 @@ TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_with_offset_plus_size_
     ///arrange
     CONSTBUFFER_HANDLE origin;
     const char source[] = "source";
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
     origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
     ASSERT_IS_NOT_NULL(origin);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1507,13 +1507,13 @@ TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_succeeds_1) /*this has
     ///arrange
     CONSTBUFFER_HANDLE origin;
     const char source[] = "source";
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
     origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
     ASSERT_IS_NOT_NULL(origin);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 0, 1));
 
     ///act
     CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSizeWithCopy(origin, 0, 0);
@@ -1538,13 +1538,13 @@ TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_succeeds_2) /*this has
     ///arrange
     CONSTBUFFER_HANDLE origin;
     const char source[] = "source";
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
     origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
     ASSERT_IS_NOT_NULL(origin);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, 1));
 
     ///act
     CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSizeWithCopy(origin, 0, 1);
@@ -1569,13 +1569,13 @@ TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_unhappy_path) /*this f
     ///arrange
     CONSTBUFFER_HANDLE origin;
     const char source[] = "source";
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
     origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
     ASSERT_IS_NOT_NULL(origin);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, 1))
         .SetReturn(NULL);
 
     ///act
@@ -1682,7 +1682,7 @@ TEST_FUNCTION(CONSTBUFFER_get_serialization_size_with_0_size_succeeds)
 {
     ///arrange
     
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 0, 1));
     CONSTBUFFER_HANDLE smallest = CONSTBUFFER_Create(NULL, 0);
     ASSERT_IS_NOT_NULL(smallest);
     uint32_t result;
@@ -1706,7 +1706,7 @@ TEST_FUNCTION(CONSTBUFFER_get_serialization_size_with_2_size_succeeds)
     ///arrange
     unsigned char source[2] = { 1,2 };
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source), 1));
     CONSTBUFFER_HANDLE smallest = CONSTBUFFER_Create(source, sizeof(source));
     ASSERT_IS_NOT_NULL(smallest);
     uint32_t result;
@@ -1744,8 +1744,8 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_source_NULL_fails)
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_NULL_fails)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     unsigned char s[] = { 1 };
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(s), 1));
     CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(s, sizeof(s));
     ASSERT_IS_NOT_NULL(source);
     unsigned char* result;
@@ -1804,8 +1804,9 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_exceeding_UINT32_MAX_fails)
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_malloc_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     unsigned char s[] = { 1 };
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG,sizeof(s), 1));
+    
     CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(s, sizeof(s));
     ASSERT_IS_NOT_NULL(source);
     unsigned char* result;
@@ -1849,7 +1850,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_malloc_succeeds)
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_0_with_malloc_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 0, 1));
     CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(NULL, 0);
     ASSERT_IS_NOT_NULL(source);
     unsigned char* result;
@@ -1890,8 +1891,8 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_0_with_malloc_succeeds)
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_custom_alloc_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     unsigned char s[] = { 1 };
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(s), 1));
     CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(s, sizeof(s));
     ASSERT_IS_NOT_NULL(source);
     unsigned char* result;
@@ -1935,8 +1936,8 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_custom_alloc_succeeds)
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_2_with_custom_alloc_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     unsigned char s[] = { 1, 2 };
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(s), 1));
     CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(s, sizeof(s));
     ASSERT_IS_NOT_NULL(source);
     unsigned char* result;
@@ -1975,8 +1976,8 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_2_with_custom_alloc_succeeds)
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_2_with_custom_alloc_unhappy_path)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     unsigned char s[] = { 1, 2 };
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(s), 1));
     CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(s, sizeof(s));
     ASSERT_IS_NOT_NULL(source);
     unsigned char* result;
@@ -2020,7 +2021,7 @@ TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_with_destination_NULL_fails)
 {
     ///arrange
     unsigned char source_bytes[1] = { 1 };
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source_bytes), 1));
     CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(source_bytes, sizeof(source_bytes));
     ASSERT_IS_NOT_NULL(source);
 
@@ -2043,7 +2044,7 @@ TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_with_serialized_size_NULL_fails)
 {
     ///arrange
     unsigned char source_bytes[1] = { 1 };
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source_bytes), 1));
     CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(source_bytes, sizeof(source_bytes));
     ASSERT_IS_NOT_NULL(source);
 
@@ -2109,7 +2110,7 @@ TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_that_would_overflow_destination_f
 {
     ///arrange
     unsigned char source_bytes[1] = { 1 };
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source_bytes), 1));
     CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(source_bytes, sizeof(source_bytes));
     ASSERT_IS_NOT_NULL(source);
 
@@ -2137,7 +2138,7 @@ TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_succeeds_1) /*in this case, the s
 {
     ///arrange
     unsigned char source_bytes[1] = { 1 };
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source_bytes), 1));
     CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(source_bytes, sizeof(source_bytes));
     ASSERT_IS_NOT_NULL(source);
 
@@ -2180,7 +2181,7 @@ TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_succeeds_2) /*in this case, the s
 {
     ///arrange
     unsigned char source_bytes[1] = { 1 };
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(source_bytes), 1));
     CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(source_bytes, sizeof(source_bytes));
     ASSERT_IS_NOT_NULL(source);
 
@@ -2220,7 +2221,7 @@ TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_succeeds_2) /*in this case, the s
 TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_succeeds_3) /*in this case, an empty constbuffer_handle is serialized*/
 {
     ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 0, 1));
     CONSTBUFFER_HANDLE source = CONSTBUFFER_Create(NULL, 0);
     ASSERT_IS_NOT_NULL(source);
 
@@ -2364,7 +2365,7 @@ TEST_FUNCTION(CONSTBUFFER_from_buffer_with_0_size_succeeds)
         0,0,0,0 /*size = 0*/
     };
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 0, 1));
 
     ///act
     result = CONSTBUFFER_from_buffer(source, sizeof(source), &consumed, &destination);
@@ -2398,7 +2399,7 @@ TEST_FUNCTION(CONSTBUFFER_from_buffer_with_0_size_from_bigger_buffer_succeeds)
         8 /*extra byte*/
     };
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 0, 1));
 
     ///act
     result = CONSTBUFFER_from_buffer(source, sizeof(source), &consumed, &destination);
@@ -2455,7 +2456,7 @@ TEST_FUNCTION(CONSTBUFFER_from_buffer_with_1_size_succeeds)
         0x42
     };
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, 1));
 
     ///act
     result = CONSTBUFFER_from_buffer(source, sizeof(source), &consumed, &destination);
@@ -2492,7 +2493,7 @@ TEST_FUNCTION(CONSTBUFFER_from_buffer_with_1_size_from_greater_size_buffer_succe
         0x42, 0x43 /*0x43 is extraneous*/
     };
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, 1));
 
     ///act
     result = CONSTBUFFER_from_buffer(source, sizeof(source), &consumed, &destination);
@@ -2529,7 +2530,7 @@ TEST_FUNCTION(CONSTBUFFER_from_buffer_with_2_size_succeeds)
         0x42, 0x43
     };
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 2, 1));
 
     ///act
     result = CONSTBUFFER_from_buffer(source, sizeof(source), &consumed, &destination);
@@ -2564,7 +2565,7 @@ TEST_FUNCTION(CONSTBUFFER_from_buffer_with_2_size_unhappy_path)
         0x42, 0x43
     };
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 2, 1))
         .SetReturn(NULL);
 
     ///act
