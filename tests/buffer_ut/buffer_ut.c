@@ -115,6 +115,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
         umock_c_init(on_umock_c_error);
 
+        REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
+
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_hl_malloc, my_gballoc_malloc);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_hl_realloc, my_gballoc_realloc);
@@ -579,7 +581,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, 1));
 
         //act
         nResult = BUFFER_append_build(hBuffer, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
@@ -605,7 +607,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, IGNORED_ARG)).SetReturn(NULL);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, 1)).SetReturn(NULL);
 
         //act
         nResult = BUFFER_append_build(hBuffer, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
@@ -761,7 +763,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * ALLOCATION_SIZE))
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, IGNORED_ARG, ALLOCATION_SIZE, 1))
             .IgnoreArgument(1);
 
         ///act
@@ -828,8 +830,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         BUFFER_delete(hBuffer);
     }
 
-    /* Tests_SRS_BUFFER_07_038: [ If decreaseSize is less than the size of the buffer, BUFFER_shrink shall return a non-null value ] */
-    TEST_FUNCTION(BUFFER_shrink_decrease_size_less_than_len_succeed)
+    /* Tests_SRS_BUFFER_07_038: [ If decreaseSize is more than the size of the buffer, BUFFER_shrink shall return a non-null value ] */
+    TEST_FUNCTION(BUFFER_shrink_decrease_size_more_than_len_fails)
     {
         //arrange
         int nResult;
@@ -1121,7 +1123,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         nResult = BUFFER_build(hAppend, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, ALLOCATION_SIZE + ALLOCATION_SIZE))
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, ALLOCATION_SIZE, ALLOCATION_SIZE, 1))
             .IgnoreArgument(1);
 
         ///act
@@ -1338,7 +1340,7 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         nResult = BUFFER_build(hAppend, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(ALLOCATION_SIZE + ALLOCATION_SIZE));
+        STRICT_EXPECTED_CALL(malloc_flex(ALLOCATION_SIZE, ALLOCATION_SIZE, 1));
         EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act

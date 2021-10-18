@@ -169,7 +169,7 @@ int BUFFER_shrink(BUFFER_HANDLE handle, size_t decreaseSize, bool fromEnd)
 
 **SRS_BUFFER_07_037: [** If decreaseSize is equal zero, `BUFFER_shrink` shall return a non-null value **]**
 
-**SRS_BUFFER_07_038: [** If decreaseSize is less than the size of the buffer, `BUFFER_shrink` shall return a non-null value **]**
+**SRS_BUFFER_07_038: [** If decreaseSize is more than the size of the buffer, `BUFFER_shrink` shall return a non-null value **]**
 
 **SRS_BUFFER_07_039: [** `BUFFER_shrink` shall allocate a temporary buffer of existing buffer size minus decreaseSize. **]**
 
