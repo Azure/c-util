@@ -23,6 +23,11 @@ static void* my_gballoc_malloc(size_t size)
     return real_gballoc_ll_malloc(size);
 }
 
+static void* my_gballoc_malloc_flex(size_t base, size_t nmemb, size_t size)
+{
+    return real_gballoc_ll_malloc_flex(base, nmemb, size);
+}
+
 static void my_gballoc_free(void* ptr)
 {
      real_gballoc_ll_free(ptr);
@@ -84,6 +89,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_RC_STRING_GLOBAL_MOCK_HOOKS();
 
     REGISTER_GLOBAL_MOCK_HOOK(malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(malloc_flex, my_gballoc_malloc_flex);
     REGISTER_GLOBAL_MOCK_HOOK(free, my_gballoc_free);
 
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(RC_STRING), void*);
@@ -124,7 +130,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_1_field_0_elements_succeeds)
 {
     // arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 0, sizeof(TUPLE_ONE)));
 
     // act
     THANDLE_TUPLE_ARRAY_TYPE(TUPLE_ONE)* result = THANDLE_TUPLE_ARRAY_CREATE(TUPLE_ONE)(0);
@@ -143,7 +149,7 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_1_field_0_elements_succeeds)
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_0_elements_succeeds)
 {
     // arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 0, sizeof(TUPLE_THREE)));
 
     // act
     THANDLE_TUPLE_ARRAY_TYPE(TUPLE_THREE)* result = THANDLE_TUPLE_ARRAY_CREATE(TUPLE_THREE)(0);
@@ -163,7 +169,7 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_0_elements_succeeds)
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_1_field_1_element_succeeds)
 {
     // arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, sizeof(TUPLE_ONE)));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
 
     // act
@@ -185,7 +191,7 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_1_field_1_element_succeeds)
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_1_element_succeeds)
 {
     // arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, sizeof(TUPLE_THREE)));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
@@ -211,7 +217,7 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_1_element_succeeds)
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_1_field_10_elements_succeeds)
 {
     // arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 10, sizeof(TUPLE_ONE)));
     for (uint32_t i = 0; i < 10; i++)
     {
         STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
@@ -239,7 +245,7 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_1_field_10_elements_succeeds)
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_10_elements_succeeds)
 {
     // arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 10, sizeof(TUPLE_THREE)));
     for (uint32_t i = 0; i < 10; i++)
     {
         STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
@@ -269,7 +275,7 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_10_elements_succeeds)
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_10_elements_fails_when_underlying_functions_fail)
 {
     // arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 10, sizeof(TUPLE_THREE)));
     for (uint32_t i = 0; i < 10; i++)
     {
         STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
@@ -299,7 +305,7 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_10_elements_fails_when_un
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_CREATE_with_3_fields_0_elements_fails_when_underlying_functions_fail)
 {
     // arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 0, sizeof(TUPLE_THREE)));
 
     umock_c_negative_tests_snapshot();
 
