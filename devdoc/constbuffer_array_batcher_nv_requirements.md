@@ -30,7 +30,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_nv_batch(CONSTBUFFER_ARRAY_HA
 
 **SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_002: [** If `count` is 0, `constbuffer_array_batcher_nv_batch` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_ARRAY_BATCHER_NV_02_001: [** If `count` is `UINT32_MAX` then `constbuffer_array_batcher_nv_batch` shall fail and return `NULL`. **]**
+**SRS_CONSTBUFFER_ARRAY_BATCHER_NV_02_001: [** If `count` greater than `UINT32_MAX` / sizeof(uint32_t) - 1 then `constbuffer_array_batcher_nv_batch` shall fail and return `NULL`. **]**
 
 **SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_023: [** If any of the payload const buffer arrays is `NULL`, `constbuffer_array_batcher_nv_batch` shall fail and return `NULL`. **]**
 
