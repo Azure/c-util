@@ -19,7 +19,7 @@ static size_t whenShallmalloc_fail = 0;
 static size_t currentrealloc_call = 0;
 static size_t whenShallrealloc_fail = 0;
 
-void* my_gballoc_malloc(size_t size)
+static void* my_gballoc_malloc(size_t size)
 {
     void* result;
     currentmalloc_call++;
@@ -41,7 +41,7 @@ void* my_gballoc_malloc(size_t size)
     return result;
 }
 
-void my_gballoc_free(void* ptr)
+static void my_gballoc_free(void* ptr)
 {
     real_gballoc_ll_free(ptr);
 }

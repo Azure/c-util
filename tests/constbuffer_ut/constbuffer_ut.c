@@ -19,18 +19,18 @@
 #include "testrunnerswitcher.h"
 
 #include "real_gballoc_ll.h"
-void* my_gballoc_malloc(size_t size)
+static void* my_gballoc_malloc(size_t size)
 {
     return real_gballoc_ll_malloc(size);
 }
 
-void* my_gballoc_malloc_with_context(size_t size, void* context)
+static void* my_gballoc_malloc_with_context(size_t size, void* context)
 {
     (void)context;
     return real_gballoc_ll_malloc(size);
 }
 
-void my_gballoc_free(void* ptr)
+static void my_gballoc_free(void* ptr)
 {
     real_gballoc_ll_free(ptr);
 }

@@ -20,7 +20,9 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_nv_batch(CONSTBUFFER_ARRAY_HA
         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_001: [ If payloads is NULL, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
         (payloads == NULL) ||
         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_002: [ If count is 0, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
-        (count == 0)
+        (count == 0) ||
+        /*Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_02_001: [ If count is UINT32_MAX then constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
+        (count == UINT32_MAX)
         )
     {
         LogError("CONSTBUFFER_ARRAY_HANDLE* payloads=%p, uint32_t count=%" PRIu32,
@@ -50,7 +52,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_nv_batch(CONSTBUFFER_ARRAY_HA
             /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_003: [ Otherwise constbuffer_array_batcher_nv_batch shall obtain the number of buffers used by each CONSTBUFFER_ARRAY. ]*/
 
             /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_004: [ constbuffer_array_batcher_nv_batch shall allocate memory for the header buffer (enough to hold the entire batch header namingly (count + 1) uint32_t values). ]*/
-            header_memory = malloc(sizeof(uint32_t) * (count + 1));
+            header_memory = malloc_2(count + 1, sizeof(uint32_t));
             if (header_memory == NULL)
             {
                 /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_010: [ If any error occurrs, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/

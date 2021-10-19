@@ -16,7 +16,7 @@ static size_t whenShallmalloc_fail = 0;
 static size_t currentrealloc_call = 0;
 static size_t whenShallrealloc_fail = 0;
 
-void* my_gballoc_malloc(size_t size)
+static void* my_gballoc_malloc(size_t size)
 {
     void* result;
     currentmalloc_call++;
@@ -38,7 +38,7 @@ void* my_gballoc_malloc(size_t size)
     return result;
 }
 
-void* my_gballoc_realloc(void* ptr, size_t size)
+static void* my_gballoc_realloc(void* ptr, size_t size)
 {
     void* result;
     currentrealloc_call++;
@@ -61,7 +61,7 @@ void* my_gballoc_realloc(void* ptr, size_t size)
     return result;
 }
 
-void my_gballoc_free(void* ptr)
+static void my_gballoc_free(void* ptr)
 {
     real_gballoc_ll_free(ptr);
 }
@@ -82,7 +82,7 @@ STRING_HANDLE my_STRING_construct(const char* psz)
     return (STRING_HANDLE)malloc(1);
 }
 
-void my_STRING_delete(STRING_HANDLE handle)
+static void my_STRING_delete(STRING_HANDLE handle)
 {
     free(handle);
 }
