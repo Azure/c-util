@@ -187,7 +187,7 @@ static void TEST_constbuffer_array_dec_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_
 
 static void constbuffer_array_create_from_array_array_inert_path(uint32_t existing_item_count)
 {
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, existing_item_count, sizeof(CONSTBUFFER_HANDLE)));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
         .CallCannotFail();
     for (uint32_t i = 0; i < existing_item_count; i++)
@@ -1317,7 +1317,7 @@ TEST_FUNCTION(constbuffer_array_create_from_array_array_fails_if_malloc_fails)
     buffer_array[0] = TEST_constbuffer_array_create(2, 0);
     buffer_array[1] = TEST_constbuffer_array_create(2, 2);
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 2 + 2, sizeof(CONSTBUFFER_HANDLE)))
         .SetReturn(NULL);
 
     ///act

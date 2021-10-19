@@ -255,11 +255,12 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
             else
             {
                 /*Codes_SRS_CONSTBUFFER_ARRAY_42_003: [ constbuffer_array_create_from_array_array shall allocate memory to hold all of the CONSTBUFFER_HANDLES from buffer_arrays. ]*/
-                result = REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(CONSTBUFFER_ARRAY_HANDLE_DATA, (total_buffer_count) * sizeof(CONSTBUFFER_HANDLE));
+                result = REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, total_buffer_count,  sizeof(CONSTBUFFER_HANDLE));
                 if (result == NULL)
                 {
                     /*Codes_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then constbuffer_array_create_from_array_array shall fail and return NULL. ]*/
-                    LogError("failure in malloc");
+                    LogError("failure in REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, total_buffer_count=%" PRIu32 ",  sizeof(CONSTBUFFER_HANDLE)=%zu)",
+                        total_buffer_count, sizeof(CONSTBUFFER_HANDLE));
                 }
                 else
                 {
