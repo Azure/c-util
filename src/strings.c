@@ -32,11 +32,11 @@ STRING_HANDLE STRING_new(void)
     if (result == NULL)
     {
         /* Codes_SRS_STRING_07_002: [STRING_new shall return an NULL STRING_HANDLE on any error that is encountered.] */
-        LogError("malloc failed.");
+        LogError("failure in malloc(sizeof(STRING)=%zu);", sizeof(STRING));
     }
     else
     {
-        if ((result->s = (char*)malloc(1)) != NULL)
+        if ((result->s = malloc(1)) != NULL)
         {
             result->s[0] = '\0';
         }
@@ -63,14 +63,15 @@ STRING_HANDLE STRING_clone(STRING_HANDLE handle)
     else
     {
         /*Codes_SRS_STRING_02_003: [If STRING_clone fails for any reason, it shall return NULL.] */
-        if ((result = (STRING*)malloc(sizeof(STRING))) != NULL)
+        if ((result = malloc(sizeof(STRING))) != NULL)
         {
-            STRING* source = (STRING*)handle;
+            STRING* source = handle;
             /*Codes_SRS_STRING_02_003: [If STRING_clone fails for any reason, it shall return NULL.] */
             size_t sourceLen = strlen(source->s);
-            if ((result->s = (char*)malloc(sourceLen + 1)) == NULL)
+            if ((result->s = malloc_flex(1, sourceLen, 1)) == NULL)
             {
-                LogError("Failure allocating clone value.");
+                LogError("Failure in malloc_flex(1, sourceLen=%zu, 1)", 
+                    sourceLen);
                 free(result);
                 result = NULL;
             }
@@ -99,12 +100,12 @@ STRING_HANDLE STRING_construct(const char* psz)
     else
     {
         STRING* str;
-        if ((str = (STRING*)malloc(sizeof(STRING))) != NULL)
+        if ((str = malloc(sizeof(STRING))) != NULL)
         {
-            size_t nLen = strlen(psz) + 1;
-            if ((str->s = (char*)malloc(nLen)) != NULL)
+            size_t nLen = strlen(psz);
+            if ((str->s = malloc_flex(1, nLen, 1)) != NULL)
             {
-                (void)memcpy(str->s, psz, nLen);
+                (void)memcpy(str->s, psz, nLen + 1);
                 result = (STRING_HANDLE)str;
             }
             /* Codes_SRS_STRING_07_032: [STRING_construct encounters any error it shall return a NULL value.] */
@@ -154,10 +155,10 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
         va_end(arg_list);
         if (length > 0)
         {
-            result = (STRING*)malloc(sizeof(STRING));
+            result = malloc(sizeof(STRING));
             if (result != NULL)
             {
-                result->s = (char*)malloc(length+1);
+                result->s = malloc(length+1);
                 if (result->s != NULL)
                 {
                     if (vsnprintf(result->s, length+1, format, arg_list_clone) < 0)
@@ -217,9 +218,9 @@ STRING_HANDLE STRING_new_with_memory(const char* memory)
     }
     else
     {
-        if ((result = (STRING*)malloc(sizeof(STRING))) != NULL)
+        if ((result = malloc(sizeof(STRING))) != NULL)
         {
-            result->s = (char*)memory;
+            result->s = memory;
         }
         else
         {
@@ -238,10 +239,10 @@ STRING_HANDLE STRING_new_quoted(const char* source)
         /* Codes_SRS_STRING_07_009: [STRING_new_quoted shall return a NULL STRING_HANDLE if the supplied const char* is NULL.] */
         result = NULL;
     }
-    else if ((result = (STRING*)malloc(sizeof(STRING))) != NULL)
+    else if ((result = malloc(sizeof(STRING))) != NULL)
     {
         size_t sourceLength = strlen(source);
-        if ((result->s = (char*)malloc(sourceLength + 3)) != NULL)
+        if ((result->s = malloc_flex(3, sourceLength,1)) != NULL)
         {
             result->s[0] = '"';
             (void)memcpy(result->s + 1, source, sourceLength);
@@ -309,10 +310,11 @@ STRING_HANDLE STRING_new_JSON(const char* source)
         }
         else
         {
-            if ((result = (STRING*)malloc(sizeof(STRING))) == NULL)
+            if ((result = malloc(sizeof(STRING))) == NULL)
             {
                 /*Codes_SRS_STRING_02_021: [If the complete JSON representation cannot be produced, then STRING_new_JSON shall fail and return NULL.] */
-                LogError("malloc json failure");
+                LogError("failure in malloc(sizeof(STRING)=%zu)",
+                    sizeof(STRING));
             }
             else if ((result->s = (char*)malloc(vlen + 5 * nControlCharacters + nEscapeCharacters + 3)) == NULL)
             {

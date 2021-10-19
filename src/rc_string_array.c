@@ -20,14 +20,13 @@ IMPLEMENT_MOCKABLE_FUNCTION(, RC_STRING_ARRAY*, rc_string_array_create, uint32_t
     RC_STRING_ARRAY* result;
 
     /*Codes_SRS_RC_STRING_ARRAY_42_001: [ rc_string_array_create shall allocate memory for RC_STRING_ARRAY. ]*/
-    size_t required_size = sizeof(RC_STRING_ARRAY);
-    result = malloc(required_size);
+    result = malloc(sizeof(RC_STRING_ARRAY));
 
     if (result == NULL)
     {
         /*Codes_SRS_RC_STRING_ARRAY_42_002: [ If there are any errors then rc_string_array_create shall fail and return NULL. ]*/
-        LogError("malloc(%zu) failed",
-            required_size);
+        LogError("malloc(sizeof(RC_STRING_ARRAY)=%zu) failed",
+            sizeof(RC_STRING_ARRAY));
     }
     else
     {
@@ -37,14 +36,13 @@ IMPLEMENT_MOCKABLE_FUNCTION(, RC_STRING_ARRAY*, rc_string_array_create, uint32_t
         if (count > 0)
         {
             /*Codes_SRS_RC_STRING_ARRAY_42_008: [ rc_string_array_create shall allocate memory for count strings. ]*/
-            required_size = count * sizeof(THANDLE(RC_STRING));
-            result->string_array = malloc(required_size);
+            result->string_array = malloc_2(count, sizeof(THANDLE(RC_STRING)));
 
             if (result->string_array == NULL)
             {
                 /*Codes_SRS_RC_STRING_ARRAY_42_002: [ If there are any errors then rc_string_array_create shall fail and return NULL. ]*/
-                LogError("malloc(%zu) failed for count=%" PRIu32,
-                    required_size, count);
+                LogError("malloc_2(count=%" PRIu32 ", sizeof(THANDLE(RC_STRING))=%zu);",
+                    count, sizeof(THANDLE(RC_STRING)));
                 failed = true;
             }
         }

@@ -23,6 +23,11 @@ static void* my_gballoc_malloc(size_t size)
     return real_gballoc_ll_malloc(size);
 }
 
+static void* my_gballoc_malloc_2(size_t nmemb, size_t size)
+{
+    return real_gballoc_ll_malloc_2(nmemb, size);
+}
+
 static void my_gballoc_free(void* ptr)
 {
      real_gballoc_ll_free(ptr);
@@ -70,6 +75,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_RC_STRING_GLOBAL_MOCK_HOOKS();
 
     REGISTER_GLOBAL_MOCK_HOOK(malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(malloc_2, my_gballoc_malloc_2);
     REGISTER_GLOBAL_MOCK_HOOK(free, my_gballoc_free);
 
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(RC_STRING), void*);
@@ -131,7 +137,7 @@ TEST_FUNCTION(rc_string_array_create_with_1_element_succeeds)
 {
     // arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(THANDLE(RC_STRING))));
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(THANDLE(RC_STRING))));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
 
     // act
@@ -153,7 +159,7 @@ TEST_FUNCTION(rc_string_array_create_with_10_elements_succeeds)
 {
     // arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(10 * sizeof(THANDLE(RC_STRING))));
+    STRICT_EXPECTED_CALL(malloc_2(10, sizeof(THANDLE(RC_STRING))));
     for (uint32_t i = 0; i < 10; i++)
     {
         STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
@@ -175,7 +181,7 @@ TEST_FUNCTION(rc_string_array_create_with_10_elements_fails_when_underlying_func
 {
     // arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(10 * sizeof(THANDLE(RC_STRING))));
+    STRICT_EXPECTED_CALL(malloc_2(10, sizeof(THANDLE(RC_STRING))));
     for (uint32_t i = 0; i < 10; i++)
     {
         STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, NULL));
