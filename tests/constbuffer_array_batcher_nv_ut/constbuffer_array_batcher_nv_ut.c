@@ -773,7 +773,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_0_buffers
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(batch, IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_content(batch, 0));
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_ARRAY_HANDLE) * 1));
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(CONSTBUFFER_ARRAY_HANDLE)));
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_create_empty());
 
@@ -818,7 +818,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_2_payload_with_0_buffers
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(batch, IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_content(batch, 0));
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_ARRAY_HANDLE) * 2));
+    STRICT_EXPECTED_CALL(malloc_2(2, sizeof(CONSTBUFFER_ARRAY_HANDLE)));
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_create_empty());
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
@@ -871,9 +871,9 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_1_buffers
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(batch, IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_content(batch, 0));
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_ARRAY_HANDLE) * 1));
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(CONSTBUFFER_ARRAY_HANDLE)));
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_HANDLE) * 1));
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(CONSTBUFFER_HANDLE)));
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(batch, 1));
     STRICT_EXPECTED_CALL(constbuffer_array_create(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(test_buffers[1]));
@@ -928,9 +928,9 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_2_buffers
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(batch, IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_content(batch, 0));
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_ARRAY_HANDLE) * 1));
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(CONSTBUFFER_ARRAY_HANDLE)));
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_HANDLE) * 2));
+    STRICT_EXPECTED_CALL(malloc_2(2, sizeof(CONSTBUFFER_HANDLE)));
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(batch, 1));
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(batch, 2));
     STRICT_EXPECTED_CALL(constbuffer_array_create(IGNORED_ARG, 2));
@@ -993,17 +993,17 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_2_payloads_each_with_dif
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(batch, IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_content(batch, 0));
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_ARRAY_HANDLE) * 2));
+    STRICT_EXPECTED_CALL(malloc_2(2, sizeof(CONSTBUFFER_ARRAY_HANDLE)));
 
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_HANDLE) * 1)); // 1st payload with 1 buffer
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(CONSTBUFFER_HANDLE))); // 1st payload with 1 buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(batch, 1));
     STRICT_EXPECTED_CALL(constbuffer_array_create(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(test_buffers[1]));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_HANDLE) * 3)); // 2nd payload with 3 buffer
+    STRICT_EXPECTED_CALL(malloc_2(3, sizeof(CONSTBUFFER_HANDLE))); // 2nd payload with 3 buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(batch, 2));
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(batch, 3));
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(batch, 4));
@@ -1077,10 +1077,10 @@ TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_batcher_nv_unbatch_fa
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_content(batch, 0))
         .CallCannotFail();
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_ARRAY_HANDLE) * 2));
+    STRICT_EXPECTED_CALL(malloc_2(2, sizeof(CONSTBUFFER_ARRAY_HANDLE)));
 
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_HANDLE) * 1)); // 1st payload with 1 buffer
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(CONSTBUFFER_HANDLE))); // 1st payload with 1 buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(batch, 1))
         .CallCannotFail();
     STRICT_EXPECTED_CALL(constbuffer_array_create(IGNORED_ARG, 1));
@@ -1088,7 +1088,7 @@ TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_batcher_nv_unbatch_fa
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_HANDLE) * 3)); // 2nd payload with 3 buffer
+    STRICT_EXPECTED_CALL(malloc_2(3, sizeof(CONSTBUFFER_HANDLE))); // 2nd payload with 3 buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(batch, 2))
         .CallCannotFail();
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(batch, 3))
@@ -1146,7 +1146,7 @@ TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_batcher_nv_unbatch_of
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_content(batch, 0))
         .CallCannotFail();
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_ARRAY_HANDLE) * 2));
+    STRICT_EXPECTED_CALL(malloc_2(2, sizeof(CONSTBUFFER_ARRAY_HANDLE)));
 
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_create_empty());
@@ -1271,7 +1271,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_1_buffer_
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(batch, IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_content(batch, 0));
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_ARRAY_HANDLE) * 1));
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(CONSTBUFFER_ARRAY_HANDLE)));
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
@@ -1303,7 +1303,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_2_payloads_with_1_buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(batch, IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_content(batch, 0));
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_ARRAY_HANDLE) * 2));
+    STRICT_EXPECTED_CALL(malloc_2(2, sizeof(CONSTBUFFER_ARRAY_HANDLE)));
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
@@ -1337,10 +1337,10 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_2_payloads_with_1_buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(batch, IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_content(batch, 0));
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_ARRAY_HANDLE) * 2));
+    STRICT_EXPECTED_CALL(malloc_2(2, sizeof(CONSTBUFFER_ARRAY_HANDLE)));
 
     STRICT_EXPECTED_CALL(read_uint32_t(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(sizeof(CONSTBUFFER_HANDLE) * 1)); // 1st payload with 1 buffer
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(CONSTBUFFER_HANDLE))); // 1st payload with 1 buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(batch, 1));
     STRICT_EXPECTED_CALL(constbuffer_array_create(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(test_buffers[1]));

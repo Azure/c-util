@@ -229,11 +229,12 @@ CONSTBUFFER_ARRAY_HANDLE* constbuffer_array_batcher_nv_unbatch(CONSTBUFFER_ARRAY
                 else
                 {
                     /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_017: [ constbuffer_array_batcher_nv_unbatch shall allocate enough memory to hold the handles for buffer arrays that will be unbatched. ]*/
-                    result = malloc(sizeof(CONSTBUFFER_ARRAY_HANDLE) * batch_payload_count);
+                    result = malloc_2(batch_payload_count, sizeof(CONSTBUFFER_ARRAY_HANDLE));
                     if (result == NULL)
                     {
                         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_022: [ If any error occurs, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
-                        LogError("malloc failed");
+                        LogError("failure in malloc_2(batch_payload_count=%" PRIu32 ", sizeof(CONSTBUFFER_ARRAY_HANDLE)=%zu);",
+                            batch_payload_count, sizeof(CONSTBUFFER_ARRAY_HANDLE));
                     }
                     else
                     {
@@ -262,11 +263,12 @@ CONSTBUFFER_ARRAY_HANDLE* constbuffer_array_batcher_nv_unbatch(CONSTBUFFER_ARRAY
                                 }
                                 else
                                 {
-                                    CONSTBUFFER_HANDLE* payload_buffers = malloc(sizeof(CONSTBUFFER_HANDLE) * buffer_count);
+                                    CONSTBUFFER_HANDLE* payload_buffers = malloc_2(buffer_count, sizeof(CONSTBUFFER_HANDLE));
                                     if (payload_buffers == NULL)
                                     {
                                         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_022: [ If any error occurs, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
-                                        LogError("malloc failed");
+                                        LogError("failure in malloc_2(buffer_count=%" PRIu32 ", sizeof(CONSTBUFFER_HANDLE)=%zu);",
+                                            buffer_count, sizeof(CONSTBUFFER_HANDLE));
                                         break;
                                     }
 
