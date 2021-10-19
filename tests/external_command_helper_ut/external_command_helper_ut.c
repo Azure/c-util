@@ -417,7 +417,7 @@ TEST_FUNCTION(external_command_helper_execute_with_second_line_too_long_fails)
     expect_run_command(&captured_file);
     expect_read_line("z");
     expect_end_command(&captured_file, 0);
-    STRICT_EXPECTED_CALL(THANDLE_DEC_REF(RC_STRING)(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_STRING)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act

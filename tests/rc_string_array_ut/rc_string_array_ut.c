@@ -239,7 +239,7 @@ TEST_FUNCTION(rc_string_array_destroy_with_0_elements_frees_everything)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_RC_STRING_ARRAY_42_005: [ rc_string_array_destroy shall iterate over all of the elements in string_array and call THANDLE_DEC_REF(RC_STRING). ]*/
+/*Tests_SRS_RC_STRING_ARRAY_42_005: [ rc_string_array_destroy shall iterate over all of the elements in string_array and call THANDLE_ASSIGN(RC_STRING) with NULL. ]*/
 /*Tests_SRS_RC_STRING_ARRAY_42_006: [ rc_string_array_destroy shall free the memory allocated in rc_string_array. ]*/
 TEST_FUNCTION(rc_string_array_destroy_with_10_elements_not_initialized_frees_everything)
 {
@@ -259,7 +259,7 @@ TEST_FUNCTION(rc_string_array_destroy_with_10_elements_not_initialized_frees_eve
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_RC_STRING_ARRAY_42_005: [ rc_string_array_destroy shall iterate over all of the elements in string_array and call THANDLE_DEC_REF(RC_STRING). ]*/
+/*Tests_SRS_RC_STRING_ARRAY_42_005: [ rc_string_array_destroy shall iterate over all of the elements in string_array and call THANDLE_ASSIGN(RC_STRING) with NULL. ]*/
 /*Tests_SRS_RC_STRING_ARRAY_42_006: [ rc_string_array_destroy shall free the memory allocated in rc_string_array. ]*/
 TEST_FUNCTION(rc_string_array_destroy_with_10_elements_initialized_frees_everything)
 {
@@ -278,7 +278,7 @@ TEST_FUNCTION(rc_string_array_destroy_with_10_elements_initialized_frees_everyth
 
     for (uint32_t i = 0; i < 10; i++)
     {
-        STRICT_EXPECTED_CALL(THANDLE_DEC_REF(RC_STRING)(rc_string_array->string_array[i]));
+        STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_STRING)(&rc_string_array->string_array[i], NULL));
     }
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
