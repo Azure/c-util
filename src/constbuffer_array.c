@@ -44,7 +44,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
     else
     {
         /* Codes_SRS_CONSTBUFFER_ARRAY_01_009: [ constbuffer_array_create shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE that can hold buffer_count buffers. ]*/
-        result = REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(CONSTBUFFER_ARRAY_HANDLE_DATA, buffer_count * sizeof(CONSTBUFFER_HANDLE));
+        result = REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, buffer_count, sizeof(CONSTBUFFER_HANDLE));
         if (result == NULL)
         {
             /* Codes_SRS_CONSTBUFFER_ARRAY_01_014: [ If any error occurs, constbuffer_array_create shall fail and return NULL. ]*/
