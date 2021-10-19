@@ -10,56 +10,6 @@
 #include "macro_utils/macro_utils.h"
 
 #include "real_gballoc_ll.h"
-static size_t currentmalloc_call = 0;
-static size_t whenShallmalloc_fail = 0;
-
-static size_t currentrealloc_call = 0;
-static size_t whenShallrealloc_fail = 0;
-
-static void* my_gballoc_malloc(size_t size)
-{
-    void* result;
-    currentmalloc_call++;
-    if (whenShallmalloc_fail > 0)
-    {
-        if (currentmalloc_call == whenShallmalloc_fail)
-        {
-            result = NULL;
-        }
-        else
-        {
-            result = real_gballoc_ll_malloc(size);
-        }
-    }
-    else
-    {
-        result = real_gballoc_ll_malloc(size);
-    }
-    return result;
-}
-
-static void* my_gballoc_realloc(void* ptr, size_t size)
-{
-    void* result;
-    currentrealloc_call++;
-    if (whenShallrealloc_fail > 0)
-    {
-        if (currentrealloc_call == whenShallrealloc_fail)
-        {
-            result = NULL;
-        }
-        else
-        {
-            result = real_gballoc_ll_realloc(ptr, size);
-        }
-    }
-    else
-    {
-        result = real_gballoc_ll_realloc(ptr, size);
-    }
-
-    return result;
-}
 
 static void my_gballoc_free(void* ptr)
 {
@@ -176,9 +126,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         REGISTER_UMOCK_ALIAS_TYPE(MAP_HANDLE, void*);
         REGISTER_UMOCK_ALIAS_TYPE(STRING_HANDLE, void*);
 
-        REGISTER_GLOBAL_MOCK_HOOK(gballoc_hl_malloc, my_gballoc_malloc);
-        REGISTER_GLOBAL_MOCK_HOOK(gballoc_hl_realloc, my_gballoc_realloc);
-        REGISTER_GLOBAL_MOCK_HOOK(gballoc_hl_free, my_gballoc_free);
+        REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
         REGISTER_GLOBAL_MOCK_HOOK(STRING_construct, my_STRING_construct);
         REGISTER_GLOBAL_MOCK_HOOK(STRING_delete, my_STRING_delete);
         REGISTER_GLOBAL_MOCK_HOOK(STRING_new_JSON, my_STRING_new_JSON);
@@ -201,12 +149,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         }
 
         umock_c_reset_all_calls();
-
-        currentmalloc_call = 0;
-        whenShallmalloc_fail = 0;
-
-        currentrealloc_call = 0;
-        whenShallrealloc_fail = 0;
     }
 
     TEST_FUNCTION_CLEANUP(TestMethodCleanup)
@@ -338,9 +280,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ///arrange
         MAP_HANDLE handle;
-        whenShallmalloc_fail = 1;
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument(1);
+            .SetReturn(NULL);
 
         ///act
         handle = Map_Create(NULL);
@@ -352,6 +293,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///cleanup
         Map_Destroy(handle);
     }
+
 
     /*Tests_SRS_MAP_02_005: [If parameter handle is NULL then Map_Destroy shall take no action.]*/
     TEST_FUNCTION(Map_Destroy_with_NULL_argument_does_nothing)
@@ -437,9 +379,9 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
@@ -478,19 +420,17 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2*sizeof(const char*))) /*growing keys*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2*sizeof(const char*))) /*growing values*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))); /*growing values*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of blue key*/
 
@@ -530,33 +470,29 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing keys*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing values*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))); /*growing values*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of blue key*/
 
-        whenShallmalloc_fail =currentmalloc_call+ 4;
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEVALUE) + 1)); /*copy of blue value*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEVALUE) + 1)) /*copy of blue value*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/
         STRICT_EXPECTED_CALL(free(IGNORED_ARG)) /*undo copy of blue key*/
             .ValidateArgumentBuffer(1, TEST_BLUEKEY, strlen(TEST_BLUEKEY) + 1);
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1 * sizeof(const char*))) /*undo growing values*/
-            .IgnoreArgument(1);
 
+        STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 1, sizeof(const char*))); /*undo growing keys*/
+        STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 1, sizeof(const char*))); /*undo growing values*/
 
         ///act
         result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -590,28 +526,24 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing keys*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing values*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))); /*growing values*/
 
-        whenShallmalloc_fail = currentmalloc_call + 3;
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of blue key*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)) /*copy of blue key*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1 * sizeof(const char*))) /*undo growing values*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 1, sizeof(const char*))); /*undo growing keys*/
+        STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 1, sizeof(const char*))); /*undo growing values*/
 
 
         ///act
@@ -646,24 +578,21 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing keys*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))); /*growing keys*/
 
-        whenShallrealloc_fail = currentrealloc_call + 4;
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing values*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))) /*growing values*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 1, sizeof(const char*))); /*undo growing keys*/
 
         ///act
         result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -697,17 +626,16 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        whenShallrealloc_fail = currentrealloc_call + 3;
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing keys*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))) /*growing keys*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/
 
@@ -742,22 +670,20 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
 
-        whenShallmalloc_fail = currentmalloc_call + 2;
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)) /*copy of red value*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/
         STRICT_EXPECTED_CALL(free(IGNORED_ARG)) /*undo copy of red key*/
             .ValidateArgumentBuffer(1, TEST_REDKEY, strlen(TEST_REDKEY) + 1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG)) /*undo growing keys*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))/*undo growing values*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*undo growing keys*/
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*undo growing values*/
 
         ///act
         result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -786,18 +712,17 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
 
-        whenShallmalloc_fail = currentmalloc_call + 1;
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)) /*copy of red key*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG)) /*undo growing keys*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))/*undo growing values*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*undo growing keys*/
+
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*undo growing values*/
 
         ///act
         result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -826,14 +751,13 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
 
-        whenShallrealloc_fail = currentrealloc_call + 2;
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))) /*growing values*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG)) /*undo growing keys*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*undo growing keys*/
 
         ///act
         result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -862,8 +786,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        whenShallrealloc_fail = currentrealloc_call + 1;
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))) /*growing keys*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/ /*none*/
 
@@ -1015,9 +939,9 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY)+1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
         ///act
@@ -1049,17 +973,15 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing keys*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing values*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of red key*/
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of blue key*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEVALUE) + 1)); /*copy of blue value*/
 
         ///act
         result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -1095,27 +1017,23 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing keys*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing values*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of red key*/
-
-        whenShallmalloc_fail = currentmalloc_call + 4;
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of blue key*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEVALUE) + 1)) /*copy of blue value*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/
         STRICT_EXPECTED_CALL(free(IGNORED_ARG)) /*undo blue key value*/
             .ValidateArgumentBuffer(1, TEST_BLUEKEY, strlen(TEST_BLUEKEY) + 1);
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1 * sizeof(const char*))) /*undo growing values*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 1, sizeof(const char*))); /*undo growing keys*/
+
+        STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 1, sizeof(const char*))); /*undo growing values*/
 
         ///act
         result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -1148,23 +1066,20 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing keys*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing values*/
-            .IgnoreArgument(1);
-        whenShallmalloc_fail = currentmalloc_call + 3;
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)) /*copy of blue key*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1 * sizeof(const char*))) /*undo growing values*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 1, sizeof(const char*))); /*undo growing keys*/
+
+        STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 1, sizeof(const char*))); /*undo growing values*/
 
         ///act
         result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -1197,20 +1112,17 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing keys*/
-            .IgnoreArgument(1);
-        whenShallrealloc_fail = currentrealloc_call + 4;
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing values*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))) /*growing values*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1 * sizeof(const char*))) /*undo growing keys*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 1, sizeof(const char*))); /*undo growing keys*/
 
         ///act
         result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -1243,14 +1155,13 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
 
-        whenShallrealloc_fail = currentrealloc_call + 3;
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 * sizeof(const char*))) /*growing keys*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(const char*), 1, sizeof(const char*))) /*growing keys*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/ /*none*/
 
@@ -1284,19 +1195,17 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
-        whenShallmalloc_fail = currentmalloc_call + 2;
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*copy of red value*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)) /*copy of red value*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/
         STRICT_EXPECTED_CALL(free(IGNORED_ARG)) /*undo red key value*/
             .ValidateArgumentBuffer(1, TEST_REDKEY, strlen(TEST_REDKEY) + 1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG)) /*undo growing keys*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG)) /*undo growing values*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*undo growing keys*/
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));/*undo growing values*/
 
         ///act
         result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -1324,11 +1233,11 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
 
-        whenShallmalloc_fail = currentmalloc_call + 1;
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*copy of red key*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)) /*copy of red key*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/
         STRICT_EXPECTED_CALL(free(IGNORED_ARG)) /*undo growing keys*/
@@ -1362,9 +1271,9 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
-        whenShallrealloc_fail = currentrealloc_call + 2;
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))) /*growing values*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/
         STRICT_EXPECTED_CALL(free(IGNORED_ARG)) /*undo growing keys*/
@@ -1396,8 +1305,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        whenShallrealloc_fail = currentrealloc_call + 1;
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))) /*growing keys*/
+            .SetReturn(NULL);
 
         /*below are undo actions*/
 
@@ -1429,7 +1338,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, strlen(TEST_YELLOWVALUE) + 1)) /*changing redkey value to yellow*/
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, 1, strlen(TEST_YELLOWVALUE), 1)) /*changing redkey value to yellow*/
             .ValidateArgumentBuffer(1, TEST_REDVALUE, strlen(TEST_REDVALUE) + 1);
 
         ///act
@@ -1466,9 +1375,9 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
 
-        whenShallrealloc_fail = currentrealloc_call + 1;
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, strlen(TEST_YELLOWVALUE) + 1)) /*changing redkey value to yellow*/
-            .ValidateArgumentBuffer(1, TEST_REDVALUE, strlen(TEST_REDVALUE) + 1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, 1, strlen(TEST_YELLOWVALUE), 1)) /*changing redkey value to yellow*/
+            .ValidateArgumentBuffer(1, TEST_REDVALUE, strlen(TEST_REDVALUE) + 1)
+            .SetReturn(NULL);
 
         ///act
         result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_YELLOWVALUE);
@@ -1503,7 +1412,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, strlen(TEST_YELLOWVALUE) + 1)) /*changing bluekey value to yellow*/
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, 1, strlen(TEST_YELLOWVALUE), 1)) /*changing bluekey value to yellow*/
             .ValidateArgumentBuffer(1, TEST_BLUEVALUE, strlen(TEST_BLUEVALUE) + 1);
 
         ///act
@@ -1539,9 +1448,9 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
 
-        whenShallrealloc_fail = currentrealloc_call + 1;
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, strlen(TEST_YELLOWVALUE) + 1)) /*changing bluekey value to yellow*/
-            .ValidateArgumentBuffer(1, TEST_BLUEVALUE, strlen(TEST_BLUEVALUE) + 1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, 1, strlen(TEST_YELLOWVALUE), 1)) /*changing bluekey value to yellow*/
+            .ValidateArgumentBuffer(1, TEST_BLUEVALUE, strlen(TEST_BLUEVALUE) + 1)
+            .SetReturn(NULL);
 
         ///act
         result1 = Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_YELLOWVALUE);
@@ -1695,11 +1604,9 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRICT_EXPECTED_CALL(free(IGNORED_ARG)) /*freeing yellow value*/
             .ValidateArgumentBuffer(1, TEST_YELLOWVALUE, strlen(TEST_YELLOWVALUE) + 1);
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1* sizeof(const char*))) /*ungrowing values*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 1, sizeof(const char*))); /*ungrowing values*/
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1 * sizeof(const char*))) /*ungrowing keys*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 1, sizeof(const char*))); /*ungrowing keys*/
 
         ///act
         result1 = Map_Delete(handle, TEST_YELLOWKEY);
@@ -1738,11 +1645,9 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRICT_EXPECTED_CALL(free(IGNORED_ARG)) /*freeing yellow value*/
             .ValidateArgumentBuffer(1, TEST_REDVALUE, strlen(TEST_REDVALUE) + 1);
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1 * sizeof(const char*))) /*ungrowing values*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 1, sizeof(const char*))); /*ungrowing values*/
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1 * sizeof(const char*))) /*ungrowing keys*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 1, sizeof(const char*))); /*ungrowing keys*/
 
         ///act
         result1 = Map_Delete(handle, TEST_REDKEY);
@@ -2112,8 +2017,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
         ///act
         result = Map_Clone(handle);
@@ -2139,9 +2043,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_HANDLE handle = Map_Create(NULL);
         umock_c_reset_all_calls();
 
-        whenShallmalloc_fail = currentmalloc_call + 1;
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument(1);
+            .SetReturn(NULL);
 
         ///act
         result = Map_Clone(handle);
@@ -2166,14 +2069,13 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is creating the HANDLE structure*/
 
-        STRICT_EXPECTED_CALL(malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(malloc_2(1, sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
 
-        STRICT_EXPECTED_CALL(malloc(sizeof(char*))); /*this is creating a clone of the storage for values*/
+        STRICT_EXPECTED_CALL(malloc_2(1, sizeof(char*))); /*this is creating a clone of the storage for values*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
 
@@ -2204,26 +2106,21 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is creating the HANDLE structure*/
 
-        STRICT_EXPECTED_CALL(malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(malloc_2(1, sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
 
-        STRICT_EXPECTED_CALL(malloc(sizeof(char*))); /*this is creating a clone of the storage for values*/
+        STRICT_EXPECTED_CALL(malloc_2(1, sizeof(char*))); /*this is creating a clone of the storage for values*/
 
-        whenShallmalloc_fail = currentmalloc_call + 5;
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)) /*this is creating a clone of RED value*/
+            .SetReturn(NULL);
 
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         result = Map_Clone(handle);
@@ -2246,22 +2143,18 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is creating the HANDLE structure*/
 
-        STRICT_EXPECTED_CALL(malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(malloc_2(1, sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
 
-        whenShallmalloc_fail = currentmalloc_call + 4;
-        STRICT_EXPECTED_CALL(malloc(sizeof(char*))); /*this is creating a clone of the storage for values*/
+        STRICT_EXPECTED_CALL(malloc_2(1, sizeof(char*))) /*this is creating a clone of the storage for values*/
+            .SetReturn(NULL);
 
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG)); 
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         result = Map_Clone(handle);
@@ -2284,18 +2177,15 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is creating the HANDLE structure*/
 
-        STRICT_EXPECTED_CALL(malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(malloc_2(1, sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
-        whenShallmalloc_fail = currentmalloc_call + 3;
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)) /*this is creating a clone of RED key*/
+            .SetReturn(NULL);
 
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         result = Map_Clone(handle);
@@ -2318,12 +2208,11 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
-        whenShallmalloc_fail = currentmalloc_call + 2;
-        STRICT_EXPECTED_CALL(malloc(sizeof(char*))); /*this is creating a clone of the storage for keys*/
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is creating the HANDLE structure*/
+
+        STRICT_EXPECTED_CALL(malloc_2(1, sizeof(char*))) /*this is creating a clone of the storage for keys*/
+            .SetReturn(NULL);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         result = Map_Clone(handle);
@@ -2346,9 +2235,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
         umock_c_reset_all_calls();
 
-        whenShallmalloc_fail = currentmalloc_call + 1;
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
+            .SetReturn(NULL);
 
         ///act
         result = Map_Clone(handle);
@@ -2375,15 +2263,14 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is creating the HANDLE structure*/
 
-        STRICT_EXPECTED_CALL(malloc(2*sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(malloc_2(2, sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
 
-        STRICT_EXPECTED_CALL(malloc(2*sizeof(char*))); /*this is creating a clone of the storage for values*/
+        STRICT_EXPECTED_CALL(malloc_2(2, sizeof(char*))); /*this is creating a clone of the storage for values*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEVALUE) + 1)); /*this is creating a clone of RED value*/
@@ -2418,34 +2305,28 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is creating the HANDLE structure*/
 
-        STRICT_EXPECTED_CALL(malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(malloc_2(2, sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
 
-        STRICT_EXPECTED_CALL(malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for values*/
+        STRICT_EXPECTED_CALL(malloc_2(2, sizeof(char*))); /*this is creating a clone of the storage for values*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
 
-        whenShallmalloc_fail = currentmalloc_call + 7;
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEVALUE) + 1)); /*this is creating a clone of BLUE value*/
+        
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEVALUE) + 1)) /*this is creating a clone of BLUE value*/
+            .SetReturn(NULL);
 
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         result = Map_Clone(handle);
@@ -2469,30 +2350,24 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is creating the HANDLE structure*/
 
-        STRICT_EXPECTED_CALL(malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(malloc_2(2,  sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
 
-        STRICT_EXPECTED_CALL(malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for values*/
+        STRICT_EXPECTED_CALL(malloc_2(2, sizeof(char*))); /*this is creating a clone of the storage for values*/
 
-        whenShallmalloc_fail = currentmalloc_call + 6;
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)) /*this is creating a clone of RED value*/
+            .SetReturn(NULL);
 
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         result = Map_Clone(handle);
@@ -2516,26 +2391,21 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is creating the HANDLE structure*/
 
-        STRICT_EXPECTED_CALL(malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(malloc_2(2, sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
 
-        whenShallmalloc_fail = currentmalloc_call + 5;
-        STRICT_EXPECTED_CALL(malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for values*/
+        STRICT_EXPECTED_CALL(malloc_2(2, sizeof(char*))) /*this is creating a clone of the storage for values*/
+            .SetReturn(NULL);
 
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         result = Map_Clone(handle);
@@ -2559,22 +2429,18 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is creating the HANDLE structure*/
 
-        STRICT_EXPECTED_CALL(malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(malloc_2(2, sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1)); /*this is creating a clone of RED key*/
 
-        whenShallmalloc_fail = currentmalloc_call + 4;
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)); /*this is creating a clone of BLUE key*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEKEY) + 1)) /*this is creating a clone of BLUE key*/
+            .SetReturn(NULL);
 
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         result = Map_Clone(handle);
@@ -2598,18 +2464,15 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is creating the HANDLE structure*/
 
-        STRICT_EXPECTED_CALL(malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
+        STRICT_EXPECTED_CALL(malloc_2(2, sizeof(char*))); /*this is creating a clone of the storage for keys*/
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDKEY) + 1))
             .SetReturn(NULL); /*this is creating a clone of RED key*/
 
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         result = Map_Clone(handle);
@@ -2633,13 +2496,12 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is creating the HANDLE structure*/
 
-        whenShallmalloc_fail = currentmalloc_call + 2;
-        STRICT_EXPECTED_CALL(malloc(2 * sizeof(char*))); /*this is creating a clone of the storage for keys*/
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc_2(2, sizeof(char*))) /*this is creating a clone of the storage for keys*/
+            .SetReturn(NULL);
+
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         result = Map_Clone(handle);
@@ -2663,9 +2525,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, TEST_BLUEKEY, TEST_BLUEVALUE);
         umock_c_reset_all_calls();
 
-        whenShallmalloc_fail = currentmalloc_call + 1;
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is creating the HANDLE structure*/
-            .IgnoreArgument(1);
+            .SetReturn(NULL);
 
         ///act
         result = Map_Clone(handle);
@@ -2689,10 +2550,10 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_RESULT result3;
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*)));
-        STRICT_EXPECTED_CALL(realloc(NULL, sizeof(const char*)));
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_GREENKEY) + 1));
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_GREENVALUE) + 1));
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_GREENKEY) + 1)); /*copy of green key*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_GREENVALUE) + 1)); /*copy of green value*/
 
         ///act
         result1 = Map_Add(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -2718,10 +2579,10 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         MAP_RESULT result2;
         umock_c_reset_all_calls();
 
-        EXPECTED_CALL(realloc(NULL, sizeof(const char*)));
-        EXPECTED_CALL(realloc(NULL, sizeof(const char*)));
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_GREENKEY) + 1));
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_GREENVALUE) + 1));
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing keys*/
+        STRICT_EXPECTED_CALL(realloc_flex(NULL, sizeof(const char*), 0, sizeof(const char*))); /*growing values*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_GREENKEY) + 1)); /*copy of green key*/
+        STRICT_EXPECTED_CALL(malloc(strlen(TEST_GREENVALUE) + 1)); /*copy of green value*/
 
         ///act
         result1 = Map_AddOrUpdate(handle, TEST_REDKEY, TEST_REDVALUE);
@@ -2760,11 +2621,9 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRING_HANDLE toJSON;
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
-        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, "}"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, "}"));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -2785,14 +2644,12 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRING_HANDLE toJSON;
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, "}"))
-            .IgnoreArgument(1).SetReturn(1);
+            .SetReturn(1);
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -2814,7 +2671,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1).SetReturn(NULL);
+            .SetReturn(NULL);
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -2841,22 +2698,17 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
         STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
         STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-            .IgnoreArgument(1)
-            .IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-            .IgnoreArgument(1)
-            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
+        
+        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey":"reddoor"*/
 
-        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
+
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, "}")); /*now JSON is {"redkey":"redoor"}*/
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -2879,30 +2731,20 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
         STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-            .IgnoreArgument(1)
-            .IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-            .IgnoreArgument(1)
-            .IgnoreArgument(2);
-
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
+        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey":"reddoor"*/
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
 
         STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
-            .IgnoreArgument(1).SetReturn(1);
+            .SetReturn(1);
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -2924,29 +2766,18 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
         STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-            .IgnoreArgument(1)
-            .IgnoreArgument(2);
-        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-            .IgnoreArgument(1);
-
+        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
         STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-            .IgnoreArgument(1)
-            .IgnoreArgument(2)
             .SetReturn(1);
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-            .IgnoreArgument(1);
-
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -2968,25 +2799,17 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
         STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-            .IgnoreArgument(1)
-            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
         STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-            .IgnoreArgument(1)
             .SetReturn(1);
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-            .IgnoreArgument(1);
-
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3008,23 +2831,17 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
         STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
         STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-            .IgnoreArgument(1)
-            .IgnoreArgument(2)
             .SetReturn(1);
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3046,18 +2863,15 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
         STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor"))
             .SetReturn(NULL); /*prepare the value*/
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3079,13 +2893,12 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "redkey", "reddoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
-        STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")).SetReturn(NULL); /*prepare the key*/
+        STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")) /*prepare the key*/
+            .SetReturn(NULL); 
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3108,7 +2921,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1)
             .SetReturn(NULL);
 
         ///act
@@ -3132,49 +2944,32 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         { /*artificial scope for first key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey":"reddoor"*/
 
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
         }
 
         { /*artificial scope for second key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ","))
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ","));
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey":"reddoor"*/
 
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
         }
 
-        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, "}")); /*now JSON is {"redkey":"redoor"}*/
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3183,7 +2978,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ASSERT_IS_NOT_NULL(toJSON);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        ///cleanup
+        ///cleanup 
         Map_Destroy(handle);
         STRING_delete(toJSON);
     }
@@ -3204,47 +2999,30 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         { /*artificial scope for first key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey":"reddoor"*/
 
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
         }
 
         { /*artificial scope for second key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ","))
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ","));
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey":"reddoor"*/
 
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
         }
 
-        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, "}"))/*now JSON is {"redkey":"redoor"}*/
-            .IgnoreArgument(1)
+        STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, "}")) /*now JSON is {"redkey":"redoor"}*/
             .SetReturn(1);
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3267,50 +3045,33 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         { /*artificial scope for first key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey":"reddoor"*/
 
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
         }
 
         { /*artificial scope for second key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ","))
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ","));
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
             STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2)
                 .SetReturn(1);
 
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
         }
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3333,47 +3094,32 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         { /*artificial scope for first key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey":"reddoor"*/
 
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
         }
 
         { /*artificial scope for second key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ","))
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ","));
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
             STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1)
                 .SetReturn(1);
 
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
         }
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3396,46 +3142,32 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         { /*artificial scope for first key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey":"reddoor"*/
 
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
         }
 
         { /*artificial scope for second key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ","))
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ","));
 
             STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2)
                 .SetReturn(1);
 
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
         }
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3458,41 +3190,30 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         { /*artificial scope for first key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey":"reddoor"*/
 
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
         }
 
         { /*artificial scope for second key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor")); /*prepare the value*/
             STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ","))
-                .IgnoreArgument(1).SetReturn(1);
+                .SetReturn(1);
 
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
         }
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3515,35 +3236,26 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         { /*artificial scope for first key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
         }
 
         { /*artificial scope for second key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")); /*prepare the key*/
-            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor")).SetReturn(NULL); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowdoor"))
+                .SetReturn(NULL); /*prepare the value*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
         }
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3566,32 +3278,24 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         { /*artificial scope for first key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey":"reddoor"*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
         }
 
         { /*artificial scope for second key:value*/
-            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey")).SetReturn(NULL); /*prepare the key*/
+            STRICT_EXPECTED_CALL(STRING_new_JSON("yellowkey"))
+                .SetReturn(NULL); /*prepare the key*/
         }
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3614,29 +3318,20 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         { /*artificial scope for first key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
             STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2)
                 .SetReturn(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
         }
 
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3659,27 +3354,18 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         { /*artificial scope for first key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
-            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
+            STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
             STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey":"reddoor"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2)
                 .SetReturn(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
         }
 
         ///act
@@ -3703,24 +3389,17 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         { /*artificial scope for first key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
-            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2);
+            STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
             STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")) /*now JSON is {"redkey":*/
-                .IgnoreArgument(1)
                 .SetReturn(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
         }
 
         ///act
@@ -3744,22 +3423,16 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         { /*artificial scope for first key:value*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
             STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")); /*prepare the value*/
             STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)) /*now JSON is {"redkey"*/
-                .IgnoreArgument(1)
-                .IgnoreArgument(2)
                 .SetReturn(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the value*/
-                .IgnoreArgument(1);
-            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-                .IgnoreArgument(1);
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the value*/
+            STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
         }
 
         ///act
@@ -3783,15 +3456,12 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")); /*prepare the key*/
         STRICT_EXPECTED_CALL(STRING_new_JSON("reddoor")).SetReturn(NULL); /*prepare the value*/
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*delete the key*/
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3814,11 +3484,10 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         (void)Map_AddOrUpdate(handle, "yellowkey", "yellowdoor");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")).SetReturn(NULL); /*prepare the key*/
-        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(STRING_construct("{"));
+        STRICT_EXPECTED_CALL(STRING_new_JSON("redkey"))
+            .SetReturn(NULL); /*prepare the key*/
+        STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
         ///act
         toJSON = Map_ToJSON(handle);
@@ -3842,7 +3511,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(STRING_construct("{"))
-            .IgnoreArgument(1)
             .SetReturn(NULL);
 
         ///act
@@ -3855,6 +3523,5 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///cleanup
         Map_Destroy(handle);
     }
-
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
