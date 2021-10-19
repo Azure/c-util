@@ -83,7 +83,7 @@ static void constbuffer_array_create_from_buffer_index_and_count_inert_path(void
 
 static void constbuffer_array_add_front_inert_path(void)
 {
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(CONSTBUFFER_HANDLE)));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
         .CallCannotFail();
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1));
@@ -91,7 +91,7 @@ static void constbuffer_array_add_front_inert_path(void)
 
 static void constbuffer_array_remove_front_inert_path(uint32_t nExistingItems)
 {
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, nExistingItems - 1, sizeof(CONSTBUFFER_HANDLE)));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
         .CallCannotFail();
     // clone front buffer
