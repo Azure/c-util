@@ -777,7 +777,7 @@ STRING_HANDLE STRING_construct_n(const char* psz, size_t n)
             STRING* str;
             if ((str = (STRING*)malloc(sizeof(STRING))) != NULL)
             {
-                if ((str->s = (char*)malloc(len + 1)) != NULL) /*len comes from strlen.and likely is way less than SIZE_MAX*/
+                if ((str->s = (char*)malloc(n + 1)) != NULL) /*if n is SIZE_MAX then condition in line 770 is extrmeely likely true and this line is never reached*/ 
                 {
                     (void)memcpy(str->s, psz, n);
                     str->s[n] = '\0';
