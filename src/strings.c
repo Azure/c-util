@@ -111,7 +111,8 @@ STRING_HANDLE STRING_construct(const char* psz)
             /* Codes_SRS_STRING_07_032: [STRING_construct encounters any error it shall return a NULL value.] */
             else
             {
-                LogError("Failure allocating constructed value.");
+                LogError("Failure in malloc_flex(1, nLen=%zu, 1).",
+                    nLen);
                 free(str);
                 result = NULL;
             }
@@ -119,7 +120,8 @@ STRING_HANDLE STRING_construct(const char* psz)
         else
         {
             /* Codes_SRS_STRING_07_032: [STRING_construct encounters any error it shall return a NULL value.] */
-            LogError("Failure allocating value.");
+            LogError("Failure in malloc(sizeof(STRING)=%zu).",
+                sizeof(STRING));
             result = NULL;
         }
     }
@@ -158,10 +160,10 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
             result = malloc(sizeof(STRING));
             if (result != NULL)
             {
-                result->s = malloc(length+1);
+                result->s = malloc(length + (size_t)1);
                 if (result->s != NULL)
                 {
-                    if (vsnprintf(result->s, length+1, format, arg_list_clone) < 0)
+                    if (vsnprintf(result->s, length + 1, format, arg_list_clone) < 0)
                     {
                         /* Codes_SRS_STRING_07_040: [If any error is encountered STRING_construct_sprintf shall return NULL.] */
                         free(result->s);
@@ -191,7 +193,7 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
         {
             /* Codes_SRS_STRING_07_039: [If the parameter format is NULL then STRING_construct_sprintf shall return NULL.] */
             result = NULL;
-            LogError("Failure: vsnprintf return 0 length");
+            LogError("Failure: vsnprintf return negative length");
         }
         va_end(arg_list_clone);
     }
@@ -316,61 +318,92 @@ STRING_HANDLE STRING_new_JSON(const char* source)
                 LogError("failure in malloc(sizeof(STRING)=%zu)",
                     sizeof(STRING));
             }
-            else if ((result->s = (char*)malloc(vlen + 5 * nControlCharacters + nEscapeCharacters + 3)) == NULL)
-            {
-                /*Codes_SRS_STRING_02_021: [If the complete JSON representation cannot be produced, then STRING_new_JSON shall fail and return NULL.] */
-                free(result);
-                result = NULL;
-                LogError("malloc failed");
-            }
             else
             {
-                size_t pos = 0;
-                /*Codes_SRS_STRING_02_012: [The string shall begin with the quote character.] */
-                result->s[pos++] = '"';
-                for (i = 0; i < vlen; i++)
+                /*compute possible overflow of the value passed to malloc vlen + 5 * nControlCharacters + nEscapeCharacters + 3*/
+                size_t size_to_alloc = 0;
+                if (vlen > SIZE_MAX - 3)
                 {
-                    if (source[i] <= 0x1F)
+                    LogError("overflow: vlen=%zu + 3 exceeds SIZE_MAX=%zu", vlen, SIZE_MAX);
+                }
+                else
+                {
+                    size_to_alloc = vlen + 3;
+                    if (SIZE_MAX - nEscapeCharacters < size_to_alloc)
                     {
-                        /*Codes_SRS_STRING_02_019: [If the character code is less than 0x20 then it shall be represented as \u00xx, where xx is the hex representation of the character code.]*/
-                        result->s[pos++] = '\\';
-                        result->s[pos++] = 'u';
-                        result->s[pos++] = '0';
-                        result->s[pos++] = '0';
-                        result->s[pos++] = hexToASCII[(source[i] & 0xF0) >> 4]; /*high nibble*/
-                        result->s[pos++] = hexToASCII[source[i] & 0x0F]; /*low nibble*/
-                    }
-                    else if (source[i] == '"')
-                    {
-                        /*Codes_SRS_STRING_02_016: [If the character is " (quote) then it shall be repsented as \".] */
-                        result->s[pos++] = '\\';
-                        result->s[pos++] = '"';
-                    }
-                    else if (source[i] == '\\')
-                    {
-                        /*Codes_SRS_STRING_02_017: [If the character is \ (backslash) then it shall represented as \\.] */
-                        result->s[pos++] = '\\';
-                        result->s[pos++] = '\\';
-                    }
-                    else if (source[i] == '/')
-                    {
-                        /*Codes_SRS_STRING_02_018: [If the character is / (slash) then it shall be represented as \/.] */
-                        result->s[pos++] = '\\';
-                        result->s[pos++] = '/';
+                        LogError("overflow: nEscapeCharacters=%zu + size_to_alloc=%zu would exceed SIZE_MAX=%zu", nEscapeCharacters, size_to_alloc, SIZE_MAX);
                     }
                     else
                     {
-                        /*Codes_SRS_STRING_02_013: [The string shall copy the characters of source "as they are" (until the '\0' character) with the following exceptions:] */
-                        result->s[pos++] = source[i];
+                        size_to_alloc += nEscapeCharacters;
+                        if ((SIZE_MAX - size_to_alloc) / 5 < nControlCharacters)
+                        {
+                            LogError("overflow: 5 * nControlCharacters=%zu + size_to_alloc=%zu would exceed SIZE_MAX=%zu", nControlCharacters, size_to_alloc, SIZE_MAX);
+                        }
+                        else
+                        {
+                            if ((result->s = malloc(vlen + 5 * nControlCharacters + nEscapeCharacters + 3)) == NULL)
+                            {
+                                /*Codes_SRS_STRING_02_021: [If the complete JSON representation cannot be produced, then STRING_new_JSON shall fail and return NULL.] */
+                                LogError("failure in malloc(vlen=%zu + 5 * nControlCharacters=%zu + nEscapeCharacters=%zu + 3",
+                                    vlen, nControlCharacters, nEscapeCharacters);
+                            }
+                            else
+                            {
+                                size_t pos = 0;
+                                /*Codes_SRS_STRING_02_012: [The string shall begin with the quote character.] */
+                                result->s[pos++] = '"';
+                                for (i = 0; i < vlen; i++)
+                                {
+                                    if (source[i] <= 0x1F)
+                                    {
+                                        /*Codes_SRS_STRING_02_019: [If the character code is less than 0x20 then it shall be represented as \u00xx, where xx is the hex representation of the character code.]*/
+                                        result->s[pos++] = '\\';
+                                        result->s[pos++] = 'u';
+                                        result->s[pos++] = '0';
+                                        result->s[pos++] = '0';
+                                        result->s[pos++] = hexToASCII[(source[i] & 0xF0) >> 4]; /*high nibble*/
+                                        result->s[pos++] = hexToASCII[source[i] & 0x0F]; /*low nibble*/
+                                    }
+                                    else if (source[i] == '"')
+                                    {
+                                        /*Codes_SRS_STRING_02_016: [If the character is " (quote) then it shall be repsented as \".] */
+                                        result->s[pos++] = '\\';
+                                        result->s[pos++] = '"';
+                                    }
+                                    else if (source[i] == '\\')
+                                    {
+                                        /*Codes_SRS_STRING_02_017: [If the character is \ (backslash) then it shall represented as \\.] */
+                                        result->s[pos++] = '\\';
+                                        result->s[pos++] = '\\';
+                                    }
+                                    else if (source[i] == '/')
+                                    {
+                                        /*Codes_SRS_STRING_02_018: [If the character is / (slash) then it shall be represented as \/.] */
+                                        result->s[pos++] = '\\';
+                                        result->s[pos++] = '/';
+                                    }
+                                    else
+                                    {
+                                        /*Codes_SRS_STRING_02_013: [The string shall copy the characters of source "as they are" (until the '\0' character) with the following exceptions:] */
+                                        result->s[pos++] = source[i];
+                                    }
+                                }
+                                /*Codes_SRS_STRING_02_020: [The string shall end with " (quote).] */
+                                result->s[pos++] = '"';
+                                /*zero terminating it*/
+                                result->s[pos] = '\0';
+                                goto allok;
+                            }
+                        }
                     }
                 }
-                /*Codes_SRS_STRING_02_020: [The string shall end with " (quote).] */
-                result->s[pos++] = '"';
-                /*zero terminating it*/
-                result->s[pos] = '\0';
+                
             }
+            free(result);
+            result = NULL;
         }
-
+    allok:;
     }
     return (STRING_HANDLE)result;
 }
@@ -391,12 +424,13 @@ int STRING_concat(STRING_HANDLE handle, const char* s2)
     {
         STRING* s1 = (STRING*)handle;
         size_t s1Length = strlen(s1->s);
-        size_t s2Length = strlen(s2);
-        char* temp = (char*)realloc(s1->s, s1Length + s2Length + 1);
+        size_t s2Length = strlen(s2); /*there's no possible way that s2Length is returned as SIZE_MAX*/
+        char* temp = realloc_flex(s1->s, s1Length, s2Length + 1, 1);
         if (temp == NULL)
         {
             /* Codes_SRS_STRING_07_013: [STRING_concat shall return a nonzero number if an error is encountered.] */
-            LogError("Failure reallocating value.");
+            LogError("Failure in realloc_flex(s1->s=%s, s1Length=%zu, s2Length=%zu + 1, 1);",
+                s1->s, s1Length, s2Length);
             result = MU_FAILURE;
         }
         else
@@ -429,11 +463,12 @@ int STRING_concat_with_STRING(STRING_HANDLE s1, STRING_HANDLE s2)
 
         size_t s1Length = strlen(dest->s);
         size_t s2Length = strlen(src->s);
-        char* temp = (char*)realloc(dest->s, s1Length + s2Length + 1);
+        char* temp = realloc_flex (dest->s, s1Length, s2Length + 1, 1);
         if (temp == NULL)
         {
             /* Codes_SRS_STRING_07_035: [String_Concat_with_STRING shall return a nonzero number if an error is encountered.] */
-            LogError("Failure reallocating value");
+            LogError("Failure in realloc_flex (dest->s=%s, s1Length=%zu, s2Length=%zu + 1, 1);",
+                dest->s, s1Length, s2Length);
             result = MU_FAILURE;
         }
         else
@@ -466,10 +501,11 @@ int STRING_copy(STRING_HANDLE handle, const char* s2)
         if (s1->s != s2)
         {
             size_t s2Length = strlen(s2);
-            char* temp = (char*)realloc(s1->s, s2Length + 1);
+            char* temp = realloc_flex(s1->s, 1, s2Length, 1);
             if (temp == NULL)
             {
-                LogError("Failure reallocating value.");
+                LogError("Failure in realloc_flex(s1->s=%s, 1, s2Length=%zu, 1);",
+                    s1->s, s2Length);
                 /* Codes_SRS_STRING_07_027: [STRING_copy shall return a nonzero value if any error is encountered.] */
                 result = MU_FAILURE;
             }
@@ -511,10 +547,11 @@ int STRING_copy_n(STRING_HANDLE handle, const char* s2, size_t n)
             s2Length = n;
         }
 
-        temp = (char*)realloc(s1->s, s2Length + 1);
+        temp = realloc_flex(s1->s, 1, s2Length, 1);
         if (temp == NULL)
         {
-            LogError("Failure reallocating value.");
+            LogError("Failure in realloc_flex(s1->s=%s, 1, s2Length=%zu, 1);",
+                s1->s, s2Length);
             /* Codes_SRS_STRING_07_028: [STRING_copy_n shall return a nonzero value if any error is encountered.] */
             result = MU_FAILURE;
         }
@@ -578,7 +615,7 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
             STRING* s1 = (STRING*)handle;
             char* temp;
             size_t s1Length = strlen(s1->s);
-            temp = (char*)realloc(s1->s, s1Length + s2Length + 1);
+            temp = realloc_flex(s1->s, s1Length, s2Length + (size_t)1, 1);
             if (temp != NULL)
             {
                 s1->s = temp;
@@ -623,10 +660,10 @@ int STRING_quote(STRING_HANDLE handle)
     {
         STRING* s1 = (STRING*)handle;
         size_t s1Length = strlen(s1->s);
-        char* temp = (char*)realloc(s1->s, s1Length + 2 + 1);/*2 because 2 quotes, 1 because '\0'*/
+        char* temp = realloc_flex(s1->s, 2 + 1, s1Length, 1);/*2 because 2 quotes, 1 because '\0'*/
         if (temp == NULL)
         {
-            LogError("Failure reallocating value.");
+            LogError("Failure in realloc_flex(s1->s=%s, 2 + 1, s1Length=%zu, 1)", s1->s, s1Length);
             /* Codes_SRS_STRING_07_029: [STRING_quote shall return a nonzero value if any error is encountered.] */
             result = MU_FAILURE;
         }
@@ -656,7 +693,7 @@ int STRING_empty(STRING_HANDLE handle)
     else
     {
         STRING* s1 = (STRING*)handle;
-        char* temp = (char*)realloc(s1->s, 1);
+        char* temp = realloc(s1->s, 1);
         if (temp == NULL)
         {
             LogError("Failure reallocating value.");
@@ -740,7 +777,7 @@ STRING_HANDLE STRING_construct_n(const char* psz, size_t n)
             STRING* str;
             if ((str = (STRING*)malloc(sizeof(STRING))) != NULL)
             {
-                if ((str->s = (char*)malloc(len + 1)) != NULL)
+                if ((str->s = (char*)malloc(len + 1)) != NULL) /*len comes from strlen.and likely is way less than SIZE_MAX*/
                 {
                     (void)memcpy(str->s, psz, n);
                     str->s[n] = '\0';
@@ -805,7 +842,7 @@ STRING_HANDLE STRING_from_byte_array(const unsigned char* source, size_t size)
     else
     {
         /*Codes_SRS_STRING_02_023: [ Otherwise, STRING_from_BUFFER shall build a string that has the same content (byte-by-byte) as source and return a non-NULL handle. ]*/
-        result = (STRING*)malloc(sizeof(STRING));
+        result = malloc(sizeof(STRING));
         if (result == NULL)
         {
             /*Codes_SRS_STRING_02_024: [ If building the string fails, then STRING_from_BUFFER shall fail and return NULL. ]*/
@@ -815,7 +852,7 @@ STRING_HANDLE STRING_from_byte_array(const unsigned char* source, size_t size)
         else
         {
             /*Codes_SRS_STRING_02_023: [ Otherwise, STRING_from_BUFFER shall build a string that has the same content (byte-by-byte) as source and return a non-NULL handle. ]*/
-            result->s = (char*)malloc(size + 1);
+            result->s = malloc_flex(1, size, 1);
             if (result->s == NULL)
             {
                 /*Codes_SRS_STRING_02_024: [ If building the string fails, then STRING_from_BUFFER shall fail and return NULL. ]*/

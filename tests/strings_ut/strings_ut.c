@@ -456,8 +456,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, strlen(INITIAL_STRING_VALUE) + strlen(TEST_STRING_VALUE) + 1))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, strlen(INITIAL_STRING_VALUE), strlen(TEST_STRING_VALUE) + 1, 1));
 
         ///act
         nResult = STRING_concat(g_hString, TEST_STRING_VALUE);
@@ -535,9 +534,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRING_copy(g_hString, TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, strlen(TEST_STRING_VALUE) + strlen(TEST_STRING_VALUE)+1))
-            .IgnoreArgument(1)
-            .IgnoreArgument(2);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, strlen(TEST_STRING_VALUE), strlen(TEST_STRING_VALUE) + 1, 1));
 
         ///act
         STRING_concat(g_hString, TEST_STRING_VALUE);
@@ -559,8 +556,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRING_HANDLE hAppend = STRING_construct(TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, strlen(INITIAL_STRING_VALUE) + strlen(TEST_STRING_VALUE) + 1))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, strlen(INITIAL_STRING_VALUE), strlen(TEST_STRING_VALUE) + 1, 1));
 
         ///act
         nResult = STRING_concat_with_STRING(g_hString, hAppend);
@@ -636,8 +632,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, strlen(TEST_STRING_VALUE) + 1))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, 1, strlen(TEST_STRING_VALUE), 1));
 
         ///act
         nResult = STRING_copy(g_hString, TEST_STRING_VALUE);
@@ -704,7 +699,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, strlen(TEST_STRING_VALUE) + 1))
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, 1, strlen(TEST_STRING_VALUE), 1))
             .SetReturn(NULL);
 
         ///act
@@ -727,8 +722,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, NUMBER_OF_CHAR_TOCOPY + 1))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, 1, NUMBER_OF_CHAR_TOCOPY, 1));
 
         ///act
         nResult = STRING_copy_n(g_hString, COMBINED_STRING_VALUE, NUMBER_OF_CHAR_TOCOPY);
@@ -784,8 +778,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 1))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, 1, IGNORED_ARG, 1));
 
         ///act
         nResult = STRING_copy_n(g_hString, COMBINED_STRING_VALUE, 0);
@@ -808,7 +801,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         g_hString = STRING_construct(INITIAL_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, NUMBER_OF_CHAR_TOCOPY + 1))
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, 1, NUMBER_OF_CHAR_TOCOPY , 1))
             .SetReturn(NULL);
 
         ///act
@@ -831,8 +824,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         g_hString = STRING_construct(TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 + strlen(TEST_STRING_VALUE) + 1))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, 3, strlen(TEST_STRING_VALUE), 1));
 
         ///act
         nResult = STRING_quote(g_hString);
@@ -857,8 +849,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         str_handle = STRING_construct(TEST_STRING_VALUE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, 2 + strlen(TEST_STRING_VALUE) + 1))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, 3, strlen(TEST_STRING_VALUE), 1));
 
         umock_c_negative_tests_snapshot();
 
@@ -1490,10 +1481,9 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ///arrange
         STRING_HANDLE result;
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument_size();
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
-        STRICT_EXPECTED_CALL(malloc(1 + 1));
+        STRICT_EXPECTED_CALL(malloc_flex(1, 1, 1));
 
         ///act
         result = STRING_from_byte_array((const unsigned char*)"a", 1);
@@ -1512,10 +1502,9 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ///arrange
         STRING_HANDLE result;
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument_size();
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
-        STRICT_EXPECTED_CALL(malloc(1 + 0));
+        STRICT_EXPECTED_CALL(malloc_flex(1, 0, 1));
 
         ///act
         result = STRING_from_byte_array(NULL, 0);
@@ -1534,14 +1523,12 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ///arrange
         STRING_HANDLE result;
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument_size();
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
-        STRICT_EXPECTED_CALL(malloc(1 + 1))
+        STRICT_EXPECTED_CALL(malloc_flex(1, 1, 1))
             .SetReturn(NULL);
 
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument_ptr();
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         result = STRING_from_byte_array((const unsigned char*)"a", 1);
@@ -1559,7 +1546,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         STRING_HANDLE result;
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument_size()
             .SetReturn(NULL);
 
         ///act
@@ -1616,7 +1602,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
         umock_c_reset_all_calls();
 
-        EXPECTED_CALL(realloc(IGNORED_ARG, IGNORED_ARG));
+        EXPECTED_CALL(realloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, 1));
 
         ///act
         str_result = STRING_sprintf(str_handle, FORMAT_STRING, TEST_STRING_VALUE);
@@ -1665,7 +1651,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
         umock_c_reset_all_calls();
 
-        EXPECTED_CALL(realloc(IGNORED_ARG, IGNORED_ARG));
+        EXPECTED_CALL(realloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, 1));
 
         umock_c_negative_tests_snapshot();
 
