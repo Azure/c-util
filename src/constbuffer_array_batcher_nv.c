@@ -21,7 +21,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_nv_batch(CONSTBUFFER_ARRAY_HA
         (payloads == NULL) ||
         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_002: [ If count is 0, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
         (count == 0) ||
-        /*Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_02_001: [ If count greater than UINT32_MAX / sizeof(uint32_t) - 1 then constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
+        /*Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_02_001: [ If count is greater than UINT32_MAX / sizeof(uint32_t) - 1 then constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
         (count > (UINT32_MAX / sizeof(uint32_t)) - 1) /*this is needed because we might end up multiplying (count+1) by sizeof(uint32_t) in CONSTBUFFER_CreateWithMoveMemory*/
         )
     {
