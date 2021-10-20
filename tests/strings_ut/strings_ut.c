@@ -233,9 +233,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         STRING_HANDLE g_hString;
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_STRING_VALUE) + 1));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(1, strlen(TEST_STRING_VALUE), 1));
 
         ///act
         g_hString = STRING_construct(TEST_STRING_VALUE);
@@ -257,7 +256,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         size_t index;
 
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_STRING_VALUE) + 1));
+        STRICT_EXPECTED_CALL(malloc_flex(1, strlen(TEST_STRING_VALUE), 1));
 
         umock_c_negative_tests_snapshot();
 
@@ -302,9 +301,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         STRING_HANDLE g_hString;
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(malloc(2 + strlen(TEST_STRING_VALUE) + 1));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(3, strlen(TEST_STRING_VALUE), 1));
 
         ///act
         g_hString = STRING_new_quoted(TEST_STRING_VALUE);
@@ -324,7 +322,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRING_HANDLE g_hString;
 
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(malloc(2 + strlen(TEST_STRING_VALUE) + 1));
+        STRICT_EXPECTED_CALL(malloc_flex(3, strlen(TEST_STRING_VALUE), 1));
 
         umock_c_negative_tests_snapshot();
 
@@ -920,9 +918,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         const char* s;
         STRING_HANDLE g_hString;
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(malloc(strlen(TEST_STRING_VALUE) + 1));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(1, strlen(TEST_STRING_VALUE), 1));
 
         ///act
         g_hString = STRING_construct(TEST_STRING_VALUE);
@@ -1082,9 +1079,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRING_HANDLE hSource = STRING_construct("aa");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(malloc(sizeof("aa")));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(1, sizeof("aa")-1, 1));
 
         ///act
         result = STRING_clone(hSource);
@@ -1125,9 +1121,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         str_handle = STRING_construct("aa");
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument(1);
-        STRICT_EXPECTED_CALL(malloc(sizeof("aa")));
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(malloc_flex(1, sizeof("aa")-1, 1));
 
         umock_c_negative_tests_snapshot();
 

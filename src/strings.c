@@ -220,7 +220,7 @@ STRING_HANDLE STRING_new_with_memory(const char* memory)
     {
         if ((result = malloc(sizeof(STRING))) != NULL)
         {
-            result->s = memory;
+            result->s = (char*)memory;
         }
         else
         {
