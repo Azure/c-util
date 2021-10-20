@@ -228,7 +228,7 @@ add_subdirectory(test_helpers)
 add_subdirectory(tests)
 
 if(${run_reals_check})
-    add_reals_check_target(c_util)
+    add_reals_check_target()
 endif()
 
 include(CMakePackageConfigHelpers)
