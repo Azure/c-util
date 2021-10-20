@@ -17,62 +17,6 @@
 
 #include "real_gballoc_ll.h"
 
-static size_t currentmalloc_call = 0;
-static size_t whenShallmalloc_fail = 0;
-
-static size_t currentrealloc_call = 0;
-static size_t whenShallrealloc_fail = 0;
-
-static void* my_gballoc_malloc(size_t size)
-{
-    void* result;
-    currentmalloc_call++;
-    if (whenShallmalloc_fail > 0)
-    {
-        if (currentmalloc_call == whenShallmalloc_fail)
-        {
-            result = NULL;
-        }
-        else
-        {
-            result = real_gballoc_ll_malloc(size);
-        }
-    }
-    else
-    {
-        result = real_gballoc_ll_malloc(size);
-    }
-    return result;
-}
-
-static void* my_gballoc_realloc(void* ptr, size_t size)
-{
-    void* result;
-    currentrealloc_call++;
-    if (whenShallrealloc_fail > 0)
-    {
-        if (currentrealloc_call == whenShallrealloc_fail)
-        {
-            result = NULL;
-        }
-        else
-        {
-            result = real_gballoc_ll_realloc(ptr, size);
-        }
-    }
-    else
-    {
-        result = real_gballoc_ll_realloc(ptr, size);
-    }
-
-    return result;
-}
-
-static void my_gballoc_free(void* ptr)
-{
-    real_gballoc_ll_free(ptr);
-}
-
 #define ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
@@ -117,11 +61,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
         REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
 
-        REGISTER_GLOBAL_MOCK_HOOK(gballoc_hl_malloc, my_gballoc_malloc);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
-        REGISTER_GLOBAL_MOCK_HOOK(gballoc_hl_realloc, my_gballoc_realloc);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(realloc, NULL);
-        REGISTER_GLOBAL_MOCK_HOOK(gballoc_hl_free, my_gballoc_free);
     }
 
     TEST_SUITE_CLEANUP(TestClassCleanup)
@@ -143,12 +84,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_reset_all_calls();
 
         ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
-
-        currentmalloc_call = 0;
-        whenShallmalloc_fail = 0;
-
-        currentrealloc_call = 0;
-        whenShallrealloc_fail = 0;
     }
 
     TEST_FUNCTION_CLEANUP(cleans)
@@ -163,8 +98,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ///arrange
         BUFFER_HANDLE g_hBuffer;
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
         ///act
         g_hBuffer = BUFFER_new();
@@ -186,8 +120,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         g_hBuffer = BUFFER_new();
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         BUFFER_delete(g_hBuffer);
@@ -336,11 +269,9 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         int nResult;
         BUFFER_HANDLE g_hBuffer;
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, ALLOCATION_SIZE))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, ALLOCATION_SIZE));
 
         ///act
         g_hBuffer = BUFFER_new();
@@ -424,8 +355,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         g_hBuffer = BUFFER_new();
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, 0);
@@ -448,8 +378,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         g_hBuffer = BUFFER_new();
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         nResult = BUFFER_build(g_hBuffer, NULL, 0);
@@ -630,8 +559,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, ALLOCATION_SIZE))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, ALLOCATION_SIZE));
 
         ///act
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -654,8 +582,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE - 1);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, ALLOCATION_SIZE))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, ALLOCATION_SIZE));
 
         ///act
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
@@ -678,8 +605,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, ALLOCATION_SIZE - 1))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, ALLOCATION_SIZE - 1));
 
         ///act
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE - 1);
@@ -703,8 +629,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
         ///act
         nResult = BUFFER_unbuild(g_hBuffer);
@@ -763,8 +688,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         nResult = BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, IGNORED_ARG, ALLOCATION_SIZE, 1))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, IGNORED_ARG, ALLOCATION_SIZE, 1));
 
         ///act
         nResult = BUFFER_enlarge(g_hBuffer, ALLOCATION_SIZE);
@@ -1123,8 +1047,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         nResult = BUFFER_build(hAppend, ADDITIONAL_BUFFER, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, ALLOCATION_SIZE, ALLOCATION_SIZE, 1))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, ALLOCATION_SIZE, ALLOCATION_SIZE, 1));
 
         ///act
         nResult = BUFFER_append(g_hBuffer, hAppend);
@@ -1491,8 +1414,7 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         size_t howBig;
         char c = '3';
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
         STRICT_EXPECTED_CALL(malloc(1));
 
@@ -1549,10 +1471,9 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         BUFFER_HANDLE res;
 
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(malloc(1));
+        STRICT_EXPECTED_CALL(malloc(1))
+            .SetReturn(NULL);
         STRICT_EXPECTED_CALL(free(IGNORED_ARG));
-
-        whenShallmalloc_fail = 2;
 
         ///act
         res = BUFFER_create((const unsigned char*)&c, 1);
@@ -1572,9 +1493,8 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         char c = '3';
         BUFFER_HANDLE res;
 
-        whenShallmalloc_fail = 1;
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-            .IgnoreArgument(1);
+            .SetReturn(NULL);
 
         ///act
         res = BUFFER_create((const unsigned char*)&c, 1);
