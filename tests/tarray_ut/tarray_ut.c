@@ -13,12 +13,12 @@
 
 #include "testrunnerswitcher.h"
 
-void* my_gballoc_malloc(size_t size)
+static void* my_gballoc_malloc(size_t size)
 {
     return malloc(size);
 }
 
-void my_gballoc_free(void* ptr)
+static void my_gballoc_free(void* ptr)
 {
     free(ptr);
 }
@@ -38,6 +38,7 @@ void my_gballoc_free(void* ptr)
 static TEST_MUTEX_HANDLE g_testByTest;
 
 #define THANDLE_MALLOC_FUNCTION malloc
+#define THANDLE_MALLOC_FLEX_FUNCTION malloc_flex
 #define THANDLE_FREE_FUNCTION free
 
 /*TARRAY with regular types*/
@@ -239,7 +240,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_with_same_capacity_succeeds)
     TARRAY_ASSIGN(uint32_t)(&arr, NULL);
 }
 
-/*Tests_SRS_TARRAY_02_007: [ TARRAY_ENSURE_CAPACITY(T) shall realloc arr to the next multiple of 2 greater than or equal to capacity. ]*/
+/*Tests_SRS_TARRAY_02_007: [ TARRAY_ENSURE_CAPACITY(T) shall shall call realloc_2 to resize arr to the next multiple of 2 greater than or equal to capacity. ]*/
 TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_reallocs_succeeds)
 {
     ///arrange
@@ -249,7 +250,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_reallocs_succeeds)
 
     int result;
 
-    STRICT_EXPECTED_CALL(realloc(arr->arr, 8 * sizeof(uint32_t)));
+    STRICT_EXPECTED_CALL(realloc_2(arr->arr, 8, sizeof(uint32_t)));
 
     ///act
     result = TARRAY_ENSURE_CAPACITY(uint32_t)(arr, 5);/*capacity is already at 1, the next power of 2 after 5 is 8*/
@@ -263,7 +264,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_reallocs_succeeds)
     TARRAY_ASSIGN(uint32_t)(&arr, NULL);
 }
 
-/*Tests_SRS_TARRAY_02_007: [ TARRAY_ENSURE_CAPACITY(T) shall realloc arr to the next multiple of 2 greater than or equal to capacity. ]*/
+/*Tests_SRS_TARRAY_02_007: [ TARRAY_ENSURE_CAPACITY(T) shall shall call realloc_2 to resize arr to the next multiple of 2 greater than or equal to capacity. ]*/
 TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_reallocs_does_not_realloc_when_size_is_exactly_power_of_2)
 {
     ///arrange
@@ -273,7 +274,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_reallocs_does_not_realloc_when_size_is_exac
 
     int result;
 
-    STRICT_EXPECTED_CALL(realloc(arr->arr, 8 * sizeof(uint32_t)));
+    STRICT_EXPECTED_CALL(realloc_2(arr->arr, 8, sizeof(uint32_t)));
     result = TARRAY_ENSURE_CAPACITY(uint32_t)(arr, 5);/*capacity is already at 1, the next multiple of 2 of 5 is 8*/
     ASSERT_ARE_EQUAL(int, 0, result);
 
@@ -321,7 +322,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_unhappy_path)
 
     int result;
 
-    STRICT_EXPECTED_CALL(realloc(arr->arr, 8 * sizeof(uint32_t)))
+    STRICT_EXPECTED_CALL(realloc_2(arr->arr, 8, sizeof(uint32_t)))
         .SetReturn(NULL);
 
     ///act

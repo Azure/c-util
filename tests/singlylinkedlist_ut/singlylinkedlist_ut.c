@@ -19,7 +19,7 @@ static size_t whenShallmalloc_fail = 0;
 static size_t currentrealloc_call = 0;
 static size_t whenShallrealloc_fail = 0;
 
-void* my_gballoc_malloc(size_t size)
+static void* my_gballoc_malloc(size_t size)
 {
     void* result;
     currentmalloc_call++;
@@ -41,7 +41,7 @@ void* my_gballoc_malloc(size_t size)
     return result;
 }
 
-void my_gballoc_free(void* ptr)
+static void my_gballoc_free(void* ptr)
 {
     real_gballoc_ll_free(ptr);
 }
@@ -508,8 +508,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_1_matching_item_yields_that_i
     (void)singlylinkedlist_add(list, &x);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT))
-        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT));
 
     // act
     result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
@@ -534,7 +533,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_1_items_that_does_not_match_r
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT))
-        .IgnoreArgument(1).SetReturn(false);
+        .SetReturn(false);
 
     // act
     result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
@@ -562,8 +561,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_2_items_where_the_first_match
     (void)singlylinkedlist_add(list, &x2);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT))
-        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT));
 
     // act
     result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
@@ -594,9 +592,8 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_2_items_where_the_second_matc
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT))
-        .IgnoreArgument(1).SetReturn(false);
-    STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT))
-        .IgnoreArgument(1);
+        .SetReturn(false);
+    STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT));
 
     // act
     result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
@@ -622,8 +619,7 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_2_items_both_matching_yields_
     (void)singlylinkedlist_add(list, &x2);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT))
-        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT));
 
     // act
     result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);
@@ -650,9 +646,9 @@ TEST_FUNCTION(singlylinkedlist_find_on_a_list_with_2_items_where_none_matches_re
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT))
-        .IgnoreArgument(1).SetReturn(false);
+        .SetReturn(false);
     STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT))
-        .IgnoreArgument(1).SetReturn(false);
+        .SetReturn(false);
 
     // act
     result = singlylinkedlist_find(list, test_match_function, TEST_CONTEXT);

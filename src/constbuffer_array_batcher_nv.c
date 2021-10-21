@@ -20,7 +20,9 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_nv_batch(CONSTBUFFER_ARRAY_HA
         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_001: [ If payloads is NULL, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
         (payloads == NULL) ||
         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_002: [ If count is 0, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
-        (count == 0)
+        (count == 0) ||
+        /*Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_02_001: [ If count is greater than UINT32_MAX / sizeof(uint32_t) - 1 then constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
+        (count > (UINT32_MAX / sizeof(uint32_t)) - 1) /*this is needed because we might end up multiplying (count+1) by sizeof(uint32_t) in CONSTBUFFER_CreateWithMoveMemory*/
         )
     {
         LogError("CONSTBUFFER_ARRAY_HANDLE* payloads=%p, uint32_t count=%" PRIu32,
@@ -50,11 +52,12 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_nv_batch(CONSTBUFFER_ARRAY_HA
             /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_003: [ Otherwise constbuffer_array_batcher_nv_batch shall obtain the number of buffers used by each CONSTBUFFER_ARRAY. ]*/
 
             /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_004: [ constbuffer_array_batcher_nv_batch shall allocate memory for the header buffer (enough to hold the entire batch header namingly (count + 1) uint32_t values). ]*/
-            header_memory = malloc(sizeof(uint32_t) * (count + 1));
+            header_memory = malloc_2(count + 1, sizeof(uint32_t));
             if (header_memory == NULL)
             {
                 /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_010: [ If any error occurrs, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
-                LogError("malloc failed");
+                LogError("failure in malloc_2(count=%" PRIu32 " + 1, sizeof(uint32_t)=%zu)",
+                    count, sizeof(uint32_t));
             }
             else
             {
@@ -74,65 +77,81 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_nv_batch(CONSTBUFFER_ARRAY_HA
                     write_uint32_t((void*)&header_memory[i + 1], buffer_count);
 
                     total_buffer_count += buffer_count;
+
+                    if ((total_buffer_count < buffer_count) || (total_buffer_count == UINT32_MAX))
+                    {
+                        /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_010: [ If any error occurrs, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
+                        LogError("exceeding total_buffer_count=%" PRIu32 " buffer_count=%" PRIu32 "",
+                            total_buffer_count, buffer_count);
+                        break;
+                    }
                 }
 
-                /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_007: [ constbuffer_array_batcher_nv_batch shall allocate enough memory for all the buffer handles in all the arrays + one extra header buffer handle. ]*/
-                all_buffers = malloc(sizeof(CONSTBUFFER_HANDLE) * (total_buffer_count + 1));
-                if (all_buffers == NULL)
+                if (i != count)
                 {
-                    /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_010: [ If any error occurrs, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
-                    LogError("malloc failed");
+                    /*error in the loop above, exit*/
                 }
                 else
                 {
-                    uint32_t current_index = 0;
-
-                    /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_008: [ constbuffer_array_batcher_nv_batch shall populate the first handle in the newly allocated handles array with the header buffer handle. ]*/
-                    all_buffers[current_index] = CONSTBUFFER_CreateWithMoveMemory((void*)header_memory, sizeof(uint32_t) * (count + 1));
-                    if (all_buffers[current_index] == NULL)
+                    /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_007: [ constbuffer_array_batcher_nv_batch shall allocate enough memory for all the buffer handles in all the arrays + one extra header buffer handle. ]*/
+                    all_buffers = malloc_2(total_buffer_count + 1, sizeof(CONSTBUFFER_HANDLE)); /*previous code ensures that total_buffer_count + 1 doesn't overflow*/
+                    if (all_buffers == NULL)
                     {
                         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_010: [ If any error occurrs, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
-                        LogError("CONSTBUFFER_CreateWithMoveMemory failed");
+                        LogError("failure in malloc_2(total_buffer_count=%" PRIu32 " + 1, sizeof(CONSTBUFFER_HANDLE)=%zu);",
+                            total_buffer_count, sizeof(CONSTBUFFER_HANDLE));
                     }
                     else
                     {
-                        current_index++;
+                        uint32_t current_index = 0;
 
-                        header_memory = NULL;
-
-                        /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_009: [ constbuffer_array_batcher_nv_batch shall populate the rest of the handles in the newly allocated handles array with the const buffer handles obtained from the arrays in payloads. ]*/
-                        for (i = 0; i < count; i++)
+                        /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_008: [ constbuffer_array_batcher_nv_batch shall populate the first handle in the newly allocated handles array with the header buffer handle. ]*/
+                        all_buffers[current_index] = CONSTBUFFER_CreateWithMoveMemory((void*)header_memory, sizeof(uint32_t) * (count + 1)); /*previous code ensures that this multiplication is always possible*/
+                        if (all_buffers[current_index] == NULL)
                         {
-                            uint32_t buffer_count;
-                            uint32_t j;
-
-                            (void)constbuffer_array_get_buffer_count(payloads[i], &buffer_count);
-
-                            for (j = 0; j < buffer_count; j++)
-                            {
-                                all_buffers[current_index++] = constbuffer_array_get_buffer(payloads[i], j);
-                            }
-                        }
-
-                        result = constbuffer_array_create(all_buffers, total_buffer_count + 1);
-                        for (i = 0; i < current_index; i++)
-                        {
-                            CONSTBUFFER_DecRef(all_buffers[i]);
-                        }
-
-                        if (result == NULL)
-                        {
-                            LogError("constbuffer_array_create failed");
+                            /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_010: [ If any error occurrs, constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
+                            LogError("CONSTBUFFER_CreateWithMoveMemory failed");
                         }
                         else
                         {
-                            free(all_buffers);
+                            current_index++;
 
-                            goto all_ok;
+                            header_memory = NULL;
+
+                            /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_009: [ constbuffer_array_batcher_nv_batch shall populate the rest of the handles in the newly allocated handles array with the const buffer handles obtained from the arrays in payloads. ]*/
+                            for (i = 0; i < count; i++)
+                            {
+                                uint32_t buffer_count;
+                                uint32_t j;
+
+                                (void)constbuffer_array_get_buffer_count(payloads[i], &buffer_count);
+
+                                for (j = 0; j < buffer_count; j++)
+                                {
+                                    all_buffers[current_index++] = constbuffer_array_get_buffer(payloads[i], j);
+                                }
+                            }
+
+                            result = constbuffer_array_create(all_buffers, total_buffer_count + 1);
+                            for (i = 0; i < current_index; i++)
+                            {
+                                CONSTBUFFER_DecRef(all_buffers[i]);
+                            }
+
+                            if (result == NULL)
+                            {
+                                LogError("constbuffer_array_create failed");
+                            }
+                            else
+                            {
+                                free(all_buffers);
+
+                                goto all_ok;
+                            }
                         }
-                    }
 
-                    free(all_buffers);
+                        free(all_buffers);
+                    }
                 }
 
                 if (header_memory != NULL)
@@ -210,11 +229,12 @@ CONSTBUFFER_ARRAY_HANDLE* constbuffer_array_batcher_nv_unbatch(CONSTBUFFER_ARRAY
                 else
                 {
                     /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_017: [ constbuffer_array_batcher_nv_unbatch shall allocate enough memory to hold the handles for buffer arrays that will be unbatched. ]*/
-                    result = malloc(sizeof(CONSTBUFFER_ARRAY_HANDLE) * batch_payload_count);
+                    result = malloc_2(batch_payload_count, sizeof(CONSTBUFFER_ARRAY_HANDLE));
                     if (result == NULL)
                     {
                         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_022: [ If any error occurs, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
-                        LogError("malloc failed");
+                        LogError("failure in malloc_2(batch_payload_count=%" PRIu32 ", sizeof(CONSTBUFFER_ARRAY_HANDLE)=%zu);",
+                            batch_payload_count, sizeof(CONSTBUFFER_ARRAY_HANDLE));
                     }
                     else
                     {
@@ -243,11 +263,12 @@ CONSTBUFFER_ARRAY_HANDLE* constbuffer_array_batcher_nv_unbatch(CONSTBUFFER_ARRAY
                                 }
                                 else
                                 {
-                                    CONSTBUFFER_HANDLE* payload_buffers = malloc(sizeof(CONSTBUFFER_HANDLE) * buffer_count);
+                                    CONSTBUFFER_HANDLE* payload_buffers = malloc_2(buffer_count, sizeof(CONSTBUFFER_HANDLE));
                                     if (payload_buffers == NULL)
                                     {
                                         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_022: [ If any error occurs, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/
-                                        LogError("malloc failed");
+                                        LogError("failure in malloc_2(buffer_count=%" PRIu32 ", sizeof(CONSTBUFFER_HANDLE)=%zu);",
+                                            buffer_count, sizeof(CONSTBUFFER_HANDLE));
                                         break;
                                     }
 

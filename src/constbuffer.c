@@ -47,14 +47,14 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
     /*Codes_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
     /*Codes_SRS_CONSTBUFFER_02_010: [The non-NULL handle returned by CONSTBUFFER_CreateFromBuffer shall have its ref count set to "1".]*/
     /*Codes_SRS_CONSTBUFFER_02_037: [ CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall allocate enough memory to hold CONSTBUFFER_HANDLE and size bytes. ]*/
-    result = (CONSTBUFFER_HANDLE)malloc(sizeof(CONSTBUFFER_HANDLE_DATA) + size * sizeof(unsigned char));
+    result = (CONSTBUFFER_HANDLE)malloc_flex(sizeof(CONSTBUFFER_HANDLE_DATA), size, sizeof(unsigned char));
     if (result == NULL)
     {
         /*Codes_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
         /*Codes_SRS_CONSTBUFFER_02_008: [If copying the content fails, then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.] */
         /*Codes_SRS_CONSTBUFFER_02_040: [ If there are any failures then CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
-        LogError("failure in malloc(sizeof(CONSTBUFFER_HANDLE_DATA)=%zu + size=%" PRIu32 " * sizeof(unsigned char)=%zu)",
-            sizeof(CONSTBUFFER_HANDLE_DATA) , size , sizeof(unsigned char));
+        LogError("failure in malloc_flex(sizeof(CONSTBUFFER_HANDLE_DATA)=%zu, size=%" PRIu32 ", sizeof(unsigned char)=%zu",
+            sizeof(CONSTBUFFER_HANDLE_DATA), size, sizeof(unsigned char));
         /*return as is*/
     }
     else
@@ -432,7 +432,7 @@ uint32_t CONSTBUFFER_get_serialization_size(CONSTBUFFER_HANDLE source)
 static void* calls_malloc(size_t size, void* context)
 {
     (void)context;
-    return malloc(size);
+    return malloc(size); /*in all the contexts where this is called, it is verified that the size is 0..UINT32_MAX, which is a subset of 0..SIZE_MAX*/
 }
 
 unsigned char* CONSTBUFFER_to_buffer(CONSTBUFFER_HANDLE source, CONSTBUFFER_to_buffer_alloc alloc, void* alloc_context, uint32_t* serialized_size)
@@ -461,7 +461,7 @@ unsigned char* CONSTBUFFER_to_buffer(CONSTBUFFER_HANDLE source, CONSTBUFFER_to_b
         if (UINT32_MAX - CONSTBUFFER_VERSION_SIZE - CONSTBUFFER_SIZE_SIZE < source->alias.size)
         {
             /*overflow*/
-            LogError("serialization size exceeds the lesser of (UINT32_MAX, UINT32_MAX)=%" PRIu32 ". Serialization size is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%" PRIu32 "",
+            LogError("serialization size exceeds UINT32_MAX=%" PRIu32 ". Serialization size is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->alias.size=%" PRIu32 "",
                 UINT32_MAX, CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, source->alias.size);
             result = NULL;
         }

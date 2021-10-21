@@ -13,12 +13,12 @@
 
 #include "testrunnerswitcher.h"
 
-void* my_gballoc_malloc(size_t size)
+static void* my_gballoc_malloc(size_t size)
 {
     return malloc(size);
 }
 
-void my_gballoc_free(void* ptr)
+static void my_gballoc_free(void* ptr)
 {
     free(ptr);
 }
@@ -64,6 +64,7 @@ MU_DEFINE_STRUCT(A_B, A_B_FIELDS);
 
 
 #define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_MALLOC_FLEX_FUNCTION gballoc_hl_malloc_flex
 #define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
@@ -74,6 +75,7 @@ extern "C" {
     }
 #endif
 #undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_MALLOC_FLEX_FUNCTION
 #undef THANDLE_FREE_FUNCTION
 
 
@@ -108,6 +110,7 @@ static void dispose_A_S(A_S* a_s)
 }
 
 #define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_MALLOC_FLEX_FUNCTION gballoc_hl_malloc_flex
 #define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
@@ -118,6 +121,7 @@ extern "C" {
 }
 #endif
 #undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_MALLOC_FLEX_FUNCTION
 #undef THANDLE_FREE_FUNCTION
 
 typedef struct A_FLEX_TAG
@@ -133,6 +137,7 @@ static size_t get_sizeof_A_FLEX(const A_FLEX* source)
 }
 
 #define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_MALLOC_FLEX_FUNCTION gballoc_hl_malloc_flex
 #define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
@@ -143,6 +148,7 @@ extern "C" {
 }
 #endif
 #undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_MALLOC_FLEX_FUNCTION 
 #undef THANDLE_FREE_FUNCTION
 
 
@@ -188,6 +194,7 @@ static size_t get_sizeof_A_S_FLEX(const A_S_FLEX* source)
 }
 
 #define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_MALLOC_FLEX_FUNCTION gballoc_hl_malloc_flex
 #define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
@@ -198,6 +205,7 @@ extern "C" {
 }
 #endif
 #undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_MALLOC_FLEX_FUNCTION
 #undef THANDLE_FREE_FUNCTION
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
@@ -284,7 +292,7 @@ TEST_FUNCTION(thandle_user_create_fails_when_thandle_malloc_fails)
 TEST_FUNCTION(thandle_flex_user_create_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)); /*this is THANDLE_MALLOC*/
     STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
 
     ///act
@@ -302,26 +310,11 @@ TEST_FUNCTION(thandle_flex_user_create_succeeds)
 TEST_FUNCTION(thandle_flex_user_create_fails_when_thandle_malloc_fails)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .SetReturn(NULL); /*this is THANDLE_MALLOC_WITH_EXTRA_SIZE*/
 
     ///act
     THANDLE(LL_FLEX) ll = ll_flex_create(TEST_A, TEST_S, 10);
-
-    ///assert
-    ASSERT_IS_NULL(ll);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///cleanup
-}
-
-/*Tests_SRS_THANDLE_02_019: [ If extra_size + sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) would exceed SIZE_MAX then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/
-TEST_FUNCTION(thandle_flex_user_create_fails_when_SIZE_MAX_is_exceeded)
-{
-    ///arrange
-
-    ///act
-    THANDLE(LL_FLEX) ll = ll_flex_create(TEST_A, TEST_S, SIZE_MAX/sizeof(int));
 
     ///assert
     ASSERT_IS_NULL(ll);
@@ -715,7 +708,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_with_copy_NULL_succeeds)
     a_b.a = 2;
     a_b.b = 3;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, IGNORED_ARG)); /*this is THANDLE_MALLOC*/
 
     ///act
     THANDLE(A_B) result = THANDLE_CREATE_FROM_CONTENT(A_B)(&a_b, NULL, NULL);
@@ -742,7 +735,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_DISPOSE_with_non_NULL_succeeds)
     a_s.a = 22;
     a_s.s = copy;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, IGNORED_ARG)); /*this is THANDLE_MALLOC*/
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is sprintf_char in copy_A_S, also known as "copy"*/
 
     ///act
@@ -768,7 +761,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_when_THANDLE_MALLOC_FUNCTION_fail
     a_s.a = 22;
     a_s.s = copy;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, IGNORED_ARG)) /*this is THANDLE_MALLOC*/
         .SetReturn(NULL);
 
     ///act
@@ -791,7 +784,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_when_copy_fails_it_fails)
     a_s.a = 22;
     a_s.s = copy;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, IGNORED_ARG)); /*this is THANDLE_MALLOC*/
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)) /*this is malloc in copy_A_S, aslo known as "copy"*/
         .SetReturn(NULL);
     STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
@@ -820,7 +813,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof)
         source->p[i] = i * i;
     }
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, IGNORED_ARG)); /*this is THANDLE_MALLOC*/
 
     ///act
     THANDLE(A_FLEX) copy = THANDLE_CREATE_FROM_CONTENT_FLEX(A_FLEX)(source, NULL, NULL, get_sizeof_A_FLEX);
@@ -855,7 +848,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof_2)
         source->p[i] = i * i;
     }
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, IGNORED_ARG)); /*this is THANDLE_MALLOC*/
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is malloc for the string*/
 
     ///act

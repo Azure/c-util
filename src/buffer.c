@@ -231,11 +231,12 @@ int BUFFER_append_build(BUFFER_HANDLE handle, const unsigned char* source, size_
         else
         {
             /* Codes_SRS_BUFFER_01_009: [ if handle->buffer is not NULL BUFFER_append_build shall realloc the buffer to be the handle->size + size ] */
-            unsigned char* temp = (unsigned char*)realloc(handle->buffer, handle->size + size);
+            unsigned char* temp = (unsigned char*)realloc_flex(handle->buffer, handle->size, size, 1);
             if (temp == NULL)
             {
                 /* Codes_SRS_BUFFER_07_035: [ If any error is encountered BUFFER_append_build shall return a non-null value. ] */
-                LogError("Failure reallocating temporary buffer");
+                LogError("Failure reallocating temporary buffer realloc_flex(handle->buffer=%p, handle->size=%zu, size=%zu, 1);",
+                    handle->buffer, handle->size, size);
                 result = MU_FAILURE;
             }
             else
@@ -361,11 +362,11 @@ int BUFFER_enlarge(BUFFER_HANDLE handle, size_t enlargeSize)
     else
     {
         BUFFER* b = (BUFFER*)handle;
-        unsigned char* temp = (unsigned char*)realloc(b->buffer, b->size + enlargeSize);
+        unsigned char* temp = (unsigned char*)realloc_flex(b->buffer, b->size, enlargeSize, 1);
         if (temp == NULL)
         {
             /* Codes_SRS_BUFFER_07_018: [BUFFER_enlarge shall return a nonzero result if any error is encountered.] */
-            LogError("Failure: allocating temp buffer.");
+            LogError("Failure in realloc_flex(b->buffer=%p, b->size=%zu, enlargeSize=%zu, 1);", b->buffer, b->size, enlargeSize);
             result = MU_FAILURE;
         }
         else
@@ -396,7 +397,7 @@ int BUFFER_shrink(BUFFER_HANDLE handle, size_t decreaseSize, bool fromEnd)
     else if (decreaseSize > handle->size)
     {
         /* Codes_SRS_BUFFER_07_038: [ If decreaseSize is less than the size of the buffer, BUFFER_shrink shall return a non-null value ] */
-        LogError("Failure: decrease size is less than buffer size.");
+        LogError("Failure: decrease size is more than buffer size.");
         result = MU_FAILURE;
     }
     else
@@ -425,7 +426,7 @@ int BUFFER_shrink(BUFFER_HANDLE handle, size_t decreaseSize, bool fromEnd)
                 if (fromEnd)
                 {
                     /* Codes_SRS_BUFFER_07_040: [ if the fromEnd variable is true, BUFFER_shrink shall remove the end of the buffer of size decreaseSize. ] */
-                    memcpy(tmp, handle->buffer, alloc_size);
+                    (void)memcpy(tmp, handle->buffer, alloc_size);
                     free(handle->buffer);
                     handle->buffer = tmp;
                     handle->size = alloc_size;
@@ -434,7 +435,7 @@ int BUFFER_shrink(BUFFER_HANDLE handle, size_t decreaseSize, bool fromEnd)
                 else
                 {
                     /* Codes_SRS_BUFFER_07_041: [ if the fromEnd variable is false, BUFFER_shrink shall remove the beginning of the buffer of size decreaseSize. ] */
-                    memcpy(tmp, handle->buffer + decreaseSize, alloc_size);
+                    (void)memcpy(tmp, handle->buffer + decreaseSize, alloc_size);
                     free(handle->buffer);
                     handle->buffer = tmp;
                     handle->size = alloc_size;
@@ -497,11 +498,11 @@ int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
             else
             {
                 // b2->size != 0, whatever b1->size is
-                unsigned char* temp = (unsigned char*)realloc(b1->buffer, b1->size + b2->size);
+                unsigned char* temp = (unsigned char*)realloc_flex(b1->buffer, b1->size, b2->size, 1);
                 if (temp == NULL)
                 {
                     /* Codes_SRS_BUFFER_07_023: [BUFFER_append shall return a nonzero upon any error that is encountered.] */
-                    LogError("Failure: allocating temp buffer.");
+                    LogError("Failure in realloc_flex(b1->buffer=%p, b1->size=%zu, b2->size=%zu, 1)", b1->buffer, b1->size, b2->size);
                     result = MU_FAILURE;
                 }
                 else
@@ -552,11 +553,11 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
             else
             {
                 // b2->size != 0
-                unsigned char* temp = (unsigned char*)malloc(b1->size + b2->size);
+                unsigned char* temp = (unsigned char*)malloc_flex(b1->size, b2->size, 1);
                 if (temp == NULL)
                 {
                     /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
-                    LogError("Failure: allocating temp buffer.");
+                    LogError("failure in malloc_flex(b1->size=%zu, b2->size=%zu, 1);", b1->size, b2->size);
                     result = MU_FAILURE;
                 }
                 else

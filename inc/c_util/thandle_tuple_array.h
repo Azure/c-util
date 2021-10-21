@@ -52,43 +52,30 @@ extern "C" {
     IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE_TUPLE_ARRAY_TYPE(name)*, THANDLE_TUPLE_ARRAY_CREATE(name), uint32_t, count) \
     { \
         THANDLE_TUPLE_ARRAY_TYPE(name)* result; \
+        /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_001: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall allocate memory for the array. ]*/ \
+        result = (THANDLE_TUPLE_ARRAY_TYPE(name)*)malloc_flex(sizeof(THANDLE_TUPLE_ARRAY_TYPE(name)), count, sizeof(name)); \
         \
-        if (SIZE_MAX / sizeof(name) < count || \
-            SIZE_MAX - count * sizeof(name) < sizeof(THANDLE_TUPLE_ARRAY_TYPE(name))) \
+        if (result == NULL) \
         { \
-            /*Unlikely overflow check*/ \
-            LogError("Overflow for count=%" PRIu32 " with sizeof(" MU_TOSTRING(name) ")=%zu, sizeof(" MU_TOSTRING(THANDLE_TUPLE_ARRAY_TYPE(name)) ")=%zu", \
-                count, sizeof(name), sizeof(THANDLE_TUPLE_ARRAY_TYPE(name))); \
-            result = NULL; \
+            /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_004: [ If there are any errors then THANDLE_TUPLE_ARRAY_CREATE(name) shall fail and return NULL. ]*/ \
+            LogError("failure in malloc_flex((sizeof(THANDLE_TUPLE_ARRAY_TYPE(name))=%zu, count=%" PRIu32 ", sizeof(name)=%zu)) failed", sizeof(THANDLE_TUPLE_ARRAY_TYPE(name)), count, sizeof(name)); \
         } \
         else \
         { \
-            /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_001: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall allocate memory for the array. ]*/ \
-            size_t required_size = sizeof(THANDLE_TUPLE_ARRAY_TYPE(name)) + count * sizeof(name); \
-            result = (THANDLE_TUPLE_ARRAY_TYPE(name)*)malloc(required_size); \
+            /* Need to cast to assign to the const member */ \
+            *(uint32_t*)&result->count = count; \
             \
-            if (result == NULL) \
+            /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_003: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall initialize the members of the tuples in the array to NULL. ]*/ \
+            for (uint32_t i = 0; i < count; ++i) \
             { \
-                /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_004: [ If there are any errors then THANDLE_TUPLE_ARRAY_CREATE(name) shall fail and return NULL. ]*/ \
-                LogError("malloc(%zu) failed", required_size); \
+                MU_FOR_EACH_2(THANDLE_TUPLE_ARRAY_INIT_MEMBER, __VA_ARGS__) \
             } \
-            else \
-            { \
-                /* Need to cast to assign to the const member */ \
-                *(uint32_t*)&result->count = count; \
-                \
-                /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_003: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall initialize the members of the tuples in the array to NULL. ]*/ \
-                for (uint32_t i = 0; i < count; ++i) \
-                { \
-                    MU_FOR_EACH_2(THANDLE_TUPLE_ARRAY_INIT_MEMBER, __VA_ARGS__) \
-                } \
-                \
-                /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_005: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall succeed and return the allocated array. ]*/ \
-                goto all_ok; \
-            } \
-            free(result); \
-            result = NULL; \
+            \
+            /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_005: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall succeed and return the allocated array. ]*/ \
+            goto all_ok; \
         } \
+        free(result); \
+        result = NULL; \
     all_ok: \
         return result; \
     }

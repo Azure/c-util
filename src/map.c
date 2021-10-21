@@ -30,7 +30,7 @@ typedef struct MAP_HANDLE_DATA_TAG
 MAP_HANDLE Map_Create(MAP_FILTER_CALLBACK mapFilterFunc)
 {
     /*Codes_SRS_MAP_02_001: [Map_Create shall create a new, empty map.]*/
-    MAP_HANDLE_DATA* result = (MAP_HANDLE_DATA*)malloc(sizeof(MAP_HANDLE_DATA));
+    MAP_HANDLE_DATA* result = malloc(sizeof(MAP_HANDLE_DATA));
     /*Codes_SRS_MAP_02_002: [If during creation there are any error, then Map_Create shall return NULL.]*/
     if (result != NULL)
     {
@@ -49,7 +49,7 @@ void Map_Destroy(MAP_HANDLE handle)
     if (handle != NULL)
     {
         /*Codes_SRS_MAP_02_004: [Map_Destroy shall release all resources associated with the map.] */
-        MAP_HANDLE_DATA* handleData = (MAP_HANDLE_DATA*)handle;
+        MAP_HANDLE_DATA* handleData = handle;
         size_t i;
 
         for (i = 0; i < handleData->count; i++)
@@ -68,9 +68,11 @@ void Map_Destroy(MAP_HANDLE handle)
 static char** Map_CloneVector(const char*const * source, size_t count)
 {
     char** result;
-    result = (char**)malloc(count *sizeof(char*));
+    result = malloc_2(count, sizeof(char*));
     if (result == NULL)
     {
+        LogError("failure in malloc_2(count=%zu, sizeof(char*)=%zu);",
+            count, sizeof(char*));
         /*do nothing, just return it (NULL)*/
     }
     else
@@ -114,8 +116,8 @@ MAP_HANDLE Map_Clone(MAP_HANDLE handle)
     }
     else
     {
-        MAP_HANDLE_DATA * handleData = (MAP_HANDLE_DATA *)handle;
-        result = (MAP_HANDLE_DATA*)malloc(sizeof(MAP_HANDLE_DATA));
+        MAP_HANDLE_DATA * handleData = handle;
+        result = malloc(sizeof(MAP_HANDLE_DATA));
         if (result == NULL)
         {
             /*Codes_SRS_MAP_02_047: [If during cloning, any operation fails, then Map_Clone shall return NULL.] */
@@ -168,10 +170,11 @@ MAP_HANDLE Map_Clone(MAP_HANDLE handle)
 static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
 {
     int result;
-    char** newKeys = (char**)realloc(handleData->keys, (handleData->count + 1) * sizeof(char*));
+    char** newKeys = realloc_flex(handleData->keys, sizeof(char*), handleData->count , sizeof(char*));
     if (newKeys == NULL)
     {
-        LogError("realloc error");
+        LogError("failure in realloc_flex(handleData->keys=%p, sizeof(char*)=%zu, handleData->count=%zu , sizeof(char*)=%zu);",
+            handleData->keys, sizeof(char*), handleData->count, sizeof(char*));
         result = MU_FAILURE;
     }
     else
@@ -179,10 +182,11 @@ static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
         char** newValues;
         handleData->keys = newKeys;
         handleData->keys[handleData->count] = NULL;
-        newValues = (char**)realloc(handleData->values, (handleData->count + 1) * sizeof(char*));
+        newValues = realloc_flex(handleData->values, sizeof(char*), handleData->count, sizeof(char*));
         if (newValues == NULL)
         {
-            LogError("realloc error");
+            LogError("failure in realloc_flex(handleData->values=%p, sizeof(char*)=%zu, handleData->count=%zu, sizeof(char*)=%zu);",
+                handleData->values, sizeof(char*), handleData->count, sizeof(char*));
             if (handleData->count == 0) /*avoiding an implementation defined behavior */
             {
                 free(handleData->keys);
@@ -190,7 +194,7 @@ static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
             }
             else
             {
-                char** undoneKeys = (char**)realloc(handleData->keys, (handleData->count) * sizeof(char*));
+                char** undoneKeys = realloc_2(handleData->keys, handleData->count, sizeof(char*));
                 if (undoneKeys == NULL)
                 {
                     LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size");
@@ -228,20 +232,22 @@ static void Map_DecreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
     {
         /*certainly > 1...*/
         char** undoneValues;
-        char** undoneKeys = (char**)realloc(handleData->keys, sizeof(char*)* (handleData->count - 1));
+        char** undoneKeys = realloc_2(handleData->keys, handleData->count - 1, sizeof(char*));
         if (undoneKeys == NULL)
         {
-            LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size");
+            LogError("CATASTROPHIC error, realloc_2(handleData->keys, handleData->count=%zu - 1, sizeof(char*)=%zu);",
+                handleData->count, sizeof(char*));
         }
         else
         {
             handleData->keys = undoneKeys;
         }
 
-        undoneValues = (char**)realloc(handleData->values, sizeof(char*)* (handleData->count - 1));
+        undoneValues = realloc_2(handleData->values, handleData->count - 1, sizeof(char*));
         if (undoneValues == NULL)
         {
-            LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size");
+            LogError("CATASTROPHIC error, realloc_2(handleData->values=%p, handleData->count=%zu - 1, sizeof(char*)=%zu);",
+                handleData->values, handleData->count, sizeof(char*));
         }
         else
         {
@@ -428,10 +434,12 @@ MAP_RESULT Map_AddOrUpdate(MAP_HANDLE handle, const char* key, const char* value
                 size_t index = whereIsIt - handleData->keys;
                 size_t valueLength = strlen(value);
                 /*try to realloc value of this key*/
-                char* newValue = (char*)realloc(handleData->values[index],valueLength  + 1);
+                char* newValue = realloc_flex(handleData->values[index], 1, valueLength, 1);
                 if (newValue == NULL)
                 {
                     /*Codes_SRS_MAP_02_018: [If there are any failures then Map_AddOrUpdate shall return MAP_ERROR.] */
+                    LogError("failure in realloc_flex(handleData->values[index], 1, valueLength=%zu, 1);",
+                        valueLength);
                     result = MAP_ERROR;
                     LOG_MAP_ERROR;
                 }

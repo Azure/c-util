@@ -19,9 +19,9 @@ static void* my_gballoc_malloc(size_t size)
     return real_gballoc_ll_malloc(size);
 }
 
-static void* my_gballoc_realloc(void* ptr, size_t size)
+static void* my_gballoc_realloc_flex(void* ptr, size_t base, size_t nmemb, size_t size)
 {
-    return real_gballoc_ll_realloc(ptr, size);
+    return real_gballoc_ll_realloc_flex(ptr, base, nmemb, size);
 }
 
 static void my_gballoc_free(void* ptr)
@@ -133,7 +133,7 @@ static void expect_run_command(FILE** captured_file_handle)
 
 static void expect_read_line(const char* line)
 {
-    STRICT_EXPECTED_CALL(realloc(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(realloc_flex(IGNORED_ARG, sizeof(THANDLE(RC_STRING)), IGNORED_ARG, sizeof(THANDLE(RC_STRING))));
     STRICT_EXPECTED_CALL(rc_string_create(line));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(RC_STRING)(IGNORED_ARG, IGNORED_ARG));
 }
@@ -171,10 +171,10 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_RC_STRING_ARRAY_GLOBAL_MOCK_HOOK();
 
     REGISTER_GLOBAL_MOCK_HOOK(malloc, my_gballoc_malloc);
-    REGISTER_GLOBAL_MOCK_HOOK(realloc, my_gballoc_realloc);
+    REGISTER_GLOBAL_MOCK_HOOK(realloc_flex, my_gballoc_realloc_flex);
     REGISTER_GLOBAL_MOCK_HOOK(free, my_gballoc_free);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(realloc, NULL);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(realloc_flex, NULL);
 
     REGISTER_GLOBAL_MOCK_HOOK(pipe_pclose, hook_pclose);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(pipe_pclose, -1);

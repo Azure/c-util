@@ -67,14 +67,14 @@ static CONSTBUFFER_HANDLE TEST_CONSTBUFFER_HANDLE_6;
 
 static void constbuffer_array_create_empty_inert_path(void)
 {
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 0, 0));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
         .CallCannotFail();
 }
 
 static void constbuffer_array_create_from_buffer_index_and_count_inert_path(void)
 {
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
         .CallCannotFail();
     STRICT_EXPECTED_CALL(interlocked_increment(IGNORED_ARG))
@@ -83,7 +83,7 @@ static void constbuffer_array_create_from_buffer_index_and_count_inert_path(void
 
 static void constbuffer_array_add_front_inert_path(void)
 {
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(CONSTBUFFER_HANDLE)));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
         .CallCannotFail();
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1));
@@ -91,7 +91,7 @@ static void constbuffer_array_add_front_inert_path(void)
 
 static void constbuffer_array_remove_front_inert_path(uint32_t nExistingItems)
 {
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, nExistingItems - 1, sizeof(CONSTBUFFER_HANDLE)));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
         .CallCannotFail();
     // clone front buffer
@@ -187,7 +187,7 @@ static void TEST_constbuffer_array_dec_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_
 
 static void constbuffer_array_create_from_array_array_inert_path(uint32_t existing_item_count)
 {
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, existing_item_count, sizeof(CONSTBUFFER_HANDLE)));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
         .CallCannotFail();
     for (uint32_t i = 0; i < existing_item_count; i++)
@@ -323,7 +323,7 @@ TEST_FUNCTION(constbuffer_array_create_succeeds)
     test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
     test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(test_buffers) / sizeof(test_buffers[0]), sizeof(CONSTBUFFER_HANDLE)));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1));
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_2));
@@ -368,7 +368,7 @@ TEST_FUNCTION(constbuffer_array_create_with_0_buffer_count_succeeds)
 
     test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 0, sizeof(CONSTBUFFER_HANDLE)));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1));
 
     ///act
@@ -392,7 +392,7 @@ TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_create_fails)
     test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
     test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, sizeof(test_buffers) / sizeof(test_buffers[0]), sizeof(CONSTBUFFER_HANDLE)));
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1));
     STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_2));
 
@@ -446,7 +446,7 @@ TEST_FUNCTION(constbuffer_array_create_with_move_buffers_succeeds)
     test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 0, 0));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1));
 
     ///act
@@ -474,7 +474,7 @@ TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_create_with_move_buff
     test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
 
     umock_c_negative_tests_snapshot();
     for (i = 0; i < umock_c_negative_tests_call_count(); i++)
@@ -1317,7 +1317,7 @@ TEST_FUNCTION(constbuffer_array_create_from_array_array_fails_if_malloc_fails)
     buffer_array[0] = TEST_constbuffer_array_create(2, 0);
     buffer_array[1] = TEST_constbuffer_array_create(2, 2);
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 2 + 2, sizeof(CONSTBUFFER_HANDLE)))
         .SetReturn(NULL);
 
     ///act

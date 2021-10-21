@@ -116,7 +116,7 @@ static T* THANDLE_MALLOC(C)(void(*dispose)(T*))                                 
     if (handle_impl == NULL)                                                                                                                                        \
     {                                                                                                                                                               \
         /*Codes_SRS_THANDLE_02_015: [ If malloc fails then THANDLE_MALLOC shall fail and return NULL. ]*/                                                           \
-        LogError("error in malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                                                                      \
+        LogError("error in " MU_TOSTRING(THANDLE_MALLOC_FUNCTION) "(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                                    \
             sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                                                                                                  \
         result = NULL;                                                                                                                                              \
     }                                                                                                                                                               \
@@ -139,35 +139,26 @@ const THANDLE_WRAPPER_TYPE_NAME(T)* const THANDLE_INSPECT(C)(THANDLE(T) t)      
     return CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                                                                \
 }                                                                                                                                                                   \
 
-#define THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_MACRO(C, T)                                                                                                                     \
+#define THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_MACRO(C, T)                                                                                                               \
 static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(C)(void(*dispose)(T*), size_t extra_size)                                                                                  \
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
-    /*Codes_SRS_THANDLE_02_019: [ If extra_size + sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) would exceed SIZE_MAX then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/ \
-    if (SIZE_MAX - sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) < extra_size)                                                                                               \
+    /*Codes_SRS_THANDLE_02_020: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall allocate memory enough to hold T and extra_size. ]*/                                         \
+    THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)THANDLE_MALLOC_FLEX_FUNCTION(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)), extra_size, 1);   \
+    if (handle_impl == NULL)                                                                                                                                        \
     {                                                                                                                                                               \
-        LogError("extra_size=%zu produces arithmetic overflows", extra_size);                                                                                       \
+        /*Codes_SRS_THANDLE_02_022: [ If malloc fails then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/                                           \
+        LogError("error in " MU_TOSTRING(THANDLE_MALLOC_FLEX_FUNCTION) "(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                               \
+            sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                                                                                                  \
         result = NULL;                                                                                                                                              \
     }                                                                                                                                                               \
     else                                                                                                                                                            \
     {                                                                                                                                                               \
-        /*Codes_SRS_THANDLE_02_020: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall allocate memory enough to hold T and extra_size. ]*/                                     \
-        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)THANDLE_MALLOC_FUNCTION(extra_size + sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));      \
-        if (handle_impl == NULL)                                                                                                                                    \
-        {                                                                                                                                                           \
-            /*Codes_SRS_THANDLE_02_022: [ If malloc fails then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/                                       \
-            LogError("error in malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                                                                  \
-                sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                                                                                              \
-            result = NULL;                                                                                                                                          \
-        }                                                                                                                                                           \
-        else                                                                                                                                                        \
-        {                                                                                                                                                           \
-            /*Codes_SRS_THANDLE_02_021: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall initialize the reference count to 1, store dispose and return a T*. ]*/              \
-            THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                          \
-            handle_impl->dispose = dispose;                                                                                                                         \
-            (void)interlocked_exchange(&handle_impl->refCount,1);                                                                                                   \
-            result = &(handle_impl->data);                                                                                                                          \
-        }                                                                                                                                                           \
+        /*Codes_SRS_THANDLE_02_021: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall initialize the reference count to 1, store dispose and return a T*. ]*/                  \
+        THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                              \
+        handle_impl->dispose = dispose;                                                                                                                             \
+        (void)interlocked_exchange(&handle_impl->refCount,1);                                                                                                       \
+        result = &(handle_impl->data);                                                                                                                              \
     }                                                                                                                                                               \
     return result;                                                                                                                                                  \
 }                                                                                                                                                                   \
@@ -189,12 +180,12 @@ static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(C)(const T* source, void(*dis
         /*Codes_SRS_THANDLE_02_031: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall call get_sizeof to get the needed size to store T. ]*/                                 \
         size_t sizeof_source = get_sizeof(source);                                                                                                                  \
         /*Codes_SRS_THANDLE_02_026: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall allocate memory. ]*/                                                                   \
-        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)THANDLE_MALLOC_FUNCTION(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) - sizeof(T) + sizeof_source); \
+        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)THANDLE_MALLOC_FLEX_FUNCTION(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) - sizeof(T), 1, sizeof_source); \
         if (handle_impl == NULL)                                                                                                                                    \
         {                                                                                                                                                           \
             /*Codes_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/                           \
-            LogError("error in malloc(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                                                                  \
-                sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) - sizeof(T) + sizeof_source);                                                                                  \
+            LogError("error in " MU_TOSTRING(THANDLE_MALLOC_FLEX_FUNCTION) "(sizeof(THANDLE_WRAPPER_TYPE_NAME(T))=%zu - sizeof(T)=%zu, 1, sizeof_source=%zu)",      \
+                sizeof(THANDLE_WRAPPER_TYPE_NAME(T)), sizeof(T), sizeof_source);                                                                                    \
             result = NULL;                                                                                                                                          \
         }                                                                                                                                                           \
         else                                                                                                                                                        \

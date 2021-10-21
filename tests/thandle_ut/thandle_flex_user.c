@@ -21,9 +21,11 @@ MU_DEFINE_STRUCT(LL_FLEX, LL_FLEX_FIELDS);
 
 
 #define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
+#define THANDLE_MALLOC_FLEX_FUNCTION gballoc_hl_malloc_flex
 #define THANDLE_FREE_FUNCTION gballoc_hl_free
 THANDLE_TYPE_DEFINE(LL_FLEX);
 #undef THANDLE_MALLOC_FUNCTION
+#undef THANDLE_MALLOC_FLEX_FUNCTION
 #undef THANDLE_FREE_FUNCTION
 
 static void frees_the_string(LL_FLEX* ll)
@@ -39,7 +41,7 @@ THANDLE(LL_FLEX) ll_flex_create(int a, const char* s, size_t howMany)
     LL_FLEX* result = THANDLE_MALLOC_WITH_EXTRA_SIZE(LL_FLEX)(frees_the_string, howMany * sizeof(int));
     if (result == NULL)
     {
-        LogError("failure in THANDLE_MALLOC_WITH_EXTRA_SIZE(LL)(frees_the_string, howMany=%zu * sizeof(int)=%zu)",
+        LogError("failure in THANDLE_MALLOC_WITH_EXTRA_SIZE(LL_FLEX)(frees_the_string, howMany=%zu * sizeof(int)=%zu)",
             howMany, sizeof(int));
         /*return as is*/
     }

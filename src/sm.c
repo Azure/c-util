@@ -64,16 +64,16 @@ SM_HANDLE sm_create(const char* name)
         name = NO_NAME;
     }
 
-    size_t flexSize = strlen(name) + 1;
+    size_t flexSize = strlen(name) + 1; /*there's a zero chance that strlen(name) is SIZE_MAX*/
 
     /*Codes_SRS_SM_02_002: [ sm_create shall allocate memory for the instance. ]*/
-    result = malloc(sizeof(SM_HANDLE_DATA) + flexSize);
+    result = malloc_flex(sizeof(SM_HANDLE_DATA), flexSize, sizeof(char));
 
     if (result == NULL)
     {
         /*Codes_SRS_SM_02_004: [ If there are any failures then sm_create shall fail and return NULL. ]*/
-        LogError("sm name=%s, failure in malloc(sizeof(SM_HANDLE_DATA)=%zu);",
-            MU_P_OR_NULL(name), sizeof(SM_HANDLE_DATA));
+        LogError("sm name=%s, failure in malloc_flex(sizeof(SM_HANDLE_DATA)=%zu, flexSize=%zu, 1);", 
+            MU_P_OR_NULL(name), sizeof(SM_HANDLE_DATA), flexSize);
         /*return as is*/
     }
     else

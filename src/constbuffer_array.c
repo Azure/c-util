@@ -44,11 +44,12 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
     else
     {
         /* Codes_SRS_CONSTBUFFER_ARRAY_01_009: [ constbuffer_array_create shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE that can hold buffer_count buffers. ]*/
-        result = REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(CONSTBUFFER_ARRAY_HANDLE_DATA, buffer_count * sizeof(CONSTBUFFER_HANDLE));
+        result = REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, buffer_count, sizeof(CONSTBUFFER_HANDLE));
         if (result == NULL)
         {
             /* Codes_SRS_CONSTBUFFER_ARRAY_01_014: [ If any error occurs, constbuffer_array_create shall fail and return NULL. ]*/
-            LogError("failure in allocating const buffer array");
+            LogError("failure in REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, buffer_count=%" PRIu32 ", sizeof(CONSTBUFFER_HANDLE)=%zu);",
+                buffer_count, sizeof(CONSTBUFFER_HANDLE));
         }
         else
         {
@@ -85,7 +86,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
     if (result == NULL)
     {
         /*Codes_SRS_CONSTBUFFER_ARRAY_02_001: [ If are any failure is encountered, constbuffer_array_create_empty shall fail and return NULL. ]*/
-        LogError("failure allocating const buffer array");
+        LogError("failure in REFCOUNT_TYPE_CREATE(CONSTBUFFER_ARRAY_HANDLE_DATA)");
         /*return as is*/
     }
     else
@@ -126,7 +127,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
         if (result == NULL)
         {
             /* Codes_SRS_CONSTBUFFER_ARRAY_01_030: [ If any error occurs, constbuffer_array_create_with_move_buffers shall fail and return NULL. ]*/
-            LogError("failure allocating const buffer array");
+            LogError("failure in REFCOUNT_TYPE_CREATE(CONSTBUFFER_ARRAY_HANDLE_DATA);");
             /*return as is*/
         }
         else
@@ -178,7 +179,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
         if (result == NULL)
         {
             /* Codes_SRS_CONSTBUFFER_ARRAY_42_016: [ If any error occurs then constbuffer_array_create_from_buffer_index_and_count shall fail and return NULL. ]*/
-            LogError("failure allocating const buffer array");
+            LogError("failure in REFCOUNT_TYPE_CREATE(CONSTBUFFER_ARRAY_HANDLE_DATA)");
             /*return as is*/
         }
         else
@@ -255,11 +256,12 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
             else
             {
                 /*Codes_SRS_CONSTBUFFER_ARRAY_42_003: [ constbuffer_array_create_from_array_array shall allocate memory to hold all of the CONSTBUFFER_HANDLES from buffer_arrays. ]*/
-                result = REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(CONSTBUFFER_ARRAY_HANDLE_DATA, (total_buffer_count) * sizeof(CONSTBUFFER_HANDLE));
+                result = REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, total_buffer_count, sizeof(CONSTBUFFER_HANDLE));
                 if (result == NULL)
                 {
                     /*Codes_SRS_CONSTBUFFER_ARRAY_42_008: [ If there are any failures then constbuffer_array_create_from_array_array shall fail and return NULL. ]*/
-                    LogError("failure in malloc");
+                    LogError("failure in REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, total_buffer_count=%" PRIu32 ",  sizeof(CONSTBUFFER_HANDLE)=%zu)",
+                        total_buffer_count, sizeof(CONSTBUFFER_HANDLE));
                 }
                 else
                 {
@@ -306,33 +308,42 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_add_fr
     }
     else
     {
-        /*Codes_SRS_CONSTBUFFER_ARRAY_02_042: [ constbuffer_array_add_front shall allocate enough memory to hold all of constbuffer_array_handle existing CONSTBUFFER_HANDLE and constbuffer_handle. ]*/
-        result = REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(CONSTBUFFER_ARRAY_HANDLE_DATA, (constbuffer_array_handle->nBuffers + 1) * sizeof(CONSTBUFFER_HANDLE));
-        if (result == NULL)
+        if (constbuffer_array_handle->nBuffers == UINT32_MAX)
         {
             /*Codes_SRS_CONSTBUFFER_ARRAY_02_011: [ If there any failures constbuffer_array_add_front shall fail and return NULL. ]*/
-            LogError("failure in malloc");
-            /*return as is*/
+            LogError("cannot add when capacity is at UINT32_MAX=%" PRIu32 ", would overflow", UINT32_MAX);
         }
         else
         {
-            uint32_t i;
-
-            /*Codes_SRS_CONSTBUFFER_ARRAY_02_043: [ constbuffer_array_add_front shall copy constbuffer_handle and all of constbuffer_array_handle existing CONSTBUFFER_HANDLE. ]*/
-            /*Codes_SRS_CONSTBUFFER_ARRAY_02_044: [ constbuffer_array_add_front shall inc_ref all the CONSTBUFFER_HANDLE it had copied. ]*/
-            result->nBuffers = constbuffer_array_handle->nBuffers + 1;
-            result->custom_free = NULL;
-            result->buffers = result->buffers_memory;
-            CONSTBUFFER_IncRef(constbuffer_handle);
-            result->buffers_memory[0] = constbuffer_handle;
-            for (i = 1; i < result->nBuffers; i++)
+            /*Codes_SRS_CONSTBUFFER_ARRAY_02_042: [ constbuffer_array_add_front shall allocate enough memory to hold all of constbuffer_array_handle existing CONSTBUFFER_HANDLE and constbuffer_handle. ]*/
+            result = REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle->nBuffers + 1, sizeof(CONSTBUFFER_HANDLE));
+            if (result == NULL)
             {
-                CONSTBUFFER_IncRef(constbuffer_array_handle->buffers[i - 1]);
-                result->buffers[i] = constbuffer_array_handle->buffers[i - 1];
+                /*Codes_SRS_CONSTBUFFER_ARRAY_02_011: [ If there any failures constbuffer_array_add_front shall fail and return NULL. ]*/
+                LogError("failure in REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle->nBuffers=%" PRIu32 " + 1, sizeof(CONSTBUFFER_HANDLE)=%zu);",
+                    constbuffer_array_handle->nBuffers, sizeof(CONSTBUFFER_HANDLE));
+                /*return as is*/
             }
+            else
+            {
+                uint32_t i;
 
-            /*Codes_SRS_CONSTBUFFER_ARRAY_02_010: [ constbuffer_array_add_front shall succeed and return a non-NULL value. ]*/
-            goto allOk;
+                /*Codes_SRS_CONSTBUFFER_ARRAY_02_043: [ constbuffer_array_add_front shall copy constbuffer_handle and all of constbuffer_array_handle existing CONSTBUFFER_HANDLE. ]*/
+                /*Codes_SRS_CONSTBUFFER_ARRAY_02_044: [ constbuffer_array_add_front shall inc_ref all the CONSTBUFFER_HANDLE it had copied. ]*/
+                result->nBuffers = constbuffer_array_handle->nBuffers + 1;
+                result->custom_free = NULL;
+                result->buffers = result->buffers_memory;
+                CONSTBUFFER_IncRef(constbuffer_handle);
+                result->buffers_memory[0] = constbuffer_handle;
+                for (i = 1; i < result->nBuffers; i++)
+                {
+                    CONSTBUFFER_IncRef(constbuffer_array_handle->buffers[i - 1]);
+                    result->buffers[i] = constbuffer_array_handle->buffers[i - 1];
+                }
+
+                /*Codes_SRS_CONSTBUFFER_ARRAY_02_010: [ constbuffer_array_add_front shall succeed and return a non-NULL value. ]*/
+                goto allOk;
+            }
         }
     }
     /*Codes_SRS_CONSTBUFFER_ARRAY_02_011: [ If there any failures constbuffer_array_add_front shall fail and return NULL. ]*/
@@ -366,11 +377,12 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove
         else
         {
             /*Codes_SRS_CONSTBUFFER_ARRAY_02_046: [ constbuffer_array_remove_front shall allocate memory to hold all of constbuffer_array_handle CONSTBUFFER_HANDLEs except the front one. ]*/
-            result = REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(CONSTBUFFER_ARRAY_HANDLE_DATA, (constbuffer_array_handle->nBuffers - 1) * sizeof(CONSTBUFFER_HANDLE));
+            result = REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle->nBuffers - 1, sizeof(CONSTBUFFER_HANDLE));
             if (result == NULL)
             {
                 /*Codes_SRS_CONSTBUFFER_ARRAY_02_036: [ If there are any failures then constbuffer_array_remove_front shall fail and return NULL. ]*/
-                LogError("failure in malloc");
+                LogError("failure in REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle->nBuffers=%" PRIu32 " - 1, sizeof(CONSTBUFFER_HANDLE)=%zu);",
+                    constbuffer_array_handle->nBuffers, sizeof(CONSTBUFFER_HANDLE));
                 /*return as is*/
             }
             else

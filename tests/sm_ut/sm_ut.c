@@ -49,7 +49,7 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(SM_RESULT, SM_RESULT_VALUES);
 static SM_HANDLE TEST_sm_create(void)
 {
     SM_HANDLE result;
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, strlen("a") + 1, sizeof(char)));
     result = sm_create("a");
     ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -106,7 +106,7 @@ TEST_FUNCTION_CLEANUP(cleans)
 TEST_FUNCTION(sm_create_with_name_NULL_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     ///act
     SM_HANDLE sm = sm_create(NULL);
@@ -124,7 +124,7 @@ TEST_FUNCTION(sm_create_with_name_NULL_succeeds)
 TEST_FUNCTION(sm_create_with_name_non_NULL_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, strlen("bleeding edge")+1, sizeof(char)));
 
     ///act
     SM_HANDLE sm = sm_create("bleeding edge");
@@ -141,7 +141,7 @@ TEST_FUNCTION(sm_create_with_name_non_NULL_succeeds)
 TEST_FUNCTION(sm_create_unhappy_path)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, 1))
         .SetReturn(NULL);
 
     ///act

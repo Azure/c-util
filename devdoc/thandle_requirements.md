@@ -133,8 +133,6 @@ static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(T)(void(*dispose)(T*), size_t extra_siz
 
 `THANDLE_MALLOC_WITH_EXTRA_SIZE` return a pointer to `T`. `dispose` is a function that the `THANDLE_DEC_REF` calls when the reference count reaches 0 in order to free the resources allocated by the user in `T`. `dispose` can be `NULL` in which case there are no user resources to be de-allocated. `T` is a type that has a flexible array. `extra_size` is the size in bytes of the flexible array.
 
-**SRS_THANDLE_02_019: [** If `extra_size` + `sizeof(THANDLE_WRAPPER_TYPE_NAME(T))` would exceed `SIZE_MAX` then `THANDLE_MALLOC_WITH_EXTRA_SIZE` shall fail and return `NULL`. **]**
-
 **SRS_THANDLE_02_020: [** `THANDLE_MALLOC_WITH_EXTRA_SIZE` shall allocate memory enough to hold `T` and `extra_size`. **]**
 
 **SRS_THANDLE_02_021: [** `THANDLE_MALLOC_WITH_EXTRA_SIZE` shall initialize the reference count to 1, store `dispose` and return a `T*`. **]**

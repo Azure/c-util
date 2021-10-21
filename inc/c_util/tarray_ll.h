@@ -75,7 +75,7 @@ TARRAY_LL(T) TARRAY_LL_CREATE(C)(void)                                          
     result = THANDLE_MALLOC(TARRAY_TYPEDEF_NAME(C))(TARRAY_LL_FREE_NAME(C));                                                \
     if(result == NULL)                                                                                                      \
     {                                                                                                                       \
-        LogError("failure in malloc(" MU_TOSTRING(TARRAY_TYPEDEF_NAME(T)) "=%zu", sizeof(TARRAY_TYPEDEF_NAME(T)));          \
+        LogError("failure in " MU_TOSTRING(THANDLE_MALLOC) "(" MU_TOSTRING(TARRAY_TYPEDEF_NAME(T)) "=%zu)", sizeof(TARRAY_TYPEDEF_NAME(T))); \
         /*return as is*/                                                                                                    \
     }                                                                                                                       \
     else                                                                                                                    \
@@ -138,16 +138,16 @@ int TARRAY_LL_ENSURE_CAPACITY(C)(TARRAY_LL(T) tarray, uint32_t capacity)        
             }                                                                                                                                                   \
             else                                                                                                                                                \
             {                                                                                                                                                   \
-                /*Codes_SRS_TARRAY_02_007: [ TARRAY_ENSURE_CAPACITY(T) shall realloc arr to the next multiple of 2 greater than or equal to capacity. ]*/       \
+                /*Codes_SRS_TARRAY_02_007: [ TARRAY_ENSURE_CAPACITY(T) shall shall call realloc_2 to resize arr to the next multiple of 2 greater than or equal to capacity. ]*/       \
                 uint32_t new_capacity = tarray->capacity;                                                                                                       \
                 do{                                                                                                                                             \
                     new_capacity *= 2;                                                                                                                          \
                 }while(new_capacity<capacity);                                                                                                                  \
-                T* temp = realloc((void*)tarray->arr, new_capacity * sizeof(T));                                                                                \
+                T* temp = realloc_2((void*)tarray->arr, new_capacity, sizeof(T));                                                                               \
                 if (temp == NULL)                                                                                                                               \
                 {                                                                                                                                               \
                     /*Codes_SRS_TARRAY_02_009: [ If there are any failures then TARRAY_ENSURE_CAPACITY(T) shall fail and return a non-zero value. ]*/           \
-                    LogError("failure in realloc(tarray->arr=%p, new_capacity=%" PRIu32 " * sizeof(T)=%zu)",                                                    \
+                    LogError("failure in realloc_2(tarray->arr=%p, new_capacity=%" PRIu32 ", sizeof(T)=%zu)",                                                   \
                         tarray->arr, new_capacity, sizeof(T));                                                                                                  \
                     result = MU_FAILURE;                                                                                                                        \
                 }                                                                                                                                               \

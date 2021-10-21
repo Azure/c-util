@@ -1621,7 +1621,7 @@ TEST_FUNCTION(when_underlying_calls_fail_Azure_Base64_Encode_fails)
     ASSERT_ARE_EQUAL(int, 0, BUFFER_build(input, testVector_BINARY_with_equal_signs[0].inputData, testVector_BINARY_with_equal_signs[0].inputLength));
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(1, testVector_BINARY_with_equal_signs[0].inputLength, 4));
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
     umock_c_negative_tests_snapshot();
@@ -1706,7 +1706,7 @@ TEST_FUNCTION(when_underlying_calls_fail_Azure_Base64_Encode_Bytes_fails)
     ///Arrange
     STRING_HANDLE result;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(1, testVector_BINARY_with_equal_signs[0].inputLength, 4));
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
     umock_c_negative_tests_snapshot();

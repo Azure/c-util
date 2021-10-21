@@ -86,7 +86,7 @@ int TARRAY_ENSURE_CAPACITY(T)(TARRAY(T) tarray, uint32_t capacity)
 
 **SRS_TARRAY_02_010: [** If `capacity` is greater than 2147483648 then `TARRAY_ENSURE_CAPACITY(T)` shall fail and return a non-zero value. **]**
 
-**SRS_TARRAY_02_007: [** `TARRAY_ENSURE_CAPACITY(T)` shall realloc `arr` to the next multiple of 2 greater than or equal to `capacity`. **]**
+**SRS_TARRAY_02_007: [** `TARRAY_ENSURE_CAPACITY(T)` shall call realloc_2 to resize `arr` to the next multiple of 2 greater than or equal to `capacity`. **]**
 
 **SRS_TARRAY_02_008: [** `TARRAY_ENSURE_CAPACITY(T)` shall succeed, record the new computed capacity, and return 0. **]**
 

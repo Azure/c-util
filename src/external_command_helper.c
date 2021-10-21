@@ -90,13 +90,13 @@ IMPLEMENT_MOCKABLE_FUNCTION(, EXTERNAL_COMMAND_RESULT, external_command_helper_e
                         command_output_buffer[buffer_len] = '\0';
 
                         /*Codes_SRS_EXTERNAL_COMMAND_HELPER_42_009: [ external_command_helper_execute shall allocate an array of THANDLE(RC_STRING) or grow the existing array to fit the new line. ]*/
-                        size_t array_bytes_required = sizeof(THANDLE(RC_STRING)) * (line_count + 1);
-                        THANDLE(RC_STRING)* line_array_temp = realloc((void*)line_array, array_bytes_required);
+                        THANDLE(RC_STRING)* line_array_temp = realloc_flex((void*)line_array, sizeof(THANDLE(RC_STRING)), line_count, sizeof(THANDLE(RC_STRING)));
 
                         if (line_array_temp == NULL)
                         {
                             /*Codes_SRS_EXTERNAL_COMMAND_HELPER_42_017: [ If there are any other errors then external_command_helper_execute shall fail and return EXTERNAL_COMMAND_ERROR. ]*/
-                            LogError("realloc(%zu) failed", array_bytes_required);
+                            LogError("failure in realloc_flex((void*)line_array=%p, sizeof(THANDLE(RC_STRING))=%zu, line_count=%" PRIu32 ", sizeof(THANDLE(RC_STRING))=%zu);",
+                                (void*)line_array, sizeof(THANDLE(RC_STRING)), line_count, sizeof(THANDLE(RC_STRING)));
                             failed = true;
                         }
                         else
