@@ -23,6 +23,7 @@ option(run_unittests "set run_unittests to ON to run unittests (default is OFF)"
 option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF). Chsare dutility does not have any e2e tests, but the option needs to exist to evaluate in IF statements" OFF)
 option(run_int_tests "set run_int_tests to ON to integration tests (default is OFF)." OFF)
 option(run_perf_tests "set run_perf_tests to ON to build performance tests (default is OFF)." OFF)
+option(run_reals_check "set run_reals_check to ON to run reals check (default is OFF)." OFF)
 option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is OFF)" OFF)
 option(run_traceability "run traceability tool (default is ON)" ON)
 
@@ -31,12 +32,14 @@ set(original_run_unittests ${run_unittests})
 set(original_run_int_tests ${run_int_tests})
 set(original_run_traceability ${run_traceability})
 set(original_run_perf_tests ${run_perf_tests})
+set(original_run_reals_check ${run_reals_check})
 
 set(run_e2e_tests OFF)
 set(run_unittests OFF)
 set(run_int_tests OFF)
 set(run_traceability OFF)
 set(run_perf_tests OFF)
+set(run_reals_check OFF)
 
 if ((NOT TARGET c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-build-tools/CMakeLists.txt))
     add_subdirectory(deps/c-build-tools)
@@ -130,6 +133,7 @@ set(run_unittests ${original_run_unittests})
 set(run_int_tests ${original_run_int_tests})
 set(run_traceability ${original_run_traceability})
 set(run_perf_tests ${original_run_perf_tests})
+set(run_reals_check ${original_run_reals_check})
 
 include(CTest)
 enable_testing()
@@ -222,6 +226,10 @@ endif()
 
 add_subdirectory(test_helpers)
 add_subdirectory(tests)
+
+if(${run_reals_check})
+    add_reals_check_target()
+endif()
 
 include(CMakePackageConfigHelpers)
 
