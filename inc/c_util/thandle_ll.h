@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #include "macro_utils/macro_utils.h"
 #include "umock_c/umock_c_prod.h"
@@ -51,7 +52,9 @@
 #define THANDLE_EXTRA_FIELDS(type) \
     THANDLE_DEBUG_EXTRA_FIELDS_NAME \
     volatile_atomic int32_t, refCount, \
+    THANDLE_LL_FREE_FUNCTION_POINTER_T, free_function, \
     void(*dispose)(type*) , \
+    
 
 /*given a previous type T, this is the name of the type that has T wrapped*/
 #define THANDLE_WRAPPER_TYPE_NAME(T) MU_C2(T, _WRAPPER)
@@ -59,6 +62,35 @@
 /*given a previous type T, THANDLE_MALLOC introduces a new name that mimics "malloc for T"*/
 /*the new name is used to define the name of a static function that allocates memory*/
 #define THANDLE_MALLOC(T) MU_C2(T,_MALLOC)
+
+/*THANDLE_MALLOC_FUNCTION is the name of the function that allocates memory (has the same signature as malloc from stdlib*/
+/*THANDLE_MALLOC_FUNCTION can come from 3 sources in the decreasing order of priority:
+1. when the user defines it prior to THANDLE_LL_TYPE_DEFINE with #define THANDLE_MALLOC_FUNCTION (largely maintained momentarily due to backwards compatibility, soon to be deprecated and removed)
+2. when the user uses THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS - then it is used whatever the user declared
+3. when the user decides to use at instance level of THANDLE specific allocation function by calling THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS / THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS / THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS
+
+That is, when the user THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS will overwrite #define THANDLE_MALLOC_FUNCTION.*/
+
+typedef void* (*THANDLE_LL_MALLOC_FUNCTION_POINTER_T)(size_t);
+typedef void* (*THANDLE_LL_MALLOC_FLEX_FUNCTION_POINTER_T)(size_t, size_t, size_t);
+typedef void (*THANDLE_LL_FREE_FUNCTION_POINTER_T)(void*);
+
+typedef struct MU_C2(THANDLE_LL_TYPE_NAME, _TAG)
+{
+    THANDLE_LL_MALLOC_FUNCTION_POINTER_T thandle_ll_malloc;
+    THANDLE_LL_MALLOC_FLEX_FUNCTION_POINTER_T thandle_ll_malloc_flex;
+    THANDLE_LL_FREE_FUNCTION_POINTER_T thandle_ll_free;
+    /*TO DO: move here THANDLE_DEBUG_EXTRA_FIELDS_NAME*/
+}THANDLE_LL_TYPE;
+
+
+/*captures the defines THANDLE_MALLOC_FUNCTION, THANDLE_MALLOC_FLEX_FUNCTION, THANDLE_FREE_FUNCTION as function pointer in a structure of type THANDLE_LL_TYPE*/
+#define THANDLE_LL_TYPE_NAME_FROM_GLOBAL(T) MU_C2(THANDLE_LL_TYPE_FROM_GLOBAL_, T)
+#define THANDLE_LL_TYPE_FROM_GLOBAL_DEFINE(T) static const THANDLE_LL_TYPE  THANDLE_LL_TYPE_NAME_FROM_GLOBAL(T) = {THANDLE_MALLOC_FUNCTION, THANDLE_MALLOC_FLEX_FUNCTION, THANDLE_FREE_FUNCTION};
+
+/*captures THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS' malloc_function, malloc_flex_function, malloc_free_function parameters*/
+#define THANDLE_LL_TYPE_NAME_FROM_MACRO(T) MU_C2(THANDLE_LL_TYPE_FROM_MACRO_, T)
+#define THANDLE_LL_TYPE_FROM_MACRO_DEFINE(T, malloc_function, malloc_flex_function, malloc_free_function) static const THANDLE_LL_TYPE THANDLE_LL_TYPE_NAME_FROM_MACRO(T) = {malloc_function, malloc_flex_function, malloc_free_function};
 
 /*given a previous type T, THANDLE_INSPECT introduces a new name that if a function that returns the THANDLE_WRAPPER_TYPE_NAME(T) - useful in debugging. The function has no side-effects.*/
 #define THANDLE_INSPECT(T) MU_C2(T,_INSPECT)
@@ -105,30 +137,64 @@ INITIALIZE_MOVE does not increment the ref count, and NULLs the source.
 INITIALIZE_MOVE assumes that destination is not initialized and thus it does not decrement the destination ref count */
 #define THANDLE_INITIALIZE_MOVE(T) MU_C2(T,_INITIALIZE_MOVE)
 
+#define THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_NAME(C, T) MU_C4(THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_, C, _, T)
+
+#define THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_MACRO(C, T) \
+static T* THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_NAME(C, T)(void(*dispose)(T*), THANDLE_LL_MALLOC_FUNCTION_POINTER_T malloc_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function) \
+{                                                                                                                                                                   \
+    T* result;                                                                                                                                                      \
+    /*Codes_SRS_THANDLE_02_013: [ THANDLE_MALLOC shall allocate memory. ]*/                                                                                         \
+    THANDLE_LL_MALLOC_FUNCTION_POINTER_T malloc_function_used;                                                                                                      \
+    THANDLE_LL_FREE_FUNCTION_POINTER_T free_function_used;                                                                                                          \
+    if(malloc_function != NULL)                                                                                                                                     \
+    {                                                                                                                                                               \
+        malloc_function_used = malloc_function;                                                                                                                     \
+        free_function_used = free_function;                                                                                                                         \
+    }                                                                                                                                                               \
+    else if(THANDLE_LL_TYPE_NAME_FROM_MACRO(T).thandle_ll_malloc!=NULL)                                                                                             \
+    {                                                                                                                                                               \
+        malloc_function_used = THANDLE_LL_TYPE_NAME_FROM_MACRO(T).thandle_ll_malloc;                                                                                \
+        free_function_used = THANDLE_LL_TYPE_NAME_FROM_MACRO(T).thandle_ll_free;                                                                                    \
+    }                                                                                                                                                               \
+    else                                                                                                                                                            \
+    {                                                                                                                                                               \
+        malloc_function_used = THANDLE_MALLOC_FUNCTION;                                                                                                             \
+        free_function_used = THANDLE_FREE_FUNCTION;                                                                                                               \
+    }                                                                                                                                                               \
+    if((malloc_function_used == NULL)  || (free_function_used == NULL))                                                                                             \
+    {                                                                                                                                                               \
+        LogError("something is wrong with code config, cannot find a malloc/free function");                                                                        \
+        result = NULL;                                                                                                                                              \
+    }                                                                                                                                                               \
+    else                                                                                                                                                            \
+    {                                                                                                                                                               \
+        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)malloc_function_used(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                      \
+        if (handle_impl == NULL)                                                                                                                                    \
+        {                                                                                                                                                           \
+            /*Codes_SRS_THANDLE_02_015: [ If malloc fails then THANDLE_MALLOC shall fail and return NULL. ]*/                                                       \
+            LogError("error in malloc_function_used=%p(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                                                 \
+                malloc_function_used, sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                                                                        \
+            result = NULL;                                                                                                                                          \
+        }                                                                                                                                                           \
+        else                                                                                                                                                        \
+        {                                                                                                                                                           \
+            /*Codes_SRS_THANDLE_02_014: [ THANDLE_MALLOC shall initialize the reference count to 1, store dispose and return a T* . ]*/                             \
+            THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                          \
+            handle_impl->dispose = dispose;                                                                                                                         \
+            handle_impl->free_function = free_function_used;                                                                                                        \
+            (void)interlocked_exchange(&handle_impl->refCount,1);                                                                                                   \
+            result = &(handle_impl->data);                                                                                                                          \
+        }                                                                                                                                                           \
+    }                                                                                                                                                               \
+    return result;                                                                                                                                                  \
+}                                                                                                                                                                   \
+
 /*given a previous type T, this introduces THANDLE_MALLOC macro to create its wrapper, initialize refCount to 1, and remember the dispose function*/
 
 #define THANDLE_LL_MALLOC_MACRO(C, T) \
 static T* THANDLE_MALLOC(C)(void(*dispose)(T*))                                                                                                                     \
 {                                                                                                                                                                   \
-    T* result;                                                                                                                                                      \
-    /*Codes_SRS_THANDLE_02_013: [ THANDLE_MALLOC shall allocate memory. ]*/                                                                                         \
-    THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)THANDLE_MALLOC_FUNCTION(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                       \
-    if (handle_impl == NULL)                                                                                                                                        \
-    {                                                                                                                                                               \
-        /*Codes_SRS_THANDLE_02_015: [ If malloc fails then THANDLE_MALLOC shall fail and return NULL. ]*/                                                           \
-        LogError("error in " MU_TOSTRING(THANDLE_MALLOC_FUNCTION) "(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                                    \
-            sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                                                                                                  \
-        result = NULL;                                                                                                                                              \
-    }                                                                                                                                                               \
-    else                                                                                                                                                            \
-    {                                                                                                                                                               \
-        /*Codes_SRS_THANDLE_02_014: [ THANDLE_MALLOC shall initialize the reference count to 1, store dispose and return a T* . ]*/                                 \
-        THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                              \
-        handle_impl->dispose = dispose;                                                                                                                             \
-        (void)interlocked_exchange(&handle_impl->refCount,1);                                                                                                       \
-        result = &(handle_impl->data);                                                                                                                              \
-    }                                                                                                                                                               \
-    return result;                                                                                                                                                  \
+    return THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_NAME(C, T)(dispose, NULL, NULL);                                                                           \
 }                                                                                                                                                                   \
 
 /*this is only useful during debugging: from a THANDLE(T) it returns THANDLE_WRAPPER_TYPE_NAME(T) - which can be viewed in debugger - useful for seeing refCount.
@@ -451,8 +517,11 @@ void THANDLE_INITIALIZE_MOVE(C)(THANDLE(T) * t1, THANDLE(T) * t2)               
 }                                                                                                                                                                   \
 
 /*given a previous type T, this introduces a wrapper type that contains T (and other fields) and defines the functions of that type T*/
-#define THANDLE_LL_TYPE_DEFINE(C,T)                                                                                                                                       \
+#define THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(C, T, malloc_function, malloc_flex_function, malloc_free_function)                                                  \
+    THANDLE_LL_TYPE_FROM_GLOBAL_DEFINE(T)                                                                                                                               \
+    THANDLE_LL_TYPE_FROM_MACRO_DEFINE(T, malloc_function, malloc_flex_function, malloc_free_function)                                                                   \
     MU_DEFINE_STRUCT(THANDLE_WRAPPER_TYPE_NAME(T), THANDLE_EXTRA_FIELDS(T), T, data);                                                                                     \
+    THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                                                                             \
     THANDLE_LL_MALLOC_MACRO(C, T)                                                                                                                                         \
     THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_MACRO(C, T)                                                                                                                         \
     THANDLE_LL_CREATE_FROM_CONTENT_FLEX_MACRO(C, T)                                                                                                                       \
@@ -466,6 +535,10 @@ void THANDLE_INITIALIZE_MOVE(C)(THANDLE(T) * t1, THANDLE(T) * t2)               
     THANDLE_LL_INSPECT_MACRO(C, T)                                                                                                                                        \
     THANDLE_LL_MOVE_MACRO(C, T)                                                                                                                                           \
     THANDLE_LL_INITIALIZE_MOVE_MACRO(C, T)                                                                                                                                \
+
+
+/*given a previous type T, this introduces a wrapper type that contains T (and other fields) and defines the functions of that type T*/
+#define THANDLE_LL_TYPE_DEFINE(C,T) THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(C, T, NULL, NULL, NULL)
 
 /*macro to be used in headers*/                                                                                       \
 /*introduces an incomplete type based on a MU_DEFINE_STRUCT(T...) previously defined;*/                               \

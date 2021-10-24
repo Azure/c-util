@@ -34,31 +34,12 @@
 
 /*given a previous type T, this introduces a wrapper type that contains T (and other fields) and defines the functions of that type T*/
 #define THANDLE_TYPE_DEFINE(T) \
-    MU_DEFINE_STRUCT(THANDLE_WRAPPER_TYPE_NAME(T), THANDLE_EXTRA_FIELDS(T), T, data);                                                                               \
-    THANDLE_LL_MALLOC_MACRO(T, T)                                                                                                                                         \
-    THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_MACRO(T, T)                                                                                                                         \
-    THANDLE_LL_CREATE_FROM_CONTENT_FLEX_MACRO(T, T)                                                                                                                       \
-    THANDLE_LL_CREATE_FROM_CONTENT_MACRO(T, T)                                                                                                                            \
-    THANDLE_LL_FREE_MACRO(T, T)                                                                                                                                           \
-    THANDLE_LL_DEC_REF_MACRO(T, T)                                                                                                                                        \
-    THANDLE_LL_INC_REF_MACRO(T, T)                                                                                                                                        \
-    THANDLE_LL_ASSIGN_MACRO(T, T)                                                                                                                                         \
-    THANDLE_LL_INITIALIZE_MACRO(T, T)                                                                                                                                     \
-    THANDLE_LL_GET_T_MACRO(T, T)                                                                                                                                          \
-    THANDLE_LL_INSPECT_MACRO(T, T)                                                                                                                                        \
-    THANDLE_LL_MOVE_MACRO(T, T)                                                                                                                                           \
-    THANDLE_LL_INITIALIZE_MOVE_MACRO(T, T)                                                                                                                                \
+    THANDLE_LL_TYPE_DEFINE(T, T)
 
 /*macro to be used in headers*/                                                                                       \
 /*introduces an incomplete type based on a MU_DEFINE_STRUCT(T...) previously defined;*/                               \
 #define THANDLE_TYPE_DECLARE(T)                                                                                       \
-    THANDLE_MACRO(T);                                                                                                 \
-    MOCKABLE_FUNCTION(, void, THANDLE_DEC_REF(T), THANDLE(T), t);                                                     \
-    MOCKABLE_FUNCTION(, void, THANDLE_INC_REF(T), THANDLE(T), t);                                                     \
-    MOCKABLE_FUNCTION(, void, THANDLE_ASSIGN(T), THANDLE(T) *, t1, THANDLE(T), t2 );                                  \
-    MOCKABLE_FUNCTION(, void, THANDLE_INITIALIZE(T), THANDLE(T) *, t1, THANDLE(T), t2 );                              \
-    MOCKABLE_FUNCTION(, void, THANDLE_MOVE(T), THANDLE(T) *, t1, THANDLE(T)*, t2 );                                   \
-    MOCKABLE_FUNCTION(, void, THANDLE_INITIALIZE_MOVE(T), THANDLE(T) *, t1, THANDLE(T)*, t2 );                        \
+    THANDLE_LL_TYPE_DECLARE(T, T)
 
 #endif /*THANDLE_H*/
 
