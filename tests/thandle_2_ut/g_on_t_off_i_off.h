@@ -13,7 +13,6 @@ I_OFF - instance of the type will be created with THANDLE_MALLOC (will not use T
 #include <cstdint>
 #else
 #include <stdint.h>
-#include <stdbool.h>
 #endif
 
 #include "c_util/thandle.h"
@@ -27,6 +26,8 @@ extern "C" {
     typedef struct G_ON_T_OFF_I_OFF_TAG
     {
         int x;
+        uint32_t n;
+        char s[];
     }G_ON_T_OFF_I_OFF_DUMMY;
 
     THANDLE_TYPE_DECLARE(G_ON_T_OFF_I_OFF_DUMMY);

@@ -19,6 +19,23 @@ THANDLE(G_ON_T_OFF_I_OFF_DUMMY) G_ON_T_OFF_I_OFF_create(int x)
     if (d != NULL)
     {
         d->x = x;
+        d->n = 0;
+    }
+    return d;
+}
+
+THANDLE(G_ON_T_OFF_I_OFF_DUMMY) G_ON_T_OFF_I_OFF_create_with_extra_size(int x, uint32_t extra_size)
+{
+    G_ON_T_OFF_I_OFF_DUMMY* d = THANDLE_MALLOC_WITH_EXTRA_SIZE(G_ON_T_OFF_I_OFF_DUMMY)(NULL, extra_size);
+    if (d != NULL)
+    {
+        d->x = x;
+        d->n = extra_size;
+        (void)memset(d->s, '3', extra_size);
+        if (extra_size > 0)
+        {
+            d->s[extra_size - 1] = '\0';
+        }
     }
     return d;
 }
