@@ -855,6 +855,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof_2)
     THANDLE(A_S_FLEX) copy = THANDLE_CREATE_FROM_CONTENT_FLEX(A_S_FLEX)(source, dispose_A_S_FLEX, copy_A_S_FLEX, get_sizeof_A_S_FLEX);
 
     ///assert
+    ASSERT_IS_NOT_NULL(copy);
     ASSERT_ARE_EQUAL(int, source->n, copy->n);
     for (int i = 0; i < n; i++)
     {

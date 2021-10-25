@@ -83,15 +83,9 @@ typedef struct MU_C2(THANDLE_LL_TYPE_NAME, _TAG)
     /*TO DO: move here THANDLE_DEBUG_EXTRA_FIELDS_NAME*/
 }THANDLE_LL_TYPE;
 
-#ifdef THANDLE_MALLOC_FUNCTION /*... MALLOC_FLEX and FREE are supposed to be #defined too*/
-/*captures the defines THANDLE_MALLOC_FUNCTION, THANDLE_MALLOC_FLEX_FUNCTION, THANDLE_FREE_FUNCTION as function pointer in a structure of type THANDLE_LL_TYPE*/
-#define THANDLE_LL_TYPE_NAME_FROM_GLOBAL(T) MU_C2(THANDLE_LL_TYPE_FROM_GLOBAL_, T)
-#define THANDLE_LL_TYPE_FROM_GLOBAL_DEFINE(T) static const THANDLE_LL_TYPE  THANDLE_LL_TYPE_NAME_FROM_GLOBAL(T) = {THANDLE_MALLOC_FUNCTION, THANDLE_MALLOC_FLEX_FUNCTION, THANDLE_FREE_FUNCTION};
-#else
-#define THANDLE_LL_TYPE_NAME_FROM_GLOBAL(T) MU_C2(THANDLE_LL_TYPE_FROM_GLOBAL_, T)
-#define THANDLE_LL_TYPE_FROM_GLOBAL_DEFINE(T) static const THANDLE_LL_TYPE  THANDLE_LL_TYPE_NAME_FROM_GLOBAL(T) = {NULL, NULL, NULL};
-#endif
+#define THANDLE_LL_TYPE_NAME_FROM_GLOBAL(T) MU_C2(THANDLE_LL_TYPE_NAME_FROM_GLOBAL_, T)
 
+#define THANDLE_LL_TYPE_FROM_GLOBAL_DEFINE(T) static const THANDLE_LL_TYPE  THANDLE_LL_TYPE_NAME_FROM_GLOBAL(T) = {&THANDLE_MALLOC_FUNCTION, &THANDLE_MALLOC_FLEX_FUNCTION, &THANDLE_FREE_FUNCTION};
 
 /*captures THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS' malloc_function, malloc_flex_function, malloc_free_function parameters*/
 #define THANDLE_LL_TYPE_NAME_FROM_MACRO(T) MU_C2(THANDLE_LL_TYPE_FROM_MACRO_, T)
@@ -183,6 +177,7 @@ static T* THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_NAME(C, T)(void(*dispose
         }                                                                                                                                                           \
         else                                                                                                                                                        \
         {                                                                                                                                                           \
+            LogInfo("used %p to malloc %p", malloc_function_used, handle_impl);                                                                                     \
             /*Codes_SRS_THANDLE_02_014: [ THANDLE_MALLOC shall initialize the reference count to 1, store dispose and return a T* . ]*/                             \
             THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                          \
             handle_impl->dispose = dispose;                                                                                                                         \
@@ -251,6 +246,7 @@ static T* THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS_NAME(C, T)(voi
         }                                                                                                                                                           \
         else                                                                                                                                                        \
         {                                                                                                                                                           \
+            LogInfo("used %p to malloc+flex %p", malloc_flex_function_used, handle_impl);                                                                           \
             /*Codes_SRS_THANDLE_02_021: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall initialize the reference count to 1, store dispose and return a T*. ]*/              \
             THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                          \
             handle_impl->dispose = dispose;                                                                                                                         \
@@ -301,7 +297,7 @@ static THANDLE(T) HANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C, T)(co
             malloc_flex_function_used = THANDLE_LL_TYPE_NAME_FROM_GLOBAL(T).thandle_ll_malloc_flex;                                                                 \
             free_function_used = THANDLE_LL_TYPE_NAME_FROM_GLOBAL(T).thandle_ll_free;                                                                               \
         }                                                                                                                                                           \
-        if((malloc_flex_function_used == NULL)  || (free_function_used == NULL))                                                                                    \
+        if((malloc_flex_function_used == NULL) || (free_function_used == NULL))                                                                                     \
         {                                                                                                                                                           \
             LogError("something is wrong with code config, cannot find a malloc/free function");                                                                    \
             result = NULL;                                                                                                                                          \
@@ -327,6 +323,7 @@ static THANDLE(T) HANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C, T)(co
                     THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                          \
                     (void)memcpy(&(handle_impl->data), source, sizeof_source);                                                                                              \
                     handle_impl->dispose = dispose;                                                                                                                         \
+                    handle_impl->free_function = free_function_used;                                                                                                        \
                     /*Codes_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/            \
                     (void)interlocked_exchange(&handle_impl->refCount,1);                                                                                                   \
                     result = &(handle_impl->data);                                                                                                                          \
@@ -344,6 +341,7 @@ static THANDLE(T) HANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C, T)(co
                     else                                                                                                                                                    \
                     {                                                                                                                                                       \
                         handle_impl->dispose = dispose;                                                                                                                     \
+                        handle_impl->free_function = free_function_used;                                                                                                    \
                         /*Codes_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/        \
                         (void)interlocked_exchange(&handle_impl->refCount,1);                                                                                               \
                         result = &(handle_impl->data);                                                                                                                      \
@@ -387,6 +385,7 @@ static void THANDLE_FREE(C)(T* t)                                               
     {                                                                                                                                                               \
         /*Codes_SRS_THANDLE_02_017: [ THANDLE_FREE shall free the allocated memory by THANDLE_MALLOC. ]*/                                                           \
         THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
+        LogInfo("used %p to free %p", handle_impl->free_function, handle_impl);                                                                                     \
         handle_impl->free_function(handle_impl);                                                                                                                    \
     }                                                                                                                                                               \
 }                                                                                                                                                                   \
@@ -411,7 +410,8 @@ void THANDLE_DEC_REF(C)(THANDLE(T) t)                                           
             {                                                                                                                                                       \
                 handle_impl->dispose(&handle_impl->data);                                                                                                           \
             }                                                                                                                                                       \
-            handle_impl->free_function(&handle_impl->data);                                                                                                                    \
+            LogInfo("used %p to free %p", handle_impl->free_function, handle_impl);                                                                                 \
+            handle_impl->free_function(handle_impl);                                                                                                                \
         }                                                                                                                                                           \
                                                                                                                                                                     \
     }                                                                                                                                                               \
