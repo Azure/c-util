@@ -25,7 +25,7 @@ extern "C" {
 
     typedef struct G_ON_T_OFF_I_OFF_TAG
     {
-        int x;      /*some coordinate*/
+        int x;      /*some pretend coordinate*/
         uint32_t n; /*the number of characters in s[]. Might be 0, in which case s should not be accessed*/
         char s[]    /*has n characters*/;
     }G_ON_T_OFF_I_OFF_DUMMY;
@@ -36,7 +36,7 @@ MOCKABLE_FUNCTION(, THANDLE(G_ON_T_OFF_I_OFF_DUMMY), G_ON_T_OFF_I_OFF_create, in
 MOCKABLE_FUNCTION(, THANDLE(G_ON_T_OFF_I_OFF_DUMMY), G_ON_T_OFF_I_OFF_create_with_malloc_functions, int, x);
 MOCKABLE_FUNCTION(, THANDLE(G_ON_T_OFF_I_OFF_DUMMY), G_ON_T_OFF_I_OFF_create_with_extra_size, int, x, const char*, s);
 MOCKABLE_FUNCTION(, THANDLE(G_ON_T_OFF_I_OFF_DUMMY), G_ON_T_OFF_I_OFF_create_with_extra_size_with_malloc_functions, int, x, const char*, s);
-MOCKABLE_FUNCTION(, THANDLE(G_ON_T_OFF_I_OFF_DUMMY), G_ON_T_OFF_I_OFF_create_from_content, const G_ON_T_OFF_I_OFF_DUMMY*, origin)
+MOCKABLE_FUNCTION(, THANDLE(G_ON_T_OFF_I_OFF_DUMMY), G_ON_T_OFF_I_OFF_create_from_content_flex, const G_ON_T_OFF_I_OFF_DUMMY*, origin)
 MOCKABLE_FUNCTION(, THANDLE(G_ON_T_OFF_I_OFF_DUMMY), G_ON_T_OFF_I_OFF_create_from_content_flex_with_malloc_functions, const G_ON_T_OFF_I_OFF_DUMMY*, origin);
 
 #ifdef __cplusplus

@@ -10,9 +10,7 @@
 #define THANDLE_MALLOC_FUNCTION global_malloc
 #define THANDLE_MALLOC_FLEX_FUNCTION global_malloc_flex
 #define THANDLE_FREE_FUNCTION global_free
-/*QWQWQW*/
 THANDLE_TYPE_DEFINE(G_ON_T_OFF_I_OFF_DUMMY);
-/*WEWEWE*/
 #undef THANDLE_MALLOC_FUNCTION
 #undef THANDLE_MALLOC_FLEX_FUNCTION
 #undef THANDLE_FREE_FUNCTION
@@ -80,11 +78,11 @@ static int copies_dummy(G_ON_T_OFF_I_OFF_DUMMY* destination, const G_ON_T_OFF_I_
 
 static size_t sizeof_dummy(const G_ON_T_OFF_I_OFF_DUMMY* source)
 {
-    return sizeof(G_ON_T_OFF_I_OFF_DUMMY) + (source->n==0)?0:(source->n+1);
+    return sizeof(G_ON_T_OFF_I_OFF_DUMMY) + ((source->n==0)?0:(source->n+1));
 }
 
 
-THANDLE(G_ON_T_OFF_I_OFF_DUMMY) G_ON_T_OFF_I_OFF_create_from_content(const G_ON_T_OFF_I_OFF_DUMMY* origin)
+THANDLE(G_ON_T_OFF_I_OFF_DUMMY) G_ON_T_OFF_I_OFF_create_from_content_flex(const G_ON_T_OFF_I_OFF_DUMMY* origin)
 {
     G_ON_T_OFF_I_OFF_DUMMY* d = THANDLE_CREATE_FROM_CONTENT_FLEX(G_ON_T_OFF_I_OFF_DUMMY)(origin, NULL, copies_dummy, sizeof_dummy);
     if (d != NULL)
