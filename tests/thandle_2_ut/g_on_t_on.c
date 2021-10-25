@@ -3,19 +3,21 @@
 
 #include <stdlib.h>
 
+#include "c_util/thandle.h"
+
 #include "malloc_mocks.h"
 
 #include "g_on_t_on.h"
 
-#define THANDLE_MALLOC_FUNCTION global_malloc
-#define THANDLE_MALLOC_FLEX_FUNCTION global_malloc_flex
-#define THANDLE_FREE_FUNCTION global_free
-THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(G_ON_T_ON_DUMMY, G_ON_T_ON_DUMMY, type_malloc, type_malloc_flex, type_free);
+#define THANDLE_MALLOC_FUNCTION global_malloc               /*this is never called, but needs to exist for compilation reasons*/
+#define THANDLE_MALLOC_FLEX_FUNCTION global_malloc_flex     /*this is never called, but needs to exist for compilation reasons*/
+#define THANDLE_FREE_FUNCTION global_free                   /*this is never called, but needs to exist for compilation reasons*/
+THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(G_ON_T_ON_DUMMY, type_malloc, type_malloc_flex, type_free);
 #undef THANDLE_MALLOC_FUNCTION
 #undef THANDLE_MALLOC_FLEX_FUNCTION
 #undef THANDLE_FREE_FUNCTION
 
-/*uses global*/
+/*uses type defined functions*/
 THANDLE(G_ON_T_ON_DUMMY) G_ON_T_ON_create(int x)
 {
     G_ON_T_ON_DUMMY* d = THANDLE_MALLOC(G_ON_T_ON_DUMMY)(NULL);
@@ -39,7 +41,7 @@ THANDLE(G_ON_T_ON_DUMMY) G_ON_T_ON_create_with_malloc_functions(int x)
     return d;
 }
 
-/*uses global*/
+/*uses type defined functions*/
 THANDLE(G_ON_T_ON_DUMMY) G_ON_T_ON_create_with_extra_size(int x, const char* s)
 {
     G_ON_T_ON_DUMMY* d = THANDLE_MALLOC_WITH_EXTRA_SIZE(G_ON_T_ON_DUMMY)(NULL, strlen(s) + 1);

@@ -36,6 +36,11 @@
 #define THANDLE_TYPE_DEFINE(T) \
     THANDLE_LL_TYPE_DEFINE(T, T)
 
+/*given a previous type T, this introduces a wrapper type that contains T (and other fields) and defines the functions of that type T with special memory allocators*/
+#define THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(T, malloc_function, malloc_flex_function, free_function) \
+    THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(T, T, malloc_function, malloc_flex_function, free_function)
+
+
 /*macro to be used in headers*/                                                                                       \
 /*introduces an incomplete type based on a MU_DEFINE_STRUCT(T...) previously defined;*/                               \
 #define THANDLE_TYPE_DECLARE(T)                                                                                       \

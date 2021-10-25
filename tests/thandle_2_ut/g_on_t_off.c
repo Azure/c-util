@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 
+#include "c_util/thandle.h"
+
 #include "malloc_mocks.h"
 
 #include "g_on_t_off.h"
