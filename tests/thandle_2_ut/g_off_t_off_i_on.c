@@ -5,6 +5,8 @@
 
 #include "g_off_t_off_i_on.h"
 
+#include "c_util/thandle_ll.h"
+
 THANDLE_TYPE_DEFINE(G_OFF_T_OFF_I_ON_DUMMY);
 
 THANDLE(G_OFF_T_OFF_I_ON_DUMMY) G_OFF_T_OFF_I_ON_create(int x)
