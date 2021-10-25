@@ -25,9 +25,9 @@ extern "C" {
 
     typedef struct G_ON_T_OFF_I_OFF_TAG
     {
-        int x;
-        uint32_t n;
-        char s[];
+        int x;      /*some coordinate*/
+        uint32_t n; /*the number of characters in s[]. Might be 0, in which case s should not be accessed*/
+        char s[]    /*has n characters*/;
     }G_ON_T_OFF_I_OFF_DUMMY;
 
     THANDLE_TYPE_DECLARE(G_ON_T_OFF_I_OFF_DUMMY);

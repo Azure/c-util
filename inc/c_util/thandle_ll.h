@@ -67,7 +67,7 @@
 /*THANDLE_MALLOC_FUNCTION can come from 3 sources in the decreasing order of priority:
 1. when the user defines it prior to THANDLE_LL_TYPE_DEFINE with #define THANDLE_MALLOC_FUNCTION (largely maintained momentarily due to backwards compatibility, soon to be deprecated and removed)
 2. when the user uses THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS - then it is used whatever the user declared
-3. when the user decides to use at instance level of THANDLE specific allocation function by calling THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS / THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS / THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS
+3. when the user decides to use at instance level of THANDLE specific allocation function by calling THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS / THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS / THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS
 
 That is, when the user THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS will overwrite #define THANDLE_MALLOC_FUNCTION.*/
 
@@ -136,10 +136,10 @@ INITIALIZE_MOVE does not increment the ref count, and NULLs the source.
 INITIALIZE_MOVE assumes that destination is not initialized and thus it does not decrement the destination ref count */
 #define THANDLE_INITIALIZE_MOVE(T) MU_C2(T,_INITIALIZE_MOVE)
 
-#define THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_NAME(C) MU_C2(THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_, C)
+#define THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C) MU_C2(THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS_, C)
 
-#define THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_MACRO(C, T) \
-static T* THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_NAME(C)(void(*dispose)(T*), THANDLE_LL_MALLOC_FUNCTION_POINTER_T malloc_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function) \
+#define THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS_MACRO(C, T) \
+static T* THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)(T*), THANDLE_LL_MALLOC_FUNCTION_POINTER_T malloc_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function) \
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
     /*Codes_SRS_THANDLE_02_013: [ THANDLE_MALLOC shall allocate memory. ]*/                                                                                         \
@@ -194,7 +194,7 @@ static T* THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_NAME(C)(void(*dispose)(T
 #define THANDLE_LL_MALLOC_MACRO(C, T) \
 static T* THANDLE_MALLOC(C)(void(*dispose)(T*))                                                                                                                     \
 {                                                                                                                                                                   \
-    return THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_NAME(C)(dispose, NULL, NULL);                                                                              \
+    return THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C)(dispose, NULL, NULL);                                                                              \
 }                                                                                                                                                                   \
 
 /*this is only useful during debugging: from a THANDLE(T) it returns THANDLE_WRAPPER_TYPE_NAME(T) - which can be viewed in debugger - useful for seeing refCount.
@@ -205,10 +205,10 @@ const THANDLE_WRAPPER_TYPE_NAME(T)* const THANDLE_INSPECT(C)(THANDLE(T) t)      
     return CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                                                                \
 }                                                                                                                                                                   \
 
-#define THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS_NAME(C) MU_C2(THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_MACRO_WITH_MALLOC_FUNCTIONS_, C)
+#define THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C) MU_C2(THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_MACRO_WITH_MALLOC_FUNCTIONS_, C)
 
 #define THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                     \
-static T* THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS_NAME(C)(void(*dispose)(T*), size_t extra_size, THANDLE_LL_MALLOC_FLEX_FUNCTION_POINTER_T malloc_flex_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function)        \
+static T* THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)(T*), size_t extra_size, THANDLE_LL_MALLOC_FLEX_FUNCTION_POINTER_T malloc_flex_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function)        \
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
     THANDLE_LL_MALLOC_FLEX_FUNCTION_POINTER_T malloc_flex_function_used;                                                                                            \
@@ -261,13 +261,13 @@ static T* THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS_NAME(C)(void(*
 #define THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_MACRO(C, T)                                                                                                               \
 static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(C)(void(*dispose)(T*), size_t extra_size)                                                                                  \
 {                                                                                                                                                                   \
-    return THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS_NAME(C)(dispose, extra_size, NULL, NULL);                                                        \
+    return THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C)(dispose, extra_size, NULL, NULL);                                                        \
 }                                                                                                                                                                   \
 
 #define THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C) MU_C2(THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS_, C)
 
 #define THANDLE_LL_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                                                                                   \
-static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source), size_t(*get_sizeof)(const T* source), THANDLE_LL_MALLOC_FLEX_FUNCTION_POINTER_T malloc_flex_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function) \
+static T* THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source), size_t(*get_sizeof)(const T* source), THANDLE_LL_MALLOC_FLEX_FUNCTION_POINTER_T malloc_flex_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function) \
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
     if (                                                                                                                                                            \
@@ -354,17 +354,17 @@ static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C)(cons
 }
 
 #define THANDLE_LL_CREATE_FROM_CONTENT_FLEX_MACRO(C, T)                                                                                                                         \
-static THANDLE(T) THANDLE_CREATE_FROM_CONTENT_FLEX(C)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source), size_t(*get_sizeof)(const T* source))   \
+static T* THANDLE_CREATE_FROM_CONTENT_FLEX(C)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source), size_t(*get_sizeof)(const T* source))   \
 {                                                                                                                                                                               \
-    return THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C)(source, dispose, copy, get_sizeof, NULL, NULL);                                                          \
+    return THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C)(source, dispose, copy, get_sizeof, NULL, NULL);                                                            \
 }
 
-#define THANDLE_LL_CREATE_FROM_CONTENT_MACRO(C, T)                                                                                                                        \
+#define THANDLE_LL_CREATE_FROM_CONTENT_MACRO(C, T)                                                                                                                  \
 static size_t THANDLE_GET_SIZEOF(C)(const T* t)                                                                                                                     \
 {                                                                                                                                                                   \
     return sizeof(*t);                                                                                                                                              \
 }                                                                                                                                                                   \
-static THANDLE(T) THANDLE_CREATE_FROM_CONTENT(C)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source))                                  \
+static T* THANDLE_CREATE_FROM_CONTENT(C)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source))                                  \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_032: [ THANDLE_CREATE_FROM_CONTENT_FLEX returns what THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T)); returns. ]*/ \
     return THANDLE_CREATE_FROM_CONTENT_FLEX(C)(source, dispose, copy, THANDLE_GET_SIZEOF(C));                                                                       \
@@ -418,7 +418,7 @@ void THANDLE_DEC_REF(C)(THANDLE(T) t)                                           
 }                                                                                                                                                                   \
 
 /*given a previous type T, this introduces THANDLE_DEC_REF macro to increment the reference count*/
-#define THANDLE_LL_INC_REF_MACRO(C, T)                                                                                                                                    \
+#define THANDLE_LL_INC_REF_MACRO(C, T)                                                                                                                              \
 void THANDLE_INC_REF(C)(THANDLE(T) t)                                                                                                                               \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_004: [ If t is NULL then THANDLE_INC_REF shall return. ]*/                                                                               \
@@ -435,7 +435,7 @@ void THANDLE_INC_REF(C)(THANDLE(T) t)                                           
 }                                                                                                                                                                   \
 
 /*given a previous type T, this introduces THANDLE_ASSIGN macro to assign a handle to another handle*/
-#define THANDLE_LL_ASSIGN_MACRO(C, T)                                                                                                                                     \
+#define THANDLE_LL_ASSIGN_MACRO(C, T)                                                                                                                               \
 void THANDLE_ASSIGN(C)(THANDLE(T) * t1, THANDLE(T) t2)                                                                                                              \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_006: [ If t1 is NULL then THANDLE_ASSIGN shall return. ]*/                                                                               \
@@ -479,7 +479,7 @@ void THANDLE_ASSIGN(C)(THANDLE(T) * t1, THANDLE(T) t2)                          
 }                                                                                                                                                                   \
 
 /*given a previous type T, this introduces THANDLE_INITIALIZE macro to initialize a handle value*/
-#define THANDLE_LL_INITIALIZE_MACRO(C, T)                                                                                                                                 \
+#define THANDLE_LL_INITIALIZE_MACRO(C, T)                                                                                                                           \
 void THANDLE_INITIALIZE(C)(THANDLE(T) * lvalue, THANDLE(T) rvalue)                                                                                                  \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_011: [ If lvalue is NULL then THANDLE_INITIALIZE shall return. ]*/                                                                       \
@@ -503,7 +503,7 @@ void THANDLE_INITIALIZE(C)(THANDLE(T) * lvalue, THANDLE(T) rvalue)              
 }                                                                                                                                                                   \
 
 /*if THANDLE(T) is previously defined, then this macro returns the T* from under the THANDLE(T) */
-#define THANDLE_LL_GET_T_MACRO(C, T)                                                                                                                                      \
+#define THANDLE_LL_GET_T_MACRO(C, T)                                                                                                                                \
 static T* THANDLE_GET_T(C)(THANDLE(T) t)                                                                                                                            \
 {                                                                                                                                                                   \
     /*Codes_SRS_THANDLE_02_023: [ If t is NULL then THANDLE_GET_T(T) shall return NULL. ]*/                                                                         \
@@ -512,7 +512,7 @@ static T* THANDLE_GET_T(C)(THANDLE(T) t)                                        
 }
 
 /*given a previous type T, this introduces THANDLE_MOVE macro to move a handle (*t1=t2, *t2=NULL)*/
-#define THANDLE_LL_MOVE_MACRO(C, T)                                                                                                                                       \
+#define THANDLE_LL_MOVE_MACRO(C, T)                                                                                                                                 \
 void THANDLE_MOVE(C)(THANDLE(T) * t1, THANDLE(T) * t2)                                                                                                              \
 {                                                                                                                                                                   \
     if (                                                                                                                                                            \
@@ -560,7 +560,7 @@ void THANDLE_MOVE(C)(THANDLE(T) * t1, THANDLE(T) * t2)                          
 }                                                                                                                                                                   \
 
 /*given a previous type T, this introduces THANDLE_INITIALIZE_MOVE_MACRO macro to move a handle (*t1=t2, *t2=NULL)*/
-#define THANDLE_LL_INITIALIZE_MOVE_MACRO(C, T)                                                                                                                            \
+#define THANDLE_LL_INITIALIZE_MOVE_MACRO(C, T)                                                                                                                      \
 void THANDLE_INITIALIZE_MOVE(C)(THANDLE(T) * t1, THANDLE(T) * t2)                                                                                                   \
 {                                                                                                                                                                   \
     if (                                                                                                                                                            \
@@ -589,31 +589,31 @@ void THANDLE_INITIALIZE_MOVE(C)(THANDLE(T) * t1, THANDLE(T) * t2)               
 }                                                                                                                                                                   \
 
 /*given a previous type T, this introduces a wrapper type that contains T (and other fields) and defines the functions of that type T*/
-#define THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(C, T, malloc_function, malloc_flex_function, malloc_free_function)                                                  \
+#define THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(C, T, malloc_function, malloc_flex_function, malloc_free_function)                                                 \
     THANDLE_LL_TYPE_FROM_GLOBAL_DEFINE(T)                                                                                                                               \
     THANDLE_LL_TYPE_FROM_MACRO_DEFINE(T, malloc_function, malloc_flex_function, malloc_free_function)                                                                   \
-    MU_DEFINE_STRUCT(THANDLE_WRAPPER_TYPE_NAME(T), THANDLE_EXTRA_FIELDS(T), T, data);                                                                                     \
+    MU_DEFINE_STRUCT(THANDLE_WRAPPER_TYPE_NAME(T), THANDLE_EXTRA_FIELDS(T), T, data);                                                                                   \
                                                                                                                                                                         \
-    THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                                                                             \
-    THANDLE_LL_MALLOC_MACRO(C, T)                                                                                                                                         \
-                                                                                                                                                                            \
-    THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                                                                     \
-    THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_MACRO(C, T)                                                                                                                         \
-                                                                                                                                                                            \
-    THANDLE_LL_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                                                                   \
-    THANDLE_LL_CREATE_FROM_CONTENT_FLEX_MACRO(C, T)                                                                                                                       \
-                                                                                                                                                                            \
-    THANDLE_LL_CREATE_FROM_CONTENT_MACRO(C, T)                                                                                                                            \
-                                                                                                                                                                            \
-    THANDLE_LL_FREE_MACRO(C, T)                                                                                                                                           \
-    THANDLE_LL_DEC_REF_MACRO(C, T)                                                                                                                                        \
-    THANDLE_LL_INC_REF_MACRO(C, T)                                                                                                                                        \
-    THANDLE_LL_ASSIGN_MACRO(C, T)                                                                                                                                         \
-    THANDLE_LL_INITIALIZE_MACRO(C, T)                                                                                                                                     \
-    THANDLE_LL_GET_T_MACRO(C, T)                                                                                                                                          \
-    THANDLE_LL_INSPECT_MACRO(C, T)                                                                                                                                        \
-    THANDLE_LL_MOVE_MACRO(C, T)                                                                                                                                           \
-    THANDLE_LL_INITIALIZE_MOVE_MACRO(C, T)                                                                                                                                \
+    THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                                                                           \
+    THANDLE_LL_MALLOC_MACRO(C, T)                                                                                                                                       \
+                                                                                                                                                                        \
+    THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                                                                 \
+    THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_MACRO(C, T)                                                                                                                       \
+                                                                                                                                                                        \
+    THANDLE_LL_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                                                               \
+    THANDLE_LL_CREATE_FROM_CONTENT_FLEX_MACRO(C, T)                                                                                                                     \
+                                                                                                                                                                        \
+    THANDLE_LL_CREATE_FROM_CONTENT_MACRO(C, T)                                                                                                                          \
+                                                                                                                                                                        \
+    THANDLE_LL_FREE_MACRO(C, T)                                                                                                                                         \
+    THANDLE_LL_DEC_REF_MACRO(C, T)                                                                                                                                      \
+    THANDLE_LL_INC_REF_MACRO(C, T)                                                                                                                                      \
+    THANDLE_LL_ASSIGN_MACRO(C, T)                                                                                                                                       \
+    THANDLE_LL_INITIALIZE_MACRO(C, T)                                                                                                                                   \
+    THANDLE_LL_GET_T_MACRO(C, T)                                                                                                                                        \
+    THANDLE_LL_INSPECT_MACRO(C, T)                                                                                                                                      \
+    THANDLE_LL_MOVE_MACRO(C, T)                                                                                                                                         \
+    THANDLE_LL_INITIALIZE_MOVE_MACRO(C, T)                                                                                                                              \
 
 
 /*given a previous type T, this introduces a wrapper type that contains T (and other fields) and defines the functions of that type T*/
