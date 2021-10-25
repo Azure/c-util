@@ -140,7 +140,7 @@ INITIALIZE_MOVE does not increment the ref count, and NULLs the source.
 INITIALIZE_MOVE assumes that destination is not initialized and thus it does not decrement the destination ref count */
 #define THANDLE_INITIALIZE_MOVE(T) MU_C2(T,_INITIALIZE_MOVE)
 
-/*THANDLE_LL_MALLOC_WITH_MALLOC_FUNCTIONS returns a new T* using malloc_function (if not NULL) or THANDLE_LL_TYPE_STRUCT_VAR (if not NULL) or THANDLE_MALLOC_FUNCTION*/
+/*THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS returns a new T* using malloc_function (if not NULL) or THANDLE_LL_TYPE_STRUCT_VAR (if not NULL) or THANDLE_MALLOC_FUNCTION*/
 #define THANDLE_LL_MALLOC_WITH_MALLOC_FUNCTIONS_MACRO(C, T) \
 static T* THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)(T*), THANDLE_LL_MALLOC_FUNCTION_POINTER_T malloc_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function) \
 {                                                                                                                                                                   \
@@ -208,7 +208,7 @@ const THANDLE_WRAPPER_TYPE_NAME(T)* const THANDLE_INSPECT(C)(THANDLE(T) t)      
 
 #define THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C) MU_C2(THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_MACRO_WITH_MALLOC_FUNCTIONS_, C)
 
-/*THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS_MACRO returns a new T* with extra size using malloc_function (if not NULL) or THANDLE_LL_TYPE_STRUCT_VAR (if not NULL) or THANDLE_MALLOC_FUNCTION*/
+/*THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS returns a new T* with extra size using malloc_function (if not NULL) or THANDLE_LL_TYPE_STRUCT_VAR (if not NULL) or THANDLE_MALLOC_FUNCTION*/
 #define THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                     \
 static T* THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)(T*), size_t extra_size, THANDLE_LL_MALLOC_FLEX_FUNCTION_POINTER_T malloc_flex_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function)        \
 {                                                                                                                                                                   \
@@ -267,6 +267,7 @@ static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(C)(void(*dispose)(T*), size_t extra_siz
 
 #define THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C) MU_C2(THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS_, C)
 
+/*THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS returns a new T* from some content using malloc_flex_function (if not NULL) or THANDLE_LL_TYPE_STRUCT_VAR (if not NULL) or THANDLE_MALLOC_FUNCTION*/
 #define THANDLE_LL_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                                                                                   \
 static T* THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C)(const T* source, void(*dispose)(T*), int(*copy)(T* destination, const T* source), size_t(*get_sizeof)(const T* source), THANDLE_LL_MALLOC_FLEX_FUNCTION_POINTER_T malloc_flex_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function) \
 {                                                                                                                                                                   \
@@ -370,8 +371,6 @@ static T* THANDLE_CREATE_FROM_CONTENT(C)(const T* source, void(*dispose)(T*), in
     /*Codes_SRS_THANDLE_02_032: [ THANDLE_CREATE_FROM_CONTENT_FLEX returns what THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T)); returns. ]*/ \
     return THANDLE_CREATE_FROM_CONTENT_FLEX(C)(source, dispose, copy, THANDLE_GET_SIZEOF(C));                                                                       \
 }                                                                                                                                                                   \
-
-
 
 /*given a previous type T, this introduces THANDLE_FREE macro to free all used resources*/
 #define THANDLE_LL_FREE_MACRO(C, T) \

@@ -10,6 +10,7 @@ ${theseTestsName}.c
 set(${theseTestsName}_c_files
     g_on_t_off.c
     g_on_t_on.c
+    two_thandles_same_file.c
 )
 
 set(${theseTestsName}_h_files
@@ -18,6 +19,7 @@ set(${theseTestsName}_h_files
     malloc_mocks.h
     g_on_t_off.h
     g_on_t_on.h
+    two_thandles_same_file.h
 )
 
 build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_pal c_pal_reals)
