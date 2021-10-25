@@ -60,7 +60,7 @@
 /*thandle_ll_malloc can come from 3 sources from lowest to highest priority:
 1. globally: when the user defines it prior to THANDLE_LL_TYPE_DEFINE with #define THANDLE_MALLOC_FUNCTION (largely maintained momentarily due to backwards compatibility, soon to be deprecated and removed)
 2. at type definition time: when the user uses THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS
-3. at instance creation time: when the user decides to use at instance level of THANDLE specific allocation function by calling THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS / THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS / THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS
+3. at instance creation time: when the user decides to use at instance level of THANDLE specific allocation function by calling THANDLE_LL_MALLOC_WITH_MALLOC_FUNCTIONS / THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS / THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS
 */
 
 typedef void* (*THANDLE_LL_MALLOC_FUNCTION_POINTER_T)(size_t);
@@ -85,15 +85,15 @@ typedef struct THANDLE_LL_TYPE_STRUCT_TYPE_TAG(T)                               
 
 /*given a previous type T, THANDLE_MALLOC introduces a new name that mimics "malloc for T"*/
 /*the new name is used to define the name of a static function that allocates memory*/
-#define THANDLE_MALLOC(T) MU_C2(T,_MALLOC)
+#define THANDLE_MALLOC(C) MU_C2(THANDLE_MALLOC_, C)
 
-/*given a previous type T, THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS introduces a new name that mimics "malloc for T" but uses the specified malloc/free functions*/
+/*given a previous type T, THANDLE_LL_MALLOC_WITH_MALLOC_FUNCTIONS introduces a new name that mimics "malloc for T" but uses the specified malloc/free functions*/
 /*the new name is used to define the name of a static function that allocates memory using specified malloc functions*/
-#define THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C) MU_C2(THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS_, C)
+#define THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C) MU_C2(THANDLE_LL_MALLOC_WITH_MALLOC_FUNCTIONS_, C)
 
 /*captures THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS' malloc_function, malloc_flex_function, malloc_free_function parameters for type T*/
-#define THANDLE_LL_TYPE_NAME_FROM_MACRO(T) MU_C2(THANDLE_LL_TYPE_FROM_MACRO_, T)
-#define THANDLE_LL_TYPE_FROM_MACRO_DEFINE(T, malloc_function, malloc_flex_function, malloc_free_function) static const THANDLE_LL_TYPE_STRUCT_TYPE(T) THANDLE_LL_TYPE_NAME_FROM_MACRO(T) = {malloc_function, malloc_flex_function, malloc_free_function};
+#define THANDLE_LL_TYPE_STRUCT_VAR(T) MU_C2(THANDLE_LL_TYPE_FROM_MACRO_, T)
+#define THANDLE_LL_TYPE_STRUCT_VAR_DEFINE(T, malloc_function, malloc_flex_function, malloc_free_function) static const THANDLE_LL_TYPE_STRUCT_TYPE(T) THANDLE_LL_TYPE_STRUCT_VAR(T) = {malloc_function, malloc_flex_function, malloc_free_function};
 
 /*given a previous type T, THANDLE_INSPECT introduces a new name that if a function that returns the THANDLE_WRAPPER_TYPE_NAME(T) - useful in debugging. The function has no side-effects.*/
 #define THANDLE_INSPECT(T) MU_C2(T,_INSPECT)
@@ -140,9 +140,8 @@ INITIALIZE_MOVE does not increment the ref count, and NULLs the source.
 INITIALIZE_MOVE assumes that destination is not initialized and thus it does not decrement the destination ref count */
 #define THANDLE_INITIALIZE_MOVE(T) MU_C2(T,_INITIALIZE_MOVE)
 
-
-
-#define THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS_MACRO(C, T) \
+/*THANDLE_LL_MALLOC_WITH_MALLOC_FUNCTIONS returns a new T* using malloc_function (if not NULL) or THANDLE_LL_TYPE_STRUCT_VAR (if not NULL) or THANDLE_MALLOC_FUNCTION*/
+#define THANDLE_LL_MALLOC_WITH_MALLOC_FUNCTIONS_MACRO(C, T) \
 static T* THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)(T*), THANDLE_LL_MALLOC_FUNCTION_POINTER_T malloc_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function) \
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
@@ -154,10 +153,10 @@ static T* THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)(T*), THANDLE_LL
         malloc_function_used = malloc_function;                                                                                                                     \
         free_function_used = free_function;                                                                                                                         \
     }                                                                                                                                                               \
-    else if(THANDLE_LL_TYPE_NAME_FROM_MACRO(T).thandle_ll_malloc!=NULL)                                                                                             \
+    else if(THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_malloc!=NULL)                                                                                                  \
     {                                                                                                                                                               \
-        malloc_function_used = THANDLE_LL_TYPE_NAME_FROM_MACRO(T).thandle_ll_malloc;                                                                                \
-        free_function_used = THANDLE_LL_TYPE_NAME_FROM_MACRO(T).thandle_ll_free;                                                                                    \
+        malloc_function_used = THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_malloc;                                                                                     \
+        free_function_used = THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_free;                                                                                         \
     }                                                                                                                                                               \
     else                                                                                                                                                            \
     {                                                                                                                                                               \
@@ -181,7 +180,6 @@ static T* THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)(T*), THANDLE_LL
         }                                                                                                                                                           \
         else                                                                                                                                                        \
         {                                                                                                                                                           \
-            LogInfo("used %p to malloc %p", malloc_function_used, handle_impl);                                                                                     \
             /*Codes_SRS_THANDLE_02_014: [ THANDLE_MALLOC shall initialize the reference count to 1, store dispose and return a T* . ]*/                             \
             THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                          \
             handle_impl->dispose = dispose;                                                                                                                         \
@@ -194,11 +192,10 @@ static T* THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)(T*), THANDLE_LL
 }                                                                                                                                                                   \
 
 /*given a previous type T, this introduces THANDLE_MALLOC macro to create its wrapper, initialize refCount to 1, and remember the dispose function*/
-
 #define THANDLE_LL_MALLOC_MACRO(C, T) \
 static T* THANDLE_MALLOC(C)(void(*dispose)(T*))                                                                                                                     \
 {                                                                                                                                                                   \
-    return THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C)(dispose, NULL, NULL);                                                                              \
+    return THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C)(dispose, NULL, NULL);                                                                                            \
 }                                                                                                                                                                   \
 
 /*this is only useful during debugging: from a THANDLE(T) it returns THANDLE_WRAPPER_TYPE_NAME(T) - which can be viewed in debugger - useful for seeing refCount.
@@ -209,10 +206,11 @@ const THANDLE_WRAPPER_TYPE_NAME(T)* const THANDLE_INSPECT(C)(THANDLE(T) t)      
     return CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                                                                \
 }                                                                                                                                                                   \
 
-#define THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C) MU_C2(THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_MACRO_WITH_MALLOC_FUNCTIONS_, C)
+#define THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C) MU_C2(THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_MACRO_WITH_MALLOC_FUNCTIONS_, C)
 
+/*THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS_MACRO returns a new T* with extra size using malloc_function (if not NULL) or THANDLE_LL_TYPE_STRUCT_VAR (if not NULL) or THANDLE_MALLOC_FUNCTION*/
 #define THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                     \
-static T* THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)(T*), size_t extra_size, THANDLE_LL_MALLOC_FLEX_FUNCTION_POINTER_T malloc_flex_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function)        \
+static T* THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)(T*), size_t extra_size, THANDLE_LL_MALLOC_FLEX_FUNCTION_POINTER_T malloc_flex_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function)        \
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
     THANDLE_LL_MALLOC_FLEX_FUNCTION_POINTER_T malloc_flex_function_used;                                                                                            \
@@ -222,10 +220,10 @@ static T* THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C)(void(*dispo
         malloc_flex_function_used = malloc_flex_function;                                                                                                           \
         free_function_used = free_function;                                                                                                                         \
     }                                                                                                                                                               \
-    else if(THANDLE_LL_TYPE_NAME_FROM_MACRO(T).thandle_ll_malloc_flex!=NULL)                                                                                        \
+    else if(THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_malloc_flex!=NULL)                                                                                             \
     {                                                                                                                                                               \
-        malloc_flex_function_used = THANDLE_LL_TYPE_NAME_FROM_MACRO(T).thandle_ll_malloc_flex;                                                                      \
-        free_function_used = THANDLE_LL_TYPE_NAME_FROM_MACRO(T).thandle_ll_free;                                                                                    \
+        malloc_flex_function_used = THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_malloc_flex;                                                                           \
+        free_function_used = THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_free;                                                                                         \
     }                                                                                                                                                               \
     else                                                                                                                                                            \
     {                                                                                                                                                               \
@@ -250,7 +248,6 @@ static T* THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C)(void(*dispo
         }                                                                                                                                                           \
         else                                                                                                                                                        \
         {                                                                                                                                                           \
-            LogInfo("(1)used %p to malloc_flex %p", malloc_flex_function_used, handle_impl);                                                                           \
             /*Codes_SRS_THANDLE_02_021: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall initialize the reference count to 1, store dispose and return a T*. ]*/              \
             THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                          \
             handle_impl->dispose = dispose;                                                                                                                         \
@@ -265,7 +262,7 @@ static T* THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C)(void(*dispo
 #define THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_MACRO(C, T)                                                                                                               \
 static T* THANDLE_MALLOC_WITH_EXTRA_SIZE(C)(void(*dispose)(T*), size_t extra_size)                                                                                  \
 {                                                                                                                                                                   \
-    return THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C)(dispose, extra_size, NULL, NULL);                                                        \
+    return THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C)(dispose, extra_size, NULL, NULL);                                                             \
 }                                                                                                                                                                   \
 
 #define THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C) MU_C2(THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS_, C)
@@ -291,10 +288,10 @@ static T* THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C)(const T* sou
             malloc_flex_function_used = malloc_flex_function;                                                                                                       \
             free_function_used = free_function;                                                                                                                     \
         }                                                                                                                                                           \
-        else if(THANDLE_LL_TYPE_NAME_FROM_MACRO(T).thandle_ll_malloc_flex!=NULL)                                                                                    \
+        else if(THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_malloc_flex!=NULL)                                                                                         \
         {                                                                                                                                                           \
-            malloc_flex_function_used = THANDLE_LL_TYPE_NAME_FROM_MACRO(T).thandle_ll_malloc_flex;                                                                  \
-            free_function_used = THANDLE_LL_TYPE_NAME_FROM_MACRO(T).thandle_ll_free;                                                                                \
+            malloc_flex_function_used = THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_malloc_flex;                                                                       \
+            free_function_used = THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_free;                                                                                     \
         }                                                                                                                                                           \
         else                                                                                                                                                        \
         {                                                                                                                                                           \
@@ -321,7 +318,6 @@ static T* THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C)(const T* sou
             }                                                                                                                                                               \
             else                                                                                                                                                            \
             {                                                                                                                                                               \
-                LogInfo("(2)used %p to malloc_flex %p", malloc_flex_function_used, handle_impl);                                                                               \
                 if (copy==NULL)                                                                                                                                             \
                 {                                                                                                                                                           \
                     /*Codes_SRS_THANDLE_02_027: [ If copy is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall memcpy the content of source in allocated memory. ]*/         \
@@ -390,7 +386,6 @@ static void THANDLE_FREE(C)(T* t)                                               
     {                                                                                                                                                               \
         /*Codes_SRS_THANDLE_02_017: [ THANDLE_FREE shall free the allocated memory by THANDLE_MALLOC. ]*/                                                           \
         THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
-        LogInfo("(1) used %p to free %p", handle_impl->free_function, handle_impl);                                                                                     \
         handle_impl->free_function(handle_impl);                                                                                                                    \
     }                                                                                                                                                               \
 }                                                                                                                                                                   \
@@ -415,7 +410,6 @@ void THANDLE_DEC_REF(C)(THANDLE(T) t)                                           
             {                                                                                                                                                       \
                 handle_impl->dispose(&handle_impl->data);                                                                                                           \
             }                                                                                                                                                       \
-            LogInfo("(2)used %p to free %p", handle_impl->free_function, handle_impl);                                                                                 \
             handle_impl->free_function(handle_impl);                                                                                                                \
         }                                                                                                                                                           \
                                                                                                                                                                     \
@@ -596,10 +590,11 @@ void THANDLE_INITIALIZE_MOVE(C)(THANDLE(T) * t1, THANDLE(T) * t2)               
 /*given a previous type T, this introduces a wrapper type that contains T (and other fields) and defines the functions of that type T*/
 #define THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(C, T, malloc_function, malloc_flex_function, malloc_free_function)                                                 \
     THANDLE_LL_TYPE_STRUCT_TYPE_DEFINE(T)                                                                                                                               \
-    THANDLE_LL_TYPE_FROM_MACRO_DEFINE(T, malloc_function, malloc_flex_function, malloc_free_function)                                                                   \
+    THANDLE_LL_TYPE_STRUCT_VAR_DEFINE(T, malloc_function, malloc_flex_function, malloc_free_function)                                                                   \
+                                                                                                                                                                        \
     MU_DEFINE_STRUCT(THANDLE_WRAPPER_TYPE_NAME(T), THANDLE_EXTRA_FIELDS(T), T, data);                                                                                   \
                                                                                                                                                                         \
-    THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                                                                                    \
+    THANDLE_LL_MALLOC_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                                                                                 \
     THANDLE_LL_MALLOC_MACRO(C, T)                                                                                                                                       \
                                                                                                                                                                         \
     THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS_MACRO(C, T)                                                                                                 \

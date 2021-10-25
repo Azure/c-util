@@ -1,7 +1,7 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 
-#ifndef G_OFF_T_ON_I_ON_H
-#define G_OFF_T_ON_I_ON_H
+#ifndef G_OFF_T_ON_H
+#define G_OFF_T_ON_H
 
 /*
 G_ON - will use the global THANDLE_MALLOC_FUNCTION macro "global on"
@@ -42,4 +42,4 @@ extern "C" {
 }
 #endif
 
-#endif /*G_OFF_T_ON_I_ON_H*/
+#endif /*G_OFF_T_ON_H*/
