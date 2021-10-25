@@ -221,38 +221,42 @@ static T* THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)
     THANDLE_LL_FREE_FUNCTION_POINTER_T free_function_used;                                                                                                          \
     if(malloc_flex_function != NULL)                                                                                                                                \
     {                                                                                                                                                               \
+        /*Codes_SRS_THANDLE_02_046: [ If malloc_flex_function is not NULL then malloc_flex_function and free_function shall be used to allocate memory. ]*/         \
         malloc_flex_function_used = malloc_flex_function;                                                                                                           \
         free_function_used = free_function;                                                                                                                         \
     }                                                                                                                                                               \
     else if(THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_malloc_flex!=NULL)                                                                                             \
     {                                                                                                                                                               \
+        /*Codes_SRS_THANDLE_02_047: [ If malloc_flex_function from THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS is not NULL then THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS's malloc_flex_function and free_function shall be used to allocate/free memory. ]*/ \
         malloc_flex_function_used = THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_malloc_flex;                                                                           \
         free_function_used = THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_free;                                                                                         \
     }                                                                                                                                                               \
     else                                                                                                                                                            \
     {                                                                                                                                                               \
+        /*Codes_SRS_THANDLE_02_048: [ If THANDLE_MALLOC_FLEX_FUNCTION is not NULL then THANDLE_MALLOC_FLEX_FUNCTION / THANDLE_FREE_FUNCTION shall be used to allocate/free memory. ]*/ \
         malloc_flex_function_used = THANDLE_MALLOC_FLEX_FUNCTION;                                                                                                   \
         free_function_used = THANDLE_FREE_FUNCTION;                                                                                                                 \
     }                                                                                                                                                               \
     if((malloc_flex_function_used == NULL)  || (free_function_used == NULL))                                                                                        \
     {                                                                                                                                                               \
+        /*Codes_SRS_THANDLE_02_049: [ If no function can be found to allocate/free memory then THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/ \
         LogError("something is wrong with code config, cannot find a malloc/free function");                                                                        \
         result = NULL;                                                                                                                                              \
     }                                                                                                                                                               \
     else                                                                                                                                                            \
     {                                                                                                                                                               \
-        /*Codes_SRS_THANDLE_02_020: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall allocate memory enough to hold T and extra_size. ]*/                                     \
+        /*Codes_SRS_THANDLE_02_050: [ THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS shall allocate memory. ]*/                                               \
         THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = malloc_flex_function_used(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)), extra_size, 1);                                 \
         if (handle_impl == NULL)                                                                                                                                    \
         {                                                                                                                                                           \
-            /*Codes_SRS_THANDLE_02_022: [ If malloc fails then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/                                       \
+            /*Codes_SRS_THANDLE_02_052: [ If allocating memory fails then THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/      \
             LogError("error in malloc_flex_function_used=%p(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                                            \
                 malloc_flex_function_used, sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                                                                   \
             result = NULL;                                                                                                                                          \
         }                                                                                                                                                           \
         else                                                                                                                                                        \
         {                                                                                                                                                           \
-            /*Codes_SRS_THANDLE_02_021: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall initialize the reference count to 1, store dispose and return a T*. ]*/              \
+            /*Codes_SRS_THANDLE_02_051: [ THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function succeed and return a non-NULL T*. ]*/ \
             THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                          \
             handle_impl->dispose = dispose;                                                                                                                         \
             handle_impl->free_function = free_function_used;                                                                                                        \
@@ -277,11 +281,14 @@ static T* THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C)(const T* sou
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
     if (                                                                                                                                                            \
-        /*Codes_SRS_THANDLE_02_025: [ If source is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/                                       \
-        (source == NULL)                                                                                                                                            \
+        /*Codes_SRS_THANDLE_02_053: [ If source is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/                 \
+        (source == NULL) ||                                                                                                                                         \
+        /*Codes_SRS_THANDLE_02_054: [ If get_sizeof is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/             \
+        (get_sizeof == NULL)                                                                                                                                        \
         )                                                                                                                                                           \
     {                                                                                                                                                               \
-        LogError("invalid arguments const " MU_TOSTRING(T) "* source=%p, void(*dispose)(" MU_TOSTRING(T) "*)=%p, int(*copy)(" MU_TOSTRING(T) "* destination, const " MU_TOSTRING(T) "* source)=%p", source, dispose, copy); /*vld.h add here more parameters*/\
+        LogError("invalid arguments const T* source=%p, void(*dispose)(T*)=%p, int(*copy)(T* destination, const T* source)=%p, size_t(*get_sizeof)(const T* source)=%p, THANDLE_LL_MALLOC_FLEX_FUNCTION_POINTER_T malloc_flex_function=%p, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function=%p", \
+            source, dispose, copy, get_sizeof, malloc_flex_function, free_function);                                                                                \
         result = NULL;                                                                                                                                              \
     }                                                                                                                                                               \
     else                                                                                                                                                            \
@@ -290,33 +297,37 @@ static T* THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C)(const T* sou
         THANDLE_LL_FREE_FUNCTION_POINTER_T free_function_used;                                                                                                      \
         if(malloc_flex_function != NULL)                                                                                                                            \
         {                                                                                                                                                           \
+            /*Codes_SRS_THANDLE_02_056: [ If malloc_flex_function is not NULL then malloc_flex_function and free_function shall be used to allocate memory. ]*/     \
             malloc_flex_function_used = malloc_flex_function;                                                                                                       \
             free_function_used = free_function;                                                                                                                     \
         }                                                                                                                                                           \
         else if(THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_malloc_flex!=NULL)                                                                                         \
         {                                                                                                                                                           \
+            /*Codes_SRS_THANDLE_02_057: [ If malloc_flex_function from THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS is not NULL then THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS's malloc_flex_function and free_function shall be used to allocate/free memory. ]*/ \
             malloc_flex_function_used = THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_malloc_flex;                                                                       \
             free_function_used = THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_free;                                                                                     \
         }                                                                                                                                                           \
         else                                                                                                                                                        \
         {                                                                                                                                                           \
+            /*Codes_SRS_THANDLE_02_058: [ If THANDLE_MALLOC_FLEX_FUNCTION is not NULL then THANDLE_MALLOC_FLEX_FUNCTION / THANDLE_FREE_FUNCTION shall be used to allocate/free memory. ]*/ \
             malloc_flex_function_used = THANDLE_MALLOC_FLEX_FUNCTION;                                                                                               \
             free_function_used = THANDLE_FREE_FUNCTION;                                                                                                             \
         }                                                                                                                                                           \
         if((malloc_flex_function_used == NULL) || (free_function_used == NULL))                                                                                     \
         {                                                                                                                                                           \
+            /*Codes_SRS_THANDLE_02_059: [ If no function can be found to allocate/free memory then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/ \
             LogError("something is wrong with code config, cannot find a malloc/free function");                                                                    \
             result = NULL;                                                                                                                                          \
         }                                                                                                                                                           \
         else                                                                                                                                                        \
         {                                                                                                                                                           \
-            /*Codes_SRS_THANDLE_02_031: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall call get_sizeof to get the needed size to store T. ]*/                             \
+            /*Codes_SRS_THANDLE_02_064: [ THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall call get_sizeof to get the needed size to store T ]*/        \
             size_t sizeof_source = get_sizeof(source);                                                                                                              \
-            /*Codes_SRS_THANDLE_02_026: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall allocate memory. ]*/                                                               \
+            /*Codes_SRS_THANDLE_02_060: [ THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall allocate memory. ]*/                                         \
             THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)malloc_flex_function_used(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)) - sizeof(T), 1, sizeof_source); \
             if (handle_impl == NULL)                                                                                                                                        \
             {                                                                                                                                                               \
-                /*Codes_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/                               \
+                /*Codes_SRS_THANDLE_02_063: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/         \
                 LogError("error in malloc_flex_function_used=%p(sizeof(THANDLE_WRAPPER_TYPE_NAME(T))=%zu - sizeof(T)=%zu, 1, sizeof_source=%zu)",                           \
                     malloc_flex_function_used, sizeof(THANDLE_WRAPPER_TYPE_NAME(T)), sizeof(T), sizeof_source);                                                             \
                 result = NULL;                                                                                                                                              \
@@ -325,21 +336,21 @@ static T* THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C)(const T* sou
             {                                                                                                                                                               \
                 if (copy==NULL)                                                                                                                                             \
                 {                                                                                                                                                           \
-                    /*Codes_SRS_THANDLE_02_027: [ If copy is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall memcpy the content of source in allocated memory. ]*/         \
+                    /*Codes_SRS_THANDLE_02_055: [ If copy is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall memcpy the content of source in allocated memory. ]*/ \
                     THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                          \
                     (void)memcpy(&(handle_impl->data), source, sizeof_source);                                                                                              \
                     handle_impl->dispose = dispose;                                                                                                                         \
                     handle_impl->free_function = free_function_used;                                                                                                        \
-                    /*Codes_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/            \
+                    /*Codes_SRS_THANDLE_02_062: [ THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/  \
                     (void)interlocked_exchange(&handle_impl->refCount,1);                                                                                                   \
                     result = &(handle_impl->data);                                                                                                                          \
                 }                                                                                                                                                           \
                 else                                                                                                                                                        \
                 {                                                                                                                                                           \
-                    /*Codes_SRS_THANDLE_02_028: [ If copy is not NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall call copy to copy source into allocated memory. ]*/       \
+                    /*Codes_SRS_THANDLE_02_061: [ If copy is not NULL then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall call copy to copy source into allocated memory. ]*/ \
                     if (copy(&handle_impl->data, source) != 0)                                                                                                              \
                     {                                                                                                                                                       \
-                        /*Codes_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/                       \
+                        /*Codes_SRS_THANDLE_02_063: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/ \
                         LogError("failure in copy(&handle_impl->data=%p, source=%p)", &handle_impl->data, source);                                                          \
                         free_function_used(handle_impl);                                                                                                                    \
                         result = NULL;                                                                                                                                      \
@@ -348,7 +359,7 @@ static T* THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C)(const T* sou
                     {                                                                                                                                                       \
                         handle_impl->dispose = dispose;                                                                                                                     \
                         handle_impl->free_function = free_function_used;                                                                                                    \
-                        /*Codes_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/        \
+                        /*Codes_SRS_THANDLE_02_062: [ THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/  \
                         (void)interlocked_exchange(&handle_impl->refCount,1);                                                                                               \
                         result = &(handle_impl->data);                                                                                                                      \
                     }                                                                                                                                                       \

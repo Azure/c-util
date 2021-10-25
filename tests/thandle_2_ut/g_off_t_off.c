@@ -99,6 +99,13 @@ THANDLE(G_OFF_T_OFF_DUMMY) G_OFF_T_OFF_create_from_content_flex(const G_OFF_T_OF
     return d;
 }
 
+THANDLE(G_OFF_T_OFF_DUMMY) G_OFF_T_OFF_create_from_content_flex_with_getsizeof_NULL(const G_OFF_T_OFF_DUMMY* origin)
+{
+    G_OFF_T_OFF_DUMMY* d = THANDLE_CREATE_FROM_CONTENT_FLEX(G_OFF_T_OFF_DUMMY)(origin, NULL, copies_dummy, NULL); /*"should" always return NULL because it doesn't find a function to allocate*/
+    /*d is NULL here because get_sizeof is NULL*/
+    return d;
+}
+
 THANDLE(G_OFF_T_OFF_DUMMY) G_OFF_T_OFF_create_from_content_flex_with_malloc_functions(const G_OFF_T_OFF_DUMMY* origin)
 {
     G_OFF_T_OFF_DUMMY* d = THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(G_OFF_T_OFF_DUMMY)(origin, NULL, copies_dummy, sizeof_dummy, var_malloc_flex, var_free);

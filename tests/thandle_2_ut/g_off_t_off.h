@@ -38,6 +38,8 @@ extern "C" {
     MOCKABLE_FUNCTION(, THANDLE(G_OFF_T_OFF_DUMMY), G_OFF_T_OFF_create_from_content_flex, const G_OFF_T_OFF_DUMMY*, origin);
     MOCKABLE_FUNCTION(, THANDLE(G_OFF_T_OFF_DUMMY), G_OFF_T_OFF_create_from_content_flex_with_malloc_functions, const G_OFF_T_OFF_DUMMY*, origin);
 
+    MOCKABLE_FUNCTION(, THANDLE(G_OFF_T_OFF_DUMMY), G_OFF_T_OFF_create_from_content_flex_with_getsizeof_NULL, const G_OFF_T_OFF_DUMMY*, origin);
+
 #ifdef __cplusplus
 }
 #endif

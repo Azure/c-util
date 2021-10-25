@@ -286,8 +286,8 @@ TEST_FUNCTION(thandle_user_create_fails_when_thandle_malloc_fails)
 
 /* THANDLE_MALLOC_WITH_EXTRA_SIZE */
 
-/*Tests_SRS_THANDLE_02_020: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall allocate memory enough to hold T and extra_size. ]*/
-/*Tests_SRS_THANDLE_02_021: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall initialize the reference count to 1, store dispose and return a T*. ]*/
+/*Tests_SRS_THANDLE_02_050: [ THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS shall allocate memory. ]*/
+/*Tests_SRS_THANDLE_02_051: [ THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function succeed and return a non-NULL T*. ]*/
 TEST_FUNCTION(thandle_flex_user_create_succeeds)
 {
     ///arrange
@@ -305,7 +305,7 @@ TEST_FUNCTION(thandle_flex_user_create_succeeds)
     THANDLE_DEC_REF(LL_FLEX)(ll);
 }
 
-/*Tests_SRS_THANDLE_02_022: [ If malloc fails then THANDLE_MALLOC_WITH_EXTRA_SIZE shall fail and return NULL. ]*/
+/*Tests_SRS_THANDLE_02_052: [ If allocating memory fails then THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/
 TEST_FUNCTION(thandle_flex_user_create_fails_when_thandle_malloc_fails)
 {
     ///arrange
@@ -682,7 +682,7 @@ TEST_FUNCTION(THANDLE_T_can_build_an_array)
     my_gballoc_free((void*)arr);
 }
 
-/*Tests_SRS_THANDLE_02_025: [ If source is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/
+/*Tests_SRS_THANDLE_02_053: [ If source is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/
 /*Tests_SRS_THANDLE_02_032: [ THANDLE_CREATE_FROM_CONTENT returns what THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T)); returns. ]*/
 TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_with_source_NULL_fails)
 {
@@ -696,9 +696,9 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_with_source_NULL_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_THANDLE_02_026: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall allocate memory. ]*/
-/*Tests_SRS_THANDLE_02_027: [ If copy is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall memcpy the content of source in allocated memory. ]*/
-/*Tests_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/
+/*Tests_SRS_THANDLE_02_060: [ THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall allocate memory. ]*/
+/*Tests_SRS_THANDLE_02_055: [ If copy is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall memcpy the content of source in allocated memory. ]*/
+/*Tests_SRS_THANDLE_02_062: [ THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/
 /*Tests_SRS_THANDLE_02_032: [ THANDLE_CREATE_FROM_CONTENT returns what THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T)); returns. ]*/
 TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_with_copy_NULL_succeeds)
 {
@@ -722,9 +722,9 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_with_copy_NULL_succeeds)
     THANDLE_DEC_REF(A_B)(result);
 }
 
-/*Tests_SRS_THANDLE_02_026: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall allocate memory. ]*/
-/*Tests_SRS_THANDLE_02_028: [ If copy is not NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall call copy to copy source into allocated memory. ]*/
-/*Tests_SRS_THANDLE_02_029: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/
+/*Tests_SRS_THANDLE_02_060: [ THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall allocate memory. ]*/
+/*Tests_SRS_THANDLE_02_061: [ If copy is not NULL then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall call copy to copy source into allocated memory. ]*/
+/*Tests_SRS_THANDLE_02_062: [ THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall initialize the ref count to 1, succeed and return a non-NULL value. ]*/
 /*Tests_SRS_THANDLE_02_032: [ THANDLE_CREATE_FROM_CONTENT returns what THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T)); returns. ]*/
 TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_DISPOSE_with_non_NULL_succeeds)
 {
@@ -750,7 +750,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_DISPOSE_with_non_NULL_succeeds)
     THANDLE_DEC_REF(A_S)(result);
 }
 
-/*Tests_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/
+/*Tests_SRS_THANDLE_02_063: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/
 /*Tests_SRS_THANDLE_02_032: [ THANDLE_CREATE_FROM_CONTENT returns what THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T)); returns. ]*/
 TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_when_THANDLE_MALLOC_FUNCTION_fails_it_fails)
 {
@@ -773,7 +773,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_when_THANDLE_MALLOC_FUNCTION_fail
     ///clean
 }
 
-/*Tests_SRS_THANDLE_02_030: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX shall fail and return NULL. ]*/
+/*Tests_SRS_THANDLE_02_063: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/
 /*Tests_SRS_THANDLE_02_032: [ THANDLE_CREATE_FROM_CONTENT returns what THANDLE_CREATE_FROM_CONTENT_FLEX(T)(source, dispose, copy, THANDLE_GET_SIZEOF(T)); returns. ]*/
 TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_when_copy_fails_it_fails)
 {
@@ -798,7 +798,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_when_copy_fails_it_fails)
     ///clean
 }
 
-/*Tests_SRS_THANDLE_02_031: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall call get_sizeof to get the needed size to store T. ]*/
+/*Tests_SRS_THANDLE_02_064: [ THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall call get_sizeof to get the needed size to store T ]*/
 TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof)
 {
     ///arrange
@@ -830,8 +830,8 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof)
     THANDLE_DEC_REF(A_FLEX)(copy);
 }
 
-/*Tests_SRS_THANDLE_02_031: [ THANDLE_CREATE_FROM_CONTENT_FLEX shall call get_sizeof to get the needed size to store T. ]*/
-/*Tests_SRS_THANDLE_02_028: [ If copy is not NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall call copy to copy source into allocated memory. ]*/
+/*Tests_SRS_THANDLE_02_064: [ THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall call get_sizeof to get the needed size to store T ]*/
+/*Tests_SRS_THANDLE_02_061: [ If copy is not NULL then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall call copy to copy source into allocated memory. ]*/
 TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof_2)
 {
     ///arrange
