@@ -145,42 +145,46 @@ INITIALIZE_MOVE assumes that destination is not initialized and thus it does not
 static T* THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)(T*), THANDLE_LL_MALLOC_FUNCTION_POINTER_T malloc_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function) \
 {                                                                                                                                                                   \
     T* result;                                                                                                                                                      \
-    /*Codes_SRS_THANDLE_02_013: [ THANDLE_MALLOC shall allocate memory. ]*/                                                                                         \
     THANDLE_LL_MALLOC_FUNCTION_POINTER_T malloc_function_used;                                                                                                      \
     THANDLE_LL_FREE_FUNCTION_POINTER_T free_function_used;                                                                                                          \
     if(malloc_function != NULL)                                                                                                                                     \
     {                                                                                                                                                               \
+        /*Codes_SRS_THANDLE_02_039: [ If malloc_function is not NULL then malloc_function and free_function shall be used to allocate/free memory. ]*/              \
         malloc_function_used = malloc_function;                                                                                                                     \
         free_function_used = free_function;                                                                                                                         \
     }                                                                                                                                                               \
     else if(THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_malloc!=NULL)                                                                                                  \
     {                                                                                                                                                               \
+        /*Codes_SRS_THANDLE_02_040: [ If malloc_function from THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS is not NULL then THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS's malloc_function and free_function shall be used to allocate/free memory. ]*/ \
         malloc_function_used = THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_malloc;                                                                                     \
         free_function_used = THANDLE_LL_TYPE_STRUCT_VAR(T).thandle_ll_free;                                                                                         \
     }                                                                                                                                                               \
     else                                                                                                                                                            \
     {                                                                                                                                                               \
+        /*Codes_SRS_THANDLE_02_041: [ If THANDLE_MALLOC_FUNCTION is not NULL then THANDLE_MALLOC_FUNCTION / THANDLE_FREE_FUNCTION shall be used to allocate/free memory. ]*/ \
         malloc_function_used = THANDLE_MALLOC_FUNCTION;                                                                                                             \
         free_function_used = THANDLE_FREE_FUNCTION;                                                                                                                 \
     }                                                                                                                                                               \
     if((malloc_function_used == NULL)  || (free_function_used == NULL))                                                                                             \
     {                                                                                                                                                               \
+        /*Codes_SRS_THANDLE_02_042: [ If no function can be found to allocate/free memory then THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall return NULL. ]*/          \
         LogError("something is wrong with code config, cannot find a malloc/free function");                                                                        \
         result = NULL;                                                                                                                                              \
     }                                                                                                                                                               \
     else                                                                                                                                                            \
     {                                                                                                                                                               \
+        /*Codes_SRS_THANDLE_02_043: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall allocate memory. ]*/                                                               \
         THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = (THANDLE_WRAPPER_TYPE_NAME(T)*)malloc_function_used(sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                      \
         if (handle_impl == NULL)                                                                                                                                    \
         {                                                                                                                                                           \
-            /*Codes_SRS_THANDLE_02_015: [ If malloc fails then THANDLE_MALLOC shall fail and return NULL. ]*/                                                       \
+            /*Codes_SRS_THANDLE_02_045: [ If allocating memory fails then THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/                      \
             LogError("error in malloc_function_used=%p(sizeof(THANDLE_WRAPPER_TYPE_NAME(" MU_TOSTRING(T) "))=%zu)",                                                 \
                 malloc_function_used, sizeof(THANDLE_WRAPPER_TYPE_NAME(T)));                                                                                        \
             result = NULL;                                                                                                                                          \
         }                                                                                                                                                           \
         else                                                                                                                                                        \
         {                                                                                                                                                           \
-            /*Codes_SRS_THANDLE_02_014: [ THANDLE_MALLOC shall initialize the reference count to 1, store dispose and return a T* . ]*/                             \
+            /*Codes_SRS_THANDLE_02_044: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function and return a T* ]*/ \
             THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                          \
             handle_impl->dispose = dispose;                                                                                                                         \
             handle_impl->free_function = free_function_used;                                                                                                        \

@@ -113,18 +113,34 @@ MOCKABLE_FUNCTION(, void, THANDLE_ASSIGN(T), THANDLE(T) *, t1, THANDLE(T), t2 );
 
 `THANDLE_TYPE_DEFINE` introduces the implementation for the functions in `THANDLE_TYPE_DECLARE` (`THANDLE_DEC_REF`, `THANDLE_INC_REF`, `THANDLE_ASSIGN`, `THANDLE_INITIALIZE`, `THANDLE_GET_T`) and three new memory management functions `THANDLE_MALLOC(T)`, `THANDLE_MALLOC_WITH_EXTRA_SIZE(T)` and `THANDLE_FREE(T)`.
 
+### THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C)
+```c
+static T* THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)(T*), THANDLE_LL_MALLOC_FUNCTION_POINTER_T malloc_function, THANDLE_LL_FREE_FUNCTION_POINTER_T free_function) \
+```
+
+`THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS` returna a `T*`. `dispose` is called when the last reference to `T` is removed. `malloc_function` is a function with the same prototype as `malloc` from `<stdlib.h>` and is used to allocate memory. `free_function` is a function with the same prototype as `free` from `<stdlib.h>` and will be used to free the memory allocated by `malloc_function`.
+
+**SRS_THANDLE_02_039: [** If `malloc_function` is not `NULL` then `malloc_function` and `free_function` shall be used to allocate/free memory. **]**
+
+**SRS_THANDLE_02_040: [** If `malloc_function` from `THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS` is not `NULL` then `THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS`'s `malloc_function` and `free_function` shall be used to allocate/free memory. **]**
+
+**SRS_THANDLE_02_041: [** If `THANDLE_MALLOC_FUNCTION` is not `NULL` then `THANDLE_MALLOC_FUNCTION` / `THANDLE_FREE_FUNCTION` shall be used to allocate/free memory. **]**
+
+**SRS_THANDLE_02_042: [** If no function can be found to allocate/free memory then `THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS` shall return `NULL`. **]**
+
+**SRS_THANDLE_02_043: [** `THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS` shall allocate memory. **]**
+
+**SRS_THANDLE_02_044: [** `THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS` shall  initialize the reference count to 1, store `dispose` and `free_function` and return a `T*` **]**
+
+**SRS_THANDLE_02_045: [** If allocating memory fails then `THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS` shall fail and return `NULL`. **]**
+
+
 ### THANDLE_MALLOC(T)
 ```c
 static T* THANDLE_MALLOC(T)(void(*dispose)(T*))
 ```
 
-`THANDLE_MALLOC` return a pointer to `T`. `dispose` is a function that the `THANDLE_DEC_REF` calls when the reference count reaches 0 in order to free the resources allocated by the user in `T`. `dispose` can be `NULL` in which case there are no user resources to be de-allocated.
-
-**SRS_THANDLE_02_013: [** `THANDLE_MALLOC` shall allocate memory. **]**
-
-**SRS_THANDLE_02_014: [** `THANDLE_MALLOC` shall initialize the reference count to 1, store `dispose` and return a `T*` . **]**
-
-**SRS_THANDLE_02_015: [** If `malloc` fails then `THANDLE_MALLOC` shall fail and return `NULL`. **]**
+`THANDLE_MALLOC` behaves as `THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS` when called with `malloc_function` `NULL` and with `free_function` `NULL`.
 
 ### THANDLE_MALLOC_WITH_EXTRA_SIZE
 ```c

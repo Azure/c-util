@@ -31,6 +31,7 @@ static void my_gballoc_free(void* ptr)
 #include "malloc_mocks.h"
 #undef ENABLE_MOCKS
 
+#include "g_off_t_off.h"
 #include "g_on_t_off.h"
 #include "g_on_t_on.h"
 
@@ -91,6 +92,8 @@ TEST_FUNCTION_CLEANUP(cleans)
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
+/*Tests_SRS_THANDLE_02_041: [ If THANDLE_MALLOC_FUNCTION is not NULL then THANDLE_MALLOC_FUNCTION / THANDLE_FREE_FUNCTION shall be used to allocate/free memory. ]*/
+/*Tests_SRS_THANDLE_02_044: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function and return a T* ]*/
 TEST_FUNCTION(G_ON_T_OFF_create_calls_global_malloc)
 {
     ///arrange
@@ -109,6 +112,25 @@ TEST_FUNCTION(G_ON_T_OFF_create_calls_global_malloc)
     THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&dummy, NULL);
 }
 
+/*Tests_SRS_THANDLE_02_045: [ If allocating memory fails then THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/
+TEST_FUNCTION(G_ON_T_OFF_create_calls_global_malloc_unhappy_path)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(global_malloc(IGNORED_ARG))
+        .SetReturn(NULL);
+
+    ///act
+    THANDLE(G_ON_T_OFF_DUMMY) dummy = G_ON_T_OFF_create(3);
+
+    ///assert
+    ASSERT_IS_NULL(dummy);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+/*Tests_SRS_THANDLE_02_039: [ If malloc_function is not NULL then malloc_function and free_function shall be used to allocate/free memory. ]*/
+/*Tests_SRS_THANDLE_02_044: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function and return a T* ]*/
 TEST_FUNCTION(G_ON_T_OFF_create_calls_var_malloc)
 {
     ///arrange
@@ -127,6 +149,24 @@ TEST_FUNCTION(G_ON_T_OFF_create_calls_var_malloc)
     THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&dummy, NULL);
 }
 
+/*Tests_SRS_THANDLE_02_045: [ If allocating memory fails then THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/
+TEST_FUNCTION(G_ON_T_OFF_create_calls_var_malloc_unhappy_path)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(var_malloc(IGNORED_ARG))
+        .SetReturn(NULL);
+
+    ///act
+    THANDLE(G_ON_T_OFF_DUMMY) dummy = G_ON_T_OFF_create_with_malloc_functions(4);
+
+    ///assert
+    ASSERT_IS_NULL(dummy);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+/*Tests_SRS_THANDLE_02_044: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function and return a T* ]*/
 TEST_FUNCTION(G_ON_T_OFF_create_with_extra_size_calls_global_malloc)
 {
     ///arrange
@@ -146,6 +186,7 @@ TEST_FUNCTION(G_ON_T_OFF_create_with_extra_size_calls_global_malloc)
     THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&dummy, NULL);
 }
 
+/*Tests_SRS_THANDLE_02_044: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function and return a T* ]*/
 TEST_FUNCTION(G_ON_T_OFF_create_with_extra_size_with_malloc_functions_calls_var_malloc)
 {
     ///arrange
@@ -165,6 +206,7 @@ TEST_FUNCTION(G_ON_T_OFF_create_with_extra_size_with_malloc_functions_calls_var_
     THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&dummy, NULL);
 }
 
+/*Tests_SRS_THANDLE_02_044: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function and return a T* ]*/
 TEST_FUNCTION(G_ON_T_OFF_create_from_content_flex_calls_global_malloc)
 {
     ///arrange
@@ -190,6 +232,7 @@ TEST_FUNCTION(G_ON_T_OFF_create_from_content_flex_calls_global_malloc)
     THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&origin, NULL);
 }
 
+/*Tests_SRS_THANDLE_02_044: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function and return a T* ]*/
 TEST_FUNCTION(G_ON_T_OFF_create_from_content_flex_with_malloc_functions_calls_var_malloc)
 {
     ///arrange
@@ -215,7 +258,7 @@ TEST_FUNCTION(G_ON_T_OFF_create_from_content_flex_with_malloc_functions_calls_va
     THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&origin, NULL);
 }
 
-
+/*Tests_SRS_THANDLE_02_040: [ If malloc_function from THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS is not NULL then THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS's malloc_function and free_function shall be used to allocate/free memory. ]*/
 TEST_FUNCTION(G_ON_T_ON_create_calls_type_malloc)
 {
     ///arrange
@@ -234,6 +277,25 @@ TEST_FUNCTION(G_ON_T_ON_create_calls_type_malloc)
     THANDLE_ASSIGN(G_ON_T_ON_DUMMY)(&dummy, NULL);
 }
 
+/*Tests_SRS_THANDLE_02_045: [ If allocating memory fails then THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/
+TEST_FUNCTION(G_ON_T_ON_create_calls_type_malloc)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(type_malloc(IGNORED_ARG))
+        .SetReturn(NULL);
+
+    ///act
+    THANDLE(G_ON_T_ON_DUMMY) dummy = G_ON_T_ON_create(3);
+
+    ///assert
+    ASSERT_IS_NULL(dummy);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+/*Tests_SRS_THANDLE_02_044: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function and return a T* ]*/
+/*Tests_SRS_THANDLE_02_039: [ If malloc_function is not NULL then malloc_function and free_function shall be used to allocate/free memory. ]*/
 TEST_FUNCTION(G_ON_T_ON_create_calls_var_malloc)
 {
     ///arrange
@@ -252,6 +314,24 @@ TEST_FUNCTION(G_ON_T_ON_create_calls_var_malloc)
     THANDLE_ASSIGN(G_ON_T_ON_DUMMY)(&dummy, NULL);
 }
 
+/*Tests_SRS_THANDLE_02_045: [ If allocating memory fails then THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/
+TEST_FUNCTION(G_ON_T_ON_create_calls_var_malloc_unappy_path)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(var_malloc(IGNORED_ARG))
+        .SetReturn(NULL);
+
+    ///act
+    THANDLE(G_ON_T_ON_DUMMY) dummy = G_ON_T_ON_create_with_malloc_functions(4);
+
+    ///assert
+    ASSERT_IS_NULL(dummy);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+/*Tests_SRS_THANDLE_02_044: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function and return a T* ]*/
 TEST_FUNCTION(G_ON_T_ON_create_with_extra_size_calls_type_malloc)
 {
     ///arrange
@@ -271,6 +351,7 @@ TEST_FUNCTION(G_ON_T_ON_create_with_extra_size_calls_type_malloc)
     THANDLE_ASSIGN(G_ON_T_ON_DUMMY)(&dummy, NULL);
 }
 
+/*Tests_SRS_THANDLE_02_044: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function and return a T* ]*/
 TEST_FUNCTION(G_ON_T_ON_create_with_extra_size_with_malloc_functions_calls_var_malloc)
 {
     ///arrange
@@ -290,6 +371,7 @@ TEST_FUNCTION(G_ON_T_ON_create_with_extra_size_with_malloc_functions_calls_var_m
     THANDLE_ASSIGN(G_ON_T_ON_DUMMY)(&dummy, NULL);
 }
 
+/*Tests_SRS_THANDLE_02_044: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function and return a T* ]*/
 TEST_FUNCTION(G_ON_T_ON_create_from_content_flex_calls_type_malloc)
 {
     ///arrange
@@ -315,6 +397,7 @@ TEST_FUNCTION(G_ON_T_ON_create_from_content_flex_calls_type_malloc)
     THANDLE_ASSIGN(G_ON_T_ON_DUMMY)(&origin, NULL);
 }
 
+/*Tests_SRS_THANDLE_02_044: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function and return a T* ]*/
 TEST_FUNCTION(G_ON_T_ON_create_from_content_flex_with_malloc_functions_calls_var_malloc)
 {
     ///arrange
@@ -338,6 +421,21 @@ TEST_FUNCTION(G_ON_T_ON_create_from_content_flex_with_malloc_functions_calls_var
     ///clean
     THANDLE_ASSIGN(G_ON_T_ON_DUMMY)(&dummy, NULL);
     THANDLE_ASSIGN(G_ON_T_ON_DUMMY)(&origin, NULL);
+}
+
+/*Tests_SRS_THANDLE_02_042: [ If no function can be found to allocate/free memory then THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall return NULL. ]*/
+TEST_FUNCTION(G_OFF_T_OFF_returns_NULL_when_no_function_is_specified)
+{
+    ///arrange
+    
+    //act
+    THANDLE(G_OFF_T_OFF_DUMMY) dummy = G_OFF_T_OFF_create(8);
+
+    ///assert
+    ASSERT_IS_NULL(dummy);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

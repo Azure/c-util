@@ -248,8 +248,7 @@ TEST_FUNCTION_CLEANUP(cleans)
 
 /* THANDLE_MALLOC * /
 
-/*Tests_SRS_THANDLE_02_013: [ THANDLE_MALLOC shall allocate memory. ]*/
-/*Tests_SRS_THANDLE_02_014: [ THANDLE_MALLOC shall initialize the reference count to 1, store dispose and return a T* . ]*/
+/*Tests_SRS_THANDLE_02_043: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall allocate memory. ]*/
 TEST_FUNCTION(thandle_user_create_succeeds)
 {
     ///arrange
@@ -267,8 +266,8 @@ TEST_FUNCTION(thandle_user_create_succeeds)
     THANDLE_DEC_REF(LL)(ll);
 }
 
-/*Tests_SRS_THANDLE_02_013: [ THANDLE_MALLOC shall allocate memory. ]*/
-/*Tests_SRS_THANDLE_02_015: [ If malloc fails then THANDLE_MALLOC shall fail and return NULL. ]*/
+/*Tests_SRS_THANDLE_02_043: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall allocate memory. ]*/
+/*Tests_SRS_THANDLE_02_045: [ If allocating memory fails then THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/
 TEST_FUNCTION(thandle_user_create_fails_when_thandle_malloc_fails)
 {
     ///arrange
