@@ -31,8 +31,8 @@ static void my_gballoc_free(void* ptr)
 #include "malloc_mocks.h"
 #undef ENABLE_MOCKS
 
-#include "g_on_t_off_i_off.h"
-#include "g_on_t_off_i_on.h"
+#include "g_on_t_off.h"
+#include "g_on_t_on.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
@@ -97,7 +97,7 @@ TEST_FUNCTION(g_on_t_off_i_off_create_calls_global_malloc)
     STRICT_EXPECTED_CALL(global_malloc(IGNORED_ARG));
 
     ///act
-    THANDLE(G_ON_T_OFF_I_OFF_DUMMY) dummy = G_ON_T_OFF_I_OFF_create(3);
+    THANDLE(G_ON_T_OFF_DUMMY) dummy = G_ON_T_OFF_create(3);
 
     ///assert
     ASSERT_IS_NOT_NULL(dummy);
@@ -106,7 +106,7 @@ TEST_FUNCTION(g_on_t_off_i_off_create_calls_global_malloc)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_ASSIGN(G_ON_T_OFF_I_OFF_DUMMY)(&dummy, NULL);
+    THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&dummy, NULL);
 }
 
 TEST_FUNCTION(g_on_t_off_i_off_create_calls_var_malloc)
@@ -115,7 +115,7 @@ TEST_FUNCTION(g_on_t_off_i_off_create_calls_var_malloc)
     STRICT_EXPECTED_CALL(var_malloc(IGNORED_ARG));
 
     ///act
-    THANDLE(G_ON_T_OFF_I_OFF_DUMMY) dummy = G_ON_T_OFF_I_OFF_create_with_malloc_functions(4);
+    THANDLE(G_ON_T_OFF_DUMMY) dummy = G_ON_T_OFF_create_with_malloc_functions(4);
 
     ///assert
     ASSERT_IS_NOT_NULL(dummy);
@@ -124,7 +124,7 @@ TEST_FUNCTION(g_on_t_off_i_off_create_calls_var_malloc)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_ASSIGN(G_ON_T_OFF_I_OFF_DUMMY)(&dummy, NULL);
+    THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&dummy, NULL);
 }
 
 TEST_FUNCTION(g_on_t_off_i_off_create_with_extra_size_calls_global_malloc)
@@ -133,7 +133,7 @@ TEST_FUNCTION(g_on_t_off_i_off_create_with_extra_size_calls_global_malloc)
     STRICT_EXPECTED_CALL(global_malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
 
     ///act
-    THANDLE(G_ON_T_OFF_I_OFF_DUMMY) dummy = G_ON_T_OFF_I_OFF_create_with_extra_size(5, "a");
+    THANDLE(G_ON_T_OFF_DUMMY) dummy = G_ON_T_OFF_create_with_extra_size(5, "a");
 
     ///assert
     ASSERT_IS_NOT_NULL(dummy);
@@ -143,7 +143,7 @@ TEST_FUNCTION(g_on_t_off_i_off_create_with_extra_size_calls_global_malloc)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_ASSIGN(G_ON_T_OFF_I_OFF_DUMMY)(&dummy, NULL);
+    THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&dummy, NULL);
 }
 
 TEST_FUNCTION(g_on_t_off_i_off_create_with_extra_size_with_malloc_functions_calls_var_malloc)
@@ -152,7 +152,7 @@ TEST_FUNCTION(g_on_t_off_i_off_create_with_extra_size_with_malloc_functions_call
     STRICT_EXPECTED_CALL(var_malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
 
     ///act
-    THANDLE(G_ON_T_OFF_I_OFF_DUMMY) dummy = G_ON_T_OFF_I_OFF_create_with_extra_size_with_malloc_functions(6, "ab");
+    THANDLE(G_ON_T_OFF_DUMMY) dummy = G_ON_T_OFF_create_with_extra_size_with_malloc_functions(6, "ab");
 
     ///assert
     ASSERT_IS_NOT_NULL(dummy);
@@ -162,21 +162,21 @@ TEST_FUNCTION(g_on_t_off_i_off_create_with_extra_size_with_malloc_functions_call
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_ASSIGN(G_ON_T_OFF_I_OFF_DUMMY)(&dummy, NULL);
+    THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&dummy, NULL);
 }
 
-TEST_FUNCTION(G_ON_T_OFF_I_OFF_create_from_content_flex_calls_global_malloc)
+TEST_FUNCTION(G_ON_T_OFF_create_from_content_flex_calls_global_malloc)
 {
     ///arrange
     STRICT_EXPECTED_CALL(global_malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-    THANDLE(G_ON_T_OFF_I_OFF_DUMMY) origin = G_ON_T_OFF_I_OFF_create_with_extra_size(7, "abc");
+    THANDLE(G_ON_T_OFF_DUMMY) origin = G_ON_T_OFF_create_with_extra_size(7, "abc");
     ASSERT_IS_NOT_NULL(origin);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     STRICT_EXPECTED_CALL(global_malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     
     //act
-    THANDLE(G_ON_T_OFF_I_OFF_DUMMY) dummy = G_ON_T_OFF_I_OFF_create_from_content_flex(origin);
+    THANDLE(G_ON_T_OFF_DUMMY) dummy = G_ON_T_OFF_create_from_content_flex(origin);
     
     ///assert
     ASSERT_IS_NOT_NULL(dummy);
@@ -186,22 +186,22 @@ TEST_FUNCTION(G_ON_T_OFF_I_OFF_create_from_content_flex_calls_global_malloc)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_ASSIGN(G_ON_T_OFF_I_OFF_DUMMY)(&dummy, NULL);
-    THANDLE_ASSIGN(G_ON_T_OFF_I_OFF_DUMMY)(&origin, NULL);
+    THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&dummy, NULL);
+    THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&origin, NULL);
 }
 
-TEST_FUNCTION(G_ON_T_OFF_I_OFF_create_from_content_flex_with_malloc_functions_calls_var_malloc)
+TEST_FUNCTION(G_ON_T_OFF_create_from_content_flex_with_malloc_functions_calls_var_malloc)
 {
     ///arrange
     STRICT_EXPECTED_CALL(global_malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-    THANDLE(G_ON_T_OFF_I_OFF_DUMMY) origin = G_ON_T_OFF_I_OFF_create_with_extra_size(7, "abc");
+    THANDLE(G_ON_T_OFF_DUMMY) origin = G_ON_T_OFF_create_with_extra_size(7, "abc");
     ASSERT_IS_NOT_NULL(origin);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     STRICT_EXPECTED_CALL(var_malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
 
     //act
-    THANDLE(G_ON_T_OFF_I_OFF_DUMMY) dummy = G_ON_T_OFF_I_OFF_create_from_content_flex_with_malloc_functions(origin);
+    THANDLE(G_ON_T_OFF_DUMMY) dummy = G_ON_T_OFF_create_from_content_flex_with_malloc_functions(origin);
 
     ///assert
     ASSERT_IS_NOT_NULL(dummy);
@@ -211,8 +211,8 @@ TEST_FUNCTION(G_ON_T_OFF_I_OFF_create_from_content_flex_with_malloc_functions_ca
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_ASSIGN(G_ON_T_OFF_I_OFF_DUMMY)(&dummy, NULL);
-    THANDLE_ASSIGN(G_ON_T_OFF_I_OFF_DUMMY)(&origin, NULL);
+    THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&dummy, NULL);
+    THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&origin, NULL);
 }
 
 
