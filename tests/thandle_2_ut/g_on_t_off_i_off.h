@@ -6,7 +6,7 @@
 /*
 G_ON - will use the global THANDLE_MALLOC_FUNCTION macro
 T_OFF will use THANDLE_LL_TYPE_DEFINE (will not use THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS)
-I_OFF - instance of the type will be created with THANDLE_MALLOC (will not use THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_NAME)
+I_OFF - instance of the type will be created with THANDLE_MALLOC (will not use THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS)
 */
 
 #ifdef __cplusplus
@@ -33,6 +33,11 @@ extern "C" {
     THANDLE_TYPE_DECLARE(G_ON_T_OFF_I_OFF_DUMMY);
 
 MOCKABLE_FUNCTION(, THANDLE(G_ON_T_OFF_I_OFF_DUMMY), G_ON_T_OFF_I_OFF_create, int, x);
+MOCKABLE_FUNCTION(, THANDLE(G_ON_T_OFF_I_OFF_DUMMY), G_ON_T_OFF_I_OFF_create_with_malloc_functions, int, x);
+MOCKABLE_FUNCTION(, THANDLE(G_ON_T_OFF_I_OFF_DUMMY), G_ON_T_OFF_I_OFF_create_with_extra_size, int, x, const char*, s);
+MOCKABLE_FUNCTION(, THANDLE(G_ON_T_OFF_I_OFF_DUMMY), G_ON_T_OFF_I_OFF_create_with_extra_size_with_malloc_functions, int, x, const char*, s);
+MOCKABLE_FUNCTION(, THANDLE(G_ON_T_OFF_I_OFF_DUMMY), G_ON_T_OFF_I_OFF_create_from_content, const G_ON_T_OFF_I_OFF_DUMMY*, origin)
+MOCKABLE_FUNCTION(, THANDLE(G_ON_T_OFF_I_OFF_DUMMY), G_ON_T_OFF_I_OFF_create_from_content_flex_with_malloc_functions, const G_ON_T_OFF_I_OFF_DUMMY*, origin);
 
 #ifdef __cplusplus
 }

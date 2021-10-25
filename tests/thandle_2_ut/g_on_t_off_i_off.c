@@ -10,7 +10,9 @@
 #define THANDLE_MALLOC_FUNCTION global_malloc
 #define THANDLE_MALLOC_FLEX_FUNCTION global_malloc_flex
 #define THANDLE_FREE_FUNCTION global_free
+/*QWQWQW*/
 THANDLE_TYPE_DEFINE(G_ON_T_OFF_I_OFF_DUMMY);
+/*WEWEWE*/
 #undef THANDLE_MALLOC_FUNCTION
 #undef THANDLE_MALLOC_FLEX_FUNCTION
 #undef THANDLE_FREE_FUNCTION
@@ -28,7 +30,7 @@ THANDLE(G_ON_T_OFF_I_OFF_DUMMY) G_ON_T_OFF_I_OFF_create(int x)
 }
 
 /*uses instance defined functions*/
-THANDLE(G_ON_T_OFF_I_OFF_DUMMY) G_ON_T_OFF_I_OFF_create_with_functions(int x)
+THANDLE(G_ON_T_OFF_I_OFF_DUMMY) G_ON_T_OFF_I_OFF_create_with_malloc_functions(int x)
 {
     G_ON_T_OFF_I_OFF_DUMMY* d = THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(G_ON_T_OFF_I_OFF_DUMMY)(NULL, var_malloc, var_free);
     if (d != NULL)
@@ -46,21 +48,21 @@ THANDLE(G_ON_T_OFF_I_OFF_DUMMY) G_ON_T_OFF_I_OFF_create_with_extra_size(int x, c
     if (d != NULL)
     {
         d->x = x;
-        d->n = (uint32_t)strlen(s) + 1;
-        (void)memcpy(d->s, s, d->n);
+        d->n = (uint32_t)strlen(s);
+        (void)memcpy(d->s, s, d->n+1);
     }
     return d;
 }
 
 /*uses instance*/
-THANDLE(G_ON_T_OFF_I_OFF_DUMMY) G_ON_T_OFF_I_OFF_create_with_extra_size_with_functions(int x, const char* s)
+THANDLE(G_ON_T_OFF_I_OFF_DUMMY) G_ON_T_OFF_I_OFF_create_with_extra_size_with_malloc_functions(int x, const char* s)
 {
     G_ON_T_OFF_I_OFF_DUMMY* d = THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(G_ON_T_OFF_I_OFF_DUMMY)(NULL, strlen(s) + 1, var_malloc_flex, var_free);
     if (d != NULL)
     {
         d->x = x;
-        d->n = (uint32_t)strlen(s) + 1;
-        (void)memcpy(d->s, s, d->n);
+        d->n = (uint32_t)strlen(s);
+        (void)memcpy(d->s, s, d->n+1);
     }
     return d;
 }
@@ -69,13 +71,16 @@ static int copies_dummy(G_ON_T_OFF_I_OFF_DUMMY* destination, const G_ON_T_OFF_I_
 {
     destination->x = source->x;
     destination->n = source->n;
-    (void)memcpy(destination->s, source->s, source->n);
+    if (source->n > 0)
+    {
+        (void)memcpy(destination->s, source->s, source->n);
+    }
     return 0;
 }
 
 static size_t sizeof_dummy(const G_ON_T_OFF_I_OFF_DUMMY* source)
 {
-    return sizeof(G_ON_T_OFF_I_OFF_DUMMY) + source->n;
+    return sizeof(G_ON_T_OFF_I_OFF_DUMMY) + (source->n==0)?0:(source->n+1);
 }
 
 
@@ -86,7 +91,25 @@ THANDLE(G_ON_T_OFF_I_OFF_DUMMY) G_ON_T_OFF_I_OFF_create_from_content(const G_ON_
     {
         d->x = origin->x;
         d->n = origin->n;
-        (void)memcpy(d->s, origin->s, d->n);
+        if (origin->n > 0)
+        {
+            (void)memcpy(d->s, origin->s, d->n + 1);
+        }
+    }
+    return d;
+}
+
+THANDLE(G_ON_T_OFF_I_OFF_DUMMY) G_ON_T_OFF_I_OFF_create_from_content_flex_with_malloc_functions(const G_ON_T_OFF_I_OFF_DUMMY* origin)
+{
+    G_ON_T_OFF_I_OFF_DUMMY* d = THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(G_ON_T_OFF_I_OFF_DUMMY)(origin, NULL, copies_dummy, sizeof_dummy, var_malloc_flex, var_free);
+    if (d != NULL)
+    {
+        d->x = origin->x;
+        d->n = origin->n;
+        if (origin->n > 0)
+        {
+            (void)memcpy(d->s, origin->s, d->n + 1);
+        }
     }
     return d;
 }

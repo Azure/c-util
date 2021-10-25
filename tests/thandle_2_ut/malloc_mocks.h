@@ -18,17 +18,17 @@
 extern "C" {
 #endif
 
-    MOCKABLE_FUNCTION(, void*, global_malloc, size_t, size); /*a function used #define THANDLE_MALLOC_FUNCTION*/
-    MOCKABLE_FUNCTION(, void*, global_malloc_flex, size_t, base, size_t, nmemb, size_t, size); /*a function used #define THANDLE_MALLOC_FUNCTION*/
-    MOCKABLE_FUNCTION(, void, global_free, void*, ptr); /*a function used #define THANDLE_FREE_FUNCTION*/
+    MOCKABLE_FUNCTION(, void*, global_malloc, size_t, size);                                    /*a function used #define THANDLE_MALLOC_FUNCTION*/
+    MOCKABLE_FUNCTION(, void*, global_malloc_flex, size_t, base, size_t, nmemb, size_t, size);  /*a function used #define THANDLE_MALLOC_FUNCTION*/
+    MOCKABLE_FUNCTION(, void, global_free, void*, ptr);                                         /*a function used #define THANDLE_FREE_FUNCTION*/
 
-    MOCKABLE_FUNCTION(, void*, type_malloc, size_t, size); /*a function used by the macro THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS*/
-    MOCKABLE_FUNCTION(, void*, type_malloc_flex, size_t, base, size_t, nmemb, size_t, size); /*a function used by THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS*/
-    MOCKABLE_FUNCTION(, void, type_free, void*, ptr); /*a function used by THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS*/
+    MOCKABLE_FUNCTION(, void*, type_malloc, size_t, size);                                      /*a function used by the macro THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS*/
+    MOCKABLE_FUNCTION(, void*, type_malloc_flex, size_t, base, size_t, nmemb, size_t, size);    /*a function used by THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS*/
+    MOCKABLE_FUNCTION(, void, type_free, void*, ptr);                                           /*a function used by THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS*/
 
-    MOCKABLE_FUNCTION(, void*, var_malloc, size_t, size); /*a function used by the macro THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_NAME*/
-    MOCKABLE_FUNCTION(, void*, var_malloc_flex, size_t, base, size_t, nmemb, size_t, size); /*a function used by THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_NAME*/
-    MOCKABLE_FUNCTION(, void, var_free, void*, ptr); /*a function used by THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS_NAME*/
+    MOCKABLE_FUNCTION(, void*, var_malloc, size_t, size);                                       /*a function used by the macro THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS*/
+    MOCKABLE_FUNCTION(, void*, var_malloc_flex, size_t, base, size_t, nmemb, size_t, size);     /*a function used by THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS*/
+    MOCKABLE_FUNCTION(, void, var_free, void*, ptr);                                            /*a function used by THANDLE_MALLOC_FUNCTION_WITH_MALLOC_FUNCTIONS*/
 #ifdef __cplusplus
 }
 #endif

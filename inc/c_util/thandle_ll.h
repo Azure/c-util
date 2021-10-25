@@ -246,7 +246,7 @@ static T* THANDLE_LL_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C)(void(*dispo
         }                                                                                                                                                           \
         else                                                                                                                                                        \
         {                                                                                                                                                           \
-            LogInfo("used %p to malloc+flex %p", malloc_flex_function_used, handle_impl);                                                                           \
+            LogInfo("(1)used %p to malloc_flex %p", malloc_flex_function_used, handle_impl);                                                                           \
             /*Codes_SRS_THANDLE_02_021: [ THANDLE_MALLOC_WITH_EXTRA_SIZE shall initialize the reference count to 1, store dispose and return a T*. ]*/              \
             THANDLE_DEBUG_COPY_NAME(T, handle_impl->name);                                                                                                          \
             handle_impl->dispose = dispose;                                                                                                                         \
@@ -317,6 +317,7 @@ static T* THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C)(const T* sou
             }                                                                                                                                                               \
             else                                                                                                                                                            \
             {                                                                                                                                                               \
+                LogInfo("(2)used %p to malloc_flex %p", malloc_flex_function_used, handle_impl);                                                                               \
                 if (copy==NULL)                                                                                                                                             \
                 {                                                                                                                                                           \
                     /*Codes_SRS_THANDLE_02_027: [ If copy is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX shall memcpy the content of source in allocated memory. ]*/         \
@@ -385,7 +386,7 @@ static void THANDLE_FREE(C)(T* t)                                               
     {                                                                                                                                                               \
         /*Codes_SRS_THANDLE_02_017: [ THANDLE_FREE shall free the allocated memory by THANDLE_MALLOC. ]*/                                                           \
         THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
-        LogInfo("used %p to free %p", handle_impl->free_function, handle_impl);                                                                                     \
+        LogInfo("(1) used %p to free %p", handle_impl->free_function, handle_impl);                                                                                     \
         handle_impl->free_function(handle_impl);                                                                                                                    \
     }                                                                                                                                                               \
 }                                                                                                                                                                   \
@@ -410,7 +411,7 @@ void THANDLE_DEC_REF(C)(THANDLE(T) t)                                           
             {                                                                                                                                                       \
                 handle_impl->dispose(&handle_impl->data);                                                                                                           \
             }                                                                                                                                                       \
-            LogInfo("used %p to free %p", handle_impl->free_function, handle_impl);                                                                                 \
+            LogInfo("(2)used %p to free %p", handle_impl->free_function, handle_impl);                                                                                 \
             handle_impl->free_function(handle_impl);                                                                                                                \
         }                                                                                                                                                           \
                                                                                                                                                                     \
