@@ -28,6 +28,7 @@ if(${run_unittests})
     build_test_folder(tarray_int)
     build_test_folder(thandle_tuple_array_ut)
     build_test_folder(thandle_ut)
+    build_test_folder(thandle_2_ut)
     build_test_folder(uuid_ut)
 endif()
 
