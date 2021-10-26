@@ -11,6 +11,7 @@
 #include "play_undo_op.h"
 
 #define THANDLE_MALLOC_FUNCTION malloc
+#define THANDLE_MALLOC_FLEX_FUNCTION malloc_flex
 #define THANDLE_FREE_FUNCTION free
 
 TARRAY_TYPE_DEFINE(UNDO_OP);

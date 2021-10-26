@@ -5,6 +5,9 @@
 this file exists to prove the 2 THANDLEs can be compiled in the same .h/.c file
 */
 
+#include "c_pal/gballoc_hl.h" /*THANDLE needs malloc/malloc_flex/free to exist*/
+#include "c_pal/gballoc_hl_redirect.h" 
+
 #include "c_util/thandle.h"
 
 #include "malloc_mocks.h"

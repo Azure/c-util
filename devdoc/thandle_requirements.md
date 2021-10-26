@@ -101,9 +101,9 @@ static T* THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)(T*), THANDLE_LL
 
 **SRS_THANDLE_02_040: [** If `malloc_function` from `THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS` is not `NULL` then `THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS`'s `malloc_function` and `free_function` shall be used to allocate/free memory. **]**
 
-**SRS_THANDLE_02_041: [** If `THANDLE_MALLOC_FUNCTION` is not `NULL` then `THANDLE_MALLOC_FUNCTION` / `THANDLE_FREE_FUNCTION` shall be used to allocate/free memory. **]**
+**SRS_THANDLE_02_041: [** If `THANDLE_MALLOC_FUNCTION` is not `NULL` then `THANDLE_MALLOC_FUNCTION` / `THANDLE_FREE_FUNCTION` shall be used to allocate/free memory **]**
 
-**SRS_THANDLE_02_042: [** If no function can be found to allocate/free memory then `THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS` shall return `NULL`. **]**
+**SRS_THANDLE_02_042: [** If no function can be found to allocate/free memory then `THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS` shall use `malloc` and `free`. **]**
 
 **SRS_THANDLE_02_043: [** `THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS` shall allocate memory. **]**
 
@@ -131,7 +131,7 @@ static T* THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS(C)(void(*dispose)
 
 **SRS_THANDLE_02_048: [** If `THANDLE_MALLOC_FLEX_FUNCTION` is not `NULL` then `THANDLE_MALLOC_FLEX_FUNCTION` / `THANDLE_FREE_FUNCTION` shall be used to allocate/free memory. **]**
 
-**SRS_THANDLE_02_049: [** If no function can be found to allocate/free memory then `THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS` shall fail and return `NULL`. **]**
+**SRS_THANDLE_02_049: [** If no function can be found to allocate/free memory then `THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS` shall use `malloc_flex` and `free`. **]**
 
 **SRS_THANDLE_02_050: [** `THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS` shall allocate memory. **]**
 
@@ -188,7 +188,7 @@ static T* THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(C)(const T* sou
 
 **SRS_THANDLE_02_058: [** If `THANDLE_MALLOC_FLEX_FUNCTION` is not `NULL` then `THANDLE_MALLOC_FLEX_FUNCTION` / `THANDLE_FREE_FUNCTION` shall be used to allocate/free memory. **]**
 
-**SRS_THANDLE_02_059: [** If no function can be found to allocate/free memory then `THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS` shall fail and return `NULL`. **]**
+**SRS_THANDLE_02_059: [** If no function can be found to allocate/free memory then `THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS` shall use `malloc_flex` and `free`. **]**
 
 **SRS_THANDLE_02_064: [** `THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS` shall call `get_sizeof` to get the needed size to store `T` **]**
 

@@ -13,23 +13,14 @@
 
 #include "testrunnerswitcher.h"
 
-#include "real_gballoc_hl.h"
-#include "real_gballoc_hl_renames.h"
-
-static void* my_gballoc_malloc(size_t size)
-{
-    return malloc(size);
-}
-
-static void my_gballoc_free(void* ptr)
-{
-    free(ptr);
-}
-
 #include "umock_c/umock_c.h"
 #define ENABLE_MOCKS
+#include "c_pal/gballoc_hl.h" /*THANDLE needs malloc/malloc_flex/free to exist*/
+#include "c_pal/gballoc_hl_redirect.h" 
 #include "malloc_mocks.h"
 #undef ENABLE_MOCKS
+
+#include "real_gballoc_hl.h"
 
 #include "g_off_t_off.h"
 #include "g_on_t_off.h"
@@ -64,6 +55,8 @@ TEST_SUITE_INITIALIZE(it_does_something)
     REGISTER_GLOBAL_MOCK_HOOK(var_malloc, real_gballoc_hl_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(var_malloc_flex, real_gballoc_hl_malloc_flex);
     REGISTER_GLOBAL_MOCK_HOOK(var_free, real_gballoc_hl_free);
+
+    REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
 
     umock_c_init(on_umock_c_error);
 }
@@ -426,34 +419,45 @@ TEST_FUNCTION(G_ON_T_ON_create_from_content_flex_with_malloc_functions_calls_var
     THANDLE_ASSIGN(G_ON_T_ON_DUMMY)(&origin, NULL);
 }
 
-/*Tests_SRS_THANDLE_02_042: [ If no function can be found to allocate/free memory then THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall return NULL. ]*/
-TEST_FUNCTION(G_OFF_T_OFF_returns_NULL_when_no_function_is_specified_1)
+/*Tests_SRS_THANDLE_02_042: [ If no function can be found to allocate/free memory then THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall use malloc and free. ]*/
+TEST_FUNCTION(G_OFF_T_OFF_uses_malloc_when_no_function_is_specified_1)
 {
     ///arrange
     
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+
     //act
     THANDLE(G_OFF_T_OFF_DUMMY) dummy = G_OFF_T_OFF_create(8);
 
     ///assert
-    ASSERT_IS_NULL(dummy);
+    ASSERT_IS_NOT_NULL(dummy);
+    ASSERT_ARE_EQUAL(int, 8, dummy->x);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
+    THANDLE_ASSIGN(G_OFF_T_OFF_DUMMY)(&dummy, NULL);
 }
 
-/*Tests_SRS_THANDLE_02_049: [ If no function can be found to allocate/free memory then THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/
-TEST_FUNCTION(G_OFF_T_OFF_returns_NULL_when_no_function_is_specified_2)
+/*Tests_SRS_THANDLE_02_049: [ If no function can be found to allocate/free memory then THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS shall use malloc_flex and free. ]*/
+TEST_FUNCTION(G_OFF_T_OFF_uses_malloc_flex_when_no_function_is_specified_2)
 {
     ///arrange
+
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+
 
     //act
     THANDLE(G_OFF_T_OFF_DUMMY) dummy = G_OFF_T_OFF_create_with_extra_size(9, "abcde");
 
     ///assert
-    ASSERT_IS_NULL(dummy);
+    ASSERT_IS_NOT_NULL(dummy);
+    ASSERT_ARE_EQUAL(int, 9, dummy->x);
+    ASSERT_ARE_EQUAL(uint32_t, 5, dummy->n);
+    ASSERT_ARE_EQUAL(char_ptr, "abcde", dummy->s);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
+    THANDLE_ASSIGN(G_OFF_T_OFF_DUMMY)(&dummy, NULL);
 }
 
 /*Tests_SRS_THANDLE_02_054: [ If get_sizeof is NULL then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/
@@ -477,7 +481,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS_with_get_si
 }
 
 /*Tests_SRS_THANDLE_02_059: [ If no function can be found to allocate/free memory then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/
-TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS_with_no_malloc_functions_fails)
+TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS_with_no_explicit_malloc_functions_calls_malloc_flex)
 {
     ///arrange
     STRICT_EXPECTED_CALL(var_malloc(IGNORED_ARG));
@@ -485,15 +489,19 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS_with_no_mal
     ASSERT_IS_NOT_NULL(origin);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+
     //act
     THANDLE(G_OFF_T_OFF_DUMMY) dummy = G_OFF_T_OFF_create_from_content_flex(origin);
 
     ///assert
-    ASSERT_IS_NULL(dummy);
+    ASSERT_IS_NOT_NULL(dummy);
+    ASSERT_ARE_EQUAL(int, 9, dummy->x);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
     THANDLE_ASSIGN(G_OFF_T_OFF_DUMMY)(&origin, NULL);
+    THANDLE_ASSIGN(G_OFF_T_OFF_DUMMY)(&dummy, NULL);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
