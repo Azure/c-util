@@ -46,6 +46,6 @@ MOCKABLE_FUNCTION(, void, rc_string_array_destroy, RC_STRING_ARRAY*, rc_string_a
 
 **SRS_RC_STRING_ARRAY_42_004: [** If `rc_string_array` is `NULL` then `rc_string_array_destroy` shall fail and return. **]**
 
-**SRS_RC_STRING_ARRAY_42_005: [** `rc_string_array_destroy` shall iterate over all of the elements in `string_array` and call `THANDLE_DEC_REF(RC_STRING)`. **]**
+**SRS_RC_STRING_ARRAY_42_005: [** `rc_string_array_destroy` shall iterate over all of the elements in `string_array` and call `THANDLE_ASSIGN(RC_STRING)` with `NULL`. **]**
 
 **SRS_RC_STRING_ARRAY_42_006: [** `rc_string_array_destroy` shall free the memory allocated in `rc_string_array`. **]**

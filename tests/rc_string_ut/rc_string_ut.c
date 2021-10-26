@@ -149,7 +149,7 @@ TEST_FUNCTION(rc_string_create_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, "grogu", rc_string->string);
 
     // cleanup
-    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 }
 
 /* Tests_SRS_RC_STRING_01_002: [ Otherwise, rc_string_create shall determine the length of string. ]*/
@@ -170,7 +170,7 @@ TEST_FUNCTION(rc_string_create_with_empty_string_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, "", rc_string->string);
 
     // cleanup
-    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 }
 
 /* Tests_SRS_RC_STRING_01_006: [ If any error occurs, rc_string_create shall fail and return NULL. ]*/
@@ -235,7 +235,7 @@ TEST_FUNCTION(rc_string_create_with_move_memory_succeeds)
     ASSERT_ARE_EQUAL(void_ptr, test_string, rc_string->string);
 
     // cleanup
-    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 }
 
 /* Tests_SRS_RC_STRING_01_008: [ Otherwise, rc_string_create_with_move_memory shall allocate memory for the THANDLE(RC_STRING). ]*/
@@ -261,7 +261,7 @@ TEST_FUNCTION(rc_string_create_with_move_memory_with_empty_string_succeeds)
     ASSERT_ARE_EQUAL(void_ptr, test_string, rc_string->string);
 
     // cleanup
-    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 }
 
 /* Tests_SRS_RC_STRING_01_020: [ When the THANDLE(RC_STRING) reference count reaches 0, string shall be free with free. ]*/
@@ -282,7 +282,7 @@ TEST_FUNCTION(a_string_created_with_rc_string_create_with_move_memory_frees_the_
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
-    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -374,7 +374,7 @@ TEST_FUNCTION(rc_string_create_with_custom_free_succeeds)
     ASSERT_ARE_EQUAL(void_ptr, test_string, rc_string->string);
 
     // cleanup
-    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 }
 
 /* Tests_SRS_RC_STRING_01_015: [ rc_string_create_with_custom_free shall allocate memory for the THANDLE(RC_STRING). ]*/
@@ -401,7 +401,7 @@ TEST_FUNCTION(rc_string_create_with_custom_free_with_empty_string_succeeds)
     ASSERT_ARE_EQUAL(void_ptr, test_string, rc_string->string);
 
     // cleanup
-    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 }
 
 /* Tests_SRS_RC_STRING_01_014: [ free_func_context shall be allowed to be NULL. ]*/
@@ -426,7 +426,7 @@ TEST_FUNCTION(rc_string_create_with_custom_free_with_do_nothing_free_and_NULL_co
     ASSERT_ARE_EQUAL(void_ptr, test_string, rc_string->string);
 
     // cleanup
-    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
     // because the free function does nothing, we need to free this here
     test_free_func(test_string);
 }
@@ -483,7 +483,7 @@ TEST_FUNCTION(when_reference_count_reaches_0_the_custom_free_function_is_called)
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
-    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -508,7 +508,7 @@ TEST_FUNCTION(when_reference_count_reaches_0_the_custom_free_function_is_called_
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
-    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -551,8 +551,8 @@ TEST_FUNCTION(rc_string_recreate_succeeds_1)
     ASSERT_ARE_EQUAL(char_ptr, source, same->string);
 
     ///clean
-    THANDLE_DEC_REF(RC_STRING)(rc_string);
-    THANDLE_DEC_REF(RC_STRING)(same);
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
+    THANDLE_ASSIGN(RC_STRING)(&same, NULL);
 }
 
 /*Tests_SRS_RC_STRING_02_002: [ rc_string_recreate shall perform same steps as rc_string_create to return a THANDLE(RC_STRING) with the same content as source. ]*/
@@ -578,7 +578,7 @@ TEST_FUNCTION(rc_string_recreate_fails_when_malloc_fails)
     ASSERT_ARE_EQUAL(char_ptr, source, rc_string->string);
 
     ///clean
-    THANDLE_DEC_REF(RC_STRING)(rc_string);
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 }
 
 /*Tests_SRS_RC_STRING_02_002: [ rc_string_recreate shall perform same steps as rc_string_create to return a THANDLE(RC_STRING) with the same content as source. ]*/
@@ -593,7 +593,8 @@ TEST_FUNCTION(rc_string_recreate_succeeds_2)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(char_ptr, source, rc_string->string);
 
-    THANDLE_INC_REF(RC_STRING)(rc_string);
+    THANDLE(RC_STRING) rc_string_2 = NULL;
+    THANDLE_INITIALIZE(RC_STRING)(&rc_string_2, rc_string);
 
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
@@ -606,9 +607,9 @@ TEST_FUNCTION(rc_string_recreate_succeeds_2)
     ASSERT_ARE_EQUAL(char_ptr, same->string, rc_string->string);
 
     ///clean
-    THANDLE_DEC_REF(RC_STRING)(rc_string);
-    THANDLE_DEC_REF(RC_STRING)(rc_string);
-    THANDLE_DEC_REF(RC_STRING)(same);
+    THANDLE_ASSIGN(RC_STRING)(&rc_string_2, NULL);
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
+    THANDLE_ASSIGN(RC_STRING)(&same, NULL);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
