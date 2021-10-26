@@ -1,7 +1,7 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-set(theseTestsName thandle_2_ut) #these tests are crafted to only prove the usage of different patterns for memory allocation (global. at type define time, at instantiation time)
+set(theseTestsName thandle_2_ut) #these tests are crafted to only prove the usage of different patterns for memory allocation (global, at type define time, at instantiation time)
 
 set(${theseTestsName}_test_files
 ${theseTestsName}.c
