@@ -3,6 +3,9 @@
 
 #include <stdlib.h>
 
+#include "c_pal/gballoc_hl.h" /*THANDLE needs malloc/malloc_flex/free to exist*/
+#include "c_pal/gballoc_hl_redirect.h"
+
 #include "c_util/thandle.h"
 
 #include "malloc_mocks.h"
