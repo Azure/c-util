@@ -17,8 +17,6 @@ The above 3 concerns can be addressed by the user or maybe by an implementation 
 Because TARRAY is kind of THANDLE, all of `THANDLE`'s APIs apply to `TARRAY`. For convenience the following macros are provided out of the box with the same semantics as those of `THANDLE`'s:
 `TARRAY_INITIALIZE(T)`
 `TARRAY_ASSIGN(T)`
-`TARRAY_DEC_REF(T)`
-`TARRAY_INC_REF(T)`
 `TARRAY_MOVE(T)`
 `TARRAY_INITIALIZE_MOVE(T)`
 

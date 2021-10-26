@@ -179,7 +179,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, EXTERNAL_COMMAND_RESULT, external_command_helper_e
             {
                 for (uint32_t i = 0; i < line_count; ++i)
                 {
-                    THANDLE_DEC_REF(RC_STRING)(line_array[i]);
+                    THANDLE_ASSIGN(RC_STRING)(&line_array[i], NULL);
                 }
                 free((void*)line_array);
             }

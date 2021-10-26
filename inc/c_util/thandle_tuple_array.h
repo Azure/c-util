@@ -83,7 +83,7 @@ extern "C" {
 #define THANDLE_TUPLE_ARRAY_FREE_MEMBER(type, name) \
     if (tuple_array->tuple_array[i].name != NULL) \
     { \
-        THANDLE_DEC_REF(type)(tuple_array->tuple_array[i].name); \
+        THANDLE_ASSIGN(type)(&tuple_array->tuple_array[i].name, NULL); \
     }
 
 #define IMPLEMENT_THANDLE_TUPLE_ARRAY_DESTROY(name, ...) \
@@ -97,7 +97,7 @@ extern "C" {
         } \
         else \
         { \
-            /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_007: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall iterate over all of the elements in tuple_array and call THANDLE_DEC_REF(type) for each field. ]*/ \
+            /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_007: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall iterate over all of the elements in tuple_array and call THANDLE_ASSIGN(type) with NULL for each field. ]*/ \
             for (uint32_t i = 0; i < tuple_array->count; ++i) \
             { \
                 MU_FOR_EACH_2(THANDLE_TUPLE_ARRAY_FREE_MEMBER, __VA_ARGS__) \

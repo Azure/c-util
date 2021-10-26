@@ -79,6 +79,6 @@ MOCKABLE_FUNCTION(, void, THANDLE_TUPLE_ARRAY_DESTROY(name), THANDLE_TUPLE_ARRAY
 
 **SRS_THANDLE_TUPLE_ARRAY_42_006: [** If `tuple_array` is `NULL` then `THANDLE_TUPLE_ARRAY_DESTROY(name)` shall fail and return. **]**
 
-**SRS_THANDLE_TUPLE_ARRAY_42_007: [** `THANDLE_TUPLE_ARRAY_DESTROY(name)` shall iterate over all of the elements in `tuple_array` and call `THANDLE_DEC_REF(type)` for each field. **]**
+**SRS_THANDLE_TUPLE_ARRAY_42_007: [** `THANDLE_TUPLE_ARRAY_DESTROY(name)` shall iterate over all of the elements in `tuple_array` and call `THANDLE_ASSIGN(type)` with `NULL` for each field. **]**
 
 **SRS_THANDLE_TUPLE_ARRAY_42_008: [** `THANDLE_TUPLE_ARRAY_DESTROY(name)` shall free the memory allocated in `tuple_array`. **]**

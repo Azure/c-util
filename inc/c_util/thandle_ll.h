@@ -40,7 +40,7 @@
 #define THANDLE_MAX_NAME_CHAR 32 /*maximum number of characters in a captured THANDLE type name*/
 
 /*THANDLE carries a name field on debug builds only. Can be inspected with INSPECT function here in a debug environment.*/
-#if defined(_DEBUG) || defined(DEBUG) 
+#if defined(_DEBUG) || defined(DEBUG)
 #define THANDLE_DEBUG_EXTRA_FIELDS_NAME char, name[THANDLE_MAX_NAME_CHAR],
 /*destination is intended to be the field "name" from above*/
 #define THANDLE_DEBUG_COPY_NAME(T, destination) (void)snprintf(destination, THANDLE_MAX_NAME_CHAR, "%s", MU_TOSTRING(T));
@@ -54,7 +54,7 @@
     volatile_atomic int32_t, refCount, \
     THANDLE_LL_FREE_FUNCTION_POINTER_T, free_function, \
     void(*dispose)(type*) , \
-    
+
 
 /*thandle_ll_malloc field in the structure below is the name of the function that allocates memory (has the same signature as malloc from stdlib*/
 /*thandle_ll_malloc can come from 3 sources from lowest to highest priority:
@@ -406,45 +406,25 @@ static void THANDLE_FREE(C)(T* t)                                               
 
 /*given a previous type T, this introduces THANDLE_DEC_REF macro to decrement the reference count*/
 #define THANDLE_LL_DEC_REF_MACRO(C, T) \
-void THANDLE_DEC_REF(C)(THANDLE(T) t)                                                                                                                               \
+static void THANDLE_DEC_REF(C)(THANDLE(T) t)                                                                                                                               \
 {                                                                                                                                                                   \
-    /*Codes_SRS_THANDLE_02_001: [ If t is NULL then THANDLE_DEC_REF shall return. ]*/                                                                               \
-    if (t == NULL)                                                                                                                                                  \
-    {                                                                                                                                                               \
-        LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") t=%p", t);                                                                                           \
-    }                                                                                                                                                               \
-    else                                                                                                                                                            \
-    {                                                                                                                                                               \
-        /*Codes_SRS_THANDLE_02_002: [ THANDLE_DEC_REF shall decrement the ref count of t. ]*/                                                                       \
-        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
-        if (interlocked_decrement(&handle_impl->refCount) == 0)                                                                                                     \
-        {                                                                                                                                                           \
-            /*Codes_SRS_THANDLE_02_003: [ If the ref count of t reaches 0 then THANDLE_DEC_REF shall call dispose (if not NULL) and free the used memory. ]*/       \
-            if (handle_impl->dispose!=NULL)                                                                                                                         \
-            {                                                                                                                                                       \
-                handle_impl->dispose(&handle_impl->data);                                                                                                           \
-            }                                                                                                                                                       \
-            handle_impl->free_function(handle_impl);                                                                                                                \
-        }                                                                                                                                                           \
-                                                                                                                                                                    \
-    }                                                                                                                                                               \
+    THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
+    if (interlocked_decrement(&handle_impl->refCount) == 0)                                                                                                     \
+    {                                                                                                                                                           \
+        if (handle_impl->dispose!=NULL)                                                                                                                         \
+        {                                                                                                                                                       \
+            handle_impl->dispose(&handle_impl->data);                                                                                                           \
+        }                                                                                                                                                       \
+        handle_impl->free_function(handle_impl);                                                                                                                \
+    }                                                                                                                                                           \
 }                                                                                                                                                                   \
 
-/*given a previous type T, this introduces THANDLE_DEC_REF macro to increment the reference count*/
+/*given a previous type T, this introduces THANDLE_INC_REF macro to increment the reference count*/
 #define THANDLE_LL_INC_REF_MACRO(C, T)                                                                                                                              \
-void THANDLE_INC_REF(C)(THANDLE(T) t)                                                                                                                               \
+static void THANDLE_INC_REF(C)(THANDLE(T) t)                                                                                                                               \
 {                                                                                                                                                                   \
-    /*Codes_SRS_THANDLE_02_004: [ If t is NULL then THANDLE_INC_REF shall return. ]*/                                                                               \
-    if (t == NULL)                                                                                                                                                  \
-    {                                                                                                                                                               \
-        LogError("invalid argument THANDLE(" MU_TOSTRING(T) ") t=%p", t);                                                                                           \
-    }                                                                                                                                                               \
-    else                                                                                                                                                            \
-    {                                                                                                                                                               \
-        /*Codes_SRS_THANDLE_02_005: [ THANDLE_INC_REF shall increment the reference count of t. ]*/                                                                 \
-        THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
-        (void)interlocked_increment(&handle_impl->refCount);                                                                                                        \
-    }                                                                                                                                                               \
+    THANDLE_WRAPPER_TYPE_NAME(T)* handle_impl = CONTAINING_RECORD(t, THANDLE_WRAPPER_TYPE_NAME(T), data);                                                       \
+    (void)interlocked_increment(&handle_impl->refCount);                                                                                                        \
 }                                                                                                                                                                   \
 
 /*given a previous type T, this introduces THANDLE_ASSIGN macro to assign a handle to another handle*/
@@ -637,8 +617,6 @@ void THANDLE_INITIALIZE_MOVE(C)(THANDLE(T) * t1, THANDLE(T) * t2)               
 /*introduces an incomplete type based on a MU_DEFINE_STRUCT(T...) previously defined;*/                               \
 #define THANDLE_LL_TYPE_DECLARE(C,T)                                                                                  \
     THANDLE_MACRO(T);                                                                                                 \
-    MOCKABLE_FUNCTION(, void, THANDLE_DEC_REF(C), THANDLE(T), t);                                                     \
-    MOCKABLE_FUNCTION(, void, THANDLE_INC_REF(C), THANDLE(T), t);                                                     \
     MOCKABLE_FUNCTION(, void, THANDLE_ASSIGN(C), THANDLE(T) *, t1, THANDLE(T), t2 );                                  \
     MOCKABLE_FUNCTION(, void, THANDLE_INITIALIZE(C), THANDLE(T) *, t1, THANDLE(T), t2 );                              \
     MOCKABLE_FUNCTION(, void, THANDLE_MOVE(C), THANDLE(T) *, t1, THANDLE(T)*, t2 );                                   \

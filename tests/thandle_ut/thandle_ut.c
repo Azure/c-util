@@ -263,7 +263,7 @@ TEST_FUNCTION(thandle_user_create_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
-    THANDLE_DEC_REF(LL)(ll);
+    THANDLE_ASSIGN(LL)(&ll, NULL);
 }
 
 /*Tests_SRS_THANDLE_02_043: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall allocate memory. ]*/
@@ -302,7 +302,7 @@ TEST_FUNCTION(thandle_flex_user_create_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
-    THANDLE_DEC_REF(LL_FLEX)(ll);
+    THANDLE_ASSIGN(LL_FLEX)(&ll, NULL);
 }
 
 /*Tests_SRS_THANDLE_02_052: [ If allocating memory fails then THANDLE_MALLOC_WITH_EXTRA_SIZE_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/
@@ -320,86 +320,6 @@ TEST_FUNCTION(thandle_flex_user_create_fails_when_thandle_malloc_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
-}
-
-/* THANDLE_DEC_REF */
-
-/*Tests_SRS_THANDLE_02_001: [ If t is NULL then THANDLE_DEC_REF shall return. ]*/
-TEST_FUNCTION(THANDLE_DEC_REF_with_t_NULL_returns)
-{
-    ///arrange
-    THANDLE(LL) ll = NULL;
-
-    ///act
-    THANDLE_DEC_REF(LL)(ll);
-
-    ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///cleanup
-}
-
-/*Tests_SRS_THANDLE_02_002: [ THANDLE_DEC_REF shall decrement the ref count of t. ]*/
-TEST_FUNCTION(THANDLE_DEC_REF_decrements)
-{
-    ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
-    THANDLE(LL) ll = ll_create(TEST_A, TEST_S);
-    ASSERT_IS_NOT_NULL(ll);
-    THANDLE_INC_REF(LL)(ll); /*intentionally setting the ref count to 2*/
-
-    umock_c_reset_all_calls();
-
-    ///act
-    THANDLE_DEC_REF(LL)(ll);
-
-    ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///cleanup
-    THANDLE_DEC_REF(LL)(ll);
-}
-
-/*Tests_SRS_THANDLE_02_003: [ If the ref count of t reaches 0 then THANDLE_DEC_REF shall call dispose (if not NULL) and free the used memory. ]*/
-/*Tests_SRS_THANDLE_02_005: [ THANDLE_INC_REF shall increment the reference count of t. ]*/
-TEST_FUNCTION(THANDLE_DEC_REF_decrements_and_frees_resources)
-{
-    ///arrange
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*this is THANDLE_MALLOC*/
-    STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S_DEFINE))); /*this is the copy of s*/
-    THANDLE(LL) ll = ll_create(TEST_A, TEST_S);
-    ASSERT_IS_NOT_NULL(ll);
-    THANDLE_INC_REF(LL)(ll); /*intentionally setting the ref count to 2*/
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is the copy of s that is freed*/
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is THANDLE_MALLOC's memory that gets freed*/
-
-    ///act
-    THANDLE_DEC_REF(LL)(ll);
-    THANDLE_DEC_REF(LL)(ll); /*gets to 0*/
-
-    ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///cleanup - nothing
-}
-
-/* THANDLE_INC_REF */
-
-/*Tests_SRS_THANDLE_02_004: [ If t is NULL then THANDLE_INC_REF shall return. ]*/
-TEST_FUNCTION(THANDLE_INC_REF_with_t_NULL_returns)
-{
-    ///arrange
-
-    ///act
-    THANDLE_INC_REF(LL)(NULL);
-
-    ///assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///cleanup - nothing
 }
 
 /* THANDLE_ASSIGN */
@@ -445,7 +365,7 @@ TEST_FUNCTION(THANDLE_ASSIGN_with_t1_NULL_t2_not_NULL)
 
     THANDLE(LL) t1 = NULL;
     umock_c_reset_all_calls();
-    
+
     ///act
     THANDLE_ASSIGN(LL)(&t1, t2);
 
@@ -454,8 +374,8 @@ TEST_FUNCTION(THANDLE_ASSIGN_with_t1_NULL_t2_not_NULL)
     ASSERT_IS_TRUE(t1 == t2);
 
     ///cleanup
-    THANDLE_DEC_REF(LL)(t1);
-    THANDLE_DEC_REF(LL)(t2);
+    THANDLE_ASSIGN(LL)(&t1, NULL);
+    THANDLE_ASSIGN(LL)(&t2, NULL);
 }
 
 /*Tests_SRS_THANDLE_02_009: [ If *t1 is not NULL and t2 is NULL then THANDLE_ASSIGN shall decrement the reference count of *t1 and store NULL in *t1. ]*/
@@ -496,7 +416,7 @@ TEST_FUNCTION(THANDLE_ASSIGN_with_t1_not_NULL_t2_not_NULL)
     STRICT_EXPECTED_CALL(malloc(sizeof(TEST_S2_DEFINE))); /*this is the copy of s2*/
     THANDLE(LL) t2 = ll_create(TEST_A, TEST_S2);
     ASSERT_IS_NOT_NULL(t2);
-   
+
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is the copy of s that goes away*/
@@ -510,8 +430,8 @@ TEST_FUNCTION(THANDLE_ASSIGN_with_t1_not_NULL_t2_not_NULL)
     ASSERT_IS_TRUE(t1 == t2);
 
     ///cleanup
-    THANDLE_DEC_REF(LL)(t1);
-    THANDLE_DEC_REF(LL)(t2);
+    THANDLE_ASSIGN(LL)(&t1, NULL);
+    THANDLE_ASSIGN(LL)(&t2, NULL);
 }
 
 /* THANDLE_INITIALIZE */
@@ -533,7 +453,7 @@ TEST_FUNCTION(THANDLE_INITIALIZE_with_lvalue_NULL_returns)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
-    THANDLE_DEC_REF(LL)(t2);
+    THANDLE_ASSIGN(LL)(&t2, NULL);
 }
 
 /*Tests_SRS_THANDLE_02_018: [ If rvalue is NULL then THANDLE_INITIALIZE shall store NULL in *lvalue. ]*/
@@ -574,8 +494,8 @@ TEST_FUNCTION(THANDLE_INITIALIZE_with_lvalue_non_NULL_succeeds)
     ASSERT_ARE_EQUAL(void_ptr, t2, t1);
 
     ///cleanup
-    THANDLE_DEC_REF(LL)(t1);
-    THANDLE_DEC_REF(LL)(t2);
+    THANDLE_ASSIGN(LL)(&t1, NULL);
+    THANDLE_ASSIGN(LL)(&t2, NULL);
 }
 
 /* THANDLE_FREE */
@@ -594,7 +514,7 @@ TEST_FUNCTION(THANDLE_FREE_frees_memory)
     STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*this is THANDLE_MALLOC's memory that gets freed*/
     ///act
 
-    THANDLE_DEC_REF(LL)(t1);
+    THANDLE_ASSIGN(LL)(&t1, NULL);
 
     ///assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -627,7 +547,7 @@ TEST_FUNCTION(THANDLE_GET_T_with_t_NULL_returns_NULL)
     ///assert
     ASSERT_IS_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    
+
     ///cleanup
 }
 
@@ -650,7 +570,7 @@ TEST_FUNCTION(THANDLE_GET_T_with_t_not_NULL_returns_original_pointer) /*direct t
     ASSERT_ARE_EQUAL(int, TEST_A + 5, incremented);
 
     ///cleanup
-    THANDLE_DEC_REF(LL)(ll);
+    THANDLE_ASSIGN(LL)(&ll, NULL);
 }
 
 /*returns a pointer to an array of 2 THANDLE(LL)*/
@@ -669,15 +589,15 @@ TEST_FUNCTION(THANDLE_T_can_build_an_array)
     THANDLE(LL) temp = ll_create(1, "4");
     ASSERT_IS_NOT_NULL(temp);
     THANDLE_INITIALIZE(LL)(&arr[0], temp);
-    THANDLE_DEC_REF(LL)(temp);
+    THANDLE_ASSIGN(LL)(&temp, NULL);
 
     THANDLE(LL) temp2 = ll_create(2, "44");
     ASSERT_IS_NOT_NULL(temp2);
     THANDLE_INITIALIZE(LL)(&arr[1], temp2);
-    THANDLE_DEC_REF(LL)(temp2);
+    THANDLE_ASSIGN(LL)(&temp2, NULL);
 
-    THANDLE_DEC_REF(LL)(arr[0]);
-    THANDLE_DEC_REF(LL)(arr[1]);
+    THANDLE_ASSIGN(LL)(&arr[0], NULL);
+    THANDLE_ASSIGN(LL)(&arr[1], NULL);
 
     my_gballoc_free((void*)arr);
 }
@@ -717,9 +637,9 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_with_copy_NULL_succeeds)
     ASSERT_ARE_EQUAL(int, a_b.a, result->a);
     ASSERT_ARE_EQUAL(int, a_b.b, result->b);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    
+
     ///clean
-    THANDLE_DEC_REF(A_B)(result);
+    THANDLE_ASSIGN(A_B)(&result, NULL);
 }
 
 /*Tests_SRS_THANDLE_02_060: [ THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall allocate memory. ]*/
@@ -747,7 +667,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_DISPOSE_with_non_NULL_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_DEC_REF(A_S)(result);
+    THANDLE_ASSIGN(A_S)(&result, NULL);
 }
 
 /*Tests_SRS_THANDLE_02_063: [ If there are any failures then THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall fail and return NULL. ]*/
@@ -827,7 +747,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof)
 
     ///clean
     my_gballoc_free(source);
-    THANDLE_DEC_REF(A_FLEX)(copy);
+    THANDLE_ASSIGN(A_FLEX)(&copy, NULL);
 }
 
 /*Tests_SRS_THANDLE_02_064: [ THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS shall call get_sizeof to get the needed size to store T ]*/
@@ -865,7 +785,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof_2)
 
     ///clean
     my_gballoc_free(source);
-    THANDLE_DEC_REF(A_S_FLEX)(copy);
+    THANDLE_ASSIGN(A_S_FLEX)(&copy, NULL);
 }
 
 /*Tests_SRS_THANDLE_02_033: [ If t1 is NULL then THANDLE_MOVE shall return. ]*/
@@ -885,7 +805,7 @@ TEST_FUNCTION(THANDLE_MOVE_with_t1_NULL_returns)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_DEC_REF(LL)(ll2);
+    THANDLE_ASSIGN(LL)(&ll2, NULL);
 }
 
 /*Tests_SRS_THANDLE_02_034: [ If t2 is NULL then THANDLE_MOVE shall return. ]*/
@@ -905,7 +825,7 @@ TEST_FUNCTION(THANDLE_MOVE_with_t2_NULL_returns)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_DEC_REF(LL)(ll1);
+    THANDLE_ASSIGN(LL)(&ll1, NULL);
 }
 
 /*Tests_SRS_THANDLE_02_035: [ If *t1 is NULL and *t2 is NULL then THANDLE_MOVE shall return. ]*/
@@ -945,7 +865,7 @@ TEST_FUNCTION(THANDLE_MOVE_with_star_t1_NULL_and_star_t2_not_NULL)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_DEC_REF(LL)(ll1);
+    THANDLE_ASSIGN(LL)(&ll1, NULL);
 }
 
 /*Tests_SRS_THANDLE_02_037: [ If *t1 is not NULL and *t2 is NULL then THANDLE_MOVE shall THANDLE_DEC_REF *t1, set *t1 to NULL and return. ]*/
@@ -1002,7 +922,7 @@ TEST_FUNCTION(THANDLE_MOVE_with_star_t1_not_NULL_and_star_t2_not_NULL)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_DEC_REF(LL)(ll1);
+    THANDLE_ASSIGN(LL)(&ll1, NULL);
 }
 
 /* THANDLE_INITIALIZE_MOVE_MACRO */
@@ -1024,7 +944,7 @@ TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_t1_NULL_returns)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_DEC_REF(LL)(ll2);
+    THANDLE_ASSIGN(LL)(&ll2, NULL);
 }
 
 /*Tests_SRS_THANDLE_01_002: [ If t2 is NULL then THANDLE_INITIALIZE_MOVE shall return. ]*/
@@ -1044,7 +964,7 @@ TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_t2_NULL_returns)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_DEC_REF(LL)(ll1);
+    THANDLE_ASSIGN(LL)(&ll1, NULL);
 }
 
 /*Tests_SRS_THANDLE_01_003: [ If *t2 is NULL then THANDLE_INITIALIZE_MOVE shall set *t1 to NULL and return. ]*/
@@ -1084,7 +1004,7 @@ TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_star_t1_NULL_and_star_t2_not_NULL)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_DEC_REF(LL)(ll1);
+    THANDLE_ASSIGN(LL)(&ll1, NULL);
 }
 
 /*Tests_SRS_THANDLE_01_003: [ If *t2 is NULL then THANDLE_INITIALIZE_MOVE shall set *t1 to NULL and return. ]*/
@@ -1135,7 +1055,7 @@ TEST_FUNCTION(THANDLE_INITIALIZE_MOVE_with_star_t1_not_NULL_and_star_t2_not_NULL
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
-    THANDLE_DEC_REF(LL)(ll1);
+    THANDLE_ASSIGN(LL)(&ll1, NULL);
 }
 
 #if defined(_DEBUG) || defined (DEBUG)
@@ -1156,7 +1076,7 @@ TEST_FUNCTION(THANDLE_can_be_build_from_a_33_character_type)
     ASSERT_ARE_EQUAL(char_ptr, "LL34567890123456789012345678901", name); /*note how the name comes truncated due to only 32 characters existing in name. Of which 1 is '\0', the last one  */
 
     ///clean
-    THANDLE_DEC_REF(LL3456789012345678901234567890123)(ll1);
+    THANDLE_ASSIGN(LL3456789012345678901234567890123)(&ll1, NULL);
 }
 #endif
 

@@ -36,8 +36,6 @@ typedef struct TARRAY_STRUCT_TYPE_NAME_TAG(T)                                   
 /*the below are just shortcuts of THANDLE's public ones*/
 #define TARRAY_LL_INITIALIZE(T) THANDLE_INITIALIZE(TARRAY_TYPEDEF_NAME(T))
 #define TARRAY_LL_ASSIGN(T) THANDLE_ASSIGN(TARRAY_TYPEDEF_NAME(T))
-#define TARRAY_LL_DEC_REF(T) THANDLE_DEC_REF(TARRAY_TYPEDEF_NAME(T))
-#define TARRAY_LL_INC_REF(T) THANDLE_INC_REF(TARRAY_TYPEDEF_NAME(T))
 #define TARRAY_LL_MOVE(T) THANDLE_MOVE(TARRAY_TYPEDEF_NAME(T))
 #define TARRAY_LL_INITIALIZE_MOVE(T) THANDLE_INITIALIZE_MOVE(TARRAY_TYPEDEF_NAME(T))
 
@@ -49,7 +47,7 @@ typedef struct TARRAY_STRUCT_TYPE_NAME_TAG(T)                                   
 #define TARRAY_LL_CREATE_DECLARE(C, T) MOCKABLE_FUNCTION(, TARRAY_LL(T), TARRAY_LL_CREATE(C));
 
 /*introduces a name for the function that free's a TARRAY when it's ref count got to 0*/
-#define TARRAY_LL_FREE_NAME(C) MU_C2(TARRAY_LL_FREE_, C) 
+#define TARRAY_LL_FREE_NAME(C) MU_C2(TARRAY_LL_FREE_, C)
 
 /*introduces a function definition for freeing the allocated resources for a TARRAY*/
 #define TARRAY_LL_FREE_DEFINE(C, T) \

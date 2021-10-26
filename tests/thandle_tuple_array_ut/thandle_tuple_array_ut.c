@@ -378,7 +378,7 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_DESTROY_with_3_fields_0_elements_frees_everyth
 }
 
 
-/*Tests_SRS_THANDLE_TUPLE_ARRAY_42_007: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall iterate over all of the elements in tuple_array and call THANDLE_DEC_REF(type) for each field. ]*/
+/*Tests_SRS_THANDLE_TUPLE_ARRAY_42_007: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall iterate over all of the elements in tuple_array and call THANDLE_ASSIGN(type) with NULL for each field. ]*/
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_008: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall free the memory allocated in tuple_array. ]*/
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_DESTROY_with_1_field_10_elements_not_initialized_frees_everything)
 {
@@ -398,7 +398,7 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_DESTROY_with_1_field_10_elements_not_initializ
 }
 
 
-/*Tests_SRS_THANDLE_TUPLE_ARRAY_42_007: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall iterate over all of the elements in tuple_array and call THANDLE_DEC_REF(type) for each field. ]*/
+/*Tests_SRS_THANDLE_TUPLE_ARRAY_42_007: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall iterate over all of the elements in tuple_array and call THANDLE_ASSIGN(type) with NULL for each field. ]*/
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_008: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall free the memory allocated in tuple_array. ]*/
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_DESTROY_with_3_fields_10_elements_not_initialized_frees_everything)
 {
@@ -417,7 +417,7 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_DESTROY_with_3_fields_10_elements_not_initiali
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_THANDLE_TUPLE_ARRAY_42_007: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall iterate over all of the elements in tuple_array and call THANDLE_DEC_REF(type) for each field. ]*/
+/*Tests_SRS_THANDLE_TUPLE_ARRAY_42_007: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall iterate over all of the elements in tuple_array and call THANDLE_ASSIGN(type) with NULL for each field. ]*/
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_008: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall free the memory allocated in tuple_array. ]*/
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_DESTROY_with_1_field_10_elements_initialized_frees_everything)
 {
@@ -436,7 +436,7 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_DESTROY_with_1_field_10_elements_initialized_f
 
     for (uint32_t i = 0; i < 10; i++)
     {
-        STRICT_EXPECTED_CALL(THANDLE_DEC_REF(RC_STRING)(tuple_array->tuple_array[i].a));
+        STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_STRING)(&tuple_array->tuple_array[i].a, NULL));
     }
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
@@ -447,7 +447,7 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_DESTROY_with_1_field_10_elements_initialized_f
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_THANDLE_TUPLE_ARRAY_42_007: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall iterate over all of the elements in tuple_array and call THANDLE_DEC_REF(type) for each field. ]*/
+/*Tests_SRS_THANDLE_TUPLE_ARRAY_42_007: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall iterate over all of the elements in tuple_array and call THANDLE_ASSIGN(type) with NULL for each field. ]*/
 /*Tests_SRS_THANDLE_TUPLE_ARRAY_42_008: [ THANDLE_TUPLE_ARRAY_DESTROY(name) shall free the memory allocated in tuple_array. ]*/
 TEST_FUNCTION(THANDLE_TUPLE_ARRAY_DESTROY_with_3_fields_10_elements_initialized_frees_everything)
 {
@@ -472,9 +472,9 @@ TEST_FUNCTION(THANDLE_TUPLE_ARRAY_DESTROY_with_3_fields_10_elements_initialized_
 
     for (uint32_t i = 0; i < 10; i++)
     {
-        STRICT_EXPECTED_CALL(THANDLE_DEC_REF(RC_STRING)(tuple_array->tuple_array[i].foo));
-        STRICT_EXPECTED_CALL(THANDLE_DEC_REF(RC_STRING)(tuple_array->tuple_array[i].bar));
-        STRICT_EXPECTED_CALL(THANDLE_DEC_REF(RC_STRING)(tuple_array->tuple_array[i].baz));
+        STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_STRING)(&tuple_array->tuple_array[i].foo, NULL));
+        STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_STRING)(&tuple_array->tuple_array[i].bar, NULL));
+        STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_STRING)(&tuple_array->tuple_array[i].baz, NULL));
     }
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 

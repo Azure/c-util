@@ -164,6 +164,6 @@ void umocktypes_free_THANDLE_RC_STRING(THANDLE(RC_STRING)* value)
 {
     if (value != NULL && *value != NULL)
     {
-        THANDLE_DEC_REF(real_RC_STRING)(*value);
+        THANDLE_ASSIGN(real_RC_STRING)(value, NULL);
     }
 }
