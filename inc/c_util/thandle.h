@@ -17,21 +17,6 @@
 #include "c_util/containing_record.h"
 #include "c_util/thandle_ll.h"
 
-
-#ifdef THANDLE_MALLOC_FUNCTION
-    #ifndef THANDLE_FREE_FUNCTION
-        #error THANDLE_MALLOC_FUNCTION and THANDLE_FREE_FUNCTION must be both defined or both not defined
-    #else
-        /*do nothing, the macros here will call whatever THANDLE_MALLOC_FUNCTION/THANDLE_FREE_FUNCTION expands to*/
-    #endif
-#else
-    #ifdef THANDLE_FREE_FUNCTION
-        #error THANDLE_MALLOC_FUNCTION and THANDLE_FREE_FUNCTION must be both defined or both not defined
-    #else
-        /*then use whatever malloc and free expand to*/
-    #endif
-#endif
-
 /*given a previous type T, this introduces a wrapper type that contains T (and other fields) and defines the functions of that type T*/
 #define THANDLE_TYPE_DEFINE(T) \
     THANDLE_LL_TYPE_DEFINE(T, T)

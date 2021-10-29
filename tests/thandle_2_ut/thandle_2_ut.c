@@ -85,7 +85,6 @@ TEST_FUNCTION_CLEANUP(cleans)
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
-/*Tests_SRS_THANDLE_02_041: [ If THANDLE_MALLOC_FUNCTION is not NULL then THANDLE_MALLOC_FUNCTION / THANDLE_FREE_FUNCTION shall be used to allocate/free memory. ]*/
 /*Tests_SRS_THANDLE_02_044: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function and return a T* ]*/
 TEST_FUNCTION(G_ON_T_OFF_create_calls_global_malloc)
 {
@@ -159,7 +158,7 @@ TEST_FUNCTION(G_ON_T_OFF_create_calls_var_malloc_unhappy_path)
     ///clean
 }
 
-/*Tests_SRS_THANDLE_02_048: [ If THANDLE_MALLOC_FLEX_FUNCTION is not NULL then THANDLE_MALLOC_FLEX_FUNCTION / THANDLE_FREE_FUNCTION shall be used to allocate/free memory. ]*/
+/*Tests_SRS_THANDLE_02_046: [ If malloc_flex_function is not NULL then malloc_flex_function and free_function shall be used to allocate memory. ]*/
 TEST_FUNCTION(G_ON_T_OFF_create_with_extra_size_calls_global_malloc)
 {
     ///arrange
@@ -199,7 +198,6 @@ TEST_FUNCTION(G_ON_T_OFF_create_with_extra_size_with_malloc_functions_calls_var_
     THANDLE_ASSIGN(G_ON_T_OFF_DUMMY)(&dummy, NULL);
 }
 
-/*Tests_SRS_THANDLE_02_058: [ If THANDLE_MALLOC_FLEX_FUNCTION is not NULL then THANDLE_MALLOC_FLEX_FUNCTION / THANDLE_FREE_FUNCTION shall be used to allocate/free memory. ]*/
 /*Tests_SRS_THANDLE_02_044: [ THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS shall initialize the reference count to 1, store dispose and free_function and return a T* ]*/
 TEST_FUNCTION(G_ON_T_OFF_create_from_content_flex_calls_global_malloc)
 {

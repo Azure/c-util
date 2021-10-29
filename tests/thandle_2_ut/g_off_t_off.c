@@ -12,13 +12,7 @@
 
 #include "g_off_t_off.h"
 
-#define THANDLE_MALLOC_FUNCTION NULL
-#define THANDLE_MALLOC_FLEX_FUNCTION NULL
-#define THANDLE_FREE_FUNCTION NULL
 THANDLE_TYPE_DEFINE(G_OFF_T_OFF_DUMMY); /*this is a type that can only be instantiated with by explicitly specifying at every isntance the malloc functions*/
-#undef THANDLE_MALLOC_FUNCTION
-#undef THANDLE_MALLOC_FLEX_FUNCTION
-#undef THANDLE_FREE_FUNCTION
 
 /*uses global*/
 THANDLE(G_OFF_T_OFF_DUMMY) G_OFF_T_OFF_create(int x)

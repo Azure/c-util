@@ -4,7 +4,7 @@
 #define G_ON_T_OFF_H
 
 /*
-G_ON - will use the global THANDLE_MALLOC_FUNCTION macro "global on"
+G_ON - will use the global malloc("global on")
 T_OFF will use THANDLE_LL_TYPE_DEFINE (will not use THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS) - so "type off"
 */
 

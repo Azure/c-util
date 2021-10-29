@@ -12,13 +12,7 @@
 
 #include "g_on_t_on.h"
 
-#define THANDLE_MALLOC_FUNCTION global_malloc               /*this is never called, but needs to exist for compilation reasons*/
-#define THANDLE_MALLOC_FLEX_FUNCTION global_malloc_flex     /*this is never called, but needs to exist for compilation reasons*/
-#define THANDLE_FREE_FUNCTION global_free                   /*this is never called, but needs to exist for compilation reasons*/
 THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(G_ON_T_ON_DUMMY, type_malloc, type_malloc_flex, type_free);
-#undef THANDLE_MALLOC_FUNCTION
-#undef THANDLE_MALLOC_FLEX_FUNCTION
-#undef THANDLE_FREE_FUNCTION
 
 /*uses type defined functions*/
 THANDLE(G_ON_T_ON_DUMMY) G_ON_T_ON_create(int x)

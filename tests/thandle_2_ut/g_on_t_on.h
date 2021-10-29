@@ -4,7 +4,7 @@
 #define G_OFF_T_ON_H
 
 /*
-G_ON - will use the global THANDLE_MALLOC_FUNCTION macro "global on"
+G_ON - will use the global maloc ("global on")
 T_ON will use THANDLE_LL_TYPE_DEFINE (will not use THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS) - so "type on" (this effectively means the global functions are NEVER used)
 */
 

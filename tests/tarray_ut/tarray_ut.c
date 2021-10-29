@@ -37,10 +37,6 @@ static void my_gballoc_free(void* ptr)
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
-#define THANDLE_MALLOC_FUNCTION malloc
-#define THANDLE_MALLOC_FLEX_FUNCTION malloc_flex
-#define THANDLE_FREE_FUNCTION free
-
 /*TARRAY with regular types*/
 TARRAY_DEFINE_STRUCT_TYPE(uint32_t)
 THANDLE_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(uint32_t));
