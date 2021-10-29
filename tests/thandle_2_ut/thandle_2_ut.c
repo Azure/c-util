@@ -43,10 +43,6 @@ TEST_SUITE_INITIALIZE(it_does_something)
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
 
-    REGISTER_GLOBAL_MOCK_HOOK(global_malloc, real_gballoc_hl_malloc);
-    REGISTER_GLOBAL_MOCK_HOOK(global_malloc_flex, real_gballoc_hl_malloc_flex);
-    REGISTER_GLOBAL_MOCK_HOOK(global_free, real_gballoc_hl_free);
-
     REGISTER_GLOBAL_MOCK_HOOK(type_malloc, real_gballoc_hl_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(type_malloc_flex, real_gballoc_hl_malloc_flex);
     REGISTER_GLOBAL_MOCK_HOOK(type_free, real_gballoc_hl_free);
