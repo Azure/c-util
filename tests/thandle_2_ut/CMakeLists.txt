@@ -8,8 +8,8 @@ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-    g_off_t_off.c
-    g_on_t_on.c
+    t_off.c
+    t_on.c
     two_thandles_same_file.c
 )
 
@@ -17,8 +17,8 @@ set(${theseTestsName}_h_files
     ../../inc/c_util/thandle.h
     ../../inc/c_util/thandle_ll.h
     malloc_mocks.h
-    g_off_t_off.h
-    g_on_t_on.h
+    t_off.h
+    t_on.h
     two_thandles_same_file.h
 )
 
