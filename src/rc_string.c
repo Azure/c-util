@@ -14,9 +14,6 @@
 
 #include "c_util/rc_string.h"
 
-#define THANDLE_MALLOC_FUNCTION malloc
-#define THANDLE_MALLOC_FLEX_FUNCTION malloc_flex
-#define THANDLE_FREE_FUNCTION free
 THANDLE_TYPE_DEFINE(RC_STRING);
 
 #define STRING_STORAGE_TYPE_VALUES \

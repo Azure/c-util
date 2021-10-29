@@ -62,22 +62,14 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 
 MU_DEFINE_STRUCT(A_B, A_B_FIELDS);
 
-
-#define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
-#define THANDLE_MALLOC_FLEX_FUNCTION gballoc_hl_malloc_flex
-#define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
 #endif
     THANDLE_TYPE_DECLARE(A_B);
-    THANDLE_TYPE_DEFINE(A_B);
+    THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(A_B, gballoc_hl_malloc, gballoc_hl_malloc_flex, gballoc_hl_free);
 #ifdef __cplusplus
     }
 #endif
-#undef THANDLE_MALLOC_FUNCTION
-#undef THANDLE_MALLOC_FLEX_FUNCTION
-#undef THANDLE_FREE_FUNCTION
-
 
 typedef struct A_S_TAG
 {
@@ -109,20 +101,14 @@ static void dispose_A_S(A_S* a_s)
     free(a_s->s);
 }
 
-#define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
-#define THANDLE_MALLOC_FLEX_FUNCTION gballoc_hl_malloc_flex
-#define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
 #endif
     THANDLE_TYPE_DECLARE(A_S);
-    THANDLE_TYPE_DEFINE(A_S);
+    THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(A_S, gballoc_hl_malloc, gballoc_hl_malloc_flex, gballoc_hl_free);
 #ifdef __cplusplus
 }
 #endif
-#undef THANDLE_MALLOC_FUNCTION
-#undef THANDLE_MALLOC_FLEX_FUNCTION
-#undef THANDLE_FREE_FUNCTION
 
 typedef struct A_FLEX_TAG
 {
@@ -136,20 +122,14 @@ static size_t get_sizeof_A_FLEX(const A_FLEX* source)
     return sizeof(A_FLEX) + source->n * sizeof(int);
 }
 
-#define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
-#define THANDLE_MALLOC_FLEX_FUNCTION gballoc_hl_malloc_flex
-#define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
 #endif
     THANDLE_TYPE_DECLARE(A_FLEX);
-    THANDLE_TYPE_DEFINE(A_FLEX);
+    THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(A_FLEX, gballoc_hl_malloc, gballoc_hl_malloc_flex, gballoc_hl_free);
 #ifdef __cplusplus
 }
 #endif
-#undef THANDLE_MALLOC_FUNCTION
-#undef THANDLE_MALLOC_FLEX_FUNCTION 
-#undef THANDLE_FREE_FUNCTION
 
 
 /*a flex structure that has a non-default copy*/
@@ -193,20 +173,14 @@ static size_t get_sizeof_A_S_FLEX(const A_S_FLEX* source)
     return sizeof(A_S_FLEX) + source->n * sizeof(int);
 }
 
-#define THANDLE_MALLOC_FUNCTION gballoc_hl_malloc
-#define THANDLE_MALLOC_FLEX_FUNCTION gballoc_hl_malloc_flex
-#define THANDLE_FREE_FUNCTION gballoc_hl_free
 #ifdef __cplusplus
 extern "C" {
 #endif
     THANDLE_TYPE_DECLARE(A_S_FLEX);
-    THANDLE_TYPE_DEFINE(A_S_FLEX);
+    THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(A_S_FLEX, gballoc_hl_malloc, gballoc_hl_malloc_flex, gballoc_hl_free);
 #ifdef __cplusplus
 }
 #endif
-#undef THANDLE_MALLOC_FUNCTION
-#undef THANDLE_MALLOC_FLEX_FUNCTION
-#undef THANDLE_FREE_FUNCTION
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 

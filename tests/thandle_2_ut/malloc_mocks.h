@@ -15,10 +15,6 @@
 extern "C" {
 #endif
 
-    MOCKABLE_FUNCTION(, void*, global_malloc, size_t, size);                                    /*a function used globally when nothing else is specified*/
-    MOCKABLE_FUNCTION(, void*, global_malloc_flex, size_t, base, size_t, nmemb, size_t, size);  /*a function used globally when nothing else is specified*/
-    MOCKABLE_FUNCTION(, void, global_free, void*, ptr);                                         /*a function used globally when nothing else is specified*/
-
     MOCKABLE_FUNCTION(, void*, type_malloc, size_t, size);                                      /*a function used when THANDLE_TYPE is defined*/
     MOCKABLE_FUNCTION(, void*, type_malloc_flex, size_t, base, size_t, nmemb, size_t, size);    /*a function used when THANDLE_TYPE is defined*/
     MOCKABLE_FUNCTION(, void, type_free, void*, ptr);                                           /*a function used when THANDLE_TYPE is defined*/
