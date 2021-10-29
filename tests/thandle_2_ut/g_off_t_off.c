@@ -12,12 +12,12 @@
 
 #include "g_off_t_off.h"
 
-THANDLE_TYPE_DEFINE(G_OFF_T_OFF_DUMMY); /*this is a type that can only be instantiated with by explicitly specifying at every isntance the malloc functions*/
+THANDLE_TYPE_DEFINE(G_OFF_T_OFF_DUMMY); /*this is a type that can only be instantiated with by global malloc or at every creation by THANDLE_MALLOC*/
 
 /*uses global*/
 THANDLE(G_OFF_T_OFF_DUMMY) G_OFF_T_OFF_create(int x)
 {
-    G_OFF_T_OFF_DUMMY* d = THANDLE_MALLOC(G_OFF_T_OFF_DUMMY)(NULL); /*"should" always return NULL because it doesn't find a function to allocate*/
+    G_OFF_T_OFF_DUMMY* d = THANDLE_MALLOC(G_OFF_T_OFF_DUMMY)(NULL); /*uses global malloc functions*/
     if (d != NULL)
     {
         d->x = x;
@@ -41,7 +41,7 @@ THANDLE(G_OFF_T_OFF_DUMMY) G_OFF_T_OFF_create_with_malloc_functions(int x)
 /*uses global*/
 THANDLE(G_OFF_T_OFF_DUMMY) G_OFF_T_OFF_create_with_extra_size(int x, const char* s)
 {
-    G_OFF_T_OFF_DUMMY* d = THANDLE_MALLOC_WITH_EXTRA_SIZE(G_OFF_T_OFF_DUMMY)(NULL, strlen(s)+1); /*"should" always return NULL because it doesn't find a function to allocate*/
+    G_OFF_T_OFF_DUMMY* d = THANDLE_MALLOC_WITH_EXTRA_SIZE(G_OFF_T_OFF_DUMMY)(NULL, strlen(s)+1); /*uses global malloc functions*/
     if (d != NULL)
     {
         d->x = x;
@@ -83,7 +83,7 @@ static size_t sizeof_dummy(const G_OFF_T_OFF_DUMMY* source)
 
 THANDLE(G_OFF_T_OFF_DUMMY) G_OFF_T_OFF_create_from_content_flex(const G_OFF_T_OFF_DUMMY* origin)
 {
-    G_OFF_T_OFF_DUMMY* d = THANDLE_CREATE_FROM_CONTENT_FLEX(G_OFF_T_OFF_DUMMY)(origin, NULL, copies_dummy, sizeof_dummy); /*"should" always return NULL because it doesn't find a function to allocate*/
+    G_OFF_T_OFF_DUMMY* d = THANDLE_CREATE_FROM_CONTENT_FLEX(G_OFF_T_OFF_DUMMY)(origin, NULL, copies_dummy, sizeof_dummy); /*uses global malloc functions*/
     if (d != NULL)
     {
         d->x = origin->x;
@@ -98,14 +98,14 @@ THANDLE(G_OFF_T_OFF_DUMMY) G_OFF_T_OFF_create_from_content_flex(const G_OFF_T_OF
 
 THANDLE(G_OFF_T_OFF_DUMMY) G_OFF_T_OFF_create_from_content_flex_with_getsizeof_NULL(const G_OFF_T_OFF_DUMMY* origin)
 {
-    G_OFF_T_OFF_DUMMY* d = THANDLE_CREATE_FROM_CONTENT_FLEX(G_OFF_T_OFF_DUMMY)(origin, NULL, copies_dummy, NULL); /*"should" always return NULL because it doesn't find a function to allocate*/
+    G_OFF_T_OFF_DUMMY* d = THANDLE_CREATE_FROM_CONTENT_FLEX(G_OFF_T_OFF_DUMMY)(origin, NULL, copies_dummy, NULL);
     /*d is NULL here because get_sizeof is NULL*/
     return d;
 }
 
 THANDLE(G_OFF_T_OFF_DUMMY) G_OFF_T_OFF_create_from_content_flex_with_malloc_functions(const G_OFF_T_OFF_DUMMY* origin)
 {
-    G_OFF_T_OFF_DUMMY* d = THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(G_OFF_T_OFF_DUMMY)(origin, NULL, copies_dummy, sizeof_dummy, var_malloc_flex, var_free);
+    G_OFF_T_OFF_DUMMY* d = THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(G_OFF_T_OFF_DUMMY)(origin, NULL, copies_dummy, sizeof_dummy, var_malloc_flex, var_free); /*uses global malloc functions*/
     if (d != NULL)
     {
         d->x = origin->x;

@@ -4,7 +4,7 @@
 #define G_OFF_T_ON_H
 
 /*
-G_ON - will use the global maloc ("global on")
+G_ON - will use the global malloc ("global on")
 T_ON will use THANDLE_LL_TYPE_DEFINE (will not use THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS) - so "type on" (this effectively means the global functions are NEVER used)
 */
 
@@ -17,7 +17,6 @@ T_ON will use THANDLE_LL_TYPE_DEFINE (will not use THANDLE_TYPE_DEFINE_WITH_MALL
 #include "c_util/thandle.h"
 
 #include "umock_c/umock_c_prod.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

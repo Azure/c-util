@@ -17,7 +17,6 @@ T_OFF will use THANDLE_LL_TYPE_DEFINE (will not use THANDLE_TYPE_DEFINE_WITH_MAL
 #include "c_util/thandle.h"
 
 #include "umock_c/umock_c_prod.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
