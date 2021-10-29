@@ -4,7 +4,6 @@
 #define T_OFF_H
 
 /*
-G_OFF- will have as defines for the global functions NULL"
 T_OFF will use THANDLE_LL_TYPE_DEFINE (will not use THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS) - so "type off"
 */
 
