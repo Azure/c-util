@@ -12,7 +12,7 @@
 
 #include "t_off.h"
 
-THANDLE_TYPE_DEFINE(T_OFF_DUMMY); /*this is a type that can only be instantiated with by global malloc or at every creation by THANDLE_MALLOC*/
+THANDLE_TYPE_DEFINE(T_OFF_DUMMY); /*this is a type that allocates its memory by global malloc or by the function specified at THANDLE_MALLOC_WITH_MALLOC_FUNCTIONS*/
 
 /*uses global*/
 THANDLE(T_OFF_DUMMY) T_OFF_create(int x)
@@ -105,7 +105,7 @@ THANDLE(T_OFF_DUMMY) T_OFF_create_from_content_flex_with_getsizeof_NULL(const T_
 
 THANDLE(T_OFF_DUMMY) T_OFF_create_from_content_flex_with_malloc_functions(const T_OFF_DUMMY* origin)
 {
-    T_OFF_DUMMY* d = THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(T_OFF_DUMMY)(origin, NULL, copies_dummy, sizeof_dummy, var_malloc_flex, var_free); /*uses global malloc functions*/
+    T_OFF_DUMMY* d = THANDLE_CREATE_FROM_CONTENT_FLEX_WITH_MALLOC_FUNCTIONS(T_OFF_DUMMY)(origin, NULL, copies_dummy, sizeof_dummy, var_malloc_flex, var_free); /*uses var_malloc_flex/var_free functions*/
     if (d != NULL)
     {
         d->x = origin->x;
