@@ -41,7 +41,7 @@ typedef struct CONSTBUFFER_HANDLE_DATA_TAG
     unsigned char storage[]; /*if the memory was copied, this is where the copied memory is. For example in the case of CONSTBUFFER_CreateFromOffsetAndSizeWithCopy. Can have 0 as size.*/
 } CONSTBUFFER_HANDLE_DATA;
 
-static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* source, uint32_t size)
+static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* source, uint32_t offset, uint32_t size)
 {
     CONSTBUFFER_HANDLE result;
     /*Codes_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
@@ -74,7 +74,7 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
             /*Codes_SRS_CONSTBUFFER_02_007: [Otherwise, CONSTBUFFER_CreateFromBuffer shall copy the content of buffer.]*/
             /*Codes_SRS_CONSTBUFFER_02_009: [Otherwise, CONSTBUFFER_CreateFromBuffer shall return a non-NULL handle.]*/
             /*Codes_SRS_CONSTBUFFER_02_039: [ CONSTBUFFER_CreateFromOffsetAndSizeWithCopy shall set the pointed to a non-NULL value that contains the same bytes as offset...offset+size-1 of handle. ]*/
-            (void)memcpy(result->storage, source, size);
+            (void)memcpy(result->storage, source + offset, size);
             result->alias.buffer = result->storage;
         }
 
@@ -97,7 +97,26 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsi
     }
     else
     {
-        result = CONSTBUFFER_Create_Internal(source, size);
+        result = CONSTBUFFER_Create_Internal(source, 0, size);
+    }
+    return result;
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithOffsetAndSize, const unsigned char*, source, uint32_t, offset, uint32_t, size)
+{
+    CONSTBUFFER_HANDLE result;
+
+    if (
+        (source == NULL) &&
+        (size != 0)
+        )
+    {
+        LogError("invalid arguments passes to CONSTBUFFER_Create: %p, size: %" PRIu32 "", source, size);
+        result = NULL;
+    }
+    else
+    {
+        result = CONSTBUFFER_Create_Internal(source, offset, size);
     }
     return result;
 }
@@ -116,7 +135,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, 
     {
         uint32_t length = (uint32_t)BUFFER_length(buffer);
         unsigned char* rawBuffer = BUFFER_u_char(buffer);
-        result = CONSTBUFFER_Create_Internal(rawBuffer, length);
+        result = CONSTBUFFER_Create_Internal(rawBuffer, 0, length);
     }
     return result;
 }
@@ -269,10 +288,10 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAn
     }
     else
     {
-        result = CONSTBUFFER_Create_Internal(handle->alias.buffer + offset, size);
+        result = CONSTBUFFER_Create_Internal(handle->alias.buffer, offset, size);
         if (result == NULL)
         {
-            LogError("failure in CONSTBUFFER_Create_Internal(handle->alias.buffer=%p + offset=%" PRIu32 ", size=%" PRIu32 ")",
+            LogError("failure in CONSTBUFFER_Create_Internal(handle->alias.buffer=%p, offset=%" PRIu32 ", size=%" PRIu32 ")",
                 handle->alias.buffer, offset, size);
             /*return as is*/
         }
@@ -608,11 +627,11 @@ CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* sour
                     else
                     {
                         /*Codes_SRS_CONSTBUFFER_02_071: [ CONSTBUFFER_from_buffer shall create a CONSTBUFFER_HANDLE from the bytes at offset 5 of source. ]*/
-                        *destination = CONSTBUFFER_Create_Internal(source + CONSTBUFFER_CONTENT_OFFSET, content_size);
+                        *destination = CONSTBUFFER_Create_Internal(source, CONSTBUFFER_CONTENT_OFFSET, content_size);
                         if (*destination == NULL)
                         {
                             /*Codes_SRS_CONSTBUFFER_02_073: [ If there are any failures then shall fail and return CONSTBUFFER_FROM_BUFFER_RESULT_ERROR. ]*/
-                            LogError("failure in CONSTBUFFER_Create(source=%p + CONSTBUFFER_CONTENT_OFFSET=%zu, content_size=%" PRIu32 ")",
+                            LogError("failure in CONSTBUFFER_Create(source=%p, CONSTBUFFER_CONTENT_OFFSET=%zu, content_size=%" PRIu32 ")",
                                 source, CONSTBUFFER_CONTENT_OFFSET, content_size);
                             result = CONSTBUFFER_FROM_BUFFER_RESULT_ERROR;
                         }

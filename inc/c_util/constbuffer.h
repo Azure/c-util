@@ -57,6 +57,8 @@ MOCKABLE_INTERFACE(constbuffer,
     /*this creates a new constbuffer from a memory area*/
     FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, uint32_t, size),
 
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithOffsetAndSize, const unsigned char*, source, uint32_t, offset, uint32_t, size),
+
     /*this creates a new constbuffer from an existing BUFFER_HANDLE*/
     FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer),
 
