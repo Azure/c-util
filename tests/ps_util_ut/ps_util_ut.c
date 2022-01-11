@@ -1,11 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifdef __cplusplus
-#include <cstdlib>
-#else
+
 #include <stdlib.h>
-#endif
+
 
 #include "macro_utils/macro_utils.h"
 
@@ -16,18 +14,15 @@ static TEST_MUTEX_HANDLE g_testByTest;
 
 #include "c_util/ps_util.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 MOCK_FUNCTION_WITH_CODE(, void, mock_abort);
 MOCK_FUNCTION_END()
 MOCK_FUNCTION_WITH_CODE(, void, mock_exit, int, exit_code);
 MOCK_FUNCTION_END()
 
-#ifdef __cplusplus
-}
-#endif
+
+
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 

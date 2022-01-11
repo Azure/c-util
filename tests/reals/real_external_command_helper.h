@@ -15,14 +15,11 @@
 
 #include "c_util/external_command_helper.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
     EXTERNAL_COMMAND_RESULT real_external_command_helper_execute(const char* command, RC_STRING_ARRAY** lines, int* return_code);
 
-#ifdef __cplusplus
-}
-#endif
+
+
 
 #endif //REAL_EXTERNAL_COMMAND_HELPER_H

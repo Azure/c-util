@@ -16,15 +16,12 @@
         UUID_T_to_string \
     )
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
     UUID_T_FROM_STRING_RESULT real_UUID_T_from_string(const char* uuid_string, UUID_T uuid);
     char* real_UUID_T_to_string(const UUID_T uuid);
 
-#ifdef __cplusplus
-}
-#endif
+
+
 
 #endif // REAL_C_UTIL_UUID_H

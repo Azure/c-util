@@ -20,13 +20,9 @@
         DList_RemoveHeadList \
     )
 
-#ifdef __cplusplus
-#include <cstddef>
-extern "C"
-{
-#else
+
 #include <stddef.h>
-#endif
+
 
 void real_DList_InitializeListHead(PDLIST_ENTRY listHead);
 int real_DList_IsListEmpty(const PDLIST_ENTRY listHead);
@@ -36,8 +32,7 @@ void real_DList_AppendTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY ListToAppend)
 int real_DList_RemoveEntryList(PDLIST_ENTRY listEntry);
 PDLIST_ENTRY real_DList_RemoveHeadList(PDLIST_ENTRY listHead);
 
-#ifdef __cplusplus
-}
-#endif
+
+
 
 #endif // REAL_DOUBLYLINKEDLIST_H

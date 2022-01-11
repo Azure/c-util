@@ -4,11 +4,9 @@
 #ifndef REAL_SINGLYLINKEDLIST_H
 #define REAL_SINGLYLINKEDLIST_H
 
-#ifdef __cplusplus
-#include <cstddef>
-#else
+
 #include <stddef.h>
-#endif
+
 
 #include "macro_utils/macro_utils.h"
 #include "c_util/singlylinkedlist.h"
@@ -30,9 +28,7 @@
         singlylinkedlist_foreach \
     )
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 SINGLYLINKEDLIST_HANDLE real_singlylinkedlist_create(void);
 void real_singlylinkedlist_destroy(SINGLYLINKEDLIST_HANDLE list);
@@ -46,8 +42,7 @@ const void* real_singlylinkedlist_item_get_value(LIST_ITEM_HANDLE item_handle);
 int real_singlylinkedlist_remove_if(SINGLYLINKEDLIST_HANDLE list, LIST_CONDITION_FUNCTION condition_function, const void* match_context);
 int real_singlylinkedlist_foreach(SINGLYLINKEDLIST_HANDLE list, LIST_ACTION_FUNCTION action_function, const void* action_context);
 
-#ifdef __cplusplus
-}
-#endif
+
+
 
 #endif // REAL_SINGLYLINKEDLIST_H

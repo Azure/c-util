@@ -25,14 +25,11 @@
 typedef UNDO_OP real_UNDO_OP;
 
 #include "umock_c/umock_c_prod.h"
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
     TARRAY_LL_TYPE_DECLARE(real_UNDO_OP, UNDO_OP);
 
-#ifdef __cplusplus
-}
-#endif
+
+
 
 #endif //REAL_TARRAY_UNDO_OP_H

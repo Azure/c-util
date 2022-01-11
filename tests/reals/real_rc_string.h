@@ -21,13 +21,9 @@
     REGISTER_GLOBAL_MOCK_HOOK(THANDLE_INITIALIZE_MOVE(RC_STRING), THANDLE_INITIALIZE_MOVE(real_RC_STRING)) \
     REGISTER_GLOBAL_MOCK_HOOK(THANDLE_ASSIGN(RC_STRING), THANDLE_ASSIGN(real_RC_STRING)) \
 
-#ifdef __cplusplus
-#include <cstdint>
-extern "C"
-{
-#else
+
 #include <stdint.h>
-#endif
+
 
     typedef struct RC_STRING_TAG real_RC_STRING;
     THANDLE_TYPE_DECLARE(real_RC_STRING);
@@ -37,8 +33,7 @@ extern "C"
     THANDLE(RC_STRING) real_rc_string_create_with_custom_free(const char* string, RC_STRING_FREE_FUNC free_func, void* free_func_context);
     THANDLE(RC_STRING) real_rc_string_recreate(THANDLE(RC_STRING) source);
 
-#ifdef __cplusplus
-}
-#endif
+
+
 
 #endif //REAL_RC_STRING_H

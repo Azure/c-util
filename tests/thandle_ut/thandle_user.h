@@ -6,9 +6,7 @@
 
 #include "c_util/thandle.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
     typedef struct LL_TAG LL;
 
@@ -20,8 +18,7 @@ void ll_increment_a(THANDLE(LL) ll, int amount);
 
 int ll_get_a(THANDLE(LL) ll);
 
-#ifdef __cplusplus
-}
-#endif
+
+
 
 #endif /*THANDLE_USER_H*/

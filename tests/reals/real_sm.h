@@ -25,9 +25,7 @@
 
 #include "c_util/sm.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 SM_HANDLE real_sm_create(const char* name);
 void real_sm_destroy(SM_HANDLE sm);
@@ -46,8 +44,7 @@ void real_sm_barrier_end(SM_HANDLE sm);
 
 void real_sm_fault(SM_HANDLE sm);
 
-#ifdef __cplusplus
-}
-#endif
+
+
 
 #endif //REAL_SM_H

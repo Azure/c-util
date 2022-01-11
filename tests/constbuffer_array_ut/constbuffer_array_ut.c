@@ -1,13 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-#ifdef __cplusplus
-#include <cinttypes>
-#include <cstdlib>
-#else
+
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#endif
+
 
 #include "real_gballoc_ll.h"
 
