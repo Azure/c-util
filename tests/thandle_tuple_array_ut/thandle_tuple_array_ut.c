@@ -1,10 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
 #include <stdlib.h>
 #include <stdint.h>
-
 
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
@@ -13,22 +11,6 @@
 #include "umock_c/umocktypes_stdint.h"
 #include "umock_c/umocktypes.h"
 #include "umock_c/umock_c_negative_tests.h"
-
-#include "real_gballoc_ll.h"
-static void* my_gballoc_malloc(size_t size)
-{
-    return real_gballoc_ll_malloc(size);
-}
-
-static void* my_gballoc_malloc_flex(size_t base, size_t nmemb, size_t size)
-{
-    return real_gballoc_ll_malloc_flex(base, nmemb, size);
-}
-
-static void my_gballoc_free(void* ptr)
-{
-     real_gballoc_ll_free(ptr);
-}
 
 #include "c_pal/interlocked.h" /*included for mocking reasons - it will prohibit creation of mocks belonging to interlocked.h - at the moment verified through int tests - this is porting legacy code, temporary solution*/
 
@@ -85,9 +67,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_RC_STRING_GLOBAL_MOCK_HOOKS();
 
-    REGISTER_GLOBAL_MOCK_HOOK(malloc, my_gballoc_malloc);
-    REGISTER_GLOBAL_MOCK_HOOK(malloc_flex, my_gballoc_malloc_flex);
-    REGISTER_GLOBAL_MOCK_HOOK(free, my_gballoc_free);
+    REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
 
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(RC_STRING), void*);
 }

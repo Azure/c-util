@@ -1,11 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <stddef.h>
-
 
 #include <limits.h>
 
@@ -13,23 +11,6 @@
 
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
-
-#include "real_gballoc_ll.h"
-static void* my_gballoc_malloc(size_t size)
-{
-    return real_gballoc_ll_malloc(size);
-}
-
-static void* my_gballoc_malloc_with_context(size_t size, void* context)
-{
-    (void)context;
-    return real_gballoc_ll_malloc(size);
-}
-
-static void my_gballoc_free(void* ptr)
-{
-    real_gballoc_ll_free(ptr);
-}
 
 #define ENABLE_MOCKS
 #include "umock_c/umock_c.h"
@@ -42,6 +23,12 @@ MOCKABLE_FUNCTION(, void*, test_alloc, size_t, size, void*, context);
 #undef ENABLE_MOCKS
 
 #include "real_gballoc_hl.h"
+
+static void* my_gballoc_malloc_with_context(size_t size, void* context)
+{
+    (void)context;
+    return real_gballoc_hl_malloc(size);
+}
 
 #include "c_util/memory_data.h"
 
@@ -110,7 +97,7 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUF
 static void* test_alloc_impl(size_t size, void* context)
 {
     ASSERT_ARE_EQUAL(void_ptr, TEST_ALLOC_CONTEXT, context);
-    return my_gballoc_malloc(size);
+    return real_gballoc_hl_malloc(size);
 }
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
@@ -389,7 +376,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE handle;
         const CONSTBUFFER* content;
-        unsigned char* test_buffer = (unsigned char* )my_gballoc_malloc(2);
+        unsigned char* test_buffer = (unsigned char* )real_gballoc_hl_malloc(2);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -417,7 +404,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE handle;
         const CONSTBUFFER* content;
-        unsigned char* test_buffer = (unsigned char* )my_gballoc_malloc(2);
+        unsigned char* test_buffer = (unsigned char* )real_gballoc_hl_malloc(2);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -465,7 +452,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ///arrange
         CONSTBUFFER_HANDLE handle;
-        unsigned char* test_buffer = (unsigned char* )my_gballoc_malloc(2);
+        unsigned char* test_buffer = (unsigned char* )real_gballoc_hl_malloc(2);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -502,7 +489,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ///arrange
         CONSTBUFFER_HANDLE handle;
-        unsigned char* test_buffer = (unsigned char*)my_gballoc_malloc(2);
+        unsigned char* test_buffer = (unsigned char*)real_gballoc_hl_malloc(2);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -513,7 +500,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ASSERT_IS_NULL(handle);
 
         /// cleanup
-        my_gballoc_free(test_buffer);
+        real_gballoc_hl_free(test_buffer);
     }
 
     /* Tests_SRS_CONSTBUFFER_01_008: [ CONSTBUFFER_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
@@ -522,7 +509,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE handle;
         const CONSTBUFFER* content;
-        unsigned char* test_buffer = (unsigned char*)my_gballoc_malloc(2);
+        unsigned char* test_buffer = (unsigned char*)real_gballoc_hl_malloc(2);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -549,7 +536,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE handle;
         const CONSTBUFFER* content;
-        unsigned char* test_buffer = (unsigned char*)my_gballoc_malloc(2);
+        unsigned char* test_buffer = (unsigned char*)real_gballoc_hl_malloc(2);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -568,7 +555,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
         ///cleanup
         CONSTBUFFER_DecRef(handle);
-        my_gballoc_free(test_buffer);
+        real_gballoc_hl_free(test_buffer);
     }
 
     /* Tests_SRS_CONSTBUFFER_01_008: [ CONSTBUFFER_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
@@ -578,7 +565,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE handle;
         const CONSTBUFFER* content;
-        unsigned char* test_buffer = (unsigned char*)my_gballoc_malloc(2);
+        unsigned char* test_buffer = (unsigned char*)real_gballoc_hl_malloc(2);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -626,7 +613,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ///arrange
         CONSTBUFFER_HANDLE handle;
-        unsigned char* test_buffer = (unsigned char*)my_gballoc_malloc(2);
+        unsigned char* test_buffer = (unsigned char*)real_gballoc_hl_malloc(2);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -1245,7 +1232,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     TEST_FUNCTION(CONSTBUFFER_CreateWithCustomFree_is_ref_counted_1)
     {
         ///arrange
-        unsigned char* test_buffer = (unsigned char*)my_gballoc_malloc(2);
+        unsigned char* test_buffer = (unsigned char*)real_gballoc_hl_malloc(2);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
         CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateWithCustomFree(test_buffer, 2, free, test_buffer);
@@ -1266,7 +1253,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     TEST_FUNCTION(CONSTBUFFER_CreateWithCustomFree_with_custom_free_function_calls_the_custom_free_func)
     {
         ///arrange
-        unsigned char* test_buffer = (unsigned char*)my_gballoc_malloc(2);
+        unsigned char* test_buffer = (unsigned char*)real_gballoc_hl_malloc(2);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
         CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateWithCustomFree(test_buffer, 2, test_free_func, (void*)0x4242);
@@ -1282,7 +1269,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         // cleanup
-        my_gballoc_free(test_buffer);
+        real_gballoc_hl_free(test_buffer);
     }
 
     /* Tests_SRS_CONSTBUFFER_01_003: [ The non-NULL handle returned by CONSTBUFFER_CreateWithMoveMemory shall have its ref count set to "1". ]*/
@@ -1291,7 +1278,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ///arrange
         CONSTBUFFER_HANDLE handle;
-        unsigned char* test_buffer = (unsigned char* )my_gballoc_malloc(2);
+        unsigned char* test_buffer = (unsigned char* )real_gballoc_hl_malloc(2);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
         handle = CONSTBUFFER_CreateWithMoveMemory(test_buffer, 2);
@@ -1618,7 +1605,7 @@ TEST_FUNCTION(CONSTBUFFER_get_serialization_size_with_too_big_size_fails)
 {
     ///arrange
     uint32_t almost4GB = UINT32_MAX - 4; /*this is 4 bytes shy of 4GB. It would not fit.*/
-    unsigned char* toobig = my_gballoc_malloc(almost4GB);
+    unsigned char* toobig = real_gballoc_hl_malloc(almost4GB);
     if (toobig == NULL)
     {
         /*do nothing, let the test pass - not a fault in this module*/
@@ -1648,7 +1635,7 @@ TEST_FUNCTION(CONSTBUFFER_get_serialization_size_with_biggest_size_succeeds)
 {
     ///arrange
     uint32_t almost4GB = UINT32_MAX - 5; /*this is 5 bytes shy of 4GB. This is the greatest size for which serialization still works*/
-    unsigned char* toobig = my_gballoc_malloc(almost4GB);
+    unsigned char* toobig = real_gballoc_hl_malloc(almost4GB);
     if (toobig == NULL)
     {
         /*do nothing, let the test pass - not a fault in this module*/
@@ -1762,7 +1749,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_exceeding_UINT32_MAX_fails)
 {
     ///arrange
     uint32_t almost4GB = UINT32_MAX - 4; /*this is 4 bytes shy of 4GB. Serialization_size is UINT32_MAX + 1 for almost4GB, which cannot be represented as a uint32_t type*/
-    unsigned char* toobig = my_gballoc_malloc(almost4GB);
+    unsigned char* toobig = real_gballoc_hl_malloc(almost4GB);
     if (toobig == NULL)
     {
         /*do nothing, let the test pass - not a fault in this module*/
@@ -2064,7 +2051,7 @@ TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_when_serialized_size_overflows_fa
 {
     ///arrange
     uint32_t almost4GB = UINT32_MAX - 4; /*this is 4 bytes shy of 4GB. Serialization_size is UINT32_MAX + 1 for almost4GB, which cannot be represented as a uint32_t type*/
-    unsigned char* toobig = my_gballoc_malloc(almost4GB);
+    unsigned char* toobig = real_gballoc_hl_malloc(almost4GB);
     if (toobig == NULL)
     {
         /*do nothing, let the test pass - not a fault in this module*/
@@ -2075,7 +2062,7 @@ TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_when_serialized_size_overflows_fa
         CONSTBUFFER_HANDLE toobig_h = CONSTBUFFER_CreateWithMoveMemory(toobig, almost4GB);
         ASSERT_IS_NOT_NULL(toobig_h);
 
-        unsigned char* destination = my_gballoc_malloc(UINT32_MAX);
+        unsigned char* destination = real_gballoc_hl_malloc(UINT32_MAX);
         if (destination == NULL)
         {
             /*not really a fault of this test, let the test pass*/
@@ -2095,7 +2082,7 @@ TEST_FUNCTION(CONSTBUFFER_to_fixed_size_buffer_when_serialized_size_overflows_fa
             ASSERT_ARE_EQUAL(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_ERROR, result);
             
             ///clean
-            my_gballoc_free(destination);
+            real_gballoc_hl_free(destination);
         }
         CONSTBUFFER_DecRef(toobig_h);
     }

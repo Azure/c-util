@@ -1,30 +1,13 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 
-
 #include "macro_utils/macro_utils.h"
 
 #include "real_gballoc_ll.h"
-
-static void* my_gballoc_malloc(size_t size)
-{
-    return real_gballoc_ll_malloc(size);
-}
-
-static void* my_gballoc_realloc_flex(void* ptr, size_t base, size_t nmemb, size_t size)
-{
-    return real_gballoc_ll_realloc_flex(ptr, base, nmemb, size);
-}
-
-static void my_gballoc_free(void* ptr)
-{
-     real_gballoc_ll_free(ptr);
-}
 
 #include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
@@ -167,9 +150,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_RC_STRING_GLOBAL_MOCK_HOOKS();
     REGISTER_RC_STRING_ARRAY_GLOBAL_MOCK_HOOK();
 
-    REGISTER_GLOBAL_MOCK_HOOK(malloc, my_gballoc_malloc);
-    REGISTER_GLOBAL_MOCK_HOOK(realloc_flex, my_gballoc_realloc_flex);
-    REGISTER_GLOBAL_MOCK_HOOK(free, my_gballoc_free);
+    REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(realloc_flex, NULL);
 
@@ -364,7 +345,7 @@ TEST_FUNCTION(external_command_helper_execute_with_line_too_long_fails)
     RC_STRING_ARRAY* lines;
     int return_code;
 
-    char* long_line = (char*)my_gballoc_malloc(2048 + 2);
+    char* long_line = (char*)real_gballoc_hl_malloc(2048 + 2);
     ASSERT_IS_NOT_NULL(long_line);
     for (uint32_t i = 0; i < 2048; ++i)
     {
@@ -387,7 +368,7 @@ TEST_FUNCTION(external_command_helper_execute_with_line_too_long_fails)
     ASSERT_ARE_EQUAL(EXTERNAL_COMMAND_RESULT, EXTERNAL_COMMAND_ERROR, result);
 
     // cleanup
-    my_gballoc_free(long_line);
+    real_gballoc_hl_free(long_line);
 }
 
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_007: [ If a line of output exceeds 2048 bytes then external_command_helper_execute shall fail and return EXTERNAL_COMMAND_ERROR. ]*/
@@ -397,7 +378,7 @@ TEST_FUNCTION(external_command_helper_execute_with_second_line_too_long_fails)
     RC_STRING_ARRAY* lines;
     int return_code;
 
-    char* long_line = (char*)my_gballoc_malloc(2 + 2048 + 2);
+    char* long_line = (char*)real_gballoc_hl_malloc(2 + 2048 + 2);
     ASSERT_IS_NOT_NULL(long_line);
     long_line[0] = 'z';
     long_line[1] = '\n';
@@ -425,7 +406,7 @@ TEST_FUNCTION(external_command_helper_execute_with_second_line_too_long_fails)
     ASSERT_ARE_EQUAL(EXTERNAL_COMMAND_RESULT, EXTERNAL_COMMAND_ERROR, result);
 
     // cleanup
-    my_gballoc_free(long_line);
+    real_gballoc_hl_free(long_line);
 }
 
 /*Tests_SRS_EXTERNAL_COMMAND_HELPER_42_014: [ external_command_helper_execute shall store the exit code of the command in return_code. ]*/
