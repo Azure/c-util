@@ -92,6 +92,7 @@ TEST_FUNCTION(uuid_from_string_with_uuid_string_NULL_returns_UUID_FROM_STRING_RE
 
     ///arrange
     ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_ARG, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_UUID_02_002: [ If uuid is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
@@ -106,6 +107,7 @@ TEST_FUNCTION(uuid_from_string_with_uuid_NULL_returns_UUID_FROM_STRING_RESULT_IN
 
     ///arrange
     ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_ARG, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 static bool isHexDigit(char c)
@@ -116,6 +118,8 @@ static bool isHexDigit(char c)
 }
 
 /*Tests_SRS_UUID_02_003: [ If any character of uuid_string doesn't match the string representation hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/
+/*Tests_SRS_UUID_02_004: [ If any character of uuid_string is \0 instead of a hex digit then UUID_T_from_string shall succeed and return UUID_T_FROM_STRING_RESULT_INVALID_DATA. ]*/ /*note: this happens when int_result is 0*/
+/*Tests_SRS_UUID_02_005: [ If any character of uuid_string is \0 instead of a - then UUID_T_from_string shall succeed and return UUID_T_FROM_STRING_RESULT_INVALID_DATA. ]*/ /*note: this happens when int_result is 0*/
 TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
 {
     ///arrange
@@ -135,10 +139,12 @@ TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
                 if (SOURCE[pos] == '-')
                 {
                     (void)memcpy(source, SOURCE, UUID_T_STRING_LENGTH + 1);
+                    umock_c_reset_all_calls();
                     source[pos] = replace;
 
                     ///act + assert all in one!
                     ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, destination));
+                    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
                 }
             }
         }
@@ -150,11 +156,13 @@ TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
                 if (SOURCE[pos] != '-')
                 {
                     (void)memcpy(source, SOURCE, UUID_T_STRING_LENGTH + 1);
+                    umock_c_reset_all_calls();
 
                     source[pos] = replace;
 
                     ///act + assert all in one!
                     ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, destination));
+                    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
                 }
             }
         }
@@ -163,16 +171,32 @@ TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
             for (size_t pos = 0; pos < UUID_T_STRING_LENGTH; pos++) /*trying to replace the character at position "pos" with "replace"*/
             {
                 (void)memcpy(source, SOURCE, UUID_T_STRING_LENGTH + 1);
+                umock_c_reset_all_calls();
 
                 source[pos] = replace;
 
                 ///act + assert all in one!
                 ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, destination));
+                ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
             }
         }
     }
 }
 
+/*Tests_SRS_UUID_02_007: [ If uuid is NULL then uuid_to_string shall fail and return NULL. ]*/
+TEST_FUNCTION(uuid_to_string_with_uuid_NULL_fails)
+{
+    ///arrange
+    char* result;
+
+    ///act
+    result = uuid_to_string(NULL);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    
+}
 
 /*Tests_SRS_UUID_02_006: [ uuid_from_string shall convert the hex digits to the bytes of uuid, succeed and return UUID_FROM_STRING_RESULT_OK. ]*/
 TEST_FUNCTION(uuid_from_string_succeeds)
@@ -203,6 +227,7 @@ TEST_FUNCTION(uuid_from_string_succeeds)
     ASSERT_ARE_EQUAL(uint8_t, 0xDC, destination[13]);
     ASSERT_ARE_EQUAL(uint8_t, 0xED, destination[14]);
     ASSERT_ARE_EQUAL(uint8_t, 0xFE, destination[15]);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 // Tests_SRS_UUID_09_011: [ If uuid is NULL, UUID_to_string shall return a non-zero value ]
@@ -215,7 +240,10 @@ TEST_FUNCTION(UUID_to_string_NULL_uuid)
 
     //assert
     ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
+
+/*Tests_SRS_UUID_02_008: [ uuid_to_string shall output a \0 terminated string in format hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh where every h is a nibble of one the bytes in uuid. ]*/
 
 TEST_FUNCTION(UUID_to_string_succeed)
 {
@@ -254,6 +282,7 @@ TEST_FUNCTION(UUID_to_string_succeed)
     free(result);
 }
 
+/*Tests_SRS_UUID_02_009: [ If there are any failures then uuid_to_string shall fail and return NULL. ]*/
 TEST_FUNCTION(UUID_to_string_fails_when_sprintf_char_fails)
 {
     //arrange
@@ -288,6 +317,21 @@ TEST_FUNCTION(UUID_to_string_fails_when_sprintf_char_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
+}
+
+/* Tests_SRS_UUID_01_001: [ NIL_UUID shall contain all zeroes. ]*/
+TEST_FUNCTION(NIL_UUID_is_filled_with_zeroes)
+{
+    //Arrange
+
+    //Act
+
+    //Assert
+    size_t i;
+    for (i = 0; i < sizeof(UUID_T); i++)
+    {
+        ASSERT_ARE_EQUAL(uint8_t, 0, NIL_UUID[i]);
+    }
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
