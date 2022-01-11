@@ -12,14 +12,14 @@
 
 #define REGISTER_C_UTIL_UUID_GLOBAL_MOCK_HOOK() /*vld.h trebuie schimbar numele ca e acelasi cu ala din pal*/\
     MU_FOR_EACH_1(R2, \
-        UUID_T_from_string, \
-        UUID_T_to_string \
+        uuid_from_string, \
+        uuid_to_string \
     )
 
 
 
-    UUID_T_FROM_STRING_RESULT real_UUID_T_from_string(const char* uuid_string, UUID_T uuid);
-    char* real_UUID_T_to_string(const UUID_T uuid);
+    UUID_FROM_STRING_RESULT real_uuid_from_string(const char* uuid_string, UUID_T uuid);
+    char* real_uuid_to_string(const UUID_T uuid);
 
 
 
