@@ -16,7 +16,7 @@
 #include "../reals/real_rc_string.h"
 #include "../reals/real_rc_string_array.h"
 #include "../reals/real_singlylinkedlist.h"
-#include "../reals/real_uuid.h"
+#include "../reals/real_c_util_uuid.h"
 
 #include "c_util/constbuffer.h"
 #include "c_util/constbuffer_array.h"
@@ -53,7 +53,7 @@ TEST_FUNCTION(check_all_c_util_reals)
     REGISTER_MEMORY_DATA_GLOBAL_MOCK_HOOK();
     REGISTER_RC_STRING_GLOBAL_MOCK_HOOKS();
     REGISTER_SINGLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
-    REGISTER_UUID_GLOBAL_MOCK_HOOK();
+    REGISTER_C_UTIL_UUID_GLOBAL_MOCK_HOOK();
 
 #if defined _MSC_VER
     REGISTER_SM_GLOBAL_MOCK_HOOK();

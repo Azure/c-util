@@ -439,18 +439,12 @@ TEST_FUNCTION(write_uuid_t_succeeds)
     ///arrange
     const UUID_T value = { 0x42, 0x43, 0x42, 0x43, 0x42, 0x43, 0x42, 0x43, 0x42, 0x43, 0x42, 0x43, 0x42, 0x43, 0x42, 0x43 };
     unsigned char destination[sizeof(UUID_T)] = { 0 };
-    char* expected_bytes_string;
-    char* actual_bytes_string;
 
     ///act
     write_uuid_t(destination, value);
 
     ///assert
-    expected_bytes_string = UUID_to_string(&value);
-    actual_bytes_string = UUID_to_string((const UUID_T*)&destination[0]);
-    ASSERT_ARE_EQUAL(char_ptr, expected_bytes_string, actual_bytes_string);
-    free(expected_bytes_string);
-    free(actual_bytes_string);
+    ASSERT_IS_TRUE(memcmp(value, destination, sizeof(UUID_T))==0);
 }
 
 /*Tests_SRS_MEMORY_DATA_02_058: [ write_uuid_t shall write at destination the bytes of value ]*/
@@ -459,18 +453,12 @@ TEST_FUNCTION(write_uuid_t_succeeds_2)
     ///arrange
     const UUID_T value = { 0xAA, 0x00, 0xAB, 0x01, 0xAC, 0x02, 0xFE, 0xFD, 0xFC, 0xFB, 0xFA, 0xF9, 0xF8, 0xF7, 0xF6, 0xF5 };
     unsigned char destination[sizeof(UUID_T)] = { 0 };
-    char* expected_bytes_string;
-    char* actual_bytes_string;
 
     ///act
     write_uuid_t(destination, value);
 
     ///assert
-    expected_bytes_string = UUID_to_string(&value);
-    actual_bytes_string = UUID_to_string((const UUID_T*)&destination[0]);
-    ASSERT_ARE_EQUAL(char_ptr, expected_bytes_string, actual_bytes_string);
-    free(expected_bytes_string);
-    free(actual_bytes_string);
+    ASSERT_IS_TRUE(memcmp(destination, value, sizeof(UUID_T))==0);
 }
 
 /* read_int8_t */

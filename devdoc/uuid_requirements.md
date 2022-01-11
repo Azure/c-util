@@ -2,105 +2,60 @@ uuid requirements
 =================
 
 ## Overview
-The UUID module provides functions to create and convert UUID values.
+The UUID module provides functions to convert between UUID_T and const char*.
 
 ## Exposed API
 ```c
-typedef unsigned char UUID_T[16];
+
+#define UUID_T_FROM_STRING_RESULT_VALUES \
+    UUID_T_FROM_STRING_RESULT_OK, \
+    UUID_T_FROM_STRING_RESULT_INVALID_DATA, \
+    UUID_T_FROM_STRING_RESULT_INVALID_ARG
+
+MU_DEFINE_ENUM(UUID_T_FROM_STRING_RESULT, UUID_T_FROM_STRING_RESULT_VALUES)
+
+#define UUID_T_STRING_LENGTH 36 /*all UUID_T have 36 characters when stringified (not counting a '\0' terminator)*/
 
 extern const UUID_T NIL_UUID;
 
-/* These 2 strings can be conveniently used directly in printf statements
-  Notice that PRI_UUID has to be used like any other print format specifier, meaning it
-  has to be preceded with % */
-#define PRI_UUID        "02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x"
-#define UUID_FORMAT_VALUES(uuid) \
-    (uuid)[0], (uuid)[1], (uuid)[2], (uuid)[3], (uuid)[4], (uuid)[5], (uuid)[6], (uuid)[7], \
-    (uuid)[8], (uuid)[9], (uuid)[10], (uuid)[11], (uuid)[12], (uuid)[13], (uuid)[14], (uuid)[15]
+MOCKABLE_FUNCTION(, UUID_T_FROM_STRING_RESULT, UUID_T_from_string, const char*, uuid_string, UUID_T, uuid);
 
-#define UUID_FORMAT_VALUES_OR_NULL(uuid) \
-    ((uuid) == NULL) ? 0 : (uuid)[0], ((uuid) == NULL) ? 0 : (uuid)[1], ((uuid) == NULL) ? 0 : (uuid)[2], ((uuid) == NULL) ? 0 : (uuid)[3], \
-    ((uuid) == NULL) ? 0 : (uuid)[4], ((uuid) == NULL) ? 0 : (uuid)[5], ((uuid) == NULL) ? 0 : (uuid)[6], ((uuid) == NULL) ? 0 : (uuid)[7], \
-    ((uuid) == NULL) ? 0 : (uuid)[8], ((uuid) == NULL) ? 0 : (uuid)[9], ((uuid) == NULL) ? 0 : (uuid)[10], ((uuid) == NULL) ? 0 : (uuid)[11], \
-    ((uuid) == NULL) ? 0 : (uuid)[12], ((uuid) == NULL) ? 0 : (uuid)[13], ((uuid) == NULL) ? 0 : (uuid)[14], ((uuid) == NULL) ? 0 : (uuid)[15] \
-
-/* @brief               Generates a true UUID
-*  @param uuid          A pre-allocated buffer for the bytes of the generated UUID
-*  @returns             Zero if no failures occur, non-zero otherwise.
-*/
-MOCKABLE_FUNCTION(, int, UUID_generate, UUID_T*, uuid);
-
-/* @brief               Gets the UUID value (byte sequence) of an well-formed UUID string.
-*  @param uuid_string   A null-terminated well-formed UUID string (e.g., "7f907d75-5e13-44cf-a1a3-19a01a2b4528").
-*  @param uuid          Sequence of bytes representing an UUID.
-*  @returns             Zero if no failures occur, non-zero otherwise.
-*/
-MOCKABLE_FUNCTION(, int, UUID_from_string, const char*, uuid_string, UUID_T*, uuid);
-
-/* @brief               Gets the string representation of the UUID value.
-*  @param uuid          Sequence of bytes representing an UUID.
-*  @returns             A null-terminated string representation of the UUID value provided (e.g., "7f907d75-5e13-44cf-a1a3-19a01a2b4528").
-*/
-MOCKABLE_FUNCTION(, char*, UUID_to_string, const UUID_T*, uuid);
+MOCKABLE_FUNCTION(, char*, UUID_T_to_string, const UUID_T, uuid);
 ```
 
-###  UUID_generate
-
+### UUID_T_from_string
 ```c
-MOCKABLE_FUNCTION(, int, UUID_generate, UUID_T*, uuid);
+MOCKABLE_FUNCTION(, UUID_T_FROM_STRING_RESULT, UUID_T_from_string, const char*, uuid_string, UUID_T, uuid);
 ```
 
-`UUID_generate` generates a `UUID_T`.
+`UUID_T_from_string` fills `uuid`'s bytes with the values from its representation in `uuid_string`. The string representation is `hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh`, where `h` is a hex digit, either lower case, or upper case.
 
-**SRS_UUID_09_001: [** If `uuid` is NULL, UUID_generate shall return a non-zero value **]**
+**SRS_UUID_02_001: [** If `uuid_string` is `NULL` then `UUID_T_from_string` shall fail and return `UUID_T_FROM_STRING_RESULT_INVALID_ARG`. **]**
 
-**SRS_UUID_09_002: [** UUID_generate shall obtain an UUID string from UniqueId_Generate **]**
+**SRS_UUID_02_002: [** If `uuid` is `NULL` then `UUID_T_from_string` shall fail and return `UUID_T_FROM_STRING_RESULT_INVALID_ARG`. **]**
 
-**SRS_UUID_09_003: [** If the UUID string fails to be obtained, UUID_generate shall fail and return a non-zero value **]**
+**SRS_UUID_02_003: [** If any character of `uuid_string` doesn't match the string representation `hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh` then `UUID_T_from_string` shall succeed and return `UUID_T_FROM_STRING_RESULT_INVALID_DATA`. **]**
 
-**SRS_UUID_09_004: [** The UUID string shall be parsed into an UUID_T type (16 unsigned char array) and filled in `uuid` **]**  
+**SRS_UUID_02_004: [** If any character of `uuid_string` is `\0` instead of a hex digit then `UUID_T_from_string` shall succeed and return `UUID_T_FROM_STRING_RESULT_INVALID_DATA`. **]**
 
-**SRS_UUID_09_005: [** If `uuid` fails to be set, UUID_generate shall fail and return a non-zero value **]**
+**SRS_UUID_02_005: [** If any character of `uuid_string` is `\0` instead of a `-` then `UUID_T_from_string` shall succeed and return `UUID_T_FROM_STRING_RESULT_INVALID_DATA`. **]**
 
-**SRS_UUID_09_006: [** If no failures occur, UUID_generate shall return zero **]**
+**SRS_UUID_02_006: [** `UUID_T_from_string` shall convert the hex digits to the bytes of `uuid`, succeed and return `UUID_T_FROM_STRING_RESULT_OK`. **]**
 
 
-###  UUID_from_string
-
+### UUID_T_to_string
 ```c
-MOCKABLE_FUNCTION(, int, UUID_from_string, const char*, uuid_string, UUID_T*, uuid);
+MOCKABLE_FUNCTION(, char*, UUID_T_to_string, const UUID_T, uuid);
 ```
 
-`UUID_from_string` converts a string to a `UUID_T`.
+`UUID_T_to_string` produces the string representation of `uuid`.
 
-**SRS_UUID_09_007: [** If `uuid_string` or `uuid` are NULL, UUID_from_string shall return a non-zero value **]**
+**SRS_UUID_02_007: [** If `uuid` is `NULL` then `UUID_T_to_string` shall fail and return `NULL`. **]**
 
-**SRS_UUID_09_008: [** Each pair of digits in `uuid_string`, excluding dashes, shall be read as a single HEX value and saved on the respective position in `uuid` **]**  
+**SRS_UUID_02_008: [** `UUID_T_to_string` shall output a `\0` terminated string in format `hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh` where every `h` is a nibble of one the bytes in `uuid`. **]**
 
-**SRS_UUID_09_009: [** If `uuid` fails to be generated, UUID_from_string shall return a non-zero value **]**
+**SRS_UUID_02_009: [** If there are any failures then `UUID_T_to_string` shall fail and return `NULL`. **]**
 
-**SRS_UUID_09_010: [** If no failures occur, UUID_from_string shall return zero **]**
-
-
-###  UUID_to_string
-
-```c
-MOCKABLE_FUNCTION(, char*, UUID_to_string, const UUID_T*, uuid);
-```
-
-`UUID_to_string` converts a `UUID_T` to a string.
-
-**SRS_UUID_09_011: [** If `uuid` is NULL, UUID_to_string shall return a non-zero value **]**  
-
-**SRS_UUID_09_012: [** UUID_to_string shall allocate a valid UUID string (`uuid_string`) as per RFC 4122 **]**  
-
-**SRS_UUID_09_013: [** If `uuid_string` fails to be allocated, UUID_to_string shall return NULL **]**  
-
-**SRS_UUID_09_014: [** Each character in `uuid` shall be written in the respective positions of `uuid_string` as a 2-digit HEX value **]**  
-
-**SRS_UUID_09_015: [** If `uuid_string` fails to be set, UUID_to_string shall return NULL **]**  
-
-**SRS_UUID_09_016: [** If no failures occur, UUID_to_string shall return `uuid_string` **]**  
 
 ### NIL_UUID
 

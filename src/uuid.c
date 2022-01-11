@@ -3,172 +3,169 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
+
 #include "macro_utils/macro_utils.h"
 
 #include "c_logging/xlogging.h"
 
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
-#include "c_pal/uniqueid.h"
+#include "c_pal/uuid.h"
+#include "c_pal/string_utils.h"
 
 #include "c_util/uuid.h"
 
-#define UUID_STRING_LENGTH          36
-#define UUID_STRING_SIZE            (UUID_STRING_LENGTH + 1)
-#define __SUCCESS__                 0
-#define UUID_FORMAT_STRING          "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x"
+MU_DEFINE_ENUM_STRINGS(UUID_T_FROM_STRING_RESULT, UUID_T_FROM_STRING_RESULT_VALUES);
 
 /* Codes_SRS_UUID_01_001: [ NIL_UUID shall contain all zeroes. ]*/
 const UUID_T NIL_UUID = { 0 };
 
-int UUID_from_string(const char* uuid_string, UUID_T* uuid)
+static bool isHexDigit(char c, uint8_t* value)
 {
     int result;
-
-    // Codes_SRS_UUID_09_007: [ If uuid_string or uuid are NULL, UUID_from_string shall return a non-zero value ]
-    if (uuid_string == NULL || uuid == NULL)
+    if (('0' <= c) && (c <= '9'))
     {
-        LogError("Invalid argument (uuid_string=%p, uuid=%p)", uuid_string, uuid);
-        result = MU_FAILURE;
+        *value = c - '0';
+        result = true;
     }
     else
     {
-        size_t uuid_string_length = strlen(uuid_string);
-
-        if (uuid_string_length != UUID_STRING_LENGTH)
+        if (('a' <= c) && (c <= 'f'))
         {
-            LogError("Unexpected size for an UUID string (%lu)", (unsigned long)uuid_string_length);
-            result = MU_FAILURE;
+            *value = 0xA + c - 'a';
+            result = true;
         }
         else
         {
-            // Codes_SRS_UUID_09_008: [ Each pair of digits in uuid_string, excluding dashes, shall be read as a single HEX value and saved on the respective position in uuid ]
-            size_t i, j;
-            char* uuid_bytes;
-
-            uuid_bytes = (char *)uuid;
-            // Codes_SRS_UUID_09_010: [ If no failures occur, UUID_from_string shall return zero ]
-            result = __SUCCESS__;
-
-            for (i = 0, j = 0; i < uuid_string_length; )
+            if (('A' <= c) && (c <= 'F'))
             {
-                if (uuid_string[i] == '-')
-                {
-                    i++;
-                }
-                else
-                {
-                    char double_hex_digit[3] = { 0, 0, 0 };
-
-                    (void)memcpy(double_hex_digit, uuid_string + i, 2);
-
-                    if (sscanf(double_hex_digit, "%02hhx", uuid_bytes + j) != 1)
-                    {
-                        // Codes_SRS_UUID_09_009: [ If uuid fails to be generated, UUID_from_string shall return a non-zero value ]
-                        LogError("Failed decoding UUID string (%lu)", (unsigned long)i);
-                        result = MU_FAILURE;
-                        break;
-                    }
-                    else
-                    {
-                        i += 2;
-                        j++;
-                    }
-                }
-            }
-        }
-    }
-
-    return result;
-}
-
-char* UUID_to_string(const UUID_T* uuid)
-{
-    char* result;
-
-    // Codes_SRS_UUID_09_011: [ If uuid is NULL, UUID_to_string shall return a non-zero value ]
-    if (uuid == NULL)
-    {
-        LogError("Invalid argument (uuid is NULL)");
-        result = NULL;
-    }
-    // Codes_SRS_UUID_09_012: [ UUID_to_string shall allocate a valid UUID string (uuid_string) as per RFC 4122 ]
-    else if ((result = (char*)malloc(sizeof(char) * UUID_STRING_SIZE)) == NULL)
-    {
-        // Codes_SRS_UUID_09_013: [ If uuid_string fails to be allocated, UUID_to_string shall return NULL ]
-        LogError("Failed allocating UUID string");
-    }
-    else
-    {
-        unsigned char* uuid_bytes;
-        int number_of_chars_written;
-
-        uuid_bytes = (unsigned char*)uuid;
-
-        // Codes_SRS_UUID_09_014: [ Each character in uuid shall be written in the respective positions of uuid_string as a 2-digit HEX value ]  
-        number_of_chars_written = sprintf(result, "%" PRI_UUID,
-            UUID_FORMAT_VALUES(uuid_bytes));
-
-        if (number_of_chars_written != UUID_STRING_LENGTH)
-        {
-            // Codes_SRS_UUID_09_015: [ If uuid_string fails to be set, UUID_to_string shall return NULL ]
-            LogError("Failed encoding UUID string");
-            free(result);
-            result = NULL;
-        }
-    }
-
-    // Codes_SRS_UUID_09_016: [ If no failures occur, UUID_to_string shall return uuid_string ]
-    return result;
-}
-
-int UUID_generate(UUID_T* uuid)
-{
-    int result;
-
-    // Codes_SRS_UUID_09_001: [ If uuid is NULL, UUID_generate shall return a non-zero value ]
-    if (uuid == NULL)
-    {
-        LogError("Invalid argument (uuid is NULL)");
-        result = MU_FAILURE;
-    }
-    else
-    {
-        char* uuid_string;
-
-        if ((uuid_string = (char*)malloc(sizeof(char) * UUID_STRING_SIZE)) == NULL)
-        {
-            // Codes_SRS_UUID_09_003: [ If the UUID string fails to be obtained, UUID_generate shall fail and return a non-zero value ]
-            LogError("Failed allocating UUID string");
-            result = MU_FAILURE;
-        }
-        else
-        {
-            (void)memset(uuid_string, 0, sizeof(char) * UUID_STRING_SIZE);
-
-            // Codes_SRS_UUID_09_002: [ UUID_generate shall obtain an UUID string from UniqueId_Generate ]
-            if (UniqueId_Generate(uuid_string, UUID_STRING_SIZE) != UNIQUEID_OK)
-            {
-                // Codes_SRS_UUID_09_003: [ If the UUID string fails to be obtained, UUID_generate shall fail and return a non-zero value ]
-                LogError("Failed generating UUID");
-                result = MU_FAILURE;
-            }
-            // Codes_SRS_UUID_09_004: [ The UUID string shall be parsed into an UUID_T type (16 unsigned char array) and filled in uuid ]
-            else if (UUID_from_string(uuid_string, uuid) != 0)
-            {
-                // Codes_SRS_UUID_09_005: [ If uuid fails to be set, UUID_generate shall fail and return a non-zero value ]
-                LogError("Failed parsing UUID string");
-                result = MU_FAILURE;
+                *value = 0xA + c - 'A';
+                result = true;
             }
             else
             {
-                // Codes_SRS_UUID_09_006: [ If no failures occur, UUID_generate shall return zero ]
-                result = __SUCCESS__;
+                result = false;
             }
+        }
+    }
+    return result;
+}
 
-            free(uuid_string);
+static bool isHexByte(const char* s, uint8_t* value)
+{
+    bool result;
+    size_t pos = 0;
+    uint8_t high, low;
+    if (!isHexDigit(s[pos], &high))
+    {
+        result = false;
+    }
+    else
+    {
+        pos++;
+        if (!isHexDigit(s[pos], &low))
+        {
+            result = false;
+        }
+        else
+        {
+            *value = (high << 4) + low;
+            result = true;
+        }
+    }
+    return result;
+}
+
+static bool parseHexString(const char* s, uint8_t numbers, unsigned char* destination) /*numbers = how many hex number (0-0xFF) to parse*/
+{
+    bool result = true;
+    size_t i = 0; /*where are we scanning in s*/
+    while (
+        (i < numbers) &&
+        (result == true)
+        )
+    {
+        result = isHexByte(s + i * 2, destination + i);
+        i++;
+    }
+    
+    return result;
+}
+
+UUID_T_FROM_STRING_RESULT UUID_T_from_string(const char* uuid_string, UUID_T uuid) /*uuid_string is not necessarily null terminated*/
+{
+    UUID_T_FROM_STRING_RESULT result;
+
+    if (
+        /*Codes_SRS_UUID_02_001: [ If uuid_string is NULL then UUID_T_from_string shall fail and return UUID_T_FROM_STRING_RESULT_INVALID_ARG. ]*/
+        (uuid_string == NULL) ||
+        /*Codes_SRS_UUID_02_002: [ If uuid is NULL then UUID_T_from_string shall fail and return UUID_T_FROM_STRING_RESULT_INVALID_ARG. ]*/
+        (uuid == NULL)
+        )
+    {
+        LogError("Invalid argument (uuid_string=%s, uuid=%p)", MU_P_OR_NULL(uuid_string), uuid);
+        result = UUID_T_FROM_STRING_RESULT_INVALID_ARG;
+    }
+    else
+    {
+        /*scan until either all characters are converted and deposited into the UUID_T or found a non-expected character (that includes '\0')*/
+
+
+        /*the below test shows where offsets are in a UUID representation as string*/
+        /*             1         2         3        */
+        /*   012345678901234567890123456789012345   */
+        /*   8C9F1E63-3F22-4AFD-BC7D-8D1B20F968D6   */
+
+        /*Codes_SRS_UUID_02_003: [ If any character of uuid_string doesn't match the string representation hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh then UUID_T_from_string shall succeed and return UUID_T_FROM_STRING_RESULT_INVALID_DATA. ]*/
+        /*Codes_SRS_UUID_02_004: [ If any character of uuid_string is \0 instead of a hex digit then UUID_T_from_string shall succeed and return UUID_T_FROM_STRING_RESULT_INVALID_DATA. ]*/
+        /*Codes_SRS_UUID_02_005: [ If any character of uuid_string is \0 instead of a - then UUID_T_from_string shall succeed and return UUID_T_FROM_STRING_RESULT_INVALID_DATA. ]*/
+        if (
+            (!parseHexString(uuid_string + 0, 4, uuid + 0)) ||
+            (uuid_string[8] != '-') ||
+            (!parseHexString(uuid_string + 9, 2, uuid + 4)) ||
+            (uuid_string[13] != '-') ||
+            (!parseHexString(uuid_string + 14, 2, uuid + 6)) ||
+            (uuid_string[18] != '-') ||
+            (!parseHexString(uuid_string + 19, 2, uuid + 8)) ||
+            (uuid_string[23] != '-') ||
+            (!parseHexString(uuid_string + 24, 6, uuid + 10))
+            )
+        {
+            LogError("const char* uuid_string=%s cannot be parsed at UUID_T", uuid_string);
+            result = UUID_T_FROM_STRING_RESULT_INVALID_DATA;
+        }
+        else
+        {
+            /*Codes_SRS_UUID_02_006: [ UUID_T_from_string shall convert the hex digits to the bytes of uuid, succeed and return UUID_T_FROM_STRING_RESULT_OK. ]*/
+            result = UUID_T_FROM_STRING_RESULT_OK;
         }
     }
 
     return result;
 }
+
+char* UUID_T_to_string(const UUID_T uuid)
+{
+    char* result;
+
+    /*Codes_SRS_UUID_02_007: [ If uuid is NULL then UUID_T_to_string shall fail and return NULL. ]*/
+    if (uuid == NULL)
+    {
+        LogError("Invalid argument (const UUID_T uuid=%" PRI_UUID_T ")", UUID_T_VALUES_OR_NULL(uuid));
+        result = NULL;
+    }
+    else
+    {
+        /*Codes_SRS_UUID_02_008: [ UUID_T_to_string shall output a \0 terminated string in format hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh where every h is a nibble of one the bytes in uuid. ]*/
+        result = sprintf_char("%" PRI_UUID_T "", UUID_T_VALUES(uuid));
+
+        /*Codes_SRS_UUID_02_009: [ If there are any failures then UUID_T_to_string shall fail and return NULL. ]*/
+        if (result == NULL)
+        {
+            /*return as is*/
+            LogError("failure in sprintf_char(\"%%\" PRI_UUID_T \"\", UUID_T_VALUES(uuid=%" PRI_UUID_T ")", UUID_T_VALUES(uuid));
+        }
+    }
+
+    return result;
+}
+
