@@ -6,7 +6,7 @@
 
 #include "macro_utils/macro_utils.h"
 
-#include "c_util/uuid.h"
+#include "c_util/uuid_string.h"
 
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 

@@ -160,7 +160,7 @@ set(c_util_c_files
     ./src/sm.c
     ./src/strings.c
     ./src/tarray.c
-    ./src/uuid.c
+    ./src/uuid_string.c
 )
 
 set(c_util_h_files
@@ -189,7 +189,7 @@ set(c_util_h_files
     ./inc/c_util/thandle_ll.h
     ./inc/c_util/thandle.h
     ./inc/c_util/thandle_tuple_array.h
-    ./inc/c_util/uuid.h
+    ./inc/c_util/uuid_string.h
 )
 
 FILE(GLOB c_util_md_files "devdoc/*.md")

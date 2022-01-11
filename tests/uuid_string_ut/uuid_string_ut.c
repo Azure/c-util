@@ -22,7 +22,7 @@
 #include "real_uuid.h" /*the one from c_pal*/
 #include "real_gballoc_hl.h"
 
-#include "c_util/uuid.h"
+#include "c_util/uuid_string.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
@@ -80,7 +80,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
-/*Tests_SRS_UUD_STRING_02_001: [ If uuid_string is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
+/*Tests_SRS_UUID_STRING_02_001: [ If uuid_string is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
 TEST_FUNCTION(uuid_from_string_with_uuid_string_NULL_returns_UUID_FROM_STRING_RESULT_INVALID_ARG)
 {
     ///arrange
@@ -95,7 +95,7 @@ TEST_FUNCTION(uuid_from_string_with_uuid_string_NULL_returns_UUID_FROM_STRING_RE
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_UUD_STRING_02_002: [ If uuid is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
+/*Tests_SRS_UUID_STRING_02_002: [ If uuid is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
 TEST_FUNCTION(uuid_from_string_with_uuid_NULL_returns_UUID_FROM_STRING_RESULT_INVALID_ARG)
 {
     ///arrange
@@ -117,9 +117,9 @@ static bool isHexDigit(char c)
         (('0' <= c) && (c <= '9'));
 }
 
-/*Tests_SRS_UUD_STRING_02_003: [ If any character of uuid_string doesn't match the string representation hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/
-/*Tests_SRS_UUD_STRING_02_004: [ If any character of uuid_string is \0 instead of a hex digit then UUID_T_from_string shall succeed and return UUID_T_FROM_STRING_RESULT_INVALID_DATA. ]*/ /*note: this happens when int_result is 0*/
-/*Tests_SRS_UUD_STRING_02_005: [ If any character of uuid_string is \0 instead of a - then UUID_T_from_string shall succeed and return UUID_T_FROM_STRING_RESULT_INVALID_DATA. ]*/ /*note: this happens when int_result is 0*/
+/*Tests_SRS_UUID_STRING_02_003: [ If any character of uuid_string doesn't match the string representation hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/
+/*Tests_SRS_UUID_STRING_02_004: [ If any character of uuid_string is \0 instead of a hex digit then UUID_T_from_string shall succeed and return UUID_T_FROM_STRING_RESULT_INVALID_DATA. ]*/ /*note: this happens when int_result is 0*/
+/*Tests_SRS_UUID_STRING_02_005: [ If any character of uuid_string is \0 instead of a - then UUID_T_from_string shall succeed and return UUID_T_FROM_STRING_RESULT_INVALID_DATA. ]*/ /*note: this happens when int_result is 0*/
 TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
 {
     ///arrange
@@ -183,7 +183,7 @@ TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
     }
 }
 
-/*Tests_SRS_UUD_STRING_02_007: [ If uuid is NULL then uuid_to_string shall fail and return NULL. ]*/
+/*Tests_SRS_UUID_STRING_02_007: [ If uuid is NULL then uuid_to_string shall fail and return NULL. ]*/
 TEST_FUNCTION(uuid_to_string_with_uuid_NULL_fails)
 {
     ///arrange
@@ -198,7 +198,7 @@ TEST_FUNCTION(uuid_to_string_with_uuid_NULL_fails)
     
 }
 
-/*Tests_SRS_UUD_STRING_02_006: [ uuid_from_string shall convert the hex digits to the bytes of uuid, succeed and return UUID_FROM_STRING_RESULT_OK. ]*/
+/*Tests_SRS_UUID_STRING_02_006: [ uuid_from_string shall convert the hex digits to the bytes of uuid, succeed and return UUID_FROM_STRING_RESULT_OK. ]*/
 TEST_FUNCTION(uuid_from_string_succeeds)
 {
     ///arrange
@@ -230,7 +230,7 @@ TEST_FUNCTION(uuid_from_string_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_UUD_STRING_02_007: [ If uuid is NULL then uuid_to_string shall fail and return NULL. ]*/
+/*Tests_SRS_UUID_STRING_02_007: [ If uuid is NULL then uuid_to_string shall fail and return NULL. ]*/
 TEST_FUNCTION(UUID_to_string_NULL_uuid)
 {
     //arrange
@@ -243,7 +243,7 @@ TEST_FUNCTION(UUID_to_string_NULL_uuid)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_UUD_STRING_02_008: [ uuid_to_string shall output a \0 terminated string in format hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh where every h is a nibble of one the bytes in uuid. ]*/
+/*Tests_SRS_UUID_STRING_02_008: [ uuid_to_string shall output a \0 terminated string in format hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh where every h is a nibble of one the bytes in uuid. ]*/
 
 TEST_FUNCTION(UUID_to_string_succeed)
 {
@@ -282,7 +282,7 @@ TEST_FUNCTION(UUID_to_string_succeed)
     free(result);
 }
 
-/*Tests_SRS_UUD_STRING_02_009: [ If there are any failures then uuid_to_string shall fail and return NULL. ]*/
+/*Tests_SRS_UUID_STRING_02_009: [ If there are any failures then uuid_to_string shall fail and return NULL. ]*/
 TEST_FUNCTION(UUID_to_string_fails_when_sprintf_char_fails)
 {
     //arrange

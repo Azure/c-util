@@ -13,7 +13,7 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
-#include "c_util/uuid.h"
+#include "c_util/uuid_string.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 

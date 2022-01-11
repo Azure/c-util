@@ -28,7 +28,7 @@
 #include "c_util/rc_string.h"
 #include "c_util/rc_string_array.h"
 #include "c_util/singlylinkedlist.h"
-#include "c_util/uuid.h"
+#include "c_util/uuid_string.h"
 
 #if defined _MSC_VER
 #include "../reals/real_sm.h"
