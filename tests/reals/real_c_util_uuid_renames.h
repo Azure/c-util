@@ -5,3 +5,4 @@
 #define uuid_to_string real_uuid_to_string
 
 #define NIL_UUID real_NIL_UUID
+#define UUID_FROM_STRING_RESULT real_UUID_FROM_STRING_RESULT
