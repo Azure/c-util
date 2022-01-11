@@ -1,35 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifdef __cplusplus
-#include <cstdlib>
-#include <cstddef>
-#else
 #include <stdlib.h>
 #include <stddef.h>
-#endif
-
-#include "real_gballoc_ll.h"
-
-static void* my_gballoc_malloc(size_t size)
-{
-    return real_gballoc_ll_malloc(size);
-}
-
-static void* my_gballoc_malloc_2(size_t nmemb, size_t size)
-{
-    return real_gballoc_ll_malloc_2(nmemb, size);
-}
-
-static void* my_gballoc_malloc_flex(size_t base, size_t nmemb, size_t size)
-{
-    return real_gballoc_ll_malloc_flex(base, nmemb, size);
-}
-
-static void my_gballoc_free(void* s)
-{
-    free(s);
-}
 
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
@@ -59,10 +32,10 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 
 // this function is used for tests just to make sure we do not confuse it with regular malloc
 MOCK_FUNCTION_WITH_CODE(, void*, test_malloc_func, size_t, size_needed)
-MOCK_FUNCTION_END((unsigned char*)my_gballoc_malloc(size_needed + 1) + 1)
+MOCK_FUNCTION_END((unsigned char*)real_gballoc_hl_malloc(size_needed + 1) + 1)
 
 MOCK_FUNCTION_WITH_CODE(, void, test_free_func, void*, context)
-    my_gballoc_free((unsigned char*)context - 1);
+    real_gballoc_hl_free((unsigned char*)context - 1);
 MOCK_FUNCTION_END()
 
 MOCK_FUNCTION_WITH_CODE(, void, test_free_func_do_nothing, void*, context)
@@ -81,11 +54,7 @@ TEST_SUITE_INITIALIZE(suite_initialize)
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error));
     ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types());
 
-    REGISTER_GLOBAL_MOCK_HOOK(malloc, my_gballoc_malloc);
-    REGISTER_GLOBAL_MOCK_HOOK(malloc_2, my_gballoc_malloc_2);
-    REGISTER_GLOBAL_MOCK_HOOK(malloc_flex, my_gballoc_malloc_flex);
-    REGISTER_GLOBAL_MOCK_HOOK(free, my_gballoc_free);
-
+    REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
 }
 
@@ -219,7 +188,7 @@ TEST_FUNCTION(rc_string_create_with_move_memory_succeeds)
 {
     // arrange
     const char const_test_string[] = "goguletz";
-    char* test_string = (char*)my_gballoc_malloc(sizeof(const_test_string));
+    char* test_string = (char*)real_gballoc_hl_malloc(sizeof(const_test_string));
     ASSERT_IS_NOT_NULL(test_string);
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
@@ -245,7 +214,7 @@ TEST_FUNCTION(rc_string_create_with_move_memory_with_empty_string_succeeds)
 {
     // arrange
     const char const_test_string[] = "";
-    char* test_string = (char*)my_gballoc_malloc(sizeof(const_test_string));
+    char* test_string = (char*)real_gballoc_hl_malloc(sizeof(const_test_string));
     ASSERT_IS_NOT_NULL(test_string);
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
@@ -269,7 +238,7 @@ TEST_FUNCTION(a_string_created_with_rc_string_create_with_move_memory_frees_the_
 {
     // arrange
     const char const_test_string[] = "goguletz";
-    char* test_string = (char*)my_gballoc_malloc(sizeof(const_test_string));
+    char* test_string = (char*)real_gballoc_hl_malloc(sizeof(const_test_string));
     ASSERT_IS_NOT_NULL(test_string);
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
@@ -294,7 +263,7 @@ TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_move_memory_also_
     // arrange
     const char const_test_string[] = "";
 
-    char* test_string = (char*)my_gballoc_malloc(sizeof(const_test_string));
+    char* test_string = (char*)real_gballoc_hl_malloc(sizeof(const_test_string));
     ASSERT_IS_NOT_NULL(test_string);
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
@@ -319,7 +288,7 @@ TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_move_memory_also_
     }
 
     // cleanup
-    my_gballoc_free(test_string);
+    real_gballoc_hl_free(test_string);
 }
 
 /* rc_string_create_with_custom_free */

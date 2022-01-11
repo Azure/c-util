@@ -13,7 +13,7 @@ set(c_util_reals_c_files
     real_rc_string_array.c
     real_singlylinkedlist.c
     real_sm.c
-    real_uuid.c
+    real_uuid_string.c
 )
 
 set(c_util_reals_h_files
@@ -39,8 +39,8 @@ set(c_util_reals_h_files
     real_singlylinkedlist_renames.h
     real_sm.h
     real_sm_renames.h
-    real_uuid.h
-    real_uuid_renames.h
+    real_uuid_string.h
+    real_uuid_string_renames.h
 )
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)

@@ -20,12 +20,11 @@
         DList_RemoveHeadList \
     )
 
-#ifdef __cplusplus
-#include <cstddef>
-extern "C"
-{
-#else
+
 #include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 void real_DList_InitializeListHead(PDLIST_ENTRY listHead);

@@ -1,25 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-#ifdef __cplusplus
-#include <cinttypes>
-#include <cstdlib>
-#else
+
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#endif
 
 #include "real_gballoc_ll.h"
-
-static void* my_gballoc_malloc(size_t size)
-{
-    return real_gballoc_ll_malloc(size);
-}
-
-static void my_gballoc_free(void* s)
-{
-    real_gballoc_ll_free(s);
-}
 
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
@@ -253,7 +239,6 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(CONSTBUFFER_GetContent, NULL);
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
-
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
 
     REGISTER_INTERLOCKED_GLOBAL_MOCK_HOOK();
@@ -437,7 +422,7 @@ TEST_FUNCTION(constbuffer_array_create_with_move_buffers_succeeds)
 {
     ///arrange
     CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
-    CONSTBUFFER_HANDLE* test_buffers = (CONSTBUFFER_HANDLE*)my_gballoc_malloc(sizeof(CONSTBUFFER_HANDLE) * 2);
+    CONSTBUFFER_HANDLE* test_buffers = (CONSTBUFFER_HANDLE*)real_gballoc_hl_malloc(sizeof(CONSTBUFFER_HANDLE) * 2);
 
     CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1);
     CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_2);
@@ -464,7 +449,7 @@ TEST_FUNCTION(constbuffer_array_create_with_move_buffers_succeeds)
 TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_create_with_move_buffers_also_fails)
 {
     ///arrange
-    CONSTBUFFER_HANDLE* test_buffers = (CONSTBUFFER_HANDLE*)my_gballoc_malloc(sizeof(CONSTBUFFER_HANDLE) * 2);
+    CONSTBUFFER_HANDLE* test_buffers = (CONSTBUFFER_HANDLE*)real_gballoc_hl_malloc(sizeof(CONSTBUFFER_HANDLE) * 2);
     size_t i;
 
     CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1);

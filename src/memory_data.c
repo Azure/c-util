@@ -6,7 +6,7 @@
 
 #include "umock_c/umock_c_prod.h"
 
-#include "c_util/uuid.h"
+#include "c_util/uuid_string.h"
 
 #include "c_util/memory_data.h"
 

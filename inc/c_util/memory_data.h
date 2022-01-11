@@ -10,7 +10,7 @@
 #include <stdint.h>
 #endif
 
-#include "c_util/uuid.h"
+#include "c_util/uuid_string.h"
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus

@@ -38,4 +38,5 @@ extern "C" {
 }
 #endif
 
+
 #endif //REAL_INTERLOCKED_HL_H

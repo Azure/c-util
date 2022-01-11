@@ -14,18 +14,14 @@
 TARRAY_DEFINE_STRUCT_TYPE(UNDO_OP);
 
 #include "umock_c/umock_c_prod.h"
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+
 
     THANDLE_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(UNDO_OP));
 
     TARRAY_TYPE_DECLARE(UNDO_OP);
 
-#ifdef __cplusplus
-}
-#endif
+
+
 
 #endif /*PLAY_UNDO_OP_TARRAY_TYPES_H*/
 

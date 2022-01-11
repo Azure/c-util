@@ -21,12 +21,11 @@
     REGISTER_GLOBAL_MOCK_HOOK(THANDLE_INITIALIZE_MOVE(RC_STRING), THANDLE_INITIALIZE_MOVE(real_RC_STRING)) \
     REGISTER_GLOBAL_MOCK_HOOK(THANDLE_ASSIGN(RC_STRING), THANDLE_ASSIGN(real_RC_STRING)) \
 
-#ifdef __cplusplus
-#include <cstdint>
-extern "C"
-{
-#else
+
 #include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
     typedef struct RC_STRING_TAG real_RC_STRING;
@@ -40,5 +39,6 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif //REAL_RC_STRING_H

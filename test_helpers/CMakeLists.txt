@@ -12,12 +12,10 @@ set(c_util_test_helpers_c_files
 if(WIN32)
 set(c_util_test_helpers_h_files
     ${c_util_test_helpers_h_files}
-    inc/c_util_test_helpers/uuid_test_type.h
 )
 
 set(c_util_test_helpers_c_files
     ${c_util_test_helpers_c_files}
-    src/uuid_test_type.c
 )
 endif()
 

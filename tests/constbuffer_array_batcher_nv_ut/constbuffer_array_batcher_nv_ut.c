@@ -1,31 +1,13 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-#ifdef __cplusplus
-#include <cstdlib>
-#include <cinttypes>
-#else
+
 #include <stdlib.h>
 #include <inttypes.h>
-#endif
+
 
 #include "macro_utils/macro_utils.h"
 
 #include "real_gballoc_ll.h"
-
-static void* real_malloc(size_t size)
-{
-    return real_gballoc_ll_malloc(size);
-}
-
-static void* real_malloc_2(size_t nmemb, size_t size)
-{
-    return real_gballoc_ll_malloc_2(nmemb, size);
-}
-
-static void real_free(void* ptr)
-{
-    real_gballoc_ll_free(ptr);
-}
 
 #include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
@@ -76,9 +58,9 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_ARE_EQUAL(int, 0, result, "umocktypes_stdint_register_types failed");
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
-
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc_2, NULL);
+
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(constbuffer_array_create_empty, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(constbuffer_array_create, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(CONSTBUFFER_CreateWithMoveMemory, NULL);
@@ -791,7 +773,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_0_buffers
     real_constbuffer_array_dec_ref(batch);
     real_CONSTBUFFER_DecRef(test_buffers[0]);
     real_constbuffer_array_dec_ref(result[0]);
-    real_free(result);
+    real_gballoc_hl_free(result);
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_013: [ Otherwise, constbuffer_array_batcher_nv_unbatch shall obtain the number of buffers in batch. ]*/
@@ -841,7 +823,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_2_payload_with_0_buffers
     real_CONSTBUFFER_DecRef(test_buffers[0]);
     real_constbuffer_array_dec_ref(result[0]);
     real_constbuffer_array_dec_ref(result[1]);
-    real_free(result);
+    real_gballoc_hl_free(result);
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_013: [ Otherwise, constbuffer_array_batcher_nv_unbatch shall obtain the number of buffers in batch. ]*/
@@ -897,7 +879,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_1_buffers
     real_CONSTBUFFER_DecRef(test_buffers[1]);
     real_constbuffer_array_dec_ref(result[0]);
     real_CONSTBUFFER_DecRef(actual_buffers[0]);
-    real_free(result);
+    real_gballoc_hl_free(result);
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_013: [ Otherwise, constbuffer_array_batcher_nv_unbatch shall obtain the number of buffers in batch. ]*/
@@ -960,7 +942,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_1_payload_with_2_buffers
     real_constbuffer_array_dec_ref(result[0]);
     real_CONSTBUFFER_DecRef(actual_buffers[0]);
     real_CONSTBUFFER_DecRef(actual_buffers[1]);
-    real_free(result);
+    real_gballoc_hl_free(result);
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_013: [ Otherwise, constbuffer_array_batcher_nv_unbatch shall obtain the number of buffers in batch. ]*/
@@ -1050,7 +1032,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_unbatch_with_2_payloads_each_with_dif
     real_CONSTBUFFER_DecRef(actual_buffers[1]);
     real_CONSTBUFFER_DecRef(actual_buffers[2]);
     real_CONSTBUFFER_DecRef(actual_buffers[3]);
-    real_free(result);
+    real_gballoc_hl_free(result);
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_01_022: [ If any error occurs, constbuffer_array_batcher_nv_unbatch shall fail and return NULL. ]*/

@@ -29,7 +29,7 @@ if(${run_unittests})
     build_test_folder(thandle_tuple_array_ut)
     build_test_folder(thandle_ut)
     build_test_folder(thandle_2_ut)
-    build_test_folder(uuid_ut)
+    build_test_folder(uuid_string_ut)
 endif()
 
 if(${run_int_tests})

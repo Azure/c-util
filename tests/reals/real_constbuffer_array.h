@@ -4,11 +4,9 @@
 #ifndef REAL_CONSTBUFFER_ARRAY_H
 #define REAL_CONSTBUFFER_ARRAY_H
 
-#ifdef __cplusplus
-#include <cstdint>
-#else
+
 #include <stdint.h>
-#endif
+
 
 #include "macro_utils/macro_utils.h"
 

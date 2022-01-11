@@ -6,9 +6,7 @@
 
 #include "c_util/thandle.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
     typedef struct LL_FLEX_TAG LL_FLEX;
 
@@ -16,8 +14,7 @@ THANDLE_TYPE_DECLARE(LL_FLEX) /*LL is a struct in thandle_user.c that has an "in
 
 THANDLE(LL_FLEX) ll_flex_create(int a, const char* b, size_t howMany);
 
-#ifdef __cplusplus
-}
-#endif
+
+
 
 #endif /*THANDLE_FLEX_USER_H*/

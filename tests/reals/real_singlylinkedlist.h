@@ -4,11 +4,9 @@
 #ifndef REAL_SINGLYLINKEDLIST_H
 #define REAL_SINGLYLINKEDLIST_H
 
-#ifdef __cplusplus
-#include <cstddef>
-#else
+
 #include <stddef.h>
-#endif
+
 
 #include "macro_utils/macro_utils.h"
 #include "c_util/singlylinkedlist.h"
@@ -49,5 +47,6 @@ int real_singlylinkedlist_foreach(SINGLYLINKEDLIST_HANDLE list, LIST_ACTION_FUNC
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif // REAL_SINGLYLINKEDLIST_H

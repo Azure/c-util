@@ -3,13 +3,10 @@
 #ifndef REAL_RC_STRING_ARRAY_H
 #define REAL_RC_STRING_ARRAY_H
 
-#ifdef __cplusplus
-#include <cstdint>
-#include <cstddef>
-#else
+
 #include <stdint.h>
 #include <stddef.h>
-#endif
+
 
 #include "c_util/rc_string_array.h"
 
@@ -33,5 +30,6 @@ void real_rc_string_array_destroy(RC_STRING_ARRAY* rc_string_array);
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif //REAL_RC_STRING_ARRAY_H

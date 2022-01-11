@@ -1,13 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifdef __cplusplus
-#include <cstdlib>
-#include <cstddef>
-#else
+
 #include <stdlib.h>
 #include <stddef.h>
-#endif
+
 
 #include "macro_utils/macro_utils.h"
 
@@ -62,14 +59,11 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 
 MU_DEFINE_STRUCT(A_B, A_B_FIELDS);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
     THANDLE_TYPE_DECLARE(A_B);
     THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(A_B, gballoc_hl_malloc, gballoc_hl_malloc_flex, gballoc_hl_free);
-#ifdef __cplusplus
-    }
-#endif
+
+
 
 typedef struct A_S_TAG
 {
@@ -101,14 +95,11 @@ static void dispose_A_S(A_S* a_s)
     free(a_s->s);
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
     THANDLE_TYPE_DECLARE(A_S);
     THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(A_S, gballoc_hl_malloc, gballoc_hl_malloc_flex, gballoc_hl_free);
-#ifdef __cplusplus
-}
-#endif
+
+
 
 typedef struct A_FLEX_TAG
 {
@@ -122,14 +113,11 @@ static size_t get_sizeof_A_FLEX(const A_FLEX* source)
     return sizeof(A_FLEX) + source->n * sizeof(int);
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
     THANDLE_TYPE_DECLARE(A_FLEX);
     THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(A_FLEX, gballoc_hl_malloc, gballoc_hl_malloc_flex, gballoc_hl_free);
-#ifdef __cplusplus
-}
-#endif
+
+
 
 
 /*a flex structure that has a non-default copy*/
@@ -173,14 +161,11 @@ static size_t get_sizeof_A_S_FLEX(const A_S_FLEX* source)
     return sizeof(A_S_FLEX) + source->n * sizeof(int);
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
     THANDLE_TYPE_DECLARE(A_S_FLEX);
     THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(A_S_FLEX, gballoc_hl_malloc, gballoc_hl_malloc_flex, gballoc_hl_free);
-#ifdef __cplusplus
-}
-#endif
+
+
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 

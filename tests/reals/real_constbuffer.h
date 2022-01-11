@@ -4,13 +4,10 @@
 #ifndef REAL_CONSTBUFFER_H
 #define REAL_CONSTBUFFER_H
 
-#ifdef __cplusplus
-#include <cstdint>
-#include <cstddef>
-#else
+
 #include <stdint.h>
 #include <stddef.h>
-#endif
+
 
 #include "macro_utils/macro_utils.h"
 
@@ -34,16 +31,16 @@
         CONSTBUFFER_from_buffer \
 )
 
-#ifdef __cplusplus
-#include <cstddef>
-extern "C"
-{
-#else
+
 #include <stddef.h>
 #include <stdbool.h>
-#endif
+
 
 #include "c_util/constbuffer.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 CONSTBUFFER_HANDLE real_CONSTBUFFER_Create(const unsigned char* source, uint32_t size);
 
@@ -76,5 +73,6 @@ CONSTBUFFER_FROM_BUFFER_RESULT real_CONSTBUFFER_from_buffer(const unsigned char*
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif //REAL_CONSTBUFFER_H

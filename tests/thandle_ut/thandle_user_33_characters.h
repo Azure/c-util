@@ -6,9 +6,7 @@
 
 #include "c_util/thandle.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
     typedef struct LL3456789012345678901234567890123_TAG LL3456789012345678901234567890123;
 
@@ -21,8 +19,7 @@ THANDLE(LL3456789012345678901234567890123) ll33_create(int a);
 const char* ll33_get_name(THANDLE(LL3456789012345678901234567890123) ll);
 #endif
 
-#ifdef __cplusplus
-}
-#endif
+
+
 
 #endif /*THANDLE_USER_33_CHARACTERS_H*/

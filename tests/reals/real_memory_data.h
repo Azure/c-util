@@ -6,7 +6,7 @@
 
 #include "macro_utils/macro_utils.h"
 
-#include "c_util/uuid.h"
+#include "c_util/uuid_string.h"
 
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 
@@ -32,12 +32,11 @@
         write_uuid_t \
     )
 
-#ifdef __cplusplus
-#include <cstdint>
-extern "C"
-{
-#else
+
 #include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
     void real_read_uint8_t(const unsigned char* source, uint8_t* destination);
@@ -67,5 +66,6 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif //REAL_MEMORY_DATA_H
