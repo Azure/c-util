@@ -96,9 +96,9 @@ UUID_FROM_STRING_RESULT uuid_from_string(const char* uuid_string, UUID_T uuid) /
     UUID_FROM_STRING_RESULT result;
 
     if (
-        /*Codes_SRS_UUID_02_001: [ If uuid_string is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
+        /*Codes_SRS_UUD_STRING_02_001: [ If uuid_string is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
         (uuid_string == NULL) ||
-        /*Codes_SRS_UUID_02_002: [ If uuid is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
+        /*Codes_SRS_UUD_STRING_02_002: [ If uuid is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
         (uuid == NULL)
         )
     {
@@ -115,9 +115,9 @@ UUID_FROM_STRING_RESULT uuid_from_string(const char* uuid_string, UUID_T uuid) /
         /*   012345678901234567890123456789012345   */
         /*   8C9F1E63-3F22-4AFD-BC7D-8D1B20F968D6   */
 
-        /*Codes_SRS_UUID_02_003: [ If any character of uuid_string doesn't match the string representation hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/
-        /*Codes_SRS_UUID_02_004: [ If any character of uuid_string is \0 instead of a hex digit then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/
-        /*Codes_SRS_UUID_02_005: [ If any character of uuid_string is \0 instead of a - then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/
+        /*Codes_SRS_UUD_STRING_02_003: [ If any character of uuid_string doesn't match the string representation hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/
+        /*Codes_SRS_UUD_STRING_02_004: [ If any character of uuid_string is \0 instead of a hex digit then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/
+        /*Codes_SRS_UUD_STRING_02_005: [ If any character of uuid_string is \0 instead of a - then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/
         if (
             (!parseHexString(uuid_string + 0, 4, uuid + 0)) ||
             (uuid_string[8] != '-') ||
@@ -135,7 +135,7 @@ UUID_FROM_STRING_RESULT uuid_from_string(const char* uuid_string, UUID_T uuid) /
         }
         else
         {
-            /*Codes_SRS_UUID_02_006: [ uuid_from_string shall convert the hex digits to the bytes of uuid, succeed and return UUID_FROM_STRING_RESULT_OK. ]*/
+            /*Codes_SRS_UUD_STRING_02_006: [ uuid_from_string shall convert the hex digits to the bytes of uuid, succeed and return UUID_FROM_STRING_RESULT_OK. ]*/
             result = UUID_FROM_STRING_RESULT_OK;
         }
     }
@@ -147,7 +147,7 @@ char* uuid_to_string(const UUID_T uuid)
 {
     char* result;
 
-    /*Codes_SRS_UUID_02_007: [ If uuid is NULL then uuid_to_string shall fail and return NULL. ]*/
+    /*Codes_SRS_UUD_STRING_02_007: [ If uuid is NULL then uuid_to_string shall fail and return NULL. ]*/
     if (uuid == NULL)
     {
         LogError("Invalid argument (const UUID_T uuid=%" PRI_UUID_T ")", UUID_T_VALUES_OR_NULL(uuid));
@@ -155,10 +155,10 @@ char* uuid_to_string(const UUID_T uuid)
     }
     else
     {
-        /*Codes_SRS_UUID_02_008: [ uuid_to_string shall output a \0 terminated string in format hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh where every h is a nibble of one the bytes in uuid. ]*/
+        /*Codes_SRS_UUD_STRING_02_008: [ uuid_to_string shall output a \0 terminated string in format hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh where every h is a nibble of one the bytes in uuid. ]*/
         result = sprintf_char("%" PRI_UUID_T "", UUID_T_VALUES(uuid));
 
-        /*Codes_SRS_UUID_02_009: [ If there are any failures then uuid_to_string shall fail and return NULL. ]*/
+        /*Codes_SRS_UUD_STRING_02_009: [ If there are any failures then uuid_to_string shall fail and return NULL. ]*/
         if (result == NULL)
         {
             /*return as is*/

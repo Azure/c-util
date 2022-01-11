@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifndef C_UTIL_UUID_H
-#define C_UTIL_UUID_H
+#ifndef UUID_STRING_H
+#define UUID_STRING_H
 
 #include "macro_utils/macro_utils.h"
 
@@ -32,4 +32,4 @@ MOCKABLE_FUNCTION(, char*, uuid_to_string, const UUID_T, uuid);
 }
 #endif
 
-#endif /* C_UTIL_UUID_H */
+#endif /* UUID_STRING_H */

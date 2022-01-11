@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifndef REAL_C_UTIL_UUID_H
-#define REAL_C_UTIL_UUID_H
+#ifndef REAL_UUID_STRING_H
+#define REAL_UUID_STRING_H
 
 #include "macro_utils/macro_utils.h"
 #include "c_pal/uuid.h"
@@ -10,7 +10,7 @@
 
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 
-#define REGISTER_C_UTIL_UUID_GLOBAL_MOCK_HOOK() \
+#define REGISTER_UUID_STRING_GLOBAL_MOCK_HOOK() \
     MU_FOR_EACH_1(R2, \
         uuid_from_string, \
         uuid_to_string \
@@ -29,4 +29,4 @@
 
 
 
-#endif // REAL_C_UTIL_UUID_H
+#endif // REAL_UUID_STRING_H
