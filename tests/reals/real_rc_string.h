@@ -24,6 +24,9 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
     typedef struct RC_STRING_TAG real_RC_STRING;
     THANDLE_TYPE_DECLARE(real_RC_STRING);
@@ -33,7 +36,9 @@
     THANDLE(RC_STRING) real_rc_string_create_with_custom_free(const char* string, RC_STRING_FREE_FUNC free_func, void* free_func_context);
     THANDLE(RC_STRING) real_rc_string_recreate(THANDLE(RC_STRING) source);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif //REAL_RC_STRING_H

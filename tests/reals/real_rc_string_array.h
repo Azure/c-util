@@ -20,12 +20,16 @@
         rc_string_array_destroy \
     )
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 RC_STRING_ARRAY* real_rc_string_array_create(uint32_t count);
 void real_rc_string_array_destroy(RC_STRING_ARRAY* rc_string_array);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif //REAL_RC_STRING_ARRAY_H

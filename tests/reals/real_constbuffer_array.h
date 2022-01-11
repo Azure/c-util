@@ -34,7 +34,9 @@
 #include "c_util/constbuffer.h"
 #include "c_util/constbuffer_array.h"
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_create(const CONSTBUFFER_HANDLE* buffers, uint32_t buffer_count);
 CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_create_empty(void);
@@ -59,7 +61,8 @@ int real_constbuffer_array_get_all_buffers_size(CONSTBUFFER_ARRAY_HANDLE constbu
 const CONSTBUFFER_HANDLE* real_constbuffer_array_get_const_buffer_handle_array(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle);
 bool real_CONSTBUFFER_ARRAY_HANDLE_contain_same(CONSTBUFFER_ARRAY_HANDLE left, CONSTBUFFER_ARRAY_HANDLE right);
 
-
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif // REAL_CONSTBUFFER_ARRAY_H

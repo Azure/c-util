@@ -22,12 +22,16 @@
 
 #include "c_util/constbuffer_array.h"
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_batcher_nv_batch(CONSTBUFFER_ARRAY_HANDLE* payloads, uint32_t count);
 CONSTBUFFER_ARRAY_HANDLE* real_constbuffer_array_batcher_nv_unbatch(CONSTBUFFER_ARRAY_HANDLE batch, uint32_t* payload_count);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif // REAL_CONSTBUFFER_ARRAY_BATCHER_H

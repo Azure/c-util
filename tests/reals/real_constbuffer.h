@@ -38,6 +38,10 @@
 
 #include "c_util/constbuffer.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 CONSTBUFFER_HANDLE real_CONSTBUFFER_Create(const unsigned char* source, uint32_t size);
 
 CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer);
@@ -66,7 +70,9 @@ CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT real_CONSTBUFFER_to_fixed_size_buffer(CO
 
 CONSTBUFFER_FROM_BUFFER_RESULT real_CONSTBUFFER_from_buffer(const unsigned char* source, uint32_t size, uint32_t* consumed, CONSTBUFFER_HANDLE* destination);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif //REAL_CONSTBUFFER_H
