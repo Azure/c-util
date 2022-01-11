@@ -230,7 +230,7 @@ TEST_FUNCTION(uuid_from_string_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-// Tests_SRS_UUID_09_011: [ If uuid is NULL, UUID_to_string shall return a non-zero value ]
+/*Tests_SRS_UUID_02_007: [ If uuid is NULL then uuid_to_string shall fail and return NULL. ]*/
 TEST_FUNCTION(UUID_to_string_NULL_uuid)
 {
     //arrange
