@@ -99,6 +99,9 @@ TEST_FUNCTION(RC_STRING_VALUE_works)
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "I love Lagavulin", result);
+
+    // cleanup
+    THANDLE_ASSIGN(RC_STRING)(&a, NULL);
 }
 
 /* RC_STRING_VALUE_OR_NULL */
@@ -129,6 +132,9 @@ TEST_FUNCTION(RC_STRING_VALUE_OR_NULL_works)
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "I love Laphroaig", result);
+
+    // cleanup
+    THANDLE_ASSIGN(RC_STRING)(&a, NULL);
 }
 
 /* rc_string_create */
