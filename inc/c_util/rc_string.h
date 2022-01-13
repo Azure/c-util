@@ -30,7 +30,7 @@ extern "C"
     #define PRI_RC_STRING "s"
 
     /*Codes_SRS_RC_STRING_01_021: [ RC_STRING_VALUE shall print the string field of rc. ]*/
-    #define RC_STRING_VALUE(rc) (rc->string)
+    #define RC_STRING_VALUE(rc) ((rc)->string)
 
     /*Codes_SRS_RC_STRING_01_022: [ If rc is NULL, RC_STRING_VALUE_OR_NULL shall print NULL. ]*/
     /*Codes_SRS_RC_STRING_01_023: [ If rc is non NULL, RC_STRING_VALUE_OR_NULL shall print the string field of rc. ]*/

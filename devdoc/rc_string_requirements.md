@@ -19,7 +19,7 @@
 
     #define PRI_RC_STRING "s"
 
-    #define RC_STRING_VALUE(rc) (rc->string)
+    #define RC_STRING_VALUE(rc) ((rc)->string)
     #define RC_STRING_VALUE_OR_NULL(rc) (((rc) == NULL) ? "NULL" : (rc)->string)
 
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*, string);
