@@ -10,8 +10,9 @@
 #include <stddef.h>
 #endif
 
-#include "umock_c/umock_c_prod.h"
 #include "c_util/thandle.h"
+
+#include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -28,7 +29,13 @@ extern "C"
     typedef void (*RC_STRING_FREE_FUNC)(void* context);
 
     #define PRI_RC_STRING "s"
-    #define RC_STRING_VALUE(rc) (((rc) == NULL) ? "NULL" : MU_P_OR_NULL(rc->string))
+
+    /*Codes_SRS_RC_STRING_01_021: [ RC_STRING_VALUE shall print the string field of rc. ]*/
+    #define RC_STRING_VALUE(rc) ((rc)->string)
+
+    /*Codes_SRS_RC_STRING_01_022: [ If rc is NULL, RC_STRING_VALUE_OR_NULL shall print NULL. ]*/
+    /*Codes_SRS_RC_STRING_01_023: [ If rc is non NULL, RC_STRING_VALUE_OR_NULL shall print the string field of rc. ]*/
+    #define RC_STRING_VALUE_OR_NULL(rc) (((rc) == NULL) ? "NULL" : (rc)->string)
 
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*, string);
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_move_memory, const char*, string);

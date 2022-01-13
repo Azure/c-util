@@ -85,6 +85,58 @@ TEST_FUNCTION_CLEANUP(function_cleanup)
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
+/* RC_STRING_VALUE */
+
+/*Tests_SRS_RC_STRING_01_021: [ RC_STRING_VALUE shall print the string field of rc. ]*/
+TEST_FUNCTION(RC_STRING_VALUE_works)
+{
+    // arrange
+    THANDLE(RC_STRING) a = rc_string_create("Lagavulin");
+    char result[256];
+
+    // act
+    (void)sprintf(result, "I love %" PRI_RC_STRING "", RC_STRING_VALUE(a));
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "I love Lagavulin", result);
+
+    // cleanup
+    THANDLE_ASSIGN(RC_STRING)(&a, NULL);
+}
+
+/* RC_STRING_VALUE_OR_NULL */
+
+/*Tests_SRS_RC_STRING_01_022: [ If rc is NULL, RC_STRING_VALUE_OR_NULL shall print NULL. ]*/
+TEST_FUNCTION(RC_STRING_VALUE_OR_NULL_with_NULL_yields_NULL)
+{
+    // arrange
+    THANDLE(RC_STRING) a = NULL;
+    char result[256];
+
+    // act
+    (void)sprintf(result, "I do not like %" PRI_RC_STRING "", RC_STRING_VALUE_OR_NULL(a));
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "I do not like NULL", result);
+}
+
+/*Tests_SRS_RC_STRING_01_023: [ If rc is non NULL, RC_STRING_VALUE_OR_NULL shall print the string field of rc. ]*/
+TEST_FUNCTION(RC_STRING_VALUE_OR_NULL_works)
+{
+    // arrange
+    THANDLE(RC_STRING) a = rc_string_create("Laphroaig");
+    char result[256];
+
+    // act
+    (void)sprintf(result, "I love %" PRI_RC_STRING "", RC_STRING_VALUE_OR_NULL(a));
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, "I love Laphroaig", result);
+
+    // cleanup
+    THANDLE_ASSIGN(RC_STRING)(&a, NULL);
+}
+
 /* rc_string_create */
 
 /*Tests_SRS_RC_STRING_01_001: [ If string is NULL, rc_string_create shall fail and return NULL. ]*/

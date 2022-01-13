@@ -24,7 +24,7 @@
 
 void TEST_THANDLE_RC_STRING_ToString(char* string, size_t bufferSize, THANDLE(RC_STRING) val)
 {
-    (void)snprintf(string, bufferSize, "%" PRI_RC_STRING, RC_STRING_VALUE(val));
+    (void)snprintf(string, bufferSize, "%" PRI_RC_STRING "", RC_STRING_VALUE_OR_NULL(val));
 }
 
 int TEST_THANDLE_RC_STRING_Compare(THANDLE(RC_STRING) left, THANDLE(RC_STRING) right)
