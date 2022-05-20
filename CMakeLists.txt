@@ -144,7 +144,6 @@ include_directories(${UMOCK_C_INC_FOLDER})
 
 set(c_util_c_files
     ./src/azure_base64.c
-    ./src/worker_thread.c
     ./src/buffer.c
     ./src/constbuffer.c
     ./src/constbuffer_array.c
