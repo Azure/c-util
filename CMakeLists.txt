@@ -166,7 +166,6 @@ set(c_util_c_files
 
 set(c_util_h_files
     ./inc/c_util/azure_base64.h
-    ./inc/c_util/worker_thread.h
     ./inc/c_util/buffer_.h
     ./inc/c_util/constbuffer.h
     ./inc/c_util/constbuffer_format.h
@@ -193,6 +192,19 @@ set(c_util_h_files
     ./inc/c_util/thandle_tuple_array.h
     ./inc/c_util/uuid_string.h
 )
+
+if(WIN32)
+#add worker_thread only on Windows (until we fix it)
+set(c_util_c_files
+    ${c_util_c_files}
+    ./src/worker_thread.c
+)
+
+set(c_util_h_files
+    ${c_util_h_files}
+    ./inc/c_util/worker_thread.h
+)
+endif()
 
 FILE(GLOB c_util_md_files "devdoc/*.md")
 SOURCE_GROUP(devdoc FILES ${c_util_md_files})
