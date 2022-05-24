@@ -26,8 +26,6 @@ static void my_gballoc_free(void* ptr)
 #include "umock_c/umocktypes_bool.h"
 #include "umock_c/umock_c_negative_tests.h"
 
-#include "c_pal/interlocked.h" /*included for mocking reasons - it will prohibit creation of mocks belonging to interlocked.h - at the moment verified through int tests - this is porting legacy code, temporary solution*/
-
 #define ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
@@ -97,7 +95,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
         CONST HANDLE*, lpHandles,
         BOOL, bWaitAll,
         DWORD, dwMilliseconds)
-        MOCK_FUNCTION_END(WAIT_OBJECT_0 + 1);
+    MOCK_FUNCTION_END(WAIT_OBJECT_0 + 1);
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 

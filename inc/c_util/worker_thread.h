@@ -9,7 +9,9 @@
 extern "C" {
 #endif 
 
-    /* this is the callback that is to be called each time a batch process is scheduled */
+    /* this is the callback that is to be called each time processing (worker executing) is scheduled */
+    /* Note that if a processing (worker executing) is scheduled already, a new one might not be scheduled 
+    (the number of executed WORKER_FUNC calls is <= number of worker_thread_schedule_process calls made ) */
     typedef void(*WORKER_FUNC)(void* worker_func_context);
 
     typedef struct WORKER_THREAD_TAG* WORKER_THREAD_HANDLE;
