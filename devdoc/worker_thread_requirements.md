@@ -4,9 +4,9 @@
 ## Overview
 
 `worker_thread` is a helper module that implements execution of a work item on a separate thread. It can be used in batching operations, sequencing completions, etc.
-The user instantiates a BS worker thread instance and then signals when the work shall be executed by calling `worker_thread_schedule_process`.
+The user instantiates a worker thread instance and then signals when the work shall be executed by calling `worker_thread_schedule_process`.
 
-Note: The BS worker thread module was created in order to ease testing of the user components.
+Note: The worker thread module was created in order to ease testing of the user components.
 
 ## Exposed API
 
