@@ -29,6 +29,8 @@
 extern "C" {
 #endif
 
+#include "c_util/worker_thread.h"
+
 WORKER_THREAD_HANDLE real_worker_thread_create(WORKER_FUNC worker_func, void* worker_func_context);
 void real_worker_thread_destroy(WORKER_THREAD_HANDLE worker_thread);
 

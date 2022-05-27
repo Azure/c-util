@@ -17,7 +17,6 @@
 #include "../reals/real_rc_string_array.h"
 #include "../reals/real_singlylinkedlist.h"
 #include "../reals/real_uuid_string.h"
-#include "../reals/real_worker_thread.h"
 
 #include "c_util/constbuffer.h"
 #include "c_util/constbuffer_array.h"
