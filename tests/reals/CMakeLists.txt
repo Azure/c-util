@@ -14,7 +14,6 @@ set(c_util_reals_c_files
     real_singlylinkedlist.c
     real_sm.c
     real_uuid_string.c
-    real_worker_thread.c
 )
 
 set(c_util_reals_h_files
