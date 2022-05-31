@@ -32,7 +32,9 @@
 
 #if defined _MSC_VER
 #include "../reals/real_sm.h"
+#include "../reals/real_worker_thread.h"
 #include "c_util/sm.h"
+#include "c_util/worker_thread.h"
 #endif
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
@@ -57,6 +59,7 @@ TEST_FUNCTION(check_all_c_util_reals)
 
 #if defined _MSC_VER
     REGISTER_SM_GLOBAL_MOCK_HOOK();
+    REGISTER_WORKER_THREAD_GLOBAL_MOCK_HOOK();
 #endif
 
     // assert
