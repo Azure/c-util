@@ -1,6 +1,13 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifdef __cplusplus
+#include <cstddef>
+#else
+#include <stddef.h>
+#include <stdbool.h>
+#endif
+
 #include "c_util/doublylinkedlist.h"
 
 void
@@ -104,4 +111,28 @@ void DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY entry)
     entry->Flink = listHead->Flink;
     listHead->Flink->Blink = entry;
     listHead->Flink = entry;
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATCH_FUNCTION, matchFunction, const void*, matchContext)
+{
+    (void)listHead;
+    (void)matchFunction;
+    (void)matchContext;
+    return NULL;
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext)
+{
+    (void)listHead;
+    (void)conditionFunction;
+    (void)conditionContext;
+    return NULL;
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUNCTION, actionFunction, const void*, actionContext)
+{
+    (void)listHead;
+    (void)actionFunction;
+    (void)actionContext;
+    return 0;
 }
