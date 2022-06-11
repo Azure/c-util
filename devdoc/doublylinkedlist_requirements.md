@@ -20,6 +20,24 @@ typedef struct DLIST_ENTRY_TAG
     struct DLIST_ENTRY_TAG *Blink;
 } DLIST_ENTRY, *PDLIST_ENTRY;
 
+#define DLIST_MATCH_FUNCTION_RESULT_VALUES \
+    DLIST_MATCH_FUNCTION_MATCHING, \
+    DLIST_MATCH_FUNCTION_NOT_MATCHING, \
+    DLIST_MATCH_FUNCTION_ERROR
+
+MU_DEFINE_ENUM(DLIST_CONDITION_FUNCTION_RESULT, DLIST_CONDITION_FUNCTION_VALUES);
+
+#define DLIST_CONDITION_FUNCTION_RESULT_VALUES \
+    DLIST_CONDITION_FUNCTION_SATISFIED, \
+    DLIST_CONDITION_FUNCTION_NOT_SATISFIED, \
+    DLIST_CONDITION_FUNCTION_ERROR
+
+MU_DEFINE_ENUM(DLIST_CONDITION_FUNCTION_RESULT, DLIST_CONDITION_FUNCTION_RESULT_VALUES);
+
+typedef DLIST_CONDITION_FUNCTION_RESULT (*DLIST_MATCH_FUNCTION)(PDLIST_ENTRY listEntry, const void* matchContext);
+typedef DLIST_CONDITION_FUNCTION_RESULT (*DLIST_CONDITION_FUNCTION)(PDLIST_ENTRY listEntry, const void* conditionContext, bool* continueProcessing);
+typedef int (*DLIST_ACTION_FUNCTION)(PDLIST_ENTRY listEntry, const void* actionContext, bool* continueProcessing);
+
 extern void DList_InitializeListHead(PDLIST_ENTRY listHead);
 extern int DList_IsListEmpty(const PDLIST_ENTRY listHead);
 extern void DList_InsertTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY listEntry);
@@ -27,6 +45,10 @@ extern void DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY entry);
 extern void DList_AppendTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY ListToAppend);
 extern int DList_RemoveEntryList(PDLIST_ENTRY listEntry);
 extern PDLIST_ENTRY DList_RemoveHeadList(PDLIST_ENTRY listHead);
+extern PDLIST_ENTRY DList_Find(PDLIST_ENTRY listHead, DLIST_MATCH_FUNCTION matchFunction, const void* matchContext);
+extern PDLIST_ENTRY DList_RemoveIf(PDLIST_ENTRY listHead, DLIST_CONDITION_FUNCTION conditionFunction, const void* conditionContext);
+extern int DList_ForEach(PDLIST_ENTRY listHead, DLIST_ACTION_FUNCTION actionFunction, const void* actionContext);
+
 //
 // Calculate the address of the base of the structure given its type, and an
 // address of a field within the structure.
@@ -104,3 +126,42 @@ extern PDLIST_ENTRY DList_RemoveHeadList(PDLIST_ENTRY listHead);
 **SRS_DLIST_06_013: [** DList_RemoveHeadList shall return listHead if that's the only item in the list. **]**
 
 Note: The Flink & Blink of the returned PDLIST_ENTRY shall be undefined.
+
+### DList_Find
+```c
+MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATCH_FUNCTION, matchFunction, const void*, matchContext);
+```
+
+**SRS_DLIST_43_001: [** `DList_Find` shall call `matchFunction` on each entry in the list defined by `listHead` along with `matchContext`. **]**
+
+**SRS_DLIST_43_002: [** If the call to `matchFunction` for an entry returns `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall return that entry. **]**
+
+**SRS_DLIST_43_003: [** `DList_Find` shall return `NULL`. **]**
+
+### DList_Remove_If
+```c
+MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext);
+```
+
+**SRS_DLIST_43_004: [** `DList_RemoveIf` shall call `conditionFunction` on each entry in the list defined by `listHead` along with `conditionContext`. **]**
+
+**SRS_DLIST_43_005: [** If the call to `conditionFunction` for an entry returns `DLIST_CONDITION_FUNCTION_SATISFIED`, `DList_RemoveIf` shall remove that entry from the list and it to the list of removed entries. **]**
+
+**SRS_DLIST_43_006: [** If `continueProcessing` is `false`, `DList_RemoveIf` shall stop iterating over the list. **]**
+
+**SRS_DLIST_43_007: [** `DList_RemoveIf` shall return the list of removed entries. **]**
+
+**SRS_DLIST_43_008: [** If no entries were removed, `DList_RemoveIf` shall return `NULL`. **]**
+
+### DList_ForEach
+```c
+MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUNCTION, actionFunction, const void*, actionContext);
+```
+
+**SRS_DLIST_43_009: [** `DList_ForEach` shall call `actionFunction` on each entry in the list defined by `listHead` along with `actionContext`. **]**
+
+**SRS_DLIST_43_010: [** If `continueProcessing` is `false`, `DList_ForEach` shall stop iterating over the list. **]**
+
+**SRS_DLIST_43_011: [** If any call to `actionFunction` returned a non-zero value, `DList_ForEach` shall fail and return a non-zero value. **]**
+
+**SRS_DLIST_43_012: [** If all calls to `actionFunction` returned zero, DList_ForEach` shall succeed and return zero. **]**
