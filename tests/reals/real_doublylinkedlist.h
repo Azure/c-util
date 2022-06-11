@@ -17,7 +17,10 @@
         DList_InsertHeadList, \
         DList_AppendTailList, \
         DList_RemoveEntryList, \
-        DList_RemoveHeadList \
+        DList_RemoveHeadList, \
+        DList_Find, \
+        DList_RemoveIf, \
+        DList_ForEach \
     )
 
 
@@ -34,6 +37,9 @@ void real_DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY listEntry);
 void real_DList_AppendTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY ListToAppend);
 int real_DList_RemoveEntryList(PDLIST_ENTRY listEntry);
 PDLIST_ENTRY real_DList_RemoveHeadList(PDLIST_ENTRY listHead);
+PDLIST_ENTRY real_DList_Find(PDLIST_ENTRY listHead, DLIST_MATCH_FUNCTION matchFunction, const void* matchContext);
+PDLIST_ENTRY real_DList_RemoveIf(PDLIST_ENTRY listHead, DLIST_CONDITION_FUNCTION conditionFunction, const void* conditionContext);
+int real_DList_ForEach(PDLIST_ENTRY listHead, DLIST_ACTION_FUNCTION actionFunction, const void* actionContext);
 
 #ifdef __cplusplus
 }
