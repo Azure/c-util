@@ -38,7 +38,7 @@ void real_DList_AppendTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY ListToAppend)
 int real_DList_RemoveEntryList(PDLIST_ENTRY listEntry);
 PDLIST_ENTRY real_DList_RemoveHeadList(PDLIST_ENTRY listHead);
 PDLIST_ENTRY real_DList_Find(PDLIST_ENTRY listHead, DLIST_MATCH_FUNCTION matchFunction, const void* matchContext);
-PDLIST_ENTRY real_DList_RemoveIf(PDLIST_ENTRY listHead, DLIST_CONDITION_FUNCTION conditionFunction, const void* conditionContext);
+PDLIST_ENTRY real_DList_RemoveIf(PDLIST_ENTRY listHead, DLIST_CONDITION_FUNCTION conditionFunction, const void* conditionContext, DLIST_ENTRY_DESTROY_FUNCTION destroyFunction, const void* destroyContext);
 int real_DList_ForEach(PDLIST_ENTRY listHead, DLIST_ACTION_FUNCTION actionFunction, const void* actionContext);
 
 #ifdef __cplusplus
