@@ -139,7 +139,7 @@ MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATC
 
 **SRS_DLIST_43_003: [** If no calls to `matchFunction` return `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall return `NULL`. **]**
 
-### DList_Remove_If
+### DList_RemoveIf
 ```c
 MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext, DLIST_ENTRY_DESTROY_FUNCTION, destroyFunction, const void*, destroyContext);
 ```
