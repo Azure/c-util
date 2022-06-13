@@ -121,11 +121,13 @@ IMPLEMENT_MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_Find, PDLIST_ENTRY, listHead, 
     return NULL;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext)
+IMPLEMENT_MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext, DLIST_ENTRY_DESTROY_FUNCTION, destroyFunction, const void*, destroyContext)
 {
     (void)listHead;
     (void)conditionFunction;
     (void)conditionContext;
+    (void)destroyFunction;
+    (void)destroyContext;
     return NULL;
 }
 
