@@ -36,6 +36,7 @@ MU_DEFINE_ENUM(DLIST_CONDITION_FUNCTION_RESULT, DLIST_CONDITION_FUNCTION_RESULT_
 
 typedef DLIST_CONDITION_FUNCTION_RESULT (*DLIST_MATCH_FUNCTION)(PDLIST_ENTRY listEntry, const void* matchContext);
 typedef DLIST_CONDITION_FUNCTION_RESULT (*DLIST_CONDITION_FUNCTION)(PDLIST_ENTRY listEntry, const void* conditionContext, bool* continueProcessing);
+typedef int (*DLIST_ENTRY_DESTROY_FUNCTION)(PDLIST_ENTRY listEntry, const void* destroyContext);
 typedef int (*DLIST_ACTION_FUNCTION)(PDLIST_ENTRY listEntry, const void* actionContext, bool* continueProcessing);
 
 extern void DList_InitializeListHead(PDLIST_ENTRY listHead);
@@ -46,7 +47,7 @@ extern void DList_AppendTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY ListToAppen
 extern int DList_RemoveEntryList(PDLIST_ENTRY listEntry);
 extern PDLIST_ENTRY DList_RemoveHeadList(PDLIST_ENTRY listHead);
 extern PDLIST_ENTRY DList_Find(PDLIST_ENTRY listHead, DLIST_MATCH_FUNCTION matchFunction, const void* matchContext);
-extern PDLIST_ENTRY DList_RemoveIf(PDLIST_ENTRY listHead, DLIST_CONDITION_FUNCTION conditionFunction, const void* conditionContext);
+extern PDLIST_ENTRY DList_RemoveIf(PDLIST_ENTRY listHead, DLIST_CONDITION_FUNCTION conditionFunction, const void* conditionContext, DLIST_ENTRY_DESTROY_FUNCTION destroyFunction, const void* destroyContext);
 extern int DList_ForEach(PDLIST_ENTRY listHead, DLIST_ACTION_FUNCTION actionFunction, const void* actionContext);
 
 //
@@ -136,22 +137,26 @@ MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATC
 
 **SRS_DLIST_43_002: [** If the call to `matchFunction` for an entry returns `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall return that entry. **]**
 
-**SRS_DLIST_43_003: [** `DList_Find` shall return `NULL`. **]**
+**SRS_DLIST_43_003: [** If no calls to `matchFunction` return `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall return `NULL`. **]**
 
 ### DList_Remove_If
 ```c
-MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext);
+MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext, DLIST_ENTRY_DESTROY_FUNCTION, destroyFunction, const void*, destroyContext);
 ```
 
 **SRS_DLIST_43_004: [** `DList_RemoveIf` shall call `conditionFunction` on each entry in the list defined by `listHead` along with `conditionContext`. **]**
 
-**SRS_DLIST_43_005: [** If the call to `conditionFunction` for an entry returns `DLIST_CONDITION_FUNCTION_SATISFIED`, `DList_RemoveIf` shall remove that entry from the list and it to the list of removed entries. **]**
+**SRS_DLIST_43_005: [** If the call to `conditionFunction` for an entry returns `DLIST_CONDITION_FUNCTION_SATISFIED`:**]**
+
+ - **SRS_DLIST_43_013: [** `DList_RemoveIf` shall remove the entry from the list. **]**
+
+ - **SRS_DLIST_43_014: [** `DList_RemoveIf` shall call `destroyFunction` on the entry. **]**
 
 **SRS_DLIST_43_006: [** If `continueProcessing` is `false`, `DList_RemoveIf` shall stop iterating over the list. **]**
 
-**SRS_DLIST_43_007: [** `DList_RemoveIf` shall return the list of removed entries. **]**
+**SRS_DLIST_43_007: [** `DList_RemoveIf` shall return the head of the list after entries have been removed. **]**
 
-**SRS_DLIST_43_008: [** If no entries were removed, `DList_RemoveIf` shall return `NULL`. **]**
+**SRS_DLIST_43_008: [** If all entries were removed, `DList_RemoveIf` shall return `NULL`. **]**
 
 ### DList_ForEach
 ```c

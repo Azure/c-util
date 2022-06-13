@@ -33,6 +33,7 @@ MU_DEFINE_ENUM(DLIST_CONDITION_FUNCTION_RESULT, DLIST_CONDITION_FUNCTION_RESULT_
 
 typedef DLIST_MATCH_FUNCTION_RESULT (*DLIST_MATCH_FUNCTION)(PDLIST_ENTRY listEntry, const void* matchContext);
 typedef DLIST_CONDITION_FUNCTION_RESULT (*DLIST_CONDITION_FUNCTION)(PDLIST_ENTRY listEntry, const void* conditionContext, bool* continueProcessing);
+typedef int (*DLIST_ENTRY_DESTROY_FUNCTION)(PDLIST_ENTRY listEntry, const void* destroyContext);
 typedef int (*DLIST_ACTION_FUNCTION)(PDLIST_ENTRY listEntry, const void* actionContext, bool* continueProcessing);
 
 #include "umock_c/umock_c_prod.h"
@@ -49,7 +50,7 @@ MOCKABLE_FUNCTION(, void, DList_AppendTailList, PDLIST_ENTRY, listHead, PDLIST_E
 MOCKABLE_FUNCTION(, int, DList_RemoveEntryList, PDLIST_ENTRY, listEntry);
 MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveHeadList, PDLIST_ENTRY, listHead);
 MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATCH_FUNCTION, matchFunction, const void*, matchContext);
-MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext);
+MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext, DLIST_ENTRY_DESTROY_FUNCTION, destroyFunction, const void*, destroyContext);
 MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUNCTION, actionFunction, const void*, actionContext);
 
 #ifdef __cplusplus
