@@ -59,7 +59,7 @@ And one cleanup function to call:
     THANDLE_INITIALIZE_MOVE(real_RC_STRING)(&g.name, &MU_C2A(name, _temp));
 
 #define RC_STRING_TEST_CLEANUP_RC_STRING(name, value) \
-    THANDLE_DEC_REF(real_RC_STRING)(g.name);
+    THANDLE_ASSIGN(real_RC_STRING)(&g.name, NULL);
 
 #define RC_STRING_TEST_DECL(...) \
     static struct G_TAG \
@@ -109,7 +109,7 @@ Note that COUNT must be a compile-time constant in C (so an integer or DEFINE to
     }
 
 #define RC_STRING_TEST_CLEANUP_ARRAY_RC_STRING(name, value) \
-    THANDLE_DEC_REF(real_RC_STRING)(g.name);
+    THANDLE_ASSIGN(real_RC_STRING)(&g.name, NULL);
 
 #define RC_STRING_TEST_ARRAY_DECL(struct_name, field_name, array_count, ...) \
     static struct MU_C2(struct_name, _TAG) \
@@ -127,7 +127,7 @@ Note that COUNT must be a compile-time constant in C (so an integer or DEFINE to
     { \
         for (uint32_t i = 0; i < struct_name.count; ++i) \
         { \
-            THANDLE_DEC_REF(real_RC_STRING)(struct_name.field_name[i]); \
+            THANDLE_ASSIGN(real_RC_STRING)(&struct_name.field_name[i], NULL); \
         } \
     }
 
