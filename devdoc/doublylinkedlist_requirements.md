@@ -20,31 +20,7 @@ typedef struct DLIST_ENTRY_TAG
     struct DLIST_ENTRY_TAG *Blink;
 } DLIST_ENTRY, *PDLIST_ENTRY;
 
-#define DLIST_FIND_RESULT_VALUES \
-    DLIST_FIND_RESULT_FOUND, \
-    DLIST_FIND_RESULT_NOT_FOUND, \
-    DLIST_FIND_RESULT_ERROR
-
-MU_DEFINE_ENUM(DLIST_FIND_RESULT, DLIST_FIND_RESULT_VALUES);
-
-#define DLIST_MATCH_FUNCTION_RESULT_VALUES \
-    DLIST_MATCH_FUNCTION_MATCHING, \
-    DLIST_MATCH_FUNCTION_NOT_MATCHING, \
-    DLIST_MATCH_FUNCTION_ERROR
-
-MU_DEFINE_ENUM(DLIST_MATCH_FUNCTION_RESULT, DLIST_MATCH_FUNCTION_RESULT_VALUES);
-
-#define DLIST_CONDITION_FUNCTION_RESULT_VALUES \
-    DLIST_CONDITION_FUNCTION_TRUE, \
-    DLIST_CONDITION_FUNCTION_FALSE, \
-    DLIST_CONDITION_FUNCTION_ERROR
-
-MU_DEFINE_ENUM(DLIST_CONDITION_FUNCTION_RESULT, DLIST_CONDITION_FUNCTION_RESULT_VALUES);
-
-typedef DLIST_MATCH_FUNCTION_RESULT (*DLIST_MATCH_FUNCTION)(PDLIST_ENTRY listEntry, const void* matchContext);
-typedef DLIST_CONDITION_FUNCTION_RESULT (*DLIST_CONDITION_FUNCTION)(PDLIST_ENTRY listEntry, const void* conditionContext, bool* continueProcessing);
-typedef int (*DLIST_ENTRY_DESTROY_FUNCTION)(PDLIST_ENTRY listEntry, const void* destroyContext);
-typedef int (*DLIST_ACTION_FUNCTION)(PDLIST_ENTRY listEntry, const void* actionContext, bool* continueProcessing);
+typedef int (*DLIST_ACTION_FUNCTION)(PDLIST_ENTRY listEntry, void* actionContext, bool* continueProcessing);
 
 extern void DList_InitializeListHead(PDLIST_ENTRY listHead);
 extern int DList_IsListEmpty(const PDLIST_ENTRY listHead);
@@ -53,9 +29,7 @@ extern void DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY entry);
 extern void DList_AppendTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY ListToAppend);
 extern int DList_RemoveEntryList(PDLIST_ENTRY listEntry);
 extern PDLIST_ENTRY DList_RemoveHeadList(PDLIST_ENTRY listHead);
-extern DLIST_FIND_RESULT DList_Find(PDLIST_ENTRY listHead, DLIST_MATCH_FUNCTION matchFunction, const void* matchContext, PDLIST_ENTRY* foundEntry);
-extern int DList_RemoveIf(PDLIST_ENTRY listHead, DLIST_CONDITION_FUNCTION conditionFunction, const void* conditionContext, DLIST_ENTRY_DESTROY_FUNCTION destroyFunction, const void* destroyContext);
-extern int DList_ForEach(PDLIST_ENTRY listHead, DLIST_ACTION_FUNCTION actionFunction, const void* actionContext);
+extern int DList_ForEach(PDLIST_ENTRY listHead, DLIST_ACTION_FUNCTION actionFunction, void* actionContext);
 
 //
 // Calculate the address of the base of the structure given its type, and an
@@ -135,42 +109,11 @@ extern PDLIST_ENTRY DList_RemoveHeadList(PDLIST_ENTRY listHead);
 
 Note: The Flink & Blink of the returned PDLIST_ENTRY shall be undefined.
 
-### DList_Find
-```c
-MOCKABLE_FUNCTION(, DLIST_FIND_RESULT, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATCH_FUNCTION, matchFunction, const void*, matchContext, PDLIST_ENTRY*, foundEntry);
-```
-
-**S_R_S_DLIST_43_001: [** `DList_Find` shall call `matchFunction` on each entry in the list defined by `listHead` along with `matchContext`. **]**
-
-**S_R_S_DLIST_43_002: [** If the call to `matchFunction` for an entry returns `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall set `foundEntry` to that entry and return `DLIST_FIND_RESULT_FOUND`. **]**
-
-**S_R_S_DLIST_43_003: [** If no calls to `matchFunction` return `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall return `DLIST_FIND_RESULT_NOT_FOUND`. **]**
-
-**S_R_S_DLIST_43_016: [** If there are any failures, `DList_Find` shall fail and return `DLIST_FIND_RESULT_ERROR`. **]**
-
-### DList_RemoveIf
-```c
-MOCKABLE_FUNCTION(, int, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext, DLIST_ENTRY_DESTROY_FUNCTION, destroyFunction, const void*, destroyContext);
-```
-
-**S_R_S_DLIST_43_004: [** `DList_RemoveIf` shall call `conditionFunction` on each entry in the list defined by `listHead` along with `conditionContext`. **]**
-
-**S_R_S_DLIST_43_005: [** If the call to `conditionFunction` for an entry returns `DLIST_CONDITION_FUNCTION_TRUE`:**]**
-
- - **S_R_S_DLIST_43_013: [** `DList_RemoveIf` shall remove the entry from the list. **]**
-
- - **S_R_S_DLIST_43_014: [** `DList_RemoveIf` shall call `destroyFunction` on the entry. **]**
-
-**S_R_S_DLIST_43_006: [** If `continueProcessing` is `false`, `DList_RemoveIf` shall stop iterating over the list. **]**
-
-**S_R_S_DLIST_43_017: [** `DList_RemoveIf` shall succeed and return zero. **]**
-
-**S_R_S_DLIST_43_018: [** If there are any failures, `DList_RemoveIf` shall fail and return a non-zero value. **]**
-
 ### DList_ForEach
 ```c
-MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUNCTION, actionFunction, const void*, actionContext);
+MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUNCTION, actionFunction, void*, actionContext);
 ```
+`DList_ForEach` can be used to perform some action on each entry in a list. `actionFunction` is a user-provided function that returns zero on success and a non-zero value on error.
 
 **S_R_S_DLIST_43_009: [** `DList_ForEach` shall call `actionFunction` on each entry in the list defined by `listHead` along with `actionContext`. **]**
 
@@ -178,4 +121,4 @@ MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUN
 
 **S_R_S_DLIST_43_011: [** If any call to `actionFunction` returned a non-zero value, `DList_ForEach` shall fail and return a non-zero value. **]**
 
-**S_R_S_DLIST_43_012: [** If all calls to `actionFunction` returned zero, DList_ForEach` shall succeed and return zero. **]**
+**S_R_S_DLIST_43_012: [** If all calls to `actionFunction` returned zero, `DList_ForEach` shall succeed and return zero. **]**
