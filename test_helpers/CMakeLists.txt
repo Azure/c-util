@@ -3,6 +3,7 @@
 
 set(c_util_test_helpers_h_files
     inc/c_util_test_helpers/rc_string_test_type.h
+    inc/c_util_test_helpers/rc_string_test_decl.h
 )
 
 set(c_util_test_helpers_c_files
