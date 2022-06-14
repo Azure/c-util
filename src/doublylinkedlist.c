@@ -113,23 +113,22 @@ void DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY entry)
     listHead->Flink = entry;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATCH_FUNCTION, matchFunction, const void*, matchContext, PDLIST_ENTRY*, foundEntry)
+IMPLEMENT_MOCKABLE_FUNCTION(, DLIST_FIND_RESULT, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATCH_FUNCTION, matchFunction, const void*, matchContext, PDLIST_ENTRY*, foundEntry)
 {
     (void)listHead;
     (void)matchFunction;
     (void)matchContext;
     (void)foundEntry;
-    return 0;
+    return DLIST_FIND_RESULT_NOT_FOUND;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext, DLIST_ENTRY_DESTROY_FUNCTION, destroyFunction, const void*, destroyContext, PDLIST_ENTRY*, newHead)
+IMPLEMENT_MOCKABLE_FUNCTION(, int, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext, DLIST_ENTRY_DESTROY_FUNCTION, destroyFunction, const void*, destroyContext)
 {
     (void)listHead;
     (void)conditionFunction;
     (void)conditionContext;
     (void)destroyFunction;
     (void)destroyContext;
-    (void)newHead;
     return 0;
 }
 

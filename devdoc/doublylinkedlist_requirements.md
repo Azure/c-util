@@ -20,6 +20,13 @@ typedef struct DLIST_ENTRY_TAG
     struct DLIST_ENTRY_TAG *Blink;
 } DLIST_ENTRY, *PDLIST_ENTRY;
 
+#define DLIST_FIND_RESULT_VALUES \
+    DLIST_FIND_RESULT_FOUND, \
+    DLIST_FIND_RESULT_NOT_FOUND, \
+    DLIST_FIND_RESULT_ERROR
+
+MU_DEFINE_ENUM(DLIST_FIND_RESULT, DLIST_FIND_RESULT_VALUES);
+
 #define DLIST_MATCH_FUNCTION_RESULT_VALUES \
     DLIST_MATCH_FUNCTION_MATCHING, \
     DLIST_MATCH_FUNCTION_NOT_MATCHING, \
@@ -46,8 +53,8 @@ extern void DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY entry);
 extern void DList_AppendTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY ListToAppend);
 extern int DList_RemoveEntryList(PDLIST_ENTRY listEntry);
 extern PDLIST_ENTRY DList_RemoveHeadList(PDLIST_ENTRY listHead);
-extern int DList_Find(PDLIST_ENTRY listHead, DLIST_MATCH_FUNCTION matchFunction, const void* matchContext, PDLIST_ENTRY* foundEntry);
-extern int DList_RemoveIf(PDLIST_ENTRY listHead, DLIST_CONDITION_FUNCTION conditionFunction, const void* conditionContext, DLIST_ENTRY_DESTROY_FUNCTION destroyFunction, const void* destroyContext, PDLIST_ENTRY* newHead);
+extern DLIST_FIND_RESULT DList_Find(PDLIST_ENTRY listHead, DLIST_MATCH_FUNCTION matchFunction, const void* matchContext, PDLIST_ENTRY* foundEntry);
+extern int DList_RemoveIf(PDLIST_ENTRY listHead, DLIST_CONDITION_FUNCTION conditionFunction, const void* conditionContext, DLIST_ENTRY_DESTROY_FUNCTION destroyFunction, const void* destroyContext);
 extern int DList_ForEach(PDLIST_ENTRY listHead, DLIST_ACTION_FUNCTION actionFunction, const void* actionContext);
 
 //
@@ -130,22 +137,20 @@ Note: The Flink & Blink of the returned PDLIST_ENTRY shall be undefined.
 
 ### DList_Find
 ```c
-MOCKABLE_FUNCTION(, int, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATCH_FUNCTION, matchFunction, const void*, matchContext, PDLIST_ENTRY*, foundEntry);
+MOCKABLE_FUNCTION(, DLIST_FIND_RESULT, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATCH_FUNCTION, matchFunction, const void*, matchContext, PDLIST_ENTRY*, foundEntry);
 ```
 
 **SRS_DLIST_43_001: [** `DList_Find` shall call `matchFunction` on each entry in the list defined by `listHead` along with `matchContext`. **]**
 
-**SRS_DLIST_43_002: [** If the call to `matchFunction` for an entry returns `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall set `foundEntry` to that entry. **]**
+**SRS_DLIST_43_002: [** If the call to `matchFunction` for an entry returns `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall set `foundEntry` to that entry and return `DLIST_FIND_RESULT_FOUND`. **]**
 
-**SRS_DLIST_43_003: [** If no calls to `matchFunction` return `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall set `foundEntry` to `NULL`. **]**
+**SRS_DLIST_43_003: [** If no calls to `matchFunction` return `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall return `DLIST_FIND_RESULT_NOT_FOUND`. **]**
 
-**SRS_DLIST_43_015: [** `DList_Find` shall succeed and return zero. **]**
-
-**SRS_DLIST_43_016: [** If there are any failures, `DList_Find` shall fail and return a non-zero value. **]**
+**SRS_DLIST_43_016: [** If there are any failures, `DList_Find` shall fail and return `DLIST_FIND_RESULT_ERROR`. **]**
 
 ### DList_RemoveIf
 ```c
-MOCKABLE_FUNCTION(, int, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext, DLIST_ENTRY_DESTROY_FUNCTION, destroyFunction, const void*, destroyContext, PDLIST_ENTRY*, newHead);
+MOCKABLE_FUNCTION(, int, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext, DLIST_ENTRY_DESTROY_FUNCTION, destroyFunction, const void*, destroyContext);
 ```
 
 **SRS_DLIST_43_004: [** `DList_RemoveIf` shall call `conditionFunction` on each entry in the list defined by `listHead` along with `conditionContext`. **]**
@@ -157,10 +162,6 @@ MOCKABLE_FUNCTION(, int, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION
  - **SRS_DLIST_43_014: [** `DList_RemoveIf` shall call `destroyFunction` on the entry. **]**
 
 **SRS_DLIST_43_006: [** If `continueProcessing` is `false`, `DList_RemoveIf` shall stop iterating over the list. **]**
-
-**SRS_DLIST_43_007: [** `DList_RemoveIf` shall set `newHead` to be the head of the list after entries have been removed. **]**
-
-**SRS_DLIST_43_008: [** If all entries were removed, `DList_RemoveIf` shall set `newHead` to `NULL`. **]**
 
 **SRS_DLIST_43_017: [** `DList_RemoveIf` shall succeed and return zero. **]**
 

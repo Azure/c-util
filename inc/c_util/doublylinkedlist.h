@@ -17,6 +17,13 @@ typedef struct DLIST_ENTRY_TAG
     struct DLIST_ENTRY_TAG *Blink;
 } DLIST_ENTRY, *PDLIST_ENTRY;
 
+#define DLIST_FIND_RESULT_VALUES \
+    DLIST_FIND_RESULT_FOUND, \
+    DLIST_FIND_RESULT_NOT_FOUND, \
+    DLIST_FIND_RESULT_ERROR
+
+MU_DEFINE_ENUM(DLIST_FIND_RESULT, DLIST_FIND_RESULT_VALUES);
+
 #define DLIST_MATCH_FUNCTION_RESULT_VALUES \
     DLIST_MATCH_FUNCTION_MATCHING, \
     DLIST_MATCH_FUNCTION_NOT_MATCHING, \
@@ -49,8 +56,8 @@ MOCKABLE_FUNCTION(, void, DList_InsertHeadList, PDLIST_ENTRY, listHead, PDLIST_E
 MOCKABLE_FUNCTION(, void, DList_AppendTailList, PDLIST_ENTRY, listHead, PDLIST_ENTRY, ListToAppend);
 MOCKABLE_FUNCTION(, int, DList_RemoveEntryList, PDLIST_ENTRY, listEntry);
 MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveHeadList, PDLIST_ENTRY, listHead);
-MOCKABLE_FUNCTION(, int, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATCH_FUNCTION, matchFunction, const void*, matchContext, PDLIST_ENTRY*, foundEntry);
-MOCKABLE_FUNCTION(, int, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext, DLIST_ENTRY_DESTROY_FUNCTION, destroyFunction, const void*, destroyContext, PDLIST_ENTRY*, newHead);
+MOCKABLE_FUNCTION(, DLIST_FIND_RESULT, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATCH_FUNCTION, matchFunction, const void*, matchContext, PDLIST_ENTRY*, foundEntry);
+MOCKABLE_FUNCTION(, int, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext, DLIST_ENTRY_DESTROY_FUNCTION, destroyFunction, const void*, destroyContext);
 MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUNCTION, actionFunction, const void*, actionContext);
 
 #ifdef __cplusplus
