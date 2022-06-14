@@ -46,8 +46,8 @@ extern void DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY entry);
 extern void DList_AppendTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY ListToAppend);
 extern int DList_RemoveEntryList(PDLIST_ENTRY listEntry);
 extern PDLIST_ENTRY DList_RemoveHeadList(PDLIST_ENTRY listHead);
-extern PDLIST_ENTRY DList_Find(PDLIST_ENTRY listHead, DLIST_MATCH_FUNCTION matchFunction, const void* matchContext);
-extern PDLIST_ENTRY DList_RemoveIf(PDLIST_ENTRY listHead, DLIST_CONDITION_FUNCTION conditionFunction, const void* conditionContext, DLIST_ENTRY_DESTROY_FUNCTION destroyFunction, const void* destroyContext);
+extern int DList_Find(PDLIST_ENTRY listHead, DLIST_MATCH_FUNCTION matchFunction, const void* matchContext, PDLIST_ENTRY* foundEntry);
+extern int DList_RemoveIf(PDLIST_ENTRY listHead, DLIST_CONDITION_FUNCTION conditionFunction, const void* conditionContext, DLIST_ENTRY_DESTROY_FUNCTION destroyFunction, const void* destroyContext, PDLIST_ENTRY* newHead);
 extern int DList_ForEach(PDLIST_ENTRY listHead, DLIST_ACTION_FUNCTION actionFunction, const void* actionContext);
 
 //
@@ -130,18 +130,22 @@ Note: The Flink & Blink of the returned PDLIST_ENTRY shall be undefined.
 
 ### DList_Find
 ```c
-MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATCH_FUNCTION, matchFunction, const void*, matchContext);
+MOCKABLE_FUNCTION(, int, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATCH_FUNCTION, matchFunction, const void*, matchContext, PDLIST_ENTRY*, foundEntry);
 ```
 
 **SRS_DLIST_43_001: [** `DList_Find` shall call `matchFunction` on each entry in the list defined by `listHead` along with `matchContext`. **]**
 
-**SRS_DLIST_43_002: [** If the call to `matchFunction` for an entry returns `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall return that entry. **]**
+**SRS_DLIST_43_002: [** If the call to `matchFunction` for an entry returns `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall set `foundEntry` to that entry. **]**
 
-**SRS_DLIST_43_003: [** If no calls to `matchFunction` return `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall return `NULL`. **]**
+**SRS_DLIST_43_003: [** If no calls to `matchFunction` return `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall set `foundEntry` to `NULL`. **]**
+
+**SRS_DLIST_43_015: [** `DList_Find` shall succeed and return zero. **]**
+
+**SRS_DLIST_43_016: [** If there are any failures, `DList_Find` shall fail and return a non-zero value. **]**
 
 ### DList_RemoveIf
 ```c
-MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext, DLIST_ENTRY_DESTROY_FUNCTION, destroyFunction, const void*, destroyContext);
+MOCKABLE_FUNCTION(, int, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext, DLIST_ENTRY_DESTROY_FUNCTION, destroyFunction, const void*, destroyContext, PDLIST_ENTRY*, newHead);
 ```
 
 **SRS_DLIST_43_004: [** `DList_RemoveIf` shall call `conditionFunction` on each entry in the list defined by `listHead` along with `conditionContext`. **]**
@@ -154,9 +158,13 @@ MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_
 
 **SRS_DLIST_43_006: [** If `continueProcessing` is `false`, `DList_RemoveIf` shall stop iterating over the list. **]**
 
-**SRS_DLIST_43_007: [** `DList_RemoveIf` shall return the head of the list after entries have been removed. **]**
+**SRS_DLIST_43_007: [** `DList_RemoveIf` shall set `newHead` to be the head of the list after entries have been removed. **]**
 
-**SRS_DLIST_43_008: [** If all entries were removed, `DList_RemoveIf` shall return `NULL`. **]**
+**SRS_DLIST_43_008: [** If all entries were removed, `DList_RemoveIf` shall set `newHead` to `NULL`. **]**
+
+**SRS_DLIST_43_017: [** `DList_RemoveIf` shall succeed and return zero. **]**
+
+**SRS_DLIST_43_018: [** If there are any failures, `DList_RemoveIf` shall fail and return a non-zero value. **]**
 
 ### DList_ForEach
 ```c
