@@ -140,42 +140,42 @@ Note: The Flink & Blink of the returned PDLIST_ENTRY shall be undefined.
 MOCKABLE_FUNCTION(, DLIST_FIND_RESULT, DList_Find, PDLIST_ENTRY, listHead, DLIST_MATCH_FUNCTION, matchFunction, const void*, matchContext, PDLIST_ENTRY*, foundEntry);
 ```
 
-**SRS_DLIST_43_001: [** `DList_Find` shall call `matchFunction` on each entry in the list defined by `listHead` along with `matchContext`. **]**
+**S_R_S_DLIST_43_001: [** `DList_Find` shall call `matchFunction` on each entry in the list defined by `listHead` along with `matchContext`. **]**
 
-**SRS_DLIST_43_002: [** If the call to `matchFunction` for an entry returns `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall set `foundEntry` to that entry and return `DLIST_FIND_RESULT_FOUND`. **]**
+**S_R_S_DLIST_43_002: [** If the call to `matchFunction` for an entry returns `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall set `foundEntry` to that entry and return `DLIST_FIND_RESULT_FOUND`. **]**
 
-**SRS_DLIST_43_003: [** If no calls to `matchFunction` return `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall return `DLIST_FIND_RESULT_NOT_FOUND`. **]**
+**S_R_S_DLIST_43_003: [** If no calls to `matchFunction` return `DLIST_MATCH_FUNCTION_MATCHING`, `DList_Find` shall return `DLIST_FIND_RESULT_NOT_FOUND`. **]**
 
-**SRS_DLIST_43_016: [** If there are any failures, `DList_Find` shall fail and return `DLIST_FIND_RESULT_ERROR`. **]**
+**S_R_S_DLIST_43_016: [** If there are any failures, `DList_Find` shall fail and return `DLIST_FIND_RESULT_ERROR`. **]**
 
 ### DList_RemoveIf
 ```c
 MOCKABLE_FUNCTION(, int, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION_FUNCTION, conditionFunction, const void*, conditionContext, DLIST_ENTRY_DESTROY_FUNCTION, destroyFunction, const void*, destroyContext);
 ```
 
-**SRS_DLIST_43_004: [** `DList_RemoveIf` shall call `conditionFunction` on each entry in the list defined by `listHead` along with `conditionContext`. **]**
+**S_R_S_DLIST_43_004: [** `DList_RemoveIf` shall call `conditionFunction` on each entry in the list defined by `listHead` along with `conditionContext`. **]**
 
-**SRS_DLIST_43_005: [** If the call to `conditionFunction` for an entry returns `DLIST_CONDITION_FUNCTION_TRUE`:**]**
+**S_R_S_DLIST_43_005: [** If the call to `conditionFunction` for an entry returns `DLIST_CONDITION_FUNCTION_TRUE`:**]**
 
- - **SRS_DLIST_43_013: [** `DList_RemoveIf` shall remove the entry from the list. **]**
+ - **S_R_S_DLIST_43_013: [** `DList_RemoveIf` shall remove the entry from the list. **]**
 
- - **SRS_DLIST_43_014: [** `DList_RemoveIf` shall call `destroyFunction` on the entry. **]**
+ - **S_R_S_DLIST_43_014: [** `DList_RemoveIf` shall call `destroyFunction` on the entry. **]**
 
-**SRS_DLIST_43_006: [** If `continueProcessing` is `false`, `DList_RemoveIf` shall stop iterating over the list. **]**
+**S_R_S_DLIST_43_006: [** If `continueProcessing` is `false`, `DList_RemoveIf` shall stop iterating over the list. **]**
 
-**SRS_DLIST_43_017: [** `DList_RemoveIf` shall succeed and return zero. **]**
+**S_R_S_DLIST_43_017: [** `DList_RemoveIf` shall succeed and return zero. **]**
 
-**SRS_DLIST_43_018: [** If there are any failures, `DList_RemoveIf` shall fail and return a non-zero value. **]**
+**S_R_S_DLIST_43_018: [** If there are any failures, `DList_RemoveIf` shall fail and return a non-zero value. **]**
 
 ### DList_ForEach
 ```c
 MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUNCTION, actionFunction, const void*, actionContext);
 ```
 
-**SRS_DLIST_43_009: [** `DList_ForEach` shall call `actionFunction` on each entry in the list defined by `listHead` along with `actionContext`. **]**
+**S_R_S_DLIST_43_009: [** `DList_ForEach` shall call `actionFunction` on each entry in the list defined by `listHead` along with `actionContext`. **]**
 
-**SRS_DLIST_43_010: [** If `continueProcessing` is `false`, `DList_ForEach` shall stop iterating over the list. **]**
+**S_R_S_DLIST_43_010: [** If `continueProcessing` is `false`, `DList_ForEach` shall stop iterating over the list. **]**
 
-**SRS_DLIST_43_011: [** If any call to `actionFunction` returned a non-zero value, `DList_ForEach` shall fail and return a non-zero value. **]**
+**S_R_S_DLIST_43_011: [** If any call to `actionFunction` returned a non-zero value, `DList_ForEach` shall fail and return a non-zero value. **]**
 
-**SRS_DLIST_43_012: [** If all calls to `actionFunction` returned zero, DList_ForEach` shall succeed and return zero. **]**
+**S_R_S_DLIST_43_012: [** If all calls to `actionFunction` returned zero, DList_ForEach` shall succeed and return zero. **]**
