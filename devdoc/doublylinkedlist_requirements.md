@@ -28,8 +28,8 @@ typedef struct DLIST_ENTRY_TAG
 MU_DEFINE_ENUM(DLIST_MATCH_FUNCTION_RESULT, DLIST_MATCH_FUNCTION_RESULT_VALUES);
 
 #define DLIST_CONDITION_FUNCTION_RESULT_VALUES \
-    DLIST_CONDITION_FUNCTION_SATISFIED, \
-    DLIST_CONDITION_FUNCTION_NOT_SATISFIED, \
+    DLIST_CONDITION_FUNCTION_TRUE, \
+    DLIST_CONDITION_FUNCTION_FALSE, \
     DLIST_CONDITION_FUNCTION_ERROR
 
 MU_DEFINE_ENUM(DLIST_CONDITION_FUNCTION_RESULT, DLIST_CONDITION_FUNCTION_RESULT_VALUES);
@@ -150,7 +150,7 @@ MOCKABLE_FUNCTION(, int, DList_RemoveIf, PDLIST_ENTRY, listHead, DLIST_CONDITION
 
 **SRS_DLIST_43_004: [** `DList_RemoveIf` shall call `conditionFunction` on each entry in the list defined by `listHead` along with `conditionContext`. **]**
 
-**SRS_DLIST_43_005: [** If the call to `conditionFunction` for an entry returns `DLIST_CONDITION_FUNCTION_SATISFIED`:**]**
+**SRS_DLIST_43_005: [** If the call to `conditionFunction` for an entry returns `DLIST_CONDITION_FUNCTION_TRUE`:**]**
 
  - **SRS_DLIST_43_013: [** `DList_RemoveIf` shall remove the entry from the list. **]**
 
