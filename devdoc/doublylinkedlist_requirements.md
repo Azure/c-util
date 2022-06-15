@@ -49,7 +49,7 @@ The parent struct of a list entry can be obtained using `CONTAINING_RECORD`:
 
 ```
 PDLIST_ENTRY listEntry = DList_RemoveHeadList(listHead);
-DATA data = CONTAINING_RECORD(listEntry, DATA, anchor);
+DATA* data = CONTAINING_RECORD(listEntry, DATA, anchor);
 ```
 
 ### DList_InitializeListHead
@@ -128,14 +128,14 @@ MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUN
 ```
 `DList_ForEach` can be used to perform some action on each entry in a list. `actionFunction` is a user-provided function that returns zero on success and a non-zero value on error.
 
-**S_R_S_DLIST_43_001: [** If `listHead` is `NULL`, `DList_ForEach` shall fail and return a non-zero value. **]**
+**SRS_DLIST_43_001: [** If `listHead` is `NULL`, `DList_ForEach` shall fail and return a non-zero value. **]**
 
-**S_R_S_DLIST_43_002: [** If `actionFunction` is `NULL`, `DList_ForEach` shall fail and return a non-zero value. **]**
+**SRS_DLIST_43_002: [** If `actionFunction` is `NULL`, `DList_ForEach` shall fail and return a non-zero value. **]**
 
-**S_R_S_DLIST_43_009: [** `DList_ForEach` shall call `actionFunction` on each entry in the list defined by `listHead` along with `actionContext`. **]**
+**SRS_DLIST_43_009: [** `DList_ForEach` shall call `actionFunction` on each entry in the list defined by `listHead` along with `actionContext`. **]**
 
-**S_R_S_DLIST_43_010: [** If `continueProcessing` is `false`, `DList_ForEach` shall stop iterating over the list. **]**
+**SRS_DLIST_43_010: [** If `continueProcessing` is `false`, `DList_ForEach` shall stop iterating over the list. **]**
 
-**S_R_S_DLIST_43_011: [** If any call to `actionFunction` returned a non-zero value, `DList_ForEach` shall fail and return a non-zero value. **]**
+**SRS_DLIST_43_011: [** `DList_ForEach` shall succeed and return zero. **]**
 
-**S_R_S_DLIST_43_012: [** If all calls to `actionFunction` returned zero, `DList_ForEach` shall succeed and return zero. **]**
+**SRS_DLIST_43_012: [** If there are any failures, `DList_ForEach` shall fail and return a non-zero value. **]**
