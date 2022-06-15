@@ -22,14 +22,14 @@ typedef struct DLIST_ENTRY_TAG
 
 typedef int (*DLIST_ACTION_FUNCTION)(PDLIST_ENTRY listEntry, void* actionContext, bool* continueProcessing);
 
-extern void DList_InitializeListHead(PDLIST_ENTRY listHead);
-extern int DList_IsListEmpty(const PDLIST_ENTRY listHead);
-extern void DList_InsertTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY listEntry);
-extern void DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY entry);
-extern void DList_AppendTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY ListToAppend);
-extern int DList_RemoveEntryList(PDLIST_ENTRY listEntry);
-extern PDLIST_ENTRY DList_RemoveHeadList(PDLIST_ENTRY listHead);
-extern int DList_ForEach(PDLIST_ENTRY listHead, DLIST_ACTION_FUNCTION actionFunction, void* actionContext);
+MOCKABLE_FUNCTION(, void, DList_InitializeListHead, PDLIST_ENTRY, listHead);
+MOCKABLE_FUNCTION(, int, DList_IsListEmpty, const PDLIST_ENTRY, listHead);
+MOCKABLE_FUNCTION(, void, DList_InsertTailList, PDLIST_ENTRY, listHead, PDLIST_ENTRY, listEntry);
+MOCKABLE_FUNCTION(, void, DList_InsertHeadList, PDLIST_ENTRY, listHead, PDLIST_ENTRY, listEntry);
+MOCKABLE_FUNCTION(, void, DList_AppendTailList, PDLIST_ENTRY, listHead, PDLIST_ENTRY, ListToAppend);
+MOCKABLE_FUNCTION(, int, DList_RemoveEntryList, PDLIST_ENTRY, listEntry);
+MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveHeadList, PDLIST_ENTRY, listHead);
+MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUNCTION, actionFunction, void*, actionContext);
 
 //
 // Calculate the address of the base of the structure given its type, and an
