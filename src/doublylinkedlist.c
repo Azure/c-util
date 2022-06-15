@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <stdbool.h>
+
 #include "c_util/doublylinkedlist.h"
 
 void
@@ -104,4 +106,12 @@ void DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY entry)
     entry->Flink = listHead->Flink;
     listHead->Flink->Blink = entry;
     listHead->Flink = entry;
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUNCTION, actionFunction, void*, actionContext)
+{
+    (void)listHead;
+    (void)actionFunction;
+    (void)actionContext;
+    return 0;
 }

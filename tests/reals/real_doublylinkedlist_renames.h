@@ -8,3 +8,4 @@
 #define DList_AppendTailList real_DList_AppendTailList
 #define DList_RemoveEntryList real_DList_RemoveEntryList
 #define DList_RemoveHeadList real_DList_RemoveHeadList
+#define DList_ForEach real_DList_ForEach
