@@ -77,7 +77,9 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
 {
+    umock_c_deinit();
     TEST_MUTEX_DESTROY(g_testByTest);
+
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
@@ -90,6 +92,7 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
+    umock_c_reset_all_calls();
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
