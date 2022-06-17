@@ -100,7 +100,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_InitializeListHead_with_a_list_head_points_Flink_and_Blink_to_its_address)
     {
         // arrange
-        DLIST_ENTRY head = { 0 };
+        DLIST_ENTRY head;
 
         // act
         DList_InitializeListHead(&head);
@@ -114,7 +114,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_IsListEmpty_with_a_list_head_only_returns_empty)
     {
         // arrange
-        DLIST_ENTRY local = { 0 };
+        DLIST_ENTRY local;
         int result;
 
         DList_InitializeListHead(&local);
@@ -129,7 +129,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_IsListEmpty_with_a_list_head_and_items_returns_empty)
     {
         // arrange
-        DLIST_ENTRY head = { 0 };
+        DLIST_ENTRY head;
         int result;
 
         DList_InitializeListHead(&head);
@@ -145,7 +145,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_InsertTailList_with_a_list_head_inserts_1st_item_at_the_end_of_the_list)
     {
         // arrange
-        DLIST_ENTRY head = { 0 };
+        DLIST_ENTRY head;
 
         DList_InitializeListHead(&head);
         // act
@@ -160,7 +160,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_InsertTailList_with_a_list_head_inserts_2nd_item_at_the_end_of_the_list)
     {
         // arrange
-        DLIST_ENTRY head = { 0 };
+        DLIST_ENTRY head;
 
         DList_InitializeListHead(&head);
         DList_InsertTailList(&head, &(simp1.link));
@@ -180,7 +180,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_AppendTailList_adds_listToAppend_after_listHead)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         PDLIST_ENTRY currentEntry;
 
         DList_InitializeListHead(&listHead);
@@ -234,7 +234,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveEntryList_with_head_only_in_list_shall_return_non_zero)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         int resultOfRemove;
 
         DList_InitializeListHead(&listHead);
@@ -252,7 +252,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveEntryList_with_one_element_and_removing_that_one_element_shall_return_non_zero)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         int resultOfRemove;
 
         DList_InitializeListHead(&listHead);
@@ -272,7 +272,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveEntryList_with_one_element_and_removing_the_head_shall_return_non_zero)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         int resultOfRemove;
 
         DList_InitializeListHead(&listHead);
@@ -294,7 +294,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveEntryList_with_three_elements_and_removing_the_first_return_zero)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         int resultOfRemove;
 
         DList_InitializeListHead(&listHead);
@@ -322,7 +322,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveEntryList_with_three_elements_and_removing_the_last_return_zero)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         int resultOfRemove;
 
         DList_InitializeListHead(&listHead);
@@ -350,7 +350,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveEntryList_with_three_elements_and_removing_the_middle_return_zero)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         int resultOfRemove;
 
         DList_InitializeListHead(&listHead);
@@ -375,7 +375,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveHeadList_with_only_head_shall_return_the_head)
     {
         // arrange
-        DLIST_ENTRY head = { 0 };
+        DLIST_ENTRY head;
         PDLIST_ENTRY returnedEntry;
 
         DList_InitializeListHead(&head);
@@ -391,7 +391,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveHeadList_with_one_entry_returns_entry)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         PDLIST_ENTRY returnedEntry;
 
         DList_InitializeListHead(&listHead);
@@ -409,7 +409,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveHeadList_with_two_entries_returns_first_entry)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         PDLIST_ENTRY returnedEntry;
 
         DList_InitializeListHead(&listHead);
@@ -498,7 +498,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_ForEach_succeeds)
     {
         ///arrange
-        DLIST_ENTRY head = { 0 };
+        DLIST_ENTRY head;
         DList_InitializeListHead(&head);
         DList_InsertTailList(&head, &(simp1.link));
         DList_InsertTailList(&head, &(simp2.link));
@@ -523,7 +523,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_ForEach_succeeds_with_empty_list)
     {
         ///arrange
-        DLIST_ENTRY head = { 0 };
+        DLIST_ENTRY head;
         DList_InitializeListHead(&head);
 
         ///act
@@ -540,7 +540,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_ForEach_stops_processing_when_continueProcessing_is_false)
     {
         ///arrange
-        DLIST_ENTRY head = { 0 };
+        DLIST_ENTRY head;
         DList_InitializeListHead(&head);
         DList_InsertTailList(&head, &(simp1.link));
         DList_InsertTailList(&head, &(simp2.link));
@@ -565,7 +565,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_ForEach_fails_when_actionFunction_fails)
     {
         ///arrange
-        DLIST_ENTRY head = { 0 };
+        DLIST_ENTRY head;
         DList_InitializeListHead(&head);
         DList_InsertTailList(&head, &(simp1.link));
         DList_InsertTailList(&head, &(simp2.link));
