@@ -1,6 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include "macro_utils/macro_utils.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_charptr.h"
+
+
 #include "c_util/doublylinkedlist.h"
 #include "c_util/containing_record.h"
 #include "testrunnerswitcher.h"
@@ -19,17 +24,62 @@ static simpleItem simp5 = { 5, { NULL, NULL } };
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
+static void* test_action_context = (void*)0x1000;
+static PDLIST_ENTRY test_pdlist_entry = (PDLIST_ENTRY)0x1001;
+
+MOCK_FUNCTION_WITH_CODE(, int, test_action_function, PDLIST_ENTRY, list_entry, void*, action_context, bool*, continueProcessing);
+    (void)list_entry;
+    (void)action_context;
+    *continueProcessing = true;
+    return 0;
+MOCK_FUNCTION_END();
+
+MOCK_FUNCTION_WITH_CODE(, int, test_action_function_2, PDLIST_ENTRY, list_entry, void*, action_context, bool*, continueProcessing);
+    (void)action_context;
+    simpleItem* item = CONTAINING_RECORD(list_entry, simpleItem, link);
+    *continueProcessing = !(item->index == 3);
+    return 0;
+MOCK_FUNCTION_END();
+
+
+MOCK_FUNCTION_WITH_CODE(, int, test_action_function_fail, PDLIST_ENTRY, list_entry, void*, action_context, bool*, continueProcessing);
+    (void)list_entry;
+    (void)action_context;
+    *continueProcessing = true;
+    simpleItem* item = CONTAINING_RECORD(list_entry, simpleItem, link);
+    if (item->index == 3)
+    {
+        return MU_FAILURE;
+    }
+    return 0;
+MOCK_FUNCTION_END();
+
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
+}
+
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(TestClassInitialize)
 {
     g_testByTest = TEST_MUTEX_CREATE();
     ASSERT_IS_NOT_NULL(g_testByTest);
+
+    ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error), "umock_c_init");
+    ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types(), "umocktypes_charptr_register_types");
+
+    REGISTER_UMOCK_ALIAS_TYPE(PDLIST_ENTRY, void*);
+
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
 {
+    umock_c_deinit();
     TEST_MUTEX_DESTROY(g_testByTest);
+
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
@@ -42,6 +92,7 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
+    umock_c_reset_all_calls();
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
@@ -49,7 +100,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_InitializeListHead_with_a_list_head_points_Flink_and_Blink_to_its_address)
     {
         // arrange
-        DLIST_ENTRY head = { 0 };
+        DLIST_ENTRY head;
 
         // act
         DList_InitializeListHead(&head);
@@ -63,7 +114,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_IsListEmpty_with_a_list_head_only_returns_empty)
     {
         // arrange
-        DLIST_ENTRY local = { 0 };
+        DLIST_ENTRY local;
         int result;
 
         DList_InitializeListHead(&local);
@@ -78,7 +129,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_IsListEmpty_with_a_list_head_and_items_returns_empty)
     {
         // arrange
-        DLIST_ENTRY head = { 0 };
+        DLIST_ENTRY head;
         int result;
 
         DList_InitializeListHead(&head);
@@ -94,7 +145,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_InsertTailList_with_a_list_head_inserts_1st_item_at_the_end_of_the_list)
     {
         // arrange
-        DLIST_ENTRY head = { 0 };
+        DLIST_ENTRY head;
 
         DList_InitializeListHead(&head);
         // act
@@ -109,7 +160,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_InsertTailList_with_a_list_head_inserts_2nd_item_at_the_end_of_the_list)
     {
         // arrange
-        DLIST_ENTRY head = { 0 };
+        DLIST_ENTRY head;
 
         DList_InitializeListHead(&head);
         DList_InsertTailList(&head, &(simp1.link));
@@ -129,7 +180,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_AppendTailList_adds_listToAppend_after_listHead)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         PDLIST_ENTRY currentEntry;
 
         DList_InitializeListHead(&listHead);
@@ -183,7 +234,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveEntryList_with_head_only_in_list_shall_return_non_zero)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         int resultOfRemove;
 
         DList_InitializeListHead(&listHead);
@@ -201,7 +252,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveEntryList_with_one_element_and_removing_that_one_element_shall_return_non_zero)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         int resultOfRemove;
 
         DList_InitializeListHead(&listHead);
@@ -221,7 +272,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveEntryList_with_one_element_and_removing_the_head_shall_return_non_zero)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         int resultOfRemove;
 
         DList_InitializeListHead(&listHead);
@@ -243,7 +294,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveEntryList_with_three_elements_and_removing_the_first_return_zero)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         int resultOfRemove;
 
         DList_InitializeListHead(&listHead);
@@ -271,7 +322,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveEntryList_with_three_elements_and_removing_the_last_return_zero)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         int resultOfRemove;
 
         DList_InitializeListHead(&listHead);
@@ -299,7 +350,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveEntryList_with_three_elements_and_removing_the_middle_return_zero)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         int resultOfRemove;
 
         DList_InitializeListHead(&listHead);
@@ -324,7 +375,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveHeadList_with_only_head_shall_return_the_head)
     {
         // arrange
-        DLIST_ENTRY head = { 0 };
+        DLIST_ENTRY head;
         PDLIST_ENTRY returnedEntry;
 
         DList_InitializeListHead(&head);
@@ -340,7 +391,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveHeadList_with_one_entry_returns_entry)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         PDLIST_ENTRY returnedEntry;
 
         DList_InitializeListHead(&listHead);
@@ -358,7 +409,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     TEST_FUNCTION(DList_RemoveHeadList_with_two_entries_returns_first_entry)
     {
         // arrange
-        DLIST_ENTRY listHead = { 0 };
+        DLIST_ENTRY listHead;
         PDLIST_ENTRY returnedEntry;
 
         DList_InitializeListHead(&listHead);
@@ -414,5 +465,122 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 
     }
 
+    /*Tests_SRS_DLIST_43_001: [If listHead is NULL, DList_ForEach shall fail and return a non - zero value.]*/
+    /*Tests_SRS_DLIST_43_012 : [If there are any failures, DList_ForEach shall fail and return a non - zero value.]*/
+    TEST_FUNCTION(DList_ForEach_fails_with_NULL_listHead)
+    {
+        ///arrange
 
+        ///act
+        int result = DList_ForEach(NULL, test_action_function, test_action_context);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    }
+    
+    /*Tests_SRS_DLIST_43_002 : [If actionFunction is NULL, DList_ForEach shall fail and return a non - zero value.]*/
+    /*Tests_SRS_DLIST_43_012 : [If there are any failures, DList_ForEach shall fail and return a non - zero value.]*/
+    TEST_FUNCTION(DList_ForEach_fails_with_NULL_actionFunction)
+    {
+        ///arrange
+
+        ///act
+        int result = DList_ForEach(test_pdlist_entry, NULL, test_action_context);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    }
+
+    /*Tests_SRS_DLIST_43_009 : [DList_ForEach shall call actionFunction on each entry in the list defined by listHead along with actionContext.]*/
+    /*Tests_SRS_DLIST_43_011 : [DList_ForEach shall succeed and return zero.]*/
+    TEST_FUNCTION(DList_ForEach_succeeds)
+    {
+        ///arrange
+        DLIST_ENTRY head;
+        DList_InitializeListHead(&head);
+        DList_InsertTailList(&head, &(simp1.link));
+        DList_InsertTailList(&head, &(simp2.link));
+        DList_InsertTailList(&head, &(simp3.link));
+        DList_InsertTailList(&head, &(simp4.link));
+        DList_InsertTailList(&head, &(simp5.link));
+
+        STRICT_EXPECTED_CALL(test_action_function(&(simp1.link), test_action_context, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(test_action_function(&(simp2.link), test_action_context, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(test_action_function(&(simp3.link), test_action_context, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(test_action_function(&(simp4.link), test_action_context, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(test_action_function(&(simp5.link), test_action_context, IGNORED_ARG));
+        
+        ///act
+        int result = DList_ForEach(&head, test_action_function, test_action_context);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_EQUAL(int, 0, result);
+    }
+
+    TEST_FUNCTION(DList_ForEach_succeeds_with_empty_list)
+    {
+        ///arrange
+        DLIST_ENTRY head;
+        DList_InitializeListHead(&head);
+
+        ///act
+        int result = DList_ForEach(&head, test_action_function, test_action_context);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_EQUAL(int, 0, result);
+    }
+
+    /*Tests_SRS_DLIST_43_009 : [DList_ForEach shall call actionFunction on each entry in the list defined by listHead along with actionContext.]*/
+    /*Tests_SRS_DLIST_43_010 : [If continueProcessing is false, DList_ForEach shall stop iterating over the list.]*/
+    /*Tests_SRS_DLIST_43_011 : [DList_ForEach shall succeed and return zero.]*/
+    TEST_FUNCTION(DList_ForEach_stops_processing_when_continueProcessing_is_false)
+    {
+        ///arrange
+        DLIST_ENTRY head;
+        DList_InitializeListHead(&head);
+        DList_InsertTailList(&head, &(simp1.link));
+        DList_InsertTailList(&head, &(simp2.link));
+        DList_InsertTailList(&head, &(simp3.link));
+        DList_InsertTailList(&head, &(simp4.link));
+        DList_InsertTailList(&head, &(simp5.link));
+
+        STRICT_EXPECTED_CALL(test_action_function_2(&(simp1.link), test_action_context, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(test_action_function_2(&(simp2.link), test_action_context, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(test_action_function_2(&(simp3.link), test_action_context, IGNORED_ARG));
+
+        ///act
+        int result = DList_ForEach(&head, test_action_function_2, test_action_context);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_EQUAL(int, 0, result);
+    }
+
+    /*Tests_SRS_DLIST_43_009: [DList_ForEach shall call actionFunction on each entry in the list defined by listHead along with actionContext.]*/
+    /*Tests_SRS_DLIST_43_012: [If there are any failures, DList_ForEach shall fail and return a non - zero value.]*/
+    TEST_FUNCTION(DList_ForEach_fails_when_actionFunction_fails)
+    {
+        ///arrange
+        DLIST_ENTRY head;
+        DList_InitializeListHead(&head);
+        DList_InsertTailList(&head, &(simp1.link));
+        DList_InsertTailList(&head, &(simp2.link));
+        DList_InsertTailList(&head, &(simp3.link));
+        DList_InsertTailList(&head, &(simp4.link));
+        DList_InsertTailList(&head, &(simp5.link));
+
+        STRICT_EXPECTED_CALL(test_action_function_fail(&(simp1.link), test_action_context, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(test_action_function_fail(&(simp2.link), test_action_context, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(test_action_function_fail(&(simp3.link), test_action_context, IGNORED_ARG));
+        ///act
+        int result = DList_ForEach(&head, test_action_function_fail, test_action_context);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    }
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

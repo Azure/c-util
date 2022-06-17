@@ -3,6 +3,9 @@
 
 #include <stdbool.h>
 
+#include "macro_utils/macro_utils.h"
+#include "c_logging/xlogging.h"
+
 #include "c_util/doublylinkedlist.h"
 
 void
@@ -110,8 +113,48 @@ void DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY entry)
 
 IMPLEMENT_MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUNCTION, actionFunction, void*, actionContext)
 {
-    (void)listHead;
-    (void)actionFunction;
-    (void)actionContext;
-    return 0;
+    int result;
+    /*Codes_SRS_DLIST_43_001: [If listHead is NULL, DList_ForEach shall fail and return a non - zero value.]*/
+    /*Codes_SRS_DLIST_43_002 : [If actionFunction is NULL, DList_ForEach shall fail and return a non - zero value.]*/
+    if (
+        listHead == NULL ||
+        actionFunction == NULL
+        )
+    {
+        /*Codes_SRS_DLIST_43_012: [If there are any failures, DList_ForEach shall fail and return a non - zero value.]*/
+        LogError("Invalid args: PDLIST_ENTRY listHead = %p, DLIST_ACTION_FUNCTION actionFunction = %p, void* actionContext = %p", listHead, actionFunction, actionContext);
+        result = MU_FAILURE;
+    }
+    else
+    {
+        PDLIST_ENTRY entry = listHead->Flink;
+        while (entry != listHead)
+        {
+            bool continueProcessing;
+            /*Codes_SRS_DLIST_43_009: [DList_ForEach shall call actionFunction on each entry in the list defined by listHead along with actionContext.]*/
+            if (actionFunction(entry, actionContext, &continueProcessing) != 0)
+            {
+                /*Codes_SRS_DLIST_43_012: [If there are any failures, DList_ForEach shall fail and return a non - zero value.]*/
+                LogError("failure in actionFunction(entry = %p, actionContext = %p, &continueProcessing = %p)", entry, actionContext, &continueProcessing);
+                result = MU_FAILURE;
+                goto end;
+            }
+            else
+            {
+                /*Codes_SRS_DLIST_43_010: [If continueProcessing is false, DList_ForEach shall stop iterating over the list.]*/
+                if (!continueProcessing)
+                {
+                    /*Codes_SRS_DLIST_43_011: [DList_ForEach shall succeed and return zero.]*/
+                    result = 0;
+                    goto end;
+                }
+            }
+            entry = entry->Flink;
+        }
+        /*Codes_SRS_DLIST_43_011: [DList_ForEach shall succeed and return zero.]*/        
+        result = 0;
+    }
+end:
+    return result;
 }
+
