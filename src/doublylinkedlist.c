@@ -134,26 +134,27 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_
             /*Codes_SRS_DLIST_43_009: [DList_ForEach shall call actionFunction on each entry in the list defined by listHead along with actionContext.]*/
             if (actionFunction(entry, actionContext, &continueProcessing) != 0)
             {
+                /*Codes_SRS_DLIST_43_012: [If there are any failures, DList_ForEach shall fail and return a non - zero value.]*/
                 LogError("failure in actionFunction(entry = %p, actionContext = %p, &continueProcessing = %p)", entry, actionContext, &continueProcessing);
                 result = MU_FAILURE;
-                break;
+                goto end;
             }
             else
             {
                 /*Codes_SRS_DLIST_43_010: [If continueProcessing is false, DList_ForEach shall stop iterating over the list.]*/
                 if (!continueProcessing)
                 {
-                    break;
+                    /*Codes_SRS_DLIST_43_011: [DList_ForEach shall succeed and return zero.]*/
+                    result = 0;
+                    goto end;
                 }
             }
             entry = entry->Flink;
         }
-        /*Codes_SRS_DLIST_43_011: [DList_ForEach shall succeed and return zero.]*/
-        if (entry == listHead)
-        {
-            result = 0;
-        }
+        /*Codes_SRS_DLIST_43_011: [DList_ForEach shall succeed and return zero.]*/        
+        result = 0;
     }
+end:
     return result;
 }
 
