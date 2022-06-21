@@ -24,9 +24,7 @@
 
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 void real_DList_InitializeListHead(PDLIST_ENTRY listHead);
 int real_DList_IsListEmpty(const PDLIST_ENTRY listHead);
@@ -37,8 +35,6 @@ int real_DList_RemoveEntryList(PDLIST_ENTRY listEntry);
 PDLIST_ENTRY real_DList_RemoveHeadList(PDLIST_ENTRY listHead);
 int real_DList_ForEach(PDLIST_ENTRY listHead, DLIST_ACTION_FUNCTION actionFunction, void* actionContext);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif // REAL_DOUBLYLINKEDLIST_H

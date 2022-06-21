@@ -3,13 +3,8 @@
 #ifndef REAL_WORKER_THREAD_H
 #define REAL_WORKER_THREAD_H
 
-#ifdef __cplusplus
-#include <cstdint>
-#include <cstddef>
-#else
 #include <stdint.h>
 #include <stddef.h>
-#endif
 
 #include "macro_utils/macro_utils.h"
 
@@ -25,9 +20,6 @@
         worker_thread_schedule_process \
     )
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include "c_util/worker_thread.h"
 
@@ -39,8 +31,5 @@ void real_worker_thread_close(WORKER_THREAD_HANDLE worker_thread);
 
 WORKER_THREAD_SCHEDULE_PROCESS_RESULT real_worker_thread_schedule_process(WORKER_THREAD_HANDLE worker_thread);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif //REAL_WORKER_THREAD_H
