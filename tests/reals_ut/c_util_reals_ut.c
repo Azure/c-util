@@ -12,6 +12,7 @@
 #include "../reals/real_doublylinkedlist.h"
 #include "../reals/real_external_command_helper.h"
 #include "../reals/real_interlocked_hl.h"
+#include "../reals/real_object_lifetime_tracker.h"
 #include "../reals/real_memory_data.h"
 #include "../reals/real_rc_string.h"
 #include "../reals/real_rc_string_array.h"
@@ -25,6 +26,7 @@
 #include "c_util/external_command_helper.h"
 #include "c_util/interlocked_hl.h"
 #include "c_util/memory_data.h"
+#include "c_util/object_lifetime_tracker.h"
 #include "c_util/rc_string.h"
 #include "c_util/rc_string_array.h"
 #include "c_util/singlylinkedlist.h"
@@ -53,6 +55,7 @@ TEST_FUNCTION(check_all_c_util_reals)
     REGISTER_EXTERNAL_COMMAND_HELPER_GLOBAL_MOCK_HOOKS();
     REGISTER_INTERLOCKED_HL_GLOBAL_MOCK_HOOK();
     REGISTER_MEMORY_DATA_GLOBAL_MOCK_HOOK();
+    REGISTER_OBJECT_LIFETIME_TRACKER_GLOBAL_MOCK_HOOKS();
     REGISTER_RC_STRING_GLOBAL_MOCK_HOOKS();
     REGISTER_SINGLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
     REGISTER_UUID_STRING_GLOBAL_MOCK_HOOK();

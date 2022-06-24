@@ -153,6 +153,7 @@ set(c_util_c_files
     ./src/interlocked_hl.c
     ./src/map.c
     ./src/memory_data.c
+    ./src/object_lifetime_tracker.c
     ./src/ps_util.c
     ./src/rc_string.c
     ./src/rc_string_array.c
@@ -177,6 +178,7 @@ set(c_util_h_files
     ./inc/c_util/log_critical_and_terminate.h
     ./inc/c_util/map.h
     ./inc/c_util/memory_data.h
+    ./inc/c_util/object_lifetime_tracker.h
     ./inc/c_util/ps_util.h
     ./inc/c_util/rc_string.h
     ./inc/c_util/rc_string_array.h

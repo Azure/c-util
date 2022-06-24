@@ -1,0 +1,54 @@
+// Copyright (C) Microsoft Corporation. All rights reserved.
+
+#ifndef OBJECT_LIFETIME_TRACKER_H
+#define OBJECT_LIFETIME_TRACKER_H
+
+#include "macro_utils/macro_utils.h"
+
+#define KEY_MATCH_FUNCTION_RESULT_VALUES \
+    KEY_MATCH_FUNCTION_RESULT_MATCHING, \
+    KEY_MATCH_FUNCTION_RESULT_NOT_MATCHING, \
+    KEY_MATCH_FUNCTION_RESULT_ERROR
+
+MU_DEFINE_ENUM(KEY_MATCH_FUNCTION_RESULT, KEY_MATCH_FUNCTION_RESULT_VALUES);
+
+#define OBJECT_MATCH_FUNCTION_RESULT_VALUES \
+    OBJECT_MATCH_FUNCTION_RESULT_MATCHING, \
+    OBJECT_MATCH_FUNCTION_RESULT_NOT_MATCHING, \
+    OBJECT_MATCH_FUNCTION_RESULT_ERROR
+
+MU_DEFINE_ENUM(OBJECT_MATCH_FUNCTION_RESULT, OBJECT_MATCH_FUNCTION_RESULT_VALUES);
+
+#define OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT_VALUES \
+    OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_OK, \
+    OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_ERROR, \
+    OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_NOT_FOUND, \
+    OBJECT_LIFETIME_TRACKER_UNREGISTER_KEY_NOT_FOUND
+
+MU_DEFINE_ENUM(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT_VALUES);
+
+typedef struct OBJECT_LIFETIME_TRACKER_TAG* OBJECT_LIFETIME_TRACKER_HANDLE;
+typedef void(*DESTROY_OBJECT)(void* object);
+typedef KEY_MATCH_FUNCTION_RESULT(*KEY_MATCH_FUNCTION)(const void* lhs, const void* rhs);
+typedef OBJECT_MATCH_FUNCTION_RESULT(*OBJECT_MATCH_FUNCTION)(const void* lhs, const void* rhs);
+
+#include "umock_c/umock_c_prod.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+    MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker_create, KEY_MATCH_FUNCTION, key_match_function, OBJECT_MATCH_FUNCTION, object_match_function);
+    MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker);
+
+    MOCKABLE_FUNCTION(, int, object_lifetime_tracker_register_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, DESTROY_OBJECT, destroy_object);
+    MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, object_lifetime_tracker_unregister_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object);
+    MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy_all_objects_for_key, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /*OBJECT_LIFETIME_TRACKER_H*/
+
+
