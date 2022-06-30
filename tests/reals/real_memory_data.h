@@ -35,9 +35,7 @@
 
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
     void real_read_uint8_t(const unsigned char* source, uint8_t* destination);
     void real_read_uint16_t(const unsigned char* source, uint16_t* destination);
@@ -63,9 +61,7 @@ extern "C" {
 
     void real_write_uuid_t(unsigned char* destination, const UUID_T value);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 
 #endif //REAL_MEMORY_DATA_H
