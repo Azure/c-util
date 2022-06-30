@@ -194,13 +194,16 @@ set(c_util_h_files
 
 if(WIN32)
     #add worker_thread only on Windows (until we fix it)
+    #object_lifetime_tracker requires srw lock (which we only have implemented for Windows)
     set(c_util_c_files
         ${c_util_c_files}
+        ./src/object_lifetime_tracker.c
         ./src/worker_thread.c
     )
 
     set(c_util_h_files
         ${c_util_h_files}
+        ./inc/c_util/object_lifetime_tracker.h
         ./inc/c_util/worker_thread.h
     )
 endif()

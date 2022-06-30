@@ -47,11 +47,14 @@ if(WIN32)
     #add worker_thread only on Windows (until we fix it)
     set(c_util_reals_c_files
         ${c_util_reals_c_files}
+        real_object_lifetime_tracker.c
         real_worker_thread.c
     )
 
     set(c_util_reals_h_files
         ${c_util_reals_h_files}
+        real_object_lifetime_tracker_renames.h
+        real_object_lifetime_tracker.h
         real_worker_thread.h
         real_worker_thread_renames.h
     )
