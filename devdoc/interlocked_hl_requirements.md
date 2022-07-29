@@ -176,3 +176,18 @@ MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_SetAndWake
 **SRS_INTERLOCKED_HL_02_030: [** `InterlockedHL_SetAndWakeAll` shall call `wake_by_address_all`. **]**
 
 **SRS_INTERLOCKED_HL_02_031: [** `InterlockedHL_SetAndWakeAll` shall succeed and return `INTERLOCKED_HL_OK`. **]**
+
+### InterlockedHL_DecrementAndWake
+```c
+MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_DecrementAndWake, int32_t volatile_atomic*, address)(INTERLOCKED_HL_OK, INTERLOCKED_HL_ERROR);
+```
+
+`InterlockedHL_DecrementAndWake` decrements the value at `address` by 1 and signals the change of value in `address`. This can be commonly used with `InterlockedHL_WaitForValue` to signal a waiting thread.
+
+**S_RS_INTERLOCKED_HL_44_001: [** If `address` is `NULL` then `InterlockedHL_DecrementAndWake` shall fail and return `INTERLOCKED_HL_ERROR`. **]**
+
+**S_RS_INTERLOCKED_HL_44_002: [** `InterlockedHL_DecrementAndWake` shall decrement the value `address` by 1. **]**
+
+**S_RS_INTERLOCKED_HL_44_003: [** `InterlockedHL_DecrementAndWake` shall call `wake_by_address_single`. **]**
+
+**S_RS_INTERLOCKED_HL_44_004: [** `InterlockedHL_DecrementAndWake` shall succeed and return `INTERLOCKED_HL_OK`. **]**
