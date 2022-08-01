@@ -186,7 +186,7 @@ MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_DecrementA
 
 **S_RS_INTERLOCKED_HL_44_001: [** If `address` is `NULL` then `InterlockedHL_DecrementAndWake` shall fail and return `INTERLOCKED_HL_ERROR`. **]**
 
-**S_RS_INTERLOCKED_HL_44_002: [** `InterlockedHL_DecrementAndWake` shall decrement the value `address` by 1. **]**
+**S_RS_INTERLOCKED_HL_44_002: [** `InterlockedHL_DecrementAndWake` shall decrement the value at `address` by 1. **]**
 
 **S_RS_INTERLOCKED_HL_44_003: [** `InterlockedHL_DecrementAndWake` shall call `wake_by_address_single`. **]**
 
