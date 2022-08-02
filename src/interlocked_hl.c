@@ -311,19 +311,19 @@ IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_DecrementAndW
     INTERLOCKED_HL_RESULT result;
     if (address == NULL)
     {
-        /*Codes_S_RS_INTERLOCKED_HL_44_001: [ If address is NULL then InterlockedHL_DecrementAndWake shall fail and return INTERLOCKED_HL_ERROR. ]*/
+        /*Codes_SRS_INTERLOCKED_HL_44_001: [ If address is NULL then InterlockedHL_DecrementAndWake shall fail and return INTERLOCKED_HL_ERROR. ]*/
         LogError("invalid arguments int32_t volatile_atomic* address=%p", address);
         result = INTERLOCKED_HL_ERROR;
     }
     else
     {
-        /*Codes_S_RS_INTERLOCKED_HL_44_002: [ InterlockedHL_DecrementAndWake shall decrement the value at address by 1. ]*/
+        /*Codes_SRS_INTERLOCKED_HL_44_002: [ InterlockedHL_DecrementAndWake shall decrement the value at address by 1. ]*/
         (void)interlocked_decrement(address);
 
-        /*Codes_S_RS_INTERLOCKED_HL_44_003: [ InterlockedHL_DecrementAndWake shall call wake_by_address_single. ]*/
+        /*Codes_SRS_INTERLOCKED_HL_44_003: [ InterlockedHL_DecrementAndWake shall call wake_by_address_single. ]*/
         wake_by_address_single(address);
 
-        /*Codes_S_RS_INTERLOCKED_HL_44_004: [ InterlockedHL_DecrementAndWake shall succeed and return INTERLOCKED_HL_OK. ]*/
+        /*Codes_SRS_INTERLOCKED_HL_44_004: [ InterlockedHL_DecrementAndWake shall succeed and return INTERLOCKED_HL_OK. ]*/
         result = INTERLOCKED_HL_OK;
     }
     return result;

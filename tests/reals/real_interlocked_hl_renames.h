@@ -9,5 +9,6 @@
 #define InterlockedHL_SetAndWakeAll real_InterlockedHL_SetAndWakeAll
 #define InterlockedHL_CompareExchangeIf real_InterlockedHL_CompareExchangeIf
 #define InterlockedHL_CompareExchange64If real_InterlockedHL_CompareExchange64If
+#define InterlockedHL_DecrementAndWake real_InterlockedHL_DecrementAndWake
 
 #define INTERLOCKED_HL_RESULT real_INTERLOCKED_HL_RESULT
