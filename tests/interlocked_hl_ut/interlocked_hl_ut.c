@@ -885,7 +885,6 @@ TEST_FUNCTION(InterlockedHL_DecrementAndWake_with_NULL_address_fails)
     result = InterlockedHL_DecrementAndWake(NULL);
 
     // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_ERROR, result);
 }
 
