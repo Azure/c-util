@@ -888,6 +888,9 @@ TEST_FUNCTION(InterlockedHL_DecrementAndWake_with_NULL_address_fails)
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_ERROR, result);
 }
 
+/*Tests_SRS_INTERLOCKED_HL_44_002: [ InterlockedHL_DecrementAndWake shall decrement the value at address by 1. ]*/
+/*Tests_SRS_INTERLOCKED_HL_44_003: [ InterlockedHL_DecrementAndWake shall call wake_by_address_single. ]*/
+/*Tests_SRS_INTERLOCKED_HL_44_004: [ InterlockedHL_DecrementAndWake shall succeed and return INTERLOCKED_HL_OK. ]*/
 TEST_FUNCTION(InterlockedHL_DecrementAndWake_with_Valid_Inputs_success)
 {
     ///arrange
@@ -909,16 +912,13 @@ TEST_FUNCTION(InterlockedHL_DecrementAndWake_with_Valid_Inputs_success)
     {
         ///arrange
         umock_c_reset_all_calls();
-        /*Tests_SRS_INTERLOCKED_HL_44_002: [ InterlockedHL_DecrementAndWake shall decrement the value at address by 1. ]*/
         STRICT_EXPECTED_CALL(interlocked_decrement(&(testCases[i].Input)));
-        /*Tests_SRS_INTERLOCKED_HL_44_003: [ InterlockedHL_DecrementAndWake shall call wake_by_address_single. ]*/
         STRICT_EXPECTED_CALL(wake_by_address_single(&(testCases[i].Input)));
 
         ///act
         INTERLOCKED_HL_RESULT result = InterlockedHL_DecrementAndWake(&(testCases[i].Input));
 
         ///assert
-        /*Tests_SRS_INTERLOCKED_HL_44_004: [ InterlockedHL_DecrementAndWake shall succeed and return INTERLOCKED_HL_OK. ]*/
         ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
         ASSERT_ARE_EQUAL(int64_t, testCases[i].Output, testCases[i].Input);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
