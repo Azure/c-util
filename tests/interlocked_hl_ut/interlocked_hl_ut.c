@@ -65,6 +65,12 @@ typedef  struct ADDEND_CEILING_AND_VALUE_TAG
     int64_t Value;
 } ADDEND_CEILING_AND_VALUE;
 
+typedef  struct INPUT_AND_OUTPUT_TAG
+{
+    volatile_atomic int32_t Input;
+    int32_t Output;
+} INPUT_AND_OUTPUT;
+
 static bool hook_wait_on_address(volatile_atomic int32_t* address, int32_t compare_value, uint32_t milliseconds)
 {
     (void)address;
@@ -866,5 +872,57 @@ TEST_FUNCTION(InterlockedHL_SetAndWakeAll_succeeds)
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
 }
 #endif
+
+/* InterlockedHL_DecrementAndWake */
+
+/*Tests_SRS_INTERLOCKED_HL_44_001: [ If address is NULL then InterlockedHL_DecrementAndWake shall fail and return INTERLOCKED_HL_ERROR. ]*/
+TEST_FUNCTION(InterlockedHL_DecrementAndWake_with_NULL_address_fails)
+{
+    // arrange
+    INTERLOCKED_HL_RESULT result;
+
+    // act
+    result = InterlockedHL_DecrementAndWake(NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_ERROR, result);
+}
+
+/*Tests_SRS_INTERLOCKED_HL_44_002: [ InterlockedHL_DecrementAndWake shall decrement the value at address by 1. ]*/
+/*Tests_SRS_INTERLOCKED_HL_44_003: [ InterlockedHL_DecrementAndWake shall call wake_by_address_single. ]*/
+/*Tests_SRS_INTERLOCKED_HL_44_004: [ InterlockedHL_DecrementAndWake shall succeed and return INTERLOCKED_HL_OK. ]*/
+TEST_FUNCTION(InterlockedHL_DecrementAndWake_with_Valid_Inputs_success)
+{
+    ///arrange
+    INPUT_AND_OUTPUT testCases[] =
+    {
+        /*Input*/              /*Output*/
+        { INT32_MAX,            INT32_MAX - 1},
+        { INT32_MAX - 1,        INT32_MAX - 2},
+        { INT32_MIN,            INT32_MAX},
+        { INT32_MIN + 1,        INT32_MIN},
+        { -1,                   -2 },
+        { 0,                    -1} ,
+        { 1,                    0},
+        { 1024,                 1023 },
+        { -1024,                -1025 },
+    };
+    size_t nTestCases = sizeof(testCases) / sizeof(testCases[0]);
+    for (size_t i = 0; i < nTestCases; i++)
+    {
+        ///arrange
+        umock_c_reset_all_calls();
+        STRICT_EXPECTED_CALL(interlocked_decrement(&(testCases[i].Input)));
+        STRICT_EXPECTED_CALL(wake_by_address_single(&(testCases[i].Input)));
+
+        ///act
+        INTERLOCKED_HL_RESULT result = InterlockedHL_DecrementAndWake(&(testCases[i].Input));
+
+        ///assert
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
+        ASSERT_ARE_EQUAL(int64_t, testCases[i].Output, testCases[i].Input);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    }
+}
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

@@ -16,7 +16,8 @@
         InterlockedHL_SetAndWake, \
         InterlockedHL_SetAndWakeAll, \
         InterlockedHL_CompareExchangeIf, \
-        InterlockedHL_CompareExchange64If \
+        InterlockedHL_CompareExchange64If, \
+        InterlockedHL_DecrementAndWake \
     )
 
 #include "c_pal/interlocked.h"
@@ -31,6 +32,7 @@
     INTERLOCKED_HL_RESULT real_InterlockedHL_SetAndWakeAll(int32_t volatile_atomic* address, int32_t value);
     INTERLOCKED_HL_RESULT real_InterlockedHL_CompareExchangeIf(int32_t volatile_atomic* target, int32_t exchange, INTERLOCKED_COMPARE_EXCHANGE_IF compare, int32_t* original_target);
     INTERLOCKED_HL_RESULT real_InterlockedHL_CompareExchange64If(int64_t volatile_atomic* target, int64_t exchange, INTERLOCKED_COMPARE_EXCHANGE_64_IF compare, int64_t* original_target);
+    INTERLOCKED_HL_RESULT real_InterlockedHL_DecrementAndWake(int32_t volatile_atomic* address);
 
 
 
