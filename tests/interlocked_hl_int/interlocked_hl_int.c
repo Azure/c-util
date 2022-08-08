@@ -12,35 +12,19 @@
 #include "c_pal/threadapi.h"
 #include "macro_utils/macro_utils.h"
 
-#include "c_pal/gballoc_hl.h"
-#include "c_logging/xlogging.h"
-#include "c_util/rc_string_array.h"
 #include "c_util/interlocked_hl.h"
 
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
-// If we are building with VLD, then the test tool also has VLD
-// VLD is set to be disabled for the exe, but that still prints two lines:
-//   Visual Leak Detector read settings from: PATH_TO_CMAKE_BUILD\external_command_helper_int_exe\ext\vld.ini
-//   Visual Leak Detector is turned off.
-// Just ignore those lines
-#if defined _DEBUG && defined VLD_OPT_REPORT_TO_STDOUT
-#define ADDITIONAL_LINE_COUNT 2
-#else
-#define ADDITIONAL_LINE_COUNT 0
-#endif
-
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
-    ASSERT_ARE_EQUAL(int, 0, gballoc_hl_init(NULL, NULL));
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
-    gballoc_hl_deinit();
 }
 
 TEST_FUNCTION_INITIALIZE(function_initialize)
@@ -52,6 +36,12 @@ TEST_FUNCTION_CLEANUP(function_cleanup)
 }
 
 volatile int32_t globalValue = 10;
+
+/*
+Tests:
+InterlockedHL_WaitForValue
+InterlockedHL_DecrementAndWake
+*/
 static int decrement_and_wake_helper_thread_function(void* context)
 {
     (void)context;
@@ -60,12 +50,7 @@ static int decrement_and_wake_helper_thread_function(void* context)
     return 0;
 }
 
-/*
-Tests: 
-InterlockedHL_WaitForValue
-InterlockedHL_DecrementAndWake
-*/
-TEST_FUNCTION(decrement_and_wake_operates_successfully)
+TEST_FUNCTION(interlocked_hl_decrement_and_wake_operates_successfully)
 {
     // + have a helper thread which waits for decremented value
     // + main thread creates helper thread and decrements value
@@ -81,6 +66,7 @@ TEST_FUNCTION(decrement_and_wake_operates_successfully)
     ThreadAPI_Sleep(5000);
     INTERLOCKED_HL_RESULT result = InterlockedHL_DecrementAndWake(&globalValue);
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, 9, globalValue);
 
     // cleanup
     int return_code;
@@ -93,7 +79,6 @@ Tests:
 InterlockedHL_WaitForValue
 InterlockedHL_SetAndWakeAll
 */
-
 static int set_and_wakeall_helper_thread_function(void* context)
 {
     (void)context;
@@ -102,7 +87,7 @@ static int set_and_wakeall_helper_thread_function(void* context)
     return 0;
 }
 
-TEST_FUNCTION(set_and_wakeall_operates_successfully)
+TEST_FUNCTION(interlocked_hl_set_and_wakeall_operates_successfully)
 {
     // + create 10 helper threads which wait on a value
     // + main thread creates helper threads and sets value for the helper threads to wake up
@@ -125,6 +110,7 @@ TEST_FUNCTION(set_and_wakeall_operates_successfully)
     // act
     INTERLOCKED_HL_RESULT result = InterlockedHL_SetAndWakeAll(&globalValue, 15);
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, 15, globalValue);
 
     // cleanup
     for (uint32_t i = 0; i < NUMBER_OF_HELPER_THREADS; ++i)
@@ -140,7 +126,6 @@ Tests:
 InterlockedHL_WaitForValue
 InterlockedHL_SetAndWake
 */
-
 static int set_and_wake_helper_thread_function(void* context)
 {
     (void)context;
@@ -149,10 +134,11 @@ static int set_and_wake_helper_thread_function(void* context)
     return 0;
 }
 
-TEST_FUNCTION(set_and_wake_operates_successfully)
+TEST_FUNCTION(interlocked_hl_set_and_wake_operates_successfully)
 {
     // + create 1 helper thread which waits on a value
-    // + main thread creates helper thread and sets value for the helper thread to wake up
+    // + main thread creates helper thread and sets a value and wakes up the helper thread
+    // + helper thread return from wait as the value it is waiting on is same
     // + main thread joins on the helper thread and ensures that the helper thread wakes up and terminates
     // arrange
     globalValue = 10;
@@ -168,6 +154,7 @@ TEST_FUNCTION(set_and_wake_operates_successfully)
     // act
     INTERLOCKED_HL_RESULT result = InterlockedHL_SetAndWake(&globalValue, 20);
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, 20, globalValue);
 
     // cleanup
     int return_code;
@@ -178,8 +165,8 @@ TEST_FUNCTION(set_and_wake_operates_successfully)
 /*
 Tests:
 InterlockedHL_WaitForNotValue
+InterlockedHL_SetAndWake
 */
-
 static int wait_for_not_value_helper_thread_function(void* context)
 {
     (void)context;
@@ -188,10 +175,11 @@ static int wait_for_not_value_helper_thread_function(void* context)
     return 0;
 }
 
-TEST_FUNCTION(wait_for_not_value_operates_successfully)
+TEST_FUNCTION(interlocked_hl_wait_for_not_value_operates_successfully)
 {
     // + create 1 helper thread which waits on a value
-    // + main thread creates helper thread and sets value for the helper thread to wake up
+    // + main thread creates helper thread and sets a different value and wakes up the helper thread
+    // + helper thread returns from wait as the value changed
     // + main thread joins on the helper thread and ensures that the helper thread wakes up and terminates
     // arrange
     globalValue = 25;
@@ -208,11 +196,92 @@ TEST_FUNCTION(wait_for_not_value_operates_successfully)
     //set and wake up helper thread
     INTERLOCKED_HL_RESULT result = InterlockedHL_SetAndWake(&globalValue, 30);
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, 30, globalValue);
 
     // cleanup
     int return_code;
     ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(helper_thread, &return_code));
     ASSERT_ARE_EQUAL(int, 0, return_code);
+}
+
+/*
+Tests:
+InterlockedHL_Add64WithCeiling
+*/
+TEST_FUNCTION(interlocked_hl_add64_with_ceiling_operates_successfully)
+{
+    // + tests the trivial test case of adding a value to 64bit integer
+    // arrange
+    volatile int64_t addend = 55;
+    int64_t original_addend = 1;
+    const int64_t CEILING = 100;
+    int64_t value = 20;
+
+    // act
+    INTERLOCKED_HL_RESULT result = InterlockedHL_Add64WithCeiling(&addend, CEILING, value, &original_addend);
+    
+    // assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
+    ASSERT_ARE_EQUAL(int64_t, 55, original_addend);
+    ASSERT_ARE_EQUAL(int64_t, 75, addend);
+}
+
+/*
+Tests:
+InterlockedHL_CompareExchangeIf
+*/
+bool helper_int32_compare_function(int32_t target, int32_t exchange)
+{
+    //always returns true
+    (void)target;
+    (void)exchange;
+    return true;
+}
+
+TEST_FUNCTION(interlocked_hl_compare_exchange_if_operates_successfully)
+{
+    // + tests the trivial test case of successfully exchanging a value into target
+    // arrange
+    volatile int32_t target = 60;
+    int32_t original_target = 1;
+    int32_t exchange = 88;
+
+    // act
+    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchangeIf(&target, exchange, helper_int32_compare_function, &original_target);
+
+    // assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
+    ASSERT_ARE_EQUAL(int32_t, 60, original_target);
+    ASSERT_ARE_EQUAL(int32_t, 88, target);
+}
+
+/*
+Tests:
+InterlockedHL_CompareExchange64If
+*/
+bool helper_int64_compare_function(int64_t target, int64_t exchange)
+{
+    //always returns true
+    (void)target;
+    (void)exchange;
+    return true;
+}
+
+TEST_FUNCTION(interlocked_hl_compare_exchange_64_if_operates_successfully)
+{
+    // + tests the trivial test case of successfully exchanging a value into target
+    // arrange
+    volatile int64_t target = 120;
+    int64_t original_target = 1;
+    int64_t exchange = 97;
+
+    // act
+    INTERLOCKED_HL_RESULT result = InterlockedHL_CompareExchange64If(&target, exchange, helper_int64_compare_function, &original_target);
+
+    // assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, result);
+    ASSERT_ARE_EQUAL(int64_t, 120, original_target);
+    ASSERT_ARE_EQUAL(int64_t, 97, target);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
