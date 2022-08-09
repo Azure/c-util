@@ -35,7 +35,7 @@ TEST_FUNCTION_CLEANUP(function_cleanup)
 {
 }
 
-volatile int32_t globalValue = 10;
+volatile_atomic int32_t globalValue = 10;
 
 /*
 Tests:
@@ -212,7 +212,7 @@ TEST_FUNCTION(interlocked_hl_add64_with_ceiling_operates_successfully)
 {
     // + tests the trivial test case of adding a value to 64bit integer
     // arrange
-    volatile int64_t addend = 55;
+    volatile_atomic int64_t addend = 55;
     int64_t original_addend = 1;
     const int64_t CEILING = 100;
     int64_t value = 20;
@@ -242,7 +242,7 @@ TEST_FUNCTION(interlocked_hl_compare_exchange_if_operates_successfully)
 {
     // + tests the trivial test case of successfully exchanging a value into target
     // arrange
-    volatile int32_t target = 60;
+    volatile_atomic int32_t target = 60;
     int32_t original_target = 1;
     int32_t exchange = 88;
 
@@ -271,7 +271,7 @@ TEST_FUNCTION(interlocked_hl_compare_exchange_64_if_operates_successfully)
 {
     // + tests the trivial test case of successfully exchanging a value into target
     // arrange
-    volatile int64_t target = 120;
+    volatile_atomic int64_t target = 120;
     int64_t original_target = 1;
     int64_t exchange = 97;
 
