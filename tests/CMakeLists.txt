@@ -42,4 +42,5 @@ if(${run_int_tests})
 
     build_test_folder(external_command_helper_int)
     build_test_folder(sm_int)
+    build_test_folder(interlocked_hl_int)
 endif()
