@@ -4,7 +4,7 @@
 add_subdirectory(reals)
 
 if(${run_unittests})
-
+    build_test_folder(flags_to_string_ut)
     build_test_folder(azure_base64_ut)
     build_test_folder(buffer_ut)
     build_test_folder(constbuffer_ut)

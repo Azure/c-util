@@ -10,11 +10,10 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
-
-
 #include "c_util/flags_to_string.h"
 
 #include "collection_one.h"
+#include "collection_two.h"
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
@@ -149,6 +148,20 @@ TEST_FUNCTION(collection_one_all_known_and_unknown_flag)
     free(result);
 }
 
+TEST_FUNCTION(collection_two_can_print_all_bits)
+{
+    ///arrange
+
+    ///act
+    char* result = FLAGS_TO_STRING(COLLECTION_BETA)(UINT32_MAX);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, "bit_00 | bit_01 | bit_02 | bit_03 | bit_04 | bit_05 | bit_06 | bit_07 | bit_08 | bit_09 | bit_10 | bit_11 | bit_12 | bit_13 | bit_14 | bit_15 | bit_16 | bit_17 | bit_18 | bit_19 | bit_20 | bit_21 | bit_22 | bit_23 | bit_24 | bit_25 | bit_26 | bit_27 | bit_28 | bit_29 | bit_30 | bit_31", result);
+
+    ///clean
+    free(result);
+}
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
