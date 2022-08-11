@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
 #include <inttypes.h>
@@ -70,7 +71,6 @@ static void umockvalue_free_va_list(void* value)
 {
     (void)value;
 }
-
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
