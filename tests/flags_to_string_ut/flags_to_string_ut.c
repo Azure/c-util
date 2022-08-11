@@ -5,8 +5,6 @@
 #include <limits.h>
 #include <stdbool.h>
 
-#include "windows.h"
-
 #include "macro_utils/macro_utils.h"
 
 #include "testrunnerswitcher.h"
@@ -15,7 +13,6 @@
 #include "umock_c/umocktypes_charptr.h"
 #include "umock_c/umocktypes_windows.h"
 #include "umock_c/umock_c_negative_tests.h"
-#include "umock_c/umocktypes_bool.h"
 
 #define ENABLE_MOCKS
 #include "c_pal/string_utils.h"
