@@ -4,7 +4,7 @@
 add_subdirectory(reals)
 
 if(${run_unittests})
-
+    build_test_folder(flags_to_string_ut)
     build_test_folder(azure_base64_ut)
     build_test_folder(buffer_ut)
     build_test_folder(constbuffer_ut)
@@ -40,6 +40,7 @@ if(${run_int_tests})
     add_subdirectory(external_command_sample)
     add_subdirectory(constbuffer_serialization_sample)
 
+    build_test_folder(flags_to_string_int)
     build_test_folder(external_command_helper_int)
     build_test_folder(sm_int)
     build_test_folder(interlocked_hl_int)
