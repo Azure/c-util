@@ -69,10 +69,7 @@ static int umockvalue_copy_va_list(void* destination, const void* source)
 static void umockvalue_free_va_list(void* value)
 {
     (void)value;
-    //free(value);
 }
-
-
 
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

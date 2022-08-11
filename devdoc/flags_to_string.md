@@ -4,7 +4,7 @@
 
 Here's an example:
 
-Given the collection fo flag values and flag names 1, "ONE", 2, "TWO" then `FLAGS_TO_STRING(COLLECTION)(3)` will produce the string "ONE | TWO".
+Given the collection of flag values and flag names 1, "ONE", 2, "TWO" then `FLAGS_TO_STRING(COLLECTION)(3)` will produce the string "ONE | TWO".
 
 In the exposed API below "X" is the name that is used to decorate the generated functions so that they are all named differently.
 
