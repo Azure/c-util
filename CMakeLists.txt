@@ -164,6 +164,7 @@ set(c_util_c_files
 )
 
 set(c_util_h_files
+    ./inc/c_util/flags_to_string.h
     ./inc/c_util/azure_base64.h
     ./inc/c_util/buffer_.h
     ./inc/c_util/constbuffer.h

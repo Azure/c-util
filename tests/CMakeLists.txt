@@ -40,6 +40,7 @@ if(${run_int_tests})
     add_subdirectory(external_command_sample)
     add_subdirectory(constbuffer_serialization_sample)
 
+    build_test_folder(flags_to_string_int)
     build_test_folder(external_command_helper_int)
     build_test_folder(sm_int)
     build_test_folder(interlocked_hl_int)
