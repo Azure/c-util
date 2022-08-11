@@ -91,9 +91,9 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
     TEST_MUTEX_RELEASE(test_serialize_mutex);
 }
 
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_044: [ If following the reset of the known flags, there are no bits set in argument, then FLAG_to_string shall prepare a string using the format "%s%s%s%s%s%s%s%s%s%s", where each pair of %s%s corresponds to a pair of separator_N/value_N; ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_037: [ FLAG_to_string shall succeed and return a non-NULL string. ]*/
-TEST_FUNCTION(FLAG_to_string_with_0_flags_succeeds)
+/*Tests_SRS_FLAGS_TO_STRING_02_007: [ If following the reset of the known flags, there are no bits set in argument, then FLAGS_TO_STRING(X) shall prepare a string using the format "%s%s...%s", where each pair of %s%s corresponds to a pair of separator_N/value_N; ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_008: [ FLAGS_TO_STRING(X) shall succeed and return a non-NULL string. ]*/
+TEST_FUNCTION(FLAGS_TO_STRING_with_0_flags_succeeds)
 {
     ///arrange
     char* result;
@@ -115,8 +115,8 @@ TEST_FUNCTION(FLAG_to_string_with_0_flags_succeeds)
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_043: [ If following the reset of the known flags, there are still bits set in argument, then FLAG_to_string shall prepare a string using the format "%s%s%s%s%s%s%s%s%s%s%sUNKNOWN_FLAG(%#.8" PRIx32 ")", where each pair of %s%s corresponds to a pair of separator_N/value_N; the last %s corresponds to either "" or " | " depeding on argument not containing or containing any known flags; %PRIx32 corresponds to the remaining (unknown) flags; ]*/
-TEST_FUNCTION(FLAG_to_string_with_1_UNKNOWN_flag_succeeds)
+/*Tests_SRS_FLAGS_TO_STRING_02_006: [ If following the reset of the known flags, there are still bits set in argument, then FLAGS_TO_STRING(X) shall prepare a string using the format "%s%s...%sUNKNOWN_FLAG(%#.8" PRIx32 ")", where each pair of %s%s corresponds to a pair of separator_N/value_N; the last %s corresponds to either "" or " | " depeding on argument not containing or containing any known flags; %PRIx32 corresponds to the remaining (unknown) flags; ]*/
+TEST_FUNCTION(FLAGS_TO_STRING_with_1_UNKNOWN_flag_succeeds)
 {
     ///arrange
     char* result;
@@ -138,13 +138,14 @@ TEST_FUNCTION(FLAG_to_string_with_1_UNKNOWN_flag_succeeds)
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_038: [ For each of the known flags FLAG_to_string shall define 2 variables: separator_N and value_N both of them of type const char*. N is a decreasing number (all the way to 1) for every of the predefined flags. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_039: [ separator_N shall contain either "" (empty string) or " | ", depending on whether this is the first known flag or not. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_040: [ If the flag is set then value_N shall contain the stringification of the flag. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_041: [ If the flag is not set then value_N shall contain "" (empty string). ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_042: [ FLAG_to_string shall reset (set to 0) all the used known flags in argument. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_044: [ If following the reset of the known flags, there are no bits set in argument, then FLAG_to_string shall prepare a string using the format "%s%s%s%s%s%s%s%s%s%s", where each pair of %s%s corresponds to a pair of separator_N/value_N; ]*/
-TEST_FUNCTION(FLAG_to_string_with_1_known_flag_succeeds)
+/*Tests_SRS_FLAGS_TO_STRING_02_001: [ For each of the known flags FLAGS_TO_STRING(X) shall define 2 variables: separator_N and value_N both of them of type const char*. N is a decreasing number (all the way to 1) for every of the predefined flags. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_001: [ For each of the known flags FLAGS_TO_STRING(X) shall define 2 variables: separator_N and value_N both of them of type const char*. N is a decreasing number (all the way to 1) for every of the predefined flags. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_002: [ separator_N shall contain either "" (empty string) or " | ", depending on whether this is the first known flag or not. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_003: [ If the flag is set then value_N shall contain the stringification of the flag. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_004: [ If the flag is not set then value_N shall contain "" (empty string). ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_005: [ FLAGS_TO_STRING(X) shall reset (set to 0) all the used known flags in argument. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_006: [ If following the reset of the known flags, there are still bits set in argument, then FLAGS_TO_STRING(X) shall prepare a string using the format "%s%s...%sUNKNOWN_FLAG(%#.8" PRIx32 ")", where each pair of %s%s corresponds to a pair of separator_N/value_N; the last %s corresponds to either "" or " | " depeding on argument not containing or containing any known flags; %PRIx32 corresponds to the remaining (unknown) flags; ]*/
+TEST_FUNCTION(FLAGS_TO_STRING_with_1_known_flag_succeeds)
 {
     ///arrange
     char* result;
@@ -167,13 +168,13 @@ TEST_FUNCTION(FLAG_to_string_with_1_known_flag_succeeds)
 }
 
 
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_038: [ For each of the known flags FLAG_to_string shall define 2 variables: separator_N and value_N both of them of type const char*. N is a decreasing number (all the way to 1) for every of the predefined flags. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_039: [ separator_N shall contain either "" (empty string) or " | ", depending on whether this is the first known flag or not. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_040: [ If the flag is set then value_N shall contain the stringification of the flag. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_041: [ If the flag is not set then value_N shall contain "" (empty string). ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_042: [ FLAG_to_string shall reset (set to 0) all the used known flags in argument. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_043: [ If following the reset of the known flags, there are still bits set in argument, then FLAG_to_string shall prepare a string using the format "%s%s%s%s%s%s%s%s%s%s%sUNKNOWN_FLAG(%#.8" PRIx32 ")", where each pair of %s%s corresponds to a pair of separator_N/value_N; the last %s corresponds to either "" or " | " depeding on argument not containing or containing any known flags; %PRIx32 corresponds to the remaining (unknown) flags; ]*/
-TEST_FUNCTION(FLAG_to_string_with_1_known_1_unknown_flag_succeeds)
+/*Tests_SRS_FLAGS_TO_STRING_02_001: [ For each of the known flags FLAGS_TO_STRING(X) shall define 2 variables: separator_N and value_N both of them of type const char*. N is a decreasing number (all the way to 1) for every of the predefined flags. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_002: [ separator_N shall contain either "" (empty string) or " | ", depending on whether this is the first known flag or not. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_003: [ If the flag is set then value_N shall contain the stringification of the flag. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_004: [ If the flag is not set then value_N shall contain "" (empty string). ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_005: [ FLAGS_TO_STRING(X) shall reset (set to 0) all the used known flags in argument. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_006: [ If following the reset of the known flags, there are still bits set in argument, then FLAGS_TO_STRING(X) shall prepare a string using the format "%s%s...%sUNKNOWN_FLAG(%#.8" PRIx32 ")", where each pair of %s%s corresponds to a pair of separator_N/value_N; the last %s corresponds to either "" or " | " depeding on argument not containing or containing any known flags; %PRIx32 corresponds to the remaining (unknown) flags; ]*/
+TEST_FUNCTION(FLAGS_TO_STRING_with_1_known_1_unknown_flag_succeeds)
 {
     ///arrange
     char* result;
@@ -195,13 +196,13 @@ TEST_FUNCTION(FLAG_to_string_with_1_known_1_unknown_flag_succeeds)
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_038: [ For each of the known flags FLAG_to_string shall define 2 variables: separator_N and value_N both of them of type const char*. N is a decreasing number (all the way to 1) for every of the predefined flags. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_039: [ separator_N shall contain either "" (empty string) or " | ", depending on whether this is the first known flag or not. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_040: [ If the flag is set then value_N shall contain the stringification of the flag. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_041: [ If the flag is not set then value_N shall contain "" (empty string). ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_042: [ FLAG_to_string shall reset (set to 0) all the used known flags in argument. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_044: [ If following the reset of the known flags, there are no bits set in argument, then FLAG_to_string shall prepare a string using the format "%s%s%s%s%s%s%s%s%s%s", where each pair of %s%s corresponds to a pair of separator_N/value_N; ]*/
-TEST_FUNCTION(FLAG_to_string_with_2_known_flag_succeeds)
+/*Tests_SRS_FLAGS_TO_STRING_02_001: [ For each of the known flags FLAGS_TO_STRING(X) shall define 2 variables: separator_N and value_N both of them of type const char*. N is a decreasing number (all the way to 1) for every of the predefined flags. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_002: [ separator_N shall contain either "" (empty string) or " | ", depending on whether this is the first known flag or not. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_003: [ If the flag is set then value_N shall contain the stringification of the flag. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_004: [ If the flag is not set then value_N shall contain "" (empty string). ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_005: [ FLAGS_TO_STRING(X) shall reset (set to 0) all the used known flags in argument. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_007: [ If following the reset of the known flags, there are no bits set in argument, then FLAGS_TO_STRING(X) shall prepare a string using the format "%s%s...%s", where each pair of %s%s corresponds to a pair of separator_N/value_N; ]*/
+TEST_FUNCTION(FLAGS_TO_STRING_with_2_known_flag_succeeds)
 {
     ///arrange
     char* result;
@@ -223,13 +224,13 @@ TEST_FUNCTION(FLAG_to_string_with_2_known_flag_succeeds)
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_038: [ For each of the known flags FLAG_to_string shall define 2 variables: separator_N and value_N both of them of type const char*. N is a decreasing number (all the way to 1) for every of the predefined flags. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_039: [ separator_N shall contain either "" (empty string) or " | ", depending on whether this is the first known flag or not. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_040: [ If the flag is set then value_N shall contain the stringification of the flag. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_041: [ If the flag is not set then value_N shall contain "" (empty string). ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_042: [ FLAG_to_string shall reset (set to 0) all the used known flags in argument. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_044: [ If following the reset of the known flags, there are no bits set in argument, then FLAG_to_string shall prepare a string using the format "%s%s%s%s%s%s%s%s%s%s", where each pair of %s%s corresponds to a pair of separator_N/value_N; ]*/
-TEST_FUNCTION(FLAG_to_string_with_3_known_flag_succeeds)
+/*Tests_SRS_FLAGS_TO_STRING_02_001: [ For each of the known flags FLAGS_TO_STRING(X) shall define 2 variables: separator_N and value_N both of them of type const char*. N is a decreasing number (all the way to 1) for every of the predefined flags. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_002: [ separator_N shall contain either "" (empty string) or " | ", depending on whether this is the first known flag or not. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_003: [ If the flag is set then value_N shall contain the stringification of the flag. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_004: [ If the flag is not set then value_N shall contain "" (empty string). ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_005: [ FLAGS_TO_STRING(X) shall reset (set to 0) all the used known flags in argument. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_007: [ If following the reset of the known flags, there are no bits set in argument, then FLAGS_TO_STRING(X) shall prepare a string using the format "%s%s...%s", where each pair of %s%s corresponds to a pair of separator_N/value_N; ]*/
+TEST_FUNCTION(FLAGS_TO_STRING_with_3_known_flag_succeeds)
 {
     ///arrange
     char* result;
@@ -251,13 +252,13 @@ TEST_FUNCTION(FLAG_to_string_with_3_known_flag_succeeds)
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_038: [ For each of the known flags FLAG_to_string shall define 2 variables: separator_N and value_N both of them of type const char*. N is a decreasing number (all the way to 1) for every of the predefined flags. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_039: [ separator_N shall contain either "" (empty string) or " | ", depending on whether this is the first known flag or not. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_040: [ If the flag is set then value_N shall contain the stringification of the flag. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_041: [ If the flag is not set then value_N shall contain "" (empty string). ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_042: [ FLAG_to_string shall reset (set to 0) all the used known flags in argument. ]*/
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_043: [ If following the reset of the known flags, there are still bits set in argument, then FLAG_to_string shall prepare a string using the format "%s%s%s%s%s%s%s%s%s%s%sUNKNOWN_FLAG(%#.8" PRIx32 ")", where each pair of %s%s corresponds to a pair of separator_N/value_N; the last %s corresponds to either "" or " | " depeding on argument not containing or containing any known flags; %PRIx32 corresponds to the remaining (unknown) flags; ]*/
-TEST_FUNCTION(FLAG_to_string_with_2_known_flag_1_unknown_succeeds)
+/*Tests_SRS_FLAGS_TO_STRING_02_001: [ For each of the known flags FLAGS_TO_STRING(X) shall define 2 variables: separator_N and value_N both of them of type const char*. N is a decreasing number (all the way to 1) for every of the predefined flags. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_002: [ separator_N shall contain either "" (empty string) or " | ", depending on whether this is the first known flag or not. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_003: [ If the flag is set then value_N shall contain the stringification of the flag. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_004: [ If the flag is not set then value_N shall contain "" (empty string). ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_005: [ FLAGS_TO_STRING(X) shall reset (set to 0) all the used known flags in argument. ]*/
+/*Tests_SRS_FLAGS_TO_STRING_02_006: [ If following the reset of the known flags, there are still bits set in argument, then FLAGS_TO_STRING(X) shall prepare a string using the format "%s%s...%sUNKNOWN_FLAG(%#.8" PRIx32 ")", where each pair of %s%s corresponds to a pair of separator_N/value_N; the last %s corresponds to either "" or " | " depeding on argument not containing or containing any known flags; %PRIx32 corresponds to the remaining (unknown) flags; ]*/
+TEST_FUNCTION(FLAGS_TO_STRING_with_2_known_flag_1_unknown_succeeds)
 {
     ///arrange
     char* result;
@@ -279,8 +280,8 @@ TEST_FUNCTION(FLAG_to_string_with_2_known_flag_1_unknown_succeeds)
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_045: [ If there are any failures then FLAG_to_string shall fails and return NULL. ]*/
-TEST_FUNCTION(FLAG_to_string_with_2_known_flag_1_unknown_fails_when_vsprintf_char_fails)
+/*Tests_SRS_FLAGS_TO_STRING_02_009: [ If there are any failures then FLAGS_TO_STRING(X) shall fails and return NULL. ]*/
+TEST_FUNCTION(FLAGS_TO_STRING_with_2_known_flag_1_unknown_fails_when_vsprintf_char_fails)
 {
     ///arrange
     char* result;
@@ -301,8 +302,8 @@ TEST_FUNCTION(FLAG_to_string_with_2_known_flag_1_unknown_fails_when_vsprintf_cha
     ///clean
 }
 
-/*Tests_SRS_TLS_SECURITY_SCHANNEL_HELPER_02_045: [ If there are any failures then FLAG_to_string shall fails and return NULL. ]*/
-TEST_FUNCTION(FLAG_to_string_with_2_known_flag_fails_when_vsprintf_char_fails)
+/*Tests_SRS_FLAGS_TO_STRING_02_009: [ If there are any failures then FLAGS_TO_STRING(X) shall fails and return NULL. ]*/
+TEST_FUNCTION(FLAGS_TO_STRING_with_2_known_flag_fails_when_vsprintf_char_fails)
 {
     ///arrange
     char* result;
