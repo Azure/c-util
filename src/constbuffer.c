@@ -630,19 +630,19 @@ CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* sour
     return result;
 }
 
-CONSTBUFFER_HANDLE CONSTBUFFER_create_writable_handle(uint32_t size)
+CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_create_writable_handle(uint32_t size)
 {   
     (void) size;
     return NULL;
 }
 
-unsigned char* CONSTBUFFER_get_writable_buffer(CONSTBUFFER_HANDLE constbufferHandle)
+unsigned char* CONSTBUFFER_get_writable_buffer(CONSTBUFFER_WRITABLE_HANDLE constbufferHandle)
 {
     (void) constbufferHandle;
     return NULL;
 }
 
-CONSTBUFFER_HANDLE CONSTBUFFER_seal_writable_handle(CONSTBUFFER_HANDLE constbufferHandle)
+CONSTBUFFER_HANDLE CONSTBUFFER_seal_writable_handle(CONSTBUFFER_WRITABLE_HANDLE constbufferHandle)
 {
     (void) constbufferHandle;
     return NULL;
