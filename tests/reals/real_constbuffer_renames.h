@@ -22,4 +22,8 @@
 #define CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT real_CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT
 #define CONSTBUFFER_FROM_BUFFER_RESULT real_CONSTBUFFER_FROM_BUFFER_RESULT
 
+#define CONSTBUFFER_create_writable_handle real_CONSTBUFFER_create_writable_handle
+#define CONSTBUFFER_get_writable_buffer real_CONSTBUFFER_get_writable_buffer
+#define CONSTBUFFER_seal_writable_handle real_CONSTBUFFER_seal_writable_handle
+
 #endif // REAL_CONSTBUFFER_RENAMES_H
