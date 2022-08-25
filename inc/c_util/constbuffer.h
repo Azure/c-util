@@ -26,7 +26,7 @@ extern "C"
 typedef struct CONSTBUFFER_HANDLE_DATA_TAG* CONSTBUFFER_HANDLE;
 
 /*this is the writable handle*/
-typedef CONSTBUFFER_HANDLE CONSTBUFFER_WRITABLE_HANDLE ;
+typedef struct CONSTBUFFER_WRITABLE_HANDLE_DATA_TAG* CONSTBUFFER_WRITABLE_HANDLE;
 
 /*this is what is returned when the content of the buffer needs access*/
 typedef struct CONSTBUFFER_TAG
@@ -89,9 +89,9 @@ MOCKABLE_INTERFACE(constbuffer,
 
     FUNCTION(, CONSTBUFFER_WRITABLE_HANDLE, CONSTBUFFER_create_writable_handle, uint32_t, size),
 
-    FUNCTION(, unsigned char*, CONSTBUFFER_get_writable_buffer, CONSTBUFFER_WRITABLE_HANDLE, constbufferHandle),
+    FUNCTION(, unsigned char*, CONSTBUFFER_get_writable_buffer, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_seal_writable_handle, CONSTBUFFER_WRITABLE_HANDLE, constbufferHandle)
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_seal_writable_handle, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle)
 )
 
 #ifdef __cplusplus

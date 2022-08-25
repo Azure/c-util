@@ -104,8 +104,6 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*
 
 **SRS_CONSTBUFFER_02_005: [** The non-NULL handle returned by `CONSTBUFFER_Create` shall have its ref count set to "1". **]** 
 
-**S_RS_CONSTBUFFER_51_014: [** `CONSTBUFFER_Create` shall set the state of `CONSTBUFFER_HANDLE` to `CONSTBUFFER_WRITIABLE_STATE_SEAL`. **]**
-
 ### CONSTBUFFER_CreateFromBuffer
 
 ```c
@@ -121,8 +119,6 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HAN
 **SRS_CONSTBUFFER_02_009: [** Otherwise, `CONSTBUFFER_CreateFromBuffer` shall return a non-NULL handle. **]**
 
 **SRS_CONSTBUFFER_02_010: [** The non-NULL handle returned by `CONSTBUFFER_CreateFromBuffer` shall have its ref count set to "1". **]** 
-
-**S_RS_CONSTBUFFER_51_015: [** `CONSTBUFFER_CreateFromBuffer` shall set the state of `CONSTBUFFER_HANDLE` to `CONSTBUFFER_WRITIABLE_STATE_SEAL`. **]**
 
 ### CONSTBUFFER_CreateWithMoveMemory
 
@@ -140,8 +136,6 @@ The memory is assumed to be freeable by a call to `free`.
 **SRS_CONSTBUFFER_01_002: [** `CONSTBUFFER_CreateWithMoveMemory` shall store the `source` and `size` and return a non-NULL handle to the newly created const buffer. **]**
 
 **SRS_CONSTBUFFER_01_003: [** The non-NULL handle returned by `CONSTBUFFER_CreateWithMoveMemory` shall have its ref count set to "1". **]**
-
-**S_RS_CONSTBUFFER_51_016: [** `CONSTBUFFER_CreateWithMoveMemory` shall set the state of `CONSTBUFFER_HANDLE` to `CONSTBUFFER_WRITIABLE_STATE_SEAL`. **]**
 
 **SRS_CONSTBUFFER_01_005: [** If any error occurs, `CONSTBUFFER_CreateWithMoveMemory` shall fail and return NULL. **]**
 
@@ -168,8 +162,6 @@ The memory has to be free by calling the custom free function passed as argument
 
 **SRS_CONSTBUFFER_01_010: [** The non-NULL handle returned by `CONSTBUFFER_CreateWithCustomFree` shall have its ref count set to 1. **]**
 
-**S_RS_CONSTBUFFER_51_017: [** `CONSTBUFFER_CreateWithCustomFree` shall set the state of `CONSTBUFFER_HANDLE` to `CONSTBUFFER_WRITIABLE_STATE_SEAL`. **]**
-
 **SRS_CONSTBUFFER_01_011: [** If any error occurs, `CONSTBUFFER_CreateWithMoveMemory` shall fail and return NULL. **]**
 
 ### CONSTBUFFER_CreateFromOffsetAndSize
@@ -191,8 +183,6 @@ Given an existing `handle` `CONSTBUFFER_CreateFromOffsetAndSize` creates another
 **SRS_CONSTBUFFER_02_029: [** `CONSTBUFFER_CreateFromOffsetAndSize` shall set the ref count of the newly created `CONSTBUFFER_HANDLE` to the initial value. **]**
 
 **SRS_CONSTBUFFER_02_030: [** `CONSTBUFFER_CreateFromOffsetAndSize` shall increment the reference count of `handle`. **]**
-
-**S_RS_CONSTBUFFER_51_018: [** `CONSTBUFFER_CreateFromOffsetAndSize` shall set the state of `CONSTBUFFER_HANDLE` to `CONSTBUFFER_WRITIABLE_STATE_SEAL`. **]**
 
 **SRS_CONSTBUFFER_02_031: [** `CONSTBUFFER_CreateFromOffsetAndSize` shall succeed and return a non-`NULL` value. **]**
 
@@ -218,8 +208,6 @@ FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONS
 
 **SRS_CONSTBUFFER_02_039: [** `CONSTBUFFER_CreateFromOffsetAndSizeWithCopy` shall set the pointed to a non-`NULL` value that contains the same bytes as `offset`...`offset`+`size`-1 of `handle`. **]**
 
-**S_RS_CONSTBUFFER_51_019: [** `CONSTBUFFER_CreateFromOffsetAndSizeWithCopy` shall set the state of `CONSTBUFFER_HANDLE` to `CONSTBUFFER_WRITIABLE_STATE_SEAL`. **]**
-
 **SRS_CONSTBUFFER_02_040: [** If there are any failures then `CONSTBUFFER_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
 
 ### CONSTBUFFER_IncRef
@@ -230,8 +218,6 @@ MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHan
 
 **SRS_CONSTBUFFER_02_013: [** If `constbufferHandle` is NULL then `CONSTBUFFER_IncRef` shall return. **]**
 
-**S_RS_CONSTBUFFER_51_020: [** If state of `constbufferHandle' is `CONSTBUFFER_WRITABLE_STATE_OPEN`, then `CONSTBUFFER_IncRef` shall do nothing. **]**
-
 **SRS_CONSTBUFFER_02_014: [** Otherwise, `CONSTBUFFER_IncRef` shall increment the reference count. **]**
 
 ### CONSTBUFFER_DecRef
@@ -241,8 +227,6 @@ MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHan
 ```
 
 **SRS_CONSTBUFFER_02_015: [** If `constbufferHandle` is NULL then `CONSTBUFFER_DecRef` shall do nothing. **]**
-
-**S_RS_CONSTBUFFER_51_021: [** If state of `constbufferHandle' is `CONSTBUFFER_WRITABLE_STATE_OPEN`, then `CONSTBUFFER_DecRef` shall do nothing. **]**
 
 **SRS_CONSTBUFFER_02_016: [** Otherwise, `CONSTBUFFER_DecRef` shall decrement the refcount on the `constbufferHandle` handle. **]**
 
@@ -259,8 +243,6 @@ MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HAND
 ```
 
 **SRS_CONSTBUFFER_02_011: [** If `constbufferHandle` is NULL then CONSTBUFFER_GetContent shall return NULL. **]**
-
-**S_RS_CONSTBUFFER_51_022: [** If state of `constbufferHandle' is `CONSTBUFFER_WRITABLE_STATE_OPEN`, then `CONSTBUFFER_GetContent` shall return NULL. **]**
 
 **SRS_CONSTBUFFER_02_012: [** Otherwise, `CONSTBUFFER_GetContent` shall return a `const CONSTBUFFER*` that matches byte by byte the original bytes used to created the const buffer and has the same length. **]**
 
@@ -280,8 +262,6 @@ MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, l
 
 **SRS_CONSTBUFFER_02_021: [** If `left`'s size is different than `right`'s size then `CONSTBUFFER_HANDLE_contain_same` shall return `false`. **]**
 
-**S_RS_CONSTBUFFER_51_023: [** If `left`'s state is different than `right`'s state, then `CONSTBUFFER_HANDLE_contain_same` shall return `false`. **]**
-
 **SRS_CONSTBUFFER_02_022: [** If `left`'s buffer is contains different bytes than `rights`'s buffer then `CONSTBUFFER_HANDLE_contain_same` shall return `false`. **]**
 
 **SRS_CONSTBUFFER_02_023: [** `CONSTBUFFER_HANDLE_contain_same` shall return `true`. **]**
@@ -295,8 +275,6 @@ MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_get_serialization_size, CONSTBUFFER_HA
 `CONSTBUFFER_get_serialization_size` returns the needed size in bytes for serialization of `source`.
 
 **SRS_CONSTBUFFER_02_041: [** If `source` is `NULL` then `CONSTBUFFER_get_serialization_size` shall fail and return 0. **]**
-
-**S_RS_CONSTBUFFER_51_024: [** If state of `source' is `CONSTBUFFER_WRITABLE_STATE_OPEN`, then `CONSTBUFFER_get_serialization_size` shall return 0. **]**
 
 **SRS_CONSTBUFFER_02_042: [** If `sizeof(uint8_t)` + `sizeof(uint32_t)` + `source`'s `size` exceed `UINT32_MAX` then `CONSTBUFFER_get_serialization_size` shall fail and return 0. **]**
 
@@ -313,8 +291,6 @@ MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_to_buffer, CONSTBUFFER_HANDLE, s
 **SRS_CONSTBUFFER_02_044: [** If `source` is `NULL` then `CONSTBUFFER_to_buffer` shall fail and return `NULL`. **]**
 
 **SRS_CONSTBUFFER_02_045: [** If `size` is `NULL` then `CONSTBUFFER_to_buffer` shall fail and return `NULL`. **]**
-
-**S_RS_CONSTBUFFER_51_025: [** If state of `source` is `CONSTBUFFER_WRITABLE_STATE_OPEN`, then `CONSTBUFFER_to_buffer` shall return `NULL`. **]**
 
 **SRS_CONSTBUFFER_02_046: [** If `alloc` is `NULL` then `CONSTBUFFER_to_buffer` shall use `malloc` as provided by `gballoc_hl_redirect.h`. **]**
 
@@ -339,8 +315,6 @@ CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT CONSTBUFFER_to_fixed_size_buffer(CONSTBU
 `CONSTBUFFER_to_fixed_size_buffer` write the serialization of `source` into the buffer `destination` having `destination_size` size and returns in `serialized_size` the number of bytes written.
 
 **SRS_CONSTBUFFER_02_055: [** If `source` is `NULL` then `CONSTBUFFER_to_fixed_size_buffer` shall fail and return `CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG`. **]**
-
-**S_RS_CONSTBUFFER_51_026: [** If state of `source` is `CONSTBUFFER_WRITABLE_STATE_OPEN`, then `CONSTBUFFER_to_buffer` shall return `CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG`. **]**
 
 **SRS_CONSTBUFFER_02_056: [** If `destination` is `NULL` then `CONSTBUFFER_to_fixed_size_buffer` shall fail and return `CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG`. **]**
 
@@ -386,60 +360,50 @@ CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* sour
 
 **SRS_CONSTBUFFER_02_072: [** `CONSTBUFFER_from_buffer` shall succeed, write in `consumed` the total number of consumed bytes from `source`, write in `destination` the constructed `CONSTBUFFER_HANDLE` and return `CONSTBUFFER_FROM_BUFFER_RESULT_OK`. **]**
 
-**S_RS_CONSTBUFFER_51_027: [**  `CONSTBUFFER_from_buffer` shall set the state of `destination` to `CONSTBUFFER_WRITIABLE_STATE_SEAL`. **]**
-
 **SRS_CONSTBUFFER_02_073: [** If there are any failures then shall fail and return `CONSTBUFFER_FROM_BUFFER_RESULT_ERROR`. **]**
 
 
 ### CONSTBUFFER_create_writiable_handle
 
 ```c
- CONSTBUFFER_HANDLE CONSTBUFFER_create_writable_handle (uint32_t size)
+ CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_create_writable_handle (uint32_t size)
 ```
 
-`CONSTBUFFER_create_writiable_handle` construct a new `CONSTBUFFER_HANDLE` of size `size` and state `CONSTBUFFER_WRITABLE_STATE_OPEN`. `CONSTBUFFER_HANDLE`supports two state `CONSTBUFFER_WRITABLE_STATE_SEAL` and `CONSTBUFFER_WRITABLE_STATE_OPEN`. If the state is `CONSTBUFFER_WRITABLE_STATE_OPEN` then buffers of `CONSTBUFFER_HANDLE` can be overridden (the same buffer can be reused to fill).
+`CONSTBUFFER_create_writiable_handle` construct a new `CONSTBUFFER_WRITABLE_HANDLE` of size `size`. Buffers of `CONSTBUFFER_WRITABLE_HANDLE` can be overridden (the same buffer can be reused to fill).
 
 **S_RS_CONSTBUFFER_51_001: [** If `size` is 0, then CONSTBUFFER_create_writiable_handle shall fail and return NULL. **]**
 
-**S_RS_CONSTBUFFER_51_002: [** `CONSTBUFFER_create_writiable_handle` shall allocate memory for the `CONSTBUFFER_HANDLE` **]**
+**S_RS_CONSTBUFFER_51_002: [** `CONSTBUFFER_create_writiable_handle` shall allocate memory for the `CONSTBUFFER_WRITABLE_HANDLE` **]**
 
 **S_RS_CONSTBUFFER_51_003: [** If any error occurs, `CONSTBUFFER_create_writiable_handle` shall fail and return NULL. **]**
 
-**S_RS_CONSTBUFFER_51_004: [** `CONSTBUFFER_create_writiable_handle` shall set the ref count of the newly created `CONSTBUFFER_HANDLE` to 1. **]**
+**S_RS_CONSTBUFFER_51_004: [** `CONSTBUFFER_create_writiable_handle` shall set the ref count of the newly created `CONSTBUFFER_WRITABLE_HANDLE` to 1. **]**
 
-**S_RS_CONSTBUFFER_51_005: [** `CONSTBUFFER_create_writiable_handle` shall set the state of the newly created `CONSTBUFFER_HANDLE` to `CONSTBUFFER_WRITABLE_STATE_OPEN`. **]**
-
-**S_RS_CONSTBUFFER_51_006: [** `CONSTBUFFER_create_writiable_handle` shall succeed and return a non-`NULL` `CONSTBUFFER_HANDLE`. **]**
+**S_RS_CONSTBUFFER_51_005: [** `CONSTBUFFER_create_writiable_handle` shall succeed and return a non-`NULL` `CONSTBUFFER_WRITABLE_HANDLE`. **]**
 
 
 ### CONSTBUFFER_get_writable_buffer
 
 ```c
- unsigned char* CONSTBUFFER_get_writable_buffer(CONSTBUFFER_HANDLE constbufferHandle)
+ unsigned char* CONSTBUFFER_get_writable_buffer(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
 ```
 
 `CONSTBUFFER_get_writable_buffer` return the handle of writable buffer.
 
-**S_RS_CONSTBUFFER_51_007: [** If `constbufferHandle` is `NULL`, then `CONSTBUFFER_get_writable_buffer` shall fail and return `NULL`. **]**
+**S_RS_CONSTBUFFER_51_006: [** If `constbufferHandle` is `NULL`, then `CONSTBUFFER_get_writable_buffer` shall fail and return `NULL`. **]**
 
-**S_RS_CONSTBUFFER_51_008: [** If the state of `constbufferHandle' is `CONSTBUFFER_WRITABLE_STATE_SEAL`, then `CONSTBUFFER_get_writable_buffer` shall fail and return `NULL`. **]**
-
-**S_RS_CONSTBUFFER_51_09: [** `CONSTBUFFER_get_writable_buffer` shall succeed and return a handle to the non-CONST buffer of `constbufferHandle`. **]**
+**S_RS_CONSTBUFFER_51_007: [** `CONSTBUFFER_get_writable_buffer` shall succeed and return a handle to the non-CONST buffer of `constbufferWritableHandle`. **]**
 
 
 
 ### CONSTBUFFER_seal_writable_handle
 
 ```c
- CONSTBUFFER_HANDLE CONSTBUFFER_seal_writable_handle(CONSTBUFFER_HANDLE constbufferHandle)
+ CONSTBUFFER_HANDLE CONSTBUFFER_seal_writable_handle(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
 ```
 
-`CONSTBUFFER_seal_writable_handle` shall update the `CONSTBUFFER_HANDLE state to `CONSTBUFFER_WRITABLE_STATE_SEAL`.
+`CONSTBUFFER_seal_writable_handle` shall return `CONSTBUFFER_HANDLE` from the `CONSTBUFFER_WRITABLE_HANDLE`.
 
-**S_RS_CONSTBUFFER_51_010: [** If `constbufferHandle` is `NULL` then `CONSTBUFFER_seal_writable_handle` shall fail and return `NULL`. **]**
+**S_RS_CONSTBUFFER_51_008: [** If `constbufferWritableHandle` is `NULL` then `CONSTBUFFER_seal_writable_handle` shall fail and return `NULL`. **]**
 
-**S_RS_CONSTBUFFER_51_011: [** If the state of `constbufferHandle' is `CONSTBUFFER_WRITABLE_STATE_SEAL`, then `CONSTBUFFER_seal_writable_handle` shall fail and return `NULL`. **]**
-
-**S_RS_CONSTBUFFER_51_012: [** `CONSTBUFFER_seal_writable_handle` shall set the state of `constbufferHandle` to `CONSTBUFFER_WRITIABLE_STATE_SEAL`. **]**
-
-**S_RS_CONSTBUFFER_51_013: [** `CONSTBUFFER_seal_writable_handle` shall succeed and return a non-`NULL` `constbufferHandle`. **]**
+**S_RS_CONSTBUFFER_51_009: [** `CONSTBUFFER_seal_writable_handle` shall succeed and return a non-`NULL` `CONSTBUFFER_HANDLE`. **]**

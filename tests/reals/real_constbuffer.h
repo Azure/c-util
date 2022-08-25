@@ -73,9 +73,9 @@ CONSTBUFFER_FROM_BUFFER_RESULT real_CONSTBUFFER_from_buffer(const unsigned char*
 
 CONSTBUFFER_WRITABLE_HANDLE real_CONSTBUFFER_create_writable_handle(uint32_t size);
 
-unsigned char * real_CONSTBUFFER_get_writable_buffer(CONSTBUFFER_WRITABLE_HANDLE constbufferHandle);
+unsigned char * real_CONSTBUFFER_get_writable_buffer(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle);
 
-CONSTBUFFER_HANDLE real_CONSTBUFFER_seal_writable_handle(CONSTBUFFER_WRITABLE_HANDLE constbufferHandle);
+CONSTBUFFER_HANDLE real_CONSTBUFFER_seal_writable_handle(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle);
 
 
 #endif //REAL_CONSTBUFFER_H
