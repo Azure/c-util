@@ -363,7 +363,7 @@ CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* sour
 **SRS_CONSTBUFFER_02_073: [** If there are any failures then shall fail and return `CONSTBUFFER_FROM_BUFFER_RESULT_ERROR`. **]**
 
 
-### CONSTBUFFER_create_writiable_handle
+### CONSTBUFFER_create_writable_handle
 
 ```c
  CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_create_writable_handle (uint32_t size)
@@ -392,7 +392,7 @@ CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* sour
 
 **S_RS_CONSTBUFFER_51_006: [** If `constbufferHandle` is `NULL`, then `CONSTBUFFER_get_writable_buffer` shall fail and return `NULL`. **]**
 
-**S_RS_CONSTBUFFER_51_007: [** `CONSTBUFFER_get_writable_buffer` shall succeed and return a handle to the non-CONST buffer of `constbufferWritableHandle`. **]**
+**S_RS_CONSTBUFFER_51_007: [** `CONSTBUFFER_get_writable_buffer` shall succeed and returns a pointer to the non-CONST buffer of `constbufferWritableHandle`. **]**
 
 
 
