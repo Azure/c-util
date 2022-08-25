@@ -80,11 +80,11 @@ MOCKABLE_INTERFACE(constbuffer,
 
     FUNCTION(, CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_from_buffer, const unsigned char*, source, uint32_t, size, uint32_t*, consumed, CONSTBUFFER_HANDLE*, destination),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_create_writable_handle, uint32_t, size),
+    FUNCTION(, CONSTBUFFER_WRITABLE_HANDLE, CONSTBUFFER_create_writable_handle, uint32_t, size),
 
-    FUNCTION(, unsigned char*, CONSTBUFFER_get_writable_buffer, CONSTBUFFER_HANDLE, constbufferHandle),
+    FUNCTION(, unsigned char*, CONSTBUFFER_get_writable_buffer, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle),
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_seal_writable_handle, CONSTBUFFER_HANDLE, constbufferHandle)
+    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_seal_writable_handle, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle)
 )
 ```
 
