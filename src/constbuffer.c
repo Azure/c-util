@@ -638,14 +638,14 @@ CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_create_writable_handle(uint32_t size)
     return NULL;
 }
 
-unsigned char* CONSTBUFFER_get_writable_buffer(CONSTBUFFER_WRITABLE_HANDLE constbufferHandle)
+unsigned char* CONSTBUFFER_get_writable_buffer(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
 {
-    (void) constbufferHandle;
+    (void) constbufferWritableHandle;
     return NULL;
 }
 
-CONSTBUFFER_HANDLE CONSTBUFFER_seal_writable_handle(CONSTBUFFER_WRITABLE_HANDLE constbufferHandle)
+CONSTBUFFER_HANDLE CONSTBUFFER_seal_writable_handle(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
 {
-    (void) constbufferHandle;
+    (void) constbufferWritableHandle;
     return NULL;
 }
