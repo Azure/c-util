@@ -30,16 +30,18 @@ MU_DEFINE_ENUM_STRINGS(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_R
 
 MU_DEFINE_ENUM_STRINGS(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_VALUES);
 
-typedef struct CONSTBUFFER_HANDLE_DATA_TAG
-{
-    CONSTBUFFER alias;
-    volatile_atomic int32_t count;
-    CONSTBUFFER_TYPE buffer_type;
-    CONSTBUFFER_CUSTOM_FREE_FUNC custom_free_func;
-    void* custom_free_func_context;
-    CONSTBUFFER_HANDLE originalHandle; /*where the CONSTBUFFER_TYPE_FROM_OFFSET_AND_SIZE was build from*/
-    unsigned char storage[]; /*if the memory was copied, this is where the copied memory is. For example in the case of CONSTBUFFER_CreateFromOffsetAndSizeWithCopy. Can have 0 as size.*/
-} CONSTBUFFER_HANDLE_DATA;
+#define CONSTBUFFER_HANDLE_DATA_FIELDS                                                                                                                                                                     \
+        CONSTBUFFER, alias,                                                                                                                                                                                \
+        volatile_atomic int32_t, count,                                                                                                                                                                    \
+        CONSTBUFFER_TYPE,  buffer_type,                                                                                                                                                                    \
+        CONSTBUFFER_CUSTOM_FREE_FUNC, custom_free_func,                                                                                                                                                    \
+        void*, custom_free_func_context, /*where the CONSTBUFFER_TYPE_FROM_OFFSET_AND_SIZE was build from*/                                                                                                \
+        CONSTBUFFER_HANDLE, originalHandle, /*if the memory was copied, this is where the copied memory is. For example in the case of CONSTBUFFER_CreateFromOffsetAndSizeWithCopy. Can have 0 as size.*/  \
+        unsigned char, storage[]
+
+MU_DEFINE_STRUCT(CONSTBUFFER_HANDLE_DATA, CONSTBUFFER_HANDLE_DATA_FIELDS)
+
+MU_DEFINE_STRUCT(CONSTBUFFER_WRITABLE_HANDLE_DATA, CONSTBUFFER_HANDLE_DATA_FIELDS)
 
 static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* source, uint32_t size)
 {
@@ -628,4 +630,22 @@ CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* sour
         }
     }
     return result;
+}
+
+CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_create_writable_handle(uint32_t size)
+{   
+    (void) size;
+    return NULL;
+}
+
+unsigned char* CONSTBUFFER_get_writable_buffer(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
+{
+    (void) constbufferWritableHandle;
+    return NULL;
+}
+
+CONSTBUFFER_HANDLE CONSTBUFFER_seal_writable_handle(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
+{
+    (void) constbufferWritableHandle;
+    return NULL;
 }
