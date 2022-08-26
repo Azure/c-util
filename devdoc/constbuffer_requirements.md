@@ -178,7 +178,7 @@ Given an existing `handle` `CONSTBUFFER_CreateFromOffsetAndSize` creates another
 
 **SRS_CONSTBUFFER_02_027: [** If `offset` + `size` exceed `handles`'s size then `CONSTBUFFER_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
 
-If `offset` is 0 and `size` is equal to `handle`'s size then `CONSTBUFFER_CreateFromOffsetAndSize` shall increment the reference count of `handle` and return `handle`.
+**SRS_CONSTBUFFER_28_001: [** If `offset` is 0 and `size` is equal to `handle`'s size then `CONSTBUFFER_CreateFromOffsetAndSize` shall increment the reference count of `handle` and return `handle`. **]**
 
 **SRS_CONSTBUFFER_02_028: [** `CONSTBUFFER_CreateFromOffsetAndSize` shall allocate memory for a new `CONSTBUFFER_HANDLE`'s content. **]**
 
