@@ -650,7 +650,7 @@ CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_create_writable_handle(uint32_t size)
         {
             /*Codes_SRS_CONSTBUFFER_51_003: [ If any error occurs, `CONSTBUFFER_create_writiable_handle` shall fail and return NULL. ]*/
             LogError("failure in malloc_flex(sizeof(CONSTBUFFER_WRITABLE_HANDLE_DATA)=%zu, size=%" PRIu32 ", sizeof(unsigned char)=%zu",
-                sizeof(CONSTBUFFER_HANDLE_DATA), size, sizeof(unsigned char));
+                sizeof(CONSTBUFFER_WRITABLE_HANDLE_DATA), size, sizeof(unsigned char));
             result = NULL;
         }
         else
