@@ -2562,4 +2562,144 @@ TEST_FUNCTION(CONSTBUFFER_from_buffer_with_2_size_unhappy_path)
     ///clean
 }
 
+/*Tests_SRS_CONSTBUFFER_51_001: [ If `size` is 0, then CONSTBUFFER_create_writiable_handle shall fail and return NULL. ]*/
+TEST_FUNCTION(CONSTBUFFER_create_writable_handle_invalid_args_fails)
+{
+    ///arrange
+
+    ///act
+    CONSTBUFFER_WRITABLE_HANDLE handle = CONSTBUFFER_create_writable_handle(0);
+
+    ///assert
+    ASSERT_IS_NULL(handle);
+
+    ///cleanup
+}
+
+/*Tests_SRS_CONSTBUFFER_51_003: [ If any error occurs, `CONSTBUFFER_create_writiable_handle` shall fail and return NULL. ]*/
+TEST_FUNCTION(CONSTBUFFER_create_writable_handle_fails_when_malloc_fails)
+{
+    ///arrange
+    CONSTBUFFER_WRITABLE_HANDLE handle;
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER1_length, 1))
+        .SetReturn(NULL);
+
+    ///act
+    handle = CONSTBUFFER_create_writable_handle(BUFFER1_length);
+
+    ///assert
+    ASSERT_IS_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+}
+
+/*Tests_SRS_CONSTBUFFER_51_004: [ `CONSTBUFFER_create_writiable_handle` shall set the ref count of the newly created `CONSTBUFFER_WRITABLE_HANDLE` to 1. ]*/
+TEST_FUNCTION(CONSTBUFFER_create_writiable_handle_is_ref_counted_1)
+{
+    ///arrange
+    CONSTBUFFER_WRITABLE_HANDLE handle = CONSTBUFFER_create_writable_handle(BUFFER1_length);
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+
+    ///act
+    CONSTBUFFER_DecRef((CONSTBUFFER_HANDLE) handle);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+}
+
+/*Tests_SRS_CONSTBUFFER_51_002: [ `CONSTBUFFER_create_writiable_handle` shall allocate memory for the `CONSTBUFFER_WRITABLE_HANDLE`. ]*/
+/*Tests_SRS_CONSTBUFFER_51_005: [ `CONSTBUFFER_create_writiable_handle` shall succeed and return a non - `NULL` `CONSTBUFFER_WRITABLE_HANDLE`. ]*/
+TEST_FUNCTION(CONSTBUFFER_create_writable_handle_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_WRITABLE_HANDLE handle;
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER1_length, 1));
+
+    ///act
+    handle = CONSTBUFFER_create_writable_handle(BUFFER1_length);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    CONSTBUFFER_DecRef((CONSTBUFFER_HANDLE)handle);
+}
+
+/*Tests_SRS_CONSTBUFFER_51_006: [ If `constbufferHandle` is `NULL`, then `CONSTBUFFER_get_writable_buffer` shall fail and return `NULL`. ] */
+TEST_FUNCTION(CONSTBUFFER_get_writable_buffer_handle_invalid_args_fails)
+{
+    ///arrange
+    unsigned char* buffer;
+
+    ///act
+    buffer = CONSTBUFFER_get_writable_buffer(NULL);
+
+    ///assert
+    ASSERT_IS_NULL(buffer);
+
+    ///cleanup
+}
+
+/*Tests_SRS_CONSTBUFFER_51_007: [ `CONSTBUFFER_get_writable_buffer` shall succeed and returns a pointer to the non-CONST buffer of `constbufferWritableHandle`. ]*/
+TEST_FUNCTION(CONSTBUFFER_get_writable_buffer_handle_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle;
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER1_length, 1));
+
+    ///act
+    constbufferWritableHandle = CONSTBUFFER_create_writable_handle(BUFFER1_length); 
+    unsigned char* buffer = CONSTBUFFER_get_writable_buffer(constbufferWritableHandle);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(buffer);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    CONSTBUFFER_DecRef((CONSTBUFFER_HANDLE) constbufferWritableHandle);
+}
+
+
+/*Tests_SRS_CONSTBUFFER_51_008: [ If `constbufferWritableHandle` is `NULL` then `CONSTBUFFER_seal_writable_handle` shall fail and return `NULL`. ]*/
+TEST_FUNCTION(CONSTBUFFER_seal_writable_handle_invalid_args_fails)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE handle;
+
+    ///act
+    handle = CONSTBUFFER_seal_writable_handle(NULL);
+
+    ///assert
+    ASSERT_IS_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+}
+
+/*Tests_SRS_CONSTBUFFER_51_009: [`CONSTBUFFER_seal_writable_handle` shall succeed and return a non - `NULL` `CONSTBUFFER_HANDLE`.]*/
+TEST_FUNCTION(CONSTBUFFER_seal_writable_handle_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle;
+    CONSTBUFFER_HANDLE handle;
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER1_length, 1));
+       
+
+    ///act
+    constbufferWritableHandle = CONSTBUFFER_create_writable_handle(BUFFER1_length);
+    handle = CONSTBUFFER_seal_writable_handle(constbufferWritableHandle);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    CONSTBUFFER_DecRef(handle);
+}
+
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

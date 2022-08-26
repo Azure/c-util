@@ -633,19 +633,71 @@ CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* sour
 }
 
 CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_create_writable_handle(uint32_t size)
-{   
-    (void) size;
-    return NULL;
+{
+    CONSTBUFFER_WRITABLE_HANDLE result;
+
+    if (size == 0)
+    {
+        /*Codes_SRS_CONSTBUFFER_51_001: [ If `size` is 0, then CONSTBUFFER_create_writiable_handle shall fail and return NULL. ]*/
+        LogError("invalid arguments passes to CONSTBUFFER_create_writable_handle: size: %" PRIu32 "", size);
+        result = NULL;
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_51_002: [ `CONSTBUFFER_create_writiable_handle` shall allocate memory for the `CONSTBUFFER_WRITABLE_HANDLE`. ]*/
+        result = (CONSTBUFFER_WRITABLE_HANDLE)malloc_flex(sizeof(CONSTBUFFER_WRITABLE_HANDLE_DATA), size, sizeof(unsigned char));
+        if (result == NULL)
+        {
+            /*Codes_SRS_CONSTBUFFER_51_003: [ If any error occurs, `CONSTBUFFER_create_writiable_handle` shall fail and return NULL. ]*/
+            LogError("failure in malloc_flex(sizeof(CONSTBUFFER_WRITABLE_HANDLE_DATA)=%zu, size=%" PRIu32 ", sizeof(unsigned char)=%zu",
+                sizeof(CONSTBUFFER_HANDLE_DATA), size, sizeof(unsigned char));
+            result = NULL;
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_51_005: [ `CONSTBUFFER_create_writiable_handle` shall succeed and return a non - `NULL` `CONSTBUFFER_WRITABLE_HANDLE`. ]*/
+            /*Codes_SRS_CONSTBUFFER_51_004: [ `CONSTBUFFER_create_writiable_handle` shall set the ref count of the newly created `CONSTBUFFER_WRITABLE_HANDLE` to 1. ]*/
+            (void)interlocked_exchange(&result->count, 1);
+            result->buffer_type = CONSTBUFFER_TYPE_COPIED;
+            result->alias.size = size;
+            result->alias.buffer = result->storage;
+        }
+    }
+    return result;
+
 }
 
 unsigned char* CONSTBUFFER_get_writable_buffer(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
 {
-    (void) constbufferWritableHandle;
-    return NULL;
+    unsigned char* buffer;
+    if (constbufferWritableHandle == NULL)
+    {
+        /*Codes_SRS_CONSTBUFFER_51_006: [ If `constbufferHandle` is `NULL`, then `CONSTBUFFER_get_writable_buffer` shall fail and return `NULL`. ]*/
+        LogError("Invalid arguments: CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle=%p", constbufferWritableHandle);
+        buffer = NULL;
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_51_007: [ `CONSTBUFFER_get_writable_buffer` shall succeed and returns a pointer to the non-CONST buffer of `constbufferWritableHandle`. ]*/
+        buffer = constbufferWritableHandle->storage;
+    }
+    return buffer;
 }
+
 
 CONSTBUFFER_HANDLE CONSTBUFFER_seal_writable_handle(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
 {
-    (void) constbufferWritableHandle;
-    return NULL;
+    CONSTBUFFER_HANDLE result;
+    if (constbufferWritableHandle == NULL)
+    {
+        /*Codes_SRS_CONSTBUFFER_51_008: [ If `constbufferWritableHandle` is `NULL` then `CONSTBUFFER_seal_writable_handle` shall fail and return `NULL`. ]*/
+        LogError("Invalid arguments: CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle=%p", constbufferWritableHandle);
+        result = NULL;
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_51_009: [ `CONSTBUFFER_seal_writable_handle` shall succeed and return a non-`NULL` `CONSTBUFFER_HANDLE`. ]*/
+        result = (CONSTBUFFER_HANDLE) constbufferWritableHandle;
+    }
+    return result;
 }
