@@ -2712,7 +2712,6 @@ TEST_FUNCTION(CONSTBUFFER_sealWritableHandle_succeeds)
     ///assert
     ASSERT_IS_NOT_NULL(content);
     ASSERT_ARE_EQUAL(uint32_t, content->size, writableBufferSize);
-    ASSERT_ARE_EQUAL(char_ptr, content->buffer, writableBuffer);
     /*content*/
     ASSERT_IS_TRUE(memcmp(buffer1, content->buffer, content->size) == 0);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
