@@ -2562,15 +2562,15 @@ TEST_FUNCTION(CONSTBUFFER_from_buffer_with_2_size_unhappy_path)
     ///clean
 }
 
-/*CONSTBUFFER_createWritableHandle*/
+/*CONSTBUFFER_CreateWritableHandle*/
 
-/*Tests_SRS_CONSTBUFFER_51_001: [ If `size` is 0, then CONSTBUFFER_createWritableHandle shall fail and return NULL. ]*/
-TEST_FUNCTION(CONSTBUFFER_createWritableHandle_invalid_args_fails)
+/*Tests_SRS_CONSTBUFFER_51_001: [ If `size` is 0, then CONSTBUFFER_CreateWritableHandle shall fail and return NULL. ]*/
+TEST_FUNCTION(CONSTBUFFER_CreateWritableHandle_invalid_args_fails)
 {
     ///arrange
 
     ///act
-    CONSTBUFFER_WRITABLE_HANDLE handle = CONSTBUFFER_createWritableHandle(0);
+    CONSTBUFFER_WRITABLE_HANDLE handle = CONSTBUFFER_CreateWritableHandle(0);
 
     ///assert
     ASSERT_IS_NULL(handle);
@@ -2578,8 +2578,8 @@ TEST_FUNCTION(CONSTBUFFER_createWritableHandle_invalid_args_fails)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_51_003: [ If any error occurs, `CONSTBUFFER_createWritableHandle` shall fail and return NULL. ]*/
-TEST_FUNCTION(CONSTBUFFER_createWritableHandle_fails_when_malloc_fails)
+/*Tests_SRS_CONSTBUFFER_51_003: [ If any error occurs, `CONSTBUFFER_CreateWritableHandle` shall fail and return NULL. ]*/
+TEST_FUNCTION(CONSTBUFFER_CreateWritableHandle_fails_when_malloc_fails)
 {
     ///arrange
     CONSTBUFFER_WRITABLE_HANDLE handle;
@@ -2587,7 +2587,7 @@ TEST_FUNCTION(CONSTBUFFER_createWritableHandle_fails_when_malloc_fails)
         .SetReturn(NULL);
 
     ///act
-    handle = CONSTBUFFER_createWritableHandle(BUFFER1_length);
+    handle = CONSTBUFFER_CreateWritableHandle(BUFFER1_length);
 
     ///assert
     ASSERT_IS_NULL(handle);
@@ -2596,11 +2596,11 @@ TEST_FUNCTION(CONSTBUFFER_createWritableHandle_fails_when_malloc_fails)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_51_004: [ `CONSTBUFFER_createWritableHandle` shall set the ref count of the newly created `CONSTBUFFER_WRITABLE_HANDLE` to 1. ]*/
-TEST_FUNCTION(CONSTBUFFER_createWritableHandle_is_ref_counted_1)
+/*Tests_SRS_CONSTBUFFER_51_004: [ `CONSTBUFFER_CreateWritableHandle` shall set the ref count of the newly created `CONSTBUFFER_WRITABLE_HANDLE` to 1. ]*/
+TEST_FUNCTION(CONSTBUFFER_CreateWritableHandle_is_ref_counted_1)
 {
     ///arrange
-    CONSTBUFFER_WRITABLE_HANDLE handle = CONSTBUFFER_createWritableHandle(BUFFER1_length);
+    CONSTBUFFER_WRITABLE_HANDLE handle = CONSTBUFFER_CreateWritableHandle(BUFFER1_length);
     umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
@@ -2613,16 +2613,16 @@ TEST_FUNCTION(CONSTBUFFER_createWritableHandle_is_ref_counted_1)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_51_002: [ `CONSTBUFFER_createWritableHandle` shall allocate memory for the `CONSTBUFFER_WRITABLE_HANDLE`. ]*/
-/*Tests_SRS_CONSTBUFFER_51_005: [ `CONSTBUFFER_createWritableHandle` shall succeed and return a non - `NULL` `CONSTBUFFER_WRITABLE_HANDLE`. ]*/
-TEST_FUNCTION(CONSTBUFFER_createWritableHandle_succeeds)
+/*Tests_SRS_CONSTBUFFER_51_002: [ `CONSTBUFFER_CreateWritableHandle` shall allocate memory for the `CONSTBUFFER_WRITABLE_HANDLE`. ]*/
+/*Tests_SRS_CONSTBUFFER_51_005: [ `CONSTBUFFER_CreateWritableHandle` shall succeed and return a non - `NULL` `CONSTBUFFER_WRITABLE_HANDLE`. ]*/
+TEST_FUNCTION(CONSTBUFFER_CreateWritableHandle_succeeds)
 {
     ///arrange
     CONSTBUFFER_WRITABLE_HANDLE handle;
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER1_length, 1));
 
     ///act
-    handle = CONSTBUFFER_createWritableHandle(BUFFER1_length);
+    handle = CONSTBUFFER_CreateWritableHandle(BUFFER1_length);
 
     ///assert
     ASSERT_IS_NOT_NULL(handle);
@@ -2634,14 +2634,14 @@ TEST_FUNCTION(CONSTBUFFER_createWritableHandle_succeeds)
 
 /*CONSTBUFFER_getWritableBuffer*/
 
-/*Tests_SRS_CONSTBUFFER_51_006: [ If `constbufferHandle` is `NULL`, then `CONSTBUFFER_getWritableBuffer` shall fail and return `NULL`. ] */
-TEST_FUNCTION(CONSTBUFFER_getWritableBuffer_invalid_args_fails)
+/*Tests_SRS_CONSTBUFFER_51_006: [ If `constbufferHandle` is `NULL`, then `CONSTBUFFER_GetWritableBuffer` shall fail and return `NULL`. ] */
+TEST_FUNCTION(CONSTBUFFER_GetWritableBuffer_invalid_args_fails)
 {
     ///arrange
     unsigned char* buffer;
 
     ///act
-    buffer = CONSTBUFFER_getWritableBuffer(NULL);
+    buffer = CONSTBUFFER_GetWritableBuffer(NULL);
 
     ///assert
     ASSERT_IS_NULL(buffer);
@@ -2649,16 +2649,16 @@ TEST_FUNCTION(CONSTBUFFER_getWritableBuffer_invalid_args_fails)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_51_007: [ `CONSTBUFFER_getWritableBuffer` shall succeed and returns a pointer to the non-CONST buffer of `constbufferWritableHandle`. ]*/
-TEST_FUNCTION(CONSTBUFFER_getWritableBuffer_succeeds)
+/*Tests_SRS_CONSTBUFFER_51_007: [ `CONSTBUFFER_GetWritableBuffer` shall succeed and returns a pointer to the non-CONST buffer of `constbufferWritableHandle`. ]*/
+TEST_FUNCTION(CONSTBUFFER_GetWritableBuffer_succeeds)
 {
     ///arrange
     CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle;
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER1_length, 1));
 
     ///act
-    constbufferWritableHandle = CONSTBUFFER_createWritableHandle(BUFFER1_length); 
-    unsigned char* buffer = CONSTBUFFER_getWritableBuffer(constbufferWritableHandle);
+    constbufferWritableHandle = CONSTBUFFER_CreateWritableHandle(BUFFER1_length); 
+    unsigned char* buffer = CONSTBUFFER_GetWritableBuffer(constbufferWritableHandle);
 
     ///assert
     ASSERT_IS_NOT_NULL(buffer);   
@@ -2670,14 +2670,14 @@ TEST_FUNCTION(CONSTBUFFER_getWritableBuffer_succeeds)
 
 /*CONSTBUFFER_sealWritableHandle*/
 
-/*Tests_SRS_CONSTBUFFER_51_008: [ If `constbufferWritableHandle` is `NULL` then `CONSTBUFFER_sealWritableHandle` shall fail and return `NULL`. ]*/
-TEST_FUNCTION(CONSTBUFFER_sealWritableHandle_invalid_args_fails)
+/*Tests_SRS_CONSTBUFFER_51_008: [ If `constbufferWritableHandle` is `NULL` then `CONSTBUFFER_SealWritableHandle` shall fail and return `NULL`. ]*/
+TEST_FUNCTION(CONSTBUFFER_SealWritableHandle_invalid_args_fails)
 {
     ///arrange
     CONSTBUFFER_HANDLE handle;
 
     ///act
-    handle = CONSTBUFFER_sealWritableHandle(NULL);
+    handle = CONSTBUFFER_SealWritableHandle(NULL);
 
     ///assert
     ASSERT_IS_NULL(handle);
@@ -2686,8 +2686,8 @@ TEST_FUNCTION(CONSTBUFFER_sealWritableHandle_invalid_args_fails)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_51_009: [`CONSTBUFFER_sealWritableHandle` shall succeed and return a non - `NULL` `CONSTBUFFER_HANDLE`.]*/
-TEST_FUNCTION(CONSTBUFFER_sealWritableHandle_succeeds)
+/*Tests_SRS_CONSTBUFFER_51_009: [`CONSTBUFFER_SealWritableHandle` shall succeed and return a non - `NULL` `CONSTBUFFER_HANDLE`.]*/
+TEST_FUNCTION(CONSTBUFFER_SealWritableHandle_succeeds)
 {
     ///arrange
     CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle;
@@ -2698,15 +2698,15 @@ TEST_FUNCTION(CONSTBUFFER_sealWritableHandle_succeeds)
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER1_length, 1));
        
     ///act
-    constbufferWritableHandle = CONSTBUFFER_createWritableHandle(BUFFER1_length);
-    writableBufferSize = CONSTBUFFER_getWritableBufferSize(constbufferWritableHandle);
-    writableBuffer = CONSTBUFFER_getWritableBuffer(constbufferWritableHandle);
+    constbufferWritableHandle = CONSTBUFFER_CreateWritableHandle(BUFFER1_length);
+    writableBufferSize = CONSTBUFFER_GetWritableBufferSize(constbufferWritableHandle);
+    writableBuffer = CONSTBUFFER_GetWritableBuffer(constbufferWritableHandle);
 
     /*filling data*/
     (void)memcpy(writableBuffer, buffer1, writableBufferSize);
 
     /*sealing*/
-    handle = CONSTBUFFER_sealWritableHandle(constbufferWritableHandle);
+    handle = CONSTBUFFER_SealWritableHandle(constbufferWritableHandle);
     content = CONSTBUFFER_GetContent(handle);
     
     ///assert
@@ -2739,7 +2739,7 @@ TEST_FUNCTION(CONSTBUFFER_WritableHandleIncRef_invalid_args_fails)
 TEST_FUNCTION(CONSTBUFFER_WritableHandleIncRef_succeeds)
 {
     ///arrange
-    CONSTBUFFER_WRITABLE_HANDLE handle = CONSTBUFFER_createWritableHandle(BUFFER1_length);
+    CONSTBUFFER_WRITABLE_HANDLE handle = CONSTBUFFER_CreateWritableHandle(BUFFER1_length);
     umock_c_reset_all_calls();
 
     ///act
@@ -2773,7 +2773,7 @@ TEST_FUNCTION(CONSTBUFFER_WritableHandleDecReff_invalid_args_fails)
 TEST_FUNCTION(CONSTBUFFER_WritableHandleDecReff_succeeds)
 {
     ///arrange
-    CONSTBUFFER_WRITABLE_HANDLE handle = CONSTBUFFER_createWritableHandle(BUFFER1_length);
+    CONSTBUFFER_WRITABLE_HANDLE handle = CONSTBUFFER_CreateWritableHandle(BUFFER1_length);
     umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
@@ -2788,14 +2788,14 @@ TEST_FUNCTION(CONSTBUFFER_WritableHandleDecReff_succeeds)
 
 /*CONSTBUFFER_getWritableBufferSize*/
 
-/*Tests_SRS_CONSTBUFFER_51_015: [ If `constbufferWritableHandle` is `NULL`, then `CONSTBUFFER_getWritableBufferSize` return 0. ] */
-TEST_FUNCTION(CONSTBUFFER_getWritableBufferSize_invalid_args_fails)
+/*Tests_SRS_CONSTBUFFER_51_015: [ If `constbufferWritableHandle` is `NULL`, then `CONSTBUFFER_GetWritableBufferSize` return 0. ] */
+TEST_FUNCTION(CONSTBUFFER_GetWritableBufferSize_invalid_args_fails)
 {
     ///arrange
     uint32_t bufferSize;
 
     ///act
-    bufferSize = CONSTBUFFER_getWritableBufferSize(NULL);
+    bufferSize = CONSTBUFFER_GetWritableBufferSize(NULL);
 
     ///assert
     ASSERT_ARE_EQUAL(uint32_t, bufferSize, 0);
@@ -2803,8 +2803,8 @@ TEST_FUNCTION(CONSTBUFFER_getWritableBufferSize_invalid_args_fails)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_51_016: [ `CONSTBUFFER_getWritableBufferSize` shall succeed and returns the size of the writable buffer of `constbufferWritableHandle`. ]*/
-TEST_FUNCTION(CONSTBUFFER_getWritableBufferSize_succeeds)
+/*Tests_SRS_CONSTBUFFER_51_016: [ `CONSTBUFFER_GetWritableBufferSize` shall succeed and returns the size of the writable buffer of `constbufferWritableHandle`. ]*/
+TEST_FUNCTION(CONSTBUFFER_GetWritableBufferSize_succeeds)
 {
     ///arrange
     CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle;
@@ -2812,10 +2812,10 @@ TEST_FUNCTION(CONSTBUFFER_getWritableBufferSize_succeeds)
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER1_length, 1));
 
     ///act
-    constbufferWritableHandle = CONSTBUFFER_createWritableHandle(BUFFER1_length);
+    constbufferWritableHandle = CONSTBUFFER_CreateWritableHandle(BUFFER1_length);
 
 
-    bufferSize = CONSTBUFFER_getWritableBufferSize(constbufferWritableHandle);
+    bufferSize = CONSTBUFFER_GetWritableBufferSize(constbufferWritableHandle);
 
     ///assert
     ASSERT_ARE_EQUAL(uint32_t, bufferSize, BUFFER1_length);
