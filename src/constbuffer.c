@@ -638,20 +638,120 @@ CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* sour
     return result;
 }
 
-CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_create_writable_handle(uint32_t size)
-{   
-    (void) size;
-    return NULL;
+CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_CreateWritableHandle(uint32_t size)
+{
+    CONSTBUFFER_WRITABLE_HANDLE result;
+
+    if (size == 0)
+    {
+        /*Codes_SRS_CONSTBUFFER_51_001: [ If `size` is 0, then CONSTBUFFER_CreateWritableHandle shall fail and return NULL. ]*/
+        LogError("invalid arguments passes to CONSTBUFFER_createWritableHandle: size: %" PRIu32 "", size);
+        result = NULL;
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_51_002: [ `CONSTBUFFER_CreateWritableHandle` shall allocate memory for the `CONSTBUFFER_WRITABLE_HANDLE`. ]*/
+        result = malloc_flex(sizeof(CONSTBUFFER_WRITABLE_HANDLE_DATA), size, sizeof(unsigned char));
+        if (result == NULL)
+        {
+            /*Codes_SRS_CONSTBUFFER_51_003: [ If any error occurs, `CONSTBUFFER_CreateWritableHandle` shall fail and return NULL. ]*/
+            LogError("failure in malloc_flex(sizeof(CONSTBUFFER_WRITABLE_HANDLE_DATA)=%zu, size=%" PRIu32 ", sizeof(unsigned char)=%zu",
+                sizeof(CONSTBUFFER_WRITABLE_HANDLE_DATA), size, sizeof(unsigned char));
+            result = NULL;
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_51_005: [ `CONSTBUFFER_CreateWritableHandle` shall succeed and return a non - `NULL` `CONSTBUFFER_WRITABLE_HANDLE`. ]*/
+            /*Codes_SRS_CONSTBUFFER_51_004: [ `CONSTBUFFER_CreateWritableHandle` shall set the ref count of the newly created `CONSTBUFFER_WRITABLE_HANDLE` to 1. ]*/
+            (void)interlocked_exchange(&result->count, 1);
+            result->buffer_type = CONSTBUFFER_TYPE_COPIED;
+            result->alias.size = size;
+            result->alias.buffer = result->storage;
+        }
+    }
+    return result;
+
 }
 
-unsigned char* CONSTBUFFER_get_writable_buffer(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
+unsigned char* CONSTBUFFER_GetWritableBuffer(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
 {
-    (void) constbufferWritableHandle;
-    return NULL;
+    unsigned char* buffer;
+    if (constbufferWritableHandle == NULL)
+    {
+        /*Codes_SRS_CONSTBUFFER_51_006: [ If `constbufferHandle` is `NULL`, then `CONSTBUFFER_GetWritableBuffer` shall fail and return `NULL`. ]*/
+        LogError("Invalid arguments: CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle=%p", constbufferWritableHandle);
+        buffer = NULL;
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_51_007: [ `CONSTBUFFER_GetWritableBuffer` shall succeed and returns a pointer to the non-CONST buffer of `constbufferWritableHandle`. ]*/
+        buffer = constbufferWritableHandle->storage;
+    }
+    return buffer;
 }
 
-CONSTBUFFER_HANDLE CONSTBUFFER_seal_writable_handle(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
+CONSTBUFFER_HANDLE CONSTBUFFER_SealWritableHandle(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
 {
-    (void) constbufferWritableHandle;
-    return NULL;
+    CONSTBUFFER_HANDLE result;
+    if (constbufferWritableHandle == NULL)
+    {
+        /*Codes_SRS_CONSTBUFFER_51_008: [ If `constbufferWritableHandle` is `NULL` then `CONSTBUFFER_SealWritableHandle` shall fail and return `NULL`. ]*/
+        LogError("Invalid arguments: CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle=%p", constbufferWritableHandle);
+        result = NULL;
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_51_009: [ `CONSTBUFFER_SealWritableHandle` shall succeed and return a non-`NULL` `CONSTBUFFER_HANDLE`. ]*/
+        result = (CONSTBUFFER_HANDLE) constbufferWritableHandle;       
+    }
+    return result;
+}
+
+void CONSTBUFFER_WritableHandleIncRef(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
+{
+    if (constbufferWritableHandle == NULL)
+    {
+        /*Codes_SRS_CONSTBUFFER_51_010: [ If `constbufferWritableHandle` is NULL then `CONSTBUFFER_WritableHandleIncRef` shall return. ]*/
+        LogError("Invalid arguments: CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle=%p", constbufferWritableHandle);
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_51_011: [ Otherwise, `CONSTBUFFER_WritableHandleIncRef` shall increment the reference count. ]*/
+        (void)interlocked_increment(&constbufferWritableHandle->count);
+    }
+}
+
+void CONSTBUFFER_WritableHandleDecRef(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
+{
+    if (constbufferWritableHandle == NULL)
+    {
+        /*Codes_SRS_CONSTBUFFER_51_012: [ If `constbufferWritableHandle` is NULL then `CONSTBUFFER_WritableHandleDecRef` shall do nothing. ] */
+        LogError("Invalid arguments: CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle=%p", constbufferWritableHandle);
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_51_013: [ Otherwise, `CONSTBUFFER_WritableHandleDecRef` shall decrement the refcount on the `constbufferWritableHandle` handle. ]*/
+        if (interlocked_decrement(&constbufferWritableHandle->count) == 0)
+        {
+            /*Codes_SRS_CONSTBUFFER_51_014: [ If the refcount reaches zero, then `CONSTBUFFER_WritableHandleDecRef` shall deallocate all resources used by the CONSTBUFFER_HANDLE. ]*/
+            free(constbufferWritableHandle);
+        }
+    }
+}
+
+uint32_t CONSTBUFFER_GetWritableBufferSize(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
+{
+    uint32_t bufferSize;
+    if (constbufferWritableHandle == NULL)
+    {
+        /*Codes_SRS_CONSTBUFFER_51_015: [ If `constbufferWritableHandle` is `NULL`, then `CONSTBUFFER_GetWritableBufferSize` return 0. ]*/
+        LogError("Invalid arguments: CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle=%p", constbufferWritableHandle);
+        bufferSize = 0;
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_51_016: [ `CONSTBUFFER_GetWritableBufferSize` shall succeed and returns the size of the writable buffer of `constbufferWritableHandle`. ]*/
+        bufferSize = constbufferWritableHandle->alias.size;
+    }
+    return bufferSize;
 }

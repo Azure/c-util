@@ -364,48 +364,82 @@ CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* sour
 
 **SRS_CONSTBUFFER_02_073: [** If there are any failures then shall fail and return `CONSTBUFFER_FROM_BUFFER_RESULT_ERROR`. **]**
 
-
-### CONSTBUFFER_create_writable_handle
-
-```c
- CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_create_writable_handle (uint32_t size)
-```
-
-`CONSTBUFFER_create_writiable_handle` construct a new `CONSTBUFFER_WRITABLE_HANDLE` of size `size`. Buffers of `CONSTBUFFER_WRITABLE_HANDLE` can be overridden (the same buffer can be reused to fill).
-
-**S_RS_CONSTBUFFER_51_001: [** If `size` is 0, then CONSTBUFFER_create_writiable_handle shall fail and return NULL. **]**
-
-**S_RS_CONSTBUFFER_51_002: [** `CONSTBUFFER_create_writiable_handle` shall allocate memory for the `CONSTBUFFER_WRITABLE_HANDLE` **]**
-
-**S_RS_CONSTBUFFER_51_003: [** If any error occurs, `CONSTBUFFER_create_writiable_handle` shall fail and return NULL. **]**
-
-**S_RS_CONSTBUFFER_51_004: [** `CONSTBUFFER_create_writiable_handle` shall set the ref count of the newly created `CONSTBUFFER_WRITABLE_HANDLE` to 1. **]**
-
-**S_RS_CONSTBUFFER_51_005: [** `CONSTBUFFER_create_writiable_handle` shall succeed and return a non-`NULL` `CONSTBUFFER_WRITABLE_HANDLE`. **]**
-
-
-### CONSTBUFFER_get_writable_buffer
+### CONSTBUFFER_CreateWritableHandle
 
 ```c
- unsigned char* CONSTBUFFER_get_writable_buffer(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
+ CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_CreateWritableHandle (uint32_t size)
 ```
 
-`CONSTBUFFER_get_writable_buffer` return the handle of writable buffer.
+`CONSTBUFFER_CreateWritableHandle` constructs a new `CONSTBUFFER_WRITABLE_HANDLE` of size `size`. Buffers of `CONSTBUFFER_WRITABLE_HANDLE` are writeable (the same buffer can be reused to fill).
 
-**S_RS_CONSTBUFFER_51_006: [** If `constbufferHandle` is `NULL`, then `CONSTBUFFER_get_writable_buffer` shall fail and return `NULL`. **]**
+**SRS_CONSTBUFFER_51_001: [** If `size` is 0, then `CONSTBUFFER_CreateWritableHandle` shall fail and return NULL. **]**
 
-**S_RS_CONSTBUFFER_51_007: [** `CONSTBUFFER_get_writable_buffer` shall succeed and returns a pointer to the non-CONST buffer of `constbufferWritableHandle`. **]**
+**SRS_CONSTBUFFER_51_002: [** `CONSTBUFFER_CreateWritableHandle` shall allocate memory for the `CONSTBUFFER_WRITABLE_HANDLE` **]**
 
+**SRS_CONSTBUFFER_51_003: [** If any error occurs, `CONSTBUFFER_CreateWritableHandle` shall fail and return NULL. **]**
 
+**SRS_CONSTBUFFER_51_004: [** `CONSTBUFFER_CreateWritableHandle` shall set the ref count of the newly created `CONSTBUFFER_WRITABLE_HANDLE` to 1. **]**
 
-### CONSTBUFFER_seal_writable_handle
+**SRS_CONSTBUFFER_51_005: [** `CONSTBUFFER_CreateWritableHandle` shall succeed and return a non-`NULL` `CONSTBUFFER_WRITABLE_HANDLE`. **]**
+
+### CONSTBUFFER_GetWritableBuffer
 
 ```c
- CONSTBUFFER_HANDLE CONSTBUFFER_seal_writable_handle(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
+ unsigned char* CONSTBUFFER_GetWritableBuffer(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
 ```
 
-`CONSTBUFFER_seal_writable_handle` shall return `CONSTBUFFER_HANDLE` from the `CONSTBUFFER_WRITABLE_HANDLE`.
+`CONSTBUFFER_GetWritableBuffer` return a pointer to the writable buffer.
 
-**S_RS_CONSTBUFFER_51_008: [** If `constbufferWritableHandle` is `NULL` then `CONSTBUFFER_seal_writable_handle` shall fail and return `NULL`. **]**
+**SRS_CONSTBUFFER_51_006: [** If `constbufferWritableHandle` is `NULL`, then `CONSTBUFFER_GetWritableBuffer` shall fail and return `NULL`. **]**
 
-**S_RS_CONSTBUFFER_51_009: [** `CONSTBUFFER_seal_writable_handle` shall succeed and return a non-`NULL` `CONSTBUFFER_HANDLE`. **]**
+**SRS_CONSTBUFFER_51_007: [** `CONSTBUFFER_GetWritableBuffer` shall succeed and returns a pointer to the non-CONST buffer of `constbufferWritableHandle`. **]**
+
+### CONSTBUFFER_SealWritableHandle
+
+```c
+ CONSTBUFFER_HANDLE CONSTBUFFER_SealWritableHandle(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
+```
+
+`CONSTBUFFER_SealWritableHandle` shall return `CONSTBUFFER_HANDLE` from the `CONSTBUFFER_WRITABLE_HANDLE`.
+
+**SRS_CONSTBUFFER_51_008: [** If `constbufferWritableHandle` is `NULL` then `CONSTBUFFER_SealWritableHandle` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_51_009: [** `CONSTBUFFER_SealWritableHandle` shall succeed and return a non-`NULL` `CONSTBUFFER_HANDLE`. **]**
+
+### CONSTBUFFER_WritableHandleIncRef
+
+```c
+void CONSTBUFFER_WritableHandleIncRef(CONSTBUFFER_HANDLE constbufferWritableHandle)
+```
+
+`CONSTBUFFER_WritableHandleIncRef` shall increment the refcount of `constbufferWritableHandle`.
+
+**SRS_CONSTBUFFER_51_010: [** If `constbufferWritableHandle` is NULL then `CONSTBUFFER_WritableHandleIncRef` shall return. **]**
+
+**SRS_CONSTBUFFER_51_011: [** Otherwise, `CONSTBUFFER_WritableHandleIncRef` shall increment the reference count of `constbufferWritableHandle` **]**
+
+### CONSTBUFFER_WritableHandleDecRef
+
+```c
+void CONSTBUFFER_WritableHandleDecRef(CONSTBUFFER_HANDLE constbufferWritableHandle)
+```
+
+`CONSTBUFFER_WritableHandleDecRef` shall decrement the refcount of `constbufferWritableHandle`.
+
+**SRS_CONSTBUFFER_51_012: [** If `constbufferWritableHandle` is NULL then `CONSTBUFFER_WritableHandleDecRef` shall do nothing. **]**
+
+**SRS_CONSTBUFFER_51_013: [** Otherwise, `CONSTBUFFER_WritableHandleDecRef` shall decrement the refcount of `constbufferWritableHandle`. **]**
+
+**SRS_CONSTBUFFER_51_014: [** If the refcount reaches zero, then `CONSTBUFFER_WritableHandleDecRef` shall deallocate all resources used by the CONSTBUFFER_HANDLE. **]**
+
+### CONSTBUFFER_GetWritableBufferSize
+
+```c
+ unsigned char* CONSTBUFFER_GetWritableBufferSize(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
+```
+
+`CONSTBUFFER_GetWritableBufferSize` returns the size of the writable buffer.
+
+**SRS_CONSTBUFFER_51_015: [** If `constbufferWritableHandle` is `NULL`, then `CONSTBUFFER_GetWritableBufferSize` return 0. **]**
+
+**SRS_CONSTBUFFER_51_016: [** `CONSTBUFFER_GetWritableBufferSize` shall succeed and returns the size of the writable buffer of `constbufferWritableHandle`. **]**
