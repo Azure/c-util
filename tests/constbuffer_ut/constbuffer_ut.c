@@ -780,10 +780,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         CONSTBUFFER_DecRef(origin);
     }
 
-    /*Tests_SRS_CONSTBUFFER_02_028: [ CONSTBUFFER_CreateFromOffsetAndSize shall allocate memory for a new CONSTBUFFER_HANDLE's content. ]*/
-    /*Tests_SRS_CONSTBUFFER_02_029: [ CONSTBUFFER_CreateFromOffsetAndSize shall set the ref count of the newly created CONSTBUFFER_HANDLE to the initial value. ]*/
-    /*Tests_SRS_CONSTBUFFER_02_030: [ CONSTBUFFER_CreateFromOffsetAndSize shall increment the reference count of handle. ]*/
-    /*Tests_SRS_CONSTBUFFER_02_031: [ CONSTBUFFER_CreateFromOffsetAndSize shall succeed and return a non-NULL value. ]*/
+    /*Tests_SRS_CONSTBUFFER_28_001: [ If offset is 0 and size is equal to handle's size then CONSTBUFFER_CreateFromOffsetAndSize shall increment the reference count of handle and return handle. ]*/
     TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSize_succeeds_1)
     {
         ///arrange
@@ -795,17 +792,13 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
-
         ///act
         CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 0, (uint32_t)(sizeof(source)));
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-        const CONSTBUFFER* content = CONSTBUFFER_GetContent(result);
-        ASSERT_ARE_EQUAL(size_t, sizeof(source), content->size);
-        ASSERT_IS_TRUE(memcmp(content->buffer, source, sizeof(source)) == 0);
+        ASSERT_IS_TRUE(result == origin);
 
         ///cleanup
         CONSTBUFFER_DecRef(origin);
