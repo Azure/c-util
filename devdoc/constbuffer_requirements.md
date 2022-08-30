@@ -388,7 +388,7 @@ CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* sour
 
 `CONSTBUFFER_getWritableBuffer` return a pointer to the writable buffer.
 
-**SRS_CONSTBUFFER_51_006: [** If `constbufferHandle` is `NULL`, then `CONSTBUFFER_getWritableBuffer` shall fail and return `NULL`. **]**
+**SRS_CONSTBUFFER_51_006: [** If `constbufferWritableHandle` is `NULL`, then `CONSTBUFFER_getWritableBuffer` shall fail and return `NULL`. **]**
 
 **SRS_CONSTBUFFER_51_007: [** `CONSTBUFFER_getWritableBuffer` shall succeed and returns a pointer to the non-CONST buffer of `constbufferWritableHandle`. **]**
 
