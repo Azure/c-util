@@ -29,9 +29,12 @@
         CONSTBUFFER_to_buffer, \
         CONSTBUFFER_to_fixed_size_buffer, \
         CONSTBUFFER_from_buffer, \
-        CONSTBUFFER_create_writable_handle, \
-        CONSTBUFFER_get_writable_buffer, \
-        CONSTBUFFER_seal_writable_handle \
+        CONSTBUFFER_createWritableHandle, \
+        CONSTBUFFER_getWritableBuffer, \
+        CONSTBUFFER_sealWritableHandle, \
+        CONSTBUFFER_WritableHandleIncRef, \
+        CONSTBUFFER_WritableHandleDecRef, \
+        CONSTBUFFER_getWritableBufferSize \
 )
 
 
@@ -71,11 +74,16 @@ CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT real_CONSTBUFFER_to_fixed_size_buffer(CO
 
 CONSTBUFFER_FROM_BUFFER_RESULT real_CONSTBUFFER_from_buffer(const unsigned char* source, uint32_t size, uint32_t* consumed, CONSTBUFFER_HANDLE* destination);
 
-CONSTBUFFER_WRITABLE_HANDLE real_CONSTBUFFER_create_writable_handle(uint32_t size);
+CONSTBUFFER_WRITABLE_HANDLE real_CONSTBUFFER_createWritableHandle(uint32_t size);
 
-unsigned char * real_CONSTBUFFER_get_writable_buffer(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle);
+unsigned char * real_CONSTBUFFER_getWritableBuffer(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle);
 
-CONSTBUFFER_HANDLE real_CONSTBUFFER_seal_writable_handle(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle);
+CONSTBUFFER_HANDLE real_CONSTBUFFER_sealWritableHandle(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle);
 
+void real_CONSTBUFFER_WritableHandleIncRef(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle);
+
+void real_CONSTBUFFER_WritableHandleDecRef(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle);
+
+uint32_t real_CONSTBUFFER_getWritableBufferSize(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle);
 
 #endif //REAL_CONSTBUFFER_H
