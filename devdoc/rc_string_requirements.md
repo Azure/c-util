@@ -1,5 +1,4 @@
 # rc_string requirements
-================
 
 ## Overview
 
@@ -23,6 +22,7 @@
     #define RC_STRING_VALUE_OR_NULL(rc) (((rc) == NULL) ? "NULL" : (rc)->string)
 
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*, string);
+    THANDLE(RC_STRING) rc_string_create_with_format(const char* string, ...);
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_move_memory, const char*, string);
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_custom_free, const char*, string, RC_STRING_FREE_FUNC, free_func, void*, free_func_context);
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_recreate, THANDLE(RC_STRING), self);
@@ -71,6 +71,33 @@ MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*, string);
 **SRS_RC_STRING_01_005: [** `rc_string_create` shall succeed and return a non-`NULL` handle. **]**
 
 **SRS_RC_STRING_01_006: [** If any error occurs, `rc_string_create` shall fail and return `NULL`. **]**
+
+## rc_string_create_with_format
+
+```c
+THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...);
+```
+
+`rc_string_create_with_format` creates a new ref counted string by using the format convention as in sprintf.
+
+[** If `format` is `NULL`, `rc_string_create_with_format` shall fail and return `NULL`. **]**
+
+[** Otherwise, `rc_string_create_with_format` shall determine the total number of characters written using the variadic arguments. **]**
+
+[** `rc_string_create_with_format` shall allocate memory for the formatted string including the `NULL` terminator.**]**
+
+[** `rc_string_create_with_format` shall copy the formatted string result including the `NULL` terminator into `string`. **]**
+
+[** `rc_string_create_with_format` shall allocate memory for  the `THANDLE(RC_STRING)`, ensuring all the bytes in `string` can be copied (including the zero terminator).**]**
+
+[** `rc_string_create_with_format` shall copy the string memory (including the `NULL` terminator). **]**
+
+[** `rc_string_create_with_format` shall succeed and return a non-`NULL` handle. **]**
+
+[** If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. **]**
+
+
+
 
 ## rc_string_create_with_move_memory
 

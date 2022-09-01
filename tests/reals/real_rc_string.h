@@ -29,6 +29,7 @@
     THANDLE_TYPE_DECLARE(real_RC_STRING);
 
     THANDLE(RC_STRING) real_rc_string_create(const char* string);
+    THANDLE(RC_STRING) real_rc_string_create_with_format(const char* format, ...);
     THANDLE(RC_STRING) real_rc_string_create_with_move_memory(const char* string);
     THANDLE(RC_STRING) real_rc_string_create_with_custom_free(const char* string, RC_STRING_FREE_FUNC free_func, void* free_func_context);
     THANDLE(RC_STRING) real_rc_string_recreate(THANDLE(RC_STRING) source);
