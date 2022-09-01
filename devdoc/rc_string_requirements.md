@@ -84,7 +84,7 @@ If `format` is `NULL`, `rc_string_create_with_format` shall fail and return `NUL
 
 Otherwise, `rc_string_create_with_format` shall determine the total number of characters written using the variable number of arguments.  
 
-`rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`.
+`rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)` and the number of bytes for the resulting formatted string.
 
 `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`.
 
