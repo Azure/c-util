@@ -82,22 +82,15 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...);
 
 If `format` is `NULL`, `rc_string_create_with_format` shall fail and return `NULL`. 
 
-Otherwise, `rc_string_create_with_format` shall determine the total number of characters written using the variadic arguments. 
+Otherwise, `rc_string_create_with_format` shall determine the total number of characters written using the variable number of arguments.  
 
-`rc_string_create_with_format` shall allocate memory for the formatted string including the `NULL` terminator.
+`rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`.
 
-`rc_string_create_with_format` shall copy the formatted string result including the `NULL` terminator into `string`. 
-
-`rc_string_create_with_format` shall allocate memory for  the `THANDLE(RC_STRING)`, ensuring all the bytes in `string` can be copied (including the zero terminator).
-
-`rc_string_create_with_format` shall copy the string memory (including the `NULL` terminator). 
+`rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`.
 
 `rc_string_create_with_format` shall succeed and return a non-`NULL` handle. 
 
 If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`.
-
-
-
 
 ## rc_string_create_with_move_memory
 
