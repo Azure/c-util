@@ -110,23 +110,9 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*,
 
 THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
 {
-    THANDLE(RC_STRING) result = NULL;
+    (void)format;
 
-    if (format == NULL)
-    {
-        LogError("Invalid arguments: const char* format=%s", MU_P_OR_NULL(format));
-    }
-    else
-    {
-        va_list args;
-        va_start(args, format);
-        int size = vsnprintf(NULL, 0, format, args) + 1;
-        char* string = (char*)malloc(size);
-        vsnprintf(string, size, format, args);
-        return rc_string_create_impl(string);
-    }
-
-    return result;
+    return NULL;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_move_memory, const char*, string)
