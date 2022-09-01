@@ -28,16 +28,17 @@ extern "C"
 
     typedef void (*RC_STRING_FREE_FUNC)(void* context);
 
-    #define PRI_RC_STRING "s"
+#define PRI_RC_STRING "s"
 
     /*Codes_SRS_RC_STRING_01_021: [ RC_STRING_VALUE shall print the string field of rc. ]*/
-    #define RC_STRING_VALUE(rc) ((rc)->string)
+#define RC_STRING_VALUE(rc) ((rc)->string)
 
-    /*Codes_SRS_RC_STRING_01_022: [ If rc is NULL, RC_STRING_VALUE_OR_NULL shall print NULL. ]*/
-    /*Codes_SRS_RC_STRING_01_023: [ If rc is non NULL, RC_STRING_VALUE_OR_NULL shall print the string field of rc. ]*/
-    #define RC_STRING_VALUE_OR_NULL(rc) (((rc) == NULL) ? "NULL" : (rc)->string)
+/*Codes_SRS_RC_STRING_01_022: [ If rc is NULL, RC_STRING_VALUE_OR_NULL shall print NULL. ]*/
+/*Codes_SRS_RC_STRING_01_023: [ If rc is non NULL, RC_STRING_VALUE_OR_NULL shall print the string field of rc. ]*/
+#define RC_STRING_VALUE_OR_NULL(rc) (((rc) == NULL) ? "NULL" : (rc)->string)
 
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*, string);
+    THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...);
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_move_memory, const char*, string);
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_custom_free, const char*, string, RC_STRING_FREE_FUNC, free_func, void*, free_func_context);
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_recreate, THANDLE(RC_STRING), self);

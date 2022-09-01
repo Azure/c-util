@@ -107,6 +107,14 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*,
     return result;
 }
 
+
+THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
+{
+    (void)format;
+
+    return NULL;
+}
+
 IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_move_memory, const char*, string)
 {
     THANDLE(RC_STRING) result = NULL;
@@ -204,7 +212,7 @@ THANDLE(RC_STRING) rc_string_recreate(THANDLE(RC_STRING) self)
         }
 
         /*in any case (NULL, non-NULL) return it*/
-        THANDLE_INITIALIZE_MOVE(RC_STRING)(&result, &temp); 
+        THANDLE_INITIALIZE_MOVE(RC_STRING)(&result, &temp);
     }
     return result;
 }
