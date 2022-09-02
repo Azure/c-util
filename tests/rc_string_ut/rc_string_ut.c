@@ -23,15 +23,17 @@
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
-//#define vsnprintf mocked_vsnprintf
-//MOCKABLE_FUNCTION(, int, vsnprintf, char* const, _Buffer, size_t const, _BufferCount, char const* const, _Format, va_list, _ArgList);
-
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
+
+MOCK_FUNCTION_WITH_CODE(, int, mocked_vsnprintf, char* const, _Buffer, size_t const, _BufferCount, char const* const, _Format, va_list, _ArgList)
+    int my_result = vsnprintf(_Buffer, _BufferCount, _Format, _ArgList);
+MOCK_FUNCTION_END(my_result);
+
 
 // this function is used for tests just to make sure we do not confuse it with regular malloc
 MOCK_FUNCTION_WITH_CODE(, void*, test_malloc_func, size_t, size_needed)
