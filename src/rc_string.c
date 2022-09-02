@@ -108,11 +108,60 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*,
 }
 
 
+
 THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
 {
-    (void)format;
+    THANDLE(RC_STRING) result = NULL;
 
-    return NULL;
+    if (format == NULL)
+    {
+        /*Codes_SRS_RC_STRING_07_001: [ If format is NULL, rc_string_create_with_format shall fail and return NULL. ]*/
+        LogError("Invalid arguments: const char* format=%s", MU_P_OR_NULL(format));
+    }
+    else
+    {
+        /*Codes_SRS_RC_STRING_07_002: [ Otherwise, `rc_string_create_with_format` shall determine the total number of characters written using the variable number of arguments. ]*/
+        va_list args;
+        va_start(args, format);
+        size_t string_length_with_terminator = vsnprintf(NULL, 0, format, args) + 1;
+        
+        if (string_length_with_terminator <= 0)
+        {
+            /*Codes_SRS_RC_STRING_07_003: [ If `vsnprintf` failed, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+            LogError("vsnprintf failed.");
+        }
+        else
+        {
+            /*Codes_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
+            THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator);
+            if (temp_result == NULL)
+            {
+                /*Codes_SRS_RC_STRING_07_007: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+                LogError("THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING) failed, extra size is %zu, string_length_with_terminator=%zu", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, string_length_with_terminator);
+            }
+            else
+            {
+                RC_STRING_INTERNAL* rc_string_internal = RC_STRING_INTERNAL_FROM_RC_STRING(THANDLE_GET_T(RC_STRING)(temp_result));
+                rc_string_internal->rc_string.string = rc_string_internal->copied_string;
+                rc_string_internal->storage_type = STRING_STORAGE_TYPE_COPIED;
+
+                /*Codes_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
+                int copy_string_length = vsnprintf(rc_string_internal->copied_string, string_length_with_terminator, format, args);
+                if (copy_string_length < 0)
+                {
+                    /*Codes_SRS_RC_STRING_07_003: [ If `vsnprintf` failed, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+                    LogError("vsnprintf failed.");
+                    THANDLE_FREE(RC_STRING)((void *)temp_result);
+                }
+                else
+                {
+                    /*Codes_SRS_RC_STRING_07_006: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
+                    THANDLE_MOVE(RC_STRING)(&result, &temp_result);
+                }
+            }
+        }
+    }
+    return result;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_move_memory, const char*, string)

@@ -23,6 +23,9 @@
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
+//#define vsnprintf mocked_vsnprintf
+//MOCKABLE_FUNCTION(, int, vsnprintf, char* const, _Buffer, size_t const, _BufferCount, char const* const, _Format, va_list, _ArgList);
+
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
@@ -211,6 +214,107 @@ TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_also_fails)
 
             // act
             THANDLE(RC_STRING) rc_string = rc_string_create("gogu");
+
+            ///assert
+            ASSERT_IS_NULL(rc_string, "On failed call %zu", i);
+        }
+    }
+}
+
+/* rc_string_create_with_format */
+
+/* Tests_SRS_RC_STRING_07_001: [If format is NULL, rc_string_create_with_format shall fail and return NULL.]*/
+TEST_FUNCTION(rc_string_create_with_format_format_NULL_fails)
+{
+    // arrange
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_format(NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(rc_string);
+}
+
+/* Tests_SRS_RC_STRING_07_002: [ Otherwise `rc_string_create_with_format` shall determine the total number of characters written using `vsnprintf` with the variable number of arguments. ]*/
+/* Tests_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
+/* Tests_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
+/* Tests_SRS_RC_STRING_07_006: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
+/* Tests_SRS_RC_STRING_07_007: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+TEST_FUNCTION(rc_string_create_with_format_succeeds)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_format("hell%c", 'o');
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(rc_string);
+    ASSERT_ARE_EQUAL(char_ptr, "hello", rc_string->string);
+
+    // cleanup
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
+}
+
+/* Tests_SRS_RC_STRING_07_003: [ If `vsnprintf` failed, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+TEST_FUNCTION(rc_string_create_with_format_with_vsnprintf_fails)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_format("hell%c", 'o');
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(rc_string);
+    ASSERT_ARE_EQUAL(char_ptr, "hello", rc_string->string);
+
+    // cleanup
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
+}
+
+/* Tests_SRS_RC_STRING_07_002: [ Otherwise `rc_string_create_with_format` shall determine the total number of characters written using `vsnprintf` with the variable number of arguments. ]*/
+/* Tests_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
+/* Tests_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
+/* Tests_SRS_RC_STRING_07_006: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
+/* Tests_SRS_RC_STRING_07_007: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+TEST_FUNCTION(rc_string_create_with_format_with_empty_string_succeeds)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_format("");
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(rc_string);
+    ASSERT_ARE_EQUAL(char_ptr, "", rc_string->string);
+
+    // cleanup
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
+}
+
+/* Tests_SRS_RC_STRING_07_007: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_format_also_fails)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+
+    umock_c_negative_tests_snapshot();
+
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            // act
+            THANDLE(RC_STRING) rc_string = rc_string_create_with_format("hell%c", 'o');
 
             ///assert
             ASSERT_IS_NULL(rc_string, "On failed call %zu", i);
