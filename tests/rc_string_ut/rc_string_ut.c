@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 
@@ -13,6 +14,11 @@
 #define ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
+
+#include "umock_c/umock_c_prod.h"
+
+MOCKABLE_FUNCTION(, int, mocked_vsnprintf, char*, s, size_t, n, const char*, format, va_list, args)
+
 #undef ENABLE_MOCKS
 
 #include "c_util/thandle.h"
@@ -30,10 +36,10 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
-MOCK_FUNCTION_WITH_CODE(, int, mocked_vsnprintf, char* const, _Buffer, size_t const, _BufferCount, char const* const, _Format, va_list, _ArgList)
-    int my_result = vsnprintf(_Buffer, _BufferCount, _Format, _ArgList);
-MOCK_FUNCTION_END(my_result);
-
+static int my_vsnprintf(char* s, size_t n, const char* format, va_list args)
+{
+    return vsnprintf(s, n, format, args);
+}
 
 // this function is used for tests just to make sure we do not confuse it with regular malloc
 MOCK_FUNCTION_WITH_CODE(, void*, test_malloc_func, size_t, size_needed)
@@ -58,6 +64,14 @@ TEST_SUITE_INITIALIZE(suite_initialize)
 
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error));
     ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types());
+
+    REGISTER_GLOBAL_MOCK_HOOK(mocked_vsnprintf, my_vsnprintf);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mocked_vsnprintf, -1);
+
+    REGISTER_UMOCK_ALIAS_TYPE(char const* const, const char*);
+    REGISTER_UMOCK_ALIAS_TYPE(char* const, const char*);
+    REGISTER_UMOCK_ALIAS_TYPE(size_t const, size_t);
+    REGISTER_UMOCK_ALIAS_TYPE(va_list, char*);
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
@@ -246,7 +260,9 @@ TEST_FUNCTION(rc_string_create_with_format_format_NULL_fails)
 TEST_FUNCTION(rc_string_create_with_format_succeeds)
 {
     // arrange
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
 
     // act
     THANDLE(RC_STRING) rc_string = rc_string_create_with_format("hell%c", 'o');
@@ -264,7 +280,8 @@ TEST_FUNCTION(rc_string_create_with_format_succeeds)
 TEST_FUNCTION(rc_string_create_with_format_with_vsnprintf_fails)
 {
     // arrange
-    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+        .SetReturn(-1);
 
     // act
     THANDLE(RC_STRING) rc_string = rc_string_create_with_format("hell%c", 'o');
@@ -286,7 +303,9 @@ TEST_FUNCTION(rc_string_create_with_format_with_vsnprintf_fails)
 TEST_FUNCTION(rc_string_create_with_format_with_empty_string_succeeds)
 {
     // arrange
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
 
     // act
     THANDLE(RC_STRING) rc_string = rc_string_create_with_format("");
@@ -304,7 +323,9 @@ TEST_FUNCTION(rc_string_create_with_format_with_empty_string_succeeds)
 TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_format_also_fails)
 {
     // arrange
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
 
     umock_c_negative_tests_snapshot();
 

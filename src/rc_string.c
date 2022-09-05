@@ -160,6 +160,7 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
                 }
             }
         }
+        va_end(args);
     }
     return result;
 }
