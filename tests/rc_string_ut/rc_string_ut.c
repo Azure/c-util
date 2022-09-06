@@ -255,8 +255,7 @@ TEST_FUNCTION(rc_string_create_with_format_format_NULL_fails)
 /* Tests_SRS_RC_STRING_07_002: [ Otherwise `rc_string_create_with_format` shall determine the total number of characters written using `vsnprintf` with the variable number of arguments. ]*/
 /* Tests_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
 /* Tests_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
-/* Tests_SRS_RC_STRING_07_006: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
-/* Tests_SRS_RC_STRING_07_007: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+/* Tests_SRS_RC_STRING_07_007: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
 TEST_FUNCTION(rc_string_create_with_format_succeeds)
 {
     // arrange
@@ -276,15 +275,19 @@ TEST_FUNCTION(rc_string_create_with_format_succeeds)
     THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 }
 
-/* Tests_SRS_RC_STRING_07_003: [ If `vsnprintf` failed, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
-TEST_FUNCTION(rc_string_create_with_format_with_vsnprintf_fails)
+/* Tests_SRS_RC_STRING_07_002: [ Otherwise `rc_string_create_with_format` shall determine the total number of characters written using `vsnprintf` with the variable number of arguments. ]*/
+/* Tests_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
+/* Tests_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
+/* Tests_SRS_RC_STRING_07_007: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
+TEST_FUNCTION(rc_string_create_with_format_succeeds_with_percentage_sign_front)
 {
     // arrange
-    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
-        .SetReturn(-1);
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
 
     // act
-    THANDLE(RC_STRING) rc_string = rc_string_create_with_format("hell%c", 'o');
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_format("%cello", 'h');
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -298,8 +301,46 @@ TEST_FUNCTION(rc_string_create_with_format_with_vsnprintf_fails)
 /* Tests_SRS_RC_STRING_07_002: [ Otherwise `rc_string_create_with_format` shall determine the total number of characters written using `vsnprintf` with the variable number of arguments. ]*/
 /* Tests_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
 /* Tests_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
-/* Tests_SRS_RC_STRING_07_006: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
-/* Tests_SRS_RC_STRING_07_007: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+/* Tests_SRS_RC_STRING_07_007: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
+TEST_FUNCTION(rc_string_create_with_format_succeeds_with_longer_string_input)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_format("The %s of %u and %u is %f", "sum", 3, 7, 10.0);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(rc_string);
+    ASSERT_ARE_EQUAL(char_ptr, "The sum of 3 and 7 is 10.000000", rc_string->string);
+
+    // cleanup
+    THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
+}
+
+/*Tests_SRS_RC_STRING_07_003: [ If `vsnprintf` failed to determine the total number of characters written, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+TEST_FUNCTION(when_vsnprintf_determine_written_characters_length_fail_rc_string_create_with_format_also_fails)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+        .SetReturn(-1);
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_format("hell%c", 'o');
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(rc_string);
+
+}
+
+/* Tests_SRS_RC_STRING_07_002: [ Otherwise `rc_string_create_with_format` shall determine the total number of characters written using `vsnprintf` with the variable number of arguments. ]*/
+/* Tests_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
+/* Tests_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
+/* Tests_SRS_RC_STRING_07_007: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
 TEST_FUNCTION(rc_string_create_with_format_with_empty_string_succeeds)
 {
     // arrange
@@ -319,7 +360,24 @@ TEST_FUNCTION(rc_string_create_with_format_with_empty_string_succeeds)
     THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 }
 
-/* Tests_SRS_RC_STRING_07_007: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+/*Tests_SRS_RC_STRING_07_006: [ If `vsnprintf` failed to get the resulting formatted string, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+TEST_FUNCTION(when_vsnprintf_get_resulting_formatted_string_fail_rc_string_create_with_format_also_fails)
+{
+    //// arrange
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)).SetReturn(-1);
+    STRICT_EXPECTED_CALL(gballoc_hl_free(IGNORED_ARG));
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_format("hell%c", 'o');
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(rc_string);
+}
+
+/* Tests_SRS_RC_STRING_07_008: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
 TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_format_also_fails)
 {
     // arrange

@@ -127,8 +127,8 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
         
         if (string_length_with_terminator <= 0)
         {
-            /*Codes_SRS_RC_STRING_07_003: [ If `vsnprintf` failed, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
-            LogError("vsnprintf failed.");
+            /*Codes_SRS_RC_STRING_07_003: [ If `vsnprintf` failed to determine the total number of characters written, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+            LogError("vsnprintf failed to determine the total number of characters written.");
         }
         else
         {
@@ -136,7 +136,7 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
             THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator);
             if (temp_result == NULL)
             {
-                /*Codes_SRS_RC_STRING_07_007: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+                /*Codes_SRS_RC_STRING_07_008: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
                 LogError("THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING) failed, extra size is %zu, string_length_with_terminator=%zu", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, string_length_with_terminator);
             }
             else
@@ -149,13 +149,13 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
                 int copy_string_length = vsnprintf(rc_string_internal->copied_string, string_length_with_terminator, format, args);
                 if (copy_string_length < 0)
                 {
-                    /*Codes_SRS_RC_STRING_07_003: [ If `vsnprintf` failed, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
-                    LogError("vsnprintf failed.");
+                    /*Codes_SRS_RC_STRING_07_006: [ If `vsnprintf` failed to get the resulting formatted string, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+                    LogError("vsnprintf failed to get the resulting formatted string.");
                     THANDLE_FREE(RC_STRING)((void *)temp_result);
                 }
                 else
                 {
-                    /*Codes_SRS_RC_STRING_07_006: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
+                    /*Codes_SRS_RC_STRING_07_007: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
                     THANDLE_MOVE(RC_STRING)(&result, &temp_result);
                 }
             }
