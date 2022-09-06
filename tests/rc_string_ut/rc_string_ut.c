@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdarg.h>
 
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
@@ -68,10 +69,7 @@ TEST_SUITE_INITIALIZE(suite_initialize)
     REGISTER_GLOBAL_MOCK_HOOK(mocked_vsnprintf, my_vsnprintf);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(mocked_vsnprintf, -1);
 
-    REGISTER_UMOCK_ALIAS_TYPE(char const* const, const char*);
-    REGISTER_UMOCK_ALIAS_TYPE(char* const, const char*);
-    REGISTER_UMOCK_ALIAS_TYPE(size_t const, size_t);
-    REGISTER_UMOCK_ALIAS_TYPE(va_list, char*);
+    REGISTER_UMOCK_ALIAS_TYPE(va_list, void*);
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
