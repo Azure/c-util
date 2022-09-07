@@ -54,13 +54,13 @@ DATA* data = CONTAINING_RECORD(listEntry, DATA, anchor);
 
 ### DList_InitializeListHead
 ```c
-extern void DList_InitializeListHead(PDLIST_ENTRY listHead);
+void DList_InitializeListHead(PDLIST_ENTRY listHead);
 ```
 **SRS_DLIST_06_005: [** DList_InitializeListHead will initialize the Flink & Blink to the address of the DLIST_ENTRY. **]**
 
 ### DList_IsListEmpty
 ```c
-extern int DList_IsListEmpty(const PDLIST_ENTRY listHead);
+int DList_IsListEmpty(const PDLIST_ENTRY listHead);
 ```
 
 **SRS_DLIST_06_003: [** DList_IsListEmpty shall return a non-zero value if there are no DLIST_ENTRY's on this list other than the list head. **]**
@@ -73,14 +73,14 @@ Notes:
 
 ### DList_InsertTailList
 ```c
-extern void DList_InsertTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY listEntry);
+void DList_InsertTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY listEntry);
 ```
 
 **SRS_DLIST_06_006: [** DList_InsertTailList shall place the DLIST_ENTRY at the end of the list defined by the listHead parameter. **]**
 
 ### DList_InsertHeadList
 ```c
-extern void DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY entry);
+void DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY entry);
 ```
 
 **SRS_DLIST_02_002: [** DList_InsertHeadList inserts a singular entry in the list having as head listHead after "head". **]** (see diagram below)
@@ -89,14 +89,14 @@ DList_InsertHeadList shall assume listHead and listEntry non-NULL and pointing t
 
 ### DList_AppendTailList
 ```c
-extern void DList_AppendTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY ListToAppend);
+void DList_AppendTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY ListToAppend);
 ```
 
 **SRS_DLIST_06_007: [** DList_AppendTailList shall place the list defined by listToAppend at the end of the list defined by the listHead parameter. **]**
 
 ### DList_RemoveEntryList
 ```c
-extern int DList_RemoveEntryList(PDLIST_ENTRY listEntry);
+int DList_RemoveEntryList(PDLIST_ENTRY listEntry);
 ```
 
 **SRS_DLIST_06_008: [** DList_RemoveEntryList shall remove a listEntry from whatever list it is properly part of. **]**
@@ -113,7 +113,7 @@ Notes:
 
 ### DList_RemoveHeadList
 ```c
-extern PDLIST_ENTRY DList_RemoveHeadList(PDLIST_ENTRY listHead);
+PDLIST_ENTRY DList_RemoveHeadList(PDLIST_ENTRY listHead);
 ```
 
 **SRS_DLIST_06_012: [** DList_RemoveHeadList removes the oldest entry from the list defined by the listHead parameter and returns a pointer to that entry. **]**
@@ -122,9 +122,9 @@ extern PDLIST_ENTRY DList_RemoveHeadList(PDLIST_ENTRY listHead);
 
 Note: The Flink & Blink of the returned PDLIST_ENTRY shall be undefined.
 
-### DList_RemoveHeadList
+### DList_RemoveTailList
 ```c
-extern PDLIST_ENTRY DList_RemoveTailList(PDLIST_ENTRY listHead);
+PDLIST_ENTRY DList_RemoveTailList(PDLIST_ENTRY listHead);
 ```
 
 **SRS_DLIST_02_003: [** `DList_RemoveTailList` removes the newest entry inserted at the tail of the list defined by the `listHead` parameter and returns a pointer to that entry. **]**
