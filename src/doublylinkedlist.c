@@ -74,6 +74,8 @@ DList_RemoveTailList(
     PDLIST_ENTRY Blink;
     PDLIST_ENTRY Entry;
 
+    /*Codes_SRS_DLIST_02_003: [ DList_RemoveTailList removes the newest entry inserted at the tail of the list defined by the listHead parameter and returns a pointer to that entry. ]*/
+    /*Codes_SRS_DLIST_02_004: [ DList_RemoveTailList shall return listHead if that's the only item in the list. ]*/
     Entry = ListHead->Blink;
     Blink = Entry->Blink;
     ListHead->Blink = Blink;
