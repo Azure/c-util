@@ -122,6 +122,19 @@ extern PDLIST_ENTRY DList_RemoveHeadList(PDLIST_ENTRY listHead);
 
 Note: The Flink & Blink of the returned PDLIST_ENTRY shall be undefined.
 
+### DList_RemoveHeadList
+```c
+extern PDLIST_ENTRY DList_RemoveTailList(PDLIST_ENTRY listHead);
+```
+
+**SRS_DLIST_02_003: [** `DList_RemoveTailList` removes the newest entry inserted at the tail of the list defined by the `listHead` parameter and returns a pointer to that entry. **]**
+
+Note: The pseudocode sequence: `DList_InsertTailList(1), DList_InsertTailList(2), DList_InsertTailList(3)` + `DList_RemoveTailList()` => {1,2}
+
+**SRS_DLIST_02_004: [** `DList_RemoveTailList` shall return `listHead` if that's the only item in the list. **]**
+
+Note: The `Flink` & `Blink` of the returned `PDLIST_ENTRY` shall be undefined.
+
 ### DList_ForEach
 ```c
 MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUNCTION, actionFunction, void*, actionContext);

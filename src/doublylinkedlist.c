@@ -65,6 +65,22 @@ DList_RemoveHeadList(
     return Entry;
 }
 
+PDLIST_ENTRY
+DList_RemoveTailList(
+    PDLIST_ENTRY ListHead
+)
+{
+
+    PDLIST_ENTRY Blink;
+    PDLIST_ENTRY Entry;
+
+    Entry = ListHead->Blink;
+    Blink = Entry->Blink;
+    ListHead->Blink = Blink;
+    Blink->Flink = ListHead;
+    return Entry;
+}
+
 
 
 void
