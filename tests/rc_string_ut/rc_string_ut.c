@@ -4,7 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+<<<<<<< HEAD
 #include <string.h>
+=======
+#include <stdarg.h>
+>>>>>>> d9a2483ae2b1b9043e629706616ebf9e3cb91f39
 
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
@@ -101,10 +105,20 @@ TEST_SUITE_INITIALIZE(suite_initialize)
     REGISTER_GLOBAL_MOCK_HOOK(mocked_vsnprintf, my_vsnprintf);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(mocked_vsnprintf, -100);
 
+<<<<<<< HEAD
     REGISTER_GLOBAL_MOCK_HOOK(mocked_strlen, my_strlen);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(mocked_strlen, 0);
 
     REGISTER_UMOCK_VALUE_TYPE(va_list, umockvalue_stringify_va_list, umockvalue_are_equal_va_list, umockvalue_copy_va_list, umockvalue_free_va_list);
+=======
+#ifdef WIN32
+    // The reason this is with a WIN32 block is because 
+    // in linux the va_list item is not a char*, but a struct
+    // of size 24 bytes.  It is made to be opaque so we are unable
+    // to set up the mock alias for this type.
+    REGISTER_UMOCK_ALIAS_TYPE(va_list, void*);
+#endif
+>>>>>>> d9a2483ae2b1b9043e629706616ebf9e3cb91f39
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
@@ -306,6 +320,7 @@ TEST_FUNCTION(rc_string_create_with_format_format_NULL_fails)
 /* Tests_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
 /* Tests_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
 /* Tests_SRS_RC_STRING_07_007: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
+#ifdef WIN32
 TEST_FUNCTION(rc_string_create_with_format_succeeds)
 {
     // arrange
@@ -502,6 +517,7 @@ TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_format_also_fails
         }
     }
 }
+#endif
 
 /* rc_string_create_with_move_memory */
 
