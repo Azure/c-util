@@ -70,16 +70,15 @@ static THANDLE(RC_STRING) rc_string_create_impl(const char* string)
 
     /* Codes_SRS_RC_STRING_01_002: [ Otherwise, rc_string_create shall determine the length of string. ]*/
     size_t string_length = strlen(string);
-    size_t memory_allocation_max_size = SIZE_MAX - (sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + 1);
-    if (string_length > memory_allocation_max_size)
+    size_t string_length_with_terminator = string_length + 1;
+
+    if (string_length_with_terminator > SIZE_MAX - (sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING)))
     {
         /* Codes_SRS_RC_STRING_07_010: [ If the resulting memory size requested for the `THANDLE(RC_STRING)`and `string` results in an size_t overflow, `rc_string_create` shall failand return `NULL`. ]*/
-        LogError("Requested memory size overflow.");
+        LogError("Size_t overflowed, extra size is %zu, string_length_with_terminator=%zu", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, string_length_with_terminator);
     }
     else
     {
-        size_t string_length_with_terminator = string_length + 1;
-
         /* Codes_SRS_RC_STRING_01_003: [ rc_string_create shall allocate memory for the THANDLE(RC_STRING), ensuring all the bytes in string can be copied (including the zero terminator). ]*/
         THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator);
         if (temp_result == NULL)
@@ -144,21 +143,21 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
         }
         else
         {   
-            size_t memory_size_need = sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator;
+            size_t memory_size_needed = sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator;
             
-            if (memory_size_need > SIZE_MAX) 
+            if (memory_size_needed > SIZE_MAX) 
             {
                 /*Codes_SRS_RC_STRING_07_009: [ If the resulting memory size requested for the `THANDLE(RC_STRING)`and the resulting formatted string results in an size_t overflow in `malloc_flex`, `rc_string_create_with_format` shall failand return `NULL`. ]*/
-                LogError("Requested memory size overflow.");
+                LogError("Size_t overflowed, extra size is %zu, string_length_with_terminator=%d", memory_size_needed, string_length_with_terminator);
             }
             else
             {
                 /*Codes_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
-                THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, memory_size_need);
+                THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, memory_size_needed);
                 if (temp_result == NULL)
                 {
                     /*Codes_SRS_RC_STRING_07_008: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
-                    LogError("THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING) failed, extra size is %zu, string_length_with_terminator=%d", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, string_length_with_terminator);
+                    LogError("THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING) failed, extra size is %zu, string_length_with_terminator=%d", memory_size_needed, string_length_with_terminator);
                 }
                 else
                 {

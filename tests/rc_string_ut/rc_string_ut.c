@@ -307,7 +307,6 @@ TEST_FUNCTION(rc_string_create_with_format_format_NULL_fails)
 /* Tests_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
 /* Tests_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
 /* Tests_SRS_RC_STRING_07_007: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
-#ifdef WIN32
 TEST_FUNCTION(rc_string_create_with_format_succeeds)
 {
     // arrange
@@ -374,7 +373,7 @@ TEST_FUNCTION(rc_string_create_with_format_succeeds_with_longer_string_input)
 }
 
 /*Tests_SRS_RC_STRING_07_003: [ If `vsnprintf` failed to determine the total number of characters written, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
-TEST_FUNCTION(when_vsnprintf_determine_written_characters_length_fail_with_return_value_negative_one_rc_string_create_with_format_also_fails)
+TEST_FUNCTION(when_vsnprintf_determine_written_characters_length_fails_with_return_value_negative_one_rc_string_create_with_format_also_fails)
 {
     // arrange
     STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
@@ -390,7 +389,7 @@ TEST_FUNCTION(when_vsnprintf_determine_written_characters_length_fail_with_retur
 }
 
 /*Tests_SRS_RC_STRING_07_003: [ If `vsnprintf` failed to determine the total number of characters written, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
-TEST_FUNCTION(when_vsnprintf_determine_written_characters_length_fail_with_return_value_negative_two_rc_string_create_with_format_also_fails)
+TEST_FUNCTION(when_vsnprintf_determine_written_characters_length_fails_with_return_value_negative_two_rc_string_create_with_format_also_fails)
 {
     // arrange
     STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
@@ -429,7 +428,7 @@ TEST_FUNCTION(rc_string_create_with_format_with_empty_string_succeeds)
 }
 
 /*Tests_SRS_RC_STRING_07_009: [ If the resulting memory size requested for the `THANDLE(RC_STRING)`and the resulting formatted string results in an size_t overflow in `malloc_flex`, `rc_string_create_with_format` shall failand return `NULL`. ]*/
-TEST_FUNCTION(rc_string_create_with_format_with_overflow_memory_allocation_size_fails)
+TEST_FUNCTION(rc_string_create_with_format_with_overflow_for_memory_allocation_size_fails)
 {
     // arrange
     // sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) == 24
@@ -446,7 +445,7 @@ TEST_FUNCTION(rc_string_create_with_format_with_overflow_memory_allocation_size_
 }
 
 /*Tests_SRS_RC_STRING_07_006: [ If `vsnprintf` failed to construct the resulting formatted string, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
-TEST_FUNCTION(when_vsnprintf_get_resulting_formatted_string_fail_with_return_value_negative_one_rc_string_create_with_format_also_fails)
+TEST_FUNCTION(when_vsnprintf_get_resulting_formatted_string_fails_with_return_value_negative_one_rc_string_create_with_format_also_fails)
 {
     //// arrange
     STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
@@ -463,7 +462,7 @@ TEST_FUNCTION(when_vsnprintf_get_resulting_formatted_string_fail_with_return_val
 }
 
 /*Tests_SRS_RC_STRING_07_006: [ If `vsnprintf` failed to construct the resulting formatted string, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
-TEST_FUNCTION(when_vsnprintf_get_resulting_formatted_string_fail_with_return_value_negative_two_rc_string_create_with_format_also_fails)
+TEST_FUNCTION(when_vsnprintf_get_resulting_formatted_string_fails_with_return_value_negative_two_rc_string_create_with_format_also_fails)
 {
     //// arrange
     STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
@@ -504,7 +503,6 @@ TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_format_also_fails
         }
     }
 }
-#endif
 
 /* rc_string_create_with_move_memory */
 
