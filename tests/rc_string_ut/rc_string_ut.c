@@ -4,10 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <string.h>
 
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
+#include "umock_c/umock_c_prod.h"
 #include "umock_c/umock_c_negative_tests.h"
 #include "umock_c/umocktypes_charptr.h"
 
@@ -15,9 +17,8 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
-#include "umock_c/umock_c_prod.h"
-
 MOCKABLE_FUNCTION(, int, mocked_vsnprintf, char*, s, size_t, n, const char*, format, va_list, args)
+MOCKABLE_FUNCTION(, size_t, mocked_strlen, const char*, s)
 
 #undef ENABLE_MOCKS
 
@@ -39,6 +40,38 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 static int my_vsnprintf(char* s, size_t n, const char* format, va_list args)
 {
     return vsnprintf(s, n, format, args);
+}
+
+static size_t my_strlen(const char* s) 
+{
+    return strlen(s);
+}
+
+static unsigned char va_list_to_string[] = "some va_list stringification";
+static char* umockvalue_stringify_va_list(const void* value)
+{
+    (void)value;
+    char* result = malloc(sizeof(va_list_to_string));
+    ASSERT_IS_NOT_NULL(result);
+    memcpy(result, va_list_to_string, sizeof(va_list_to_string));
+    return result;
+}
+
+static int umockvalue_are_equal_va_list(const void* left, const void* right)
+{
+    (void)memcmp(left, right, sizeof(va_list));
+    return 0;
+}
+
+static int umockvalue_copy_va_list(void* destination, const void* source)
+{
+    (void)memcpy(destination, source, sizeof(va_list));
+    return 0;
+}
+
+static void umockvalue_free_va_list(void* value)
+{
+    (void)value;
 }
 
 // this function is used for tests just to make sure we do not confuse it with regular malloc
@@ -66,12 +99,12 @@ TEST_SUITE_INITIALIZE(suite_initialize)
     ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types());
 
     REGISTER_GLOBAL_MOCK_HOOK(mocked_vsnprintf, my_vsnprintf);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mocked_vsnprintf, -1);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mocked_vsnprintf, -100);
 
-    REGISTER_UMOCK_ALIAS_TYPE(char const* const, const char*);
-    REGISTER_UMOCK_ALIAS_TYPE(char* const, const char*);
-    REGISTER_UMOCK_ALIAS_TYPE(size_t const, size_t);
-    REGISTER_UMOCK_ALIAS_TYPE(va_list, char*);
+    REGISTER_GLOBAL_MOCK_HOOK(mocked_strlen, my_strlen);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mocked_strlen, 0);
+
+    REGISTER_UMOCK_VALUE_TYPE(va_list, umockvalue_stringify_va_list, umockvalue_are_equal_va_list, umockvalue_copy_va_list, umockvalue_free_va_list);
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
@@ -171,6 +204,21 @@ TEST_FUNCTION(rc_string_create_with_NULL_fails)
     ASSERT_IS_NULL(rc_string);
 }
 
+/* Tests_SRS_RC_STRING_07_010: [ If the resulting memory size requested for the `THANDLE(RC_STRING)`and `string` results in an size_t overflow, `rc_string_create` shall failand return `NULL`. ]*/
+TEST_FUNCTION(rc_string_create_with_overflow_memory_allocation_size_fails)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(mocked_strlen(IGNORED_ARG))
+        .SetReturn(SIZE_MAX - 24);
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create("grogu");
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(rc_string);
+}
+
 /* Tests_SRS_RC_STRING_01_002: [ Otherwise, rc_string_create shall determine the length of string. ]*/
 /* Tests_SRS_RC_STRING_01_003: [ rc_string_create shall allocate memory for the THANDLE(RC_STRING), ensuring all the bytes in string can be copied (including the zero terminator). ]*/
 /* Tests_SRS_RC_STRING_01_004: [ rc_string_create shall copy the string memory (including the NULL terminator). ]*/
@@ -178,6 +226,7 @@ TEST_FUNCTION(rc_string_create_with_NULL_fails)
 TEST_FUNCTION(rc_string_create_succeeds)
 {
     // arrange
+    STRICT_EXPECTED_CALL(mocked_strlen(IGNORED_ARG));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     // act
@@ -199,6 +248,7 @@ TEST_FUNCTION(rc_string_create_succeeds)
 TEST_FUNCTION(rc_string_create_with_empty_string_succeeds)
 {
     // arrange
+    STRICT_EXPECTED_CALL(mocked_strlen(""));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     // act
@@ -322,11 +372,27 @@ TEST_FUNCTION(rc_string_create_with_format_succeeds_with_longer_string_input)
 }
 
 /*Tests_SRS_RC_STRING_07_003: [ If `vsnprintf` failed to determine the total number of characters written, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
-TEST_FUNCTION(when_vsnprintf_determine_written_characters_length_fail_rc_string_create_with_format_also_fails)
+TEST_FUNCTION(when_vsnprintf_determine_written_characters_length_fail_with_return_value_negative_one_rc_string_create_with_format_also_fails)
 {
     // arrange
     STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .SetReturn(-1);
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_format("hell%c", 'o');
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(rc_string);
+
+}
+
+/*Tests_SRS_RC_STRING_07_003: [ If `vsnprintf` failed to determine the total number of characters written, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+TEST_FUNCTION(when_vsnprintf_determine_written_characters_length_fail_with_return_value_negative_two_rc_string_create_with_format_also_fails)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+        .SetReturn(-2);
 
     // act
     THANDLE(RC_STRING) rc_string = rc_string_create_with_format("hell%c", 'o');
@@ -360,13 +426,47 @@ TEST_FUNCTION(rc_string_create_with_format_with_empty_string_succeeds)
     THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 }
 
-/*Tests_SRS_RC_STRING_07_006: [ If `vsnprintf` failed to get the resulting formatted string, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
-TEST_FUNCTION(when_vsnprintf_get_resulting_formatted_string_fail_rc_string_create_with_format_also_fails)
+/*Tests_SRS_RC_STRING_07_009: [ If the resulting memory size requested for the `THANDLE(RC_STRING)`and the resulting formatted string results in an size_t overflow in `malloc_flex`, `rc_string_create_with_format` shall failand return `NULL`. ]*/
+TEST_FUNCTION(rc_string_create_with_format_with_overflow_memory_allocation_size_fails)
+{
+    // arrange
+    // sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) == 24
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+        .SetReturn(SIZE_MAX - 24);
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_format("hell%c", 'o');
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(rc_string);
+
+}
+
+/*Tests_SRS_RC_STRING_07_006: [ If `vsnprintf` failed to construct the resulting formatted string, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+TEST_FUNCTION(when_vsnprintf_get_resulting_formatted_string_fail_with_return_value_negative_one_rc_string_create_with_format_also_fails)
 {
     //// arrange
     STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
     STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)).SetReturn(-1);
+    STRICT_EXPECTED_CALL(gballoc_hl_free(IGNORED_ARG));
+
+    // act
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_format("hell%c", 'o');
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NULL(rc_string);
+}
+
+/*Tests_SRS_RC_STRING_07_006: [ If `vsnprintf` failed to construct the resulting formatted string, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+TEST_FUNCTION(when_vsnprintf_get_resulting_formatted_string_fail_with_return_value_negative_two_rc_string_create_with_format_also_fails)
+{
+    //// arrange
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)).SetReturn(-2);
     STRICT_EXPECTED_CALL(gballoc_hl_free(IGNORED_ARG));
 
     // act
@@ -740,12 +840,16 @@ TEST_FUNCTION(rc_string_recreate_succeeds_1)
 {
     ///arrange
     const char source[] = "bla";
+
+    STRICT_EXPECTED_CALL(mocked_strlen(source));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+
     THANDLE(RC_STRING) rc_string = rc_string_create(source);
     ASSERT_IS_NOT_NULL(rc_string);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(char_ptr, source, rc_string->string);
 
+    STRICT_EXPECTED_CALL(mocked_strlen(source));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     ///act
@@ -766,12 +870,16 @@ TEST_FUNCTION(rc_string_recreate_fails_when_malloc_fails)
 {
     ///arrange
     const char source[] = "bla";
+
+    STRICT_EXPECTED_CALL(mocked_strlen(source));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+
     THANDLE(RC_STRING) rc_string = rc_string_create(source);
     ASSERT_IS_NOT_NULL(rc_string);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(char_ptr, source, rc_string->string);
 
+    STRICT_EXPECTED_CALL(mocked_strlen(source));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)))
         .SetReturn(NULL);
 
@@ -793,7 +901,10 @@ TEST_FUNCTION(rc_string_recreate_succeeds_2)
 {
     ///arrange
     const char source[] = "bla2";
+    
+    STRICT_EXPECTED_CALL(mocked_strlen(source));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
+
     THANDLE(RC_STRING) rc_string = rc_string_create(source);
     ASSERT_IS_NOT_NULL(rc_string);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -802,6 +913,7 @@ TEST_FUNCTION(rc_string_recreate_succeeds_2)
     THANDLE(RC_STRING) rc_string_2 = NULL;
     THANDLE_INITIALIZE(RC_STRING)(&rc_string_2, rc_string);
 
+    STRICT_EXPECTED_CALL(mocked_strlen(source));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 
     ///act
