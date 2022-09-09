@@ -32,6 +32,7 @@ MOCKABLE_FUNCTION(, void, DList_InsertHeadList, PDLIST_ENTRY, listHead, PDLIST_E
 MOCKABLE_FUNCTION(, void, DList_AppendTailList, PDLIST_ENTRY, listHead, PDLIST_ENTRY, ListToAppend);
 MOCKABLE_FUNCTION(, int, DList_RemoveEntryList, PDLIST_ENTRY, listEntry);
 MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveHeadList, PDLIST_ENTRY, listHead);
+MOCKABLE_FUNCTION(, PDLIST_ENTRY, DList_RemoveTailList, PDLIST_ENTRY, listHead);
 MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUNCTION, actionFunction, void*, actionContext);
 
 #ifdef __cplusplus

@@ -405,6 +405,110 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
         ASSERT_ARE_EQUAL(void_ptr, &(simp1.link), returnedEntry);
     }
 
+    /*Tests_SRS_DLIST_02_003: [ DList_RemoveTailList removes the newest entry inserted at the tail of the list defined by the listHead parameter and returns a pointer to that entry. ]*/
+    /*Tests_SRS_DLIST_02_004: [ DList_RemoveTailList shall return listHead if that's the only item in the list. ]*/
+    TEST_FUNCTION(DList_RemoveTailList_with_empty_list_returns_the_list)
+    {
+        // arrange
+        DLIST_ENTRY theList;
+        PDLIST_ENTRY returnedEntry;
+
+        DList_InitializeListHead(&theList);
+        
+        // act
+        returnedEntry = DList_RemoveTailList(&theList);
+
+        // assert
+        ASSERT_ARE_EQUAL(void_ptr, &theList, returnedEntry);
+
+        /*is empty?*/
+        ASSERT_IS_TRUE(DList_IsListEmpty(&theList));
+
+        /*are links still properly set up?*/
+        ASSERT_ARE_EQUAL(void_ptr, theList.Flink, &theList);
+        ASSERT_ARE_EQUAL(void_ptr, theList.Blink, &theList);
+    }
+
+    /*Tests_SRS_DLIST_02_003: [ DList_RemoveTailList removes the newest entry inserted at the tail of the list defined by the listHead parameter and returns a pointer to that entry. ]*/
+    TEST_FUNCTION(DList_RemoveTailList_with_1_entry_returns_theList)
+    {
+        // arrange
+        DLIST_ENTRY theList;
+        PDLIST_ENTRY returnedEntry;
+
+        DList_InitializeListHead(&theList);
+        DList_InsertTailList(&theList, &simp1.link);
+
+        // act
+        returnedEntry = DList_RemoveTailList(&theList);
+
+        // assert
+        ASSERT_ARE_EQUAL(void_ptr, &simp1.link, returnedEntry);
+
+        /*is empty?*/
+        ASSERT_IS_TRUE(DList_IsListEmpty(&theList));
+
+        /*are links still properly set up?*/
+        ASSERT_ARE_EQUAL(void_ptr, theList.Flink, &theList);
+        ASSERT_ARE_EQUAL(void_ptr, theList.Blink, &theList);
+    }
+
+    /*Tests_SRS_DLIST_02_003: [ DList_RemoveTailList removes the newest entry inserted at the tail of the list defined by the listHead parameter and returns a pointer to that entry. ]*/
+    TEST_FUNCTION(DList_RemoveTailList_with_2_entries_returns_the_removed_entry)
+    {
+        // arrange
+        DLIST_ENTRY theList;
+        PDLIST_ENTRY returnedEntry;
+
+        DList_InitializeListHead(&theList);
+        DList_InsertTailList(&theList, &simp1.link);
+        DList_InsertTailList(&theList, &simp2.link);
+
+        // act
+        returnedEntry = DList_RemoveTailList(&theList);
+
+        // assert
+        ASSERT_ARE_EQUAL(void_ptr, &simp2.link, returnedEntry);
+
+        /*is empty?*/
+        ASSERT_IS_FALSE(DList_IsListEmpty(&theList));
+        
+        /*are links still properly set up?*/
+        ASSERT_ARE_EQUAL(void_ptr, theList.Flink, &simp1.link);
+        ASSERT_ARE_EQUAL(void_ptr, theList.Blink, &simp1.link);
+        ASSERT_ARE_EQUAL(void_ptr, simp1.link.Flink, &theList);
+        ASSERT_ARE_EQUAL(void_ptr, simp1.link.Blink, &theList);
+    }
+
+    /*Tests_SRS_DLIST_02_003: [ DList_RemoveTailList removes the newest entry inserted at the tail of the list defined by the listHead parameter and returns a pointer to that entry. ]*/
+    TEST_FUNCTION(DList_RemoveTailList_with_3_entries_returns_the_removed_entry)
+    {
+        // arrange
+        DLIST_ENTRY theList;
+        PDLIST_ENTRY returnedEntry;
+
+        DList_InitializeListHead(&theList);
+        DList_InsertTailList(&theList, &simp1.link);
+        DList_InsertTailList(&theList, &simp2.link);
+        DList_InsertTailList(&theList, &simp3.link);
+
+        // act
+        returnedEntry = DList_RemoveTailList(&theList);
+
+        // assert
+        ASSERT_ARE_EQUAL(void_ptr, &simp3.link, returnedEntry);
+
+        ASSERT_IS_FALSE(DList_IsListEmpty(&theList));
+
+        ASSERT_ARE_EQUAL(void_ptr, theList.Flink, &simp1.link);
+        ASSERT_ARE_EQUAL(void_ptr, theList.Blink, &simp2.link);
+        ASSERT_ARE_EQUAL(void_ptr, simp1.link.Flink, &simp2.link);
+        ASSERT_ARE_EQUAL(void_ptr, simp1.link.Blink, &theList);
+        ASSERT_ARE_EQUAL(void_ptr, simp2.link.Flink, &theList);
+        ASSERT_ARE_EQUAL(void_ptr, simp2.link.Blink, &simp1.link);
+    }
+
+
     /* Tests_SRS_DLIST_06_012: [DList_RemoveHeadList removes the oldest entry from the list defined by the listHead parameter and returns a pointer to that entry.] */
     TEST_FUNCTION(DList_RemoveHeadList_with_two_entries_returns_first_entry)
     {
