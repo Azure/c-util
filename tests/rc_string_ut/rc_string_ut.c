@@ -431,9 +431,8 @@ TEST_FUNCTION(rc_string_create_with_format_with_empty_string_succeeds)
 TEST_FUNCTION(rc_string_create_with_format_with_overflow_for_memory_allocation_size_fails)
 {
     // arrange
-    // sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) == 24
     STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
-        .SetReturn(SIZE_MAX - 24);
+        .SetReturn(INT_MAX);
 
     // act
     THANDLE(RC_STRING) rc_string = rc_string_create_with_format("hell%c", 'o');

@@ -134,7 +134,8 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
         /*Codes_SRS_RC_STRING_07_002: [ Otherwise, `rc_string_create_with_format` shall determine the total number of characters written using the variable number of arguments. ]*/
         va_list args;
         va_start(args, format);
-        int string_length_with_terminator = vsnprintf(NULL, 0, format, args) + 1;
+        int string_length = vsnprintf(NULL, 0, format, args);
+        int string_length_with_terminator = string_length + 1;
         
         if (string_length_with_terminator <= 0)
         {
@@ -143,21 +144,19 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
         }
         else
         {   
-            size_t memory_size_needed = sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator;
-            
-            if (memory_size_needed > SIZE_MAX) 
+            if (string_length == INT_MAX)
             {
                 /*Codes_SRS_RC_STRING_07_009: [ If the resulting memory size requested for the `THANDLE(RC_STRING)`and the resulting formatted string results in an size_t overflow in `malloc_flex`, `rc_string_create_with_format` shall failand return `NULL`. ]*/
-                LogError("Size_t overflowed, extra size is %zu, string_length_with_terminator=%d", memory_size_needed, string_length_with_terminator);
+                LogError("Size_t overflowed, extra size is %zu, string_length_with_terminator=%d", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, string_length_with_terminator);
             }
             else
             {
                 /*Codes_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
-                THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, memory_size_needed);
+                THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator);
                 if (temp_result == NULL)
                 {
                     /*Codes_SRS_RC_STRING_07_008: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
-                    LogError("THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING) failed, extra size is %zu, string_length_with_terminator=%d", memory_size_needed, string_length_with_terminator);
+                    LogError("THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING) failed, extra size is %zu, string_length_with_terminator=%d", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, string_length_with_terminator);
                 }
                 else
                 {
