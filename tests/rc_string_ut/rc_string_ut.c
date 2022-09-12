@@ -362,12 +362,12 @@ TEST_FUNCTION(rc_string_create_with_format_succeeds_with_longer_string_input)
     STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
 
     // act
-    THANDLE(RC_STRING) rc_string = rc_string_create_with_format("The %s of %u and %u is %f", "sum", 3, 7, 10.0);
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_format("The %s of %d and %d is %d", "sum", 3, 7, 10);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NOT_NULL(rc_string);
-    ASSERT_ARE_EQUAL(char_ptr, "The sum of 3 and 7 is 10.000000", rc_string->string);
+    ASSERT_ARE_EQUAL(char_ptr, "The sum of 3 and 7 is 10", rc_string->string);
 
     // cleanup
     THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);

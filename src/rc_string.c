@@ -145,7 +145,7 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
         }
         else
         {   
-            if (string_length == INT_MAX)
+            if (string_length_with_terminator > SIZE_MAX - (sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING)))
             {
                 /*Codes_SRS_RC_STRING_07_009: [ If the resulting memory size requested for the `THANDLE(RC_STRING)`and the resulting formatted string results in an size_t overflow in `malloc_flex`, `rc_string_create_with_format` shall failand return `NULL`. ]*/
                 LogError("Size_t overflowed, extra size is %zu, string_length_with_terminator=%d", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, string_length_with_terminator);
