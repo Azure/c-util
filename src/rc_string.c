@@ -134,26 +134,30 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
     {
         /*Codes_SRS_RC_STRING_07_002: [ Otherwise, `rc_string_create_with_format` shall determine the total number of characters written using the variable number of arguments. ]*/
         va_list args;
+        va_list args_copy;
         va_start(args, format);
+        va_copy(args_copy, args);
+
         int string_length = vsnprintf(NULL, 0, format, args);
+        va_end(args);
         int string_length_with_terminator = string_length + 1;
         
-        if (string_length_with_terminator <= 0)
+        if (string_length < 0)
         {
             /*Codes_SRS_RC_STRING_07_003: [ If `vsnprintf` failed to determine the total number of characters written, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
             LogError("vsnprintf failed to determine the total number of characters written.");
         }
         else
         {   
-            if (string_length_with_terminator > SIZE_MAX - (sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING)))
+            if (string_length == INT_MAX)
             {
                 /*Codes_SRS_RC_STRING_07_009: [ If the resulting memory size requested for the `THANDLE(RC_STRING)`and the resulting formatted string results in an size_t overflow in `malloc_flex`, `rc_string_create_with_format` shall failand return `NULL`. ]*/
-                LogError("Size_t overflowed, extra size is %zu, string_length_with_terminator=%d", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, string_length_with_terminator);
+                LogError("int overflowed, extra size is %zu, string_length_with_terminator=%zu", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + (size_t)string_length + 1, (size_t)string_length + 1);
             }
             else
             {
                 /*Codes_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
-                THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator);
+                THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + (size_t)string_length_with_terminator);
                 if (temp_result == NULL)
                 {
                     /*Codes_SRS_RC_STRING_07_008: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
@@ -166,7 +170,8 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
                     rc_string_internal->storage_type = STRING_STORAGE_TYPE_COPIED;
 
                     /*Codes_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
-                    int copy_string_length = vsnprintf(rc_string_internal->copied_string, string_length_with_terminator, format, args);
+                    int copy_string_length = vsnprintf(rc_string_internal->copied_string, string_length_with_terminator, format, args_copy);
+                    va_end(args_copy);
                     if (copy_string_length < 0)
                     {
                         /*Codes_SRS_RC_STRING_07_006: [ If `vsnprintf` failed to construct the resulting formatted string, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
@@ -181,7 +186,6 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
                 }
             }
         }
-        va_end(args);
     }
     return result;
 }
