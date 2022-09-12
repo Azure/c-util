@@ -177,20 +177,23 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     }
 
     /* Tests_SRS_DLIST_06_007: [DList_AppendTailList shall place the list defined by ListToAppend at the end of the list defined by the listHead parameter.] */
-    TEST_FUNCTION(DList_AppendTailList_adds_listToAppend_after_listHead)
+    TEST_FUNCTION(DList_AppendTailList_adds_listToBeAppended_after_listHead)
     {
         // arrange
         DLIST_ENTRY listHead;
         PDLIST_ENTRY currentEntry;
 
         DList_InitializeListHead(&listHead);
-        DList_InsertTailList(&listHead, &(simp1.link));
+        DList_InsertTailList(&listHead, &simp1.link);
+        DList_InsertTailList(&listHead, &simp2.link);
 
-        DList_InitializeListHead(&simp2.link);
-        DList_InsertTailList(&simp2.link, &simp4.link);
-        DList_InsertTailList(&simp2.link, &simp5.link);
+        DLIST_ENTRY listToBeAppendedHead;
+        DList_InitializeListHead(&listToBeAppendedHead);
+        DList_InsertTailList(&listToBeAppendedHead, &simp3.link);
+        DList_InsertTailList(&listToBeAppendedHead, &simp4.link);
+        DList_InsertTailList(&listToBeAppendedHead, &simp5.link);
         // act
-        DList_AppendTailList(&listHead, &simp2.link);
+        DList_AppendTailList(&listHead, &listToBeAppendedHead);
 
         // assert
         // Go forwards
@@ -201,6 +204,9 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
         currentEntry = currentEntry->Flink;
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp2.link);
         ASSERT_ARE_EQUAL(short, (short)2, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
+        currentEntry = currentEntry->Flink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp3.link);
+        ASSERT_ARE_EQUAL(short, (short)3, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
         currentEntry = currentEntry->Flink;
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp4.link);
         ASSERT_ARE_EQUAL(short, (short)4, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
@@ -221,6 +227,9 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp4.link);
         ASSERT_ARE_EQUAL(short, (short)4, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
         currentEntry = currentEntry->Blink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp3.link);
+        ASSERT_ARE_EQUAL(short, (short)3, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
+        currentEntry = currentEntry->Blink;
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp2.link);
         ASSERT_ARE_EQUAL(short, (short)2, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
         currentEntry = currentEntry->Blink;
@@ -228,7 +237,155 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
         ASSERT_ARE_EQUAL(short, (short)1, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
         currentEntry = currentEntry->Blink;
         ASSERT_ARE_EQUAL(void_ptr, currentEntry, &listHead);
+
+        ASSERT_ARE_NOT_EQUAL(int, 0, DList_IsListEmpty(&listToBeAppendedHead));
     }
+
+    /* Tests_SRS_DLIST_06_007: [DList_AppendTailList shall place the list defined by ListToAppend at the end of the list defined by the listHead parameter.] */
+    TEST_FUNCTION(DList_AppendTailList_with_one_entry_in_both_list)
+    {
+        // arrange
+        DLIST_ENTRY listHead;
+        PDLIST_ENTRY currentEntry;
+
+        DList_InitializeListHead(&listHead);
+        DList_InsertTailList(&listHead, &simp1.link);
+
+        DLIST_ENTRY listToBeAppendedHead;
+        DList_InitializeListHead(&listToBeAppendedHead);
+        DList_InsertTailList(&listToBeAppendedHead, &simp2.link);
+
+        // act
+        DList_AppendTailList(&listHead, &listToBeAppendedHead);
+
+        // assert
+        // Go forwards
+        ASSERT_ARE_EQUAL(int, 0, DList_IsListEmpty(&listHead));
+        currentEntry = listHead.Flink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp1.link);
+        ASSERT_ARE_EQUAL(short, (short)1, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
+        currentEntry = currentEntry->Flink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp2.link);
+        ASSERT_ARE_EQUAL(short, (short)2, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
+        currentEntry = currentEntry->Flink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &listHead);
+
+        // Now back
+        currentEntry = listHead.Blink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp2.link);
+        ASSERT_ARE_EQUAL(short, (short)2, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
+        currentEntry = currentEntry->Blink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp1.link);
+        ASSERT_ARE_EQUAL(short, (short)1, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
+        currentEntry = currentEntry->Blink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &listHead);
+
+        ASSERT_ARE_NOT_EQUAL(int, 0, DList_IsListEmpty(&listToBeAppendedHead));
+    }
+
+    /* Tests_SRS_DLIST_06_007: [DList_AppendTailList shall place the list defined by ListToAppend at the end of the list defined by the listHead parameter.] */
+    TEST_FUNCTION(DList_AppendTailList_with_empty_listToBeAppendedHead)
+    {
+        // arrange
+        DLIST_ENTRY listHead;
+        PDLIST_ENTRY currentEntry;
+
+        DList_InitializeListHead(&listHead);
+        DList_InsertTailList(&listHead, &simp1.link);
+        DList_InsertTailList(&listHead, &simp2.link);
+
+        DLIST_ENTRY listToBeAppendedHead;
+        DList_InitializeListHead(&listToBeAppendedHead);
+
+        // act
+        DList_AppendTailList(&listHead, &listToBeAppendedHead);
+
+        // assert
+        // Go forwards
+        ASSERT_ARE_EQUAL(int, 0, DList_IsListEmpty(&listHead));
+        currentEntry = listHead.Flink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp1.link);
+        ASSERT_ARE_EQUAL(short, (short)1, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
+        currentEntry = currentEntry->Flink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp2.link);
+        ASSERT_ARE_EQUAL(short, (short)2, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
+        currentEntry = currentEntry->Flink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &listHead);
+
+        // Now back
+        currentEntry = listHead.Blink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp2.link);
+        ASSERT_ARE_EQUAL(short, (short)2, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
+        currentEntry = currentEntry->Blink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp1.link);
+        ASSERT_ARE_EQUAL(short, (short)1, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
+        currentEntry = currentEntry->Blink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &listHead);
+
+        ASSERT_ARE_NOT_EQUAL(int, 0, DList_IsListEmpty(&listToBeAppendedHead));
+    }
+
+    /* Tests_SRS_DLIST_06_007: [DList_AppendTailList shall place the list defined by ListToAppend at the end of the list defined by the listHead parameter.] */
+    TEST_FUNCTION(DList_AppendTailList_with_empty_listHead)
+    {
+        // arrange
+        DLIST_ENTRY listHead;
+        PDLIST_ENTRY currentEntry;
+
+        DList_InitializeListHead(&listHead);
+
+        DLIST_ENTRY listToBeAppendedHead;
+        DList_InitializeListHead(&listToBeAppendedHead);
+        DList_InsertTailList(&listToBeAppendedHead, &simp1.link);
+        DList_InsertTailList(&listToBeAppendedHead, &simp2.link);
+
+        // act
+        DList_AppendTailList(&listHead, &listToBeAppendedHead);
+
+        // assert
+        // Go forwards
+        ASSERT_ARE_EQUAL(int, 0, DList_IsListEmpty(&listHead));
+        currentEntry = listHead.Flink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp1.link);
+        ASSERT_ARE_EQUAL(short, (short)1, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
+        currentEntry = currentEntry->Flink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp2.link);
+        ASSERT_ARE_EQUAL(short, (short)2, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
+        currentEntry = currentEntry->Flink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &listHead);
+
+        // Now back
+        currentEntry = listHead.Blink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp2.link);
+        ASSERT_ARE_EQUAL(short, (short)2, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
+        currentEntry = currentEntry->Blink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &simp1.link);
+        ASSERT_ARE_EQUAL(short, (short)1, CONTAINING_RECORD(currentEntry, simpleItem, link)->index);
+        currentEntry = currentEntry->Blink;
+        ASSERT_ARE_EQUAL(void_ptr, currentEntry, &listHead);
+
+        ASSERT_ARE_NOT_EQUAL(int, 0, DList_IsListEmpty(&listToBeAppendedHead));
+    }
+
+    /* Tests_SRS_DLIST_06_007: [DList_AppendTailList shall place the list defined by ListToAppend at the end of the list defined by the listHead parameter.] */
+    TEST_FUNCTION(DList_AppendTailList_with_both_list_empty)
+    {
+        // arrange
+        DLIST_ENTRY listHead;
+        DList_InitializeListHead(&listHead);
+
+        DLIST_ENTRY listToBeAppendedHead;
+        DList_InitializeListHead(&listToBeAppendedHead);
+
+
+        // act
+        DList_AppendTailList(&listHead, &listToBeAppendedHead);
+
+        // assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, DList_IsListEmpty(&listHead));
+        ASSERT_ARE_NOT_EQUAL(int, 0, DList_IsListEmpty(&listToBeAppendedHead));
+    }
+
 
     /* Tests_SRS_DLIST_06_010: [DList_RemoveEntryList shall return non-zero if the remaining list is empty.] */
     TEST_FUNCTION(DList_RemoveEntryList_with_head_only_in_list_shall_return_non_zero)

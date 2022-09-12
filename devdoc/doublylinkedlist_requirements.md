@@ -89,10 +89,10 @@ DList_InsertHeadList shall assume listHead and listEntry non-NULL and pointing t
 
 ### DList_AppendTailList
 ```c
-void DList_AppendTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY ListToAppend);
+void DList_AppendTailList(PDLIST_ENTRY listHead, PDLIST_ENTRY listToBeAppendedHead);
 ```
 
-**SRS_DLIST_06_007: [** DList_AppendTailList shall place the list defined by listToAppend at the end of the list defined by the listHead parameter. **]**
+**SRS_DLIST_06_007: [** DList_AppendTailList shall place the list defined by `listToBeAppendedHead` at the end of the list defined by the `listHead` parameter. **]**
 
 ### DList_RemoveEntryList
 ```c

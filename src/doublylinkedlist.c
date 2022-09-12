@@ -106,19 +106,24 @@ DList_InsertTailList(
 void
 DList_AppendTailList(
     PDLIST_ENTRY ListHead,
-    PDLIST_ENTRY ListToAppend
+    PDLIST_ENTRY ListToBeAppendedHead
 )
 {
-    /* Codes_SRS_DLIST_06_007: [DList_AppendTailList shall place the list defined by listToAppend at the end of the list defined by the listHead parameter.] */
-    PDLIST_ENTRY ListEnd = ListHead->Blink;
+    if (!DList_IsListEmpty(ListToBeAppendedHead))
+    {
+        /* Codes_SRS_DLIST_06_007: [DList_AppendTailList shall place the list defined by listToBeAppendedHead at the end of the list defined by the listHead parameter.] */
+        PDLIST_ENTRY ListEnd = ListHead->Blink;
 
-    ListHead->Blink->Flink = ListToAppend;
-    ListHead->Blink = ListToAppend->Blink;
-    ListToAppend->Blink->Flink = ListHead;
-    ListToAppend->Blink = ListEnd;
+        ListHead->Blink->Flink = ListToBeAppendedHead->Flink;
+        ListHead->Blink = ListToBeAppendedHead->Blink;
+        ListToBeAppendedHead->Blink->Flink = ListHead;
+        ListToBeAppendedHead->Flink->Blink = ListEnd;
+
+        DList_InitializeListHead(ListToBeAppendedHead);
+    }
+
     return;
 }
-
 
 /*Codes_SRS_DLIST_02_002: [DList_InsertHeadList inserts a singular entry in the list having as head listHead after "head".]*/
 void DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY entry)
