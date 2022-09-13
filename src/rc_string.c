@@ -160,7 +160,7 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
                 if (temp_result == NULL)
                 {
                     /*Codes_SRS_RC_STRING_07_008: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
-                    LogError("THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING) failed, extra size is %zu, string_length_with_terminator=%d", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, string_length_with_terminator);
+                    LogError("THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING) failed, extra size is %zu, string_length_with_terminator=%d", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + (size_t)string_length_with_terminator, string_length_with_terminator);
                 }
                 else
                 {
