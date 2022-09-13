@@ -139,7 +139,6 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
         va_copy(args_copy, args);
 
         int string_length = vsnprintf(NULL, 0, format, args);
-        va_end(args);
         int string_length_with_terminator = string_length + 1;
         
         if (string_length < 0)
@@ -171,7 +170,6 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
 
                     /*Codes_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
                     int copy_string_length = vsnprintf(rc_string_internal->copied_string, string_length_with_terminator, format, args_copy);
-                    va_end(args_copy);
                     if (copy_string_length < 0)
                     {
                         /*Codes_SRS_RC_STRING_07_006: [ If `vsnprintf` failed to construct the resulting formatted string, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
@@ -186,6 +184,8 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...)
                 }
             }
         }
+        va_end(args);
+        va_end(args_copy);
     }
     return result;
 }
