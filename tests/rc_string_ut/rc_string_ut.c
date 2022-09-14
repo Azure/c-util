@@ -494,7 +494,7 @@ TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_format_also_fails
 
     umock_c_negative_tests_snapshot();
 
-    for (size_t i = 2; i < umock_c_negative_tests_call_count(); i++)
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
     {
         if (umock_c_negative_tests_can_call_fail(i))
         {
