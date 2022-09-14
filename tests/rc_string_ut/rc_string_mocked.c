@@ -4,10 +4,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#define vsnprintf mocked_vsnprintf
+#define vsnprintf proxy_mocked_vsnprintf
 #define strlen mocked_strlen
 
-int mocked_vsnprintf(char * restrict s, size_t n, const char * restrict format, va_list arg);
+int proxy_mocked_vsnprintf(char * restrict s, size_t n, const char * restrict format, va_list arg);
 size_t mocked_strlen(const char* s);
 
 #include "../../src/rc_string.c"

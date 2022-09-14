@@ -19,8 +19,14 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
-MOCKABLE_FUNCTION(, int, mocked_vsnprintf, char*, s, size_t, n, const char*, format, va_list, args)
+MOCKABLE_FUNCTION(, int, mocked_vsnprintf, void*, s, size_t, n, const char*, format, va_list, args)
 MOCKABLE_FUNCTION(, size_t, mocked_strlen, const char*, s)
+
+// this is only here because umock is attempting to copy the argument s as a char*
+int proxy_mocked_vsnprintf(char* s, size_t n, const char* format, va_list args)
+{
+    return mocked_vsnprintf(s, n, format, args);
+}
 
 #undef ENABLE_MOCKS
 
@@ -39,7 +45,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
-static int my_vsnprintf(char* s, size_t n, const char* format, va_list args)
+static int my_vsnprintf(void* s, size_t n, const char* format, va_list args)
 {
     return vsnprintf(s, n, format, args);
 }
@@ -484,12 +490,11 @@ TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_format_also_fails
     // arrange
     STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
-    //set return value here due to uninitialized value in umocktypes
-    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)).SetReturn(-2);
+    STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
 
     umock_c_negative_tests_snapshot();
 
-    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    for (size_t i = 2; i < umock_c_negative_tests_call_count(); i++)
     {
         if (umock_c_negative_tests_can_call_fail(i))
         {
