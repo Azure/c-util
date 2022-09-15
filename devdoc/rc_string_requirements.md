@@ -64,6 +64,8 @@ MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*, string);
 
 **SRS_RC_STRING_01_002: [** Otherwise, `rc_string_create` shall determine the length of `string`. **]**
 
+**SRS_RC_STRING_07_010: [** If the resulting memory size requested for the `THANDLE(RC_STRING)` and `string` results in an size_t overflow,`rc_string_create` shall fail and return `NULL`. **]**
+
 **SRS_RC_STRING_01_003: [** `rc_string_create` shall allocate memory for the `THANDLE(RC_STRING)`, ensuring all the bytes in `string` can be copied (including the zero terminator). **]**
 
 **SRS_RC_STRING_01_004: [** `rc_string_create` shall copy the string memory (including the `NULL` terminator). **]**
@@ -80,17 +82,23 @@ THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...);
 
 `rc_string_create_with_format` creates a new ref counted string by using the format convention as in sprintf.
 
-If `format` is `NULL`, `rc_string_create_with_format` shall fail and return `NULL`. 
+**SRS_RC_STRING_07_001: [** If `format` is `NULL`, `rc_string_create_with_format` shall fail and return `NULL`. **]** 
 
-Otherwise, `rc_string_create_with_format` shall determine the total number of characters written using the variable number of arguments.  
+**SRS_RC_STRING_07_002: [** Otherwise `rc_string_create_with_format` shall determine the total number of characters written using `vsnprintf` with the variable number of arguments. **]**  
 
-`rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)` and the number of bytes for the resulting formatted string.
+**SRS_RC_STRING_07_003: [** If `vsnprintf` failed to determine the total number of characters written, `rc_string_create_with_format` shall fail and return `NULL`. **]**
 
-`rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`.
+**SRS_RC_STRING_07_004: [** `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)` and the number of bytes for the resulting formatted string. **]**
 
-`rc_string_create_with_format` shall succeed and return a non-`NULL` handle. 
+**SRS_RC_STRING_07_009: [** If the resulting memory size requested for the `THANDLE(RC_STRING)` and the resulting formatted string results in an size_t overflow in `malloc_flex`, `rc_string_create_with_format` shall fail and return `NULL`. **]**
 
-If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`.
+**SRS_RC_STRING_07_005: [** `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. **]**
+
+**SRS_RC_STRING_07_006: [** If `vsnprintf` failed to construct the resulting formatted string, `rc_string_create_with_format` shall fail and return `NULL`. **]**
+
+**SRS_RC_STRING_07_007: [** `rc_string_create_with_format` shall succeed and return a non-`NULL` handle. **]** 
+
+**SRS_RC_STRING_07_008: [** If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. **]**
 
 ## rc_string_create_with_move_memory
 
