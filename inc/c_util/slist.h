@@ -9,8 +9,6 @@
 #include <stdbool.h>
 #endif
 
-#include "macro_utils/macro_utils.h"
-
 typedef struct SLIST_ENTRY_TAG
 {
     struct SLIST_ENTRY_TAG *next;
