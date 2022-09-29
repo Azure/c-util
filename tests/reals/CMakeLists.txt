@@ -11,6 +11,7 @@ set(c_util_reals_c_files
     real_memory_data.c
     real_rc_string.c
     real_rc_string_array.c
+    real_slist.c
     real_singlylinkedlist.c
     real_sm.c
     real_uuid_string.c
@@ -35,6 +36,8 @@ set(c_util_reals_h_files
     real_rc_string_renames.h
     real_rc_string_array.h
     real_rc_string_array_renames.h
+    real_slist.h
+    real_slist_renames.h
     real_singlylinkedlist.h
     real_singlylinkedlist_renames.h
     real_sm.h
