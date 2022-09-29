@@ -921,7 +921,7 @@ TEST_FUNCTION(slist_for_each_with_NULL_list_fails_with_NULL)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Codes_SRS_SLIST_07_034: [ If `action_function` is `NULL`, `slist_for_each` shall fail and return a non - zero value. ]*/
+/* Tests_SRS_SLIST_07_034: [ If `action_function` is `NULL`, `slist_for_each` shall fail and return a non - zero value. ]*/
 TEST_FUNCTION(slist_for_each_with_NULL_action_function_fails_with_NULL)
 {
     // arrange
