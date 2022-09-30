@@ -21,10 +21,10 @@ MOCKABLE_FUNCTION(, bool, slist_initialize, PSINGLYLINKEDLIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, bool, slist_is_empty, const PSINGLYLINKEDLIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_add, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
 MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_add_head, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
-MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_remove, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
+MOCKABLE_FUNCTION(, int, slist_remove, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
 MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_remove_head, PSINGLYLINKEDLIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_find, PSINGLYLINKEDLIST_ENTRY, list_head, SLIST_MATCH_FUNCTION, match_function, const void*, match_context);
-MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_remove_if, PSINGLYLINKEDLIST_ENTRY, list_head, SLIST_CONDITION_FUNCTION, condition_function, const void*, match_context);
+MOCKABLE_FUNCTION(, int, slist_remove_if, PSINGLYLINKEDLIST_ENTRY, list_head, SLIST_CONDITION_FUNCTION, condition_function, const void*, match_context);
 MOCKABLE_FUNCTION(, int, slist_for_each, PSINGLYLINKEDLIST_ENTRY, list_head, SLIST_ACTION_FUNCTION, action_function, const void*, action_context);
 
 ```
@@ -61,6 +61,7 @@ bool slist_initialize(PSINGLYLINKEDLIST_ENTRY list_head);
 ```c
 bool slist_is_empty(const PSINGLYLINKEDLIST_ENTRY list_head);
 ```
+**SRS_SLIST_07_038: [** If `list_head` is `NULL`, `slist_is_empty` shall fail and return `true`.  **]**
 
 **SRS_SLIST_07_003: [** `slist_is_empty` shall return `true` if there is no `SINGLYLINKEDLIST_ENTRY` in this list. **]** 
 
@@ -79,7 +80,7 @@ PSINGLYLINKEDLIST_ENTRY slist_add(PSINGLYLINKEDLIST_ENTRY list_head, PSINGLYLINK
 
 **SRS_SLIST_07_006: [** If `list_entry` is `NULL`, `slist_add` shall fail and return `NULL`. **]**
 
-**SRS_SLIST_07_007: [** `slist_add` shall add one entry to the tail of the list on success and return an entry to the added entry. **]** 
+**SRS_SLIST_07_007: [** `slist_add` shall add one entry to the tail of the list on success and return a pointer to the added entry. **]** 
 
 ### slist_add_head
 ```
@@ -94,16 +95,16 @@ PSINGLYLINKEDLIST_ENTRY slist_add_head(PSINGLYLINKEDLIST_ENTRY list_head, PSINGL
 
 ### slist_remove
 ```c
-PSINGLYLINKEDLIST_ENTRY slist_remove(PSINGLYLINKEDLIST_ENTRY list_head, PSINGLYLINKEDLIST_ENTRY list_entry);
+int slist_remove(PSINGLYLINKEDLIST_ENTRY list_head, PSINGLYLINKEDLIST_ENTRY list_entry);
 ```
 
-**SRS_SLIST_07_011: [** If `list_head` is `NULL`, `slist_remove` shall fail and return `NULL`.  **]**
+**SRS_SLIST_07_011: [** If `list_head` is `NULL`, `slist_remove` shall fail and return a non-zero value.  **]**
 
-**SRS_SLIST_07_012: [** If `list_entry` is `NULL`, `slist_remove` shall fail and return `NULL`. **]**
+**SRS_SLIST_07_012: [** If `list_entry` is `NULL`, `slist_remove` shall fail and return a non-zero value. **]**
 
-**SRS_SLIST_07_013: [** `slist_remove` shall remove a list entry from the list on success and return a pointer to the new head entry. **]** 
+**SRS_SLIST_07_013: [** `slist_remove` shall remove a list entry from the list and return zero on success. **]** 
 
-**SRS_SLIST_07_014: [** If the entry `list_entry` is not found in the list, then `slist_remove` shall fail and `NULL`. **]** 
+**SRS_SLIST_07_014: [** If the entry `list_entry` is not found in the list, then `slist_remove` shall fail and a non-zero value. **]** 
 
 ### slist_remove_head
 ```c
@@ -112,9 +113,9 @@ PSINGLYLINKEDLIST_ENTRY slist_remove_head(PSINGLYLINKEDLIST_ENTRY list_head);
 
 **SRS_SLIST_07_015: [** If `list_head` is `NULL`, `slist_remove_head` shall fail and return `NULL`.  **]**
 
-**SRS_SLIST_07_016: [** `slist_remove_head` removes the head entry from the list defined by the `list_head` parameter on success and return a pointer to the new head entry. **]** 
+**SRS_SLIST_07_016: [** `slist_remove_head` removes the head entry from the list defined by the `list_head` parameter on success and return a pointer to that entry. **]** 
 
-**SRS_SLIST_07_017: [** `slist_remove_head` shall return `NULL` if that's the only entry in the list. **]** 
+**SRS_SLIST_07_017: [** `slist_remove_head` shall return `list_head` if that's the only entry in the list. **]** 
 
 ### slist_find
 ```c
@@ -137,16 +138,20 @@ PSINGLYLINKEDLIST_ENTRY slist_find(PSINGLYLINKEDLIST_ENTRY list_head, SLIST_MATC
 
 **SRS_SLIST_07_025: [** If the list is empty, `slist_find` shall return `NULL`. **]** 
 
+**SRS_SLIST_07_039: [** If the item is not found, `slist_find` shall return `NULL`. **]**
+
 ### slist_remove_if
 ```c
-PSINGLYLINKEDLIST_ENTRY slist_remove_if(PSINGLYLINKEDLIST_ENTRY list_head, SLIST_CONDITION_FUNCTION condition_function, const void* match_context);
+int slist_remove_if(PSINGLYLINKEDLIST_ENTRY list_head, SLIST_CONDITION_FUNCTION condition_function, const void* match_context);
 ```
 
-**SRS_SLIST_07_026: [** If `list_head` is `NULL`, `slist_remove_if` shall fail and return `NULL`. **]**
+**SRS_SLIST_07_026: [** If `list_head` is `NULL`, `slist_remove_if` shall fail and return a non-zero value. **]**
 
-**SRS_SLIST_07_027: [** If `condition_function` is `NULL`, `slist_remove_if` shall fail and return `NULL`.  **]**
+**SRS_SLIST_07_027: [** If `condition_function` is `NULL`, `slist_remove_if` shall fail and return a non-zero value.  **]**
 
-**SRS_SLIST_07_028: [** `slist_remove_if` shall iterate through all entris in a list, remove all that satisfies the `condition_function` and return a pointer to the new head entry. **]** 
+**SRS_SLIST_07_040: [** If the list is empty, `slist_find` shall return a non-zero value. **]**
+
+**SRS_SLIST_07_028: [** `slist_remove_if` shall iterate through all entris in a list, remove all that satisfies the `condition_function` and return zero. **]** 
 
 **SRS_SLIST_07_029: [** `slist_remove_if` shall determine whether an entry satisfies the condition criteria by invoking the condition function for that entry. **]** 
 

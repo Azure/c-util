@@ -32,13 +32,22 @@ bool slist_is_empty(const PSINGLYLINKEDLIST_ENTRY list_head)
 	bool result;
 	if (list_head == NULL)
 	{
-		/* Codes_SRS_SLIST_07_003: [ `slist_is_empty` shall return `true` if there is no `SINGLYLINKEDLIST_ENTRY` in this list. ]*/
+		/* Codes_SRS_SLIST_07_038: [ If `list_head` is `NULL`, `slist_is_empty` shall fail and return `true`. ]*/
+		LogError("Invalid argument (list_head=%p)", list_head);
 		result = true;
 	}
 	else
 	{
-		/* Codes_SRS_SLIST_07_004: [ `slist_is_empty` shall return `false` if there is one or more entris in the list. ]*/
-		result = false;
+		if (list_head->next == NULL)
+		{
+			/* Codes_SRS_SLIST_07_003: [ `slist_is_empty` shall return `true` if there is no `SINGLYLINKEDLIST_ENTRY` in this list. ]*/
+			result = true;
+		}
+		else
+		{
+			/* Codes_SRS_SLIST_07_004: [ `slist_is_empty` shall return `false` if there is one or more entris in the list. ]*/
+			result = false;
+		}
 	}
 	return result;
 }
@@ -56,7 +65,7 @@ PSINGLYLINKEDLIST_ENTRY slist_add(PSINGLYLINKEDLIST_ENTRY list_head, PSINGLYLINK
 	}
 	else
 	{
-		/* Codes_SRS_SLIST_07_007: [ `slist_add` shall add one entry to the tail of the list on success and return an entry to the added entry. ]*/
+		/* Codes_SRS_SLIST_07_007: [ `slist_add` shall add one entry to the tail of the list on success and return a pointer to the added entry. ]*/
 		PSINGLYLINKEDLIST_ENTRY list_instance = list_head;
 
 		while (list_instance->next != NULL)
@@ -84,27 +93,28 @@ PSINGLYLINKEDLIST_ENTRY slist_add_head(PSINGLYLINKEDLIST_ENTRY list_head, PSINGL
 	else
 	{
 		/* Codes_SRS_SLIST_07_010: [ `slist_add_head` shall insert `list_entry` at head on success and return an entry to the added entry. ]*/
-		list_entry->next = list_head;
+		list_entry->next = list_head->next;
+		list_head->next = list_entry;
 		result = list_entry;
 	}
 	return result;
 }
 
-PSINGLYLINKEDLIST_ENTRY slist_remove(PSINGLYLINKEDLIST_ENTRY list_head, PSINGLYLINKEDLIST_ENTRY list_entry)
+int slist_remove(PSINGLYLINKEDLIST_ENTRY list_head, PSINGLYLINKEDLIST_ENTRY list_entry)
 {
-	PSINGLYLINKEDLIST_ENTRY result;
+	int result;
 	if ((list_head == NULL) ||
 		(list_entry == NULL))
 	{
-		/* Codes_SRS_SLIST_07_011: [ If `list_head` is `NULL`, `slist_remove` shall fail and return `NULL`. ]*/
-		/* Codes_SRS_SLIST_07_012: [ If `list_entry` is `NULL`, `slist_remove` shall fail and return `NULL`. ]*/
+		/* Codes_SRS_SLIST_07_011: [ If `list_head` is `NULL`, `slist_remove` shall fail and a non-zero value. ]*/
+		/* Codes_SRS_SLIST_07_012: [ If `list_entry` is `NULL`, `slist_remove` shall fail and a non-zero value. ]*/
 		LogError("Invalid argument (list_head=%p, list_entry=%p)", list_head, list_entry);
-		result = NULL;
+		result = MU_FAILURE;
 	}
 	else
 	{
 		PSINGLYLINKEDLIST_ENTRY prev_item = NULL;
-		PSINGLYLINKEDLIST_ENTRY current_item = list_head;
+		PSINGLYLINKEDLIST_ENTRY current_item = list_head->next;
 		while (current_item != NULL)
 		{
 			if (current_item == list_entry)
@@ -116,21 +126,21 @@ PSINGLYLINKEDLIST_ENTRY slist_remove(PSINGLYLINKEDLIST_ENTRY list_head, PSINGLYL
 		}
 		if (current_item == NULL)
 		{
-			/* Codes_SRS_SLIST_07_014: [ If the entry `list_entry` is not found in the list, then `slist_remove` shall fail and `NULL`. ]*/
-			result = NULL;
+			/* Codes_SRS_SLIST_07_014: [ If the entry `list_entry` is not found in the list, then `slist_remove` shall fail and a non-zero value. ]*/
+			result = MU_FAILURE;
 		}
 		else 
 		{
-			/* Codes_SRS_SLIST_07_013: [ `slist_remove` shall remove a list entry from the list on success and return a pointer to the new head entry. ]*/
+			/* Codes_SRS_SLIST_07_013: [ `slist_remove` shall remove a list entry from the list and return zero on success. ]*/
 			if (prev_item != NULL)
 			{
-				result = list_head;
 				prev_item->next = current_item->next;
 			}
 			else
 			{
-				result = current_item->next;
+				list_head->next = list_head->next->next;
 			}
+			result = 0;
 		}
 	}
 	return result;
@@ -147,9 +157,17 @@ PSINGLYLINKEDLIST_ENTRY slist_remove_head(PSINGLYLINKEDLIST_ENTRY list_head)
 	}
 	else
 	{
-		/* Codes_SRS_SLIST_07_016: [ `slist_remove_head` removes the head entry from the list defined by the `list_head` parameter on success and return a pointer to the new head entry. ]*/
-		/* Codes_SRS_SLIST_07_017: [ `slist_remove_head` shall return `NULL` if that's the only entry in the list. ]*/
-		result = list_head->next;
+		if (list_head->next == NULL)
+		{
+			/* Codes_SRS_SLIST_07_017: [ `slist_remove_head` shall return `list_head` if that's the only entry in the list. ]*/
+			result = list_head;
+		}
+		else
+		{
+			/* Codes_SRS_SLIST_07_016: [ `slist_remove_head` removes the head entry from the list defined by the `list_head` parameter on success and return a pointer to that entry. ]*/
+			result = list_head->next;
+			list_head->next = list_head->next->next;
+		}
 	}
 	return result;
 }
@@ -167,22 +185,8 @@ PSINGLYLINKEDLIST_ENTRY slist_find(PSINGLYLINKEDLIST_ENTRY list_head, SLIST_MATC
 	}
 	else
 	{
-		PSINGLYLINKEDLIST_ENTRY current_item = list_head;
+		PSINGLYLINKEDLIST_ENTRY current_item = list_head->next;
 
-		/* Codes_SRS_SLIST_07_020: [ `slist_find` shall iterate through all entris in the list and return the first entry that satisfies the `match_function` on success. ]*/
-		while (current_item != NULL) 
-		{
-			/* Codes_SRS_SLIST_07_021: [ `slist_find` shall determine whether an item satisfies the match criteria by invoking the `match_function` for each entry in the list until a matching entry is found. ]*/
-			/* Codes_SRS_SLIST_07_022: [ The `match_function` shall get as arguments the list entry being attempted to be matched and the `match_context` as is. ]*/
-			if (match_function(current_item, match_context) == true)
-			{
-				/* Codes_SRS_SLIST_07_024: [ If the `match_function` returns `true`, `slist_find` shall consider that item as matching. ]*/
-				break;
-			}
-
-			/* Codes_SRS_SLIST_07_023: [ If the `match_function` returns `false`, `slist_find` shall consider that item as not matching. ]*/
-			current_item = current_item->next;
-		}
 		if (current_item == NULL)
 		{
 			/* Codes_SRS_SLIST_07_025: [ If the list is empty, `slist_find` shall return `NULL`. ]*/
@@ -190,62 +194,85 @@ PSINGLYLINKEDLIST_ENTRY slist_find(PSINGLYLINKEDLIST_ENTRY list_head, SLIST_MATC
 		}
 		else
 		{
-			result = current_item;
+			/* Codes_SRS_SLIST_07_020: [ `slist_find` shall iterate through all entris in the list and return the first entry that satisfies the `match_function` on success. ]*/
+			while (current_item != NULL)
+			{
+				/* Codes_SRS_SLIST_07_021: [ `slist_find` shall determine whether an item satisfies the match criteria by invoking the `match_function` for each entry in the list until a matching entry is found. ]*/
+				/* Codes_SRS_SLIST_07_022: [ The `match_function` shall get as arguments the list entry being attempted to be matched and the `match_context` as is. ]*/
+				if (match_function(current_item, match_context) == true)
+				{
+					/* Codes_SRS_SLIST_07_024: [ If the `match_function` returns `true`, `slist_find` shall consider that item as matching. ]*/
+					break;
+				}
+
+				/* Codes_SRS_SLIST_07_023: [ If the `match_function` returns `false`, `slist_find` shall consider that item as not matching. ]*/
+				current_item = current_item->next;
+			}
+			if (current_item == NULL)
+			{
+				/* Codes_SRS_SLIST_07_039: [ If the item is not found, `slist_find` shall return `NULL`. ]*/
+				result = NULL;
+			}
+			else
+			{
+				result = current_item;
+			}
 		}
+
 	}
 	return result;
 }
 
-PSINGLYLINKEDLIST_ENTRY slist_remove_if(PSINGLYLINKEDLIST_ENTRY list_head, SLIST_CONDITION_FUNCTION condition_function, const void* match_context)
+int slist_remove_if(PSINGLYLINKEDLIST_ENTRY list_head, SLIST_CONDITION_FUNCTION condition_function, const void* match_context)
 {
-	PSINGLYLINKEDLIST_ENTRY result;
+	int result;
 	if ((list_head == NULL) ||
 		(condition_function == NULL))
 	{
-		/* Codes_SRS_SLIST_07_026: [ If `list_head` is `NULL`, `slist_remove_if` shall fail and return `NULL`. ]*/
-		/* Codes_SRS_SLIST_07_027: [ If `condition_function` is `NULL`, `slist_remove_if` shall fail and return `NULL`. ]*/
+		/* Codes_SRS_SLIST_07_026: [ If `list_head` is `NULL`, `slist_remove_if` shall fail and return a non-zero value. ]*/
+		/* Codes_SRS_SLIST_07_027: [ If `condition_function` is `NULL`, `slist_remove_if` shall fail and return a non-zero value. ]*/
 		LogError("Invalid argument (list_head=%p, condition_function=%p)", list_head, condition_function);
-		result = NULL;
+		result = MU_FAILURE;
 	}
 	else
 	{
-		PSINGLYLINKEDLIST_ENTRY prev_item = NULL;
-		PSINGLYLINKEDLIST_ENTRY current_item = list_head;
-		PSINGLYLINKEDLIST_ENTRY curr_list_head = list_head;
+		PSINGLYLINKEDLIST_ENTRY prev_item = list_head;
+		PSINGLYLINKEDLIST_ENTRY current_item = list_head->next;
 
-		/* Codes_SRS_SLIST_07_028: [ `slist_remove_if` shall iterate through all entris in a list, remove all that satisfies the `condition_function` and return a pointer to the new head entry. ]*/
-		while (current_item != NULL)
+		if (current_item == NULL)
 		{
-			bool continue_processing = false;
-
-			/* Codes_SRS_SLIST_07_029: [ `slist_remove_if` shall determine whether an entry satisfies the condition criteria by invoking the condition function for that entry. ]*/
-			if (condition_function(current_item, match_context, &continue_processing) == true)
+			/* Codes_SRS_SLIST_07_040: [ If the list is empty, `slist_find` shall return a non-zero value. ]*/
+			result = MU_FAILURE;
+		}
+		else
+		{
+			/* Codes_SRS_SLIST_07_028: [ `slist_remove_if` shall iterate through all entris in a list, remove all that satisfies the `condition_function` and return zero. ]*/
+			while (current_item != NULL)
 			{
-				/* Codes_SRS_SLIST_07_030: [ If the `condition_function` returns `true`, `slist_remove_if` shall consider that entry as to be removed. ]*/
-				if (prev_item != NULL)
+				bool continue_processing = false;
+
+				/* Codes_SRS_SLIST_07_029: [ `slist_remove_if` shall determine whether an entry satisfies the condition criteria by invoking the condition function for that entry. ]*/
+				if (condition_function(current_item, match_context, &continue_processing) == true)
 				{
+					/* Codes_SRS_SLIST_07_030: [ If the `condition_function` returns `true`, `slist_remove_if` shall consider that entry as to be removed. ]*/			
 					prev_item->next = current_item->next;
 				}
 				else
 				{
-					curr_list_head = curr_list_head->next;
+					/* Codes_SRS_SLIST_07_031: [ If the `condition_function` returns `false`, `slist_remove_if` shall consider that entry as not to be removed. ]*/
+					prev_item = current_item;
 				}
-			}
-			else
-			{
-				/* Codes_SRS_SLIST_07_031: [ If the `condition_function` returns `false`, `slist_remove_if` shall consider that entry as not to be removed. ]*/
-				prev_item = current_item;
-			}
 
-			/* Codes_SRS_SLIST_07_032: [ If the `condition_function` returns `continue_processing` as `false`, `slist_remove_if` shall stop iterating through the list and return. ]*/
-			if (continue_processing == false)
-			{
-				break;
-			}
+				/* Codes_SRS_SLIST_07_032: [ If the `condition_function` returns `continue_processing` as `false`, `slist_remove_if` shall stop iterating through the list and return. ]*/
+				if (continue_processing == false)
+				{
+					break;
+				}
 
-			current_item = current_item->next;
+				current_item = current_item->next;
+			}
+			result = 0;
 		}
-		result = curr_list_head;
 	}
 
 	return result;
@@ -265,7 +292,7 @@ int slist_for_each(PSINGLYLINKEDLIST_ENTRY list_head, SLIST_ACTION_FUNCTION acti
 	}
 	else
 	{
-		PSINGLYLINKEDLIST_ENTRY current_item = list_head;
+		PSINGLYLINKEDLIST_ENTRY current_item = list_head->next;
 
 		/* Codes_SRS_SLIST_07_035: [ `slist_for_each` shall iterate through all entries in the list, invoke `action_function` for each one of themand return zero on success. ]*/
 		while (current_item != NULL)

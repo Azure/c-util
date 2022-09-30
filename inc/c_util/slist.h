@@ -49,10 +49,10 @@ MOCKABLE_FUNCTION(, bool, slist_initialize, PSINGLYLINKEDLIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, bool, slist_is_empty, const PSINGLYLINKEDLIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_add, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
 MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_add_head, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
-MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_remove, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
+MOCKABLE_FUNCTION(, int, slist_remove, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
 MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_remove_head, PSINGLYLINKEDLIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_find, PSINGLYLINKEDLIST_ENTRY, list_head, SLIST_MATCH_FUNCTION, match_function, const void*, match_context);
-MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_remove_if, PSINGLYLINKEDLIST_ENTRY, list_head, SLIST_CONDITION_FUNCTION, condition_function, const void*, match_context);
+MOCKABLE_FUNCTION(, int, slist_remove_if, PSINGLYLINKEDLIST_ENTRY, list_head, SLIST_CONDITION_FUNCTION, condition_function, const void*, match_context);
 MOCKABLE_FUNCTION(, int, slist_for_each, PSINGLYLINKEDLIST_ENTRY, list_head, SLIST_ACTION_FUNCTION, action_function, const void*, action_context);
 #ifdef __cplusplus
 }

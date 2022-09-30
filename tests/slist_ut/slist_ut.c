@@ -48,6 +48,7 @@ MOCK_FUNCTION_END(0);
 MOCK_FUNCTION_WITH_CODE(, int, test_action_function_fail, PSINGLYLINKEDLIST_ENTRY, list_entry, const void*, action_context, bool*, continueProcessing);
 *continueProcessing = true;
 simpleItem* item = CONTAINING_RECORD(list_entry, simpleItem, link);
+(int)item->index;
 if (item->index == 3)
 {
     return MU_FAILURE;
@@ -84,14 +85,12 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
     ASSERT_ARE_EQUAL(int, 0, result);
 
     REGISTER_UMOCK_ALIAS_TYPE(PSINGLYLINKEDLIST_ENTRY, void*);
-
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
 {
     umock_c_deinit();
     TEST_MUTEX_DESTROY(test_serialize_mutex);
-
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
@@ -126,20 +125,20 @@ TEST_FUNCTION(slist_initialize_with_NULL_fails)
 TEST_FUNCTION(slist_initialize_succeeds)
 {
     // arrange
-    static simpleItem simp1 = { 1, { NULL } };
+    SINGLYLINKEDLIST_ENTRY head;
 
     // act
-    bool result = slist_initialize(&(simp1.link));
+    bool result = slist_initialize(&head);
 
     // assert
-    ASSERT_ARE_EQUAL(void_ptr, NULL, simp1.link.next);
+    ASSERT_ARE_EQUAL(void_ptr, NULL, head.next);
     ASSERT_ARE_EQUAL(bool, true, result);
 }
 
 /*slist_is_empty*/
 
-/* Tests_SRS_SLIST_07_003: [ `slist_is_empty` shall return `true` if there is no `SINGLYLINKEDLIST_ENTRY` in this list. ]*/
-TEST_FUNCTION(slist_is_empty_with_empty_list_succeeds)
+/* Tests_SRS_SLIST_07_038: [ If `list_head` is `NULL`, `slist_is_empty` shall fail and return `true`. ]*/
+TEST_FUNCTION(slist_is_empty_with_NULL_list_fails)
 {
     // arrange
 
@@ -150,14 +149,30 @@ TEST_FUNCTION(slist_is_empty_with_empty_list_succeeds)
     ASSERT_ARE_EQUAL(bool, true, result);
 }
 
+/* Tests_SRS_SLIST_07_003: [ `slist_is_empty` shall return `true` if there is no `SINGLYLINKEDLIST_ENTRY` in this list. ]*/
+TEST_FUNCTION(slist_is_empty_with_empty_list_succeeds)
+{
+    // arrange
+    SINGLYLINKEDLIST_ENTRY head;
+    slist_initialize(&head);
+
+    // act
+    bool result = slist_is_empty(&head);
+
+    // assert
+    ASSERT_ARE_EQUAL(bool, true, result);
+}
+
 /* Tests_SRS_SLIST_07_004: [ `slist_is_empty` shall return `false` if there is one or more entris in the list. ]*/
 TEST_FUNCTION(slist_is_empty_with_one_entry_succeeds)
 {
     // arrange
     static simpleItem simp1 = { 1, { NULL } };
-    
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+
+    slist_add(&head, &(simp1.link));
 
     // act
     bool result = slist_is_empty(&head);
@@ -174,8 +189,9 @@ TEST_FUNCTION(slist_is_empty_with_multiple_entries_succeeds)
     static simpleItem simp2 = { 2, { NULL } };
     static simpleItem simp3 = { 3, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
     slist_add(&head, &(simp3.link));
 
@@ -205,12 +221,8 @@ TEST_FUNCTION(slist_add_with_head_entry_NULL_fails)
 TEST_FUNCTION(slist_add_with_add_entry_NULL_fails)
 {
     // arrange
-    static simpleItem simp1 = { 1, { NULL } };
-    static simpleItem simp2 = { 2, { NULL } };
-
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
-    slist_add(&head, &(simp2.link));
 
     // act
     PSINGLYLINKEDLIST_ENTRY result = slist_add(&head, NULL);
@@ -219,25 +231,24 @@ TEST_FUNCTION(slist_add_with_add_entry_NULL_fails)
     ASSERT_ARE_EQUAL(void_ptr, NULL, result);
 }
 
-/* Tests_SRS_SLIST_07_007: [ `slist_add` shall add one entry to the tail of the list on success and return an entry to the added entry. ]*/
-TEST_FUNCTION(slist_add_with_one_entry_in_the_list_succeeds)
+/* Tests_SRS_SLIST_07_007: [ `slist_add` shall add one entry to the tail of the list on success and return a pointer to the added entry. ]*/
+TEST_FUNCTION(slist_add_with_empty_list_succeeds)
 {
     // arrange
     static simpleItem simp1 = { 1, { NULL } };
-    static simpleItem simp2 = { 2, { NULL } };
-
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
-
+ 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_add(&head, &(simp2.link));
+    PSINGLYLINKEDLIST_ENTRY result = slist_add(&head, &(simp1.link));
 
     // assert
-    ASSERT_ARE_EQUAL(void_ptr, &(simp2.link), result);
-    ASSERT_ARE_EQUAL(void_ptr, &(simp2.link), head.next);
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(void_ptr, &(simp1.link), result);
+    ASSERT_ARE_EQUAL(void_ptr, head.next, result);
 }
 
-/* Tests_SRS_SLIST_07_007: [ `slist_add` shall add one entry to the tail of the list on success and return an entry to the added entry. ]*/
+/* Tests_SRS_SLIST_07_007: [ `slist_add` shall add one entry to the tail of the list on success and return a pointer to the added entry. ]*/
 TEST_FUNCTION(slist_add_with_multiple_entries_in_the_list_succeeds)
 {
     // arrange
@@ -246,17 +257,19 @@ TEST_FUNCTION(slist_add_with_multiple_entries_in_the_list_succeeds)
     static simpleItem simp3 = { 3, { NULL } };
     static simpleItem simp4 = { 4, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
-    head.next = &(simp2.link);
-    head.next->next = &(simp3.link);
+    head.next = &(simp1.link);
+    head.next->next = &(simp2.link);
+    head.next->next->next = &(simp3.link);
 
     // act
     PSINGLYLINKEDLIST_ENTRY result = slist_add(&head, &(simp4.link));
 
     // assert
+    ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(void_ptr, &(simp4.link), result);
-    ASSERT_ARE_EQUAL(void_ptr, &(simp4.link), simp3.link.next);
+    ASSERT_ARE_EQUAL(void_ptr, simp3.link.next, result);
 }
 
 /*slist_add_head*/
@@ -281,8 +294,9 @@ TEST_FUNCTION(slist_add_head_with_add_entry_NULL_fails)
     static simpleItem simp1 = { 1, { NULL } };
     static simpleItem simp2 = { 2, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
 
     // act
@@ -293,21 +307,19 @@ TEST_FUNCTION(slist_add_head_with_add_entry_NULL_fails)
 }
 
 /* Tests_SRS_SLIST_07_010: [ `slist_add_head` shall insert `list_entry` at head on success and return an entry to the added entry. ]*/
-TEST_FUNCTION(slist_add_head_with_one_entry_in_the_list_succeeds)
+TEST_FUNCTION(slist_add_head_with_empty_list_succeeds)
 {
     // arrange
     static simpleItem simp1 = { 1, { NULL } };
-    static simpleItem simp2 = { 2, { NULL } };
-
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
-
+    
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_add_head(&head, &(simp2.link));
+    PSINGLYLINKEDLIST_ENTRY result = slist_add_head(&head, &(simp1.link));
 
     // assert
-    ASSERT_ARE_EQUAL(void_ptr, &(simp2.link), result);
-    ASSERT_ARE_EQUAL(void_ptr, &head, simp2.link.next);
+    ASSERT_ARE_EQUAL(void_ptr, &(simp1.link), result);
+    ASSERT_ARE_EQUAL(void_ptr, head.next, result);
 }
 
 /* Tests_SRS_SLIST_07_010: [ `slist_add_head` shall insert `list_entry` at head on success and return an entry to the added entry. ]*/
@@ -319,53 +331,65 @@ TEST_FUNCTION(slist_add_head_with_multiple_entries_in_the_list_succeeds)
     static simpleItem simp3 = { 3, { NULL } };
     static simpleItem simp4 = { 4, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
-    head.next = &(simp2.link);
-    head.next->next = &(simp3.link);
+    slist_add(&head, &(simp1.link));
+    slist_add(&head, &(simp2.link));
+    slist_add(&head, &(simp3.link));
 
     // act
     PSINGLYLINKEDLIST_ENTRY result = slist_add_head(&head, &(simp4.link));
 
     // assert
     ASSERT_ARE_EQUAL(void_ptr, &(simp4.link), result);
-    ASSERT_ARE_EQUAL(void_ptr, &head, simp4.link.next);
+    ASSERT_ARE_EQUAL(void_ptr, head.next, result);
 }
 
 /*slist_remove*/
 
-/* Tests_SRS_SLIST_07_011: [ If `list_head` is `NULL`, `slist_remove` shall fail and return `NULL`. ]*/
+/* Tests_SRS_SLIST_07_011: [ If `list_head` is `NULL`, `slist_remove` shall fail and a non-zero value. ]*/
 TEST_FUNCTION(slist_remove_with_head_NULL_fails)
 {
     // arrange
     static simpleItem simp1 = { 1, { NULL } };
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove(NULL, &(simp1.link));
+    int result = slist_remove(NULL, &(simp1.link));
 
     // assert
-    ASSERT_ARE_EQUAL(void_ptr, NULL, result);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_SLIST_07_012: [ If `list_entry` is `NULL`, `slist_remove` shall fail and return `NULL`. ]*/
+/* Tests_SRS_SLIST_07_012: [ If `list_entry` is `NULL`, `slist_remove` shall fail and a non-zero value. ]*/
 TEST_FUNCTION(slist_remove_with_delete_entry_NULL_fails)
 {
     //arrange
-    static simpleItem simp1 = { 1, { NULL } };
-    static simpleItem simp2 = { 2, { NULL } };
-
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
-    slist_add(&head, &(simp2.link));
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove(&head, NULL);
+    int result = slist_remove(&head, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL(void_ptr, NULL, result);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_SLIST_07_014: [ If the entry `list_entry` is not found in the list, then `slist_remove` shall fail and `NULL`. ]*/
+/* Tests_SRS_SLIST_07_014: [ If the entry `list_entry` is not found in the list, then `slist_remove` shall fail and a non-zero value. ]*/
+TEST_FUNCTION(slist_remove_with_empty_list_fails)
+{
+    //arrange
+    static simpleItem simp1 = { 1, { NULL } };
+    SINGLYLINKEDLIST_ENTRY head;
+    slist_initialize(&head);
+
+    // act
+    int result = slist_remove(&head, &(simp1.link));
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+}
+
+/* Tests_SRS_SLIST_07_014: [ If the entry `list_entry` is not found in the list, then `slist_remove` shall fail and a non-zero value. ]*/
 TEST_FUNCTION(slist_remove_with_remove_entry_not_in_list_fails)
 {
     //arrange
@@ -374,35 +398,36 @@ TEST_FUNCTION(slist_remove_with_remove_entry_not_in_list_fails)
     static simpleItem simp3 = { 3, { NULL } };
     static simpleItem simp4 = { 4, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
     slist_add(&head, &(simp3.link));
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove(&head, &(simp4.link));
+    int result = slist_remove(&head, &(simp4.link));
 
     // assert
-    ASSERT_ARE_EQUAL(void_ptr, NULL, result);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_SLIST_07_013: [ `slist_remove` shall remove a list entry from the list on success and return a pointer to the new head entry. ]*/
+/* Tests_SRS_SLIST_07_013: [ `slist_remove` shall remove a list entry from the list and return zero on success. ]*/
 TEST_FUNCTION(slist_remove_with_one_entry_in_list_succeeds)
 {
     //arrange
     static simpleItem simp1 = { 1, { NULL } };
-
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove(&head, &(simp1.link));
+    int result = slist_remove(&head, &(simp1.link));
 
     // assert
-    ASSERT_ARE_EQUAL(void_ptr, NULL, result);
+    ASSERT_ARE_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_SLIST_07_013: [ `slist_remove` shall remove a list entry from the list on success and return a pointer to the new head entry. ]*/
+/* Tests_SRS_SLIST_07_013: [ `slist_remove` shall remove a list entry from the list and return zero on success. ]*/
 TEST_FUNCTION(slist_remove_with_multiple_entries_in_list_remove_tail_succeeds)
 {
     //arrange
@@ -411,21 +436,22 @@ TEST_FUNCTION(slist_remove_with_multiple_entries_in_list_remove_tail_succeeds)
     static simpleItem simp3 = { 3, { NULL } };
     static simpleItem simp4 = { 4, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
     slist_add(&head, &(simp3.link));
     slist_add(&head, &(simp4.link));
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove(&head, &(simp4.link));
+    int result = slist_remove(&head, &(simp4.link));
 
     // assert
-    ASSERT_ARE_EQUAL(void_ptr, &head, result);
+    ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(void_ptr, NULL, simp3.link.next);
 }
 
-/* Tests_SRS_SLIST_07_013: [ `slist_remove` shall remove a list entry from the list on success and return a pointer to the new head entry. ]*/
+/* Tests_SRS_SLIST_07_013: [ `slist_remove` shall remove a list entry from the list and return zero on success. ]*/
 TEST_FUNCTION(slist_remove_with_multiple_entries_in_list_remove_head_succeeds)
 {
     //arrange
@@ -434,20 +460,22 @@ TEST_FUNCTION(slist_remove_with_multiple_entries_in_list_remove_head_succeeds)
     static simpleItem simp3 = { 3, { NULL } };
     static simpleItem simp4 = { 4, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
     slist_add(&head, &(simp3.link));
     slist_add(&head, &(simp4.link));
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove(&head, &head);
+    int result = slist_remove(&head, &(simp1.link));
 
     // assert
-    ASSERT_ARE_EQUAL(void_ptr, &(simp2.link), result);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(void_ptr, head.next, &(simp2.link));
 }
 
-/* Tests_SRS_SLIST_07_013: [ `slist_remove` shall remove a list entry from the list on success and return a pointer to the new head entry. ]*/
+/* Tests_SRS_SLIST_07_013: [ `slist_remove` shall remove a list entry from the list and return zero on success. ]*/
 TEST_FUNCTION(slist_remove_with_multiple_entries_in_list_remove_middle_succeeds)
 {
     //arrange
@@ -456,19 +484,21 @@ TEST_FUNCTION(slist_remove_with_multiple_entries_in_list_remove_middle_succeeds)
     static simpleItem simp3 = { 3, { NULL } };
     static simpleItem simp4 = { 4, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
     slist_add(&head, &(simp2.link));
     slist_add(&head, &(simp3.link));
     slist_add(&head, &(simp4.link));
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove(&head, &(simp3.link));
+    int result = slist_remove(&head, &(simp3.link));
 
     // assert
-    ASSERT_ARE_EQUAL(void_ptr, &(head), result);
-    ASSERT_ARE_EQUAL(void_ptr, &(simp4.link), simp2.link.next);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(void_ptr, simp2.link.next, &(simp4.link));
 }
+
+/*slist_remove_head*/
 
 /* Tests_SRS_SLIST_07_015: [ If `list_head` is `NULL`, `slist_remove_head` shall fail and return `NULL`. ]*/
 TEST_FUNCTION(slist_remove_head_with_head_NULL_fails)
@@ -482,48 +512,63 @@ TEST_FUNCTION(slist_remove_head_with_head_NULL_fails)
     ASSERT_ARE_EQUAL(void_ptr, NULL, result);
 }
 
-/* Tests_SRS_SLIST_07_016: [ `slist_remove_head` removes the head entry from the list defined by the `list_head` parameter on success and return a pointer to the new head entry. ]*/
+/* Tests_SRS_SLIST_07_016: [ `slist_remove_head` removes the head entry from the list defined by the `list_head` parameter on success and return a pointer to that entry. ]*/
+TEST_FUNCTION(slist_remove_head_with_one_entry_in_list_succeeds)
+{
+    //arrange
+    static simpleItem simp1 = { 1, { NULL } };
+
+    SINGLYLINKEDLIST_ENTRY head;
+    slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
+
+    // act
+    PSINGLYLINKEDLIST_ENTRY result = slist_remove_head(&head);
+
+    // assert
+    ASSERT_IS_NULL(head.next);
+    ASSERT_ARE_EQUAL(void_ptr, &(simp1.link), result);
+}
+
+/* Tests_SRS_SLIST_07_016: [ `slist_remove_head` removes the head entry from the list defined by the `list_head` parameter on success and return a pointer to that entry. ]*/
 TEST_FUNCTION(slist_remove_head_with_multiple_entries_in_list_succeeds)
 {
     //arrange
     static simpleItem simp1 = { 1, { NULL } };
     static simpleItem simp2 = { 2, { NULL } };
     static simpleItem simp3 = { 3, { NULL } };
-    static simpleItem simp4 = { 4, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
     slist_add(&head, &(simp3.link));
-    slist_add(&head, &(simp4.link));
 
     // act
     PSINGLYLINKEDLIST_ENTRY result = slist_remove_head(&head);
 
     // assert
-    ASSERT_ARE_EQUAL(void_ptr, &(simp2.link), result);
+    ASSERT_ARE_EQUAL(void_ptr, head.next, &(simp2.link));
+    ASSERT_ARE_EQUAL(void_ptr, &(simp1.link), result);
 }
 
-/* Tests_SRS_SLIST_07_017: [ `slist_remove_head` shall return `NULL` if that's the only entry in the list. ]*/
-TEST_FUNCTION(slist_remove_head_with_one_entry_in_list_succeeds)
+/* Tests_SRS_SLIST_07_017: [ `slist_remove_head` shall return `list_head` if that's the only entry in the list. ]*/
+TEST_FUNCTION(slist_remove_head_with_empty_list_succeeds)
 {
     //arrange
-    static simpleItem simp1 = { 1, { NULL } };
-
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
 
     // act
     PSINGLYLINKEDLIST_ENTRY result = slist_remove_head(&head);
 
     // assert
-    ASSERT_ARE_EQUAL(void_ptr, NULL, result);
+    ASSERT_ARE_EQUAL(void_ptr, &head, result);
 }
 
 /*slist_find*/
 
 /* Tests_SRS_SLIST_07_018: [ If `list_head` is `NULL`, `slist_find` shall fail and return `NULL`. ]*/
-/* Tests_SRS_SLIST_07_025: [ If the list is empty, `slist_find` shall return `NULL`. ]*/
 TEST_FUNCTION(slist_find_with_NULL_list_fails_with_NULL)
 {
     //arrange
@@ -542,11 +587,27 @@ TEST_FUNCTION(slist_find_with_NULL_match_function_fails_with_NULL)
     // arrange
     static simpleItem simp1 = { 1, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
 
     // act
     PSINGLYLINKEDLIST_ENTRY result = slist_find(&head, NULL, TEST_CONTEXT);
+
+    // assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_SLIST_07_025: [ If the list is empty, `slist_find` shall return `NULL`. ]*/
+TEST_FUNCTION(slist_find_with_empty_list_fails_with_NULL)
+{
+    //arrange
+    SINGLYLINKEDLIST_ENTRY head;
+    slist_initialize(&head);
+
+    // act
+    PSINGLYLINKEDLIST_ENTRY result = slist_find(&head, test_match_function, TEST_CONTEXT);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -562,8 +623,9 @@ TEST_FUNCTION(slist_find_on_a_list_with_1_matching_item_yields_that_item)
     // arrange
     static simpleItem simp1 = { 1, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
 
     STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT));
 
@@ -572,7 +634,7 @@ TEST_FUNCTION(slist_find_on_a_list_with_1_matching_item_yields_that_item)
 
     // assert
     ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(void_ptr, &(head), result);
+    ASSERT_ARE_EQUAL(void_ptr, head.next, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
 }
@@ -583,8 +645,9 @@ TEST_FUNCTION(slist_find_on_a_list_with_1_items_that_does_not_match_returns_NULL
     // arrange
     static simpleItem simp1 = { 1, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
 
     STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT))
         .SetReturn(false);
@@ -607,8 +670,9 @@ TEST_FUNCTION(slist_find_on_a_list_with_2_items_where_the_first_matches_yields_t
     static simpleItem simp1 = { 1, { NULL } };
     static simpleItem simp2 = { 2, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
 
     STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT));
@@ -618,7 +682,7 @@ TEST_FUNCTION(slist_find_on_a_list_with_2_items_where_the_first_matches_yields_t
 
     // assert
     ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(void_ptr, &(head), result);
+    ASSERT_ARE_EQUAL(void_ptr, head.next, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
@@ -633,8 +697,9 @@ TEST_FUNCTION(slist_find_on_a_list_with_2_items_where_the_second_matches_yields_
     static simpleItem simp1 = { 1, { NULL } };
     static simpleItem simp2 = { 2, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
 
     STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT))
@@ -657,8 +722,9 @@ TEST_FUNCTION(slist_find_on_a_list_with_2_items_both_matching_yields_the_first_i
     static simpleItem simp1 = { 1, { NULL } };
     static simpleItem simp2 = { 2, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
 
     STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT));
@@ -668,19 +734,20 @@ TEST_FUNCTION(slist_find_on_a_list_with_2_items_both_matching_yields_the_first_i
 
     // assert
     ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(void_ptr, &(head), result);
+    ASSERT_ARE_EQUAL(void_ptr, head.next, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_SLIST_07_023: [ If the `match_function` returns `false`, `slist_find` shall consider that item as not matching. ]*/
+/* Tests_SRS_SLIST_07_039: [ If the item is not found, `slist_find` shall return `NULL`. ]*/
 TEST_FUNCTION(slist_find_on_a_list_with_2_items_where_none_matches_returns_NULL)
 {
     // arrange
     static simpleItem simp1 = { 1, { NULL } };
     static simpleItem simp2 = { 2, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
 
     STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT))
@@ -698,37 +765,38 @@ TEST_FUNCTION(slist_find_on_a_list_with_2_items_where_none_matches_returns_NULL)
 
 /*slist_remove_if*/
 
-/* Tests_SRS_SLIST_07_026: [ If `list_head` is `NULL`, `slist_remove_if` shall fail and return `NULL`. ]*/
-TEST_FUNCTION(slist_remove_if_with_NULL_list_fails_with_NULL)
+/* Tests_SRS_SLIST_07_026: [ If `list_head` is `NULL`, `slist_remove_if` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(slist_remove_if_with_NULL_list_fails)
 {
     //arrange
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove_if(NULL, test_condition_function, TEST_CONTEXT);
+    int result = slist_remove_if(NULL, test_condition_function, TEST_CONTEXT);
 
     // assert
-    ASSERT_IS_NULL(result);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_SLIST_07_027: [ If `condition_function` is `NULL`, `slist_remove_if` shall fail and return `NULL`. ]*/
-TEST_FUNCTION(slist_remove_if_with_NULL_condition_function_fails_with_NULL)
+/* Tests_SRS_SLIST_07_027: [ If `condition_function` is `NULL`, `slist_remove_if` shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(slist_remove_if_with_NULL_condition_function_fails)
 {
     // arrange
     static simpleItem simp1 = { 1, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove_if(&head, NULL, TEST_CONTEXT);
+    int result = slist_remove_if(&head, NULL, TEST_CONTEXT);
 
     // assert
-    ASSERT_IS_NULL(result);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_SLIST_07_028: [ `slist_remove_if` shall iterate through all entris in a list, remove all that satisfies the `condition_function` and return a pointer to the new head entry. ]*/
+/* Tests_SRS_SLIST_07_028: [ `slist_remove_if` shall iterate through all entris in a list, remove all that satisfies the `condition_function` and return zero. ]*/
 /* Tests_SRS_SLIST_07_029: [ `slist_remove_if` shall determine whether an entry satisfies the condition criteria by invoking the condition function for that entry. ]*/
 /* Tests_SRS_SLIST_07_030: [ If the `condition_function` returns `true`, `slist_remove_if` shall consider that entry as to be removed. ]*/
 TEST_FUNCTION(slist_remove_if_on_a_list_with_1_matching_item_removes_that_item)
@@ -736,18 +804,18 @@ TEST_FUNCTION(slist_remove_if_on_a_list_with_1_matching_item_removes_that_item)
     // arrange
     static simpleItem simp1 = { 1, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
 
     STRICT_EXPECTED_CALL(test_condition_function(IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG));
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove_if(&head, test_condition_function, TEST_CONTEXT);
+    int result = slist_remove_if(&head, test_condition_function, TEST_CONTEXT);
 
     // assert
-    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
 }
 
 /* Tests_SRS_SLIST_07_031: [ If the `condition_function` returns `false`, `slist_remove_if` shall consider that entry as not to be removed. ]*/
@@ -756,22 +824,23 @@ TEST_FUNCTION(slist_remove_if_on_a_list_with_1_items_that_does_not_match_returns
     // arrange
     static simpleItem simp1 = { 1, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
 
     STRICT_EXPECTED_CALL(test_condition_function(IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG))
         .SetReturn(false);
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove_if(&head, test_condition_function, TEST_CONTEXT);
+    int result = slist_remove_if(&head, test_condition_function, TEST_CONTEXT);
 
     // assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(void_ptr, &head, result);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(void_ptr, head.next, &(simp1.link));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_SLIST_07_028: [ `slist_remove_if` shall iterate through all entris in a list, remove all that satisfies the `condition_function` and return a pointer to the new head entry. ]*/
+/* Tests_SRS_SLIST_07_028: [ `slist_remove_if` shall iterate through all entris in a list, remove all that satisfies the `condition_function` and return zero. ]*/
 /* Tests_SRS_SLIST_07_029: [ `slist_remove_if` shall determine whether an entry satisfies the condition criteria by invoking the condition function for that entry. ]*/
 /* Tests_SRS_SLIST_07_030: [ If the `condition_function` returns `true`, `slist_remove_if` shall consider that entry as to be removed. ]*/
 TEST_FUNCTION(slist_remove_if_on_a_list_with_2_items_where_the_first_matches_deletes_the_first_item)
@@ -780,8 +849,9 @@ TEST_FUNCTION(slist_remove_if_on_a_list_with_2_items_where_the_first_matches_del
     static simpleItem simp1 = { 1, { NULL } };
     static simpleItem simp2 = { 2, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
 
     STRICT_EXPECTED_CALL(test_condition_function(IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG));
@@ -789,15 +859,15 @@ TEST_FUNCTION(slist_remove_if_on_a_list_with_2_items_where_the_first_matches_del
         .SetReturn(false);
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove_if(&head, test_condition_function, TEST_CONTEXT);
+    int result = slist_remove_if(&head, test_condition_function, TEST_CONTEXT);
 
     // assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(void_ptr, &(simp2.link), result);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(void_ptr, head.next, &(simp2.link));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_SLIST_07_028: [ `slist_remove_if` shall iterate through all entris in a list, remove all that satisfies the `condition_function` and return a pointer to the new head entry. ]*/
+/* Tests_SRS_SLIST_07_028: [ `slist_remove_if` shall iterate through all entris in a list, remove all that satisfies the `condition_function` and return zero. ]*/
 /* Tests_SRS_SLIST_07_029: [ `slist_remove_if` shall determine whether an entry satisfies the condition criteria by invoking the condition function for that entry. ]*/
 /* Tests_SRS_SLIST_07_030: [ If the `condition_function` returns `true`, `slist_remove_if` shall consider that entry as to be removed. ]*/
 /* Tests_SRS_SLIST_07_031: [ If the `condition_function` returns `false`, `slist_remove_if` shall consider that entry as not to be removed. ]*/
@@ -807,8 +877,9 @@ TEST_FUNCTION(slist_remove_if_on_a_list_with_2_items_where_the_second_matches_de
     static simpleItem simp1 = { 1, { NULL } };
     static simpleItem simp2 = { 2, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
 
     STRICT_EXPECTED_CALL(test_condition_function(IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG))
@@ -816,34 +887,35 @@ TEST_FUNCTION(slist_remove_if_on_a_list_with_2_items_where_the_second_matches_de
     STRICT_EXPECTED_CALL(test_condition_function(IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG));
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove_if(&head, test_condition_function, TEST_CONTEXT);
+    int result = slist_remove_if(&head, test_condition_function, TEST_CONTEXT);
 
     // assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(void_ptr, &head, result);
-    ASSERT_IS_NULL(head.next);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_IS_NULL(simp1.link.next);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_SLIST_07_028: [ `slist_remove_if` shall iterate through all entris in a list, remove all that satisfies the `condition_function` and return a pointer to the new head entry. ]*/
+/* Tests_SRS_SLIST_07_028: [ `slist_remove_if` shall iterate through all entris in a list, remove all that satisfies the `condition_function` and return zero. ]*/
 TEST_FUNCTION(slist_remove_if_on_a_list_with_2_items_both_matching_deletes_all_items)
 {
     // arrange
     static simpleItem simp1 = { 1, { NULL } };
     static simpleItem simp2 = { 2, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
 
     STRICT_EXPECTED_CALL(test_condition_function(IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG));
     STRICT_EXPECTED_CALL(test_condition_function(IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG));
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove_if(&head, test_condition_function, TEST_CONTEXT);
+    int result = slist_remove_if(&head, test_condition_function, TEST_CONTEXT);
 
     // assert
-    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_IS_NULL(head.next);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
@@ -854,8 +926,9 @@ TEST_FUNCTION(slist_remove_if_on_a_list_with_2_items_where_none_matches_returns_
     static simpleItem simp1 = { 1, { NULL } };
     static simpleItem simp2 = { 2, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
 
     STRICT_EXPECTED_CALL(test_condition_function(IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG))
@@ -864,12 +937,12 @@ TEST_FUNCTION(slist_remove_if_on_a_list_with_2_items_where_none_matches_returns_
         .SetReturn(false);
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove_if(&head, test_condition_function, TEST_CONTEXT);
+    int result = slist_remove_if(&head, test_condition_function, TEST_CONTEXT);
 
     // assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(void_ptr, &head, result);
-    ASSERT_ARE_EQUAL(void_ptr, head.next, &(simp2.link));
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(void_ptr, head.next, &(simp1.link));
+    ASSERT_ARE_EQUAL(void_ptr, simp1.link.next, &(simp2.link));
     ASSERT_IS_NULL(simp2.link.next);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
@@ -883,8 +956,9 @@ TEST_FUNCTION(slist_remove_if_with_continue_processing_false_returns_original_he
     static simpleItem simp3 = { 3, { NULL } };
     static simpleItem simp4 = { 4, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
     slist_add(&head, &(simp3.link));
     slist_add(&head, &(simp4.link));
@@ -896,12 +970,10 @@ TEST_FUNCTION(slist_remove_if_with_continue_processing_false_returns_original_he
     STRICT_EXPECTED_CALL(test_condition_function_2(IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG));
 
     // act
-    PSINGLYLINKEDLIST_ENTRY result = slist_remove_if(&head, test_condition_function_2, TEST_CONTEXT);
+    int result = slist_remove_if(&head, test_condition_function_2, TEST_CONTEXT);
 
     // assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(void_ptr, &head, result);
-
+    ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(void_ptr, &(simp4.link), simp2.link.next);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
@@ -927,8 +999,9 @@ TEST_FUNCTION(slist_for_each_with_NULL_action_function_fails_with_NULL)
     // arrange
     static simpleItem simp1 = { 1, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
 
     // act
     int result = slist_for_each(&head, NULL, TEST_CONTEXT);
@@ -947,8 +1020,9 @@ TEST_FUNCTION(slist_for_each_succeeds)
     static simpleItem simp3 = { 3, { NULL } };
     static simpleItem simp4 = { 4, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
     slist_add(&head, &(simp3.link));
     slist_add(&head, &(simp4.link));
@@ -975,8 +1049,9 @@ TEST_FUNCTION(slist_for_each_with_continue_processing_false_stops_processing)
     static simpleItem simp3 = { 3, { NULL } };
     static simpleItem simp4 = { 4, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
     slist_add(&head, &(simp3.link));
     slist_add(&head, &(simp4.link));
@@ -1002,8 +1077,9 @@ TEST_FUNCTION(slist_for_each_fails_when_continue_processing_fails)
     static simpleItem simp3 = { 3, { NULL } };
     static simpleItem simp4 = { 4, { NULL } };
 
-    SINGLYLINKEDLIST_ENTRY head = simp1.link;
+    SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
+    slist_add(&head, &(simp1.link));
     slist_add(&head, &(simp2.link));
     slist_add(&head, &(simp3.link));
     slist_add(&head, &(simp4.link));
