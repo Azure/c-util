@@ -599,7 +599,7 @@ TEST_FUNCTION(slist_find_with_NULL_match_function_fails_with_NULL)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_SLIST_07_025: [ If the list is empty, `slist_find` shall return `NULL`. ]*/
+/* Tests_SRS_SLIST_07_040: [ If the list is empty, `slist_find` shall return `NULL`. ]*/
 TEST_FUNCTION(slist_find_with_empty_list_fails_with_NULL)
 {
     //arrange
