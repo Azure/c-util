@@ -796,7 +796,7 @@ TEST_FUNCTION(slist_remove_if_with_NULL_condition_function_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Codes_SRS_SLIST_07_040: [ If the list is empty, `slist_find` shall return a non-zero value. ]*/
+/* Tests_SRS_SLIST_07_040: [ If the list is empty, `slist_find` shall return a non-zero value. ]*/
 TEST_FUNCTION(slist_remove_if_with_empty_list_fails)
 {
     // arrange
