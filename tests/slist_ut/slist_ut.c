@@ -599,7 +599,7 @@ TEST_FUNCTION(slist_find_with_NULL_match_function_fails_with_NULL)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_SLIST_07_040: [ If the list is empty, `slist_find` shall return `NULL`. ]*/
+/* Tests_SRS_SLIST_07_025: [ If the list is empty, `slist_find` shall return `NULL`. ]*/
 TEST_FUNCTION(slist_find_with_empty_list_fails_with_NULL)
 {
     //arrange
@@ -787,6 +787,21 @@ TEST_FUNCTION(slist_remove_if_with_NULL_condition_function_fails)
     SINGLYLINKEDLIST_ENTRY head;
     slist_initialize(&head);
     slist_add(&head, &(simp1.link));
+
+    // act
+    int result = slist_remove_if(&head, NULL, TEST_CONTEXT);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Codes_SRS_SLIST_07_040: [ If the list is empty, `slist_find` shall return a non-zero value. ]*/
+TEST_FUNCTION(slist_remove_if_with_empty_list_fails)
+{
+    // arrange
+    SINGLYLINKEDLIST_ENTRY head;
+    slist_initialize(&head);
 
     // act
     int result = slist_remove_if(&head, NULL, TEST_CONTEXT);
