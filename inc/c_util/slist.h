@@ -9,10 +9,23 @@
 #include <stdbool.h>
 #endif
 
+#include "umock_c/umock_c_prod.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 typedef struct SINGLYLINKEDLIST_ENTRY_TAG
 {
-    struct SINGLYLINKEDLIST_ENTRY_TAG *next;
-} SINGLYLINKEDLIST_ENTRY, *PSINGLYLINKEDLIST_ENTRY;
+    struct SINGLYLINKEDLIST_ENTRY_TAG* next;
+} SINGLYLINKEDLIST_ENTRY, * PSINGLYLINKEDLIST_ENTRY;
+
+#define SLIST_IS_EMPTY_RESULT_VALUES \
+    EMPTY,               \
+    NOT_EMPTY,      \
+    INVALID_ARGS
+MU_DEFINE_ENUM(SLIST_IS_EMPTY_RESULT, SLIST_IS_EMPTY_RESULT_VALUES);
 
 /**
 * @brief                          Function passed to slist_find, which returns whichever first list entry that matches it.
@@ -39,21 +52,16 @@ typedef bool (*SLIST_CONDITION_FUNCTION)(PSINGLYLINKEDLIST_ENTRY list_entry, con
 */
 typedef int (*SLIST_ACTION_FUNCTION)(PSINGLYLINKEDLIST_ENTRY list_entry, const void* action_context, bool* continue_processing);
 
-#include "umock_c/umock_c_prod.h"
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-MOCKABLE_FUNCTION(, bool, slist_initialize, PSINGLYLINKEDLIST_ENTRY, list_head);
-MOCKABLE_FUNCTION(, bool, slist_is_empty, const PSINGLYLINKEDLIST_ENTRY, list_head);
-MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_add, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
-MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_add_head, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
+MOCKABLE_FUNCTION(, int, slist_initialize, PSINGLYLINKEDLIST_ENTRY, list_head);
+MOCKABLE_FUNCTION(, SLIST_IS_EMPTY_RESULT, slist_is_empty, const PSINGLYLINKEDLIST_ENTRY, list_head);
+MOCKABLE_FUNCTION(, int, slist_add, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
+MOCKABLE_FUNCTION(, int, slist_add_head, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
 MOCKABLE_FUNCTION(, int, slist_remove, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
 MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_remove_head, PSINGLYLINKEDLIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_find, PSINGLYLINKEDLIST_ENTRY, list_head, SLIST_MATCH_FUNCTION, match_function, const void*, match_context);
 MOCKABLE_FUNCTION(, int, slist_remove_if, PSINGLYLINKEDLIST_ENTRY, list_head, SLIST_CONDITION_FUNCTION, condition_function, const void*, match_context);
 MOCKABLE_FUNCTION(, int, slist_for_each, PSINGLYLINKEDLIST_ENTRY, list_head, SLIST_ACTION_FUNCTION, action_function, const void*, action_context);
+
 #ifdef __cplusplus
 }
 #endif

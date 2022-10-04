@@ -26,15 +26,15 @@
 #include <stddef.h>
 
 
-bool real_slist_initialize(PSLIST_ENTRY list_head);
-bool real_slist_is_empty(const PSLIST_ENTRY list_head);
-PSLIST_ENTRY real_slist_add(PSLIST_ENTRY list_head, PSLIST_ENTRY list_entry);
-PSLIST_ENTRY real_slist_add_head(PSLIST_ENTRY list_head, PSLIST_ENTRY list_entry);
-PSLIST_ENTRY real_slist_remove(PSLIST_ENTRY list_head, PSLIST_ENTRY list_entry);
-PSLIST_ENTRY real_slist_remove_head(PSLIST_ENTRY list_head);
-PSLIST_ENTRY real_slist_find(PSLIST_ENTRY list_head, SLIST_MATCH_FUNCTION match_function, void* match_context);
-PSLIST_ENTRY real_slist_remove_if(PSLIST_ENTRY list_head, SLIST_CONDITION_FUNCTION condition_function, void* match_context);
-int real_slist_for_each(PSLIST_ENTRY list_head, SLIST_ACTION_FUNCTION action_function, void* action_context);
+int real_slist_initialize(PSINGLYLINKEDLIST_ENTRY list_head);
+SLIST_IS_EMPTY_RESULT real_slist_is_empty(const PSINGLYLINKEDLIST_ENTRY list_head);
+int real_slist_add(PSINGLYLINKEDLIST_ENTRY list_head, PSINGLYLINKEDLIST_ENTRY list_entry);
+int real_slist_add_head(PSINGLYLINKEDLIST_ENTRY list_head, PSINGLYLINKEDLIST_ENTRY list_entry);
+int real_slist_remove(PSINGLYLINKEDLIST_ENTRY list_head, PSINGLYLINKEDLIST_ENTRY list_entry);
+PSINGLYLINKEDLIST_ENTRY real_slist_remove_head(PSINGLYLINKEDLIST_ENTRY list_head);
+PSINGLYLINKEDLIST_ENTRY real_slist_find(PSINGLYLINKEDLIST_ENTRY list_head, SLIST_MATCH_FUNCTION match_function, const void* match_context);
+int real_slist_remove_if(PSINGLYLINKEDLIST_ENTRY list_head, SLIST_CONDITION_FUNCTION condition_function, const void* match_context);
+int real_slist_for_each(PSINGLYLINKEDLIST_ENTRY list_head, SLIST_ACTION_FUNCTION action_function, const void* action_context);
 
 
 #endif // REAL_SLIST_H

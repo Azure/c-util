@@ -13,14 +13,21 @@ typedef struct SINGLYLINKEDLIST_ENTRY_TAG
     struct SINGLYLINKEDLIST_ENTRY_TAG *next;
 } SINGLYLINKEDLIST_ENTRY, *PSINGLYLINKEDLIST_ENTRY;
 
+typedef enum
+{
+    EMPTY,
+    NOT_EMPTY,
+    INVALID_ARGS,
+} SLIST_IS_EMPTY_RESULT;
+
 typedef bool (*SLIST_MATCH_FUNCTION)(PSINGLYLINKEDLIST_ENTRY list_entry, const void* match_context);
 typedef bool (*SLIST_CONDITION_FUNCTION)(PSINGLYLINKEDLIST_ENTRY list_entry, const void* match_context, bool* continue_processing);
 typedef int (*SLIST_ACTION_FUNCTION)(PSINGLYLINKEDLIST_ENTRY list_entry, const void* action_context, bool* continue_processing);
 
-MOCKABLE_FUNCTION(, bool, slist_initialize, PSINGLYLINKEDLIST_ENTRY, list_head);
-MOCKABLE_FUNCTION(, bool, slist_is_empty, const PSINGLYLINKEDLIST_ENTRY, list_head);
+MOCKABLE_FUNCTION(, int, slist_initialize, PSINGLYLINKEDLIST_ENTRY, list_head);
+MOCKABLE_FUNCTION(, SLIST_IS_EMPTY_RESULT, slist_is_empty, const PSINGLYLINKEDLIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_add, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
-MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_add_head, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
+MOCKABLE_FUNCTION(, int, slist_add_head, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
 MOCKABLE_FUNCTION(, int, slist_remove, PSINGLYLINKEDLIST_ENTRY, list_head, PSINGLYLINKEDLIST_ENTRY, list_entry);
 MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_remove_head, PSINGLYLINKEDLIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, PSINGLYLINKEDLIST_ENTRY, slist_find, PSINGLYLINKEDLIST_ENTRY, list_head, SLIST_MATCH_FUNCTION, match_function, const void*, match_context);
@@ -50,22 +57,22 @@ DATA* data = CONTAINING_RECORD(list_entry, DATA, anchor);
 
 ### slist_initialize
 ```c
-bool slist_initialize(PSINGLYLINKEDLIST_ENTRY list_head);
+int slist_initialize(PSINGLYLINKEDLIST_ENTRY list_head);
 ```
 
-**SRS_SLIST_07_001: [** If `list_head` is `NULL`, `slist_initialize` shall fail and return `false`. **]**
+**SRS_SLIST_07_001: [** If `list_head` is `NULL`, `slist_initialize` shall fail and return a non-zero value. **]**
 
-**SRS_SLIST_07_002: [** `slist_initialize` shall initialize the `next` pointer in `list_head` points to `NULL`and return `true` on success.  **]**
+**SRS_SLIST_07_002: [** `slist_initialize` shall initialize the `next` pointer in `list_head` points to `NULL`and return zero on success.  **]**
 
 ### slist_is_empty
 ```c
-bool slist_is_empty(const PSINGLYLINKEDLIST_ENTRY list_head);
+SLIST_IS_EMPTY_RESULT slist_is_empty(const PSINGLYLINKEDLIST_ENTRY list_head);
 ```
-**SRS_SLIST_07_038: [** If `list_head` is `NULL`, `slist_is_empty` shall fail and return `true`.  **]**
+**SRS_SLIST_07_038: [** If `list_head` is `NULL`, `slist_is_empty` shall fail and return `INVALID_ARGS`.  **]**
 
-**SRS_SLIST_07_003: [** `slist_is_empty` shall return `true` if there is no `SINGLYLINKEDLIST_ENTRY` in this list. **]** 
+**SRS_SLIST_07_003: [** `slist_is_empty` shall return `EMPTY` if there is no `SINGLYLINKEDLIST_ENTRY` in this list. **]** 
 
-**SRS_SLIST_07_004: [** `slist_is_empty` shall return `false` if there is one or more entris in the list. **]** 
+**SRS_SLIST_07_004: [** `slist_is_empty` shall return `NOT_EMPTY` if there is one or more entris in the list. **]** 
 
 Notes:
 1. `slist_is_empty` shall be undefined if the `SINGLYLINKEDLIST_ENTRY` is not currently part of a list.
@@ -73,25 +80,25 @@ Notes:
 
 ### slist_add
 ```c
-PSINGLYLINKEDLIST_ENTRY slist_add(PSINGLYLINKEDLIST_ENTRY list_head, PSINGLYLINKEDLIST_ENTRY list_entry);
+int slist_add(PSINGLYLINKEDLIST_ENTRY list_head, PSINGLYLINKEDLIST_ENTRY list_entry);
 ```
 
-**SRS_SLIST_07_005: [** If `list_head` is `NULL`, `slist_add` shall fail and return `NULL`. **]**
+**SRS_SLIST_07_005: [** If `list_head` is `NULL`, `slist_add` shall fail and return a non-zero value. **]**
 
-**SRS_SLIST_07_006: [** If `list_entry` is `NULL`, `slist_add` shall fail and return `NULL`. **]**
+**SRS_SLIST_07_006: [** If `list_entry` is `NULL`, `slist_add` shall fail and return a non-zero value. **]**
 
-**SRS_SLIST_07_007: [** `slist_add` shall add one entry to the tail of the list on success and return a pointer to the added entry. **]** 
+**SRS_SLIST_07_007: [** `slist_add` shall add one entry to the tail of the list and return zero on success. **]** 
 
 ### slist_add_head
 ```
-PSINGLYLINKEDLIST_ENTRY slist_add_head(PSINGLYLINKEDLIST_ENTRY list_head, PSINGLYLINKEDLIST_ENTRY list_entry);
+int slist_add_head(PSINGLYLINKEDLIST_ENTRY list_head, PSINGLYLINKEDLIST_ENTRY list_entry);
 ```
 
-**SRS_SLIST_07_008: [** If `list_head` is `NULL`, `slist_add_head` shall fail and return `NULL`. **]** 
+**SRS_SLIST_07_008: [** If `list_head` is `NULL`, `slist_add_head` shall fail and return a non-zero value. **]** 
 
-**SRS_SLIST_07_009: [** If `list_entry` is `NULL`, `slist_add_head` shall fail and return `NULL`. **]**
+**SRS_SLIST_07_009: [** If `list_entry` is `NULL`, `slist_add_head` shall fail and return a non-zero value. **]**
 
-**SRS_SLIST_07_010: [** `slist_add_head` shall insert `list_entry` at head on success and return an entry to the added entry. **]** 
+**SRS_SLIST_07_010: [** `slist_add_head` shall insert `list_entry` at head and return zero on success. **]** 
 
 ### slist_remove
 ```c

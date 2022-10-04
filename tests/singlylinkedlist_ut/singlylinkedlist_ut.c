@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
