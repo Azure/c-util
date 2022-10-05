@@ -1,7 +1,7 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-set(theseTestsName slist_ut)
+set(theseTestsName s_list_ut)
 
 set(${theseTestsName}_test_files
     ${theseTestsName}.c
