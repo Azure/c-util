@@ -156,7 +156,7 @@ set(c_util_c_files
     ./src/ps_util.c
     ./src/rc_string.c
     ./src/rc_string_array.c
-    ./src/slist.c
+    ./src/s_list.c
     ./src/singlylinkedlist.c
     ./src/sm.c
     ./src/strings.c
@@ -182,7 +182,7 @@ set(c_util_h_files
     ./inc/c_util/ps_util.h
     ./inc/c_util/rc_string.h
     ./inc/c_util/rc_string_array.h
-    ./inc/c_util/slist.h
+    ./inc/c_util/s_list.h
     ./inc/c_util/singlylinkedlist.h
     ./inc/c_util/sm.h
     ./inc/c_util/strings.h

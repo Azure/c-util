@@ -8,11 +8,11 @@ set(${theseTestsName}_test_files
 )
 
 set(${theseTestsName}_c_files
-    ../../src/slist.c
+    ../../src/s_list.c
 )
 
 set(${theseTestsName}_h_files
-    ../../inc/c_util/slist.h
+    ../../inc/c_util/s_list.h
 )
 
 build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_pal c_pal_reals)
