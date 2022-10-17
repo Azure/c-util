@@ -17,7 +17,7 @@
 
 #include <stddef.h>
 
-void ps_util_terminate_process(void);
-void ps_util_exit_process(int exit_code);
+void real_ps_util_terminate_process(void);
+void real_ps_util_exit_process(int exit_code);
 
 #endif // REAL_PS_UTIL_H
