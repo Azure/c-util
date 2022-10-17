@@ -9,6 +9,7 @@ set(c_util_reals_c_files
     real_external_command_helper.c
     real_interlocked_hl.c
     real_memory_data.c
+    real_ps_util.c
     real_rc_string.c
     real_rc_string_array.c
     real_s_list.c
@@ -32,6 +33,8 @@ set(c_util_reals_h_files
     real_interlocked_hl_renames.h
     real_memory_data.h
     real_memory_data_renames.h
+    real_ps_util.h
+    real_ps_util_renames.h
     real_rc_string.h
     real_rc_string_renames.h
     real_rc_string_array.h
