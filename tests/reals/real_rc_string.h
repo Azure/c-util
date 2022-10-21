@@ -33,6 +33,8 @@
     THANDLE(RC_STRING) real_rc_string_create_with_move_memory(const char* string);
     THANDLE(RC_STRING) real_rc_string_create_with_custom_free(const char* string, RC_STRING_FREE_FUNC free_func, void* free_func_context);
     THANDLE(RC_STRING) real_rc_string_recreate(THANDLE(RC_STRING) source);
+
+    THANDLE(RC_STRING) real_rc_string_create_with_format_function(const char* format, ...);
     THANDLE(RC_STRING) real_rc_string_create_with_vformat(const char* format, va_list va);
 
 #endif //REAL_RC_STRING_H
