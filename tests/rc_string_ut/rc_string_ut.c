@@ -50,7 +50,7 @@ static int my_vsnprintf(void* s, size_t n, const char* format, va_list args)
     return vsnprintf(s, n, format, args);
 }
 
-static size_t my_strlen(const char* s) 
+static size_t my_strlen(const char* s)
 {
     return strlen(s);
 }
@@ -303,7 +303,12 @@ TEST_FUNCTION(rc_string_create_with_format_format_NULL_fails)
     // arrange
 
     // act
+#ifdef WIN32
     THANDLE(RC_STRING) rc_string = rc_string_create_with_format(NULL);
+#else
+    // On Linux, printf(NULL) generates a compiler warning, so instead just call the function that doesn't do the printf validation
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_format_function(NULL);
+#endif
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -423,7 +428,12 @@ TEST_FUNCTION(rc_string_create_with_format_with_empty_string_succeeds)
     STRICT_EXPECTED_CALL(mocked_vsnprintf(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
 
     // act
+#ifdef WIN32
     THANDLE(RC_STRING) rc_string = rc_string_create_with_format("");
+#else
+    // On Linux, printf("") generates a compiler warning, so instead just call the function that doesn't do the printf validation
+    THANDLE(RC_STRING) rc_string = rc_string_create_with_format_function("");
+#endif
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -908,7 +918,7 @@ TEST_FUNCTION(rc_string_recreate_succeeds_2)
 {
     ///arrange
     const char source[] = "bla2";
-    
+
     STRICT_EXPECTED_CALL(mocked_strlen(source));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, sizeof(char)));
 

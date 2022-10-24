@@ -6,7 +6,9 @@
 
 #ifdef __cplusplus
 #include <cstddef>
+#include <cstdarg>
 #else
+#include <stdarg.h>
 #include <stddef.h>
 #endif
 
@@ -38,10 +40,16 @@ extern "C"
 #define RC_STRING_VALUE_OR_NULL(rc) (((rc) == NULL) ? "NULL" : (rc)->string)
 
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*, string);
-    THANDLE(RC_STRING) rc_string_create_with_format(const char* format, ...);
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_move_memory, const char*, string);
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_custom_free, const char*, string, RC_STRING_FREE_FUNC, free_func, void*, free_func_context);
     MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_recreate, THANDLE(RC_STRING), self);
+
+    // Macro for mockable rc_string_create_with_vformat to verify the arguments as if printf was called
+    #define rc_string_create_with_format(format, ...) (0?printf((format), ## __VA_ARGS__):0, rc_string_create_with_format_function((format), ##__VA_ARGS__))
+    // The non-mockable function for rc_string_create_with_vformat (because we can't mock ... arguments)
+    THANDLE(RC_STRING) rc_string_create_with_format_function(const char* format, ...);
+    // The mockable function, called by rc_string_create_with_format_function
+    MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_vformat, const char*, format, va_list, va);
 
 #ifdef __cplusplus
 }
