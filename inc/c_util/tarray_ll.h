@@ -43,8 +43,14 @@ typedef struct TARRAY_STRUCT_TYPE_NAME_TAG(T)                                   
 #define TARRAY_LL_CREATE_NAME(C) MU_C2(TARRAY_LL_CREATE_, C)
 #define TARRAY_LL_CREATE(C) TARRAY_LL_CREATE_NAME(C)
 
+#define TARRAY_LL_CREATE_WITH_CAPACITY_NAME(C) MU_C2(TARRAY_LL_CREATE_WITH_CAPACITY_, C)
+#define TARRAY_LL_CREATE_WITH_CAPACITY(C) TARRAY_LL_CREATE_WITH_CAPACITY_NAME(C)
+
 /*introduces a function declaration for tarray_create*/
 #define TARRAY_LL_CREATE_DECLARE(C, T) MOCKABLE_FUNCTION(, TARRAY_LL(T), TARRAY_LL_CREATE(C));
+
+/*introduces a function declaration for tarray_create_with_capacity*/
+#define TARRAY_LL_CREATE_WITH_CAPACITY_DECLARE(C, T) MOCKABLE_FUNCTION(, TARRAY_LL(T), TARRAY_LL_CREATE_WITH_CAPACITY(C), uint32_t, capacity);
 
 /*introduces a name for the function that free's a TARRAY when it's ref count got to 0*/
 #define TARRAY_LL_FREE_NAME(C) MU_C2(TARRAY_LL_FREE_, C)
@@ -82,7 +88,7 @@ TARRAY_LL(T) TARRAY_LL_CREATE(C)(void)                                          
         result->arr = malloc(1 * sizeof(T));                                                                                \
         if(result->arr == NULL)                                                                                             \
         {                                                                                                                   \
-            /*Codes_SRS_TARRAY_02_004: [ If there are any failures then TARRAY_CREATE(T) shall fail and return NULL ]*/     \
+            /*Codes_SRS_TARRAY_02_004: [ If there are any failures then TARRAY_CREATE(T) shall fail and return NULL. ]*/    \
             LogError("failure in malloc(1 * sizeof(" MU_TOSTRING(T) ")=%zu)",                                               \
                 sizeof(T));                                                                                                 \
         }                                                                                                                   \
@@ -93,6 +99,51 @@ TARRAY_LL(T) TARRAY_LL_CREATE(C)(void)                                          
             goto allok;                                                                                                     \
         }                                                                                                                   \
         THANDLE_FREE(TARRAY_TYPEDEF_NAME(C))(result);                                                                       \
+        result = NULL;                                                                                                      \
+    }                                                                                                                       \
+    allok:;                                                                                                                 \
+    return result;                                                                                                          \
+}
+
+/*introduces a function definition for tarray_create_with_capacity*/
+#define TARRAY_LL_CREATE_WITH_CAPACITY_DEFINE(C, T)                                                                         \
+TARRAY_LL(T) TARRAY_LL_CREATE_WITH_CAPACITY(C)(uint32_t capacity)                                                           \
+{                                                                                                                           \
+    TARRAY_TYPEDEF_NAME(T)* result;                                                                                         \
+    if (capacity == 0)                                                                                                      \
+    {                                                                                                                       \
+        /* Codes_SRS_TARRAY_01_001: [ If capacity is 0, TARRAY_CREATE_WITH_CAPACITY(T) shall fail and return NULL. ]*/      \
+        LogError("Invalid argumenets: uint32_t capacity=%" PRIu32 "", capacity);                                            \
+        result = NULL;                                                                                                      \
+    }                                                                                                                       \
+    else                                                                                                                    \
+    {                                                                                                                       \
+        /* Codes_SRS_TARRAY_01_002: [ TARRAY_CREATE_WITH_CAPACITY(T) shall call THANDLE_MALLOC to allocate the result. ]*/  \
+        result = THANDLE_MALLOC(TARRAY_TYPEDEF_NAME(C))(TARRAY_LL_FREE_NAME(C));                                            \
+        if(result == NULL)                                                                                                  \
+        {                                                                                                                   \
+            /* Codes_SRS_TARRAY_01_005: [ If there are any failures then TARRAY_CREATE_WITH_CAPACITY(T) shall fail and return NULL. ]*/ \
+            LogError("failure in " MU_TOSTRING(THANDLE_MALLOC) "(" MU_TOSTRING(TARRAY_TYPEDEF_NAME(T)) "=%zu)", sizeof(TARRAY_TYPEDEF_NAME(T))); \
+            /*return as is*/                                                                                                \
+        }                                                                                                                   \
+        else                                                                                                                \
+        {                                                                                                                   \
+            /* Codes_SRS_TARRAY_01_003: [ TARRAY_CREATE_WITH_CAPACITY(T) shall call malloc_2 to allocate capacity entries for result->arr. ]*/ \
+            result->arr = malloc_2(capacity,sizeof(T));                                                                     \
+            if(result->arr == NULL)                                                                                         \
+            {                                                                                                               \
+                /* Codes_SRS_TARRAY_01_005: [ If there are any failures then TARRAY_CREATE_WITH_CAPACITY(T) shall fail and return NULL. ]*/ \
+                LogError("failure in malloc(1 * sizeof(" MU_TOSTRING(T) ")=%zu)",                                           \
+                    sizeof(T));                                                                                             \
+            }                                                                                                               \
+            else                                                                                                            \
+            {                                                                                                               \
+                result->capacity = capacity;                                                                                \
+                /* Codes_SRS_TARRAY_01_004: [ TARRAY_CREATE_WITH_CAPACITY(T) shall succeed and return a non-NULL value. ]*/ \
+                goto allok;                                                                                                 \
+            }                                                                                                               \
+            THANDLE_FREE(TARRAY_TYPEDEF_NAME(C))(result);                                                                   \
+        }                                                                                                                   \
         result = NULL;                                                                                                      \
     }                                                                                                                       \
     allok:;                                                                                                                 \
@@ -167,12 +218,14 @@ int TARRAY_LL_ENSURE_CAPACITY(C)(TARRAY_LL(T) tarray, uint32_t capacity)        
     /*hint: have TARRAY_DEFINE_STRUCT_TYPE(T) before TARRAY_LL_TYPE_DECLARE*/                                       \
     THANDLE_LL_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(C), TARRAY_TYPEDEF_NAME(T))                                         \
     TARRAY_LL_CREATE_DECLARE(C, T)                                                                                  \
+    TARRAY_LL_CREATE_WITH_CAPACITY_DECLARE(C, T)                                                                    \
     TARRAY_LL_ENSURE_CAPACITY_DECLARE(C, T)                                                                         \
 
 #define TARRAY_LL_TYPE_DEFINE(C, T)                                                                                 \
     /*hint: have THANDLE_TYPE_DEFINE(TARRAY_TYPEDEF_NAME(T)) before TARRAY_LL_TYPE_DEFINE*/                         \
     TARRAY_LL_FREE_DEFINE(C, T)                                                                                     \
     TARRAY_LL_CREATE_DEFINE(C, T)                                                                                   \
+    TARRAY_LL_CREATE_WITH_CAPACITY_DEFINE(C, T)                                                                     \
     TARRAY_LL_ENSURE_CAPACITY_DEFINE(C, T)                                                                          \
 
 #endif  /*TARRAY_LL_H*/

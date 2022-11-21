@@ -54,7 +54,7 @@ typedef struct TARRAY_STRUCT_T_TAG
 #define TARRAY_TYPE_DECLARE(T)
 ```
 
-`TARRAY_TYPE_DECLARE(T)` is a macro to be used in a header declaration. It introduces 2 APIs (as MOCKABLE_FUNCTIONS):
+`TARRAY_TYPE_DECLARE(T)` is a macro to be used in a header declaration. It introduces 3 APIs (as MOCKABLE_FUNCTIONS):
 
 ### TARRAY_CREATE(T)
 ```c
@@ -69,7 +69,24 @@ TARRAY(T) TARRAY_CREATE(T)(void);
 
 **SRS_TARRAY_02_003: [** `TARRAY_CREATE(T)` shall succeed and return a non-`NULL` value. **]**
 
-**SRS_TARRAY_02_004: [** If there are any failures then `TARRAY_CREATE(T)` shall fail and return `NULL` **]**
+**SRS_TARRAY_02_004: [** If there are any failures then `TARRAY_CREATE(T)` shall fail and return `NULL`. **]**
+
+### TARRAY_CREATE_WITH_CAPACITY(T)
+```c
+TARRAY(T) TARRAY_CREATE_WITH_CAPACITY(T)(uint32_t capacity);
+```
+
+`TARRAY_CREATE_WITH_CAPACITY(T)` creates a new `TARRAY(T)` with initial capacity of `capacity`.
+
+**SRS_TARRAY_01_001: [** If `capacity` is 0, `TARRAY_CREATE_WITH_CAPACITY(T)` shall fail and return `NULL`. **]**
+
+**SRS_TARRAY_01_002: [** `TARRAY_CREATE_WITH_CAPACITY(T)` shall call `THANDLE_MALLOC` to allocate the result. **]**
+
+**SRS_TARRAY_01_003: [** `TARRAY_CREATE_WITH_CAPACITY(T)` shall call `malloc_2` to allocate `capacity` entries for `result->arr`. **]**
+
+**SRS_TARRAY_01_004: [** `TARRAY_CREATE_WITH_CAPACITY(T)` shall succeed and return a non-`NULL` value. **]**
+
+**SRS_TARRAY_01_005: [** If there are any failures then `TARRAY_CREATE_WITH_CAPACITY(T)` shall fail and return `NULL`. **]**
 
 ### TARRAY_ENSURE_CAPACITY(T)
 ```c
@@ -89,7 +106,3 @@ int TARRAY_ENSURE_CAPACITY(T)(TARRAY(T) tarray, uint32_t capacity)
 **SRS_TARRAY_02_008: [** `TARRAY_ENSURE_CAPACITY(T)` shall succeed, record the new computed capacity, and return 0. **]**
 
 **SRS_TARRAY_02_009: [** If there are any failures then `TARRAY_ENSURE_CAPACITY(T)` shall fail and return a non-zero value. **]**
-
-
-
-
