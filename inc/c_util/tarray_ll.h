@@ -71,38 +71,14 @@ static void TARRAY_LL_FREE_NAME(C)(TARRAY_TYPEDEF_NAME(T)* tarray)              
 }                                                                                                   \
 
 /*introduces a function definition for tarray_create*/
+/*Codes_SRS_TARRAY_02_001: [ TARRAY_CREATE(T) shall call THANDLE_MALLOC to allocate the result. ]*/
+/*Codes_SRS_TARRAY_02_002: [ TARRAY_CREATE(T) shall call malloc to allocate result->arr. ]*/
+/*Codes_SRS_TARRAY_02_004: [ If there are any failures then TARRAY_CREATE(T) shall fail and return NULL. ]*/
+/*Codes_SRS_TARRAY_02_003: [ TARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
 #define TARRAY_LL_CREATE_DEFINE(C, T)                                                                                       \
 TARRAY_LL(T) TARRAY_LL_CREATE(C)(void)                                                                                      \
 {                                                                                                                           \
-    TARRAY_TYPEDEF_NAME(T)* result;                                                                                         \
-    /*Codes_SRS_TARRAY_02_001: [ TARRAY_CREATE(T) shall call THANDLE_MALLOC to allocate the result. ]*/                     \
-    result = THANDLE_MALLOC(TARRAY_TYPEDEF_NAME(C))(TARRAY_LL_FREE_NAME(C));                                                \
-    if(result == NULL)                                                                                                      \
-    {                                                                                                                       \
-        LogError("failure in " MU_TOSTRING(THANDLE_MALLOC) "(" MU_TOSTRING(TARRAY_TYPEDEF_NAME(T)) "=%zu)", sizeof(TARRAY_TYPEDEF_NAME(T))); \
-        /*return as is*/                                                                                                    \
-    }                                                                                                                       \
-    else                                                                                                                    \
-    {                                                                                                                       \
-        /*Codes_SRS_TARRAY_02_002: [ TARRAY_CREATE(T) shall call malloc to allocate result->arr. ]*/                        \
-        result->arr = malloc(1 * sizeof(T));                                                                                \
-        if(result->arr == NULL)                                                                                             \
-        {                                                                                                                   \
-            /*Codes_SRS_TARRAY_02_004: [ If there are any failures then TARRAY_CREATE(T) shall fail and return NULL. ]*/    \
-            LogError("failure in malloc(1 * sizeof(" MU_TOSTRING(T) ")=%zu)",                                               \
-                sizeof(T));                                                                                                 \
-        }                                                                                                                   \
-        else                                                                                                                \
-        {                                                                                                                   \
-            /*Codes_SRS_TARRAY_02_003: [ TARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/                    \
-            result->capacity = 1;                                                                                           \
-            goto allok;                                                                                                     \
-        }                                                                                                                   \
-        THANDLE_FREE(TARRAY_TYPEDEF_NAME(C))(result);                                                                       \
-        result = NULL;                                                                                                      \
-    }                                                                                                                       \
-    allok:;                                                                                                                 \
-    return result;                                                                                                          \
+    return TARRAY_LL_CREATE_WITH_CAPACITY(C)(1);                                                                            \
 }
 
 /*introduces a function definition for tarray_create_with_capacity*/
@@ -113,7 +89,7 @@ TARRAY_LL(T) TARRAY_LL_CREATE_WITH_CAPACITY(C)(uint32_t capacity)               
     if (capacity == 0)                                                                                                      \
     {                                                                                                                       \
         /* Codes_SRS_TARRAY_01_001: [ If capacity is 0, TARRAY_CREATE_WITH_CAPACITY(T) shall fail and return NULL. ]*/      \
-        LogError("Invalid argumenets: uint32_t capacity=%" PRIu32 "", capacity);                                            \
+        LogError("Invalid arguments: uint32_t capacity=%" PRIu32 "", capacity);                                             \
         result = NULL;                                                                                                      \
     }                                                                                                                       \
     else                                                                                                                    \
@@ -133,8 +109,8 @@ TARRAY_LL(T) TARRAY_LL_CREATE_WITH_CAPACITY(C)(uint32_t capacity)               
             if(result->arr == NULL)                                                                                         \
             {                                                                                                               \
                 /* Codes_SRS_TARRAY_01_005: [ If there are any failures then TARRAY_CREATE_WITH_CAPACITY(T) shall fail and return NULL. ]*/ \
-                LogError("failure in malloc(1 * sizeof(" MU_TOSTRING(T) ")=%zu)",                                           \
-                    sizeof(T));                                                                                             \
+                LogError("failure in malloc_2(capacity=%" PRIu32 ", sizeof(" MU_TOSTRING(T) ")=%zu)",                       \
+                    capacity, sizeof(T));                                                                                   \
             }                                                                                                               \
             else                                                                                                            \
             {                                                                                                               \
@@ -143,8 +119,8 @@ TARRAY_LL(T) TARRAY_LL_CREATE_WITH_CAPACITY(C)(uint32_t capacity)               
                 goto allok;                                                                                                 \
             }                                                                                                               \
             THANDLE_FREE(TARRAY_TYPEDEF_NAME(C))(result);                                                                   \
+            result = NULL;                                                                                                  \
         }                                                                                                                   \
-        result = NULL;                                                                                                      \
     }                                                                                                                       \
     allok:;                                                                                                                 \
     return result;                                                                                                          \

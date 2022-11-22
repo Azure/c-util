@@ -65,7 +65,7 @@ TARRAY(T) TARRAY_CREATE(T)(void);
 
 **SRS_TARRAY_02_001: [** `TARRAY_CREATE(T)` shall call `THANDLE_MALLOC` to allocate the result. **]**
 
-**SRS_TARRAY_02_002: [** `TARRAY_CREATE(T)` shall call `malloc` to allocate `result->arr`. **]**
+**SRS_TARRAY_02_002: [** `TARRAY_CREATE(T)` shall call `malloc_2` to allocate `result->arr`. **]**
 
 **SRS_TARRAY_02_003: [** `TARRAY_CREATE(T)` shall succeed and return a non-`NULL` value. **]**
 

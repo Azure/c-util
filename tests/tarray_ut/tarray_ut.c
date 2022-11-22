@@ -116,7 +116,7 @@ TEST_FUNCTION(uint32_t_can_be_created)
 {
     ///arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*struct*/
-    STRICT_EXPECTED_CALL(malloc(1 * sizeof(uint32_t))); /*inner array*/
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(uint32_t))); /*inner array*/
 
     ///act
     TARRAY(uint32_t) arr = TARRAY_CREATE(uint32_t)();
@@ -139,7 +139,7 @@ TEST_FUNCTION(uint32_t_can_be_created_unhappy_path_1)
     ///arrange
 
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*struct*/
-    STRICT_EXPECTED_CALL(malloc(1 * sizeof(uint32_t)))
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(uint32_t)))
         .SetReturn(NULL);
     STRICT_EXPECTED_CALL(free(IGNORED_ARG)); /*struct*/
 
@@ -178,7 +178,7 @@ TEST_FUNCTION(TARRAY_of_THANDLE_can_be_created)
 {
     ///arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*struct*/
-    STRICT_EXPECTED_CALL(malloc(1 * sizeof(THANDLE(A_TEST)))); /*inner array*/
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(THANDLE(A_TEST)))); /*inner array*/
 
     ///act
     TARRAY(THANDLE(A_TEST)) arr_of_a = TARRAY_CREATE(THANDLE(A_TEST))();
@@ -346,7 +346,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_with_same_capacity_succeeds)
 {
     ///arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*struct*/
-    STRICT_EXPECTED_CALL(malloc(1 * sizeof(uint32_t))); /*inner array*/
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(uint32_t))); /*inner array*/
     TARRAY(uint32_t) arr = TARRAY_CREATE(uint32_t)();
 
     int result;
@@ -368,8 +368,32 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_reallocs_succeeds)
 {
     ///arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*struct*/
-    STRICT_EXPECTED_CALL(malloc(1 * sizeof(uint32_t))); /*inner array*/
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(uint32_t))); /*inner array*/
     TARRAY(uint32_t) arr = TARRAY_CREATE(uint32_t)();
+
+    int result;
+
+    STRICT_EXPECTED_CALL(realloc_2(arr->arr, 8, sizeof(uint32_t)));
+
+    ///act
+    result = TARRAY_ENSURE_CAPACITY(uint32_t)(arr, 5);/*capacity is already at 1, the next power of 2 after 5 is 8*/
+
+    ///assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(uint32_t, 8, arr->capacity);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    TARRAY_ASSIGN(uint32_t)(&arr, NULL);
+}
+
+/*Tests_SRS_TARRAY_02_007: [ TARRAY_ENSURE_CAPACITY(T) shall shall call realloc_2 to resize arr to the next multiple of 2 greater than or equal to capacity. ]*/
+TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_realloc_for_an_array_created_with_TARRAY_CREATE_WITH_CAPACITY_succeeds)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*struct*/
+    STRICT_EXPECTED_CALL(malloc_2(2, sizeof(uint32_t))); /*inner array*/
+    TARRAY(uint32_t) arr = TARRAY_CREATE_WITH_CAPACITY(uint32_t)(2);
 
     int result;
 
@@ -392,7 +416,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_reallocs_does_not_realloc_when_size_is_exac
 {
     ///arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*struct*/
-    STRICT_EXPECTED_CALL(malloc(1 * sizeof(uint32_t))); /*inner array*/
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(uint32_t))); /*inner array*/
     TARRAY(uint32_t) arr = TARRAY_CREATE(uint32_t)();
 
     int result;
@@ -418,7 +442,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_with_overflow_capacity_fails)
 {
     ///arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*struct*/
-    STRICT_EXPECTED_CALL(malloc(1 * sizeof(uint32_t))); /*inner array*/
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(uint32_t))); /*inner array*/
     TARRAY(uint32_t) arr = TARRAY_CREATE(uint32_t)();
 
     int result;
@@ -440,7 +464,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_unhappy_path)
 {
     ///arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*struct*/
-    STRICT_EXPECTED_CALL(malloc(1 * sizeof(uint32_t))); /*inner array*/
+    STRICT_EXPECTED_CALL(malloc_2(1, sizeof(uint32_t))); /*inner array*/
     TARRAY(uint32_t) arr = TARRAY_CREATE(uint32_t)();
 
     int result;
