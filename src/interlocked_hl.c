@@ -6,6 +6,8 @@
 
 #include "umock_c/umock_c_prod.h"
 
+#include "windows.h"
+
 #include "c_logging/xlogging.h"
 
 #include "c_pal/interlocked.h"
@@ -109,8 +111,20 @@ IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForValue,
             /* Codes_SRS_INTERLOCKED_HL_01_005: [ When waiting for the value at address to change, the milliseconds argument value shall be used as timeout. ]*/
             if (!wait_on_address(address, current_value, milliseconds))
             {
-                /* Codes_SRS_INTERLOCKED_HL_01_006: [ If wait_on_address fails, InterlockedHL_WaitForValue shall fail and return INTERLOCKED_HL_ERROR. ]*/
-                result = INTERLOCKED_HL_ERROR;
+                if (GetLastError() == ERROR_TIMEOUT)
+                {
+                    /* Codes_SRS_INTERLOCKED_HL_24_001: [ If wait_on_address fails due to timeout, InterlockedHL_WaitForValue shall fail and return INTERLOCKED_HL_TIMEOUT. ]*/
+                    LogError("failure in wait_on_address(address=%p, &current_value=%p, milliseconds=%" PRIu32 ") due to timeout",
+                        address, &current_value, milliseconds);
+                    result = INTERLOCKED_HL_TIMEOUT;
+                }
+                else
+                {
+                    /* Codes_SRS_INTERLOCKED_HL_01_006: [ If wait_on_address fails due to any other reason, InterlockedHL_WaitForValue shall fail and return INTERLOCKED_HL_ERROR. ]*/
+                    LogError("failure in wait_on_address(address=%p, &current_value=%p, milliseconds=%" PRIu32 ")",
+                        address, &current_value, milliseconds);
+                    result = INTERLOCKED_HL_ERROR;
+                }
                 break;
             }
         } while (1);
@@ -151,10 +165,20 @@ IMPLEMENT_MOCKABLE_FUNCTION(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForNotVal
             /* Codes_SRS_INTERLOCKED_HL_42_004: [ When waiting for the value at address to change, the milliseconds argument value shall be used as timeout. ]*/
             if (!wait_on_address(address, current_value, milliseconds))
             {
-                LogError("failure in wait_on_address(address=%p, &current_value=%p, milliseconds=%" PRIu32 ")",
-                    address, &current_value, milliseconds);
-                /* Codes_SRS_INTERLOCKED_HL_42_007: [ If wait_on_address fails, InterlockedHL_WaitForNotValue shall fail and return INTERLOCKED_HL_ERROR. ]*/
-                result = INTERLOCKED_HL_ERROR;
+                if (GetLastError() == ERROR_TIMEOUT)
+                {
+                    LogError("failure in wait_on_address(address=%p, &current_value=%p, milliseconds=%" PRIu32 ") due to timeout",
+                        address, &current_value, milliseconds);
+                    /* Codes_SRS_INTERLOCKED_HL_24_002: [ If wait_on_address fails due to timeout, InterlockedHL_WaitForNotValue shall fail and return INTERLOCKED_HL_TIMEOUT. ]*/
+                    result = INTERLOCKED_HL_TIMEOUT;
+                }
+                else
+                {
+                    LogError("failure in wait_on_address(address=%p, &current_value=%p, milliseconds=%" PRIu32 ")",
+                        address, &current_value, milliseconds);
+                    /* Codes_SRS_INTERLOCKED_HL_42_007: [ If wait_on_address fails due to other reason, InterlockedHL_WaitForNotValue shall fail and return INTERLOCKED_HL_ERROR. ]*/
+                    result = INTERLOCKED_HL_ERROR;
+                }
                 break;
             }
         } while (1);

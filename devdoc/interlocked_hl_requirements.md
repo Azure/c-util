@@ -11,6 +11,7 @@
 #define INTERLOCKED_HL_RESULT_VALUES \
     INTERLOCKED_HL_OK, \
     INTERLOCKED_HL_ERROR, \
+    INTERLOCKED_HL_TIMEOUT, \
     INTERLOCKED_HL_CHANGED
 
 MU_DEFINE_ENUM(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
@@ -71,7 +72,9 @@ MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForVal
 
 **SRS_INTERLOCKED_HL_01_008: [** If the value at `address` does not match, `InterlockedHL_WaitForValue` shall issue another call to `wait_on_address`. **]**
 
-**SRS_INTERLOCKED_HL_01_006: [** If `wait_on_address` fails, `InterlockedHL_WaitForValue` shall fail and return `INTERLOCKED_HL_ERROR`. **]**
+**SRS_INTERLOCKED_HL_24_001: [** If `wait_on_address` fails due to timeout, `InterlockedHL_WaitForValue` shall fail and return `INTERLOCKED_HL_TIMEOUT`. **]**
+
+**SRS_INTERLOCKED_HL_01_006: [** If `wait_on_address` fails due to any other reason, `InterlockedHL_WaitForValue` shall fail and return `INTERLOCKED_HL_ERROR`. **]**
 
 ### InterlockedHL_WaitForNotValue
 
@@ -93,7 +96,9 @@ MOCKABLE_FUNCTION_WITH_RETURNS(, INTERLOCKED_HL_RESULT, InterlockedHL_WaitForNot
 
 **SRS_INTERLOCKED_HL_42_006: [** If the value at `address` matches, `InterlockedHL_WaitForNotValue` shall issue another call to `wait_on_address`. **]**
 
-**SRS_INTERLOCKED_HL_42_007: [** If `wait_on_address` fails, `InterlockedHL_WaitForNotValue` shall fail and return `INTERLOCKED_HL_ERROR`. **]**
+**SRS_INTERLOCKED_HL_24_002: [** If `wait_on_address` fails due to timeout, `InterlockedHL_WaitForNotValue` shall fail and return `INTERLOCKED_HL_TIMEOUT`. **]**
+
+**SRS_INTERLOCKED_HL_42_007: [** If `wait_on_address` fails due to any other reason, `InterlockedHL_WaitForNotValue` shall fail and return `INTERLOCKED_HL_ERROR`. **]**
 
 ### InterlockedHL_CompareExchangeIf
 ```c

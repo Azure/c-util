@@ -7,7 +7,7 @@ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-../../src/interlocked_hl.c
+interlocked_hl_mocked.c
 )
 
 set(${theseTestsName}_h_files

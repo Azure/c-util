@@ -30,6 +30,8 @@ static TEST_MUTEX_HANDLE g_testByTest;
 #define ENABLE_MOCKS
 #include "c_pal/interlocked.h"
 #include "c_pal/sync.h"
+
+MOCKABLE_FUNCTION_WITH_RETURNS(, DWORD, mocked_GetLastError)(ERROR_SUCCESS, ERROR_TIMEOUT)
 #undef ENABLE_MOCKS
 
 #include "real_interlocked.h"
@@ -100,6 +102,8 @@ TEST_SUITE_INITIALIZE(a)
     REGISTER_SYNC_GLOBAL_MOCK_HOOK();
 
     REGISTER_GLOBAL_MOCK_HOOK(wait_on_address, hook_wait_on_address);
+
+    REGISTER_UMOCK_ALIAS_TYPE(DWORD, uint32_t);
 }
 
 TEST_SUITE_CLEANUP(b)
@@ -408,6 +412,7 @@ TEST_FUNCTION(when_the_wait_on_address_fails_InterlockedHL_WaitForValue_also_fai
     STRICT_EXPECTED_CALL(wait_on_address(&value, IGNORED_ARG, UINT32_MAX))
         .CopyOutArgumentBuffer_address(&intermediate_value, sizeof(int32_t))
         .SetReturn(false);
+    STRICT_EXPECTED_CALL(mocked_GetLastError());
 
     // act
     result = InterlockedHL_WaitForValue(&value, 0x42, UINT32_MAX);
@@ -416,6 +421,27 @@ TEST_FUNCTION(when_the_wait_on_address_fails_InterlockedHL_WaitForValue_also_fai
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_ERROR, result);
 }
+
+/* Tests_SRS_INTERLOCKED_HL_24_001: [ If wait_on_address fails due to timeout, InterlockedHL_WaitForValue shall fail and return INTERLOCKED_HL_TIMEOUT. ]*/
+TEST_FUNCTION(when_the_wait_on_address_fails_due_to_timeout_InterlockedHL_WaitForValue_also_fails)
+{
+    // arrange
+    INTERLOCKED_HL_RESULT result;
+    volatile_atomic int32_t value = 0x40;
+
+    STRICT_EXPECTED_CALL(interlocked_add(&value, 0));
+    STRICT_EXPECTED_CALL(wait_on_address(&value, IGNORED_ARG, UINT32_MAX))
+        .SetReturn(false);
+    STRICT_EXPECTED_CALL(mocked_GetLastError()).SetReturn(ERROR_TIMEOUT);
+
+    // act
+    result = InterlockedHL_WaitForValue(&value, 0x42, UINT32_MAX);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_TIMEOUT, result);
+}
+
 
 /* InterlockedHL_WaitForNotValue */
 
@@ -511,6 +537,7 @@ TEST_FUNCTION(when_the_wait_on_address_fails_InterlockedHL_WaitForNotValue_also_
     STRICT_EXPECTED_CALL(interlocked_add(&value, 0));
     STRICT_EXPECTED_CALL(wait_on_address(&value, IGNORED_ARG, UINT32_MAX))
         .SetReturn(false);
+    STRICT_EXPECTED_CALL(mocked_GetLastError());
 
     // act
     result = InterlockedHL_WaitForNotValue(&value, 0x42, UINT32_MAX);
@@ -518,6 +545,26 @@ TEST_FUNCTION(when_the_wait_on_address_fails_InterlockedHL_WaitForNotValue_also_
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_ERROR, result);
+}
+
+/* Tests_SRS_INTERLOCKED_HL_24_002: [ If wait_on_address fails due to timeout, InterlockedHL_WaitForNotValue shall fail and return INTERLOCKED_HL_TIMEOUT. ]*/
+TEST_FUNCTION(when_the_wait_on_address_fails_due_to_timeout_InterlockedHL_WaitForNotValue_also_fails)
+{
+    // arrange
+    INTERLOCKED_HL_RESULT result;
+    volatile_atomic int32_t value = 0x42;
+
+    STRICT_EXPECTED_CALL(interlocked_add(&value, 0));
+    STRICT_EXPECTED_CALL(wait_on_address(&value, IGNORED_ARG, UINT32_MAX))
+        .SetReturn(false);
+    STRICT_EXPECTED_CALL(mocked_GetLastError()).SetReturn(ERROR_TIMEOUT);
+
+    // act
+    result = InterlockedHL_WaitForNotValue(&value, 0x42, UINT32_MAX);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_TIMEOUT, result);
 }
 
 /* InterlockedHL_CompareExchangeIf */

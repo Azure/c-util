@@ -247,4 +247,28 @@ TEST_FUNCTION(interlocked_hl_compare_exchange_64_if_operates_successfully)
     ASSERT_ARE_EQUAL(int64_t, 97, target);
 }
 
+TEST_FUNCTION(interlocked_hl_wait_for_value_returns_timeout_when_value_does_not_change_until_timeout)
+{
+    //arrange
+    volatile_atomic int32_t value = 0x40;
+
+    //act
+    INTERLOCKED_HL_RESULT result = InterlockedHL_WaitForValue(&value, 0x42, 5);
+
+    //assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_TIMEOUT, result);
+}
+
+TEST_FUNCTION(interlocked_hl_wait_for_not_value_returns_timeout_when_value_does_not_change_until_timeout)
+{
+    //arrange
+    volatile_atomic int32_t value = 0x40;
+
+    //act
+    INTERLOCKED_HL_RESULT result = InterlockedHL_WaitForNotValue(&value, 0x40, 5);
+
+    //assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_TIMEOUT, result);
+}
+
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
