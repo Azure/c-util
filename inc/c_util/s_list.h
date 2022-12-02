@@ -56,7 +56,6 @@ typedef int (*S_LIST_ACTION_FUNCTION)(PS_LIST_ENTRY list_entry, const void* acti
 MOCKABLE_FUNCTION(, int, s_list_initialize, PS_LIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, S_LIST_IS_EMPTY_RESULT, s_list_is_empty, const PS_LIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, int, s_list_add, PS_LIST_ENTRY, list_head, PS_LIST_ENTRY, list_entry);
-MOCKABLE_FUNCTION(, int, s_list_add_head, PS_LIST_ENTRY, list_head, PS_LIST_ENTRY, list_entry);
 MOCKABLE_FUNCTION(, int, s_list_remove, PS_LIST_ENTRY, list_head, PS_LIST_ENTRY, list_entry);
 MOCKABLE_FUNCTION(, PS_LIST_ENTRY, s_list_remove_head, PS_LIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, PS_LIST_ENTRY, s_list_find, PS_LIST_ENTRY, list_head, S_LIST_MATCH_FUNCTION, match_function, const void*, match_context);
