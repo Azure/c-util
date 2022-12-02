@@ -68,37 +68,10 @@ int s_list_add(PS_LIST_ENTRY list_head, PS_LIST_ENTRY list_entry)
     }
     else
     {
-        /* Codes_SRS_S_LIST_07_007: [ s_list_add shall add one entry to the tail of the list and return zero on success. ]*/
-        PS_LIST_ENTRY list_instance = list_head;
-
-        while (list_instance->next != NULL)
-        {
-            list_instance = list_instance->next;
-        }
-
-        list_instance->next = list_entry;
-        result = 0;
-    }
-    return result;
-}
-
-int s_list_add_head(PS_LIST_ENTRY list_head, PS_LIST_ENTRY list_entry)
-{
-    int result;
-    if (
-    /* Codes_SRS_S_LIST_07_008: [ If list_head is NULL, s_list_add_head shall fail and return a non-zero value. ]*/
-    (list_head == NULL) ||
-    /* Codes_SRS_S_LIST_07_009: [ If list_entry is NULL, s_list_add_head shall fail and return a non-zero value. ]*/
-    (list_entry == NULL))
-    {
-        LogError("Invalid arguments (list_head=%p, list_entry=%p)", list_head, list_entry);
-        result = MU_FAILURE;
-    }
-    else
-    {
-        /* Codes_SRS_S_LIST_07_010: [ s_list_add_head shall insert list_entry at head and return zero on success. ]*/
+        /* Codes_SRS_S_LIST_07_007: [ s_list_add shall add one entry to the head of the list and return zero on success. ]*/
         list_entry->next = list_head->next;
         list_head->next = list_entry;
+
         result = 0;
     }
     return result;

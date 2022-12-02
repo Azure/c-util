@@ -221,7 +221,7 @@ TEST_FUNCTION(s_list_add_with_add_entry_NULL_fails)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_S_LIST_07_007: [ s_list_add shall add one entry to the tail of the list and return zero on success. ]*/
+/* Tests_SRS_S_LIST_07_007: [ s_list_add shall add one entry to the head of the list and return zero on success. ]*/
 TEST_FUNCTION(s_list_add_with_empty_list_succeeds)
 {
     // arrange
@@ -237,7 +237,7 @@ TEST_FUNCTION(s_list_add_with_empty_list_succeeds)
     ASSERT_ARE_EQUAL(void_ptr, head.next, &(simp1.link));
 }
 
-/* Tests_SRS_S_LIST_07_007: [ s_list_add shall add one entry to the tail of the list and return zero on success. ]*/
+/* Tests_SRS_S_LIST_07_007: [ s_list_add shall add one entry to the head of the list and return zero on success. ]*/
 TEST_FUNCTION(s_list_add_with_multiple_entries_in_the_list_succeeds)
 {
     // arrange
@@ -248,89 +248,20 @@ TEST_FUNCTION(s_list_add_with_multiple_entries_in_the_list_succeeds)
 
     S_LIST_ENTRY head;
     (void)s_list_initialize(&head);
-    (void)s_list_add_head(&head, &(simp1.link));
-    (void)s_list_add_head(&head, &(simp2.link));
-    (void)s_list_add_head(&head, &(simp3.link));
+    (void)s_list_add(&head, &(simp3.link));
+    (void)s_list_add(&head, &(simp2.link));
+    (void)s_list_add(&head, &(simp1.link));
+    ASSERT_ARE_EQUAL(void_ptr, head.next, &(simp1.link));
+    ASSERT_ARE_EQUAL(void_ptr, simp1.link.next, &(simp2.link));
+    ASSERT_ARE_EQUAL(void_ptr, simp2.link.next, &(simp3.link));
 
     // act
     int result = s_list_add(&head, &(simp4.link));
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(void_ptr, simp1.link.next, &(simp4.link));
-}
-
-/*s_list_add_head*/
-
-/* Tests_SRS_S_LIST_07_008: [ If list_head is NULL, s_list_add_head shall fail and return a non-zero value. ]*/
-TEST_FUNCTION(s_list_add_head_with_head_NULL_fails)
-{
-    // arrange
-    static SIMPLE_ITEM simp1 = { 1, { NULL } };
-   
-    // act
-    int result = s_list_add_head(NULL, &(simp1.link));
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-}
-
-/* Tests_SRS_S_LIST_07_009: [ If list_entry is NULL, s_list_add_head shall fail and return a non-zero value. ]*/
-TEST_FUNCTION(s_list_add_head_with_add_entry_NULL_fails)
-{
-    //arrange
-    static SIMPLE_ITEM simp1 = { 1, { NULL } };
-    static SIMPLE_ITEM simp2 = { 2, { NULL } };
-
-    S_LIST_ENTRY head;
-    (void)s_list_initialize(&head);
-    (void)s_list_add(&head, &(simp1.link));
-    (void)s_list_add(&head, &(simp2.link));
-
-    // act
-    int result = s_list_add_head(&head, NULL);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-}
-
-/* Tests_SRS_S_LIST_07_010: [ s_list_add_head shall insert list_entry at head and return zero on success. ]*/
-TEST_FUNCTION(s_list_add_head_with_empty_list_succeeds)
-{
-    // arrange
-    static SIMPLE_ITEM simp1 = { 1, { NULL } };
-    S_LIST_ENTRY head;
-    (void)s_list_initialize(&head);
-    
-    // act
-    int result = s_list_add_head(&head, &(simp1.link));
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(void_ptr, head.next, &(simp1.link));
-}
-
-/* Tests_SRS_S_LIST_07_010: [ s_list_add_head shall insert list_entry at head and return zero on success. ]*/
-TEST_FUNCTION(s_list_add_head_with_multiple_entries_in_the_list_succeeds)
-{
-    // arrange
-    static SIMPLE_ITEM simp1 = { 1, { NULL } };
-    static SIMPLE_ITEM simp2 = { 2, { NULL } };
-    static SIMPLE_ITEM simp3 = { 3, { NULL } };
-    static SIMPLE_ITEM simp4 = { 4, { NULL } };
-
-    S_LIST_ENTRY head;
-    (void)s_list_initialize(&head);
-    (void)s_list_add(&head, &(simp1.link));
-    (void)s_list_add(&head, &(simp2.link));
-    (void)s_list_add(&head, &(simp3.link));
-
-    // act
-    int result = s_list_add_head(&head, &(simp4.link));
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(void_ptr, head.next, &(simp4.link));
+    ASSERT_ARE_EQUAL(void_ptr, simp4.link.next, &(simp1.link));
 }
 
 /*s_list_remove*/
@@ -426,10 +357,10 @@ TEST_FUNCTION(s_list_remove_with_multiple_entries_in_list_remove_tail_succeeds)
 
     S_LIST_ENTRY head;
     (void)s_list_initialize(&head);
-    (void)s_list_add(&head, &(simp1.link));
-    (void)s_list_add(&head, &(simp2.link));
-    (void)s_list_add(&head, &(simp3.link));
     (void)s_list_add(&head, &(simp4.link));
+    (void)s_list_add(&head, &(simp3.link));
+    (void)s_list_add(&head, &(simp2.link));
+    (void)s_list_add(&head, &(simp1.link));
 
     // act
     int result = s_list_remove(&head, &(simp4.link));
@@ -450,10 +381,10 @@ TEST_FUNCTION(s_list_remove_with_multiple_entries_in_list_remove_head_succeeds)
 
     S_LIST_ENTRY head;
     (void)s_list_initialize(&head);
-    (void)s_list_add(&head, &(simp1.link));
-    (void)s_list_add(&head, &(simp2.link));
-    (void)s_list_add(&head, &(simp3.link));
     (void)s_list_add(&head, &(simp4.link));
+    (void)s_list_add(&head, &(simp3.link));
+    (void)s_list_add(&head, &(simp2.link));
+    (void)s_list_add(&head, &(simp1.link));
 
     // act
     int result = s_list_remove(&head, &(simp1.link));
@@ -467,16 +398,15 @@ TEST_FUNCTION(s_list_remove_with_multiple_entries_in_list_remove_head_succeeds)
 TEST_FUNCTION(s_list_remove_with_multiple_entries_in_list_remove_middle_succeeds)
 {
     //arrange
-    static SIMPLE_ITEM simp1 = { 1, { NULL } };
     static SIMPLE_ITEM simp2 = { 2, { NULL } };
     static SIMPLE_ITEM simp3 = { 3, { NULL } };
     static SIMPLE_ITEM simp4 = { 4, { NULL } };
 
     S_LIST_ENTRY head;
     (void)s_list_initialize(&head);
-    (void)s_list_add(&head, &(simp2.link));
-    (void)s_list_add(&head, &(simp3.link));
     (void)s_list_add(&head, &(simp4.link));
+    (void)s_list_add(&head, &(simp3.link));
+    (void)s_list_add(&head, &(simp2.link));
 
     // act
     int result = s_list_remove(&head, &(simp3.link));
@@ -528,9 +458,9 @@ TEST_FUNCTION(s_list_remove_head_with_multiple_entries_in_list_succeeds)
 
     S_LIST_ENTRY head;
     (void)s_list_initialize(&head);
-    (void)s_list_add(&head, &(simp1.link));
-    (void)s_list_add(&head, &(simp2.link));
     (void)s_list_add(&head, &(simp3.link));
+    (void)s_list_add(&head, &(simp2.link));
+    (void)s_list_add(&head, &(simp1.link));
 
     // act
     PS_LIST_ENTRY result = s_list_remove_head(&head);
@@ -687,8 +617,8 @@ TEST_FUNCTION(s_list_find_on_a_list_with_2_items_where_the_second_matches_yields
 
     S_LIST_ENTRY head;
     (void)s_list_initialize(&head);
-    (void)s_list_add(&head, &(simp1.link));
     (void)s_list_add(&head, &(simp2.link));
+    (void)s_list_add(&head, &(simp1.link));
 
     STRICT_EXPECTED_CALL(test_match_function(IGNORED_ARG, TEST_CONTEXT))
         .SetReturn(false);
@@ -886,8 +816,8 @@ TEST_FUNCTION(s_list_remove_if_on_a_list_with_2_items_where_the_first_matches_de
 
     S_LIST_ENTRY head;
     (void)s_list_initialize(&head);
-    (void)s_list_add(&head, &(simp1.link));
     (void)s_list_add(&head, &(simp2.link));
+    (void)s_list_add(&head, &(simp1.link));
 
     STRICT_EXPECTED_CALL(test_condition_function(IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG));
     STRICT_EXPECTED_CALL(test_condition_function(IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG))
@@ -914,8 +844,8 @@ TEST_FUNCTION(s_list_remove_if_on_a_list_with_2_items_where_the_second_matches_d
 
     S_LIST_ENTRY head;
     (void)s_list_initialize(&head);
-    (void)s_list_add(&head, &(simp1.link));
     (void)s_list_add(&head, &(simp2.link));
+    (void)s_list_add(&head, &(simp1.link));
 
     STRICT_EXPECTED_CALL(test_condition_function(IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG))
         .SetReturn(false);
@@ -934,8 +864,8 @@ TEST_FUNCTION(s_list_remove_if_on_a_list_with_2_items_where_the_second_matches_d
 TEST_FUNCTION(s_list_remove_if_on_a_list_with_2_items_both_matching_deletes_all_items)
 {
     // arrange
-    static SIMPLE_ITEM simp1 = { 1, { NULL } };
-    static SIMPLE_ITEM simp2 = { 2, { NULL } };
+    static SIMPLE_ITEM simp1 = { 2, { NULL } };
+    static SIMPLE_ITEM simp2 = { 1, { NULL } };
 
     S_LIST_ENTRY head;
     (void)s_list_initialize(&head);
@@ -963,8 +893,8 @@ TEST_FUNCTION(s_list_remove_if_on_a_list_with_2_items_where_none_matches_returns
 
     S_LIST_ENTRY head;
     (void)s_list_initialize(&head);
-    (void)s_list_add(&head, &(simp1.link));
     (void)s_list_add(&head, &(simp2.link));
+    (void)s_list_add(&head, &(simp1.link));
 
     STRICT_EXPECTED_CALL(test_condition_function(IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG))
         .SetReturn(false);
@@ -993,10 +923,10 @@ TEST_FUNCTION(s_list_remove_if_with_continue_processing_false_returns_original_h
 
     S_LIST_ENTRY head;
     (void)s_list_initialize(&head);
-    (void)s_list_add(&head, &(simp1.link));
-    (void)s_list_add(&head, &(simp2.link));
-    (void)s_list_add(&head, &(simp3.link));
     (void)s_list_add(&head, &(simp4.link));
+    (void)s_list_add(&head, &(simp3.link));
+    (void)s_list_add(&head, &(simp2.link));
+    (void)s_list_add(&head, &(simp1.link));
 
     STRICT_EXPECTED_CALL(test_condition_function_2(IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG))
         .SetReturn(false);
@@ -1050,10 +980,10 @@ TEST_FUNCTION(s_list_for_each_with_NULL_action_function_fails_with_NULL)
 TEST_FUNCTION(s_list_for_each_succeeds)
 {
     // arrange
-    static SIMPLE_ITEM simp1 = { 1, { NULL } };
-    static SIMPLE_ITEM simp2 = { 2, { NULL } };
-    static SIMPLE_ITEM simp3 = { 3, { NULL } };
-    static SIMPLE_ITEM simp4 = { 4, { NULL } };
+    static SIMPLE_ITEM simp1 = { 4, { NULL } };
+    static SIMPLE_ITEM simp2 = { 3, { NULL } };
+    static SIMPLE_ITEM simp3 = { 2, { NULL } };
+    static SIMPLE_ITEM simp4 = { 1, { NULL } };
 
     S_LIST_ENTRY head;
     (void)s_list_initialize(&head);
@@ -1079,10 +1009,10 @@ TEST_FUNCTION(s_list_for_each_succeeds)
 TEST_FUNCTION(s_list_for_each_with_continue_processing_false_stops_processing)
 {
     // arrange
-    static SIMPLE_ITEM simp1 = { 1, { NULL } };
-    static SIMPLE_ITEM simp2 = { 2, { NULL } };
-    static SIMPLE_ITEM simp3 = { 3, { NULL } };
-    static SIMPLE_ITEM simp4 = { 4, { NULL } };
+    static SIMPLE_ITEM simp1 = { 4, { NULL } };
+    static SIMPLE_ITEM simp2 = { 3, { NULL } };
+    static SIMPLE_ITEM simp3 = { 2, { NULL } };
+    static SIMPLE_ITEM simp4 = { 1, { NULL } };
 
     S_LIST_ENTRY head;
     (void)s_list_initialize(&head);
@@ -1107,10 +1037,10 @@ TEST_FUNCTION(s_list_for_each_with_continue_processing_false_stops_processing)
 TEST_FUNCTION(s_list_for_each_fails_when_continue_processing_fails)
 {
     // arrange
-    static SIMPLE_ITEM simp1 = { 1, { NULL } };
-    static SIMPLE_ITEM simp2 = { 2, { NULL } };
-    static SIMPLE_ITEM simp3 = { 3, { NULL } };
-    static SIMPLE_ITEM simp4 = { 4, { NULL } };
+    static SIMPLE_ITEM simp1 = { 4, { NULL } };
+    static SIMPLE_ITEM simp2 = { 3, { NULL } };
+    static SIMPLE_ITEM simp3 = { 2, { NULL } };
+    static SIMPLE_ITEM simp4 = { 1, { NULL } };
 
     S_LIST_ENTRY head;
     (void)s_list_initialize(&head);
