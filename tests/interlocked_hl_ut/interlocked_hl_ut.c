@@ -71,12 +71,12 @@ typedef  struct INPUT_AND_OUTPUT_TAG
     int32_t Output;
 } INPUT_AND_OUTPUT;
 
-static bool hook_wait_on_address(volatile_atomic int32_t* address, int32_t compare_value, uint32_t milliseconds)
+static WAIT_ON_ADDRESS_RESULT hook_wait_on_address(volatile_atomic int32_t* address, int32_t compare_value, uint32_t milliseconds)
 {
     (void)address;
     (void)compare_value;
     (void)milliseconds;
-    return true;
+    return WAIT_ON_ADDRESS_OK;
 }
 
 TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
