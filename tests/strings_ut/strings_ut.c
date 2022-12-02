@@ -205,6 +205,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRING_HANDLE g_hString;
         size_t nLen = strlen(TEST_STRING_VALUE) + 1;
         char* szTestString = (char*)malloc(nLen);
+        ASSERT_IS_NOT_NULL(szTestString);
         strncpy(szTestString, TEST_STRING_VALUE, nLen);
         umock_c_reset_all_calls();
 
