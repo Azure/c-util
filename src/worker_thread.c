@@ -32,7 +32,7 @@ typedef struct WORKER_THREAD_TAG
 
 static int worker_thread_func(void* arg)
 {
-    WORKER_THREAD_HANDLE worker_thread = (WORKER_THREAD_HANDLE)arg;
+    WORKER_THREAD_HANDLE worker_thread = arg;
     int result = 0;
     HANDLE wait_events[2];
 

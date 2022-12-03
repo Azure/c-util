@@ -116,7 +116,7 @@ MAP_HANDLE Map_Clone(MAP_HANDLE handle)
     }
     else
     {
-        MAP_HANDLE_DATA * handleData = handle;
+        MAP_HANDLE_DATA* handleData = handle;
         result = malloc(sizeof(MAP_HANDLE_DATA));
         if (result == NULL)
         {
@@ -354,7 +354,7 @@ MAP_RESULT Map_Add(MAP_HANDLE handle, const char* key, const char* value)
     }
     else
     {
-        MAP_HANDLE_DATA* handleData = (MAP_HANDLE_DATA*)handle;
+        MAP_HANDLE_DATA* handleData = handle;
         /*Codes_SRS_MAP_02_009: [If the key already exists, then Map_Add shall return MAP_KEYEXISTS.] */
         if (findKey(handleData, key) != NULL)
         {
@@ -404,7 +404,7 @@ MAP_RESULT Map_AddOrUpdate(MAP_HANDLE handle, const char* key, const char* value
     }
     else
     {
-        MAP_HANDLE_DATA* handleData = (MAP_HANDLE_DATA*)handle;
+        MAP_HANDLE_DATA* handleData = handle;
 
         /* Codes_SRS_MAP_07_008: [If the mapFilterCallback function is not NULL, then the return value will be check and if it is not zero then Map_AddOrUpdate shall return MAP_FILTER_REJECT.] */
         if (handleData->mapFilterCallback != NULL && handleData->mapFilterCallback(key, value) != 0)
@@ -471,7 +471,7 @@ MAP_RESULT Map_Delete(MAP_HANDLE handle, const char* key)
     }
     else
     {
-        MAP_HANDLE_DATA* handleData = (MAP_HANDLE_DATA*)handle;
+        MAP_HANDLE_DATA* handleData = handle;
         char** whereIsIt = findKey(handleData,key);
         if (whereIsIt == NULL)
         {
@@ -509,7 +509,7 @@ MAP_RESULT Map_ContainsKey(MAP_HANDLE handle, const char* key, bool* keyExists)
     }
     else
     {
-        MAP_HANDLE_DATA* handleData = (MAP_HANDLE_DATA*)handle;
+        MAP_HANDLE_DATA* handleData = handle;
         /*Codes_SRS_MAP_02_025: [Otherwise if a key exists then Map_ContainsKey shall return MAP_OK and shall write in keyExists "true".]*/
         /*Codes_SRS_MAP_02_026: [If a key doesn't exist, then Map_ContainsKey shall return MAP_OK and write in keyExists "false".] */
         *keyExists = (findKey(handleData, key) != NULL) ? true: false;
@@ -533,7 +533,7 @@ MAP_RESULT Map_ContainsValue(MAP_HANDLE handle, const char* value, bool* valueEx
     }
     else
     {
-        MAP_HANDLE_DATA* handleData = (MAP_HANDLE_DATA*)handle;
+        MAP_HANDLE_DATA* handleData = handle;
         /*Codes_SRS_MAP_02_028: [Otherwise, if a pair <key, value> has its value equal to the parameter value, the Map_ContainsValue shall return MAP_OK and shall write in valueExists "true".]*/
         /*Codes_SRS_MAP_02_029: [Otherwise, if such a <key, value> does not exist, then Map_ContainsValue shall return MAP_OK and shall write in valueExists "false".] */
         *valueExists = (findValue(handleData, value) != NULL) ? true : false;
@@ -556,7 +556,7 @@ const char* Map_GetValueFromKey(MAP_HANDLE handle, const char* key)
     }
     else
     {
-        MAP_HANDLE_DATA * handleData = (MAP_HANDLE_DATA *)handle;
+        MAP_HANDLE_DATA* handleData = handle;
         char** whereIsIt = findKey(handleData, key);
         if(whereIsIt == NULL)
         {
@@ -592,7 +592,7 @@ MAP_RESULT Map_GetInternals(MAP_HANDLE handle, const char*const** keys, const ch
         /*Codes_SRS_MAP_02_043: [Map_GetInternals shall produce in *keys an pointer to an array of const char* having all the keys stored so far by the map.]*/
         /*Codes_SRS_MAP_02_044: [Map_GetInternals shall produce in *values a pointer to an array of const char* having all the values stored so far by the map.]*/
         /*Codes_SRS_MAP_02_045: [  Map_GetInternals shall produce in *count the number of stored keys and values.]*/
-        MAP_HANDLE_DATA * handleData = (MAP_HANDLE_DATA *)handle;
+        MAP_HANDLE_DATA* handleData = handle;
         *keys =(const char* const*)(handleData->keys);
         *values = (const char* const*)(handleData->values);
         *count = handleData->count;
@@ -623,7 +623,7 @@ STRING_HANDLE Map_ToJSON(MAP_HANDLE handle)
         else
         {
             size_t i;
-            MAP_HANDLE_DATA* handleData = (MAP_HANDLE_DATA *)handle;
+            MAP_HANDLE_DATA* handleData = handle;
             /*Codes_SRS_MAP_02_049: [If the MAP is empty, then Map_ToJSON shall produce the string "{}".*/
             bool breakFor = false; /*used to break out of for*/
             for (i = 0; (i < handleData->count) && (!breakFor); i++)
