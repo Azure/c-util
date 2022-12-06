@@ -542,7 +542,7 @@ TEST_FUNCTION(rc_string_create_with_move_memory_succeeds)
 {
     // arrange
     const char const_test_string[] = "goguletz";
-    char* test_string = (char*)real_gballoc_hl_malloc(sizeof(const_test_string));
+    char* test_string = real_gballoc_hl_malloc(sizeof(const_test_string));
     ASSERT_IS_NOT_NULL(test_string);
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
@@ -568,7 +568,7 @@ TEST_FUNCTION(rc_string_create_with_move_memory_with_empty_string_succeeds)
 {
     // arrange
     const char const_test_string[] = "";
-    char* test_string = (char*)real_gballoc_hl_malloc(sizeof(const_test_string));
+    char* test_string = real_gballoc_hl_malloc(sizeof(const_test_string));
     ASSERT_IS_NOT_NULL(test_string);
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
@@ -592,7 +592,7 @@ TEST_FUNCTION(a_string_created_with_rc_string_create_with_move_memory_frees_the_
 {
     // arrange
     const char const_test_string[] = "goguletz";
-    char* test_string = (char*)real_gballoc_hl_malloc(sizeof(const_test_string));
+    char* test_string = real_gballoc_hl_malloc(sizeof(const_test_string));
     ASSERT_IS_NOT_NULL(test_string);
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
@@ -617,7 +617,7 @@ TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_move_memory_also_
     // arrange
     const char const_test_string[] = "";
 
-    char* test_string = (char*)real_gballoc_hl_malloc(sizeof(const_test_string));
+    char* test_string = real_gballoc_hl_malloc(sizeof(const_test_string));
     ASSERT_IS_NOT_NULL(test_string);
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
@@ -680,7 +680,7 @@ TEST_FUNCTION(rc_string_create_with_custom_free_succeeds)
 {
     // arrange
     const char const_test_string[] = "goguletz";
-    char* test_string = (char*)test_malloc_func(sizeof(const_test_string));
+    char* test_string = test_malloc_func(sizeof(const_test_string));
     ASSERT_IS_NOT_NULL(test_string);
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
@@ -707,7 +707,7 @@ TEST_FUNCTION(rc_string_create_with_custom_free_with_empty_string_succeeds)
 {
     // arrange
     const char const_test_string[] = "";
-    char* test_string = (char*)test_malloc_func(sizeof(const_test_string));
+    char* test_string = test_malloc_func(sizeof(const_test_string));
     ASSERT_IS_NOT_NULL(test_string);
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
@@ -732,7 +732,7 @@ TEST_FUNCTION(rc_string_create_with_custom_free_with_do_nothing_free_and_NULL_co
 {
     // arrange
     const char const_test_string[] = "";
-    char* test_string = (char*)test_malloc_func(sizeof(const_test_string));
+    char* test_string = test_malloc_func(sizeof(const_test_string));
     ASSERT_IS_NOT_NULL(test_string);
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
@@ -759,7 +759,7 @@ TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_custom_free_also_
 {
     // arrange
     const char const_test_string[] = "";
-    char* test_string = (char*)test_malloc_func(sizeof(const_test_string));
+    char* test_string = test_malloc_func(sizeof(const_test_string));
     ASSERT_IS_NOT_NULL(test_string);
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
@@ -792,7 +792,7 @@ TEST_FUNCTION(when_reference_count_reaches_0_the_custom_free_function_is_called)
 {
     // arrange
     const char const_test_string[] = "";
-    char* test_string = (char*)test_malloc_func(sizeof(const_test_string));
+    char* test_string = test_malloc_func(sizeof(const_test_string));
     ASSERT_IS_NOT_NULL(test_string);
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));
@@ -817,7 +817,7 @@ TEST_FUNCTION(when_reference_count_reaches_0_the_custom_free_function_is_called_
 {
     // arrange
     const char const_test_string[] = "";
-    char* test_string = (char*)test_malloc_func(sizeof(const_test_string));
+    char* test_string = test_malloc_func(sizeof(const_test_string));
     ASSERT_IS_NOT_NULL(test_string);
 
     (void)memcpy(test_string, const_test_string, sizeof(const_test_string));

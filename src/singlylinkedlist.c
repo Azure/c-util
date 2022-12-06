@@ -29,7 +29,7 @@ SINGLYLINKEDLIST_HANDLE singlylinkedlist_create(void)
     LIST_INSTANCE* result;
 
     /* Codes_SRS_LIST_01_001: [singlylinkedlist_create shall create a new list and return a non-NULL handle on success.] */
-    result = (LIST_INSTANCE*)malloc(sizeof(LIST_INSTANCE));
+    result = malloc(sizeof(LIST_INSTANCE));
     if (result != NULL)
     {
         /* Codes_SRS_LIST_01_002: [If any error occurs during the list creation, singlylinkedlist_create shall return NULL.] */
@@ -45,12 +45,12 @@ void singlylinkedlist_destroy(SINGLYLINKEDLIST_HANDLE list)
     /* Codes_SRS_LIST_01_004: [If the list argument is NULL, no freeing of resources shall occur.] */
     if (list != NULL)
     {
-        LIST_INSTANCE* list_instance = (LIST_INSTANCE*)list;
+        LIST_INSTANCE* list_instance = list;
 
         while (list_instance->head != NULL)
         {
             LIST_ITEM_INSTANCE* current_item = list_instance->head;
-            list_instance->head = (LIST_ITEM_INSTANCE*)current_item->next;
+            list_instance->head = current_item->next;
             free(current_item);
         }
 
@@ -72,8 +72,8 @@ LIST_ITEM_HANDLE singlylinkedlist_add(SINGLYLINKEDLIST_HANDLE list, const void* 
     }
     else
     {
-        LIST_INSTANCE* list_instance = (LIST_INSTANCE*)list;
-        result = (LIST_ITEM_INSTANCE*)malloc(sizeof(LIST_ITEM_INSTANCE));
+        LIST_INSTANCE* list_instance = list;
+        result = malloc(sizeof(LIST_ITEM_INSTANCE));
 
         if (result == NULL)
         {
@@ -115,7 +115,7 @@ int singlylinkedlist_remove(SINGLYLINKEDLIST_HANDLE list, LIST_ITEM_HANDLE item)
     }
     else
     {
-        LIST_INSTANCE* list_instance = (LIST_INSTANCE*)list;
+        LIST_INSTANCE* list_instance = list;
         LIST_ITEM_INSTANCE* current_item = list_instance->head;
         LIST_ITEM_INSTANCE* previous_item = NULL;
 
@@ -129,7 +129,7 @@ int singlylinkedlist_remove(SINGLYLINKEDLIST_HANDLE list, LIST_ITEM_HANDLE item)
                 }
                 else
                 {
-                    list_instance->head = (LIST_ITEM_INSTANCE*)current_item->next;
+                    list_instance->head = current_item->next;
                 }
 
                 if (current_item == list_instance->tail)
@@ -143,7 +143,7 @@ int singlylinkedlist_remove(SINGLYLINKEDLIST_HANDLE list, LIST_ITEM_HANDLE item)
             }
 
             previous_item = current_item;
-            current_item = (LIST_ITEM_INSTANCE*)current_item->next;
+            current_item = current_item->next;
         }
 
         if (current_item == NULL)
@@ -173,7 +173,7 @@ LIST_ITEM_HANDLE singlylinkedlist_get_head_item(SINGLYLINKEDLIST_HANDLE list)
     }
     else
     {
-        LIST_INSTANCE* list_instance = (LIST_INSTANCE*)list;
+        LIST_INSTANCE* list_instance = list;
 
         /* Codes_SRS_LIST_01_008: [singlylinkedlist_get_head_item shall return the head of the list.] */
         /* Codes_SRS_LIST_01_010: [If the list is empty, singlylinkedlist_get_head_item_shall_return NULL.] */
@@ -216,7 +216,7 @@ const void* singlylinkedlist_item_get_value(LIST_ITEM_HANDLE item_handle)
     else
     {
         /* Codes_SRS_LIST_01_020: [singlylinkedlist_item_get_value shall return the value associated with the list item identified by the item_handle argument.] */
-        result = ((LIST_ITEM_INSTANCE*)item_handle)->item;
+        result = item_handle->item;
     }
 
     return result;
@@ -235,7 +235,7 @@ LIST_ITEM_HANDLE singlylinkedlist_find(SINGLYLINKEDLIST_HANDLE list, LIST_MATCH_
     }
     else
     {
-        LIST_INSTANCE* list_instance = (LIST_INSTANCE*)list;
+        LIST_INSTANCE* list_instance = list;
         LIST_ITEM_INSTANCE* current = list_instance->head;
 
         /* Codes_SRS_LIST_01_011: [singlylinkedlist_find shall iterate through all items in a list and return the first one that satisfies a certain match function.] */
@@ -250,7 +250,7 @@ LIST_ITEM_HANDLE singlylinkedlist_find(SINGLYLINKEDLIST_HANDLE list, LIST_MATCH_
             }
 
             /* Codes_SRS_LIST_01_016: [If the match function returns false, singlylinkedlist_find shall consider that item as not matching.] */
-            current = (LIST_ITEM_INSTANCE*)current->next;
+            current = current->next;
         }
 
         if (current == NULL)
@@ -279,7 +279,7 @@ int singlylinkedlist_remove_if(SINGLYLINKEDLIST_HANDLE list, LIST_CONDITION_FUNC
     }
     else
     {
-        LIST_INSTANCE* list_instance = (LIST_INSTANCE*)list;
+        LIST_INSTANCE* list_instance = list;
         LIST_ITEM_INSTANCE* current_item = list_instance->head;
         LIST_ITEM_INSTANCE* next_item = NULL;
         LIST_ITEM_INSTANCE* previous_item = NULL;
@@ -289,7 +289,7 @@ int singlylinkedlist_remove_if(SINGLYLINKEDLIST_HANDLE list, LIST_CONDITION_FUNC
         {
             bool continue_processing = false;
 
-            next_item = (LIST_ITEM_INSTANCE*)current_item->next;
+            next_item = current_item->next;
 
             /* Codes_SRS_LIST_09_003: [ singlylinkedlist_remove_if shall determine whether an item satisfies the condition criteria by invoking the condition function for that item. ] */
             /* Codes_SRS_LIST_09_004: [ If the condition function returns true, singlylinkedlist_find shall consider that item as to be removed. ] */
@@ -346,7 +346,7 @@ int singlylinkedlist_foreach(SINGLYLINKEDLIST_HANDLE list, LIST_ACTION_FUNCTION 
     }
     else
     {
-        LIST_INSTANCE* list_instance = (LIST_INSTANCE*)list;
+        LIST_INSTANCE* list_instance = list;
         LIST_ITEM_INSTANCE* list_item = list_instance->head;
 
         while (list_item != NULL)
@@ -362,7 +362,7 @@ int singlylinkedlist_foreach(SINGLYLINKEDLIST_HANDLE list, LIST_ACTION_FUNCTION 
                 break;
             }
 
-            list_item = (LIST_ITEM_INSTANCE*)list_item->next;
+            list_item = list_item->next;
         }
 
         /* Codes_SRS_LIST_09_011: [ If no errors occur, singlylinkedlist_foreach shall return zero. ] */

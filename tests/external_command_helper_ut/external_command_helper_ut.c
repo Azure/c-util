@@ -345,7 +345,7 @@ TEST_FUNCTION(external_command_helper_execute_with_line_too_long_fails)
     RC_STRING_ARRAY* lines;
     int return_code;
 
-    char* long_line = (char*)real_gballoc_hl_malloc(2048 + 2);
+    char* long_line = real_gballoc_hl_malloc(2048 + 2);
     ASSERT_IS_NOT_NULL(long_line);
     for (uint32_t i = 0; i < 2048; ++i)
     {
@@ -378,7 +378,7 @@ TEST_FUNCTION(external_command_helper_execute_with_second_line_too_long_fails)
     RC_STRING_ARRAY* lines;
     int return_code;
 
-    char* long_line = (char*)real_gballoc_hl_malloc(2 + 2048 + 2);
+    char* long_line = real_gballoc_hl_malloc(2 + 2048 + 2);
     ASSERT_IS_NOT_NULL(long_line);
     long_line[0] = 'z';
     long_line[1] = '\n';

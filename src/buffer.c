@@ -22,7 +22,7 @@ typedef struct BUFFER_TAG
 /* Codes_SRS_BUFFER_07_001: [BUFFER_new shall allocate a BUFFER_HANDLE that will contain a NULL unsigned char*.] */
 BUFFER_HANDLE BUFFER_new(void)
 {
-    BUFFER* temp = (BUFFER*)malloc(sizeof(BUFFER));
+    BUFFER* temp = malloc(sizeof(BUFFER));
     /* Codes_SRS_BUFFER_07_002: [BUFFER_new shall return NULL on any error that occurs.] */
     if (temp != NULL)
     {
@@ -40,7 +40,7 @@ static int BUFFER_safemalloc(BUFFER* handleptr, size_t size)
     {
         sizetomalloc = 1;
     }
-    handleptr->buffer = (unsigned char*)malloc(sizetomalloc);
+    handleptr->buffer = malloc(sizetomalloc);
     if (handleptr->buffer == NULL)
     {
         /*Codes_SRS_BUFFER_02_003: [If allocating memory fails, then BUFFER_create shall return NULL.]*/
@@ -68,7 +68,7 @@ BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size)
     else
     {
         /*Codes_SRS_BUFFER_02_002: [Otherwise, BUFFER_create shall allocate memory to hold size bytes and shall copy from source size bytes into the newly allocated memory.] */
-        result = (BUFFER*)malloc(sizeof(BUFFER));
+        result = malloc(sizeof(BUFFER));
         if (result == NULL)
         {
             /*Codes_SRS_BUFFER_02_003: [If allocating memory fails, then BUFFER_create shall return NULL.] */
@@ -98,7 +98,7 @@ BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size)
 BUFFER_HANDLE BUFFER_create_with_size(size_t buff_size)
 {
     BUFFER* result;
-    result = (BUFFER*)malloc(sizeof(BUFFER));
+    result = malloc(sizeof(BUFFER));
     if (result != NULL)
     {
         if (buff_size == 0)
@@ -111,7 +111,7 @@ BUFFER_HANDLE BUFFER_create_with_size(size_t buff_size)
         {
             // Codes_SRS_BUFFER_07_031: [ BUFFER_create_with_size shall allocate a buffer of buff_size. ]
             result->size = buff_size;
-            if ((result->buffer = (unsigned char*)malloc(result->size)) == NULL)
+            if ((result->buffer = malloc(result->size)) == NULL)
             {
                 // Codes_SRS_BUFFER_07_032: [ If allocating memory fails, then BUFFER_create_with_size shall return NULL. ]
                 LogError("unable to allocate buffer");
@@ -135,7 +135,7 @@ void BUFFER_delete(BUFFER_HANDLE handle)
     /* Codes_SRS_BUFFER_07_004: [BUFFER_delete shall not delete any BUFFER_HANDLE that is NULL.] */
     if (handle != NULL)
     {
-        BUFFER* b = (BUFFER*)handle;
+        BUFFER* b = handle;
         if (b->buffer != NULL)
         {
             /* Codes_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE along with the Buffer.] */
@@ -160,7 +160,7 @@ int BUFFER_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
     else if (size == 0)
     {
         /* Codes_SRS_BUFFER_01_003: [If size is zero, source can be NULL.] */
-        BUFFER* b = (BUFFER*)handle;
+        BUFFER* b = handle;
         free(b->buffer);
         b->buffer = NULL;
         b->size = 0;
@@ -176,9 +176,9 @@ int BUFFER_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
         }
         else
         {
-            BUFFER* b = (BUFFER*)handle;
+            BUFFER* b = handle;
             /* Codes_SRS_BUFFER_07_011: [BUFFER_build shall overwrite previous contents if the buffer has been previously allocated.] */
-            unsigned char* newBuffer = (unsigned char*)realloc(b->buffer, size);
+            unsigned char* newBuffer = realloc(b->buffer, size);
             if (newBuffer == NULL)
             {
                 /* Codes_SRS_BUFFER_07_010: [BUFFER_build shall return nonzero if any error is encountered.] */
@@ -231,7 +231,7 @@ int BUFFER_append_build(BUFFER_HANDLE handle, const unsigned char* source, size_
         else
         {
             /* Codes_SRS_BUFFER_01_009: [ if handle->buffer is not NULL BUFFER_append_build shall realloc the buffer to be the handle->size + size ] */
-            unsigned char* temp = (unsigned char*)realloc_flex(handle->buffer, handle->size, size, 1);
+            unsigned char* temp = realloc_flex(handle->buffer, handle->size, size, 1);
             if (temp == NULL)
             {
                 /* Codes_SRS_BUFFER_07_035: [ If any error is encountered BUFFER_append_build shall return a non-null value. ] */
@@ -272,7 +272,7 @@ int BUFFER_pre_build(BUFFER_HANDLE handle, size_t size)
     }
     else
     {
-        BUFFER* b = (BUFFER*)handle;
+        BUFFER* b = handle;
         if (b->buffer != NULL)
         {
             /* Codes_SRS_BUFFER_07_007: [BUFFER_pre_build shall return nonzero if the buffer has been previously allocated and is not NULL.] */
@@ -281,7 +281,7 @@ int BUFFER_pre_build(BUFFER_HANDLE handle, size_t size)
         }
         else
         {
-            if ((b->buffer = (unsigned char*)malloc(size)) == NULL)
+            if ((b->buffer = malloc(size)) == NULL)
             {
                 /* Codes_SRS_BUFFER_07_013: [BUFFER_pre_build shall return nonzero if any error is encountered.] */
                 LogError("Failure allocating buffer");
@@ -308,7 +308,7 @@ int BUFFER_content(BUFFER_HANDLE handle, const unsigned char** content)
     }
     else
     {
-        BUFFER* b = (BUFFER*)handle;
+        BUFFER* b = handle;
         *content = b->buffer;
         result = 0;
     }
@@ -328,7 +328,7 @@ extern int BUFFER_unbuild(BUFFER_HANDLE handle)
     }
     else
     {
-        BUFFER* b = (BUFFER*)handle;
+        BUFFER* b = handle;
         if (b->buffer != NULL)
         {
             free(b->buffer);
@@ -361,8 +361,8 @@ int BUFFER_enlarge(BUFFER_HANDLE handle, size_t enlargeSize)
     }
     else
     {
-        BUFFER* b = (BUFFER*)handle;
-        unsigned char* temp = (unsigned char*)realloc_flex(b->buffer, b->size, enlargeSize, 1);
+        BUFFER* b = handle;
+        unsigned char* temp = realloc_flex(b->buffer, b->size, enlargeSize, 1);
         if (temp == NULL)
         {
             /* Codes_SRS_BUFFER_07_018: [BUFFER_enlarge shall return a nonzero result if any error is encountered.] */
@@ -458,7 +458,7 @@ int BUFFER_size(BUFFER_HANDLE handle, size_t* size)
     }
     else
     {
-        BUFFER* b = (BUFFER*)handle;
+        BUFFER* b = handle;
         *size = b->size;
         result = 0;
     }
@@ -476,8 +476,8 @@ int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
     }
     else
     {
-        BUFFER* b1 = (BUFFER*)handle1;
-        BUFFER* b2 = (BUFFER*)handle2;
+        BUFFER* b1 = handle1;
+        BUFFER* b2 = handle2;
         if (b1->buffer == NULL)
         {
             /* Codes_SRS_BUFFER_07_023: [BUFFER_append shall return a nonzero upon any error that is encountered.] */
@@ -498,7 +498,7 @@ int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
             else
             {
                 // b2->size != 0, whatever b1->size is
-                unsigned char* temp = (unsigned char*)realloc_flex(b1->buffer, b1->size, b2->size, 1);
+                unsigned char* temp = realloc_flex(b1->buffer, b1->size, b2->size, 1);
                 if (temp == NULL)
                 {
                     /* Codes_SRS_BUFFER_07_023: [BUFFER_append shall return a nonzero upon any error that is encountered.] */
@@ -530,8 +530,8 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
     }
     else
     {
-        BUFFER* b1 = (BUFFER*)handle1;
-        BUFFER* b2 = (BUFFER*)handle2;
+        BUFFER* b1 = handle1;
+        BUFFER* b2 = handle2;
         if (b1->buffer == NULL)
         {
             /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
@@ -553,7 +553,7 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
             else
             {
                 // b2->size != 0
-                unsigned char* temp = (unsigned char*)malloc_flex(b1->size, b2->size, 1);
+                unsigned char* temp = malloc_flex(b1->size, b2->size, 1);
                 if (temp == NULL)
                 {
                     /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
@@ -591,7 +591,7 @@ int BUFFER_fill(BUFFER_HANDLE handle, unsigned char fill_char)
     {
         size_t index;
         /* Codes_SRS_BUFFER_01_011: [ BUFFER_fill shall fill the supplied BUFFER_HANDLE with the supplied fill character. ] */
-        BUFFER* buffer_data = (BUFFER*)handle;
+        BUFFER* buffer_data = handle;
         for (index = 0; index < buffer_data->size; index++)
         {
             buffer_data->buffer[index] = fill_char;
@@ -605,7 +605,7 @@ int BUFFER_fill(BUFFER_HANDLE handle, unsigned char fill_char)
 /* Codes_SRS_BUFFER_07_025: [BUFFER_u_char shall return a pointer to the underlying unsigned char*.] */
 unsigned char* BUFFER_u_char(BUFFER_HANDLE handle)
 {
-    BUFFER* handleData = (BUFFER*)handle;
+    BUFFER* handleData = handle;
     unsigned char* result;
     if (handle == NULL || handleData->size == 0)
     {
@@ -630,7 +630,7 @@ size_t BUFFER_length(BUFFER_HANDLE handle)
     }
     else
     {
-        BUFFER* b = (BUFFER*)handle;
+        BUFFER* b = handle;
         result = b->size;
     }
     return result;
@@ -645,8 +645,8 @@ BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle)
     }
     else
     {
-        BUFFER* suppliedBuff = (BUFFER*)handle;
-        BUFFER* b = (BUFFER*)malloc(sizeof(BUFFER));
+        BUFFER* suppliedBuff = handle;
+        BUFFER* b = malloc(sizeof(BUFFER));
         if (b != NULL)
         {
             if (BUFFER_safemalloc(b, suppliedBuff->size) != 0)
@@ -659,7 +659,7 @@ BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle)
             {
                 (void)memcpy(b->buffer, suppliedBuff->buffer, suppliedBuff->size);
                 b->size = suppliedBuff->size;
-                result = (BUFFER_HANDLE)b;
+                result = b;
             }
         }
         else
