@@ -93,6 +93,9 @@ MOCK_FUNCTION_END()
 MOCK_FUNCTION_WITH_CODE(, void, test_free_func_do_nothing, void*, context)
 MOCK_FUNCTION_END()
 
+MOCK_FUNCTION_WITH_CODE(, void, test_func_that_takes_charptr, const char*, str)
+MOCK_FUNCTION_END()
+
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_initialize)
@@ -152,6 +155,7 @@ TEST_FUNCTION(RC_STRING_VALUE_works)
 {
     // arrange
     THANDLE(RC_STRING) a = rc_string_create("Lagavulin");
+    ASSERT_IS_NOT_NULL(a);
     char result[256];
 
     // act
@@ -159,6 +163,43 @@ TEST_FUNCTION(RC_STRING_VALUE_works)
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, "I love Lagavulin", result);
+
+    // cleanup
+    THANDLE_ASSIGN(RC_STRING)(&a, NULL);
+}
+
+/* RC_STRING_AS_CHARPTR */
+
+/*Tests_SRS_RC_STRING_42_001: [ If rc is NULL then RC_STRING_AS_CHARPTR shall return NULL. ]*/
+TEST_FUNCTION(RC_STRING_AS_CHARPTR_with_NULL_works)
+{
+    // arrange
+    THANDLE(RC_STRING) null_string = NULL;
+
+    STRICT_EXPECTED_CALL(test_func_that_takes_charptr(NULL));
+
+    // act
+    test_func_that_takes_charptr(RC_STRING_AS_CHARPTR(null_string));
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_RC_STRING_42_002: [ If rc is non-NULL then RC_STRING_AS_CHARPTR shall return the string field of rc. ]*/
+TEST_FUNCTION(RC_STRING_AS_CHARPTR_works)
+{
+    // arrange
+    THANDLE(RC_STRING) a = rc_string_create("this is a string");
+    ASSERT_IS_NOT_NULL(a);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_func_that_takes_charptr("this is a string"));
+
+    // act
+    test_func_that_takes_charptr(RC_STRING_AS_CHARPTR(a));
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     THANDLE_ASSIGN(RC_STRING)(&a, NULL);
@@ -185,6 +226,7 @@ TEST_FUNCTION(RC_STRING_VALUE_OR_NULL_works)
 {
     // arrange
     THANDLE(RC_STRING) a = rc_string_create("Laphroaig");
+    ASSERT_IS_NOT_NULL(a);
     char result[256];
 
     // act
