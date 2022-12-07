@@ -87,7 +87,7 @@ static int callsBeginOpen(
     void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
+    OPEN_CLOSE_THREADS* data = arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -132,7 +132,7 @@ static int callsEndOpen(
     void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
+    OPEN_CLOSE_THREADS* data = arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -193,7 +193,7 @@ static int callsBeginClose(
     void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
+    OPEN_CLOSE_THREADS* data = arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -233,7 +233,7 @@ static int callsEndClose(
     void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
+    OPEN_CLOSE_THREADS* data = arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -292,7 +292,7 @@ static int callsBeginBarrier(
     void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
+    OPEN_CLOSE_THREADS* data = arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -337,7 +337,7 @@ static int callsEndBarrier(
     void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
+    OPEN_CLOSE_THREADS* data = arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -396,7 +396,7 @@ static int callsBeginExec(
     void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
+    OPEN_CLOSE_THREADS* data = arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -450,7 +450,7 @@ static int callsEndExec(
     void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
+    OPEN_CLOSE_THREADS* data = arg;
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
     {
@@ -503,7 +503,7 @@ static int callsBeginAndEnd(
     void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
+    OPEN_CLOSE_THREADS* data = arg;
     srand((unsigned int)time(NULL));
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
@@ -550,7 +550,7 @@ static int callsFault(
     void* arg
 )
 {
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)arg;
+    OPEN_CLOSE_THREADS* data = arg;
     srand((unsigned int)time(NULL));
 
     while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
@@ -642,7 +642,7 @@ static int barrier_thread(
     void* arg
 )
 {
-    THREADS_COMMON* data = (THREADS_COMMON*)arg;
+    THREADS_COMMON* data = arg;
     /*a non barrier thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
     while (interlocked_add(&data->current_index, 0) < ARRAY_SIZE)
     {
@@ -674,7 +674,7 @@ static int non_barrier_thread(
     void* arg
 )
 {
-    THREADS_COMMON* data = (THREADS_COMMON*)arg;
+    THREADS_COMMON* data = arg;
     /*a non barrier thread granted execution will interlocked increment the index, interlocked increment the source of numbers and write it*/
     while (interlocked_add(&data->current_index, 0) < ARRAY_SIZE)
     {
@@ -791,7 +791,7 @@ TEST_FUNCTION(sm_chaos)
     LOGGER_LOG toBeRestored = xlogging_get_log_function();
     xlogging_set_log_function(NULL);
 
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)malloc(sizeof(OPEN_CLOSE_THREADS));
+    OPEN_CLOSE_THREADS* data = malloc(sizeof(OPEN_CLOSE_THREADS));
     ASSERT_IS_NOT_NULL(data);
 
     data->sm = sm_create(NULL);
@@ -907,7 +907,7 @@ TEST_FUNCTION(sm_chaos_with_faults)
     LOGGER_LOG toBeRestored = xlogging_get_log_function();
     xlogging_set_log_function(NULL);
 
-    OPEN_CLOSE_THREADS* data = (OPEN_CLOSE_THREADS*)malloc(sizeof(OPEN_CLOSE_THREADS));
+    OPEN_CLOSE_THREADS* data = malloc(sizeof(OPEN_CLOSE_THREADS));
     ASSERT_IS_NOT_NULL(data);
 
     data->sm = sm_create(NULL);
@@ -1023,7 +1023,7 @@ TEST_FUNCTION(sm_does_not_block)
     xlogging_set_log_function(NULL);
 
     ///arrange
-    THREADS_COMMON* data = (THREADS_COMMON*)malloc(sizeof(THREADS_COMMON));
+    THREADS_COMMON* data = malloc(sizeof(THREADS_COMMON));
     ASSERT_IS_NOT_NULL(data);
     data->sm = sm_create(NULL);
     ASSERT_IS_NOT_NULL(data->sm);
@@ -1160,7 +1160,7 @@ static int switchesToState(
     void* arg
 )
 {
-    SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)arg;
+    SM_GO_TO_STATE* goToState = arg;
 
     LogInfo("time[s]=%.2f, switchesToState thread: will now switch state to %" PRI_MU_ENUM "", (timer_global_get_elapsed_ms()-timeSinceTestFunctionStartMs)/1000, MU_ENUM_VALUE(SM_STATES, goToState->targetState));
 
@@ -1312,7 +1312,7 @@ static int switchesFromStateToCreated(
     void* arg
 )
 {
-    SM_GO_TO_STATE* goToState = (SM_GO_TO_STATE*)arg;
+    SM_GO_TO_STATE* goToState = arg;
 
     /*waits on 1 handles that says the API is about to be called. It waits 500 ms then it resumes execution */
 

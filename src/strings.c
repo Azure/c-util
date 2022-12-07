@@ -106,7 +106,7 @@ STRING_HANDLE STRING_construct(const char* psz)
             if ((str->s = malloc_flex(1, nLen, 1)) != NULL)
             {
                 (void)memcpy(str->s, psz, nLen + 1);
-                result = (STRING_HANDLE)str;
+                result = str;
             }
             /* Codes_SRS_STRING_07_032: [STRING_construct encounters any error it shall return a NULL value.] */
             else
@@ -187,7 +187,7 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
         }
         else if (length == 0)
         {
-            result = (STRING*)STRING_new();
+            result = STRING_new();
         }
         else
         {
@@ -422,7 +422,7 @@ int STRING_concat(STRING_HANDLE handle, const char* s2)
     }
     else
     {
-        STRING* s1 = (STRING*)handle;
+        STRING* s1 = handle;
         size_t s1Length = strlen(s1->s);
         size_t s2Length = strlen(s2); /*there's no possible way that s2Length is returned as SIZE_MAX*/
         char* temp = realloc_flex(s1->s, s1Length, s2Length + 1, 1);
@@ -458,8 +458,8 @@ int STRING_concat_with_STRING(STRING_HANDLE s1, STRING_HANDLE s2)
     }
     else
     {
-        STRING* dest = (STRING*)s1;
-        STRING* src = (STRING*)s2;
+        STRING* dest = s1;
+        STRING* src = s2;
 
         size_t s1Length = strlen(dest->s);
         size_t s2Length = strlen(src->s);
@@ -496,7 +496,7 @@ int STRING_copy(STRING_HANDLE handle, const char* s2)
     }
     else
     {
-        STRING* s1 = (STRING*)handle;
+        STRING* s1 = handle;
         /* Codes_SRS_STRING_07_026: [If the underlying char* refered to by s1 handle is equal to char* s2 than STRING_copy shall be a noop and return 0.] */
         if (s1->s != s2)
         {
@@ -539,7 +539,7 @@ int STRING_copy_n(STRING_HANDLE handle, const char* s2, size_t n)
     }
     else
     {
-        STRING* s1 = (STRING*)handle;
+        STRING* s1 = handle;
         size_t s2Length = strlen(s2);
         char* temp;
         if (s2Length > n)
@@ -612,7 +612,7 @@ int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
         }
         else
         {
-            STRING* s1 = (STRING*)handle;
+            STRING* s1 = handle;
             char* temp;
             size_t s1Length = strlen(s1->s);
             temp = realloc_flex(s1->s, s1Length, s2Length + (size_t)1, 1);
@@ -658,7 +658,7 @@ int STRING_quote(STRING_HANDLE handle)
     }
     else
     {
-        STRING* s1 = (STRING*)handle;
+        STRING* s1 = handle;
         size_t s1Length = strlen(s1->s);
         char* temp = realloc_flex(s1->s, 2 + 1, s1Length, 1);/*2 because 2 quotes, 1 because '\0'*/
         if (temp == NULL)
@@ -692,7 +692,7 @@ int STRING_empty(STRING_HANDLE handle)
     }
     else
     {
-        STRING* s1 = (STRING*)handle;
+        STRING* s1 = handle;
         char* temp = realloc(s1->s, 1);
         if (temp == NULL)
         {
@@ -717,7 +717,7 @@ void STRING_delete(STRING_HANDLE handle)
     /* Codes_SRS_STRING_07_011: [STRING_delete will not attempt to free anything with a NULL STRING_HANDLE.] */
     if (handle != NULL)
     {
-        STRING* value = (STRING*)handle;
+        STRING* value = handle;
         free(value->s);
         value->s = NULL;
         free(value);
@@ -730,7 +730,7 @@ const char* STRING_c_str(STRING_HANDLE handle)
     const char* result;
     if (handle != NULL)
     {
-        result = ((STRING*)handle)->s;
+        result = handle->s;
     }
     else
     {
@@ -747,7 +747,7 @@ size_t STRING_length(STRING_HANDLE handle)
     /* Codes_SRS_STRING_07_025: [STRING_length shall return zero if the given handle is NULL.] */
     if (handle != NULL)
     {
-        STRING* value = (STRING*)handle;
+        STRING* value = handle;
         result = strlen(value->s);
     }
     return result;
@@ -775,13 +775,13 @@ STRING_HANDLE STRING_construct_n(const char* psz, size_t n)
         else
         {
             STRING* str;
-            if ((str = (STRING*)malloc(sizeof(STRING))) != NULL)
+            if ((str = malloc(sizeof(STRING))) != NULL)
             {
-                if ((str->s = (char*)malloc(n + 1)) != NULL) /*if n is SIZE_MAX then condition in line 770 is extrmeely likely true and this line is never reached*/ 
+                if ((str->s = malloc(n + 1)) != NULL) /*if n is SIZE_MAX then condition in line 770 is extrmeely likely true and this line is never reached*/ 
                 {
                     (void)memcpy(str->s, psz, n);
                     str->s[n] = '\0';
-                    result = (STRING_HANDLE)str;
+                    result = str;
                 }
                 /* Codes_SRS_STRING_02_010: [In all other error cases, STRING_construct_n shall return NULL.]  */
                 else
@@ -823,8 +823,8 @@ int STRING_compare(STRING_HANDLE s1, STRING_HANDLE s2)
     else
     {
         /* Codes_SRS_STRING_07_038: [STRING_compare shall compare the char s variable using the strcmp function.] */
-        STRING* value1 = (STRING*)s1;
-        STRING* value2 = (STRING*)s2;
+        STRING* value1 = s1;
+        STRING* value2 = s2;
         result = strcmp(value1->s, value2->s);
     }
     return result;
@@ -888,7 +888,7 @@ int STRING_replace(STRING_HANDLE handle, char target, char replace)
         size_t length;
         size_t index;
         /* Codes_SRS_STRING_07_047: [ STRING_replace shall replace all instances of target with replace. ] */
-        STRING* str_value = (STRING*)handle;
+        STRING* str_value = handle;
         length = strlen(str_value->s);
         for (index = 0; index < length; index++)
         {

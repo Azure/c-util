@@ -422,7 +422,7 @@ TEST_FUNCTION(constbuffer_array_create_with_move_buffers_succeeds)
 {
     ///arrange
     CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
-    CONSTBUFFER_HANDLE* test_buffers = (CONSTBUFFER_HANDLE*)real_gballoc_hl_malloc(sizeof(CONSTBUFFER_HANDLE) * 2);
+    CONSTBUFFER_HANDLE* test_buffers = real_gballoc_hl_malloc_2(2, sizeof(CONSTBUFFER_HANDLE));
 
     CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1);
     CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_2);
@@ -449,7 +449,7 @@ TEST_FUNCTION(constbuffer_array_create_with_move_buffers_succeeds)
 TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_create_with_move_buffers_also_fails)
 {
     ///arrange
-    CONSTBUFFER_HANDLE* test_buffers = (CONSTBUFFER_HANDLE*)real_gballoc_hl_malloc(sizeof(CONSTBUFFER_HANDLE) * 2);
+    CONSTBUFFER_HANDLE* test_buffers = real_gballoc_hl_malloc_2(2, sizeof(CONSTBUFFER_HANDLE));
     size_t i;
 
     CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1);

@@ -53,7 +53,7 @@ extern "C" {
     { \
         THANDLE_TUPLE_ARRAY_TYPE(name)* result; \
         /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_001: [ THANDLE_TUPLE_ARRAY_CREATE(name) shall allocate memory for the array. ]*/ \
-        result = (THANDLE_TUPLE_ARRAY_TYPE(name)*)malloc_flex(sizeof(THANDLE_TUPLE_ARRAY_TYPE(name)), count, sizeof(name)); \
+        result = malloc_flex(sizeof(THANDLE_TUPLE_ARRAY_TYPE(name)), count, sizeof(name)); \
         \
         if (result == NULL) \
         { \

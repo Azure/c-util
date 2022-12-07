@@ -376,7 +376,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE handle;
         const CONSTBUFFER* content;
-        unsigned char* test_buffer = (unsigned char* )real_gballoc_hl_malloc(2);
+        unsigned char* test_buffer = real_gballoc_hl_malloc(2);
+        ASSERT_IS_NOT_NULL(test_buffer);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -404,7 +405,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE handle;
         const CONSTBUFFER* content;
-        unsigned char* test_buffer = (unsigned char* )real_gballoc_hl_malloc(2);
+        unsigned char* test_buffer = real_gballoc_hl_malloc(2);
+        ASSERT_IS_NOT_NULL(test_buffer);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -452,7 +454,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ///arrange
         CONSTBUFFER_HANDLE handle;
-        unsigned char* test_buffer = (unsigned char* )real_gballoc_hl_malloc(2);
+        unsigned char* test_buffer = real_gballoc_hl_malloc(2);
+        ASSERT_IS_NOT_NULL(test_buffer);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -489,7 +492,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ///arrange
         CONSTBUFFER_HANDLE handle;
-        unsigned char* test_buffer = (unsigned char*)real_gballoc_hl_malloc(2);
+        unsigned char* test_buffer = real_gballoc_hl_malloc(2);
+        ASSERT_IS_NOT_NULL(test_buffer);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -509,7 +513,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE handle;
         const CONSTBUFFER* content;
-        unsigned char* test_buffer = (unsigned char*)real_gballoc_hl_malloc(2);
+        unsigned char* test_buffer = real_gballoc_hl_malloc(2);
+        ASSERT_IS_NOT_NULL(test_buffer);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -536,7 +541,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE handle;
         const CONSTBUFFER* content;
-        unsigned char* test_buffer = (unsigned char*)real_gballoc_hl_malloc(2);
+        unsigned char* test_buffer = real_gballoc_hl_malloc(2);
+        ASSERT_IS_NOT_NULL(test_buffer);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -565,7 +571,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///arrange
         CONSTBUFFER_HANDLE handle;
         const CONSTBUFFER* content;
-        unsigned char* test_buffer = (unsigned char*)real_gballoc_hl_malloc(2);
+        unsigned char* test_buffer = real_gballoc_hl_malloc(2);
+        ASSERT_IS_NOT_NULL(test_buffer);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -613,7 +620,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ///arrange
         CONSTBUFFER_HANDLE handle;
-        unsigned char* test_buffer = (unsigned char*)real_gballoc_hl_malloc(2);
+        unsigned char* test_buffer = real_gballoc_hl_malloc(2);
+        ASSERT_IS_NOT_NULL(test_buffer);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
@@ -1225,7 +1233,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     TEST_FUNCTION(CONSTBUFFER_CreateWithCustomFree_is_ref_counted_1)
     {
         ///arrange
-        unsigned char* test_buffer = (unsigned char*)real_gballoc_hl_malloc(2);
+        unsigned char* test_buffer = real_gballoc_hl_malloc(2);
+        ASSERT_IS_NOT_NULL(test_buffer);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
         CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateWithCustomFree(test_buffer, 2, free, test_buffer);
@@ -1246,7 +1255,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     TEST_FUNCTION(CONSTBUFFER_CreateWithCustomFree_with_custom_free_function_calls_the_custom_free_func)
     {
         ///arrange
-        unsigned char* test_buffer = (unsigned char*)real_gballoc_hl_malloc(2);
+        unsigned char* test_buffer = real_gballoc_hl_malloc(2);
+        ASSERT_IS_NOT_NULL(test_buffer);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
         CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateWithCustomFree(test_buffer, 2, test_free_func, (void*)0x4242);
@@ -1271,7 +1281,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ///arrange
         CONSTBUFFER_HANDLE handle;
-        unsigned char* test_buffer = (unsigned char* )real_gballoc_hl_malloc(2);
+        unsigned char* test_buffer = real_gballoc_hl_malloc(2);
+        ASSERT_IS_NOT_NULL(test_buffer);
         test_buffer[0] = 42;
         test_buffer[1] = 43;
         handle = CONSTBUFFER_CreateWithMoveMemory(test_buffer, 2);

@@ -14,7 +14,6 @@
         s_list_initialize, \
         s_list_is_empty, \
         s_list_add, \
-        s_list_add_head, \
         s_list_remove, \
         s_list_remove_head, \
         s_list_find, \
@@ -29,7 +28,6 @@
 int real_s_list_initialize(PS_LIST_ENTRY list_head);
 S_LIST_IS_EMPTY_RESULT real_s_list_is_empty(const PS_LIST_ENTRY list_head);
 int real_s_list_add(PS_LIST_ENTRY list_head, PS_LIST_ENTRY list_entry);
-int real_s_list_add_head(PS_LIST_ENTRY list_head, PS_LIST_ENTRY list_entry);
 int real_s_list_remove(PS_LIST_ENTRY list_head, PS_LIST_ENTRY list_entry);
 PS_LIST_ENTRY real_s_list_remove_head(PS_LIST_ENTRY list_head);
 PS_LIST_ENTRY real_s_list_find(PS_LIST_ENTRY list_head, S_LIST_MATCH_FUNCTION match_function, const void* match_context);

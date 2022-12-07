@@ -174,7 +174,8 @@ TEST_FUNCTION(InterlockedHL_Add64WithCeiling_when_underflow_it_fails)
         { INT64_MIN,            INT64_MIN}
     }, *cloneOfInputValues;
 
-    cloneOfInputValues = (ADDEND_AND_VALUE*)my_gballoc_malloc(sizeof(inputValues));
+    cloneOfInputValues = my_gballoc_malloc(sizeof(inputValues));
+    ASSERT_IS_NOT_NULL(cloneOfInputValues);
     (void)memcpy(cloneOfInputValues, inputValues, sizeof(inputValues));
 
     for (size_t i = 0; i < sizeof(inputValues) / sizeof(inputValues[0]); i++)
@@ -211,7 +212,8 @@ TEST_FUNCTION(InterlockedHL_Add64WithCeiling_when_overflow_it_fails)
         { INT64_MAX,            INT64_MAX }
     }, *cloneOfInputValues;
 
-    cloneOfInputValues = (ADDEND_AND_VALUE*)my_gballoc_malloc(sizeof(inputValues));
+    cloneOfInputValues = my_gballoc_malloc(sizeof(inputValues));
+    ASSERT_IS_NOT_NULL(cloneOfInputValues);
     (void)memcpy(cloneOfInputValues, inputValues, sizeof(inputValues));
 
     for (size_t i = 0; i < sizeof(inputValues) / sizeof(inputValues[0]); i++)
@@ -251,7 +253,8 @@ TEST_FUNCTION(InterlockedHL_Add64WithCeiling_when_over_the_ceiling_it_fails)
         { 2,                    INT64_MIN + 1,          INT64_MIN },
     }, *cloneOfInputValues;
 
-    cloneOfInputValues = (ADDEND_CEILING_AND_VALUE*)my_gballoc_malloc(sizeof(inputValues));
+    cloneOfInputValues = my_gballoc_malloc(sizeof(inputValues));
+    ASSERT_IS_NOT_NULL(cloneOfInputValues);
     (void)memcpy(cloneOfInputValues, inputValues, sizeof(inputValues));
 
     for (size_t i = 0; i < sizeof(inputValues) / sizeof(inputValues[0]); i++)
@@ -291,7 +294,8 @@ TEST_FUNCTION(InterlockedHL_Add64WithCeiling_succeeds)
         { 1,                    INT64_MIN + 1,          INT64_MIN },
     }, *cloneOfInputValues;
 
-    cloneOfInputValues = (ADDEND_CEILING_AND_VALUE*)my_gballoc_malloc(sizeof(inputValues));
+    cloneOfInputValues = my_gballoc_malloc(sizeof(inputValues));
+    ASSERT_IS_NOT_NULL(cloneOfInputValues);
     (void)memcpy(cloneOfInputValues, inputValues, sizeof(inputValues));
 
     for (size_t i = 0; i < sizeof(inputValues) / sizeof(inputValues[0]); i++)

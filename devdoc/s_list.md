@@ -27,7 +27,6 @@ typedef int (*S_LIST_ACTION_FUNCTION)(PS_LIST_ENTRY list_entry, const void* acti
 MOCKABLE_FUNCTION(, int, s_list_initialize, PS_LIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, S_LIST_IS_EMPTY_RESULT, s_list_is_empty, const PS_LIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, PS_LIST_ENTRY, s_list_add, PS_LIST_ENTRY, list_head, PS_LIST_ENTRY, list_entry);
-MOCKABLE_FUNCTION(, int, s_list_add_head, PS_LIST_ENTRY, list_head, PS_LIST_ENTRY, list_entry);
 MOCKABLE_FUNCTION(, int, s_list_remove, PS_LIST_ENTRY, list_head, PS_LIST_ENTRY, list_entry);
 MOCKABLE_FUNCTION(, PS_LIST_ENTRY, s_list_remove_head, PS_LIST_ENTRY, list_head);
 MOCKABLE_FUNCTION(, PS_LIST_ENTRY, s_list_find, PS_LIST_ENTRY, list_head, S_LIST_MATCH_FUNCTION, match_function, const void*, match_context);
@@ -87,18 +86,7 @@ int s_list_add(PS_LIST_ENTRY list_head, PS_LIST_ENTRY list_entry);
 
 **SRS_S_LIST_07_006: [** If `list_entry` is `NULL`, `s_list_add` shall fail and return a non-zero value. **]**
 
-**SRS_S_LIST_07_007: [** `s_list_add` shall add one entry to the tail of the list and return zero on success. **]** 
-
-### s_list_add_head
-```
-int s_list_add_head(PS_LIST_ENTRY list_head, PS_LIST_ENTRY list_entry);
-```
-
-**SRS_S_LIST_07_008: [** If `list_head` is `NULL`, `s_list_add_head` shall fail and return a non-zero value. **]** 
-
-**SRS_S_LIST_07_009: [** If `list_entry` is `NULL`, `s_list_add_head` shall fail and return a non-zero value. **]**
-
-**SRS_S_LIST_07_010: [** `s_list_add_head` shall insert `list_entry` at head and return zero on success. **]** 
+**SRS_S_LIST_07_007: [** `s_list_add` shall add one entry to the head of the list and return zero on success. **]** 
 
 ### s_list_remove
 ```c

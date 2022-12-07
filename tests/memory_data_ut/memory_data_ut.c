@@ -71,7 +71,7 @@ TEST_FUNCTION(read_uint8_t_succeeds)
 {
     ///arrange
     size_t size = sizeof(uint8_t);
-    unsigned char* source = (unsigned char*)malloc(size);
+    unsigned char* source = malloc(size);
     uint64_t expectedValue = 0;
     size_t i;
     uint8_t destination = 0;
@@ -99,7 +99,7 @@ TEST_FUNCTION(read_uint16_t_succeeds)
 {
     ///arrange
     size_t size = sizeof(uint16_t);
-    unsigned char* source = (unsigned char*)malloc(size);
+    unsigned char* source = malloc(size);
     uint64_t expectedValue = 0;
     uint16_t destination = 0;
     size_t i;
@@ -127,7 +127,7 @@ TEST_FUNCTION(read_uint32_t_succeeds)
 {
     ///arrange
     size_t size = sizeof(uint32_t);
-    unsigned char* source = (unsigned char*)malloc(size);
+    unsigned char* source = malloc(size);
     uint64_t expectedValue = 0;
     size_t i;
     uint32_t destination = 0;
@@ -154,7 +154,7 @@ TEST_FUNCTION(read_uint64_t_succeeds)
 {
     ///arrange
     size_t size = sizeof(uint64_t);
-    unsigned char* source = (unsigned char*)malloc(size);
+    unsigned char* source = malloc(size);
     uint64_t expectedValue = 0;
     size_t i;
     uint64_t destination = 0;
