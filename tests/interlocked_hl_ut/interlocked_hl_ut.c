@@ -414,7 +414,7 @@ TEST_FUNCTION(when_the_wait_on_address_fails_InterlockedHL_WaitForValue_also_fai
     STRICT_EXPECTED_CALL(interlocked_add(&value, 0));
     STRICT_EXPECTED_CALL(wait_on_address(&value, IGNORED_ARG, UINT32_MAX))
         .CopyOutArgumentBuffer_address(&intermediate_value, sizeof(int32_t))
-        .SetReturn(false);
+        .SetReturn(WAIT_ON_ADDRESS_ERROR);
 
     // act
     result = InterlockedHL_WaitForValue(&value, 0x42, UINT32_MAX);
@@ -517,7 +517,7 @@ TEST_FUNCTION(when_the_wait_on_address_fails_InterlockedHL_WaitForNotValue_also_
 
     STRICT_EXPECTED_CALL(interlocked_add(&value, 0));
     STRICT_EXPECTED_CALL(wait_on_address(&value, IGNORED_ARG, UINT32_MAX))
-        .SetReturn(false);
+        .SetReturn(WAIT_ON_ADDRESS_ERROR);
 
     // act
     result = InterlockedHL_WaitForNotValue(&value, 0x42, UINT32_MAX);
