@@ -71,16 +71,18 @@ typedef  struct INPUT_AND_OUTPUT_TAG
     int32_t Output;
 } INPUT_AND_OUTPUT;
 
-static bool hook_wait_on_address(volatile_atomic int32_t* address, int32_t compare_value, uint32_t milliseconds)
+static WAIT_ON_ADDRESS_RESULT hook_wait_on_address(volatile_atomic int32_t* address, int32_t compare_value, uint32_t milliseconds)
 {
     (void)address;
     (void)compare_value;
     (void)milliseconds;
-    return true;
+    return WAIT_ON_ADDRESS_OK;
 }
 
 TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
+
+IMPLEMENT_UMOCK_C_ENUM_TYPE(WAIT_ON_ADDRESS_RESULT, WAIT_ON_ADDRESS_RESULT_VALUES);
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
@@ -95,6 +97,7 @@ TEST_SUITE_INITIALIZE(a)
     ASSERT_ARE_EQUAL(int, 0, umocktypes_bool_register_types());
 
     REGISTER_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT);
+    REGISTER_TYPE(WAIT_ON_ADDRESS_RESULT, WAIT_ON_ADDRESS_RESULT);
 
     REGISTER_INTERLOCKED_GLOBAL_MOCK_HOOK();
     REGISTER_SYNC_GLOBAL_MOCK_HOOK();
@@ -411,7 +414,7 @@ TEST_FUNCTION(when_the_wait_on_address_fails_InterlockedHL_WaitForValue_also_fai
     STRICT_EXPECTED_CALL(interlocked_add(&value, 0));
     STRICT_EXPECTED_CALL(wait_on_address(&value, IGNORED_ARG, UINT32_MAX))
         .CopyOutArgumentBuffer_address(&intermediate_value, sizeof(int32_t))
-        .SetReturn(false);
+        .SetReturn(WAIT_ON_ADDRESS_ERROR);
 
     // act
     result = InterlockedHL_WaitForValue(&value, 0x42, UINT32_MAX);
@@ -514,7 +517,7 @@ TEST_FUNCTION(when_the_wait_on_address_fails_InterlockedHL_WaitForNotValue_also_
 
     STRICT_EXPECTED_CALL(interlocked_add(&value, 0));
     STRICT_EXPECTED_CALL(wait_on_address(&value, IGNORED_ARG, UINT32_MAX))
-        .SetReturn(false);
+        .SetReturn(WAIT_ON_ADDRESS_ERROR);
 
     // act
     result = InterlockedHL_WaitForNotValue(&value, 0x42, UINT32_MAX);
