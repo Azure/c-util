@@ -237,7 +237,7 @@ static SM_RESULT sm_close_begin_internal(SM_HANDLE sm, SM_CLOSING_COMPLETE_CALLB
                     }
                     else
                     {
-                        /* Codes_S_RS_SM_28_004: [ sm_close_begin_internal shall invoke callback function with callback_context as argument. ] */
+                        /* Codes_S_RS_SM_28_004: [ If callback is not NULL, sm_close_begin_internal shall invoke callback function with callback_context as argument. ] */
                         callback(callback_context);
                     }
 

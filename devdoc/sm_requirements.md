@@ -182,28 +182,6 @@ MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin, SM_HANDLE, sm);
 
 **S_RS_SM_28_006: [** `sm_close_begin` shall call `sm_close_begin_internal` with `callback` as `NULL` and `callback_context` as `NULL`. **]**
 
-**SRS_SM_02_045: [** `sm_close_begin_internal` shall set `SM_CLOSE_BIT` to 1. **]**
-
-**SRS_SM_02_046: [** If `SM_CLOSE_BIT` was already 1 then `sm_close_begin_internal` shall return `SM_EXEC_REFUSED`. **]**
-
-**SRS_SM_02_047: [** If the state is `SM_OPENED` then `sm_close_begin_internal` shall switch it to `SM_OPENED_DRAINING_TO_CLOSE`. **]**
-
-**S_RS_SM_28_008: [** `callback` shall be allowed to be NULL. **]**
-
-**SRS_SM_02_048: [** `sm_close_begin_internal` shall wait for `n` to reach 0. **]**
-
-**SRS_SM_02_049: [** `sm_close_begin_internal` shall switch the state to `SM_CLOSING` and return `SM_EXEC_GRANTED`. **]**
-
-**SRS_SM_02_050: [** If the state is `SM_OPENED_BARRIER` then `sm_close_begin_internal` shall re-evaluate the state. **]**
-
-**SRS_SM_02_051: [** If the state is `SM_OPENED_DRAINING_TO_BARRIER` then `sm_close_begin_internal` shall re-evaluate the state. **]**
-
-**SRS_SM_02_052: [** If the state is any other value then `sm_close_begin_internal` shall return `SM_EXEC_REFUSED`. **]**
-
-**SRS_SM_02_053: [** `sm_close_begin_internal` shall set `SM_CLOSE_BIT` to 0. **]**
-
-**SRS_SM_02_071: [** If there are any failures then `sm_close_begin_internal` shall fail and return `SM_ERROR`. **]**
-
 **S_RS_SM_28_007: [** `sm_close_begin` shall return the returned `SM_RESULT` from `sm_close_begin_internal`. **]**
 
 ### sm_close_begin_with_cb
@@ -219,13 +197,21 @@ MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin_with_cb, SM_HANDLE, sm, SM_CLOSING
 
 **S_RS_SM_28_003: [** `sm_close_begin_with_cb` shall call `sm_close_begin_internal` with `callback` and `callback_context` as arguments. **]**
 
+**S_RS_SM_28_005: [** `sm_close_begin_with_cb` shall return the returned `SM_RESULT` from `sm_close_begin_internal`. **]**
+
+### sm_close_begin_internal
+
+`sm_close_begin_internal` is a helper function for `sm_close_begin` and `sm_close_begin_with_cb`.
+
 **SRS_SM_02_045: [** `sm_close_begin_internal` shall set `SM_CLOSE_BIT` to 1. **]**
 
 **SRS_SM_02_046: [** If `SM_CLOSE_BIT` was already 1 then `sm_close_begin_internal` shall return `SM_EXEC_REFUSED`. **]**
 
 **SRS_SM_02_047: [** If the state is `SM_OPENED` then `sm_close_begin_internal` shall switch it to `SM_OPENED_DRAINING_TO_CLOSE`. **]**
 
-**S_RS_SM_28_004: [** `sm_close_begin_internal` shall invoke `callback` function with `callback_context` as argument. **]**
+**S_RS_SM_28_008: [** `callback` shall be allowed to be NULL. **]**
+
+**S_RS_SM_28_004: [** If `callback` is not `NULL`, `sm_close_begin_internal` shall invoke `callback` function with `callback_context` as argument. **]**
 
 **SRS_SM_02_048: [** `sm_close_begin_internal` shall wait for `n` to reach 0. **]**
 
@@ -240,8 +226,6 @@ MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin_with_cb, SM_HANDLE, sm, SM_CLOSING
 **SRS_SM_02_053: [** `sm_close_begin_internal` shall set `SM_CLOSE_BIT` to 0. **]**
 
 **SRS_SM_02_071: [** If there are any failures then `sm_close_begin_internal` shall fail and return `SM_ERROR`. **]**
-
-**S_RS_SM_28_005: [** `sm_close_begin_with_cb` shall return the returned `SM_RESULT` from `sm_close_begin_internal`. **]**
 
 ### sm_close_end
 ```c
