@@ -88,7 +88,7 @@ SM_HANDLE sm_create(const char* name)
 }
 
 /*forwards*/
-static SM_RESULT sm_close_begin_internal(SM_HANDLE sm);
+static SM_RESULT sm_close_begin_internal(SM_HANDLE sm, SM_CLOSING_COMPLETE_CALLBACK callback, void* callback_context);
 static void sm_close_end_internal(SM_HANDLE sm);
 
 void sm_destroy(SM_HANDLE sm)
@@ -101,7 +101,7 @@ void sm_destroy(SM_HANDLE sm)
     else
     {
         /*Codes_SRS_SM_02_038: [ sm_destroy behave as if sm_close_begin would have been called. ]*/
-        if (sm_close_begin_internal(sm) == SM_EXEC_GRANTED)
+        if (sm_close_begin_internal(sm, NULL, NULL) == SM_EXEC_GRANTED)
         {
             sm_close_end_internal(sm);
         }
@@ -204,15 +204,15 @@ void sm_open_end(SM_HANDLE sm, bool success)
     }
 }
 
-static SM_RESULT sm_close_begin_internal(SM_HANDLE sm)
+static SM_RESULT sm_close_begin_internal(SM_HANDLE sm, SM_CLOSING_COMPLETE_CALLBACK callback, void* callback_context)
 {
     SM_RESULT result;
 
     int32_t state;
-    /*Codes_SRS_SM_02_045: [ sm_close_begin shall set SM_CLOSE_BIT to 1. ]*/
+    /*Codes_SRS_SM_02_045: [ sm_close_begin_internal shall set SM_CLOSE_BIT to 1. ]*/
     if (((state=interlocked_or(&sm->state, SM_CLOSE_BIT)) & SM_CLOSE_BIT) == SM_CLOSE_BIT)
     {
-        /*Codes_SRS_SM_02_046: [ If SM_CLOSE_BIT was already 1 then sm_close_begin shall return SM_EXEC_REFUSED. ]*/
+        /*Codes_SRS_SM_02_046: [ If SM_CLOSE_BIT was already 1 then sm_close_begin_internal shall return SM_EXEC_REFUSED. ]*/
         LogError("sm name=%s. another thread is performing close (state=%" PRI_SM_STATE ")", sm->name, SM_STATE_VALUE(state));
         result = SM_EXEC_REFUSED;
     }
@@ -222,7 +222,7 @@ static SM_RESULT sm_close_begin_internal(SM_HANDLE sm)
         {
             state = interlocked_add(&sm->state, 0);
 
-            /*Codes_SRS_SM_02_047: [ If the state is SM_OPENED then sm_close_begin shall switch it to SM_OPENED_DRAINING_TO_CLOSE. ]*/
+            /*Codes_SRS_SM_02_047: [ If the state is SM_OPENED then sm_close_begin_internal shall switch it to SM_OPENED_DRAINING_TO_CLOSE. ]*/
             if ((state & SM_STATE_MASK) == SM_OPENED)
             {
                 if (interlocked_compare_exchange(&sm->state, state - SM_OPENED + SM_OPENED_DRAINING_TO_CLOSE + SM_STATE_INCREMENT, state) != state)
@@ -231,26 +231,36 @@ static SM_RESULT sm_close_begin_internal(SM_HANDLE sm)
                 }
                 else
                 {
-                    /*Codes_SRS_SM_02_048: [ sm_close_begin shall wait for n to reach 0. ]*/
+                    if (callback == NULL)
+                    {
+                        /* Codes_S_RS_SM_28_008: [ callback shall be allowed to be NULL. ] */
+                    }
+                    else
+                    {
+                        /* Codes_S_RS_SM_28_004: [ sm_close_begin_internal shall invoke callback function with callback_context as argument. ] */
+                        callback(callback_context);
+                    }
+
+                    /*Codes_SRS_SM_02_048: [ sm_close_begin_internal shall wait for n to reach 0. ]*/
                     if (InterlockedHL_WaitForValue(&sm->non_barrier_call_count, 0, UINT32_MAX) != INTERLOCKED_HL_OK)
                     {
-                        /*Codes_SRS_SM_02_071: [ If there are any failures then sm_close_begin shall fail and return SM_ERROR. ]*/
+                        /*Codes_SRS_SM_02_071: [ If there are any failures then sm_close_begin_internal shall fail and return SM_ERROR. ]*/
                         LogError("sm name=%s. failure in InterlockedHL_WaitForValue(&sm->non_barrier_call_count=%p, 0, UINT32_MAX), state was %" PRI_SM_STATE "", sm->name, &sm->non_barrier_call_count, SM_STATE_VALUE(state));
                         (void)interlocked_add(&sm->state, -SM_OPENED_DRAINING_TO_CLOSE + SM_OPENED + SM_STATE_INCREMENT); /*undo state to SM_OPENED...*/
                         result = SM_ERROR;
                         break;
                     }
 
-                    /*Codes_SRS_SM_02_049: [ sm_close_begin shall switch the state to SM_CLOSING and return SM_EXEC_GRANTED. ]*/
+                    /*Codes_SRS_SM_02_049: [ sm_close_begin_internal shall switch the state to SM_CLOSING and return SM_EXEC_GRANTED. ]*/
                     (void)interlocked_add(&sm->state, -SM_OPENED_DRAINING_TO_CLOSE + SM_CLOSING + SM_STATE_INCREMENT);
                     result = SM_EXEC_GRANTED;
                     break;
                 }
             }
             else if (
-                /*Codes_SRS_SM_02_050: [ If the state is SM_OPENED_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
+                /*Codes_SRS_SM_02_050: [ If the state is SM_OPENED_BARRIER then sm_close_begin_internal shall re-evaluate the state. ]*/
                 ((state & SM_STATE_MASK) == SM_OPENED_BARRIER) ||
-                /*Codes_SRS_SM_02_051: [ If the state is SM_OPENED_DRAINING_TO_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
+                /*Codes_SRS_SM_02_051: [ If the state is SM_OPENED_DRAINING_TO_BARRIER then sm_close_begin_internal shall re-evaluate the state. ]*/
                 ((state & SM_STATE_MASK) == SM_OPENED_DRAINING_TO_BARRIER)
                 )
             {
@@ -258,13 +268,13 @@ static SM_RESULT sm_close_begin_internal(SM_HANDLE sm)
             }
             else
             {
-                /*Codes_SRS_SM_02_052: [ If the state is any other value then sm_close_begin shall return SM_EXEC_REFUSED. ]*/
+                /*Codes_SRS_SM_02_052: [ If the state is any other value then sm_close_begin_internal shall return SM_EXEC_REFUSED. ]*/
                 result = SM_EXEC_REFUSED;
                 break;
             }
         } while (1);
 
-        /*Codes_SRS_SM_02_053: [ sm_close_begin shall set SM_CLOSE_BIT to 0. ]*/
+        /*Codes_SRS_SM_02_053: [ sm_close_begin_internal shall set SM_CLOSE_BIT to 0. ]*/
         (void)interlocked_and(&sm->state, ~(uint32_t)SM_CLOSE_BIT);
     }
     return result;
@@ -282,9 +292,34 @@ SM_RESULT sm_close_begin(SM_HANDLE sm)
     }
     else
     {
-        result = sm_close_begin_internal(sm);
+        /* Codes_S_RS_SM_28_006: [ sm_close_begin shall call sm_close_begin_internal with callback as NULL and callback_context as NULL. ] */
+        result = sm_close_begin_internal(sm, NULL, NULL);
     }
 
+    /* Codes_S_RS_SM_28_007: [ sm_close_begin shall return the returned SM_RESULT from sm_close_begin_internal. ] */
+    return result;
+}
+
+SM_RESULT sm_close_begin_with_cb(SM_HANDLE sm, SM_CLOSING_COMPLETE_CALLBACK callback, void* callback_context)
+{
+
+    SM_RESULT result;
+    if (
+        /* Codes_S_RS_SM_28_001: [ If sm is NULL then sm_close_begin_with_cb shall fail and return SM_ERROR. ] */
+        (sm == NULL) ||
+        /* Codes_S_RS_SM_28_002: [ If callback is NULL then sm_close_begin_with_cb shall fail and return SM_ERROR. ] */
+        (callback == NULL))
+    {
+        LogError("invalid argument SM_HANDLE sm=%p, SM_CLOSING_COMPLETE_CALLBACK callback=%p, void* callback_context=%p", sm, callback, callback_context);
+        result = SM_ERROR;
+    }
+    else
+    {
+        /* Codes_S_RS_SM_28_003: [ sm_close_begin_with_cb shall call sm_close_begin_internal with callback and callback_context as arguments. ] */
+        result = sm_close_begin_internal(sm, callback, callback_context);
+    }
+
+    /* Codes_S_RS_SM_28_005: [ sm_close_begin_with_cb shall return the returned SM_RESULT from sm_close_begin_internal. ] */
     return result;
 }
 
