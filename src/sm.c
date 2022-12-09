@@ -233,11 +233,11 @@ static SM_RESULT sm_close_begin_internal(SM_HANDLE sm, SM_CLOSING_COMPLETE_CALLB
                 {
                     if (callback == NULL)
                     {
-                        /* Codes_S_RS_SM_28_008: [ callback passed to sm_close_begin_internal shall be allowed to be NULL. ] */
+                        // do nothing.
                     }
                     else
                     {
-                        /* Codes_S_RS_SM_28_004: [ If callback is not NULL, sm_close_begin_internal shall invoke callback function with callback_context as argument. ] */
+                        // execute the callback.
                         callback(callback_context);
                     }
 
@@ -313,11 +313,12 @@ SM_RESULT sm_close_begin_with_cb(SM_HANDLE sm, SM_CLOSING_COMPLETE_CALLBACK call
     }
     else
     {
-        /* Codes_S_RS_SM_28_003: [ sm_close_begin_with_cb shall behave as if sm_close_begin was called except that callback will be invoked with callback_context as arguments before waiting for pending calls to become 0. ] */
+        /* Codes_S_RS_SM_28_003: [ sm_close_begin_with_cb shall behave as if sm_close_begin was called except as follows. ] */
+        /* Codes_S_RS_SM_28_006: [ After switching the state to SM_OPENED_DRAINING_TO_CLOSE, sm_close_begin_with_cb shall invoke callback with callback_context as argument before waiting for pending calls to become 0. ] */
         result = sm_close_begin_internal(sm, callback, callback_context);
     }
 
-    /* Codes_S_RS_SM_28_005: [ sm_close_begin_with_cb shall return the returned SM_RESULT from sm_close_begin_internal. ] */
+    /* Codes_S_RS_SM_28_005: [ sm_close_begin_with_cb shall return the same result as sm_close_begin. ] */
     return result;
 }
 
