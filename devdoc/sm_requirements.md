@@ -93,7 +93,7 @@ typedef struct SM_HANDLE_DATA_TAG* SM_HANDLE;
 
 MU_DEFINE_ENUM(SM_RESULT, SM_RESULT_VALUES);
 
-typedef void(*SM_CLOSING_COMPLETE_CALLBACK)(void* context);
+typedef void(*SM_OPENED_DRAINING_TO_CLOSE_COMPLETE_CALLBACK)(void* context);
 
 MOCKABLE_FUNCTION(, SM_HANDLE, sm_create, const char*, name);
 MOCKABLE_FUNCTION(, void, sm_destroy, SM_HANDLE, sm);
@@ -203,7 +203,7 @@ MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin, SM_HANDLE, sm);
 
 ### sm_close_begin_with_cb
 ```c
-MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin_with_cb, SM_HANDLE, sm, SM_CLOSING_COMPLETE_CALLBACK, callback, void*, callback_context);
+MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin_with_cb, SM_HANDLE, sm, SM_OPENED_DRAINING_TO_CLOSE_COMPLETE_CALLBACK, callback, void*, callback_context);
 ```
 
 `sm_close_begin_with_cb` asks from `sm` permission to exit `SM_OPENED` state (or one of its derived state) and return to `SM_CREATED`. `sm_close_begin_with_cb` invokes the `callback` function with `callback_context` before waiting for pending calls to become 0.
