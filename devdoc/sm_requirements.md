@@ -208,15 +208,15 @@ MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin_with_cb, SM_HANDLE, sm, SM_CLOSING
 
 `sm_close_begin_with_cb` asks from `sm` permission to exit `SM_OPENED` state (or one of its derived state) and return to `SM_CREATED`. `sm_close_begin_with_cb` invokes the `callback` function with `callback_context` before waiting for pending calls to become 0.
 
-**SRS_SM_28_001: [** If `sm` is `NULL` then `sm_close_begin_with_cb` shall fail and return `SM_ERROR`. **]**
+**S_RS_SM_28_001: [** If `sm` is `NULL` then `sm_close_begin_with_cb` shall fail and return `SM_ERROR`. **]**
 
-**SRS_SM_28_002: [** If `callback` is `NULL` then `sm_close_begin_with_cb` shall fail and return `SM_ERROR`. **]**
+**S_RS_SM_28_002: [** If `callback` is `NULL` then `sm_close_begin_with_cb` shall fail and return `SM_ERROR`. **]**
 
-**SRS_SM_28_003: [** `sm_close_begin_with_cb` shall behave as if `sm_close_begin` was called except as follows.  **]**
+**S_RS_SM_28_003: [** `sm_close_begin_with_cb` shall behave as if `sm_close_begin` was called except as follows.  **]**
 
-**SRS_SM_28_006: [** After switching the state to `SM_OPENED_DRAINING_TO_CLOSE`, `sm_close_begin_with_cb` shall invoke `callback` with `callback_context` as argument before waiting for pending calls to become 0. **]**
+**S_RS_SM_28_006: [** After switching the state to `SM_OPENED_DRAINING_TO_CLOSE`, `sm_close_begin_with_cb` shall invoke `callback` with `callback_context` as argument before waiting for pending calls to become 0. **]**
 
-**SRS_SM_28_005: [** `sm_close_begin_with_cb` shall return the same result as `sm_close_begin`. **]**
+**S_RS_SM_28_005: [** `sm_close_begin_with_cb` shall return the same result as `sm_close_begin`. **]**
 
 ### sm_close_end
 ```c
