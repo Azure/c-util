@@ -35,7 +35,7 @@ SM_RESULT real_sm_open_begin(SM_HANDLE sm);
 void real_sm_open_end(SM_HANDLE sm, bool success);
 
 SM_RESULT real_sm_close_begin(SM_HANDLE sm);
-SM_RESULT real_sm_close_begin_with_cb(SM_HANDLE sm, SM_OPENED_DRAINING_TO_CLOSE_COMPLETE_CALLBACK callback, void* callback_context);
+SM_RESULT real_sm_close_begin_with_cb(SM_HANDLE sm, ON_SM_CLOSING_COMPLETE_CALLBACK callback, void* callback_context);
 void real_sm_close_end(SM_HANDLE sm);
 
 SM_RESULT real_sm_exec_begin(SM_HANDLE sm);

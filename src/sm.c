@@ -88,7 +88,7 @@ SM_HANDLE sm_create(const char* name)
 }
 
 /*forwards*/
-static SM_RESULT sm_close_begin_internal(SM_HANDLE sm, SM_OPENED_DRAINING_TO_CLOSE_COMPLETE_CALLBACK callback, void* callback_context);
+static SM_RESULT sm_close_begin_internal(SM_HANDLE sm, ON_SM_CLOSING_COMPLETE_CALLBACK callback, void* callback_context);
 static void sm_close_end_internal(SM_HANDLE sm);
 
 void sm_destroy(SM_HANDLE sm)
@@ -204,7 +204,7 @@ void sm_open_end(SM_HANDLE sm, bool success)
     }
 }
 
-static SM_RESULT sm_close_begin_internal(SM_HANDLE sm, SM_OPENED_DRAINING_TO_CLOSE_COMPLETE_CALLBACK callback, void* callback_context)
+static SM_RESULT sm_close_begin_internal(SM_HANDLE sm, ON_SM_CLOSING_COMPLETE_CALLBACK callback, void* callback_context)
 {
     SM_RESULT result;
 
@@ -298,7 +298,7 @@ SM_RESULT sm_close_begin(SM_HANDLE sm)
     return result;
 }
 
-SM_RESULT sm_close_begin_with_cb(SM_HANDLE sm, SM_OPENED_DRAINING_TO_CLOSE_COMPLETE_CALLBACK callback, void* callback_context)
+SM_RESULT sm_close_begin_with_cb(SM_HANDLE sm, ON_SM_CLOSING_COMPLETE_CALLBACK callback, void* callback_context)
 {
 
     SM_RESULT result;
@@ -308,7 +308,7 @@ SM_RESULT sm_close_begin_with_cb(SM_HANDLE sm, SM_OPENED_DRAINING_TO_CLOSE_COMPL
         /* Codes_S_RS_SM_28_002: [ If callback is NULL then sm_close_begin_with_cb shall fail and return SM_ERROR. ] */
         (callback == NULL))
     {
-        LogError("invalid argument SM_HANDLE sm=%p, SM_OPENED_DRAINING_TO_CLOSE_COMPLETE_CALLBACK callback=%p, void* callback_context=%p", sm, callback, callback_context);
+        LogError("invalid argument SM_HANDLE sm=%p, ON_SM_CLOSING_COMPLETE_CALLBACK callback=%p, void* callback_context=%p", sm, callback, callback_context);
         result = SM_ERROR;
     }
     else
