@@ -43,6 +43,9 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES)
 TEST_DEFINE_ENUM_TYPE(SM_RESULT, SM_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(SM_RESULT, SM_RESULT_VALUES);
 
+MOCK_FUNCTION_WITH_CODE(, void, test_sm_opened_draining_to_close_complete, void*, context)
+MOCK_FUNCTION_END()
+
 static SM_HANDLE TEST_sm_create(void)
 {
     SM_HANDLE result;
@@ -490,7 +493,7 @@ TEST_FUNCTION(sm_close_begin_after_close_begin_close_end_open_begin_open_end_suc
 }
 
 /*Tests_SRS_SM_02_071: [ If there are any failures then sm_close_begin shall fail and return SM_ERROR. ]*/
-TEST_FUNCTION(sm_close_unhappy_path)
+TEST_FUNCTION(sm_close_begin_unhappy_path)
 {
     ///arrange
     SM_HANDLE sm = TEST_sm_create();
@@ -507,6 +510,166 @@ TEST_FUNCTION(sm_close_unhappy_path)
 
     ///act
     result = sm_close_begin(sm);
+
+    ///assert
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_ERROR, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_destroy(sm);
+}
+
+TEST_FUNCTION(sm_close_begin_with_cb_with_sm_NULL_returns_SM_ERROR)
+{
+    ///arrange
+    SM_RESULT result;
+
+    ///act
+    result = sm_close_begin_with_cb(NULL, test_sm_opened_draining_to_close_complete, (void*)0x4246);
+
+    ///assert
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_ERROR, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+TEST_FUNCTION(sm_close_begin_with_cb_with_callback_NULL_returns_SM_ERROR)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result;
+
+    ///act
+    result = sm_close_begin_with_cb(sm, NULL, (void*)0x4246);
+
+    ///assert
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_ERROR, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+}
+
+TEST_FUNCTION(sm_close_begin_with_cb_in_SM_OPENED_succeeds)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_open_end(sm, true);
+
+    STRICT_EXPECTED_CALL(test_sm_opened_draining_to_close_complete((void*)0x4246));
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX));
+
+    ///act
+    result = sm_close_begin_with_cb(sm, test_sm_opened_draining_to_close_complete, (void*)0x4246);
+
+    ///assert
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_close_end(sm);
+    sm_destroy(sm);
+}
+
+TEST_FUNCTION(sm_close_begin_with_cb_with_SM_CLOSE_BIT_refuses)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_open_end(sm, true);
+
+    /*sets SM_CLOSE_BIT to 1*/
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX));
+    result = sm_close_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+
+    ///act
+    result = sm_close_begin_with_cb(sm, test_sm_opened_draining_to_close_complete, (void*)0x4246);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, result);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_close_end(sm);
+    sm_destroy(sm);
+}
+
+TEST_FUNCTION(sm_close_begin_with_cb_in_SM_CREATED_fails)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result;
+
+    ///act
+    result = sm_close_begin_with_cb(sm, test_sm_opened_draining_to_close_complete, (void*)0x4246);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_REFUSED, result);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_destroy(sm);
+}
+
+TEST_FUNCTION(sm_close_begin_with_cb_after_close_begin_close_end_open_begin_open_end_succeeds)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result;
+
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_open_end(sm, true);
+
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX));
+
+    result = sm_close_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_close_end(sm);
+
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_open_end(sm, true);
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_sm_opened_draining_to_close_complete((void*)0x4246));
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX));
+
+    ///act
+    result = sm_close_begin_with_cb(sm, test_sm_opened_draining_to_close_complete, (void*)0x4246);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    sm_close_end(sm);
+    sm_destroy(sm);
+}
+
+TEST_FUNCTION(sm_close_begin_with_cb_unhappy_path)
+{
+    ///arrange
+    SM_HANDLE sm = TEST_sm_create();
+    SM_RESULT result;
+
+    result = sm_open_begin(sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, SM_EXEC_GRANTED, result);
+    sm_open_end(sm, true);
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(test_sm_opened_draining_to_close_complete((void*)0x4246));
+    STRICT_EXPECTED_CALL(InterlockedHL_WaitForValue(IGNORED_ARG, 0, UINT32_MAX))
+        .SetReturn(INTERLOCKED_HL_ERROR);
+
+    ///act
+    result = sm_close_begin_with_cb(sm, test_sm_opened_draining_to_close_complete, (void*)0x4246);
 
     ///assert
     ASSERT_ARE_EQUAL(SM_RESULT, SM_ERROR, result);
