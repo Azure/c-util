@@ -550,6 +550,7 @@ TEST_FUNCTION(sm_close_begin_with_cb_with_callback_NULL_returns_SM_ERROR)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
+    sm_destroy(sm);
 }
 
 /* Tests_SRS_SM_28_003: [ sm_close_begin_with_cb shall behave as if sm_close_begin was called except as follows. ] */
