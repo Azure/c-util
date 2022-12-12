@@ -303,9 +303,9 @@ SM_RESULT sm_close_begin_with_cb(SM_HANDLE sm, ON_SM_CLOSING_COMPLETE_CALLBACK c
 
     SM_RESULT result;
     if (
-        /* Codes_S_RS_SM_28_001: [ If sm is NULL then sm_close_begin_with_cb shall fail and return SM_ERROR. ] */
+        /* Codes_SRS_SM_28_001: [ If sm is NULL then sm_close_begin_with_cb shall fail and return SM_ERROR. ] */
         (sm == NULL) ||
-        /* Codes_S_RS_SM_28_002: [ If callback is NULL then sm_close_begin_with_cb shall fail and return SM_ERROR. ] */
+        /* Codes_SRS_SM_28_002: [ If callback is NULL then sm_close_begin_with_cb shall fail and return SM_ERROR. ] */
         (callback == NULL))
     {
         LogError("invalid argument SM_HANDLE sm=%p, ON_SM_CLOSING_COMPLETE_CALLBACK callback=%p, void* callback_context=%p", sm, callback, callback_context);
@@ -313,12 +313,12 @@ SM_RESULT sm_close_begin_with_cb(SM_HANDLE sm, ON_SM_CLOSING_COMPLETE_CALLBACK c
     }
     else
     {
-        /* Codes_S_RS_SM_28_003: [ sm_close_begin_with_cb shall behave as if sm_close_begin was called except as follows. ] */
-        /* Codes_S_RS_SM_28_006: [ After switching the state to SM_OPENED_DRAINING_TO_CLOSE, sm_close_begin_with_cb shall invoke callback with callback_context as argument before waiting for pending calls to become 0. ] */
+        /* Codes_SRS_SM_28_003: [ sm_close_begin_with_cb shall behave as if sm_close_begin was called except as follows. ] */
+        /* Codes_SRS_SM_28_006: [ After switching the state to SM_OPENED_DRAINING_TO_CLOSE, sm_close_begin_with_cb shall invoke callback with callback_context as argument before waiting for pending calls to become 0. ] */
         result = sm_close_begin_internal(sm, callback, callback_context);
     }
 
-    /* Codes_S_RS_SM_28_005: [ sm_close_begin_with_cb shall return the same result as sm_close_begin. ] */
+    /* Codes_SRS_SM_28_005: [ sm_close_begin_with_cb shall return the same result as sm_close_begin. ] */
     return result;
 }
 

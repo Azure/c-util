@@ -519,6 +519,7 @@ TEST_FUNCTION(sm_close_begin_unhappy_path)
     sm_destroy(sm);
 }
 
+/* Tests_SRS_SM_28_001: [ If sm is NULL then sm_close_begin_with_cb shall fail and return SM_ERROR. ] */
 TEST_FUNCTION(sm_close_begin_with_cb_with_sm_NULL_returns_SM_ERROR)
 {
     ///arrange
@@ -534,6 +535,7 @@ TEST_FUNCTION(sm_close_begin_with_cb_with_sm_NULL_returns_SM_ERROR)
     ///clean
 }
 
+/* Tests_SRS_SM_28_002: [ If callback is NULL then sm_close_begin_with_cb shall fail and return SM_ERROR. ] */
 TEST_FUNCTION(sm_close_begin_with_cb_with_callback_NULL_returns_SM_ERROR)
 {
     ///arrange
@@ -550,6 +552,9 @@ TEST_FUNCTION(sm_close_begin_with_cb_with_callback_NULL_returns_SM_ERROR)
     ///clean
 }
 
+/* Tests_SRS_SM_28_003: [ sm_close_begin_with_cb shall behave as if sm_close_begin was called except as follows. ] */
+/* Tests_SRS_SM_28_006: [ After switching the state to SM_OPENED_DRAINING_TO_CLOSE, sm_close_begin_with_cb shall invoke callback with callback_context as argument before waiting for pending calls to become 0. ] */
+/* Tests_SRS_SM_28_005: [ sm_close_begin_with_cb shall return the same result as sm_close_begin. ] */
 TEST_FUNCTION(sm_close_begin_with_cb_in_SM_OPENED_succeeds)
 {
     ///arrange
