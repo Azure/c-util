@@ -17,6 +17,7 @@
 #include "c_pal/threadapi.h"
 #include "c_pal/interlocked.h"
 #include "c_pal/sysinfo.h"
+#include "c_pal/sync.h"
 #include "c_util/interlocked_hl.h"
 #include "c_logging/xlogging.h"
 
@@ -1467,8 +1468,8 @@ static void sm_switches_from_state_to_created(SM_GO_TO_STATE* goToState)
     /*depending on the requested state, the thread might have finished by now...*/
 }
 
-/*Tests_SRS_SM_02_050: [ If the state is SM_OPENED_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
-/*Tests_SRS_SM_02_051: [ If the state is SM_OPENED_DRAINING_TO_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
+/*Tests_SRS_SM_02_050: [ If the state is SM_OPENED_BARRIER then sm_close_begin_internal shall re-evaluate the state. ]*/
+/*Tests_SRS_SM_02_051: [ If the state is SM_OPENED_DRAINING_TO_BARRIER then sm_close_begin_internal shall re-evaluate the state. ]*/
 
 /*tests different expected returns from different states of SM*/
 /*at time=0                     a thread is started that switched state to the desired state to execute some API. This thread might block there. For example when the "to" state is SM_OPENED_DRAINING_TO_BARRIER. */
@@ -1589,6 +1590,59 @@ TEST_FUNCTION(STATE_and_API)
             sm_destroy(goToState.sm);
         }
     }
+}
+
+typedef struct WAIT_FOR_CANCEL_TAG
+{
+    SM_HANDLE sm;
+    volatile_atomic int32_t cancel_wait;
+} WAIT_FOR_CANCEL;
+
+static int waitForCancel(void* context)
+{
+    WAIT_FOR_CANCEL* cancel_wait_context = context;
+    ASSERT_IS_NOT_NULL(cancel_wait_context);
+    int32_t current_value = interlocked_add(&cancel_wait_context->cancel_wait, 0);
+    sm_exec_begin(cancel_wait_context->sm);
+    if (wait_on_address(&cancel_wait_context->cancel_wait, current_value, UINT32_MAX) != WAIT_ON_ADDRESS_OK)
+    {
+        ASSERT_FAIL("wait_on_address failed.");
+    }
+    sm_exec_end(cancel_wait_context->sm);
+    return 0;
+}
+
+static void cancellingCallback(void* context)
+{
+    volatile_atomic int32_t* address = context;
+    ASSERT_IS_NOT_NULL(address);
+    wake_by_address_single(address);
+}
+
+TEST_FUNCTION(sm_close_begin_with_cb_triggers_cancel)
+{
+    /// arrange
+    WAIT_FOR_CANCEL context;
+    context.sm = sm_create(NULL);
+    context.cancel_wait = 0;
+    ASSERT_IS_NOT_NULL(context.sm);
+
+    ASSERT_IS_TRUE(sm_open_begin(context.sm) == SM_EXEC_GRANTED);
+    sm_open_end(context.sm, true);
+
+    /// act
+    THREAD_HANDLE cancel_wait_thread;
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&cancel_wait_thread, waitForCancel, &context));
+
+    // Add delay to make sure the above thread executes till wait.
+    ThreadAPI_Sleep(500);
+
+    /// assert
+    ASSERT_IS_TRUE(sm_close_begin_with_cb(context.sm, cancellingCallback, (void*)(&context.cancel_wait)) == SM_EXEC_GRANTED);
+    sm_close_end(context.sm);
+
+    /// cleanup
+    sm_destroy(context.sm);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

@@ -383,10 +383,13 @@ TEST_FUNCTION(sm_close_begin_with_sm_NULL_returns_SM_ERROR)
     ///clean
 }
 
-/*Tests_SRS_SM_02_045: [ sm_close_begin shall set SM_CLOSE_BIT to 1. ]*/
-/*Tests_SRS_SM_02_047: [ If the state is SM_OPENED then sm_close_begin shall switch it to SM_OPENED_DRAINING_TO_CLOSE. ]*/
-/*Tests_SRS_SM_02_048: [ sm_close_begin shall wait for n to reach 0. ]*/
-/*Tests_SRS_SM_02_049: [ sm_close_begin shall switch the state to SM_CLOSING and return SM_EXEC_GRANTED. ]*/
+/*Tests_SRS_SM_28_005: [ sm_close_begin shall call sm_close_begin_internal with callback as NULL and callback_context as NULL. ] */
+/*Tests_SRS_SM_02_045: [ sm_close_begin_internal shall set SM_CLOSE_BIT to 1. ]*/
+/*Tests_SRS_SM_02_047: [ If the state is SM_OPENED then sm_close_begin_internal shall switch it to SM_OPENED_DRAINING_TO_CLOSE. ]*/
+/*Tests_SRS_SM_28_007: [ callback shall be allowed to be NULL. ] */
+/*Tests_SRS_SM_02_048: [ sm_close_begin_internal shall wait for n to reach 0. ]*/
+/*Tests_SRS_SM_02_049: [ sm_close_begin_internal shall switch the state to SM_CLOSING and return SM_EXEC_GRANTED. ]*/
+/*Tests_SRS_SM_28_006: [ sm_close_begin shall return the returned SM_RESULT from sm_close_begin_internal. ] */
 TEST_FUNCTION(sm_close_begin_in_SM_OPENED_succeeds)
 {///arrange
     SM_HANDLE sm = TEST_sm_create();
@@ -409,8 +412,8 @@ TEST_FUNCTION(sm_close_begin_in_SM_OPENED_succeeds)
 
 }
 
-/*Tests_SRS_SM_02_045: [ sm_close_begin shall set SM_CLOSE_BIT to 1. ]*/
-/*Tests_SRS_SM_02_046: [ If SM_CLOSE_BIT was already 1 then sm_close_begin shall return SM_EXEC_REFUSED. ]*/
+/*Tests_SRS_SM_02_045: [ sm_close_begin_internal shall set SM_CLOSE_BIT to 1. ]*/
+/*Tests_SRS_SM_02_046: [ If SM_CLOSE_BIT was already 1 then sm_close_begin_internal shall return SM_EXEC_REFUSED. ]*/
 TEST_FUNCTION(sm_close_begin_with_SM_CLOSE_BIT_refuses)
 {
     ///arrange
@@ -437,7 +440,7 @@ TEST_FUNCTION(sm_close_begin_with_SM_CLOSE_BIT_refuses)
 }
 
 /*ZRS_SM_02_050, ZRS_02_051 left to int tests*/
-/*Tests_SRS_SM_02_052: [ If the state is any other value then sm_close_begin shall return SM_EXEC_REFUSED. ]*/
+/*Tests_SRS_SM_02_052: [ If the state is any other value then sm_close_begin_internal shall return SM_EXEC_REFUSED. ]*/
 TEST_FUNCTION(sm_close_begin_in_SM_CREATED_fails)
 {
     ///arrange
@@ -455,7 +458,7 @@ TEST_FUNCTION(sm_close_begin_in_SM_CREATED_fails)
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_053: [ sm_close_begin shall set SM_CLOSE_BIT to 0. ]*/
+/*Tests_SRS_SM_02_053: [ sm_close_begin_internal shall set SM_CLOSE_BIT to 0. ]*/
 TEST_FUNCTION(sm_close_begin_after_close_begin_close_end_open_begin_open_end_succeeds)
 {
     ///arrange
@@ -492,7 +495,7 @@ TEST_FUNCTION(sm_close_begin_after_close_begin_close_end_open_begin_open_end_suc
     sm_destroy(sm);
 }
 
-/*Tests_SRS_SM_02_071: [ If there are any failures then sm_close_begin shall fail and return SM_ERROR. ]*/
+/*Tests_SRS_SM_02_071: [ If there are any failures then sm_close_begin_internal shall fail and return SM_ERROR. ]*/
 TEST_FUNCTION(sm_close_begin_unhappy_path)
 {
     ///arrange
@@ -553,9 +556,13 @@ TEST_FUNCTION(sm_close_begin_with_cb_with_callback_NULL_returns_SM_ERROR)
     sm_destroy(sm);
 }
 
-/* Tests_SRS_SM_28_003: [ sm_close_begin_with_cb shall behave as if sm_close_begin was called except as follows. ] */
-/* Tests_SRS_SM_28_006: [ After switching the state to SM_OPENED_DRAINING_TO_CLOSE, sm_close_begin_with_cb shall invoke callback with callback_context as argument before waiting for pending calls to become 0. ] */
-/* Tests_SRS_SM_28_005: [ sm_close_begin_with_cb shall return the same result as sm_close_begin. ] */
+/* Tests_SRS_SM_28_003: [ sm_close_begin_with_cb shall call sm_close_begin_internal with callback and callback_context as arguments. ] */
+/*Tests_SRS_SM_02_045: [ sm_close_begin_internal shall set SM_CLOSE_BIT to 1. ]*/
+/*Tests_SRS_SM_02_047: [ If the state is SM_OPENED then sm_close_begin_internal shall switch it to SM_OPENED_DRAINING_TO_CLOSE. ]*/
+/*Tests_SRS_SM_28_008: [ If callback is not NULL, sm_close_begin_internal shall invoke callback function with callback_context as argument. ] */
+/*Tests_SRS_SM_02_048: [ sm_close_begin_internal shall wait for n to reach 0. ]*/
+/*Tests_SRS_SM_02_049: [ sm_close_begin_internal shall switch the state to SM_CLOSING and return SM_EXEC_GRANTED. ]*/
+/* Tests_SRS_SM_28_004: [ sm_close_begin_with_cb shall return the returned SM_RESULT from sm_close_begin_internal. ] */
 TEST_FUNCTION(sm_close_begin_with_cb_in_SM_OPENED_succeeds)
 {
     ///arrange
@@ -579,6 +586,8 @@ TEST_FUNCTION(sm_close_begin_with_cb_in_SM_OPENED_succeeds)
     sm_destroy(sm);
 }
 
+/*Tests_SRS_SM_02_045: [ sm_close_begin_internal shall set SM_CLOSE_BIT to 1. ]*/
+/*Tests_SRS_SM_02_046: [ If SM_CLOSE_BIT was already 1 then sm_close_begin_internal shall return SM_EXEC_REFUSED. ]*/
 TEST_FUNCTION(sm_close_begin_with_cb_with_SM_CLOSE_BIT_refuses)
 {
     ///arrange
@@ -604,6 +613,7 @@ TEST_FUNCTION(sm_close_begin_with_cb_with_SM_CLOSE_BIT_refuses)
     sm_destroy(sm);
 }
 
+/*Tests_SRS_SM_02_052: [ If the state is any other value then sm_close_begin_internal shall return SM_EXEC_REFUSED. ]*/
 TEST_FUNCTION(sm_close_begin_with_cb_in_SM_CREATED_fails)
 {
     ///arrange
@@ -621,6 +631,7 @@ TEST_FUNCTION(sm_close_begin_with_cb_in_SM_CREATED_fails)
     sm_destroy(sm);
 }
 
+/*Tests_SRS_SM_02_053: [ sm_close_begin_internal shall set SM_CLOSE_BIT to 0. ]*/
 TEST_FUNCTION(sm_close_begin_with_cb_after_close_begin_close_end_open_begin_open_end_succeeds)
 {
     ///arrange
@@ -658,6 +669,7 @@ TEST_FUNCTION(sm_close_begin_with_cb_after_close_begin_close_end_open_begin_open
     sm_destroy(sm);
 }
 
+/*Tests_SRS_SM_02_071: [ If there are any failures then sm_close_begin_internal shall fail and return SM_ERROR. ]*/
 TEST_FUNCTION(sm_close_begin_with_cb_unhappy_path)
 {
     ///arrange
