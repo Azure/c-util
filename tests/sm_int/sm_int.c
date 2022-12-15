@@ -1602,12 +1602,9 @@ static int waitForCancel(void* context)
 {
     WAIT_FOR_CANCEL* cancel_wait_context = context;
     ASSERT_IS_NOT_NULL(cancel_wait_context);
-    int32_t current_value = interlocked_add(&cancel_wait_context->cancel_wait, 0);
-    sm_exec_begin(cancel_wait_context->sm);
-    if (wait_on_address(&cancel_wait_context->cancel_wait, current_value, UINT32_MAX) != WAIT_ON_ADDRESS_OK)
-    {
-        ASSERT_FAIL("wait_on_address failed.");
-    }
+    ASSERT_IS_NOT_NULL(cancel_wait_context->sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, sm_exec_begin(cancel_wait_context->sm), SM_EXEC_GRANTED);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&cancel_wait_context->cancel_wait, 1, UINT32_MAX));
     sm_exec_end(cancel_wait_context->sm);
     return 0;
 }
@@ -1616,7 +1613,7 @@ static void cancellingCallback(void* context)
 {
     volatile_atomic int32_t* address = context;
     ASSERT_IS_NOT_NULL(address);
-    wake_by_address_single(address);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWake(address, 1));
 }
 
 TEST_FUNCTION(sm_close_begin_with_cb_triggers_cancel)
@@ -1624,10 +1621,10 @@ TEST_FUNCTION(sm_close_begin_with_cb_triggers_cancel)
     /// arrange
     WAIT_FOR_CANCEL context;
     context.sm = sm_create(NULL);
-    context.cancel_wait = 0;
+    (void)interlocked_exchange(&context.cancel_wait, 0);
     ASSERT_IS_NOT_NULL(context.sm);
 
-    ASSERT_IS_TRUE(sm_open_begin(context.sm) == SM_EXEC_GRANTED);
+    ASSERT_ARE_EQUAL(SM_RESULT, sm_open_begin(context.sm), SM_EXEC_GRANTED);
     sm_open_end(context.sm, true);
 
     /// act
@@ -1638,7 +1635,7 @@ TEST_FUNCTION(sm_close_begin_with_cb_triggers_cancel)
     ThreadAPI_Sleep(500);
 
     /// assert
-    ASSERT_IS_TRUE(sm_close_begin_with_cb(context.sm, cancellingCallback, (void*)(&context.cancel_wait)) == SM_EXEC_GRANTED);
+    ASSERT_ARE_EQUAL(SM_RESULT, sm_close_begin_with_cb(context.sm, cancellingCallback, (void*)(&context.cancel_wait)), SM_EXEC_GRANTED);
     sm_close_end(context.sm);
 
     /// cleanup
