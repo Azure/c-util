@@ -174,6 +174,10 @@ MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm, bool, success);
 
 ### sm_close_begin_internal
 
+```c
+static SM_RESULT sm_close_begin_internal(SM_HANDLE sm, ON_SM_CLOSING_COMPLETE_CALLBACK callback, void* callback_context);
+```
+
 `sm_close_begin_internal` is the helper function for sm_close_begin and sm_close_begin_cb.
 
 **SRS_SM_02_045: [** `sm_close_begin_internal` shall set `SM_CLOSE_BIT` to 1. **]**
