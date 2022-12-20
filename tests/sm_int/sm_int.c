@@ -17,6 +17,7 @@
 #include "c_pal/threadapi.h"
 #include "c_pal/interlocked.h"
 #include "c_pal/sysinfo.h"
+#include "c_pal/sync.h"
 #include "c_util/interlocked_hl.h"
 #include "c_logging/xlogging.h"
 
@@ -50,11 +51,13 @@ typedef struct OPEN_CLOSE_THREADS_TAG
     uint32_t n_end_open_threads;
 
     THREAD_HANDLE beginCloseThreads[N_MAX_THREADS];
+    THREAD_HANDLE beginCloseWithCBThreads[N_MAX_THREADS];
     THREAD_HANDLE endCloseThreads[N_MAX_THREADS];
     volatile_atomic int32_t n_begin_close_grants;
     volatile_atomic int32_t n_begin_close_refuses;
     volatile_atomic int32_t begin_close_pending; // Track begin_close for when end_close should be called (0 or 1)
     uint32_t n_begin_close_threads;
+    uint32_t n_begin_close_with_cb_threads;
     uint32_t n_end_close_threads;
 
     THREAD_HANDLE beginBarrierThreads[N_MAX_THREADS];
@@ -199,7 +202,7 @@ static int callsBeginClose(
     {
         if (sm_close_begin(data->sm) == SM_EXEC_GRANTED)
         {
-            (void)interlocked_increment(&data->begin_close_pending); // now make sure end_open is called
+            (void)interlocked_increment(&data->begin_close_pending); // now make sure end_close is called
             (void)interlocked_increment(&data->n_begin_close_grants);
         }
         else
@@ -226,6 +229,55 @@ static void waitAndDestroyBeginCloseThreads(OPEN_CLOSE_THREADS* data)
     {
         int dont_care;
         ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(data->beginCloseThreads[i], &dont_care));
+    }
+}
+
+void test_close_begin_with_cb_callback(void* context)
+{
+    bool* test_value = context;
+    ASSERT_IS_NOT_NULL(test_value);
+    *test_value = true;
+}
+
+static int callsBeginCloseWithCB(
+    void* arg
+)
+{
+    OPEN_CLOSE_THREADS* data = arg;
+
+    while (interlocked_add(&data->threadsShouldFinish, 0) == 0)
+    {
+        bool test_value = false;
+        if (sm_close_begin_with_cb(data->sm, test_close_begin_with_cb_callback, (void*)&test_value) == SM_EXEC_GRANTED)
+        {
+            ASSERT_IS_TRUE(test_value);
+            (void)interlocked_increment(&data->begin_close_pending); // now make sure end_close is called
+            (void)interlocked_increment(&data->n_begin_close_grants);
+        }
+        else
+        {
+            (void)interlocked_increment(&data->n_begin_close_refuses);
+        }
+
+        ThreadAPI_Sleep(SM_BEGIN_CLOSE_DELAY);
+    }
+    return 0;
+}
+
+static void createBeginCloseWithCBThreads(OPEN_CLOSE_THREADS* data)
+{
+    for (uint32_t i = 0; i < data->n_begin_close_with_cb_threads; i++)
+    {
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&data->beginCloseWithCBThreads[i], callsBeginCloseWithCB, data));
+    }
+}
+
+static void waitAndDestroyBeginCloseWithCBThreads(OPEN_CLOSE_THREADS* data)
+{
+    for (uint32_t i = 0; i < data->n_begin_close_with_cb_threads; i++)
+    {
+        int dont_care;
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(data->beginCloseWithCBThreads[i], &dont_care));
     }
 }
 
@@ -731,6 +783,7 @@ SM_OPEN_BEGIN,              \
 SM_CLOSE_BEGIN,             \
 SM_EXEC_BEGIN,              \
 SM_BARRIER_BEGIN,           \
+SM_CLOSE_BEGIN_WITH_CB,     \
 SM_FAULT                    \
 
 MU_DEFINE_ENUM_WITHOUT_INVALID(SM_APIS, SM_APIS_VALUES)
@@ -805,7 +858,8 @@ TEST_FUNCTION(sm_chaos)
     {
         data->n_begin_open_threads = nthreads;
         data->n_end_open_threads = nthreads;
-        data->n_begin_close_threads = nthreads;
+        data->n_begin_close_threads = nthreads - (nthreads / 2);
+        data->n_begin_close_with_cb_threads = nthreads / 2;
         data->n_end_close_threads = nthreads;
         data->n_begin_barrier_threads = nthreads;
         data->n_end_barrier_threads = nthreads;
@@ -833,6 +887,7 @@ TEST_FUNCTION(sm_chaos)
         createBeginOpenThreads(data);
         createEndOpenThreads(data);
         createBeginCloseThreads(data);
+        createBeginCloseWithCBThreads(data);
         createEndCloseThreads(data);
         createBeginBarrierThreads(data);
         createEndBarrierThreads(data);
@@ -865,6 +920,7 @@ TEST_FUNCTION(sm_chaos)
         waitAndDestroyEndBarrierThreads(data);
 
         waitAndDestroyBeginCloseThreads(data);
+        waitAndDestroyBeginCloseWithCBThreads(data);
         waitAndDestroyEndCloseThreads(data);
 
         waitAndDestroyBeginOpenThreads(data);
@@ -921,7 +977,8 @@ TEST_FUNCTION(sm_chaos_with_faults)
     {
         data->n_begin_open_threads = nthreads;
         data->n_end_open_threads = nthreads;
-        data->n_begin_close_threads = nthreads;
+        data->n_begin_close_threads = nthreads - (nthreads / 2);
+        data->n_begin_close_with_cb_threads = nthreads / 2;
         data->n_end_close_threads = nthreads;
         data->n_begin_barrier_threads = nthreads;
         data->n_end_barrier_threads = nthreads;
@@ -949,6 +1006,7 @@ TEST_FUNCTION(sm_chaos_with_faults)
         createBeginOpenThreads(data);
         createEndOpenThreads(data);
         createBeginCloseThreads(data);
+        createBeginCloseWithCBThreads(data);
         createEndCloseThreads(data);
         createBeginBarrierThreads(data);
         createEndBarrierThreads(data);
@@ -982,6 +1040,7 @@ TEST_FUNCTION(sm_chaos_with_faults)
         waitAndDestroyFaultThreads(data);
 
         waitAndDestroyBeginCloseThreads(data);
+        waitAndDestroyBeginCloseWithCBThreads(data);
         waitAndDestroyEndCloseThreads(data);
 
         waitAndDestroyBeginOpenThreads(data);
@@ -1409,8 +1468,8 @@ static void sm_switches_from_state_to_created(SM_GO_TO_STATE* goToState)
     /*depending on the requested state, the thread might have finished by now...*/
 }
 
-/*Tests_SRS_SM_02_050: [ If the state is SM_OPENED_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
-/*Tests_SRS_SM_02_051: [ If the state is SM_OPENED_DRAINING_TO_BARRIER then sm_close_begin shall re-evaluate the state. ]*/
+/*Tests_SRS_SM_02_050: [ If the state is SM_OPENED_BARRIER then sm_close_begin_internal shall re-evaluate the state. ]*/
+/*Tests_SRS_SM_02_051: [ If the state is SM_OPENED_DRAINING_TO_BARRIER then sm_close_begin_internal shall re-evaluate the state. ]*/
 
 /*tests different expected returns from different states of SM*/
 /*at time=0                     a thread is started that switched state to the desired state to execute some API. This thread might block there. For example when the "to" state is SM_OPENED_DRAINING_TO_BARRIER. */
@@ -1420,23 +1479,23 @@ static void sm_switches_from_state_to_created(SM_GO_TO_STATE* goToState)
 
 TEST_FUNCTION(STATE_and_API)
 {
-    SM_RESULT_AND_NEXT_STATE_AFTER_API_CALL expected[][4]=
+    SM_RESULT_AND_NEXT_STATE_AFTER_API_CALL expected[][5]=
     {
-                                                      /*sm_open_begin*/                                         /*sm_close_begin*/                                      /*sm_exec_begin*/                                         /*sm_barrier_begin*/
-        /*SM_CREATED*/                            {   {SM_EXEC_GRANTED, SM_OPENING},                            {SM_EXEC_REFUSED, SM_CREATED},                          {SM_EXEC_REFUSED, SM_CREATED},                            {SM_EXEC_REFUSED, SM_CREATED}},
-        /*SM_CREATED_FAULTED*/                    {   {SM_EXEC_REFUSED, SM_CREATED_FAULTED},                    {SM_EXEC_REFUSED, SM_CREATED_FAULTED},                  {SM_EXEC_REFUSED, SM_CREATED_FAULTED},                    {SM_EXEC_REFUSED, SM_CREATED_FAULTED}},
-        /*SM_OPENING*/                            {   {SM_EXEC_REFUSED, SM_OPENING},                            {SM_EXEC_REFUSED, SM_OPENING},                          {SM_EXEC_REFUSED, SM_OPENING},                            {SM_EXEC_REFUSED, SM_OPENING}},
-        /*SM_OPENING_FAULTED*/                    {   {SM_EXEC_REFUSED, SM_OPENING_FAULTED},                    {SM_EXEC_REFUSED, SM_OPENING_FAULTED},                  {SM_EXEC_REFUSED, SM_OPENING_FAULTED},                    {SM_EXEC_REFUSED, SM_OPENING_FAULTED}},
-        /*SM_OPENED*/                             {   {SM_EXEC_REFUSED, SM_OPENED},                             {SM_EXEC_GRANTED, SM_CLOSING},                          {SM_EXEC_GRANTED, SM_OPENED},                             {SM_EXEC_GRANTED, SM_OPENED_BARRIER}},
-        /*SM_OPENED_FAULTED*/                     {   {SM_EXEC_REFUSED, SM_OPENED_FAULTED},                     {SM_EXEC_GRANTED, SM_CLOSING_FAULTED},                  {SM_EXEC_REFUSED, SM_OPENED_FAULTED},                     {SM_EXEC_REFUSED, SM_OPENED_FAULTED}},
-        /*SM_OPENED_DRAINING_TO_BARRIER*/         {   {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER},         {SM_EXEC_GRANTED, SM_CLOSING},                          {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER},         {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER}},
-        /*SM_OPENED_DRAINING_TO_BARRIER_FAULTED*/ {   {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER_FAULTED}, {SM_EXEC_GRANTED, SM_CLOSING_FAULTED},                  {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER_FAULTED}, {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER_FAULTED}},
-        /*SM_OPENED_DRAINING_TO_CLOSE*/           {   {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE},           {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE},         {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE},           {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE}},
-        /*SM_OPENED_DRAINING_TO_CLOSE_FAULTED*/   {   {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE_FAULTED},   {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE_FAULTED}, {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE_FAULTED},   {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE_FAULTED}},
-        /*SM_OPENED_BARRIER*/                     {   {SM_EXEC_REFUSED, SM_OPENED_BARRIER},                     {SM_EXEC_GRANTED, SM_CLOSING},                          {SM_EXEC_REFUSED, SM_OPENED_BARRIER},                     {SM_EXEC_REFUSED, SM_OPENED_BARRIER}},
-        /*SM_OPENED_BARRIER_FAULTED*/             {   {SM_EXEC_REFUSED, SM_OPENED_BARRIER_FAULTED},             {SM_EXEC_GRANTED, SM_CLOSING_FAULTED},                  {SM_EXEC_REFUSED, SM_OPENED_BARRIER_FAULTED},             {SM_EXEC_REFUSED, SM_OPENED_BARRIER_FAULTED}},
-        /*SM_CLOSING*/                            {   {SM_EXEC_REFUSED, SM_CLOSING},                            {SM_EXEC_REFUSED, SM_CLOSING},                          {SM_EXEC_REFUSED, SM_CLOSING},                            {SM_EXEC_REFUSED, SM_CLOSING}},
-        /*SM_CLOSING_FAULTED*/                    {   {SM_EXEC_REFUSED, SM_CLOSING_FAULTED},                    {SM_EXEC_REFUSED, SM_CLOSING_FAULTED},                  {SM_EXEC_REFUSED, SM_CLOSING_FAULTED},                    {SM_EXEC_REFUSED, SM_CLOSING_FAULTED}}
+                                                      /*sm_open_begin*/                                         /*sm_close_begin*/                                      /*sm_exec_begin*/                                         /*sm_barrier_begin*/                                          /*sm_close_begin_with_cb*/
+        /*SM_CREATED*/                            {   {SM_EXEC_GRANTED, SM_OPENING},                            {SM_EXEC_REFUSED, SM_CREATED},                          {SM_EXEC_REFUSED, SM_CREATED},                            {SM_EXEC_REFUSED, SM_CREATED},                                {SM_EXEC_REFUSED, SM_CREATED}},
+        /*SM_CREATED_FAULTED*/                    {   {SM_EXEC_REFUSED, SM_CREATED_FAULTED},                    {SM_EXEC_REFUSED, SM_CREATED_FAULTED},                  {SM_EXEC_REFUSED, SM_CREATED_FAULTED},                    {SM_EXEC_REFUSED, SM_CREATED_FAULTED},                        {SM_EXEC_REFUSED, SM_CREATED_FAULTED}},
+        /*SM_OPENING*/                            {   {SM_EXEC_REFUSED, SM_OPENING},                            {SM_EXEC_REFUSED, SM_OPENING},                          {SM_EXEC_REFUSED, SM_OPENING},                            {SM_EXEC_REFUSED, SM_OPENING},                                {SM_EXEC_REFUSED, SM_OPENING}},
+        /*SM_OPENING_FAULTED*/                    {   {SM_EXEC_REFUSED, SM_OPENING_FAULTED},                    {SM_EXEC_REFUSED, SM_OPENING_FAULTED},                  {SM_EXEC_REFUSED, SM_OPENING_FAULTED},                    {SM_EXEC_REFUSED, SM_OPENING_FAULTED},                        {SM_EXEC_REFUSED, SM_OPENING_FAULTED}},
+        /*SM_OPENED*/                             {   {SM_EXEC_REFUSED, SM_OPENED},                             {SM_EXEC_GRANTED, SM_CLOSING},                          {SM_EXEC_GRANTED, SM_OPENED},                             {SM_EXEC_GRANTED, SM_OPENED_BARRIER},                         {SM_EXEC_GRANTED, SM_CLOSING}},
+        /*SM_OPENED_FAULTED*/                     {   {SM_EXEC_REFUSED, SM_OPENED_FAULTED},                     {SM_EXEC_GRANTED, SM_CLOSING_FAULTED},                  {SM_EXEC_REFUSED, SM_OPENED_FAULTED},                     {SM_EXEC_REFUSED, SM_OPENED_FAULTED},                         {SM_EXEC_GRANTED, SM_CLOSING_FAULTED}},
+        /*SM_OPENED_DRAINING_TO_BARRIER*/         {   {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER},         {SM_EXEC_GRANTED, SM_CLOSING},                          {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER},         {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER},             {SM_EXEC_GRANTED, SM_CLOSING}},
+        /*SM_OPENED_DRAINING_TO_BARRIER_FAULTED*/ {   {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER_FAULTED}, {SM_EXEC_GRANTED, SM_CLOSING_FAULTED},                  {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER_FAULTED}, {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_BARRIER_FAULTED},     {SM_EXEC_GRANTED, SM_CLOSING_FAULTED}},
+        /*SM_OPENED_DRAINING_TO_CLOSE*/           {   {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE},           {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE},         {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE},           {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE},               {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE}},
+        /*SM_OPENED_DRAINING_TO_CLOSE_FAULTED*/   {   {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE_FAULTED},   {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE_FAULTED}, {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE_FAULTED},   {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE_FAULTED},       {SM_EXEC_REFUSED, SM_OPENED_DRAINING_TO_CLOSE_FAULTED}},
+        /*SM_OPENED_BARRIER*/                     {   {SM_EXEC_REFUSED, SM_OPENED_BARRIER},                     {SM_EXEC_GRANTED, SM_CLOSING},                          {SM_EXEC_REFUSED, SM_OPENED_BARRIER},                     {SM_EXEC_REFUSED, SM_OPENED_BARRIER},                         {SM_EXEC_GRANTED, SM_CLOSING}},
+        /*SM_OPENED_BARRIER_FAULTED*/             {   {SM_EXEC_REFUSED, SM_OPENED_BARRIER_FAULTED},             {SM_EXEC_GRANTED, SM_CLOSING_FAULTED},                  {SM_EXEC_REFUSED, SM_OPENED_BARRIER_FAULTED},             {SM_EXEC_REFUSED, SM_OPENED_BARRIER_FAULTED},                 {SM_EXEC_GRANTED, SM_CLOSING_FAULTED}},
+        /*SM_CLOSING*/                            {   {SM_EXEC_REFUSED, SM_CLOSING},                            {SM_EXEC_REFUSED, SM_CLOSING},                          {SM_EXEC_REFUSED, SM_CLOSING},                            {SM_EXEC_REFUSED, SM_CLOSING},                                {SM_EXEC_REFUSED, SM_CLOSING}},
+        /*SM_CLOSING_FAULTED*/                    {   {SM_EXEC_REFUSED, SM_CLOSING_FAULTED},                    {SM_EXEC_REFUSED, SM_CLOSING_FAULTED},                  {SM_EXEC_REFUSED, SM_CLOSING_FAULTED},                    {SM_EXEC_REFUSED, SM_CLOSING_FAULTED},                        {SM_EXEC_REFUSED, SM_CLOSING_FAULTED}}
     };
 
     for (uint32_t i = 0 ; i < MU_COUNT_ARRAY_ITEMS(expected); i++)
@@ -1500,6 +1559,22 @@ TEST_FUNCTION(STATE_and_API)
                     }
                     break;
                 }
+                case SM_CLOSE_BEGIN_WITH_CB:/*sm_close_begin_with_cb*/
+                {
+                    bool test_value = false;
+                    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWake(&goToState.targetAPICalledInNextLine, 1));
+                    ASSERT_ARE_EQUAL(SM_RESULT, expected[i][j].expected_sm_result, sm_close_begin_with_cb(goToState.sm, test_close_begin_with_cb_callback, (void*)&test_value));
+                    if (expected[i][j].expected_sm_result == SM_EXEC_GRANTED)
+                    {
+                        ASSERT_IS_TRUE(test_value);
+                    }
+                    else
+                    {
+                        // We never execute the callback when the return result is SM_EXEC_REFUSED.
+                        ASSERT_IS_TRUE(!test_value);
+                    }
+                    break;
+                }
                 default:
                 {
                     ASSERT_FAIL("unknown action");
@@ -1515,6 +1590,56 @@ TEST_FUNCTION(STATE_and_API)
             sm_destroy(goToState.sm);
         }
     }
+}
+
+typedef struct WAIT_FOR_CANCEL_TAG
+{
+    SM_HANDLE sm;
+    volatile_atomic int32_t cancel_wait;
+} WAIT_FOR_CANCEL;
+
+static int waitForCancel(void* context)
+{
+    WAIT_FOR_CANCEL* cancel_wait_context = context;
+    ASSERT_IS_NOT_NULL(cancel_wait_context);
+    ASSERT_IS_NOT_NULL(cancel_wait_context->sm);
+    ASSERT_ARE_EQUAL(SM_RESULT, sm_exec_begin(cancel_wait_context->sm), SM_EXEC_GRANTED);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&cancel_wait_context->cancel_wait, 1, UINT32_MAX));
+    sm_exec_end(cancel_wait_context->sm);
+    return 0;
+}
+
+static void cancellingCallback(void* context)
+{
+    volatile_atomic int32_t* address = context;
+    ASSERT_IS_NOT_NULL(address);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWake(address, 1));
+}
+
+TEST_FUNCTION(sm_close_begin_with_cb_triggers_cancel)
+{
+    /// arrange
+    WAIT_FOR_CANCEL context;
+    context.sm = sm_create(NULL);
+    (void)interlocked_exchange(&context.cancel_wait, 0);
+    ASSERT_IS_NOT_NULL(context.sm);
+
+    ASSERT_ARE_EQUAL(SM_RESULT, sm_open_begin(context.sm), SM_EXEC_GRANTED);
+    sm_open_end(context.sm, true);
+
+    /// act
+    THREAD_HANDLE cancel_wait_thread;
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&cancel_wait_thread, waitForCancel, &context));
+
+    // Add delay to make sure the above thread executes till wait.
+    ThreadAPI_Sleep(500);
+
+    /// assert
+    ASSERT_ARE_EQUAL(SM_RESULT, sm_close_begin_with_cb(context.sm, cancellingCallback, (void*)(&context.cancel_wait)), SM_EXEC_GRANTED);
+    sm_close_end(context.sm);
+
+    /// cleanup
+    sm_destroy(context.sm);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

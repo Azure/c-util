@@ -56,6 +56,7 @@ To achieve the above goals, `sm` maintains the following state:
 Barriers - since they are exclusive - are realized by switching to a state called `SM_OPENED_BARRIER`. Prohibiting regular calls to _begin is achieved by switching temporarily the state from `SM_OPENED` to `SM_OPENED_DRAINING_TO_BARRIER`.
 
 Close is realized by prohibiting all calls (including competing `sm_close_begin` calls) by setting a bit with `InterlockedOr`. `sm_close_begin` will wait for the state to reach `SM_OPENED` and the number of executing calls to be `0`. This allows an ongoing barrier to finish (and return to `SM_OPENED` state), or the executing APIs to finish.
+`sm_close_begin_with_cb` will invoke a callback function between prohibiting all the calls and waiting for the number of executing calls to be `0`. The callback function is useful in various cases, such as, when we need to cancel the ongoing operations, before we wait for the outstanding calls to finish.
 
 Fault is realized by prohibiting all calls (except for `sm_close_begin` calls and all `_end` calls) by setting a bit with `InterlockedOr`. This means that any currently executing operations can complete, but the faulted state is terminal.
 
@@ -91,6 +92,8 @@ typedef struct SM_HANDLE_DATA_TAG* SM_HANDLE;
     SM_ERROR                \
 
 MU_DEFINE_ENUM(SM_RESULT, SM_RESULT_VALUES);
+
+typedef void(*ON_SM_CLOSING_COMPLETE_CALLBACK)(void* context);
 
 MOCKABLE_FUNCTION(, SM_HANDLE, sm_create, const char*, name);
 MOCKABLE_FUNCTION(, void, sm_destroy, SM_HANDLE, sm);
@@ -142,7 +145,7 @@ MOCKABLE_FUNCTION(, void, sm_destroy, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, SM_RESULT, sm_open_begin, SM_HANDLE, sm);
 ```
 
-`sm_open_begin` asks from `sm` permission to enter "open" state.
+`sm_open_begin` results in `sm` entering the "open" state.
 
 **SRS_SM_02_007: [** If `sm` is `NULL` then `sm_open_begin` shall fail and return `SM_ERROR`. **]**
 
@@ -169,34 +172,65 @@ MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm, bool, success);
 
 **SRS_SM_02_075: [** If `success` is `false` then `sm_open_end` shall switch the state to `SM_CREATED`. **]**
 
-### sm_close_begin
+### sm_close_begin_internal
+
 ```c
-MOCKABLE_FUNCTION(, int, sm_close_begin, SM_HANDLE, sm);
+static SM_RESULT sm_close_begin_internal(SM_HANDLE sm, ON_SM_CLOSING_COMPLETE_CALLBACK callback, void* callback_context);
 ```
 
-`sm_open_begin` asks from `sm` permission to exit `SM_OPENED` state (or one of its derived state) and return to `SM_CREATED`.
+`sm_close_begin_internal` is the helper function for sm_close_begin and sm_close_begin_cb.
+
+**SRS_SM_02_045: [** `sm_close_begin_internal` shall set `SM_CLOSE_BIT` to 1. **]**
+
+**SRS_SM_02_046: [** If `SM_CLOSE_BIT` was already 1 then `sm_close_begin_internal` shall return `SM_EXEC_REFUSED`. **]**
+
+**SRS_SM_02_047: [** If the state is `SM_OPENED` then `sm_close_begin_internal` shall switch it to `SM_OPENED_DRAINING_TO_CLOSE`. **]**
+
+**SRS_SM_28_007: [** `callback` shall be allowed to be NULL. **]**
+
+**SRS_SM_28_008: [** If `callback` is not `NULL`, `sm_close_begin_internal` shall invoke `callback` function with `callback_context` as argument. **]**
+
+**SRS_SM_02_048: [** `sm_close_begin_internal` shall wait for `n` to reach 0. **]**
+
+**SRS_SM_02_049: [** `sm_close_begin_internal` shall switch the state to `SM_CLOSING` and return `SM_EXEC_GRANTED`. **]**
+
+**SRS_SM_02_050: [** If the state is `SM_OPENED_BARRIER` then `sm_close_begin_internal` shall re-evaluate the state. **]**
+
+**SRS_SM_02_051: [** If the state is `SM_OPENED_DRAINING_TO_BARRIER` then `sm_close_begin_internal` shall re-evaluate the state. **]**
+
+**SRS_SM_02_052: [** If the state is any other value then `sm_close_begin_internal` shall return `SM_EXEC_REFUSED`. **]**
+
+**SRS_SM_02_053: [** `sm_close_begin_internal` shall set `SM_CLOSE_BIT` to 0. **]**
+
+**SRS_SM_02_071: [** If there are any failures then `sm_close_begin_internal` shall fail and return `SM_ERROR`. **]**
+
+### sm_close_begin
+```c
+MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin, SM_HANDLE, sm);
+```
+
+`sm_close_begin` results in `sm` exiting the `SM_OPENED` state (or one of its derived state) and returning to `SM_CREATED`. `sm_close_begin` waits for pending calls to become 0.
 
 **SRS_SM_02_013: [** If `sm` is `NULL` then `sm_close_begin` shall fail and return `SM_ERROR`. **]**
 
-**SRS_SM_02_045: [** `sm_close_begin` shall set `SM_CLOSE_BIT` to 1. **]**
+**SRS_SM_28_005: [** `sm_close_begin` shall call `sm_close_begin_internal` with `callback` as `NULL` and `callback_context` as `NULL`. **]**
 
-**SRS_SM_02_046: [** If `SM_CLOSE_BIT` was already 1 then `sm_close_begin` shall return `SM_EXEC_REFUSED`. **]**
+**SRS_SM_28_006: [** `sm_close_begin` shall return the returned `SM_RESULT` from `sm_close_begin_internal`. **]**
 
-**SRS_SM_02_047: [** If the state is `SM_OPENED` then `sm_close_begin` shall switch it to `SM_OPENED_DRAINING_TO_CLOSE`. **]**
+### sm_close_begin_with_cb
+```c
+MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin_with_cb, SM_HANDLE, sm, ON_SM_CLOSING_COMPLETE_CALLBACK, callback, void*, callback_context);
+```
 
-**SRS_SM_02_048: [** `sm_close_begin` shall wait for `n` to reach 0. **]**
+`sm_close_begin_with_cb` results in `sm` exiting the `SM_OPENED` state (or one of its derived state) and returning to `SM_CREATED`. `sm_close_begin_with_cb` invokes the `callback` function with `callback_context` before waiting for pending calls to become 0.
 
-**SRS_SM_02_049: [** `sm_close_begin` shall switch the state to `SM_CLOSING` and return `SM_EXEC_GRANTED`. **]**
+**SRS_SM_28_001: [** If `sm` is `NULL` then `sm_close_begin_with_cb` shall fail and return `SM_ERROR`. **]**
 
-**SRS_SM_02_050: [** If the state is `SM_OPENED_BARRIER` then `sm_close_begin` shall re-evaluate the state. **]**
+**SRS_SM_28_002: [** If `callback` is `NULL` then `sm_close_begin_with_cb` shall fail and return `SM_ERROR`. **]**
 
-**SRS_SM_02_051: [** If the state is `SM_OPENED_DRAINING_TO_BARRIER` then `sm_close_begin` shall re-evaluate the state. **]**
+**SRS_SM_28_003: [** `sm_close_begin_with_cb` shall call `sm_close_begin_internal` with `callback` and `callback_context` as arguments. **]**
 
-**SRS_SM_02_052: [** If the state is any other value then `sm_close_begin` shall return `SM_EXEC_REFUSED`. **]**
-
-**SRS_SM_02_053: [** `sm_close_begin` shall set `SM_CLOSE_BIT` to 0. **]**
-
-**SRS_SM_02_071: [** If there are any failures then `sm_close_begin` shall fail and return `SM_ERROR`. **]**
+**SRS_SM_28_004: [** `sm_close_begin_with_cb` shall return the returned `SM_RESULT` from `sm_close_begin_internal`. **]**
 
 ### sm_close_end
 ```c
