@@ -5,16 +5,14 @@
 
 `TARRAY` is a module that provides a list of macros (similar to `THANDLE`) that help manage an ever growing array of elements
 
-Given a type `T`, `TARRAY(T)` is a `THANDLE`'d encapsulated type that contains `capacity` and `arr` as fields. `capacity` is the current capacity of `arr`, that is arr[0..capacity] are all valid indexes and they are of type `T`.
+Given a type `T`, `TARRAY(T)` is a `THANDLE`'d encapsulated type that contains `capacity`, a potentially non-`NULL` cleanup function, and `arr` as fields. `capacity` is the current capacity of `arr`, that is `arr`[0..capacity-1] are all valid indexes and they are of type `T`. The cleanup function is called once, just before the content of `arr` is `free`'d.
 
 `TARRAY` only manages the growth of the array. It does not manage other aspects such as: 
 1) keep track of which array elements are used / unused / not used anymore;
-2) dispose of the array elements by any means;
+2) dispose of the array elements by any means (but will call the user's `cleanup` function);
 3) last written array index (colloquially known as `size` in other implementations).
 
-The above 3 concerns can be addressed by the user or maybe by an implementation of `TARRAY_HL`.
-
-Because TARRAY is kind of THANDLE, all of `THANDLE`'s APIs apply to `TARRAY`. For convenience the following macros are provided out of the box with the same semantics as those of `THANDLE`'s:
+Because `TARRAY` is kind of `THANDLE`, all of `THANDLE`'s APIs apply to `TARRAY`. For convenience the following macros are provided out of the box with the same semantics as those of `THANDLE`'s:
 `TARRAY_INITIALIZE(T)`
 `TARRAY_ASSIGN(T)`
 `TARRAY_MOVE(T)`
