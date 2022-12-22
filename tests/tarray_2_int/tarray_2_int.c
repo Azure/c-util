@@ -78,7 +78,7 @@ static int cat_thread(void* p)
     return 0;
 }
 
-#define N_TIMES 10000
+#define N_TIMES 1000
 
 /* the following test SHARES an array of cats between this thread (the main thread) and two others thread for the pupose of hearding the cats */
 /* the main thread doesn't want to know about the cats anymore, so it just TARRAY_ASSIGN(CAT)(..., NULL) to its TARRAY(CAT) */

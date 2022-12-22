@@ -145,7 +145,7 @@ TEST_FUNCTION(uint32_t_can_be_created_unhappy_path_1)
 
     ///act
     TARRAY(uint32_t) arr = TARRAY_CREATE(uint32_t)();
-    
+
     ///assert
     ASSERT_IS_NULL(arr);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -192,7 +192,7 @@ TEST_FUNCTION(TARRAY_of_THANDLE_can_be_created)
     /*array element management is entirely in user's hands. TARRAY only knows about ensuring capacity for an array.*/
     THANDLE(A_TEST) a = THANDLE_MALLOC(A_TEST)(NULL); /*NULL = no special handling of the int inside the A_TEST*/
     ASSERT_IS_NOT_NULL(a);
-    
+
     THANDLE_INITIALIZE(A_TEST)(&arr_of_a->arr[0], a);
     THANDLE_ASSIGN(A_TEST)(&arr_of_a->arr[0], NULL);
     THANDLE_ASSIGN(A_TEST)(&a, NULL);
@@ -201,32 +201,32 @@ TEST_FUNCTION(TARRAY_of_THANDLE_can_be_created)
     TARRAY_ASSIGN(THANDLE(A_TEST))(&arr_of_a, NULL);
 }
 
-/* TARRAY_CREATE_WITH_CAPACITY(T) */
+/* TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) */
 
-/* Tests_SRS_TARRAY_01_001: [ If capacity is 0, TARRAY_CREATE_WITH_CAPACITY(T) shall fail and return NULL. ]*/
-TEST_FUNCTION(TARRAY_CREATE_WITH_CAPACITY_with_0_capacity_fails)
+/* Tests_SRS_TARRAY_01_001: [ If capacity is 0, TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall fail and return NULL. ]*/
+TEST_FUNCTION(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_with_0_capacity_fails)
 {
     ///arrange
 
     ///act
-    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY(uint32_t)(0);
+    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(0, NULL);
 
     ///assert
     ASSERT_IS_NULL(arr_of_uint32_t);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_TARRAY_01_002: [ TARRAY_CREATE_WITH_CAPACITY(T) shall call THANDLE_MALLOC to allocate the result. ]*/
-/* Tests_SRS_TARRAY_01_003: [ TARRAY_CREATE_WITH_CAPACITY(T) shall call malloc_2 to allocate capacity entries for result->arr. ]*/
-/* Tests_SRS_TARRAY_01_004: [ TARRAY_CREATE_WITH_CAPACITY(T) shall succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(TARRAY_CREATE_WITH_CAPACITY_with_1_uint32_t_TARRAY_succeeds)
+/* Tests_SRS_TARRAY_01_002: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall call THANDLE_MALLOC to allocate the result. ]*/
+/* Tests_SRS_TARRAY_01_003: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall call malloc_2 to allocate capacity entries for result->arr. ]*/
+/* Tests_SRS_TARRAY_01_004: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_with_1_uint32_t_TARRAY_succeeds)
 {
     ///arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*struct*/
     STRICT_EXPECTED_CALL(malloc_2(1, sizeof(uint32_t))); /*inner array*/
 
     ///act
-    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY(uint32_t)(1);
+    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(1, NULL);
 
     ///assert
     ASSERT_IS_NOT_NULL(arr_of_uint32_t);
@@ -239,17 +239,17 @@ TEST_FUNCTION(TARRAY_CREATE_WITH_CAPACITY_with_1_uint32_t_TARRAY_succeeds)
 
 #define N_ELEMENTS 1000
 
-/* Tests_SRS_TARRAY_01_002: [ TARRAY_CREATE_WITH_CAPACITY(T) shall call THANDLE_MALLOC to allocate the result. ]*/
-/* Tests_SRS_TARRAY_01_003: [ TARRAY_CREATE_WITH_CAPACITY(T) shall call malloc_2 to allocate capacity entries for result->arr. ]*/
-/* Tests_SRS_TARRAY_01_004: [ TARRAY_CREATE_WITH_CAPACITY(T) shall succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(MU_C3(TARRAY_CREATE_WITH_CAPACITY_with_,N_ELEMENTS,_uint32_t_TARRAY_succeeds))
+/* Tests_SRS_TARRAY_01_002: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall call THANDLE_MALLOC to allocate the result. ]*/
+/* Tests_SRS_TARRAY_01_003: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall call malloc_2 to allocate capacity entries for result->arr. ]*/
+/* Tests_SRS_TARRAY_01_004: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(MU_C3(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_with_,N_ELEMENTS,_uint32_t_TARRAY_succeeds))
 {
     ///arrange
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); /*struct*/
     STRICT_EXPECTED_CALL(malloc_2(N_ELEMENTS, sizeof(uint32_t))); /*inner array*/
 
     ///act
-    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY(uint32_t)(N_ELEMENTS);
+    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(N_ELEMENTS, NULL);
 
     ///assert
     ASSERT_IS_NOT_NULL(arr_of_uint32_t);
@@ -264,7 +264,7 @@ TEST_FUNCTION(MU_C3(TARRAY_CREATE_WITH_CAPACITY_with_,N_ELEMENTS,_uint32_t_TARRA
     TARRAY_ASSIGN(uint32_t)(&arr_of_uint32_t, NULL);
 }
 
-/* Tests_SRS_TARRAY_01_005: [ If there are any failures then TARRAY_CREATE_WITH_CAPACITY(T) shall fail and return NULL. ]*/
+/* Tests_SRS_TARRAY_01_005: [ If there are any failures then TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall fail and return NULL. ]*/
 TEST_FUNCTION(when_underlying_calls_fail_TARRAY_CREATE_WITH_CAPACITY_also_fails)
 {
     ///arrange
@@ -281,7 +281,7 @@ TEST_FUNCTION(when_underlying_calls_fail_TARRAY_CREATE_WITH_CAPACITY_also_fails)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY(uint32_t)(1);
+            TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(1, NULL);
 
             // assert
             ASSERT_IS_NULL(arr_of_uint32_t, "On failed call %zu", i);
@@ -291,10 +291,10 @@ TEST_FUNCTION(when_underlying_calls_fail_TARRAY_CREATE_WITH_CAPACITY_also_fails)
 
 #define N_ELEMENTS 1000
 
-/* Tests_SRS_TARRAY_01_002: [ TARRAY_CREATE_WITH_CAPACITY(T) shall call THANDLE_MALLOC to allocate the result. ]*/
-/* Tests_SRS_TARRAY_01_003: [ TARRAY_CREATE_WITH_CAPACITY(T) shall call malloc_2 to allocate capacity entries for result->arr. ]*/
-/* Tests_SRS_TARRAY_01_004: [ TARRAY_CREATE_WITH_CAPACITY(T) shall succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(MU_C3(TARRAY_CREATE_WITH_CAPACITY_with_, N_ELEMENTS, _THANDLE_A_TEST_TARRAY_succeeds))
+/* Tests_SRS_TARRAY_01_002: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall call THANDLE_MALLOC to allocate the result. ]*/
+/* Tests_SRS_TARRAY_01_003: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall call malloc_2 to allocate capacity entries for result->arr. ]*/
+/* Tests_SRS_TARRAY_01_004: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(MU_C3(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_with_, N_ELEMENTS, _THANDLE_A_TEST_TARRAY_succeeds))
 {
     ///arrange
 
@@ -307,7 +307,7 @@ TEST_FUNCTION(MU_C3(TARRAY_CREATE_WITH_CAPACITY_with_, N_ELEMENTS, _THANDLE_A_TE
     STRICT_EXPECTED_CALL(malloc_2(N_ELEMENTS, sizeof(THANDLE(A_TEST)))); /*inner array*/
 
     ///act
-    TARRAY(THANDLE(A_TEST)) arr_of_a = TARRAY_CREATE_WITH_CAPACITY(THANDLE(A_TEST))(N_ELEMENTS);
+    TARRAY(THANDLE(A_TEST)) arr_of_a = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(THANDLE(A_TEST))(N_ELEMENTS, NULL);
 
     ///assert
     ASSERT_IS_NOT_NULL(arr_of_a);
@@ -353,7 +353,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_with_same_capacity_succeeds)
 
     ///act
     result = TARRAY_ENSURE_CAPACITY(uint32_t)(arr, 1);/*capacity is already at 1*/
-    
+
     ///assert
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(uint32_t, 1, arr->capacity);
@@ -474,7 +474,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_unhappy_path)
 
     ///act
     result = TARRAY_ENSURE_CAPACITY(uint32_t)(arr, 5);/*capacity is already at 1, the next multiple of 2 of 5 is 8*/
-    
+
     ///assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(uint32_t, 1, arr->capacity);
