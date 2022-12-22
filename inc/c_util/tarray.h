@@ -19,6 +19,8 @@
 /*given a type "T" TARRAY(T) expands to the name of the type. */ /*tarray_int folder in c-util\tests contains a template for usage in tests (with reals)*/
 #define TARRAY(T) TARRAY_LL(T)
 
+#define TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_DEFINE(T) TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_DEFINE(T, T)
+
 #define TARRAY_CREATE_DECLARE(T) TARRAY_LL_CREATE_DECLARE(T, T)
 #define TARRAY_CREATE_DEFINE(T) TARRAY_LL_CREATE_DEFINE(T, T)
 
@@ -47,14 +49,15 @@
 #define TARRAY_TYPE_DECLARE(T)                                                                                      \
     /*hint: have TARRAY_DEFINE_STRUCT_TYPE(T) before TARRAY_TYPE_DECLARE                                         */ \
     /*hint: have THANDLE_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(T)) before TARRAY_TYPE_DECLARE                         */ \
-    TARRAY_CREATE_DECLARE(T)                                                                                        \
     TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_DECLARE(T)                                                              \
+    TARRAY_CREATE_DECLARE(T)                                                                                        \
     TARRAY_CREATE_WITH_CAPACITY_DECLARE(T)                                                                          \
     TARRAY_ENSURE_CAPACITY_DECLARE(T)                                                                               \
 
 #define TARRAY_TYPE_DEFINE(T)                                                                                       \
     /*hint: have THANDLE_TYPE_DEFINE(TARRAY_TYPEDEF_NAME(T)) before  TARRAY_TYPE_DEFINE                          */ \
     TARRAY_FREE_DEFINE(T)                                                                                           \
+    TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_DEFINE(T)                                                      \
     TARRAY_CREATE_DEFINE(T)                                                                                         \
     TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_DEFINE(T)                                                               \
     TARRAY_CREATE_WITH_CAPACITY_DEFINE(T)                                                                           \

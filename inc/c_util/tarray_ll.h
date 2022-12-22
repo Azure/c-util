@@ -60,6 +60,11 @@ struct TARRAY_STRUCT_TYPE_NAME_TAG(T)                                           
 #define TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_NAME(C) MU_C2(TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_, C)
 #define TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP(C) TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_NAME(C)
 
+/*introduces a name for a function that takes a capacity and a cleanup function pointer (internal)*/
+#define TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_NAME(C) MU_C2(TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_, C)
+#define TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(C) TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_NAME(C)
+
+
 /*introduces a function declaration for tarray_create*/
 #define TARRAY_LL_CREATE_DECLARE(C, T) MOCKABLE_FUNCTION(, TARRAY_LL(T), TARRAY_LL_CREATE(C));
 
@@ -91,69 +96,77 @@ static void TARRAY_LL_FREE_NAME(C)(TARRAY_TYPEDEF_NAME(T)* tarray)              
     }                                                                                               \
 }                                                                                                   \
 
-/*introduces a function definition for tarray_create*/
-/*Codes_SRS_TARRAY_02_001: [ TARRAY_CREATE(T) shall call THANDLE_MALLOC to allocate the result. ]*/
-/*Codes_SRS_TARRAY_02_002: [ TARRAY_CREATE(T) shall call malloc to allocate result->arr. ]*/
-/*Codes_SRS_TARRAY_02_004: [ If there are any failures then TARRAY_CREATE(T) shall fail and return NULL. ]*/
-/*Codes_SRS_TARRAY_02_003: [ TARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
-#define TARRAY_LL_CREATE_DEFINE(C, T)                                                                                       \
-TARRAY_LL(T) TARRAY_LL_CREATE(C)(void)                                                                                      \
-{                                                                                                                           \
-    return TARRAY_LL_CREATE_WITH_CAPACITY(C)(1);                                                                            \
+
+/*introduces a function definition for tarray_create_with_capacity_and_cleanup*/ /*this is the JackOfAllTrades for TARRAY_CREATE*/
+#define TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_DEFINE(C, T)                                                                            \
+static TARRAY_LL(T) TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(C)(uint32_t capacity, TARRAY_LL_CLEANUP_FUNCTION_TYPE_NAME(T) cleanup)      \
+{                                                                                                                                                   \
+    TARRAY_TYPEDEF_NAME(T)* result;                                                                                                                 \
+    if (capacity == 0)                                                                                                                              \
+    {                                                                                                                                               \
+        /* Codes_SRS_TARRAY_01_001: [ If capacity is 0, TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall fail and return NULL. ]*/                  \
+        LogError("Invalid arguments: uint32_t capacity=%" PRIu32 "", capacity);                                                                     \
+        result = NULL;                                                                                                                              \
+    }                                                                                                                                               \
+    else                                                                                                                                            \
+    {                                                                                                                                               \
+        /* Codes_SRS_TARRAY_01_002: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall call THANDLE_MALLOC to allocate the result. ]*/              \
+        result = THANDLE_MALLOC(TARRAY_TYPEDEF_NAME(C))(TARRAY_LL_FREE_NAME(C));                                                                    \
+        if(result == NULL)                                                                                                                          \
+        {                                                                                                                                           \
+            /* Codes_SRS_TARRAY_01_005: [ If there are any failures then TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall fail and return NULL. ]*/ \
+            LogError("failure in " MU_TOSTRING(THANDLE_MALLOC) "(" MU_TOSTRING(TARRAY_TYPEDEF_NAME(T)) "=%zu)", sizeof(TARRAY_TYPEDEF_NAME(T)));    \
+            /*return as is*/                                                                                                                        \
+        }                                                                                                                                           \
+        else                                                                                                                                        \
+        {                                                                                                                                           \
+            /* Codes_SRS_TARRAY_01_003: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall call malloc_2 to allocate capacity entries for result->arr. ]*/ \
+            result->arr = malloc_2(capacity,sizeof(T));                                                                                             \
+            if(result->arr == NULL)                                                                                                                 \
+            {                                                                                                                                       \
+                /* Codes_SRS_TARRAY_01_005: [ If there are any failures then TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall fail and return NULL. ]*/ \
+                LogError("failure in malloc_2(capacity=%" PRIu32 ", sizeof(" MU_TOSTRING(T) ")=%zu)",                                               \
+                    capacity, sizeof(T));                                                                                                           \
+            }                                                                                                                                       \
+            else                                                                                                                                    \
+            {                                                                                                                                       \
+                result->cleanup = cleanup;                                                                                                          \
+                result->capacity = capacity;                                                                                                        \
+                /* Codes_SRS_TARRAY_01_004: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall succeed and return a non-NULL value. ]*/             \
+                goto allok;                                                                                                                         \
+            }                                                                                                                                       \
+            THANDLE_FREE(TARRAY_TYPEDEF_NAME(C))(result);                                                                                           \
+            result = NULL;                                                                                                                          \
+        }                                                                                                                                           \
+    }                                                                                                                                               \
+    allok:;                                                                                                                                         \
+    return result;                                                                                                                                  \
 }
 
 /*introduces a function definition for tarray_create_with_capacity_and_cleanup*/
 #define TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_DEFINE(C, T)                                                                     \
 TARRAY_LL(T) TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP(C)(uint32_t capacity, TARRAY_LL_CLEANUP_FUNCTION_TYPE_NAME(T) cleanup)      \
 {                                                                                                                                   \
-    TARRAY_TYPEDEF_NAME(T)* result;                                                                                                 \
-    if (capacity == 0)                                                                                                              \
-    {                                                                                                                               \
-        /* Codes_SRS_TARRAY_01_001: [ If capacity is 0, TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall fail and return NULL. ]*/  \
-        LogError("Invalid arguments: uint32_t capacity=%" PRIu32 "", capacity);                                                     \
-        result = NULL;                                                                                                              \
-    }                                                                                                                               \
-    else                                                                                                                            \
-    {                                                                                                                               \
-        /* Codes_SRS_TARRAY_01_002: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall call THANDLE_MALLOC to allocate the result. ]*/  \
-        result = THANDLE_MALLOC(TARRAY_TYPEDEF_NAME(C))(TARRAY_LL_FREE_NAME(C));                                                    \
-        if(result == NULL)                                                                                                          \
-        {                                                                                                                           \
-            /* Codes_SRS_TARRAY_01_005: [ If there are any failures then TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall fail and return NULL. ]*/ \
-            LogError("failure in " MU_TOSTRING(THANDLE_MALLOC) "(" MU_TOSTRING(TARRAY_TYPEDEF_NAME(T)) "=%zu)", sizeof(TARRAY_TYPEDEF_NAME(T))); \
-            /*return as is*/                                                                                                        \
-        }                                                                                                                           \
-        else                                                                                                                        \
-        {                                                                                                                           \
-            /* Codes_SRS_TARRAY_01_003: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall call malloc_2 to allocate capacity entries for result->arr. ]*/ \
-            result->arr = malloc_2(capacity,sizeof(T));                                                                             \
-            if(result->arr == NULL)                                                                                                 \
-            {                                                                                                                       \
-                /* Codes_SRS_TARRAY_01_005: [ If there are any failures then TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall fail and return NULL. ]*/ \
-                LogError("failure in malloc_2(capacity=%" PRIu32 ", sizeof(" MU_TOSTRING(T) ")=%zu)",                               \
-                    capacity, sizeof(T));                                                                                           \
-            }                                                                                                                       \
-            else                                                                                                                    \
-            {                                                                                                                       \
-                result->cleanup = cleanup;                                                                                          \
-                result->capacity = capacity;                                                                                        \
-                /* Codes_SRS_TARRAY_01_004: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) shall succeed and return a non-NULL value. ]*/         \
-                goto allok;                                                                                                         \
-            }                                                                                                                       \
-            THANDLE_FREE(TARRAY_TYPEDEF_NAME(C))(result);                                                                           \
-            result = NULL;                                                                                                          \
-        }                                                                                                                           \
-    }                                                                                                                               \
-    allok:;                                                                                                                         \
-    return result;                                                                                                                  \
-}
+    return TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(C)(capacity, cleanup);                                               \
+}                                                                                                                                   \
 
 /*introduces a function definition for tarray_create_with_capacity*/
-#define TARRAY_LL_CREATE_WITH_CAPACITY_DEFINE(C, T)                                                                         \
-TARRAY_LL(T) TARRAY_LL_CREATE_WITH_CAPACITY(C)(uint32_t capacity)                                                           \
-{                                                                                                                           \
-    return TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP(C)(capacity, NULL);                                                   \
-}                                                                                                                           \
+#define TARRAY_LL_CREATE_WITH_CAPACITY_DEFINE(C, T)                                                                                 \
+TARRAY_LL(T) TARRAY_LL_CREATE_WITH_CAPACITY(C)(uint32_t capacity)                                                                   \
+{                                                                                                                                   \
+    return TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(C)(capacity, NULL);                                                  \
+}                                                                                                                                   \
+
+/*introduces a function definition for tarray_create*/
+/*Codes_SRS_TARRAY_02_001: [ TARRAY_CREATE(T) shall call THANDLE_MALLOC to allocate the result. ]*/
+/*Codes_SRS_TARRAY_02_002: [ TARRAY_CREATE(T) shall call malloc to allocate result->arr. ]*/
+/*Codes_SRS_TARRAY_02_004: [ If there are any failures then TARRAY_CREATE(T) shall fail and return NULL. ]*/
+/*Codes_SRS_TARRAY_02_003: [ TARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
+#define TARRAY_LL_CREATE_DEFINE(C, T)                                                                                               \
+TARRAY_LL(T) TARRAY_LL_CREATE(C)(void)                                                                                              \
+{                                                                                                                                   \
+    return TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(C)(1, NULL);                                                         \
+}
 
 /*introduces a name for "what function to call to ensure capacity"  */
 #define TARRAY_LL_ENSURE_CAPACITY(C) MU_C2(TARRAY_ENSURE_CAPACITY_, C)
@@ -230,6 +243,7 @@ int TARRAY_LL_ENSURE_CAPACITY(C)(TARRAY_LL(T) tarray, uint32_t capacity)        
 #define TARRAY_LL_TYPE_DEFINE(C, T)                                                                                 \
     /*hint: have THANDLE_TYPE_DEFINE(TARRAY_TYPEDEF_NAME(T)) before TARRAY_LL_TYPE_DEFINE*/                         \
     TARRAY_LL_FREE_DEFINE(C, T)                                                                                     \
+    TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_DEFINE(C, T)                                                \
     TARRAY_LL_CREATE_DEFINE(C, T)                                                                                   \
     TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_DEFINE(C, T)                                                         \
     TARRAY_LL_CREATE_WITH_CAPACITY_DEFINE(C, T)                                                                     \
