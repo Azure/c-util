@@ -75,7 +75,7 @@ static TARRAY(T) TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)(uint32_t capacity, T
 **SRS_TARRAY_01_005: [** If there are any failures then `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)` shall fail and return `NULL`. **]**
 TARRAY_CREATE_
 
-**SRS_TARRAY_02_014: [** Before freeing the memeory used by `TARRAY(T)` `cleanup` shall be called if not `NULL`. **]**
+**SRS_TARRAY_02_014: [** Before freeing the memory used by `TARRAY(T)` `cleanup` shall be called if not `NULL`. **]**
 
 ### TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)
 ```c
@@ -93,7 +93,7 @@ TARRAY(T) TARRAY_CREATE_WITH_CAPACITY(T)(uint32_t capacity);
 
 `TARRAY_CREATE_WITH_CAPACITY(T)` creates a new `TARRAY(T)` with initial capacity of `capacity` and no cleanup function.
 
-**SRS_TARRAY_02_012: [** `TARRAY_CREATE_WITH_CAPACITY(T)` shall return what `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)(capacity, NULL)` returns. **]**
+**SRS_TARRAY_02_012: [** `TARRAY_CREATE_WITH_CAPACITY(T)` shall return what `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(capacity, NULL)` returns. **]**
 
 ### TARRAY_CREATE(T)
 ```c
@@ -102,7 +102,7 @@ TARRAY(T) TARRAY_CREATE(T)(void);
 
 `TARRAY_CREATE(T)` creates a new `TARRAY(T)` with initial capacity of 1 and no cleanup function.
 
-**SRS_TARRAY_02_011: [** `TARRAY_CREATE(T)` shall return what `TARRAY_CREATE_WITH_CAPACITY_INTERNAL(T)`(1, NULL) returns. **]**
+**SRS_TARRAY_02_011: [** `TARRAY_CREATE(T)` shall return what `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)`(1, NULL) returns. **]**
 
 
 
