@@ -161,7 +161,7 @@ TARRAY_LL(T) TARRAY_LL_CREATE_WITH_CAPACITY(C)(uint32_t capacity)               
 }                                                                                                                                   \
 
 /*introduces a function definition for tarray_create*/
-/*Codes_SRS_TARRAY_02_011: [ TARRAY_CREATE(T) shall return what TARRAY_CREATE_WITH_CAPACITY_INTERNAL(T)(1, NULL) returns. ]*/
+/*Codes_SRS_TARRAY_02_011: [ TARRAY_CREATE(T) shall return what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(1, NULL) returns. ]*/
 #define TARRAY_LL_CREATE_DEFINE(C, T)                                                                                               \
 TARRAY_LL(T) TARRAY_LL_CREATE(C)(void)                                                                                              \
 {                                                                                                                                   \

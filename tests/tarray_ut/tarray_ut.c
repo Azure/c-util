@@ -104,7 +104,7 @@ TEST_FUNCTION_CLEANUP(cleans)
 
 /* TARRAY_CREATE(T) */
 
-/*Tests_SRS_TARRAY_02_011: [ TARRAY_CREATE(T) shall return what TARRAY_CREATE_WITH_CAPACITY(T)(1, NULL) returns. ]*/
+/*Tests_SRS_TARRAY_02_011: [ TARRAY_CREATE(T) shall return what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(1, NULL) returns. ]*/
 TEST_FUNCTION(uint32_t_can_be_created)
 {
     ///arrange
@@ -164,7 +164,7 @@ TEST_FUNCTION(uint32_t_can_be_created_unhappy_path_2)
     ///clean
 }
 
-/*Tests_SRS_TARRAY_02_011: [ TARRAY_CREATE(T) shall return what TARRAY_CREATE_WITH_CAPACITY_INTERNAL(T)(1, NULL) returns. ]*/
+/*Tests_SRS_TARRAY_02_011: [ TARRAY_CREATE(T) shall return what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(1, NULL) returns. ]*/
 TEST_FUNCTION(TARRAY_of_THANDLE_can_be_created)
 {
     ///arrange
