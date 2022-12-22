@@ -28,6 +28,8 @@ typedef struct SM_HANDLE_DATA_TAG* SM_HANDLE;
 
 MU_DEFINE_ENUM(SM_RESULT, SM_RESULT_VALUES);
 
+typedef void(*ON_SM_CLOSING_COMPLETE_CALLBACK)(void* context);
+
 MOCKABLE_FUNCTION(, SM_HANDLE, sm_create, const char*, name);
 MOCKABLE_FUNCTION(, void, sm_destroy, SM_HANDLE, sm);
 
@@ -35,6 +37,7 @@ MOCKABLE_FUNCTION(, SM_RESULT, sm_open_begin, SM_HANDLE, sm);
 MOCKABLE_FUNCTION(, void, sm_open_end, SM_HANDLE, sm, bool, success);
 
 MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin, SM_HANDLE, sm);
+MOCKABLE_FUNCTION(, SM_RESULT, sm_close_begin_with_cb, SM_HANDLE, sm, ON_SM_CLOSING_COMPLETE_CALLBACK, callback, void*, callback_context);
 MOCKABLE_FUNCTION(, void, sm_close_end, SM_HANDLE, sm);
 
 MOCKABLE_FUNCTION(, SM_RESULT, sm_exec_begin, SM_HANDLE, sm);

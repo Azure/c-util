@@ -27,7 +27,7 @@ static TEST_MUTEX_HANDLE g_testByTest;
 STRING_HANDLE my_STRING_construct(const char* psz)
 {
     (void)psz;
-    return (STRING_HANDLE)malloc(1);
+    return malloc(1);
 }
 
 static void my_STRING_delete(STRING_HANDLE handle)
@@ -38,7 +38,7 @@ static void my_STRING_delete(STRING_HANDLE handle)
 STRING_HANDLE my_STRING_new_JSON(const char* source)
 {
     (void)source;
-    return (STRING_HANDLE)malloc(1);
+    return malloc(1);
 }
 
 #include "c_pal/gballoc_hl.h"

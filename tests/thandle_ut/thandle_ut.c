@@ -75,7 +75,7 @@ static int copy_A_S(A_S* destination, const A_S* source)
 {
     int result;
     destination->a = source->a;
-    destination->s = (char*)malloc(strlen(source->s)+1);
+    destination->s = malloc(strlen(source->s)+1);
 
     if (destination->s == NULL)
     {
@@ -132,7 +132,7 @@ static int copy_A_S_FLEX(A_S_FLEX* destination, const A_S_FLEX* source)
 {
     int result;
     destination->n = source->n;
-    destination->s = (char*)malloc(strlen(source->s) + 1);
+    destination->s = malloc(strlen(source->s) + 1);
 
     if (destination->s == NULL)
     {
@@ -535,7 +535,7 @@ TEST_FUNCTION(THANDLE_GET_T_with_t_not_NULL_returns_original_pointer) /*direct t
 /*returns a pointer to an array of 2 THANDLE(LL)*/
 static void builds_out_arg(THANDLE(LL)** x)
 {
-    *x = (THANDLE(LL)*)my_gballoc_malloc(sizeof(THANDLE(LL)) * 2);
+    *x = my_gballoc_malloc(sizeof(THANDLE(LL)) * 2);
     ASSERT_IS_NOT_NULL(*x);
 }
 
@@ -682,7 +682,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof)
 {
     ///arrange
     int n = 4; /*number of elements in the flexible array*/
-    A_FLEX* source = (A_FLEX*)my_gballoc_malloc(sizeof(A_FLEX) + n * sizeof(int));
+    A_FLEX* source = my_gballoc_malloc(sizeof(A_FLEX) + n * sizeof(int));
     ASSERT_IS_NOT_NULL(source);
 
     source->n = 4;
@@ -715,7 +715,7 @@ TEST_FUNCTION(THANDLE_CREATE_FROM_CONTENT_FLEX_calls_get_sizeof_2)
 {
     ///arrange
     int n = 4; /*number of elements in the flexible array*/
-    A_S_FLEX* source = (A_S_FLEX *)my_gballoc_malloc(sizeof(A_S_FLEX) + n * sizeof(int));
+    A_S_FLEX* source = my_gballoc_malloc(sizeof(A_S_FLEX) + n * sizeof(int));
     ASSERT_IS_NOT_NULL(source);
 
     source->s = "abc";

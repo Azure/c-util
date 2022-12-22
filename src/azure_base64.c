@@ -241,7 +241,7 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
     char* encoded;
     size_t currentPosition = 0;
     /*Codes_SRS_BASE64_06_006: [If when allocating memory to produce the encoding a failure occurs then Azure_Base64_Encode shall return NULL.]*/
-    encoded = (char*)malloc_flex(1, (size == 0) ? 0 : (((size - 1) / 3) + 1), 4); /*base==1 because there's a '\0' added at the end of the string, nmemb = (((size - 1) / 3) + 1), each of them having 4 characters*/
+    encoded = malloc_flex(1, (size == 0) ? 0 : (((size - 1) / 3) + 1), 4); /*base==1 because there's a '\0' added at the end of the string, nmemb = (((size - 1) / 3) + 1), each of them having 4 characters*/
     if (encoded == NULL)
     {
         /* Codes_SRS_BASE64_02_004: [ In case of any errors, Azure_Base64_Encode_Bytes shall return NULL. ]*/
