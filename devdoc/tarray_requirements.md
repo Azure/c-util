@@ -7,6 +7,12 @@
 
 Given a type `T`, `TARRAY(T)` is a `THANDLE`'d encapsulated type that contains `capacity`, a potentially non-`NULL` cleanup function, and `arr` as fields. `capacity` is the current capacity of `arr`, that is `arr`[0..capacity-1] are all valid indexes and they are of type `T`. The cleanup function is called once, just before the content of `arr` is `free`'d.
 
+The `cleanup` function has the following prototype:
+
+```c
+    void cleanup(TARRAY_TYPEDEF_NAME(T)* var, void* cleanup_context);
+```
+
 `TARRAY` only manages the growth of the array. It does not manage other aspects such as: 
 1) keep track of which array elements are used / unused / not used anymore;
 2) dispose of the array elements by any means (but will call the user's `cleanup` function);
@@ -57,7 +63,7 @@ typedef struct TARRAY_STRUCT_T_TAG
 
 ### TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)
 ```c
-static TARRAY(T) TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)(uint32_t capacity, TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_DECLARE(T) cleanup);
+static TARRAY(T) TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)(uint32_t capacity, TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_DECLARE(T) cleanup, void* cleanup_context);
 ```
 
 `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)` is an internal (static) function creates a new `TARRAY(T)` with initial capacity of `capacity` and `cleanup` function. This function is called by all the publicly facing APIs with different parameters.
@@ -73,16 +79,16 @@ static TARRAY(T) TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)(uint32_t capacity, T
 **SRS_TARRAY_01_005: [** If there are any failures then `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)` shall fail and return `NULL`. **]**
 TARRAY_CREATE_
 
-**SRS_TARRAY_02_014: [** Before freeing the memory used by `TARRAY(T)` `cleanup` shall be called if not `NULL`. **]**
+**SRS_TARRAY_02_014: [** Before freeing the memory used by `TARRAY(T)` `cleanup` shall be called if not `NULL` and `cleanup_context` shall be passed as `cleanup`'s `cleanup_context` **]**
 
 ### TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)
 ```c
-TARRAY(T) TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)(uint32_t capacity, TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_DECLARE(T) cleanup);
+TARRAY(T) TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)(uint32_t capacity, TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_DECLARE(T) cleanup, void* cleanup_context);
 ```
 
 `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)` creates a new `TARRAY(T)` with initial capacity of `capacity` and `cleanup` function.
 
-**SRS_TARRAY_02_013: [** `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)` returns what `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(capacity, cleanup)` returns. **]**
+**SRS_TARRAY_02_013: [** `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)` returns what `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(capacity, cleanup, cleanup_context)` returns. **]**
 
 ### TARRAY_CREATE_WITH_CAPACITY(T)
 ```c

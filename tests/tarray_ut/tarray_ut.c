@@ -52,7 +52,7 @@ TARRAY_TYPE_DEFINE(THANDLE(A_TEST));
 
 #define ENABLE_MOCKS
 #include "umock_c/umock_c_prod.h"
-MOCKABLE_FUNCTION(, void, my_cleanup, TARRAY_TYPEDEF_NAME(uint32_t)*, var2);
+MOCKABLE_FUNCTION(, void, my_cleanup, TARRAY_TYPEDEF_NAME(uint32_t)*, var2, void*, cleanup_context);
 #undef ENABLE_MOCKS
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
@@ -104,7 +104,7 @@ TEST_FUNCTION_CLEANUP(cleans)
 
 /* TARRAY_CREATE(T) */
 
-/*Tests_SRS_TARRAY_02_011: [ TARRAY_CREATE(T) shall return what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(1, NULL) returns. ]*/
+/*Tests_SRS_TARRAY_02_011: [ TARRAY_CREATE(T) shall return what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(1, NULL, NULL) returns. ]*/
 TEST_FUNCTION(uint32_t_can_be_created)
 {
     ///arrange
@@ -164,7 +164,7 @@ TEST_FUNCTION(uint32_t_can_be_created_unhappy_path_2)
     ///clean
 }
 
-/*Tests_SRS_TARRAY_02_011: [ TARRAY_CREATE(T) shall return what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(1, NULL) returns. ]*/
+/*Tests_SRS_TARRAY_02_011: [ TARRAY_CREATE(T) shall return what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(1, NULL, NULL) returns. ]*/
 TEST_FUNCTION(TARRAY_of_THANDLE_can_be_created)
 {
     ///arrange
@@ -200,7 +200,7 @@ TEST_FUNCTION(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_with_0_capacity_f
     ///arrange
 
     ///act
-    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(0, NULL);
+    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(0, NULL, NULL);
 
     ///assert
     ASSERT_IS_NULL(arr_of_uint32_t);
@@ -210,7 +210,7 @@ TEST_FUNCTION(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_with_0_capacity_f
 /* Tests_SRS_TARRAY_01_002: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T) shall call THANDLE_MALLOC to allocate the result. ]*/
 /* Tests_SRS_TARRAY_01_003: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T) shall call malloc_2 to allocate capacity entries for result->arr. ]*/
 /* Tests_SRS_TARRAY_01_004: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T) shall succeed and return a non-NULL value. ]*/
-/* Tests_SRS_TARRAY_02_013: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) returns what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(capacity, cleanup) returns. ]*/
+/* Tests_SRS_TARRAY_02_013: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) returns what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(capacity, cleanup, cleanup_context) returns. ]*/
 TEST_FUNCTION(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_with_1_uint32_t_TARRAY_succeeds)
 {
     ///arrange
@@ -218,7 +218,7 @@ TEST_FUNCTION(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_with_1_uint32_t_T
     STRICT_EXPECTED_CALL(malloc_2(1, sizeof(uint32_t))); /*inner array*/
 
     ///act
-    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(1, NULL);
+    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(1, NULL, NULL);
 
     ///assert
     ASSERT_IS_NOT_NULL(arr_of_uint32_t);
@@ -234,7 +234,7 @@ TEST_FUNCTION(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_with_1_uint32_t_T
 /* Tests_SRS_TARRAY_01_002: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T) shall call THANDLE_MALLOC to allocate the result. ]*/
 /* Tests_SRS_TARRAY_01_003: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T) shall call malloc_2 to allocate capacity entries for result->arr. ]*/
 /* Tests_SRS_TARRAY_01_004: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T) shall succeed and return a non-NULL value. ]*/
-/* Tests_SRS_TARRAY_02_013: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) returns what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(capacity, cleanup) returns. ]*/
+/* Tests_SRS_TARRAY_02_013: [ TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T) returns what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(capacity, cleanup, cleanup_context) returns. ]*/
 TEST_FUNCTION(MU_C3(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_with_,N_ELEMENTS,_uint32_t_TARRAY_succeeds))
 {
     ///arrange
@@ -242,7 +242,7 @@ TEST_FUNCTION(MU_C3(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_with_,N_ELE
     STRICT_EXPECTED_CALL(malloc_2(N_ELEMENTS, sizeof(uint32_t))); /*inner array*/
 
     ///act
-    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(N_ELEMENTS, NULL);
+    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(N_ELEMENTS, NULL, NULL);
 
     ///assert
     ASSERT_IS_NOT_NULL(arr_of_uint32_t);
@@ -274,7 +274,7 @@ TEST_FUNCTION(when_underlying_calls_fail_TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(1, NULL);
+            TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(1, NULL, NULL);
 
             // assert
             ASSERT_IS_NULL(arr_of_uint32_t, "On failed call %zu", i);
@@ -300,7 +300,7 @@ TEST_FUNCTION(MU_C3(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_with_, N_EL
     STRICT_EXPECTED_CALL(malloc_2(N_ELEMENTS, sizeof(THANDLE(A_TEST)))); /*inner array*/
 
     ///act
-    TARRAY(THANDLE(A_TEST)) arr_of_a = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(THANDLE(A_TEST))(N_ELEMENTS, NULL);
+    TARRAY(THANDLE(A_TEST)) arr_of_a = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(THANDLE(A_TEST))(N_ELEMENTS, NULL, NULL);
 
     ///assert
     ASSERT_IS_NOT_NULL(arr_of_a);
@@ -317,15 +317,37 @@ TEST_FUNCTION(MU_C3(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_with_, N_EL
     TARRAY_ASSIGN(THANDLE(A_TEST))(&arr_of_a, NULL);
 }
 
-/*Tests_SRS_TARRAY_02_014: [ Before freeing the memory used by TARRAY(T) cleanup shall be called if not NULL. ]*/
+/*Tests_SRS_TARRAY_02_014: [ Before freeing the memory used by TARRAY(T) cleanup shall be called if not NULL and cleanup_context shall be passed as cleanup's cleanup_context ]*/
 TEST_FUNCTION(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_calls_cleanup)
 {
     ///arrange
-    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(1, my_cleanup);
+    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(1, my_cleanup, (void*)0x4242);
     ASSERT_IS_NOT_NULL(arr_of_uint32_t);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(my_cleanup(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(my_cleanup(IGNORED_ARG, (void*)0x4242));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+
+    ///act
+    TARRAY_ASSIGN(uint32_t)(&arr_of_uint32_t, NULL);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    /*already done*/
+}
+
+/*Tests_SRS_TARRAY_02_014: [ Before freeing the memory used by TARRAY(T) cleanup shall be called if not NULL and cleanup_context shall be passed as cleanup's cleanup_context ]*/
+TEST_FUNCTION(TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL_calls_cleanup_with_NULL_context)
+{
+    ///arrange
+    TARRAY(uint32_t) arr_of_uint32_t = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(uint32_t)(1, my_cleanup, NULL);
+    ASSERT_IS_NOT_NULL(arr_of_uint32_t);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(my_cleanup(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
