@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "macro_utils/macro_utils.h"
 
@@ -72,15 +73,14 @@ static void release_TARRAY_of_CATs(TARRAY_TYPEDEF_NAME(CAT)* cats)
 /*some thread that prints a cat name and then releases its hold on the TARRAY(CAT)*/
 static int cat_thread(void* p)
 {
-    TARRAY(CAT) allCats = p;
-    //LogInfo("hello from thread %" PRIu32 ". I have the cat \"%s\"", ThreadAPI_GetCurrentThreadId(), allCats->arr[0].name);
-    TARRAY_ASSIGN(CAT)(&allCats, NULL);
+    TARRAY(CAT) all_cats = p;
+    TARRAY_ASSIGN(CAT)(&all_cats, NULL);
     return 0;
 }
 
 #define N_TIMES 1000
 
-/* the following test SHARES an array of cats between this thread (the main thread) and two others thread for the pupose of hearding the cats */
+/* the following test SHARES an array of cats between this thread (the main thread) and two others thread for the pupose of herding the cats */
 /* the main thread doesn't want to know about the cats anymore, so it just TARRAY_ASSIGN(CAT)(..., NULL) to its TARRAY(CAT) */
 /* which one of the 2 threads that has a hold on the TARRAY(CAT) should call free "zuzu"? */
 /* answer is: CLEANUP function passed at TARRAY creation time */
@@ -90,22 +90,22 @@ TEST_FUNCTION(an_array_of_cats_can_have_their_names_uniquely_freed)
     for(uint32_t i = 0; i < N_TIMES; i++)
     {
         ///arrange
-        TARRAY(CAT) allCats = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(CAT)(1, release_TARRAY_of_CATs);
-        ASSERT_IS_NOT_NULL(allCats);
-        ASSERT_ARE_EQUAL(int, 0, TARRAY_ENSURE_CAPACITY(CAT)(allCats, 1));
+        TARRAY(CAT) all_cats = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(CAT)(1, release_TARRAY_of_CATs);
+        ASSERT_IS_NOT_NULL(all_cats);
+        ASSERT_ARE_EQUAL(int, 0, TARRAY_ENSURE_CAPACITY(CAT)(all_cats, 1));
 
-        allCats->arr[0].name = sprintf_char("%s", "zuzu");
-        ASSERT_IS_NOT_NULL(allCats->arr[0].name);
+        all_cats->arr[0].name = sprintf_char("%s", "zuzu");
+        ASSERT_IS_NOT_NULL(all_cats->arr[0].name);
 
         /*preparing data for the threads*/
         TARRAY(CAT) t1_cat = NULL;
-        TARRAY_INITIALIZE(CAT)(&t1_cat, allCats);
+        TARRAY_INITIALIZE(CAT)(&t1_cat, all_cats);
 
         TARRAY(CAT) t2_cat = NULL;
-        TARRAY_INITIALIZE(CAT)(&t2_cat, allCats);
+        TARRAY_INITIALIZE(CAT)(&t2_cat, all_cats);
 
         /*main thread doesn't want to deal with cats anymore*/
-        TARRAY_ASSIGN(CAT)(&allCats, NULL);
+        TARRAY_ASSIGN(CAT)(&all_cats, NULL);
 
         ///act - start thread 1
         THREAD_HANDLE t1;
