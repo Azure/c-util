@@ -156,7 +156,7 @@ TEST_FUNCTION(an_array_of_cats_can_have_their_names_uniquely_freed_2)
             0 when 0 CATs are stored,
             1 when arr[0] is used,
             2 when arr[1] is used,
-            3 when arr[2] is used
+            3 when arr[0] and arr[1] are used
         */
 
         ///arrange
