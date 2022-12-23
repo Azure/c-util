@@ -64,8 +64,9 @@ TEST_FUNCTION_CLEANUP(deinit_f)
 }
 
 /*uniquely called just before the TARRAY is disposed*/
-static void release_TARRAY_of_CATs(TARRAY_TYPEDEF_NAME(CAT)* cats)
+static void release_TARRAY_of_CATs(TARRAY_TYPEDEF_NAME(CAT)* cats, void* cleanup_context)
 {
+    (void)cleanup_context;
     ASSERT_IS_NOT_NULL(cats->arr[0].name);
     free(cats->arr[0].name);
 }
@@ -90,12 +91,92 @@ TEST_FUNCTION(an_array_of_cats_can_have_their_names_uniquely_freed)
     for(uint32_t i = 0; i < N_TIMES; i++)
     {
         ///arrange
-        TARRAY(CAT) all_cats = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(CAT)(1, release_TARRAY_of_CATs);
+        TARRAY(CAT) all_cats = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(CAT)(1, release_TARRAY_of_CATs, NULL);
         ASSERT_IS_NOT_NULL(all_cats);
         ASSERT_ARE_EQUAL(int, 0, TARRAY_ENSURE_CAPACITY(CAT)(all_cats, 1));
 
         all_cats->arr[0].name = sprintf_char("%s", "zuzu");
         ASSERT_IS_NOT_NULL(all_cats->arr[0].name);
+
+        /*preparing data for the threads*/
+        TARRAY(CAT) t1_cat = NULL;
+        TARRAY_INITIALIZE(CAT)(&t1_cat, all_cats);
+
+        TARRAY(CAT) t2_cat = NULL;
+        TARRAY_INITIALIZE(CAT)(&t2_cat, all_cats);
+
+        /*main thread doesn't want to deal with cats anymore*/
+        TARRAY_ASSIGN(CAT)(&all_cats, NULL);
+
+        ///act - start thread 1
+        THREAD_HANDLE t1;
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&t1, cat_thread, (void*)t1_cat));
+
+        ///act - start thread 2
+        THREAD_HANDLE t2;
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&t2, cat_thread, (void*)t2_cat));
+
+        ///assert
+        /*by means of "no crashing" and "no leaks"*/
+
+        ///clean
+        int dummy;
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(t1, &dummy));
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(t2, &dummy));
+    }
+}
+
+
+/*uniquely called just before the TARRAY is disposed*/
+/*in this case, the array has 2 elements (by design) but whiever of these 2 elements is actually used (and therefore needs to be freed)*/
+/*is passed as a bit mask in the context*/
+static void release_TARRAY_of_CATs_2(TARRAY_TYPEDEF_NAME(CAT)* cats, void* cleanup_context)
+{
+    uint32_t used_cats_mask = *(uint32_t*)cleanup_context;
+    if (used_cats_mask & 1)
+    {
+        ASSERT_IS_NOT_NULL(cats->arr[0].name);
+        free(cats->arr[0].name);
+    }
+    if (used_cats_mask & 2)
+    {
+        ASSERT_IS_NOT_NULL(cats->arr[1].name);
+        free(cats->arr[1].name);
+    }
+}
+
+/*in this tests, MAYBE 0 or 1 or 2 CATs are stored in the array. Whiever indexes in the array are used are indicated by a bit mask*/
+/*the cleanup function needs the bit mask to know which indexes are used (this comes as the cleanup_context) so that they can be freed*/
+TEST_FUNCTION(an_array_of_cats_can_have_their_names_uniquely_freed_2)
+{
+    /*run this test for N_TIMES*/
+    for (uint32_t i = 0; i < N_TIMES; i++)
+    {
+        uint32_t used_cats_mask=0; /*set to
+            0 when 0 CATs are stored,
+            1 when arr[0] is used,
+            2 when arr[1] is used,
+            3 when arr[0] and arr[1] are used
+        */
+
+        ///arrange
+        TARRAY(CAT) all_cats = TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(CAT)(2, release_TARRAY_of_CATs_2, &used_cats_mask);
+        ASSERT_IS_NOT_NULL(all_cats);
+        ASSERT_ARE_EQUAL(int, 0, TARRAY_ENSURE_CAPACITY(CAT)(all_cats, 1));
+
+        if (rand() % 2)
+        {
+            all_cats->arr[0].name = sprintf_char("%s", "zuzu");
+            ASSERT_IS_NOT_NULL(all_cats->arr[0].name);
+            used_cats_mask |= 1;
+        }
+
+        if (rand() % 2)
+        {
+            all_cats->arr[1].name = sprintf_char("%s", "snowflake");
+            ASSERT_IS_NOT_NULL(all_cats->arr[1].name);
+            used_cats_mask |= 2;
+        }
 
         /*preparing data for the threads*/
         TARRAY(CAT) t1_cat = NULL;
