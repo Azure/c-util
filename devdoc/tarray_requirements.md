@@ -5,16 +5,14 @@
 
 `TARRAY` is a module that provides a list of macros (similar to `THANDLE`) that help manage an ever growing array of elements
 
-Given a type `T`, `TARRAY(T)` is a `THANDLE`'d encapsulated type that contains `capacity` and `arr` as fields. `capacity` is the current capacity of `arr`, that is arr[0..capacity] are all valid indexes and they are of type `T`.
+Given a type `T`, `TARRAY(T)` is a `THANDLE`'d encapsulated type that contains `capacity`, a potentially non-`NULL` cleanup function, and `arr` as fields. `capacity` is the current capacity of `arr`, that is `arr`[0..capacity-1] are all valid indexes and they are of type `T`. The cleanup function is called once, just before the content of `arr` is `free`'d.
 
 `TARRAY` only manages the growth of the array. It does not manage other aspects such as: 
 1) keep track of which array elements are used / unused / not used anymore;
-2) dispose of the array elements by any means;
+2) dispose of the array elements by any means (but will call the user's `cleanup` function);
 3) last written array index (colloquially known as `size` in other implementations).
 
-The above 3 concerns can be addressed by the user or maybe by an implementation of `TARRAY_HL`.
-
-Because TARRAY is kind of THANDLE, all of `THANDLE`'s APIs apply to `TARRAY`. For convenience the following macros are provided out of the box with the same semantics as those of `THANDLE`'s:
+Because `TARRAY` is kind of `THANDLE`, all of `THANDLE`'s APIs apply to `TARRAY`. For convenience the following macros are provided out of the box with the same semantics as those of `THANDLE`'s:
 `TARRAY_INITIALIZE(T)`
 `TARRAY_ASSIGN(T)`
 `TARRAY_MOVE(T)`
@@ -45,6 +43,7 @@ Because TARRAY is kind of THANDLE, all of `THANDLE`'s APIs apply to `TARRAY`. Fo
 typedef struct TARRAY_STRUCT_T_TAG
 {
     uint32_t capacity;
+    TARRAY_LL_CLEANUP_FUNCTION_TYPE_NAME(T) cleanup;
     T* arr;
 } TARRAY_STRUCT_T;
 ```
@@ -56,37 +55,54 @@ typedef struct TARRAY_STRUCT_T_TAG
 
 `TARRAY_TYPE_DECLARE(T)` is a macro to be used in a header declaration. It introduces 3 APIs (as MOCKABLE_FUNCTIONS):
 
-### TARRAY_CREATE(T)
+### TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)
 ```c
-TARRAY(T) TARRAY_CREATE(T)(void);
+static TARRAY(T) TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)(uint32_t capacity, TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_DECLARE(T) cleanup);
 ```
 
-`TARRAY_CREATE(T)` creates a new `TARRAY(T)` with initial capacity of 1.
+`TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)` is an internal (static) function creates a new `TARRAY(T)` with initial capacity of `capacity` and `cleanup` function. This function is called by all the publicly facing APIs with different parameters.
 
-**SRS_TARRAY_02_001: [** `TARRAY_CREATE(T)` shall call `THANDLE_MALLOC` to allocate the result. **]**
+**SRS_TARRAY_01_001: [** If `capacity` is 0, `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)` shall fail and return `NULL`. **]**
 
-**SRS_TARRAY_02_002: [** `TARRAY_CREATE(T)` shall call `malloc_2` to allocate `result->arr`. **]**
+**SRS_TARRAY_01_002: [** `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)` shall call `THANDLE_MALLOC` to allocate the result. **]**
 
-**SRS_TARRAY_02_003: [** `TARRAY_CREATE(T)` shall succeed and return a non-`NULL` value. **]**
+**SRS_TARRAY_01_003: [** `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)` shall call `malloc_2` to allocate `capacity` entries for `result->arr`. **]**
 
-**SRS_TARRAY_02_004: [** If there are any failures then `TARRAY_CREATE(T)` shall fail and return `NULL`. **]**
+**SRS_TARRAY_01_004: [** `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)` shall succeed and return a non-`NULL` value. **]**
+
+**SRS_TARRAY_01_005: [** If there are any failures then `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)` shall fail and return `NULL`. **]**
+TARRAY_CREATE_
+
+**SRS_TARRAY_02_014: [** Before freeing the memory used by `TARRAY(T)` `cleanup` shall be called if not `NULL`. **]**
+
+### TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)
+```c
+TARRAY(T) TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)(uint32_t capacity, TARRAY_LL_CREATE_WITH_CAPACITY_AND_CLEANUP_DECLARE(T) cleanup);
+```
+
+`TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)` creates a new `TARRAY(T)` with initial capacity of `capacity` and `cleanup` function.
+
+**SRS_TARRAY_02_013: [** `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP(T)` returns what `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(capacity, cleanup)` returns. **]**
 
 ### TARRAY_CREATE_WITH_CAPACITY(T)
 ```c
 TARRAY(T) TARRAY_CREATE_WITH_CAPACITY(T)(uint32_t capacity);
 ```
 
-`TARRAY_CREATE_WITH_CAPACITY(T)` creates a new `TARRAY(T)` with initial capacity of `capacity`.
+`TARRAY_CREATE_WITH_CAPACITY(T)` creates a new `TARRAY(T)` with initial capacity of `capacity` and no cleanup function.
 
-**SRS_TARRAY_01_001: [** If `capacity` is 0, `TARRAY_CREATE_WITH_CAPACITY(T)` shall fail and return `NULL`. **]**
+**SRS_TARRAY_02_012: [** `TARRAY_CREATE_WITH_CAPACITY(T)` shall return what `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(capacity, NULL)` returns. **]**
 
-**SRS_TARRAY_01_002: [** `TARRAY_CREATE_WITH_CAPACITY(T)` shall call `THANDLE_MALLOC` to allocate the result. **]**
+### TARRAY_CREATE(T)
+```c
+TARRAY(T) TARRAY_CREATE(T)(void);
+```
 
-**SRS_TARRAY_01_003: [** `TARRAY_CREATE_WITH_CAPACITY(T)` shall call `malloc_2` to allocate `capacity` entries for `result->arr`. **]**
+`TARRAY_CREATE(T)` creates a new `TARRAY(T)` with initial capacity of 1 and no cleanup function.
 
-**SRS_TARRAY_01_004: [** `TARRAY_CREATE_WITH_CAPACITY(T)` shall succeed and return a non-`NULL` value. **]**
+**SRS_TARRAY_02_011: [** `TARRAY_CREATE(T)` shall return what `TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)`(1, NULL) returns. **]**
 
-**SRS_TARRAY_01_005: [** If there are any failures then `TARRAY_CREATE_WITH_CAPACITY(T)` shall fail and return `NULL`. **]**
+
 
 ### TARRAY_ENSURE_CAPACITY(T)
 ```c
