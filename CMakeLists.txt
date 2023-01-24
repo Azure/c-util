@@ -172,6 +172,7 @@ set(c_util_h_files
     ./inc/c_util/constbuffer_version.h
     ./inc/c_util/constbuffer_array.h
     ./inc/c_util/constbuffer_array_batcher_nv.h
+    ./inc/c_util/containing_record.h
     ./inc/c_util/doublylinkedlist.h
     ./inc/c_util/external_command_helper.h
     ./inc/c_util/interlocked_hl.h
@@ -240,6 +241,8 @@ if((CMAKE_GENERATOR MATCHES "Visual Studio") AND (${run_traceability}))
         COMMAND traceabilitytool -buildcheck -e ${CMAKE_CURRENT_LIST_DIR}/deps -i ${CMAKE_CURRENT_LIST_DIR})
     add_dependencies(c_util_traceability traceabilitytool)
 endif()
+
+install_library_with_prefix(c_util c_util  ${c_util_h_files} )
 
 add_subdirectory(test_helpers)
 add_subdirectory(tests)
