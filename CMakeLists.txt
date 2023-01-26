@@ -242,6 +242,7 @@ if((CMAKE_GENERATOR MATCHES "Visual Studio") AND (${run_traceability}))
     add_dependencies(c_util_traceability traceabilitytool)
 endif()
 
+# make an install target so we can produce a Linux native client package.
 install_library_with_prefix(c_util c_util  ${c_util_h_files} )
 
 add_subdirectory(test_helpers)
