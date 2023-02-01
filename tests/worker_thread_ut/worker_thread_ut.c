@@ -29,7 +29,7 @@ static void my_gballoc_free(void* ptr)
 #define ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
-#include "c_util/sm.h"
+#include "c_pal/sm.h"
 #include "c_util/singlylinkedlist.h"
 #include "c_pal/threadapi.h"
 #undef ENABLE_MOCKS

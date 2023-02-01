@@ -14,7 +14,7 @@
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/threadapi.h"
 
-#include "c_util/sm.h"
+#include "c_pal/sm.h"
 
 #include "c_util/worker_thread.h"
 

@@ -6,14 +6,11 @@ set(c_util_reals_c_files
     real_constbuffer_array.c
     real_constbuffer_array_batcher_nv.c
     real_doublylinkedlist.c
-    real_external_command_helper.c
-    real_interlocked_hl.c
+    real_external_command_helper.c    
     real_memory_data.c
-    real_ps_util.c
     real_rc_string.c
     real_rc_string_array.c
-    real_singlylinkedlist.c
-    real_sm.c
+    real_singlylinkedlist.c   
     real_uuid_string.c
 )
 
@@ -27,21 +24,15 @@ set(c_util_reals_h_files
     real_doublylinkedlist.h
     real_doublylinkedlist_renames.h
     real_external_command_helper.h
-    real_external_command_helper_renames.h
-    real_interlocked_hl.h
-    real_interlocked_hl_renames.h
+    real_external_command_helper_renames.h 
     real_memory_data.h
-    real_memory_data_renames.h
-    real_ps_util.h
-    real_ps_util_renames.h
+    real_memory_data_renames.h 
     real_rc_string.h
     real_rc_string_renames.h
     real_rc_string_array.h
     real_rc_string_array_renames.h
     real_singlylinkedlist.h
     real_singlylinkedlist_renames.h
-    real_sm.h
-    real_sm_renames.h
     real_uuid_string.h
     real_uuid_string_renames.h
 )
