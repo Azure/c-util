@@ -150,14 +150,11 @@ set(c_util_c_files
     ./src/constbuffer_array_batcher_nv.c
     ./src/doublylinkedlist.c
     ./src/external_command_helper.c
-    ./src/interlocked_hl.c
     ./src/map.c
     ./src/memory_data.c
-    ./src/ps_util.c
     ./src/rc_string.c
     ./src/rc_string_array.c
     ./src/singlylinkedlist.c
-    ./src/sm.c
     ./src/strings.c
     ./src/tarray.c
     ./src/uuid_string.c
@@ -175,15 +172,11 @@ set(c_util_h_files
     ./inc/c_util/containing_record.h
     ./inc/c_util/doublylinkedlist.h
     ./inc/c_util/external_command_helper.h
-    ./inc/c_util/interlocked_hl.h
-    ./inc/c_util/log_critical_and_terminate.h
     ./inc/c_util/map.h
     ./inc/c_util/memory_data.h
-    ./inc/c_util/ps_util.h
     ./inc/c_util/rc_string.h
     ./inc/c_util/rc_string_array.h
     ./inc/c_util/singlylinkedlist.h
-    ./inc/c_util/sm.h
     ./inc/c_util/strings.h
     ./inc/c_util/strings_types.h
     ./inc/c_util/tarray_ll.h
