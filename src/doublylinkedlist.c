@@ -148,6 +148,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_
         PDLIST_ENTRY entry = listHead->Flink;
         while (entry != listHead)
         {
+            PDLIST_ENTRY next = entry->Flink;
             bool continueProcessing;
             /*Codes_SRS_DLIST_43_009: [DList_ForEach shall call actionFunction on each entry in the list defined by listHead along with actionContext.]*/
             if (actionFunction(entry, actionContext, &continueProcessing) != 0)
@@ -167,7 +168,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_
                     goto end;
                 }
             }
-            entry = entry->Flink;
+            entry = next;
         }
         /*Codes_SRS_DLIST_43_011: [DList_ForEach shall succeed and return zero.]*/        
         result = 0;
