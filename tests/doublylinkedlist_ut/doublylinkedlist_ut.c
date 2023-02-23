@@ -43,7 +43,6 @@ MOCK_FUNCTION_END();
 
 
 MOCK_FUNCTION_WITH_CODE(, int, test_action_function_fail, PDLIST_ENTRY, list_entry, void*, action_context, bool*, continueProcessing);
-    (void)list_entry;
     (void)action_context;
     *continueProcessing = true;
     simpleItem* item = CONTAINING_RECORD(list_entry, simpleItem, link);
@@ -51,6 +50,14 @@ MOCK_FUNCTION_WITH_CODE(, int, test_action_function_fail, PDLIST_ENTRY, list_ent
     {
         return MU_FAILURE;
     }
+    return 0;
+MOCK_FUNCTION_END();
+
+MOCK_FUNCTION_WITH_CODE(, int, test_action_function_delete, PDLIST_ENTRY, list_entry, void*, action_context, bool*, continueProcessing);
+    (void)action_context;
+    *continueProcessing = true;
+    simpleItem* item = CONTAINING_RECORD(list_entry, simpleItem, link);
+    free(item);
     return 0;
 MOCK_FUNCTION_END();
 
@@ -687,4 +694,30 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
     }
+
+    /*Tests_SRS_DLIST_24_001: [DList_ForEach shall allow deletion of elements during traversal.]*/
+    TEST_FUNCTION(DList_ForEach_continues_traversal_when_items_are_deleted)
+    {
+        ///arrange
+        DLIST_ENTRY head;
+        simpleItem* item1 = malloc(sizeof(simpleItem));
+        simpleItem* item2 = malloc(sizeof(simpleItem));
+        simpleItem* item3 = malloc(sizeof(simpleItem));
+        DList_InitializeListHead(&head);
+        DList_InsertTailList(&head, &(item1->link));
+        DList_InsertTailList(&head, &(item2->link));
+        DList_InsertTailList(&head, &(item3->link));
+
+        STRICT_EXPECTED_CALL(test_action_function_delete(&(item1->link), test_action_context, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(test_action_function_delete(&(item2->link), test_action_context, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(test_action_function_delete(&(item3->link), test_action_context, IGNORED_ARG));
+        
+        ///act
+        int result = DList_ForEach(&head, test_action_function_delete, test_action_context);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_ARE_EQUAL(int, 0, result);
+    }
+
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
