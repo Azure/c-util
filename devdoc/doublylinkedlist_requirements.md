@@ -149,6 +149,8 @@ MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUN
 
 **SRS_DLIST_43_010: [** If `continueProcessing` is `false`, `DList_ForEach` shall stop iterating over the list. **]**
 
+**SRS_DLIST_24_001: [** `DList_ForEach` shall allow deletion of elements during traversal. **]**
+
 **SRS_DLIST_43_011: [** `DList_ForEach` shall succeed and return zero. **]**
 
 **SRS_DLIST_43_012: [** If there are any failures, `DList_ForEach` shall fail and return a non-zero value. **]**

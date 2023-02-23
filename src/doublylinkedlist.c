@@ -168,9 +168,10 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_
                     goto end;
                 }
             }
+            /*Codes_SRS_DLIST_24_001: [DList_ForEach shall allow deletion of elements during traversal.]*/
             entry = next;
         }
-        /*Codes_SRS_DLIST_43_011: [DList_ForEach shall succeed and return zero.]*/        
+        /*Codes_SRS_DLIST_43_011: [DList_ForEach shall succeed and return zero.]*/
         result = 0;
     }
 end:
