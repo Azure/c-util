@@ -28,7 +28,7 @@ extern "C"
 OBJECT_LIFETIME_TRACKER_HANDLE real_object_lifetime_tracker_create(KEY_MATCH_FUNCTION key_match_function, OBJECT_MATCH_FUNCTION object_match_function);
 void real_object_lifetime_tracker_destroy(OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker);
 
-OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT real_object_lifetime_tracker_register_object(OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker, const void* key, void* object, DESTROY_OBJECT destroy_object, void* destroy_context);
+OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT real_object_lifetime_tracker_register_object(OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker, const void* key, void* object, DESTROY_OBJECT destroy_object, const void* destroy_context);
 OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT real_object_lifetime_tracker_unregister_object(OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker, const void* key, void* object);
 void real_object_lifetime_tracker_destroy_all_objects_for_key(OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker, const void* key);
 
