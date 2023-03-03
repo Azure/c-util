@@ -201,7 +201,6 @@ IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, ob
         (object == NULL) ||
         /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_015: [ If destroy_object is NULL, object_lifetime_tracker_register_object shall fail and return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR. ]*/
         (destroy_object == NULL)
-        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_075: [ object_lifetime_tracker_register_object shall allow destroy_context to be NULL. ]*/
         )
     {
         LogError("Invalid arguments: OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker=%p, const void* key=%p, void* object=%p, DESTROY_OBJECT destroy_object=%p, void* destroy_context = %p", object_lifetime_tracker, key, object, destroy_object, destroy_context);
@@ -289,12 +288,12 @@ IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, ob
 
                             if (key_match_context.found_list_entry == NULL)
                             {
-                                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_078: [ If the given key had not been found, object_lifetime_tracker_registeer_object shall return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY. ]*/
+                                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_078: [ If the given key is not found, object_lifetime_tracker_registeer_object shall return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY. ]*/
                                 result = OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY;
                             }
                             else
                             {
-                                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_079: [ object_lifetime_tracker_register_object shall return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT. ]*/
+                                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_079: [ If the given key is found but the given object is not found, object_lifetime_tracker_register_object shall return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT. ]*/
                                 result = OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT;
                             }
                         }

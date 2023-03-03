@@ -145,8 +145,6 @@ MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, object_lifet
 
 **SRS_OBJECT_LIFETIME_TRACKER_43_015: [** If `destroy_object` is `NULL`, `object_lifetime_tracker_register_object` shall fail and return `OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR`. **]**
 
-**SRS_OBJECT_LIFETIME_TRACKER_43_075: [** `object_lifetime_tracker_register_object` shall allow `destroy_context` to be `NULL`. **]**
-
 **SRS_OBJECT_LIFETIME_TRACKER_43_016: [** `object_lifetime_tracker_register_object` shall acquire the lock in exclusive mode. **]**
 
 **SRS_OBJECT_LIFETIME_TRACKER_43_017: [** `object_lifetime_tracker_register_object` shall find the list entry for the given `key` in the DList of keys by calling `DList_ForEach` with `is_same_key`. **]**
@@ -167,11 +165,13 @@ MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, object_lifet
 
   - **SRS_OBJECT_LIFETIME_TRACKER_43_019: [** `object_lifetime_tracker_register_object` shall store the given `object` with the given `destroy_object` and `destroy_context` in the DList of objects for given `key` by calling `DList_InsertHeadList`. **]**
 
-  - **SRS_OBJECT_LIFETIME_TRACKER_43_078: [** If the given `key` had not been found, `object_lifetime_tracker_registeer_object` shall return `OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY`. **]**
+Return values: 
 
-  - **SRS_OBJECT_LIFETIME_TRACKER_43_079: [** `object_lifetime_tracker_register_object` shall return `OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT`. **]**
+  - **SRS_OBJECT_LIFETIME_TRACKER_43_078: [** If the given `key` is not found, `object_lifetime_tracker_registeer_object` shall return `OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY`. **]**
 
-**SRS_OBJECT_LIFETIME_TRACKER_43_080: [** If the `object` is found in the DList of objects, `object_lifetime_tracker_register_object` shall return `OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_EXISTS`.**]**
+  - **SRS_OBJECT_LIFETIME_TRACKER_43_079: [** If the given `key` is found but the given `object` is not found, `object_lifetime_tracker_register_object` shall return `OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT`. **]**
+
+  - **SRS_OBJECT_LIFETIME_TRACKER_43_080: [** If the `object` is found in the DList of objects, `object_lifetime_tracker_register_object` shall return `OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_EXISTS`.**]**
 
 **SRS_OBJECT_LIFETIME_TRACKER_43_051: [** `object_lifetime_tracker_register_object` shall release the lock. **]**
 
