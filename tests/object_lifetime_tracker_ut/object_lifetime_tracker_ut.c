@@ -28,10 +28,10 @@
 #include "c_util/object_lifetime_tracker.h"
 
 
-MOCK_FUNCTION_WITH_CODE(, void, test_destroy_object, void*, object);
+MOCK_FUNCTION_WITH_CODE(, void, test_destroy_object, void*, object, void*, context);
 MOCK_FUNCTION_END();
 
-MOCK_FUNCTION_WITH_CODE(, void, test_destroy_object_2, void*, object);
+MOCK_FUNCTION_WITH_CODE(, void, test_destroy_object_2, void*, object, void*, context);
 MOCK_FUNCTION_END();
 
 MOCK_FUNCTION_WITH_CODE(, KEY_MATCH_FUNCTION_RESULT, test_key_match_function, const void*, lhs, const void*, rhs)
@@ -48,6 +48,11 @@ static void* test_object_1 = (void*)0x1005;
 static void* test_object_2 = (void*)0x1006;
 static void* test_object_3 = (void*)0x1007;
 static void* test_object_4 = (void*)0x1008;
+static void* test_destroy_context = (void*)0x1009;
+static void* test_destroy_context_2 = (void*)0x100A;
+
+TEST_DEFINE_ENUM_TYPE(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT_VALUES);
+IMPLEMENT_UMOCK_C_ENUM_TYPE(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT_VALUES);
 
 TEST_DEFINE_ENUM_TYPE(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT_VALUES);
@@ -79,23 +84,31 @@ static OBJECT_LIFETIME_TRACKER_HANDLE test_create_object_lifetime_tracker(void)
     return object_lifetime_tracker;
 }
 
-static void setup_object_lifetime_tracker_register_object_expectations(size_t num_keys_before, bool is_new)
+static void setup_object_lifetime_tracker_register_object_expectations(size_t num_keys_before, bool is_new_key, size_t num_objects_before, bool is_new_object)
 {
 
     STRICT_EXPECTED_CALL(srw_lock_acquire_exclusive(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(DList_ForEach(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     for (size_t i = 0; i < num_keys_before; i++)
     {
         STRICT_EXPECTED_CALL(test_key_match_function(IGNORED_ARG, IGNORED_ARG));
     }
-    if (is_new)
+    if (is_new_key)
     {
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
         STRICT_EXPECTED_CALL(DList_InitializeListHead(IGNORED_ARG));
         STRICT_EXPECTED_CALL(DList_InsertHeadList(IGNORED_ARG, IGNORED_ARG));
     }
-    STRICT_EXPECTED_CALL(DList_InsertHeadList(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(DList_ForEach(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    for (size_t i = 0; i < num_objects_before; i++)
+    {
+        STRICT_EXPECTED_CALL(test_object_match_function(IGNORED_ARG, IGNORED_ARG));
+    }
+    if (is_new_object)
+    {
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(DList_InsertHeadList(IGNORED_ARG, IGNORED_ARG));
+    }
     STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
 }
 
@@ -142,13 +155,13 @@ static void setup_object_lifetime_tracker_destroy_all_objects_for_key_expectatio
     for (size_t i = 0; i < num_objects - 1; i++)
     {
         STRICT_EXPECTED_CALL(DList_RemoveHeadList(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(test_destroy_object_2(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(test_destroy_object_2(IGNORED_ARG, test_destroy_context_2));
         STRICT_EXPECTED_CALL(free(IGNORED_ARG));
     }
     if (num_objects > 0)
     {
         STRICT_EXPECTED_CALL(DList_RemoveHeadList(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(test_destroy_object(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(test_destroy_object(IGNORED_ARG, test_destroy_context));
         STRICT_EXPECTED_CALL(free(IGNORED_ARG));
     }
     STRICT_EXPECTED_CALL(DList_RemoveHeadList(IGNORED_ARG));
@@ -324,74 +337,65 @@ TEST_FUNCTION(object_lifetime_tracker_destroy_succeeds)
 // object_lifetime_tracker_register_object
 //
 
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_012 : [ If object_lifetime_tracker is NULL, object_lifetime_tracker_register_object shall fail and return a non-zero value. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_012 : [ If object_lifetime_tracker is NULL, object_lifetime_tracker_register_object shall fail and return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR. ]*/
 TEST_FUNCTION(object_lifetime_tracker_register_object_with_NULL_handle_fails)
 {
     // arrange
 
     // act
-    int result = object_lifetime_tracker_register_object(NULL, test_key_1, test_object_1, test_destroy_object);
+    OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result = object_lifetime_tracker_register_object(NULL, test_key_1, test_object_1, test_destroy_object, test_destroy_context);
 
     // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_NOT_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_014: [ If object is NULL, object_lifetime_tracker_register_object shall fail and return a non-zero value. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_014: [ If object is NULL, object_lifetime_tracker_register_object shall fail and return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR. ]*/
 TEST_FUNCTION(object_lifetime_tracker_register_object_with_NULL_object_fails)
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
 
     // act
-    int result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, NULL, test_destroy_object);
+    OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, NULL, test_destroy_object, test_destroy_context);
 
     // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_NOT_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     object_lifetime_tracker_destroy(object_lifetime_tracker);
 }
 
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_015: [ If destroy_object is NULL, object_lifetime_tracker_register_object shall fail and return a non-zero value. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_015: [ If destroy_object is NULL, object_lifetime_tracker_register_object shall fail and return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR. ]*/
 TEST_FUNCTION(object_lifetime_tracker_register_object_with_NULL_destroy_object_fails)
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
 
     // act
-    int result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, NULL);
+    OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, NULL, test_destroy_context);
 
     // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_NOT_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     object_lifetime_tracker_destroy(object_lifetime_tracker);
 }
 
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_016: [ object_lifetime_tracker_register_object shall acquire the lock in exclusive mode. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_060: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the object. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_017: [ object_lifetime_tracker_register_object shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_045: [ If the key is not found in the DList of keys: ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_043: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the key. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_044: [ object_lifetime_tracker_register_object shall initialize a DList to store objects associated with the key by calling DList_InitializeListHead. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_018: [ object_lifetime_tracker_register_object shall add the given key to the DList of keys by calling DList_InsertHeadList. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object and the given destroy_object in the DList of objects for given key by calling DList_InsertHeadList. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_051: [ object_lifetime_tracker_register_object shall release the lock. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_020: [ object_lifetime_tracker_register_object shall succeed and return zero. ]*/
-TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_new_key)
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_075: [ object_lifetime_tracker_register_object shall allow destroy_context to be NULL. ]*/
+TEST_FUNCTION(object_lifetime_tracker_register_object_with_NULL_destroy_context_succeeds)
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
 
     // act
-    int result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object);
+    OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, NULL);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
@@ -400,15 +404,51 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_new_key)
 }
 
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_016: [ object_lifetime_tracker_register_object shall acquire the lock in exclusive mode. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_060: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the object. ]*/
+
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_017: [ object_lifetime_tracker_register_object shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_045: [ If the key is not found in the DList of keys: ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_043: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the key. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_044: [ object_lifetime_tracker_register_object shall initialize a DList to store objects associated with the key by calling DList_InitializeListHead. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_018: [ object_lifetime_tracker_register_object shall add the given key to the DList of keys by calling DList_InsertHeadList. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_076: [ object_lifetime_tracker_register_object shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_077: [ If the object is not found in the DList of objects:]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_060: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the object. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object and the given destroy_object in the DList of objects for given key by calling DList_InsertHeadList. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_078: [ If the given key had not been found, object_lifetime_tracker_registeer_object shall return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY. ]*/
+
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_051: [ object_lifetime_tracker_register_object shall release the lock. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_020: [ object_lifetime_tracker_register_object shall succeed and return zero. ]*/
+TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_new_key)
+{
+    // arrange
+    OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+
+    // act
+    OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context);
+
+    // assert
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    object_lifetime_tracker_unregister_object(object_lifetime_tracker, test_key_1, test_object_1);
+    object_lifetime_tracker_destroy(object_lifetime_tracker);
+}
+
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_016: [ object_lifetime_tracker_register_object shall acquire the lock in exclusive mode. ]*/
+
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_017: [ object_lifetime_tracker_register_object shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_045: [ If the key is not found in the DList of keys: ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_043: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the key. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_044: [ object_lifetime_tracker_register_object shall initialize a DList to store objects associated with the key by calling DList_InitializeListHead. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_018: [ object_lifetime_tracker_register_object shall add the given key to the DList of keys by calling DList_InsertHeadList. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_076: [ object_lifetime_tracker_register_object shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_077: [ If the object is not found in the DList of objects:]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_060: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the object. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object and the given destroy_object in the DList of objects for given key by calling DList_InsertHeadList. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_078: [ If the given key had not been found, object_lifetime_tracker_registeer_object shall return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_051: [ object_lifetime_tracker_register_object shall release the lock. ]*/
+
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_050: [ is_same_key shall call key_match_function on the obtained key from listEntry and the key in key_match_context. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_057: [ If key_match_function returns KEY_MATCH_FUNCTION_RESULT_NOT_MATCHING, is_same_key shall set continueProcessing to true. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_058: [ is_same_key shall succeed and return zero. ]*/
@@ -416,18 +456,18 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_different_key
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
-    setup_object_lifetime_tracker_register_object_expectations(1, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, true, 0, true);
 
     // act
-    int result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_2, test_destroy_object);
+    OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_2, test_destroy_object, test_destroy_context);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
@@ -437,15 +477,19 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_different_key
 }
 
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_016: [ object_lifetime_tracker_register_object shall acquire the lock in exclusive mode. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_060: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the object. ]*/
+
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_017: [ object_lifetime_tracker_register_object shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_045: [ If the key is not found in the DList of keys: ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_043: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the key. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_044: [ object_lifetime_tracker_register_object shall initialize a DList to store objects associated with the key by calling DList_InitializeListHead. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_018: [ object_lifetime_tracker_register_object shall add the given key to the DList of keys by calling DList_InsertHeadList. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_076: [ object_lifetime_tracker_register_object shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_077: [ If the object is not found in the DList of objects:]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_060: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the object. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object and the given destroy_object in the DList of objects for given key by calling DList_InsertHeadList. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_079: [ object_lifetime_tracker_register_object shall return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_051: [ object_lifetime_tracker_register_object shall release the lock. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_020: [ object_lifetime_tracker_register_object shall succeed and return zero. ]*/
+
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_050: [ is_same_key shall call key_match_function on the obtained key from listEntry and the key in key_match_context. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_054: [ If key_match_function returns KEY_MATCH_FUNCTION_RESULT_MATCHING: ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_055: [ is_same_key shall set continueProcessing to false. ]*/
@@ -455,18 +499,18 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_repeated_key_
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
-    setup_object_lifetime_tracker_register_object_expectations(1, false);
+    setup_object_lifetime_tracker_register_object_expectations(1, false, 1, true);
 
     // act
-    int result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object);
+    OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object, test_destroy_context);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
@@ -476,15 +520,15 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_repeated_key_
 }
 
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_016: [ object_lifetime_tracker_register_object shall acquire the lock in exclusive mode. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_060: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the object. ]*/
+
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_017: [ object_lifetime_tracker_register_object shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_045: [ If the key is not found in the DList of keys: ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_043: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the key. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_044: [ object_lifetime_tracker_register_object shall initialize a DList to store objects associated with the key by calling DList_InitializeListHead. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_018: [ object_lifetime_tracker_register_object shall add the given key to the DList of keys by calling DList_InsertHeadList. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object and the given destroy_object in the DList of objects for given key by calling DList_InsertHeadList. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_076: [ object_lifetime_tracker_register_object shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_080: [ If the object is found in the DList of objects, object_lifetime_tracker_register_object shall return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_EXISTS.]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_051: [ object_lifetime_tracker_register_object shall release the lock. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_020: [ object_lifetime_tracker_register_object shall succeed and return zero. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_050: [ is_same_key shall call key_match_function on the obtained key from listEntry and the key in key_match_context. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_054: [ If key_match_function returns KEY_MATCH_FUNCTION_RESULT_MATCHING: ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_055: [ is_same_key shall set continueProcessing to false. ]*/
@@ -494,36 +538,39 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_repeated_key_
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
-    setup_object_lifetime_tracker_register_object_expectations(1, false);
+    setup_object_lifetime_tracker_register_object_expectations(1, false, 1, false);
 
     // act
-    int result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object);
+    OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_EXISTS, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_OK, object_lifetime_tracker_unregister_object(object_lifetime_tracker, test_key_1, test_object_1));
-    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_OK, object_lifetime_tracker_unregister_object(object_lifetime_tracker, test_key_1, test_object_1));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_KEY_NOT_FOUND, object_lifetime_tracker_unregister_object(object_lifetime_tracker, test_key_1, test_object_1));
     object_lifetime_tracker_destroy(object_lifetime_tracker);
 }
 
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_016: [ object_lifetime_tracker_register_object shall acquire the lock in exclusive mode. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_060: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the object. ]*/
+
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_017: [ object_lifetime_tracker_register_object shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_045: [ If the key is not found in the DList of keys: ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_043: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the key. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_044: [ object_lifetime_tracker_register_object shall initialize a DList to store objects associated with the key by calling DList_InitializeListHead. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_018: [ object_lifetime_tracker_register_object shall add the given key to the DList of keys by calling DList_InsertHeadList. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_076: [ object_lifetime_tracker_register_object shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_077: [ If the object is not found in the DList of objects:]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_060: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the object. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object and the given destroy_object in the DList of objects for given key by calling DList_InsertHeadList. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_078: [ If the given key had not been found, object_lifetime_tracker_registeer_object shall return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_051: [ object_lifetime_tracker_register_object shall release the lock. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_020: [ object_lifetime_tracker_register_object shall succeed and return zero. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_050: [ is_same_key shall call key_match_function on the obtained key from listEntry and the key in key_match_context. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_057: [ If key_match_function returns KEY_MATCH_FUNCTION_RESULT_NOT_MATCHING, is_same_key shall set continueProcessing to true. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_058: [ is_same_key shall succeed and return zero. ]*/
@@ -531,18 +578,18 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_different_key
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
-    setup_object_lifetime_tracker_register_object_expectations(1, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, true, 0, true);
 
     // act
-    int result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_1, test_destroy_object);
+    OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_1, test_destroy_object, test_destroy_context);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
@@ -551,13 +598,13 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_different_key
     object_lifetime_tracker_destroy(object_lifetime_tracker);
 }
 
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_021: [ If there are any failures, object_lifetime_tracker_register_object shall fail and return a non-zero value. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_021: [ If there are any failures, object_lifetime_tracker_register_object shall fail and return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_059: [ If there are any failures, is_same_key shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(object_lifetime_tracker_register_object_fails_when_underlying_functions_fail_when_no_previous_key_exists)
 {
     // arrange (no previous key)
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
     umock_c_negative_tests_snapshot();
 
     for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
@@ -568,10 +615,10 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_fails_when_underlying_func
             umock_c_negative_tests_fail_call(i);
 
             // act
-            int result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object);
+            OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context);
 
             // assert
-            ASSERT_ARE_NOT_EQUAL(int, 0, result);
+            ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR, result);
 
         }
     }
@@ -580,17 +627,17 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_fails_when_underlying_func
     object_lifetime_tracker_destroy(object_lifetime_tracker);
 }
 
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_021: [ If there are any failures, object_lifetime_tracker_register_object shall fail and return a non-zero value. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_021: [ If there are any failures, object_lifetime_tracker_register_object shall fail and return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_059: [ If there are any failures, is_same_key shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(object_lifetime_tracker_register_object_fails_when_underlying_functions_fail_while_registering_with_previously_registered_key)
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
-    setup_object_lifetime_tracker_register_object_expectations(1, false);
+    setup_object_lifetime_tracker_register_object_expectations(1, false, 1, true);
     umock_c_negative_tests_snapshot();
 
     for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
@@ -601,10 +648,10 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_fails_when_underlying_func
             umock_c_negative_tests_fail_call(i);
 
             // act
-            int result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object);
+            OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object, test_destroy_context);
 
             // assert
-            ASSERT_ARE_NOT_EQUAL(int, 0, result);
+            ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR, result);
 
         }
     }
@@ -614,17 +661,17 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_fails_when_underlying_func
     object_lifetime_tracker_destroy(object_lifetime_tracker);
 }
 
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_021: [ If there are any failures, object_lifetime_tracker_register_object shall fail and return a non-zero value. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_021: [ If there are any failures, object_lifetime_tracker_register_object shall fail and return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_059: [ If there are any failures, is_same_key shall fail and return a non-zero value. ]*/
-TEST_FUNCTION(object_lifetime_tracker_register_object_fails_when_underlying_functions_fail_while_registering_object_with_new_key_when_previous_key_exists)
+TEST_FUNCTION(object_lifetime_tracker_register_object_fails_when_underlying_functions_fail_while_registering_previously_registered_key_with_previously_regiestered_object)
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
-    setup_object_lifetime_tracker_register_object_expectations(1, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, false, 1, false);
     umock_c_negative_tests_snapshot();
 
     for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
@@ -635,10 +682,44 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_fails_when_underlying_func
             umock_c_negative_tests_fail_call(i);
 
             // act
-            int result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_2, test_destroy_object);
+            OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context);
 
             // assert
-            ASSERT_ARE_NOT_EQUAL(int, 0, result);
+            ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR, result);
+
+        }
+    }
+
+    // cleanup
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_OK, object_lifetime_tracker_unregister_object(object_lifetime_tracker, test_key_1, test_object_1));
+    object_lifetime_tracker_destroy(object_lifetime_tracker);
+}
+
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_021: [ If there are any failures, object_lifetime_tracker_register_object shall fail and return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_059: [ If there are any failures, is_same_key shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(object_lifetime_tracker_register_object_fails_when_underlying_functions_fail_while_registering_object_with_new_key_when_previous_key_exists)
+{
+    // arrange
+    OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    umock_c_reset_all_calls();
+    setup_object_lifetime_tracker_register_object_expectations(1, true, 0, true);
+    umock_c_negative_tests_snapshot();
+
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            // act
+            OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result = object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_2, test_destroy_object, test_destroy_context);
+
+            // assert
+            ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR, result);
 
         }
     }
@@ -699,8 +780,8 @@ TEST_FUNCTION(object_lifetime_tracker_unregister_object_succeeds_for_1_key_with_
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
@@ -736,10 +817,10 @@ TEST_FUNCTION(object_lifetime_tracker_unregister_object_succeeds_for_1_key_with_
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    setup_object_lifetime_tracker_register_object_expectations(1, false);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, false, 1, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object, test_destroy_context));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
@@ -778,10 +859,10 @@ TEST_FUNCTION(object_lifetime_tracker_unregister_object_succeeds_for_1_key_with_
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    setup_object_lifetime_tracker_register_object_expectations(1, false);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, false, 1, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object, test_destroy_context));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
@@ -821,10 +902,10 @@ TEST_FUNCTION(object_lifetime_tracker_unregister_object_succeeds_for_2_keys_with
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    setup_object_lifetime_tracker_register_object_expectations(1, true);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_2, test_destroy_object));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_2, test_destroy_object, test_destroy_context));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
@@ -863,10 +944,10 @@ TEST_FUNCTION(object_lifetime_tracker_unregister_object_succeeds_for_2_keys_with
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    setup_object_lifetime_tracker_register_object_expectations(1, true);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_2, test_destroy_object));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_2, test_destroy_object, test_destroy_context));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
@@ -891,8 +972,8 @@ TEST_FUNCTION(object_lifetime_tracker_unregister_object_key_not_found)
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
@@ -921,8 +1002,8 @@ TEST_FUNCTION(object_lifetime_tracker_unregister_object_key_found_object_not_fou
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
@@ -951,8 +1032,8 @@ TEST_FUNCTION(object_lifetime_tracker_unregister_object_fails_when_underlying_fu
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
@@ -999,7 +1080,7 @@ TEST_FUNCTION(object_lifetime_tracker_destroy_all_objects_for_key_with_NULL_hand
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_035: [ object_lifetime_tracker_destroy_all_objects_for_key shall acquire the lock in exclusive mode. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_036: [ object_lifetime_tracker_destroy_all_objects_for_key shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_038: [ object_lifetime_tracker_destroy_all_objects_for_key shall remove the list entries for all the objects in the DList of objects for the given key by calling DList_RemoveHeadList for each list entry. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_037: [ object_lifetime_tracker_destroy_all_objects_for_key shall destroy all the objects in the DList of objects for the given key in the reverse order in which they were registered. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_037: [ object_lifetime_tracker_destroy_all_objects_for_key shall destroy all the objects in the DList of objects for the given key in the reverse order in which they were registered by calling destroy_object with destroy_context as context. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_066: [ object_lifetime_tracker_destroy_all_objects_for_key shall free the memory associated with all the objects. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_039: [ object_lifetime_tracker_destroy_all_objects_for_key shall remove the list entry for the given key from the DList of keys by calling DList_RemoveEntryList. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_065: [ object_lifetime_tracker_destroy_all_objects_for_key shall free the memory associated with the given key. ]*/
@@ -1008,10 +1089,10 @@ TEST_FUNCTION(object_lifetime_tracker_destroy_all_objects_for_key_succeeds_for_1
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    setup_object_lifetime_tracker_register_object_expectations(1, false);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object_2));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, false, 1, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object_2, test_destroy_context_2));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
     setup_object_lifetime_tracker_destroy_all_objects_for_key_expectations(test_key_1, 1, 2);
@@ -1029,7 +1110,7 @@ TEST_FUNCTION(object_lifetime_tracker_destroy_all_objects_for_key_succeeds_for_1
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_035: [ object_lifetime_tracker_destroy_all_objects_for_key shall acquire the lock in exclusive mode. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_036: [ object_lifetime_tracker_destroy_all_objects_for_key shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_038: [ object_lifetime_tracker_destroy_all_objects_for_key shall remove the list entries for all the objects in the DList of objects for the given key by calling DList_RemoveHeadList for each list entry. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_037: [ object_lifetime_tracker_destroy_all_objects_for_key shall destroy all the objects in the DList of objects for the given key in the reverse order in which they were registered. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_037: [ object_lifetime_tracker_destroy_all_objects_for_key shall destroy all the objects in the DList of objects for the given key in the reverse order in which they were registered by calling destroy_object with destroy_context as context. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_066: [ object_lifetime_tracker_destroy_all_objects_for_key shall free the memory associated with all the objects. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_039: [ object_lifetime_tracker_destroy_all_objects_for_key shall remove the list entry for the given key from the DList of keys by calling DList_RemoveEntryList. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_065: [ object_lifetime_tracker_destroy_all_objects_for_key shall free the memory associated with the given key. ]*/
@@ -1038,14 +1119,14 @@ TEST_FUNCTION(object_lifetime_tracker_destroy_all_objects_for_key_succeeds_for_2
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    setup_object_lifetime_tracker_register_object_expectations(1, false);
-    setup_object_lifetime_tracker_register_object_expectations(1, true);
-    setup_object_lifetime_tracker_register_object_expectations(1, false);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object_2));
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_3, test_destroy_object));
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_4, test_destroy_object_2));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, false, 1, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, true, 0, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, false, 1, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object_2, test_destroy_context_2));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_3, test_destroy_object, test_destroy_context));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_4, test_destroy_object_2, test_destroy_context_2));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
     setup_object_lifetime_tracker_destroy_all_objects_for_key_expectations(test_key_1, 2, 2);
@@ -1065,7 +1146,7 @@ TEST_FUNCTION(object_lifetime_tracker_destroy_all_objects_for_key_succeeds_for_2
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_035: [ object_lifetime_tracker_destroy_all_objects_for_key shall acquire the lock in exclusive mode. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_036: [ object_lifetime_tracker_destroy_all_objects_for_key shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_038: [ object_lifetime_tracker_destroy_all_objects_for_key shall remove the list entries for all the objects in the DList of objects for the given key by calling DList_RemoveHeadList for each list entry. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_037: [ object_lifetime_tracker_destroy_all_objects_for_key shall destroy all the objects in the DList of objects for the given key in the reverse order in which they were registered. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_037: [ object_lifetime_tracker_destroy_all_objects_for_key shall destroy all the objects in the DList of objects for the given key in the reverse order in which they were registered by calling destroy_object with destroy_context as context. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_066: [ object_lifetime_tracker_destroy_all_objects_for_key shall free the memory associated with all the objects. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_039: [ object_lifetime_tracker_destroy_all_objects_for_key shall remove the list entry for the given key from the DList of keys by calling DList_RemoveEntryList. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_065: [ object_lifetime_tracker_destroy_all_objects_for_key shall free the memory associated with the given key. ]*/
@@ -1074,14 +1155,14 @@ TEST_FUNCTION(object_lifetime_tracker_destroy_all_objects_for_key_succeeds_for_2
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    setup_object_lifetime_tracker_register_object_expectations(1, false);
-    setup_object_lifetime_tracker_register_object_expectations(1, true);
-    setup_object_lifetime_tracker_register_object_expectations(1, false);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object_2));
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_3, test_destroy_object));
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_4, test_destroy_object_2));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, false, 1, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, true, 0, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, false, 1, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object_2, test_destroy_context_2));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_3, test_destroy_object, test_destroy_context));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_4, test_destroy_object_2, test_destroy_context_2));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
     setup_object_lifetime_tracker_destroy_all_objects_for_key_expectations(test_key_2, 1, 2);
@@ -1103,10 +1184,10 @@ TEST_FUNCTION(object_lifetime_tracker_destroy_all_objects_for_key_key_not_found)
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
-    setup_object_lifetime_tracker_register_object_expectations(0, true);
-    setup_object_lifetime_tracker_register_object_expectations(1, false);
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object));
-    ASSERT_ARE_EQUAL(int, 0, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object_2));
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, false, 1, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_2, test_destroy_object_2, test_destroy_context_2));
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     umock_c_reset_all_calls();
 
