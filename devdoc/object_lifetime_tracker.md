@@ -46,7 +46,7 @@ typedef OBJECT_MATCH_FUNCTION_RESULT(*OBJECT_MATCH_FUNCTION)(const void* lhs, co
 MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker_create, KEY_MATCH_FUNCTION, key_match_function, OBJECT_MATCH_FUNCTION, object_match_function);
 MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker);
 
-MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, object_lifetime_tracker_register_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, DESTROY_OBJECT, destroy_object, void*, destroy_context);
+MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, object_lifetime_tracker_register_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, DESTROY_OBJECT, destroy_object, const void*, destroy_context);
 MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, object_lifetime_tracker_unregister_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object);
 MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy_all_objects_for_key, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key);
 ```
@@ -135,7 +135,7 @@ static int is_same_object(PDLIST_ENTRY listEntry, const void* object_match_conte
 ### object_lifetime_tracker_register_object
 
 ```c
-MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, object_lifetime_tracker_register_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, DESTROY_OBJECT, destroy_object, void*, destroy_context);
+MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, object_lifetime_tracker_register_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, DESTROY_OBJECT, destroy_object, const void*, destroy_context);
 ```
 `object_lifetime_tracker_register_object` registers an object belonging to a key with the object lifetime tracker. Once an object is registered with a given `key`, it can be destroyed using the given `destroy_object` destructor when `object_lifetime_tracker_destroy_all_objects_for_key` is called. `object_lifetime_tracker_register_object` does not allow an `object` to be registered with the same `key` multiple times.
 
