@@ -28,10 +28,10 @@
 #include "c_util/object_lifetime_tracker.h"
 
 
-MOCK_FUNCTION_WITH_CODE(, void, test_destroy_object, void*, object, void*, context);
+MOCK_FUNCTION_WITH_CODE(, void, test_destroy_object, void*, object, const void*, context);
 MOCK_FUNCTION_END();
 
-MOCK_FUNCTION_WITH_CODE(, void, test_destroy_object_2, void*, object, void*, context);
+MOCK_FUNCTION_WITH_CODE(, void, test_destroy_object_2, void*, object, const void*, context);
 MOCK_FUNCTION_END();
 
 MOCK_FUNCTION_WITH_CODE(, KEY_MATCH_FUNCTION_RESULT, test_key_match_function, const void*, lhs, const void*, rhs)
@@ -48,8 +48,8 @@ static void* test_object_1 = (void*)0x1005;
 static void* test_object_2 = (void*)0x1006;
 static void* test_object_3 = (void*)0x1007;
 static void* test_object_4 = (void*)0x1008;
-static void* test_destroy_context = (void*)0x1009;
-static void* test_destroy_context_2 = (void*)0x100A;
+static const void* test_destroy_context = (void*)0x1009;
+static const void* test_destroy_context_2 = (void*)0x100A;
 
 TEST_DEFINE_ENUM_TYPE(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT_VALUES);

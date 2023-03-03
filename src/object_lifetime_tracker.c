@@ -21,7 +21,7 @@ typedef struct OBJECT_TAG
 {
     void* object;
     DESTROY_OBJECT destroy_object;
-    void* destroy_context;
+    const void* destroy_context;
     DLIST_ENTRY anchor;
 } OBJECT;
 
@@ -191,7 +191,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy, OBJECT_LIFE
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, object_lifetime_tracker_register_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, DESTROY_OBJECT, destroy_object, void*, destroy_context)
+IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, object_lifetime_tracker_register_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, DESTROY_OBJECT, destroy_object, const void*, destroy_context)
 {
     OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result;
     if (
