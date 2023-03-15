@@ -246,5 +246,3 @@ if(${run_reals_check})
 endif()
 
 include(CMakePackageConfigHelpers)
-
-compileTargetAsC99(c_util)
