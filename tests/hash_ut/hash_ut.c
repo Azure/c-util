@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <limits.h>
 
 
 #include "macro_utils/macro_utils.h"
