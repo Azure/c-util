@@ -11,6 +11,7 @@
 #include "../reals/real_constbuffer_array_batcher_nv.h"
 #include "../reals/real_doublylinkedlist.h"
 #include "../reals/real_external_command_helper.h"
+#include "../reals/real_hash.h"
 #include "../reals/real_memory_data.h"
 #include "../reals/real_rc_string.h"
 #include "../reals/real_rc_string_array.h"
@@ -22,6 +23,7 @@
 #include "c_util/constbuffer_array_batcher_nv.h"
 #include "c_util/doublylinkedlist.h"
 #include "c_util/external_command_helper.h"
+#include "c_util/hash.h"
 #include "c_util/memory_data.h"
 #include "c_util/rc_string.h"
 #include "c_util/rc_string_array.h"
@@ -53,6 +55,7 @@ TEST_FUNCTION(check_all_c_util_reals)
     REGISTER_RC_STRING_GLOBAL_MOCK_HOOKS();
     REGISTER_SINGLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
     REGISTER_UUID_STRING_GLOBAL_MOCK_HOOK();
+    REGISTER_HASH_GLOBAL_MOCK_HOOK();
 
 #if defined _MSC_VER
     REGISTER_OBJECT_LIFETIME_TRACKER_GLOBAL_MOCK_HOOKS();

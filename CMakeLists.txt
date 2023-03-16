@@ -76,6 +76,25 @@ if ((NOT TARGET c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-pal/CMakeLis
     include_directories(${C_PAL_INC_FOLDER})
 endif()
 
+#smhasher generates some warnings with /W3 (default)
+if(WIN32)
+    add_definitions(/W2)
+endif(WIN32)
+
+if ((NOT TARGET SMHasherSupport) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src/CMakeLists.txt))
+    if(CMAKE_GENERATOR MATCHES "Visual Studio")
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src)
+    else()
+        # when building for iwyu SMHasher will not fully build, so for now if the generator is not VS, only build one file in the lib
+        add_library(SMHasherSupport ${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src/MurmurHash2.cpp)
+    endif()
+    include_directories(${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src)
+endif()
+
+if(WIN32)
+    remove_definitions(/W2)
+endif(WIN32)
+
 if (
     (NOT TARGET mimalloc-obj) AND
     (${GBALLOC_LL_TYPE} STREQUAL "MIMALLOC") AND
@@ -160,6 +179,10 @@ set(c_util_c_files
     ./src/uuid_string.c
 )
 
+set(c_util_cpp_files
+    ./src/hash.cpp
+)
+
 set(c_util_h_files
     ./inc/c_util/flags_to_string.h
     ./inc/c_util/azure_base64.h
@@ -172,6 +195,7 @@ set(c_util_h_files
     ./inc/c_util/containing_record.h
     ./inc/c_util/doublylinkedlist.h
     ./inc/c_util/external_command_helper.h
+    ./inc/c_util/hash.h
     ./inc/c_util/map.h
     ./inc/c_util/memory_data.h
     ./inc/c_util/rc_string.h
@@ -207,9 +231,9 @@ FILE(GLOB c_util_md_files "devdoc/*.md")
 SOURCE_GROUP(devdoc FILES ${c_util_md_files})
 
 #this is the product (a library)
-add_library(c_util ${c_util_c_files} ${c_util_h_files} ${c_util_md_files})
+add_library(c_util ${c_util_c_files} ${c_util_cpp_files} ${c_util_h_files} ${c_util_md_files})
 
-target_link_libraries(c_util c_pal)
+target_link_libraries(c_util c_pal SMHasherSupport)
 
 target_include_directories(c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc>)
 

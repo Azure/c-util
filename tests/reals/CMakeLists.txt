@@ -6,12 +6,16 @@ set(c_util_reals_c_files
     real_constbuffer_array.c
     real_constbuffer_array_batcher_nv.c
     real_doublylinkedlist.c
-    real_external_command_helper.c    
+    real_external_command_helper.c
     real_memory_data.c
     real_rc_string.c
     real_rc_string_array.c
     real_singlylinkedlist.c   
     real_uuid_string.c
+)
+
+set(c_util_reals_cpp_files
+    real_hash.cpp
 )
 
 set(c_util_reals_h_files
@@ -24,7 +28,9 @@ set(c_util_reals_h_files
     real_doublylinkedlist.h
     real_doublylinkedlist_renames.h
     real_external_command_helper.h
-    real_external_command_helper_renames.h 
+    real_external_command_helper_renames.h
+    real_hash.h
+    real_hash_renames.h
     real_memory_data.h
     real_memory_data_renames.h 
     real_rc_string.h
@@ -55,6 +61,6 @@ if(WIN32)
 endif()
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)
-add_library(c_util_reals ${c_util_reals_c_files} ${c_util_reals_h_files})
+add_library(c_util_reals ${c_util_reals_c_files} ${c_util_reals_cpp_files} ${c_util_reals_h_files})
 target_include_directories(c_util_reals PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests/reals>)
 target_link_libraries(c_util_reals c_logging c_pal_reals)
