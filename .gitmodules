@@ -22,3 +22,6 @@
 [submodule "deps/c-pal"]
 	path = deps/c-pal
 	url = https://github.com/Azure/c-pal
+[submodule "deps/smhasher"]
+	path = deps/smhasher
+	url = https://github.com/hcoona/smhasher.git
