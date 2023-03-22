@@ -211,6 +211,7 @@ TEST_FUNCTION(async_op_cancel_with_async_op_NULL_returns_ASYNC_INVALID_ARG)
 
 /*Tests_SRS_ASYNC_OP_02_006: [ async_op_cancel shall atomically switch the state to ASYNC_CANCELLING if the current state is ASYNC_RUNNING by using interlocked_compare_exchange. ]*/
 /*Tests_SRS_ASYNC_OP_02_007: [ If async_op's cancel is non-NULL then async_op_cancel shall call it with async_op->context as parameter. ]*/
+/*Tests_SRS_ASYNC_OP_02_008: [ async_op_cancel shall return the state of the operation. ]*/
 TEST_FUNCTION(async_op_cancel_calls_user_cancel)
 {
     ///arrange
@@ -234,6 +235,7 @@ TEST_FUNCTION(async_op_cancel_calls_user_cancel)
 }
 
 /*Tests_SRS_ASYNC_OP_02_006: [ async_op_cancel shall atomically switch the state to ASYNC_CANCELLING if the current state is ASYNC_RUNNING by using interlocked_compare_exchange. ]*/
+/*Tests_SRS_ASYNC_OP_02_008: [ async_op_cancel shall return the state of the operation. ]*/
 TEST_FUNCTION(async_op_cancel_calls_user_cancel_just_once)
 {
     ///arrange
@@ -260,6 +262,7 @@ TEST_FUNCTION(async_op_cancel_calls_user_cancel_just_once)
 }
 
 /*Tests_SRS_ASYNC_OP_02_007: [ If async_op's cancel is non-NULL then async_op_cancel shall call it with async_op->context as parameter. ]*/
+/*Tests_SRS_ASYNC_OP_02_008: [ async_op_cancel shall return the state of the operation. ]*/
 TEST_FUNCTION(async_op_cancel_with_cancel_NULL)
 {
     ///arrange
