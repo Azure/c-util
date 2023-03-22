@@ -135,7 +135,7 @@ TEST_FUNCTION(async_op_create_no_overflow_max_alignment) /*note:asks for a 2GB a
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
 }
 
-/*Tests_SRS_ASYNC_OP_02_002: [ async_op_create shall call THANDLE_MALLOC_WITH_EXTRA_SIZE with the extra size set as context_size + context_align - 1. ]*/
+/*Tests_SRS_ASYNC_OP_02_002: [ async_op_create shall call THANDLE_MALLOC_WITH_EXTRA_SIZE with the extra size set as (context_size > 0) * (context_size + context_align - 1).]*/
 /*Tests_SRS_ASYNC_OP_02_003: [ async_op_create shall compute context (that the user is supposed to use), record cancel, dispose, set state to ASYNC_RUNNING and return a non-NULL value. ]*/
 TEST_FUNCTION(async_op_create_succeeds)
 {
@@ -149,6 +149,24 @@ TEST_FUNCTION(async_op_create_succeeds)
     ASSERT_IS_NOT_NULL(async_op);
     ASSERT_IS_TRUE(((uintptr_t)async_op->context) % 256 == 0);
     (void)memset(async_op->context, '3', 100); /*asserts that the memory is USABLE by setting all bytes to '3'. for valgrind/fsanitize*/
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///clean
+    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+}
+
+/*Tests_SRS_ASYNC_OP_02_002: [ async_op_create shall call THANDLE_MALLOC_WITH_EXTRA_SIZE with the extra size set as (context_size > 0) * (context_size + context_align - 1).]*/
+TEST_FUNCTION(async_op_create_with_context_size_0_succeeds)
+{
+    ///arrange
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 0, IGNORED_ARG));
+
+    ///act
+    THANDLE(ASYNC_OP) async_op = async_op_create(NULL, 0, 256, NULL);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(async_op);
+    ASSERT_IS_TRUE(((uintptr_t)async_op->context) % 256 == 0);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean
@@ -175,8 +193,8 @@ TEST_FUNCTION(async_op_create_calls_dispose)
     ///clean
 }
 
-/*Tests_SRS_ASYNC_OP_02_005: [ If async_op is NULL then async_op_cancel shall return ASYNC_CANCELLING. ]*/
-TEST_FUNCTION(async_op_cancel_with_async_op_NULL_returns_ASYNC_CANCELLING)
+/*Tests_SRS_ASYNC_OP_02_005: [ If async_op is NULL then async_op_cancel shall return ASYNC_INVALID_ARG. ]*/
+TEST_FUNCTION(async_op_cancel_with_async_op_NULL_returns_ASYNC_INVALID_ARG)
 {
     ///arrange
     ASYNC_OP_STATE result;
@@ -185,7 +203,7 @@ TEST_FUNCTION(async_op_cancel_with_async_op_NULL_returns_ASYNC_CANCELLING)
     result = async_op_cancel(NULL);
 
     ///assert
-    ASSERT_ARE_EQUAL(ASYNC_OP_STATE, ASYNC_CANCELLING, result);
+    ASSERT_ARE_EQUAL(ASYNC_OP_STATE, ASYNC_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///clean

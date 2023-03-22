@@ -1,4 +1,6 @@
-// Copyright (C) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 
 #ifndef ASYNC_OP_H
 #define ASYNC_OP_H
@@ -7,12 +9,12 @@
 #include <cstdint>
 #include <cstddef>
 #else
-#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 #endif
 
 #include "macro_utils/macro_utils.h"
+
 #include "c_util/thandle.h"
 
 #include "umock_c/umock_c_prod.h"
@@ -22,7 +24,7 @@ extern "C" {
 
 #define ASYNC_OP_STATE_VALUES \
     ASYNC_RUNNING /*initial state*/, \
-    ASYNC_CANCELLING /*set when cancel is called.*/ \
+    ASYNC_CANCELLING /*set when cancel is called.*/, \
     ASYNC_INVALID_ARG /*returned when called with invalid arguments*/ \
 
 MU_DEFINE_ENUM(ASYNC_OP_STATE, ASYNC_OP_STATE_VALUES);
@@ -33,16 +35,17 @@ typedef void(*ASYNC_OP_DISPOSE)(void* context);
 typedef struct ASYNC_OP_TAG
 {
     void* context; /*this is supposed to be used by the user*/
-    struct { /* anonymous structure of fields that the user should never use or care about*/
+    struct /* anonymous structure of fields that the user should never use or care about*/
+    {
         ASYNC_OP_CANCEL_IMPL cancel;
 
         ASYNC_OP_DISPOSE dispose;
         union
         {
-            ASYNC_OP_STATE cancel_state_e; /*just for seeing the state as string instead of numbers*/
+            ASYNC_OP_STATE cancel_state_e; /*just for seeing the state as string instead of numbers in a debugger if needed*/
             volatile_atomic int32_t cancel_state;
-        }u;
-        unsigned char private_context[]; /*do not use*/
+        };
+        unsigned char private_context[]; /*not for use. context is the only field in ASYNC_OP that is user accesible*/
     };
 } ASYNC_OP;
 

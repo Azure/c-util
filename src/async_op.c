@@ -1,8 +1,9 @@
-// Copyright (C) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 
 #include <inttypes.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
 #include "macro_utils/macro_utils.h"
 
@@ -49,8 +50,8 @@ THANDLE(ASYNC_OP) async_op_create(ASYNC_OP_CANCEL_IMPL cancel, uint32_t context_
     }
     else
     {
-        /*Codes_SRS_ASYNC_OP_02_002: [ async_op_create shall call THANDLE_MALLOC_WITH_EXTRA_SIZE with the extra size set as context_size + context_align - 1. ]*/
-        THANDLE(ASYNC_OP) async_op = THANDLE_MALLOC_WITH_EXTRA_SIZE(ASYNC_OP)(async_op_dispose, context_size + context_align - 1);
+        /*Codes_SRS_ASYNC_OP_02_002: [ async_op_create shall call THANDLE_MALLOC_WITH_EXTRA_SIZE with the extra size set as (context_size > 0) * (context_size + context_align - 1).]*/
+        THANDLE(ASYNC_OP) async_op = THANDLE_MALLOC_WITH_EXTRA_SIZE(ASYNC_OP)(async_op_dispose, (context_size > 0) * (context_size + context_align - 1));
         if (async_op == NULL)
         {
             /*Codes_SRS_ASYNC_OP_02_004: [ If there are any failures then async_op_create shall fail and return NULL. ]*/
@@ -68,7 +69,7 @@ THANDLE(ASYNC_OP) async_op_create(ASYNC_OP_CANCEL_IMPL cancel, uint32_t context_
             async_op_data->cancel = cancel;
             async_op_data->dispose = dispose;
             async_op_data->context = (void*)((((uintptr_t)async_op_data->private_context) + context_align - 1) / context_align * context_align);
-            (void)interlocked_exchange(&async_op_data->u.cancel_state, ASYNC_RUNNING);
+            (void)interlocked_exchange(&async_op_data->cancel_state, ASYNC_RUNNING);
 
             THANDLE_INITIALIZE_MOVE(ASYNC_OP)(&result, &async_op);
         }
@@ -80,16 +81,16 @@ THANDLE(ASYNC_OP) async_op_create(ASYNC_OP_CANCEL_IMPL cancel, uint32_t context_
 ASYNC_OP_STATE async_op_cancel(THANDLE(ASYNC_OP) async_op)
 {
     ASYNC_OP_STATE result;
-    /*Codes_SRS_ASYNC_OP_02_005: [ If async_op is NULL then async_op_cancel shall return ASYNC_CANCELLING. ]*/
+    /*Codes_SRS_ASYNC_OP_02_005: [ If async_op is NULL then async_op_cancel shall return ASYNC_INVALID_ARG. ]*/
     if (async_op == NULL)
     {
         LogError("invalid arguments THANDLE(ASYNC_OP) async_op=%p", async_op);
-        result = ASYNC_CANCELLING;
+        result = ASYNC_INVALID_ARG;
     }
     else
     {
         /*Codes_SRS_ASYNC_OP_02_006: [ async_op_cancel shall atomically switch the state to ASYNC_CANCELLING if the current state is ASYNC_RUNNING by using interlocked_compare_exchange. ]*/
-        if ((result = interlocked_compare_exchange((void*) &async_op->u.cancel_state, ASYNC_CANCELLING, ASYNC_RUNNING)) == ASYNC_RUNNING)
+        if ((result = interlocked_compare_exchange((void*) &async_op->cancel_state, ASYNC_CANCELLING, ASYNC_RUNNING)) == ASYNC_RUNNING)
         {
             /*all is fine, just call the callback*/
             result = ASYNC_CANCELLING;
