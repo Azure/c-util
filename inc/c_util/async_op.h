@@ -23,6 +23,7 @@ extern "C" {
 #define ASYNC_OP_STATE_VALUES \
     ASYNC_RUNNING /*initial state*/, \
     ASYNC_CANCELLING /*set when cancel is called.*/ \
+    ASYNC_INVALID_ARG /*returned when called with invalid arguments*/ \
 
 MU_DEFINE_ENUM(ASYNC_OP_STATE, ASYNC_OP_STATE_VALUES);
 
