@@ -1,4 +1,6 @@
-// Copyright (C) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 
 #ifndef ASYNC_OP_H
 #define ASYNC_OP_H
@@ -7,12 +9,12 @@
 #include <cstdint>
 #include <cstddef>
 #else
-#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 #endif
 
 #include "macro_utils/macro_utils.h"
+
 #include "c_util/thandle.h"
 
 #include "umock_c/umock_c_prod.h"
@@ -32,15 +34,23 @@ typedef void(*ASYNC_OP_DISPOSE)(void* context);
 
 typedef struct ASYNC_OP_TAG
 {
-    ASYNC_OP_CANCEL_IMPL cancel;
     void* context; /*this is supposed to be used by the user*/
-    ASYNC_OP_DISPOSE dispose;
-    union
+    struct /* structure of fields that the user should never use or care about */
     {
-        ASYNC_OP_STATE cancel_state_e; /*just for seeing the state as string instead of numbers*/
-        volatile_atomic int32_t cancel_state;
-    }u;
-    unsigned char private_context[]; /*do not use*/
+        ASYNC_OP_CANCEL_IMPL cancel;
+
+        ASYNC_OP_DISPOSE dispose;
+        union
+        {
+            ASYNC_OP_STATE cancel_state_e; /*just for seeing the state as string instead of numbers in a debugger if needed*/
+            volatile_atomic int32_t cancel_state;
+        };
+        unsigned char private_context[]; /*not for use. context is the only field in ASYNC_OP that is user accesible*/
+    }
+#ifndef COMPILING_ASYNC_OP_C
+    HERE_BE_DRAGONS_DO_NOT_USE /*this preprocessor trick here will introduce a field called HERE_BE_DRAGONS_DO_NOT_USE in the structure as seen by the user. Internally (in async_op.c), it does not*/
+#endif
+    ;
 } ASYNC_OP;
 
 THANDLE_TYPE_DECLARE(ASYNC_OP);

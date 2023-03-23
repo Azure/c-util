@@ -27,15 +27,19 @@ typedef void(*ASYNC_OP_DISPOSE)(void* context);
 
 typedef struct ASYNC_OP_TAG
 {
-    ASYNC_OP_CANCEL_IMPL cancel;
     void* context; /*this is supposed to be used by the user*/
-    ASYNC_OP_DISPOSE dispose;
-    union
+    struct /* anonymous structure of fields that the user should never use or care about*/
     {
-        ASYNC_OP_STATE cancel_state_e; /*just for seeing the state as string instead of numbers*/
-        volatile_atomic int32_t cancel_state;
-    }u;
-    unsigned char private_context[]; /*do not use*/
+        ASYNC_OP_CANCEL_IMPL cancel;
+
+        ASYNC_OP_DISPOSE dispose;
+        union
+        {
+            ASYNC_OP_STATE cancel_state_e; /*just for seeing the state as string instead of numbers in a debugger if needed*/
+            volatile_atomic int32_t cancel_state;
+        };
+        unsigned char private_context[]; /*not for use. context is the only field in ASYNC_OP that is user accesible*/
+    };
 } ASYNC_OP;
 
 THANDLE_TYPE_DECLARE(ASYNC_OP);

@@ -177,6 +177,7 @@ set(c_util_c_files
     ./src/strings.c
     ./src/tarray.c
     ./src/uuid_string.c
+    ./src/async_op.c
 )
 
 set(c_util_cpp_files
@@ -209,6 +210,7 @@ set(c_util_h_files
     ./inc/c_util/thandle.h
     ./inc/c_util/thandle_tuple_array.h
     ./inc/c_util/uuid_string.h
+    ./inc/c_util/async_op.h
 )
 
 if(WIN32)
