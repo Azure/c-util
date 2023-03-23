@@ -35,7 +35,7 @@ typedef void(*ASYNC_OP_DISPOSE)(void* context);
 typedef struct ASYNC_OP_TAG
 {
     void* context; /*this is supposed to be used by the user*/
-    struct /* anonymous structure of fields that the user should never use or care about*/
+    struct /* structure of fields that the user should never use or care about */
     {
         ASYNC_OP_CANCEL_IMPL cancel;
 
@@ -46,7 +46,11 @@ typedef struct ASYNC_OP_TAG
             volatile_atomic int32_t cancel_state;
         };
         unsigned char private_context[]; /*not for use. context is the only field in ASYNC_OP that is user accesible*/
-    };
+    }
+#ifndef COMPILING_ASYNC_OP_C
+    HERE_BE_DRAGONS_DO_NOT_USE /*this preprocessor trick here will introduce a field called HERE_BE_DRAGONS_DO_NOT_USE in the structure as seen by the user. Internally (in async_op.c), it does not*/
+#endif
+    ;
 } ASYNC_OP;
 
 THANDLE_TYPE_DECLARE(ASYNC_OP);

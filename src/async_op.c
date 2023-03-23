@@ -16,7 +16,9 @@
 
 #include "c_util/thandle.h"
 
+#define COMPILING_ASYNC_OP_C
 #include "c_util/async_op.h"
+#undef COMPILING_ASYNC_OP_C
 
 MU_DEFINE_ENUM_STRINGS(ASYNC_OP_STATE, ASYNC_OP_STATE_VALUES);
 
