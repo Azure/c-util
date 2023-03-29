@@ -25,8 +25,6 @@
 
 #include "flags_to_string_helper.h"
 
-static TEST_MUTEX_HANDLE test_serialize_mutex;
-
 /*following function cannot be mocked because of variable number of arguments:( so it is copy&pasted here*/
 char* sprintf_char_function(const char* format, ...)
 {
@@ -78,8 +76,6 @@ TEST_SUITE_INITIALIZE(suite_init)
 {
     ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
 
-    ASSERT_IS_NOT_NULL(test_serialize_mutex = TEST_MUTEX_CREATE());
-
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error), "umock_c_init failed");
     ASSERT_ARE_EQUAL(int, 0, umocktypes_stdint_register_types(), "umocktypes_stdint_register_types failed");
     ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types(), "umocktypes_charptr_register_types failed");
@@ -97,18 +93,11 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 {
     umock_c_deinit();
 
-    TEST_MUTEX_DESTROY(test_serialize_mutex);
-
     real_gballoc_hl_deinit();
 }
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-    if (TEST_MUTEX_ACQUIRE(test_serialize_mutex))
-    {
-        ASSERT_FAIL("Could not acquire test serialization mutex.");
-    }
-
     umock_c_negative_tests_init();
     umock_c_reset_all_calls();
 }
@@ -116,7 +105,6 @@ TEST_FUNCTION_INITIALIZE(method_init)
 TEST_FUNCTION_CLEANUP(method_cleanup)
 {
     umock_c_negative_tests_deinit();
-    TEST_MUTEX_RELEASE(test_serialize_mutex);
 }
 
 /*Tests_SRS_FLAGS_TO_STRING_02_007: [ If following the reset of the known flags, there are no bits set in argument, then FLAGS_TO_STRING(X) shall prepare a string using the format "%s%s...%s", where each pair of %s%s corresponds to a pair of separator_N/value_N; ]*/

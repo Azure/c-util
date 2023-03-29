@@ -23,8 +23,6 @@
 #include "c_util/thandle.h"
 #include "c_util/tarray.h"
 
-static TEST_MUTEX_HANDLE g_testByTest;
-
 /*TARRAY with regular types*/
 TARRAY_DEFINE_STRUCT_TYPE(uint32_t)
 THANDLE_TYPE_DECLARE(TARRAY_TYPEDEF_NAME(uint32_t));
@@ -68,9 +66,6 @@ TEST_SUITE_INITIALIZE(it_does_something)
 {
     ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
 
-    g_testByTest = TEST_MUTEX_CREATE();
-    ASSERT_IS_NOT_NULL(g_testByTest);
-
     umock_c_init(on_umock_c_error);
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
@@ -80,18 +75,11 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
 {
     umock_c_deinit();
 
-    TEST_MUTEX_DESTROY(g_testByTest);
-
     real_gballoc_hl_deinit();
 }
 
 TEST_FUNCTION_INITIALIZE(f)
 {
-    if (TEST_MUTEX_ACQUIRE(g_testByTest))
-    {
-        ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
-    }
-
     umock_c_negative_tests_init();
     umock_c_reset_all_calls();
 }
@@ -99,7 +87,6 @@ TEST_FUNCTION_INITIALIZE(f)
 TEST_FUNCTION_CLEANUP(cleans)
 {
     umock_c_negative_tests_deinit();
-    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 /* TARRAY_CREATE(T) */

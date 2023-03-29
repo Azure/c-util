@@ -22,8 +22,6 @@ static simpleItem simp3 = { 3, { NULL, NULL } };
 static simpleItem simp4 = { 4, { NULL, NULL } };
 static simpleItem simp5 = { 5, { NULL, NULL } };
 
-static TEST_MUTEX_HANDLE g_testByTest;
-
 static void* test_action_context = (void*)0x1000;
 static PDLIST_ENTRY test_pdlist_entry = (PDLIST_ENTRY)0x1001;
 
@@ -72,9 +70,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(TestClassInitialize)
 {
-    g_testByTest = TEST_MUTEX_CREATE();
-    ASSERT_IS_NOT_NULL(g_testByTest);
-
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error), "umock_c_init");
     ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types(), "umocktypes_charptr_register_types");
 
@@ -85,22 +80,15 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 TEST_SUITE_CLEANUP(TestClassCleanup)
 {
     umock_c_deinit();
-    TEST_MUTEX_DESTROY(g_testByTest);
-
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 {
-    if (TEST_MUTEX_ACQUIRE(g_testByTest))
-    {
-        ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
-    }
 }
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
     umock_c_reset_all_calls();
-    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
     /* Tests_SRS_DLIST_06_005: [DList_InitializeListHead will initialize the Flink & Blink to the address of the DLIST_ENTRY.] */

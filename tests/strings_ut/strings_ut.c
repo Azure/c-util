@@ -56,8 +56,6 @@ static const char* MODIFIED_STRING_VALUE2 = "*nitial_";
 #define NUMBER_OF_CHAR_TOCOPY           8
 #define TEST_INTEGER_VALUE              1234
 
-static TEST_MUTEX_HANDLE g_testByTest;
-
 static const struct JSONEncoding {
     const char* source;
     const char* expectedJSON;
@@ -89,9 +87,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
 
-        g_testByTest = TEST_MUTEX_CREATE();
-        ASSERT_IS_NOT_NULL(g_testByTest);
-
         umock_c_init(on_umock_c_error);
 
         REGISTER_UMOCK_ALIAS_TYPE(STRING_HANDLE, void*);
@@ -106,18 +101,11 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         umock_c_deinit();
 
-        TEST_MUTEX_DESTROY(g_testByTest);
-
         real_gballoc_hl_deinit();
     }
 
     TEST_FUNCTION_INITIALIZE(function_init)
     {
-        if (TEST_MUTEX_ACQUIRE(g_testByTest))
-        {
-            ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
-        }
-
         ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
 
         umock_c_reset_all_calls();
@@ -126,7 +114,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     TEST_FUNCTION_CLEANUP(cleans)
     {
         umock_c_negative_tests_deinit();
-        TEST_MUTEX_RELEASE(g_testByTest);
     }
 
     /* STRING_Tests BEGIN */

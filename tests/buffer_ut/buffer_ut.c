@@ -35,8 +35,6 @@ static const unsigned char BUFFER_TEST_VALUE[] = {0x01,0x02,0x03,0x04,0x05,0x06,
 static const unsigned char ADDITIONAL_BUFFER[] = {0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
 static const unsigned char TOTAL_BUFFER[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
 
-static TEST_MUTEX_HANDLE g_testByTest;
-
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
@@ -51,9 +49,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
         ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
 
-        g_testByTest = TEST_MUTEX_CREATE();
-        ASSERT_IS_NOT_NULL(g_testByTest);
-
         umock_c_init(on_umock_c_error);
 
         REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
@@ -66,18 +61,11 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         umock_c_deinit();
 
-        TEST_MUTEX_DESTROY(g_testByTest);
-
         real_gballoc_hl_deinit();
     }
 
     TEST_FUNCTION_INITIALIZE(function_init)
     {
-        if (TEST_MUTEX_ACQUIRE(g_testByTest))
-        {
-            ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
-        }
-
         umock_c_reset_all_calls();
 
         ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
@@ -86,8 +74,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     TEST_FUNCTION_CLEANUP(cleans)
     {
         umock_c_negative_tests_deinit();
-
-        TEST_MUTEX_RELEASE(g_testByTest);
     }
 
     /* Tests_SRS_BUFFER_07_001: [BUFFER_new shall allocate a BUFFER_HANDLE that will contain a NULL unsigned char*.] */

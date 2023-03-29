@@ -1,9 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
 #include <stdlib.h>
-
 
 #include "macro_utils/macro_utils.h"
 
@@ -17,8 +15,6 @@ static void my_gballoc_free(void* ptr)
 #include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_charptr.h"
-
-static TEST_MUTEX_HANDLE g_testByTest;
 
 #define ENABLE_MOCKS
 
@@ -113,9 +109,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
         ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
 
-        g_testByTest = TEST_MUTEX_CREATE();
-        ASSERT_IS_NOT_NULL(g_testByTest);
-
         umock_c_init(on_umock_c_error);
 
         result = umocktypes_charptr_register_types();
@@ -134,24 +127,16 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         umock_c_deinit();
 
-        TEST_MUTEX_DESTROY(g_testByTest);
-
         real_gballoc_hl_deinit();
     }
 
     TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
     {
-        if (TEST_MUTEX_ACQUIRE(g_testByTest))
-        {
-            ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
-        }
-
         umock_c_reset_all_calls();
     }
 
     TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     {
-        TEST_MUTEX_RELEASE(g_testByTest);
     }
 
     /*Tests_SRS_MAP_02_001: [Map_Create shall create a new, empty map.]*/ /*this tests "create"*/
