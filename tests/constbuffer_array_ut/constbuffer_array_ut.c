@@ -28,8 +28,6 @@
 
 #include "c_util/constbuffer_array.h"
 
-static TEST_MUTEX_HANDLE test_serialize_mutex;
-
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
@@ -217,9 +215,6 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
 
-    test_serialize_mutex = TEST_MUTEX_CREATE();
-    ASSERT_IS_NOT_NULL(test_serialize_mutex);
-
     result = umock_c_init(on_umock_c_error);
     ASSERT_ARE_EQUAL(int, 0, result, "umock_c_init");
 
@@ -248,18 +243,11 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 {
     umock_c_deinit();
 
-    TEST_MUTEX_DESTROY(test_serialize_mutex);
-
     real_gballoc_hl_deinit();
 }
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-    if (TEST_MUTEX_ACQUIRE(test_serialize_mutex))
-    {
-        ASSERT_FAIL("Could not acquire test serialization mutex.");
-    }
-
     TEST_CONSTBUFFER_HANDLE_1 = real_CONSTBUFFER_Create(&one, sizeof(char));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_1);
 
@@ -291,7 +279,6 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
     real_CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_2);
     real_CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_1);
     umock_c_negative_tests_deinit();
-    TEST_MUTEX_RELEASE(test_serialize_mutex);
 }
 
 /* constbuffer_array_create */

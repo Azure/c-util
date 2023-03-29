@@ -36,8 +36,6 @@ int proxy_mocked_vsnprintf(char* s, size_t n, const char* format, va_list args)
 
 #include "c_util/rc_string.h"
 
-static TEST_MUTEX_HANDLE g_testByTest;
-
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
@@ -103,9 +101,6 @@ TEST_SUITE_INITIALIZE(suite_initialize)
 
     ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
 
-    g_testByTest = TEST_MUTEX_CREATE();
-    ASSERT_IS_NOT_NULL(g_testByTest);
-
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error));
     ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types());
 
@@ -125,18 +120,11 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 {
     umock_c_deinit();
 
-    TEST_MUTEX_DESTROY(g_testByTest);
-
     real_gballoc_hl_deinit();
 }
 
 TEST_FUNCTION_INITIALIZE(function_init)
 {
-    if (TEST_MUTEX_ACQUIRE(g_testByTest))
-    {
-        ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
-    }
-
     ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
 
     umock_c_reset_all_calls();
@@ -145,7 +133,6 @@ TEST_FUNCTION_INITIALIZE(function_init)
 TEST_FUNCTION_CLEANUP(function_cleanup)
 {
     umock_c_negative_tests_deinit();
-    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 /* RC_STRING_VALUE */

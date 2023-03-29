@@ -40,7 +40,6 @@ MOCK_FUNCTION_END((lhs == rhs) ? KEY_MATCH_FUNCTION_RESULT_MATCHING : KEY_MATCH_
 MOCK_FUNCTION_WITH_CODE(, OBJECT_MATCH_FUNCTION_RESULT, test_object_match_function, const void*, lhs, const void*, rhs)
 MOCK_FUNCTION_END((lhs == rhs) ? OBJECT_MATCH_FUNCTION_RESULT_MATCHING : OBJECT_MATCH_FUNCTION_RESULT_NOT_MATCHING);
 
-static TEST_MUTEX_HANDLE test_serialize_mutex;
 static OBJECT_LIFETIME_TRACKER_HANDLE test_object_lifetime_tracker = (OBJECT_LIFETIME_TRACKER_HANDLE)0x1001;
 static void* test_key_1 = (void*)0x1003;
 static void* test_key_2 = (void*)0x1004;
@@ -174,9 +173,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
-    test_serialize_mutex = TEST_MUTEX_CREATE();
-    ASSERT_IS_NOT_NULL(test_serialize_mutex);
-
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error), "umock_c_init failed");
     ASSERT_ARE_EQUAL(int, 0, umocktypes_bool_register_types(), "umocktypes_bool_register_types");
     ASSERT_ARE_EQUAL(int, 0, umocktypes_stdint_register_types(), "umocktypes_stdint_register_types failed");
@@ -202,17 +198,10 @@ TEST_SUITE_INITIALIZE(suite_init)
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
     umock_c_deinit();
-
-    TEST_MUTEX_DESTROY(test_serialize_mutex);
 }
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-    if (TEST_MUTEX_ACQUIRE(test_serialize_mutex))
-    {
-        ASSERT_FAIL("Could not acquire test serialization mutex.");
-    }
-
     umock_c_negative_tests_init();
     umock_c_reset_all_calls();
 }
@@ -220,8 +209,6 @@ TEST_FUNCTION_INITIALIZE(method_init)
 TEST_FUNCTION_CLEANUP(method_cleanup)
 {
     umock_c_negative_tests_deinit();
-
-    TEST_MUTEX_RELEASE(test_serialize_mutex);
 }
 
 //

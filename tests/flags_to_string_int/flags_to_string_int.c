@@ -13,32 +13,22 @@
 #include "collection_one.h"
 #include "collection_two.h"
 
-static TEST_MUTEX_HANDLE g_testByTest;
-
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(it_does_something)
 {
-    g_testByTest = TEST_MUTEX_CREATE();
-    ASSERT_IS_NOT_NULL(g_testByTest);
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
 {
-    TEST_MUTEX_DESTROY(g_testByTest);
 }
 
 TEST_FUNCTION_INITIALIZE(f)
 {
-    if (TEST_MUTEX_ACQUIRE(g_testByTest))
-    {
-        ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
-    }
 }
 
 TEST_FUNCTION_CLEANUP(cleans)
 {
-    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 TEST_FUNCTION(collection_one_flag_one)

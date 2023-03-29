@@ -19,8 +19,6 @@
 
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 
-static TEST_MUTEX_HANDLE g_testByTest;
-
 /*CAT is the type used in TARRAY*/
 typedef struct CAT_TAG
 {
@@ -36,31 +34,22 @@ THANDLE_TYPE_DEFINE(TARRAY_TYPEDEF_NAME(CAT));
 
 TARRAY_TYPE_DEFINE(CAT);
 
-
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(it_does_something)
 {
-    g_testByTest = TEST_MUTEX_CREATE();
-    ASSERT_IS_NOT_NULL(g_testByTest);
 }
 
 TEST_SUITE_CLEANUP(it_undoes_something)
 {
-    TEST_MUTEX_DESTROY(g_testByTest);
 }
 
 TEST_FUNCTION_INITIALIZE(init_f)
 {
-    if (TEST_MUTEX_ACQUIRE(g_testByTest))
-    {
-        ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
-    }
 }
 
 TEST_FUNCTION_CLEANUP(deinit_f)
 {
-    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 /*uniquely called just before the TARRAY is disposed*/

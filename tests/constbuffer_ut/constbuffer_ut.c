@@ -36,8 +36,6 @@ static void* my_gballoc_malloc_with_context(size_t size, void* context)
 #include "c_util/constbuffer_version.h"
 #include "c_util/constbuffer.h"
 
-static TEST_MUTEX_HANDLE g_testByTest;
-
 static const char* buffer1 = "le buffer no 1";
 static const char* buffer2 = NULL;
 static const char* buffer3 = "three";
@@ -113,8 +111,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
 
-        ASSERT_IS_NOT_NULL(g_testByTest = TEST_MUTEX_CREATE());
-
         ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error), "umock_c_init");
         ASSERT_ARE_EQUAL(int, 0, umocktypes_stdint_register_types(), "umocktypes_stdint_register_types failed");
 
@@ -133,24 +129,16 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     {
         umock_c_deinit();
 
-        TEST_MUTEX_DESTROY(g_testByTest);
-
         real_gballoc_hl_deinit();
     }
 
     TEST_FUNCTION_INITIALIZE(f)
     {
-        if (TEST_MUTEX_ACQUIRE(g_testByTest))
-        {
-            ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
-        }
-
         umock_c_reset_all_calls();
     }
 
     TEST_FUNCTION_CLEANUP(cleans)
     {
-        TEST_MUTEX_RELEASE(g_testByTest);
     }
 
     /* CONSTBUFFER_Create */

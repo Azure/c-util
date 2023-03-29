@@ -34,8 +34,6 @@ static void my_gballoc_free(void* ptr)
 #include "thandle_user_33_characters.h"
 #include "thandle_flex_user.h"
 
-static TEST_MUTEX_HANDLE g_testByTest;
-
 #define TEST_A_DEFINE 1
 static const int TEST_A = TEST_A_DEFINE;
 
@@ -173,9 +171,6 @@ TEST_SUITE_INITIALIZE(it_does_something)
 {
     ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
 
-    g_testByTest = TEST_MUTEX_CREATE();
-    ASSERT_IS_NOT_NULL(g_testByTest);
-
     umock_c_init(on_umock_c_error);
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
@@ -185,24 +180,16 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
 {
     umock_c_deinit();
 
-    TEST_MUTEX_DESTROY(g_testByTest);
-
     real_gballoc_hl_deinit();
 }
 
 TEST_FUNCTION_INITIALIZE(f)
 {
-    if (TEST_MUTEX_ACQUIRE(g_testByTest))
-    {
-        ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
-    }
-
     umock_c_reset_all_calls();
 }
 
 TEST_FUNCTION_CLEANUP(cleans)
 {
-    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 /* THANDLE_MALLOC * /

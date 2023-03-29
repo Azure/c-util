@@ -24,8 +24,6 @@
 
 #include "c_util/uuid_string.h"
 
-static TEST_MUTEX_HANDLE g_testByTest;
-
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 TEST_DEFINE_ENUM_TYPE(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_VALUES);
@@ -46,9 +44,6 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     ASSERT_ARE_EQUAL(int, 0, umocktypes_UUID_T_register_types());
 
-    g_testByTest = TEST_MUTEX_CREATE();
-    ASSERT_IS_NOT_NULL(g_testByTest);
-
     REGISTER_TYPE(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT);
 
     REGISTER_UUID_GLOBAL_MOCK_HOOK();
@@ -58,18 +53,12 @@ TEST_SUITE_INITIALIZE(suite_init)
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
     umock_c_deinit();
-    TEST_MUTEX_DESTROY(g_testByTest);
 
     real_gballoc_hl_deinit();
 }
 
 TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 {
-    if (TEST_MUTEX_ACQUIRE(g_testByTest) != 0)
-    {
-        ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
-    }
-
     umock_c_reset_all_calls();
     ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
 }
@@ -77,7 +66,6 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
     umock_c_negative_tests_deinit();
-    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
 /*Tests_SRS_UUID_STRING_02_001: [ If uuid_string is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
