@@ -75,8 +75,9 @@ IMPLEMENT_MOCKABLE_FUNCTION(, EXTERNAL_COMMAND_RESULT, external_command_helper_e
                     size_t original_buffer_len = strlen(command_output_buffer);
                     size_t buffer_len = strcspn(command_output_buffer, "\r\n");
 
-                    if (original_buffer_len == buffer_len)
+                    if (original_buffer_len == buffer_len || buffer_len >= COMMAND_OUTPUT_BUFFER_SIZE)
                     {
+                        // buffer_len >= COMMAND_OUTPUT_BUFFER_SIZE check is to suppress Semmle error Rule: SM01954 (cpp/unclear-array-index-validation).
                         // This means there was no newline at the end, which means the line was longer than our buffer
                         // Just fail because we don't expect that output
 
