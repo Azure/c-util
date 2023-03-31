@@ -194,9 +194,17 @@ set(c_util_h_files
     ./inc/c_util/async_op.h
 )
 
-if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src/MurmurHash2.cpp)
-    set(c_util_cpp_files ${c_util_cpp_files} ${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src/MurmurHash2.cpp)
-    set(c_util_h_files ${c_util_h_files} ${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src/MurmurHash2.h)
+function(get_murmurhash2_directory MURMURHASH2_DIR)
+    set(MURMURHASH2_DIR "${PROJECT_SOURCE_DIR}/deps/smhasher/src" PARENT_SCOPE)
+endfunction(get_murmurhash2_directory)
+
+get_murmurhash2_directory(MURMURHASH2_DIR)
+
+if (EXISTS ${MURMURHASH2_DIR}/MurmurHash2.cpp )
+    set(c_util_cpp_files ${c_util_cpp_files} ${MURMURHASH2_DIR}/MurmurHash2.cpp)
+    set(c_util_h_files ${c_util_h_files} ${MURMURHASH2_DIR}/MurmurHash2.h)
+else()
+    message(FATAL_ERROR "${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src/MurmurHash2.cpp does not exist (need to update submodules?)" )
 endif()
 
 if(WIN32)
@@ -223,11 +231,7 @@ add_library(c_util ${c_util_c_files} ${c_util_cpp_files} ${c_util_h_files} ${c_u
 
 target_link_libraries(c_util c_pal)
 
-target_include_directories(c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc>)
-
-if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src/MurmurHash2.cpp)
-    target_include_directories(c_util PRIVATE ${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src)
-endif()
+target_include_directories(c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc> ${MURMURHASH2_DIR})
 
 set(c_util_target_libs)
 
