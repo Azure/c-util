@@ -43,6 +43,11 @@ set(c_util_reals_h_files
     real_uuid_string_renames.h
 )
 
+if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/../../deps/smhasher/src/MurmurHash2.cpp)
+    set(c_util_reals_cpp_files ${c_util_reals_cpp_files} ${CMAKE_CURRENT_LIST_DIR}/../../deps/smhasher/src/MurmurHash2.cpp)
+    set(c_util_reals_h_files ${c_util_reals_h_files} ${CMAKE_CURRENT_LIST_DIR}/../../deps/smhasher/src/MurmurHash2.h)
+endif()
+
 if(WIN32)
     #add worker_thread only on Windows (until we fix it)
     set(c_util_reals_c_files
@@ -63,4 +68,7 @@ endif()
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)
 add_library(c_util_reals ${c_util_reals_c_files} ${c_util_reals_cpp_files} ${c_util_reals_h_files})
 target_include_directories(c_util_reals PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests/reals>)
-target_link_libraries(c_util_reals c_logging c_pal_reals SMHasherSupport)
+if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/../../deps/smhasher/src/MurmurHash2.cpp)
+    target_include_directories(c_util_reals PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../../deps/smhasher/src)
+endif()
+target_link_libraries(c_util_reals c_logging c_pal_reals)

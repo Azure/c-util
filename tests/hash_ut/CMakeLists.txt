@@ -12,6 +12,8 @@ hash_under_test.cpp
 
 set(${theseTestsName}_h_files
 ../../inc/c_util/hash.h
+../../deps/smhasher/src/MurmurHash2.h
 )
 
 build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util)
+target_include_directories(${theseTestsName}_lib_${CMAKE_PROJECT_NAME} PRIVATE ../../deps/smhasher/src )

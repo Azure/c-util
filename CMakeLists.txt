@@ -76,25 +76,6 @@ if ((NOT TARGET c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-pal/CMakeLis
     include_directories(${C_PAL_INC_FOLDER})
 endif()
 
-#smhasher generates some warnings with /W3 (default)
-if(WIN32)
-    add_definitions(/W2)
-endif(WIN32)
-
-if ((NOT TARGET SMHasherSupport) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src/CMakeLists.txt))
-    if(CMAKE_GENERATOR MATCHES "Visual Studio")
-        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src)
-    else()
-        # when building for iwyu SMHasher will not fully build, so for now if the generator is not VS, only build one file in the lib
-        add_library(SMHasherSupport ${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src/MurmurHash2.cpp)
-    endif()
-    include_directories(${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src)
-endif()
-
-if(WIN32)
-    remove_definitions(/W2)
-endif(WIN32)
-
 if (
     (NOT TARGET mimalloc-obj) AND
     (${GBALLOC_LL_TYPE} STREQUAL "MIMALLOC") AND
@@ -213,6 +194,11 @@ set(c_util_h_files
     ./inc/c_util/async_op.h
 )
 
+if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src/MurmurHash2.cpp)
+    set(c_util_cpp_files ${c_util_cpp_files} ${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src/MurmurHash2.cpp)
+    set(c_util_h_files ${c_util_h_files} ${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src/MurmurHash2.h)
+endif()
+
 if(WIN32)
     #add worker_thread only on Windows (until we fix it)
     #object_lifetime_tracker requires srw lock (which we only have implemented for Windows)
@@ -235,9 +221,13 @@ SOURCE_GROUP(devdoc FILES ${c_util_md_files})
 #this is the product (a library)
 add_library(c_util ${c_util_c_files} ${c_util_cpp_files} ${c_util_h_files} ${c_util_md_files})
 
-target_link_libraries(c_util c_pal SMHasherSupport)
+target_link_libraries(c_util c_pal)
 
 target_include_directories(c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc>)
+
+if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src/MurmurHash2.cpp)
+    target_include_directories(c_util PRIVATE ${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src)
+endif()
 
 set(c_util_target_libs)
 
