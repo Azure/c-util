@@ -158,7 +158,7 @@ jobs:
     displayName: 'Git submodule update'
     inputs:
       filename: 'C:\Program Files\Git\bin\git.exe'
-      arguments: 'submodule update --init --force deps/c-build-tools'
+      arguments: 'submodule update --init --force deps/c-build-tools deps/smhasher'
 
   - task: BatchScript@1
     displayName: 'Git submodule clean'
