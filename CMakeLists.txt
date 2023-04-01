@@ -195,7 +195,11 @@ set(c_util_h_files
 )
 
 function(get_murmurhash2_directory MURMURHASH2_DIR)
-    set(MURMURHASH2_DIR "${PROJECT_SOURCE_DIR}/deps/smhasher/src" PARENT_SCOPE)
+    if(EXISTS "${PROJECT_SOURCE_DIR}/deps/smhasher/src/MurmurHash2.cpp" )
+        set(MURMURHASH2_DIR "${PROJECT_SOURCE_DIR}/deps/smhasher/src" PARENT_SCOPE)
+    elseif(EXISTS "${PROJECT_SOURCE_DIR}/../smhasher/src/MurmurHash2.cpp")
+        set(MURMURHASH2_DIR "${PROJECT_SOURCE_DIR}/../smhasher/src" PARENT_SCOPE)
+    endif()
 endfunction(get_murmurhash2_directory)
 
 get_murmurhash2_directory(MURMURHASH2_DIR)
