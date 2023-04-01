@@ -16,6 +16,7 @@ set(c_util_reals_c_files
 
 set(c_util_reals_cpp_files
     real_hash.cpp
+    real_murmurhash2.cpp
 )
 
 set(c_util_reals_h_files
@@ -33,6 +34,8 @@ set(c_util_reals_h_files
     real_hash_renames.h
     real_memory_data.h
     real_memory_data_renames.h 
+    real_murmurhash2.h
+    real_murmurhash2_renames.h
     real_rc_string.h
     real_rc_string_renames.h
     real_rc_string_array.h
@@ -60,7 +63,9 @@ if(WIN32)
     )
 endif()
 
+get_murmurhash2_directory(MURMURHASH2_DIR)
+
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)
 add_library(c_util_reals ${c_util_reals_c_files} ${c_util_reals_cpp_files} ${c_util_reals_h_files})
-target_include_directories(c_util_reals PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests/reals>)
-target_link_libraries(c_util_reals c_logging c_pal_reals SMHasherSupport)
+target_include_directories(c_util_reals PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests/reals> ${MURMURHASH2_DIR})
+target_link_libraries(c_util_reals c_logging c_pal_reals)
