@@ -20,7 +20,7 @@ MOCKABLE_FUNCTION(, void, user_cancel, void*, ptr);
 
 #include "real_gballoc_hl.h"
 
-#include "c_util/thandle.h"
+#include "c_pal/thandle.h"
 #include "c_util/async_op.h"
 
 TEST_DEFINE_ENUM_TYPE(ASYNC_OP_STATE, ASYNC_OP_STATE_VALUES);

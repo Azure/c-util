@@ -5,9 +5,9 @@
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_charptr.h"
 
+#include "c_pal/containing_record.h"
 
 #include "c_util/doublylinkedlist.h"
-#include "c_util/containing_record.h"
 #include "testrunnerswitcher.h"
 
 typedef struct simpleItem_tag

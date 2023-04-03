@@ -12,7 +12,7 @@
 #include <stddef.h>
 #endif
 
-#include "c_util/thandle.h"
+#include "c_pal/thandle.h"
 
 #include "umock_c/umock_c_prod.h"
 

@@ -27,7 +27,7 @@
 
 #include "real_gballoc_hl.h"
 #include "real_rc_string.h"
-#include "c_util/thandle.h"
+#include "c_pal/thandle.h"
 
 #include "c_util/rc_string_array.h"
 

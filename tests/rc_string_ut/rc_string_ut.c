@@ -30,7 +30,7 @@ int proxy_mocked_vsnprintf(char* s, size_t n, const char* format, va_list args)
 
 #undef ENABLE_MOCKS
 
-#include "c_util/thandle.h"
+#include "c_pal/thandle.h"
 
 #include "real_gballoc_hl.h"
 

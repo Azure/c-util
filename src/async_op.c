@@ -14,7 +14,7 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
-#include "c_util/thandle.h"
+#include "c_pal/thandle.h"
 
 #define COMPILING_ASYNC_OP_C
 #include "c_util/async_op.h"

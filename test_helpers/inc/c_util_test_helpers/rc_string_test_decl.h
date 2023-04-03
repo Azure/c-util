@@ -5,7 +5,7 @@
 #define RC_STRING_TEST_DECL_H
 
 #include "c_util/rc_string.h"
-#include "c_util/thandle.h"
+#include "c_pal/thandle.h"
 #include "real_rc_string.h"
 
 #include "macro_utils/macro_utils.h"

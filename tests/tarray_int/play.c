@@ -5,7 +5,7 @@
 
 #include "c_logging/xlogging.h"
 
-#include "c_util/thandle_ll.h"
+#include "c_pal/thandle_ll.h"
 #include "c_util/tarray.h"
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"

@@ -12,7 +12,7 @@
 
 #include "macro_utils/macro_utils.h"
 
-#include "c_util/thandle.h"
+#include "c_pal/thandle.h"
 #include "c_util/rc_string.h"
 
 #include "umock_c/umock_c_prod.h"
