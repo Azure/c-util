@@ -20,7 +20,7 @@
 
 #include "real_gballoc_hl.h"
 
-#include "c_util/thandle.h"
+#include "c_pal/thandle.h"
 #include "c_util/tarray.h"
 
 /*TARRAY with regular types*/

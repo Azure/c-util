@@ -6,7 +6,7 @@
 #ifndef PLAY_UNDO_OP_TARRAY_TYPES_H
 #define PLAY_UNDO_OP_TARRAY_TYPES_H
 
-#include "c_util/thandle.h"
+#include "c_pal/thandle.h"
 #include "c_util/tarray.h"
 
 #include "play_undo_op_types.h"

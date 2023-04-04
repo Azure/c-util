@@ -14,7 +14,7 @@
 #include "c_pal/string_utils.h"
 #include "c_pal/threadapi.h"
 
-#include "c_util/thandle.h"
+#include "c_pal/thandle.h"
 #include "c_util/tarray.h"
 
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);

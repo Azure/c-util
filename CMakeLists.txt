@@ -174,7 +174,6 @@ set(c_util_h_files
     ./inc/c_util/constbuffer_version.h
     ./inc/c_util/constbuffer_array.h
     ./inc/c_util/constbuffer_array_batcher_nv.h
-    ./inc/c_util/containing_record.h
     ./inc/c_util/doublylinkedlist.h
     ./inc/c_util/external_command_helper.h
     ./inc/c_util/hash.h
@@ -187,8 +186,6 @@ set(c_util_h_files
     ./inc/c_util/strings_types.h
     ./inc/c_util/tarray_ll.h
     ./inc/c_util/tarray.h
-    ./inc/c_util/thandle_ll.h
-    ./inc/c_util/thandle.h
     ./inc/c_util/thandle_tuple_array.h
     ./inc/c_util/uuid_string.h
     ./inc/c_util/async_op.h

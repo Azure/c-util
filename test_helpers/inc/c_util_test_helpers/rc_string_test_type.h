@@ -5,7 +5,7 @@
 #define RC_STRING_TEST_TYPE_H
 
 #include "c_util/rc_string.h"
-#include "c_util/thandle.h"
+#include "c_pal/thandle.h"
 
 #ifdef __cplusplus
 extern "C" {

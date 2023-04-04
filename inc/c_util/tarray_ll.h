@@ -12,7 +12,7 @@
 
 #include "c_pal/interlocked.h"
 
-#include "c_util/thandle_ll.h"
+#include "c_pal/thandle_ll.h"
 
 #include "umock_c/umock_c_prod.h"
 

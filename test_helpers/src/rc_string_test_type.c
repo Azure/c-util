@@ -8,7 +8,7 @@
 #include "macro_utils/macro_utils.h"
 
 #include "c_util/rc_string.h"
-#include "c_util/thandle.h"
+#include "c_pal/thandle.h"
 
 //#include "c_pal/gballoc_hl.h" hmmmm... umock_c seems to free some memory allocated here. So this cannot call into gballoc thingies. This is fine, as this file should be part of umock.c anyway (and nothing there calls gballoc...)
 //#include "c_pal/gballoc_hl_redirect.h"
