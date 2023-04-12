@@ -222,6 +222,31 @@ const void* singlylinkedlist_item_get_value(LIST_ITEM_HANDLE item_handle)
     return result;
 }
 
+typedef bool (*LIST_MATCH_FUNCTION)(LIST_ITEM_HANDLE list_item, const void* match_context);
+
+static bool is_same_session(LIST_ITEM_HANDLE list_item, const void* match_context)
+{
+    bool result;
+    if (list_item == NULL || match_context == NULL)
+    {
+        LogError("Invalid arguments: LIST_ITEM_HANDLE list_item=%p, const void* match_context=%p", list_item, match_context);
+        result = false;
+    }
+    else
+    {
+        const void* item_value = singlylinkedlist_item_get_value(list_item);
+        if (item_value == NULL)
+        {
+            LogError("Invalid arguments: const void* item_value=%p", item_value);
+            result = false;
+        }
+        else
+        {
+            result = (item_value == match_context);
+        }
+    }
+    return result;
+}
 LIST_ITEM_HANDLE singlylinkedlist_find(SINGLYLINKEDLIST_HANDLE list, LIST_MATCH_FUNCTION match_function, const void* match_context)
 {
     LIST_ITEM_HANDLE result;
@@ -401,7 +426,7 @@ LIST_ITEM_HANDLE singlylinkedlist_add_head(SINGLYLINKEDLIST_HANDLE list, const v
                 result->next = NULL;
                 list->head = result;
                 list->tail = result;
-                
+
             }
             else
             {
