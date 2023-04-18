@@ -26,8 +26,8 @@ typedef struct WAITER_QUEUE_HL_TAG
 typedef struct WAITER_QUEUE_HL_ITEM_TAG
 {
     WAITER_QUEUE_HL_HANDLE waiter_queue_hl;
-    POP_CALLBACK pop_callback;
-    void* pop_callback_context;
+    UNBLOCK_CALLBACK unblock_callback;
+    void* unblock_callback_context;
 } WAITER_QUEUE_HL_ITEM;
 
 WAITER_QUEUE_HL_HANDLE waiter_queue_hl_create(void)
@@ -117,10 +117,10 @@ void waiter_queue_hl_destroy(WAITER_QUEUE_HL_HANDLE waiter_queue_hl)
     }
 }
 
-static bool on_pop(void* context, void* data, bool* continue_processing, WAITER_QUEUE_CALL_REASON reason)
+static void on_unblock(void* context, void* data, bool* remove, bool* continue_processing, WAITER_QUEUE_CALL_REASON reason)
 {
     bool result;
-    if (context == NULL || continue_processing == NULL)
+    if (context == NULL || remove == NULL || continue_processing == NULL)
     {
         LogError("Invalid argument: void* context=%p, void* data=%p, bool* continue_processing=%p, WAITER_QUEUE_CALL_REASON reason=%" PRI_MU_ENUM "", context, data, continue_processing, MU_ENUM_VALUE(WAITER_QUEUE_CALL_REASON, reason));
         result = false;
@@ -128,22 +128,21 @@ static bool on_pop(void* context, void* data, bool* continue_processing, WAITER_
     else
     {
         WAITER_QUEUE_HL_ITEM* waiter_queue_hl_item = (WAITER_QUEUE_HL_ITEM*)context;
-        result = waiter_queue_hl_item->pop_callback(waiter_queue_hl_item->pop_callback_context, data, continue_processing, reason);
-        if (result || reason == WAITER_QUEUE_CALL_REASON_ABANDONED)
+        waiter_queue_hl_item->unblock_callback(waiter_queue_hl_item->unblock_callback_context, data, remove, continue_processing, reason);
+        if (*remove || reason == WAITER_QUEUE_CALL_REASON_ABANDONED)
         {
             sm_exec_end(waiter_queue_hl_item->waiter_queue_hl->sm);
             free(waiter_queue_hl_item);
         }
     }
-    return result;
 }
 
-int waiter_queue_hl_push(WAITER_QUEUE_HL_HANDLE waiter_queue_hl, POP_CALLBACK pop_callback, void* pop_callback_context)
+int waiter_queue_hl_add_waiter(WAITER_QUEUE_HL_HANDLE waiter_queue_hl, UNBLOCK_CALLBACK unblock_callback, void* unblock_callback_context)
 {
     int result;
     if (waiter_queue_hl == NULL)
     {
-        LogError("Invalid argument: WAITER_QUEUE_HL_HANDLE waiter_queue_hl=%p, POP_CALLBACK pop_callback=%p, void* pop_callback_context=%p", waiter_queue_hl, pop_callback, pop_callback_context);
+        LogError("Invalid argument: WAITER_QUEUE_HL_HANDLE waiter_queue_hl=%p, UNBLOCK_CALLBACK unblock_callback=%p, void* unblock_callback_context=%p", waiter_queue_hl, unblock_callback, unblock_callback_context);
         result = MU_FAILURE;
     }
     else
@@ -156,8 +155,8 @@ int waiter_queue_hl_push(WAITER_QUEUE_HL_HANDLE waiter_queue_hl, POP_CALLBACK po
         }
         else
         {
-            waiter_queue_hl_item->pop_callback = pop_callback;
-            waiter_queue_hl_item->pop_callback_context = pop_callback_context;
+            waiter_queue_hl_item->unblock_callback = unblock_callback;
+            waiter_queue_hl_item->unblock_callback_context = unblock_callback_context;
             waiter_queue_hl_item->waiter_queue_hl = waiter_queue_hl;
             SM_RESULT sm_exec_begin_result = sm_exec_begin(waiter_queue_hl->sm);
             if (sm_exec_begin_result != SM_EXEC_GRANTED)
@@ -168,9 +167,9 @@ int waiter_queue_hl_push(WAITER_QUEUE_HL_HANDLE waiter_queue_hl, POP_CALLBACK po
             else
             {
                 srw_lock_acquire_exclusive(waiter_queue_hl->srw_lock);
-                if (waiter_queue_ll_push(waiter_queue_hl->waiter_queue_ll, on_pop, waiter_queue_hl_item) != 0)
+                if (waiter_queue_ll_add_waiter(waiter_queue_hl->waiter_queue_ll, on_unblock, waiter_queue_hl_item) != 0)
                 {
-                    LogError("Failure in waiter_queue_ll_push(waiter_queue_hl->waiter_queue_ll, on_pop, waiter_queue_hl_item)");
+                    LogError("Failure in waiter_queue_ll_add_waiter(waiter_queue_hl->waiter_queue_ll, on_unblock, waiter_queue_hl_item)");
                     result = MU_FAILURE;
                 }
                 else
@@ -191,7 +190,7 @@ all_ok:
     return result;
 }
 
-int waiter_queue_hl_pop(WAITER_QUEUE_HL_HANDLE waiter_queue_hl, void* data)
+int waiter_queue_hl_unblock_waiters(WAITER_QUEUE_HL_HANDLE waiter_queue_hl, void* data)
 {
     int result;
     if (waiter_queue_hl == NULL)
@@ -210,9 +209,9 @@ int waiter_queue_hl_pop(WAITER_QUEUE_HL_HANDLE waiter_queue_hl, void* data)
         else
         {
             srw_lock_acquire_exclusive(waiter_queue_hl->srw_lock);
-            if (waiter_queue_ll_pop(waiter_queue_hl->waiter_queue_ll, data) != 0)
+            if (waiter_queue_ll_unblock_waiters(waiter_queue_hl->waiter_queue_ll, data) != 0)
             {
-                LogError("Failure in waiter_queue_ll_pop(waiter_queue_hl->waiter_queue_ll, data)");
+                LogError("Failure in waiter_queue_ll_unblock_waiters(waiter_queue_hl->waiter_queue_ll, data)");
                 result = MU_FAILURE;
             }
             else

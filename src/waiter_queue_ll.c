@@ -24,8 +24,8 @@ typedef struct WAITER_QUEUE_LL_TAG
 
 typedef struct WAITER_QUEUE_LL_ITEM_TAG
 {
-    POP_CALLBACK pop_callback;
-    void* pop_callback_context;
+    UNBLOCK_CALLBACK unblock_callback;
+    void* unblock_callback_context;
 } WAITER_QUEUE_LL_ITEM;
 
 WAITER_QUEUE_LL_HANDLE waiter_queue_ll_create(void)
@@ -69,12 +69,12 @@ void waiter_queue_ll_destroy(WAITER_QUEUE_LL_HANDLE waiter_queue_ll)
     }
 }
 
-int waiter_queue_ll_push(WAITER_QUEUE_LL_HANDLE waiter_queue_ll, POP_CALLBACK pop_callback, void* pop_callback_context)
+int waiter_queue_ll_add_waiter(WAITER_QUEUE_LL_HANDLE waiter_queue_ll, UNBLOCK_CALLBACK unblock_callback, void* unblock_callback_context)
 {
     int result;
-    if (waiter_queue_ll == NULL || pop_callback == NULL)
+    if (waiter_queue_ll == NULL || unblock_callback == NULL)
     {
-        LogError("Invalid arguments: WAITER_QUEUE_LL_HANDLE waiter_queue_ll=%p, POP_CALLBACK pop_callback=%p, void* pop_callback_context=%p", waiter_queue_ll, pop_callback, pop_callback_context);
+        LogError("Invalid arguments: WAITER_QUEUE_LL_HANDLE waiter_queue_ll=%p, UNBLOCK_CALLBACK unblock_callback=%p, void* unblock_callback_context=%p", waiter_queue_ll, unblock_callback, unblock_callback_context);
         result = MU_FAILURE;
     }
     else
@@ -87,8 +87,8 @@ int waiter_queue_ll_push(WAITER_QUEUE_LL_HANDLE waiter_queue_ll, POP_CALLBACK po
         }
         else
         {
-            waiter_queue_ll_item->pop_callback = pop_callback;
-            waiter_queue_ll_item->pop_callback_context = pop_callback_context;
+            waiter_queue_ll_item->unblock_callback = unblock_callback;
+            waiter_queue_ll_item->unblock_callback_context = unblock_callback_context;
             if (singlylinkedlist_add(waiter_queue_ll->list, waiter_queue_ll_item) == NULL)
             {
                 LogError("Failure in singlylinkedlist_add(waiter_queue_ll->list, waiter_queue_ll_item)");
@@ -106,7 +106,7 @@ all_ok:
     return result;
 }
 
-int waiter_queue_ll_pop(WAITER_QUEUE_LL_HANDLE waiter_queue_ll, void* data)
+int waiter_queue_ll_unblock_waiters(WAITER_QUEUE_LL_HANDLE waiter_queue_ll, void* data)
 {
     int result;
     if (waiter_queue_ll == NULL)
@@ -136,7 +136,8 @@ int waiter_queue_ll_pop(WAITER_QUEUE_LL_HANDLE waiter_queue_ll, void* data)
                 }
                 else
                 {
-                    bool remove_item = waiter_queue_ll_item->pop_callback(waiter_queue_ll_item->pop_callback_context, data, &continue_processing, WAITER_QUEUE_CALL_REASON_POPPED);
+                    bool remove_item;
+                    waiter_queue_ll_item->unblock_callback(waiter_queue_ll_item->unblock_callback_context, data, &remove_item, &continue_processing, WAITER_QUEUE_CALL_REASON_UNBLOCKED);
                     LIST_ITEM_HANDLE old_list_item_handle = list_item_handle;
                     list_item_handle = singlylinkedlist_get_next_item(list_item_handle);
                     if (remove_item)
@@ -177,8 +178,9 @@ void waiter_queue_ll_abandon(WAITER_QUEUE_LL_HANDLE waiter_queue)
             }
             else
             {
+                bool remove_item;
                 bool continue_processing;
-                (void)waiter_queue_ll_item->pop_callback(waiter_queue_ll_item->pop_callback_context, NULL, &continue_processing, WAITER_QUEUE_CALL_REASON_ABANDONED);
+                waiter_queue_ll_item->unblock_callback(waiter_queue_ll_item->unblock_callback_context, NULL, &remove_item, &continue_processing, WAITER_QUEUE_CALL_REASON_ABANDONED);
                 LIST_ITEM_HANDLE old_list_item_item_handle = list_item_handle;
                 list_item_handle = singlylinkedlist_get_next_item(list_item_handle);
                 if (singlylinkedlist_remove(waiter_queue->list, old_list_item_item_handle) != 0)

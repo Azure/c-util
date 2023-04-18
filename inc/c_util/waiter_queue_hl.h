@@ -23,8 +23,8 @@ extern "C" {
     MOCKABLE_FUNCTION(, WAITER_QUEUE_HL_HANDLE, waiter_queue_hl_create);
     MOCKABLE_FUNCTION(, void, waiter_queue_hl_destroy, WAITER_QUEUE_HL_HANDLE, waiter_queue_hl);
 
-    MOCKABLE_FUNCTION(, int, waiter_queue_hl_push, WAITER_QUEUE_HL_HANDLE, waiter_queue_hl, POP_CALLBACK, pop_callback, void*, pop_callback_context);
-    MOCKABLE_FUNCTION(, int, waiter_queue_hl_pop, WAITER_QUEUE_HL_HANDLE, waiter_queue_hl, void*, data);
+    MOCKABLE_FUNCTION(, int, waiter_queue_hl_add_waiter, WAITER_QUEUE_HL_HANDLE, waiter_queue_hl, UNBLOCK_CALLBACK, unblock_callback, void*, unblock_callback_context);
+    MOCKABLE_FUNCTION(, int, waiter_queue_hl_unblock_waiters, WAITER_QUEUE_HL_HANDLE, waiter_queue_hl, void*, data);
 
 #ifdef __cplusplus
 }
