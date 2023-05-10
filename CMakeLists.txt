@@ -159,6 +159,7 @@ set(c_util_c_files
     ./src/tarray.c
     ./src/uuid_string.c
     ./src/async_op.c
+    ./src/waiter.c
 )
 
 set(c_util_cpp_files
@@ -189,6 +190,7 @@ set(c_util_h_files
     ./inc/c_util/thandle_tuple_array.h
     ./inc/c_util/uuid_string.h
     ./inc/c_util/async_op.h
+    ./inc/c_util/waiter.h
 )
 
 function(get_murmurhash2_directory MURMURHASH2_DIR)
