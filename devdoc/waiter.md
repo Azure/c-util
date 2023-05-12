@@ -29,16 +29,16 @@ typedef void(*NOTIFY_COMPLETE_CALLBACK)(void* context, WAITER_RESULT result);
     MOCKABLE_FUNCTION(, WAITER_HANDLE, waiter_create)
 ```
 
-- `waiter_create` creates the waiter and returns it.
+- `waiter_create` shall create the waiter and returns it.
 
 ### waiter_destroy
 ```c
     MOCKABLE_FUNCTION(, void, waiter_destroy, WAITER_HANDLE, waiter)
 ```
 
-- `waiter_destroy` destroys the waiter.
 - If `waiter_register_notification` has been called previously but `waiter_notify` has not been called, `waiter_destroy` shall call the `notification_callback` given to `waiter_register_notification` with `context` as the `context` given to `waiter_register_notification`, `data` as `NULL` and `result` as `WAITER_RESULT_ABANDONED`.
 - If `waiter_notify` has been called previously but `waiter_register_notification` has not been called, `waiter_destroy` shall call the `notify_complete_callback` given to `waiter_notify` with `context` as the `context` given to `waiter_notify`, and `result` as `WAITER_RESULT_ABANDONED`.
+- `waiter_destroy` shall destroy the given `waiter`.
 
 ### waiter_register_notification
 ```c
