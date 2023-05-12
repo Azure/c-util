@@ -2,7 +2,13 @@
 
 ## Overview
 
-`waiter` is a module that allows the user to move data asynchronously from producer to consumer without having to block the thread. 
+`waiter` is a module that allows the user to move data asynchronously from producer to consumer without having to block the thread.
+
+Consumers call `waiter_register_notification` to register a `NOTIFICATION_CALLBACK` function to be called when data becomes available.
+
+Producers call `waiter_notify` to notify the waiter that data is available.
+
+`waiter_register_notification` and `waiter_notify` can be called from different threads in any order.
 
 ## Exposed API
 ```c
