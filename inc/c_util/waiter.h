@@ -6,13 +6,16 @@
 
 #include "macro_utils/macro_utils.h"
 
+#include "c_pal/gballoc_hl.h"
+#include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/thandle.h"
 
 #include "c_util/async_op.h"
+#include "c_util/rc_ptr.h"
 
 #define WAITER_RESULT_VALUES \
     WAITER_RESULT_OK, \
-    WAITER_RESULT_CANCELED, \
+    WAITER_RESULT_CANCELLED, \
     WAITER_RESULT_ABANDONED
 
 MU_DEFINE_ENUM(WAITER_RESULT, WAITER_RESULT_VALUES);
@@ -23,17 +26,14 @@ MU_DEFINE_ENUM(WAITER_RESULT, WAITER_RESULT_VALUES);
 extern "C" {
 #endif /* __cplusplus */
 
-
-typedef void* void_ptr;
-THANDLE_TYPE_DECLARE(void_ptr);
 typedef struct WAITER_TAG* WAITER_HANDLE;
-typedef void(*NOTIFICATION_CALLBACK)(void* context, THANDLE(void_ptr) data, WAITER_RESULT result);
+typedef void(*NOTIFICATION_CALLBACK)(void* context, THANDLE(RC_PTR) data, WAITER_RESULT result);
 typedef void(*NOTIFY_COMPLETE_CALLBACK)(void* context, WAITER_RESULT result);
 
     MOCKABLE_FUNCTION(, WAITER_HANDLE, waiter_create)
     MOCKABLE_FUNCTION(, void, waiter_destroy, WAITER_HANDLE, waiter)
     MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), waiter_register_notification, WAITER_HANDLE, waiter, NOTIFICATION_CALLBACK, notification_callback, void*, context);
-    MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), waiter_notify, WAITER_HANDLE, waiter, THANDLE(void_ptr), data, NOTIFY_COMPLETE_CALLBACK, notify_complete_callback, void*, context);
+    MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), waiter_notify, WAITER_HANDLE, waiter, THANDLE(RC_PTR), data, NOTIFY_COMPLETE_CALLBACK, notify_complete_callback, void*, context);
 
 #ifdef __cplusplus
 }
