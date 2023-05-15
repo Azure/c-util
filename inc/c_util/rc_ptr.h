@@ -6,20 +6,13 @@
 
 #ifdef __cplusplus
 #include <cstddef>
-#include <cstdarg>
 #else
-#include <stdarg.h>
 #include <stddef.h>
 #endif
 
 #include "c_pal/thandle.h"
 
-#include "umock_c/umock_c_prod.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 typedef void (*RC_PTR_FREE_FUNC)(void* context);
 
@@ -35,9 +28,15 @@ THANDLE_TYPE_DECLARE(RC_PTR);
 
 #define RC_PTR_VALUE(rc) ((rc)->ptr)
 
-#define RC_PTR_AS_VOIDPTR(rc) (((rc) == NULL) ? NULL : (rc)->ptr)
+#define RC_PTR_VALUE_OR_NULL(rc) (((rc) == NULL) ? NULL : (rc)->ptr)
 
-MOCKABLE_FUNCTION(, THANDLE(RC_PTR), rc_ptr_create_with_move_memory, const void*, ptr, RC_PTR_FREE_FUNC, free_func);
+#include "umock_c/umock_c_prod.h"
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+    MOCKABLE_FUNCTION(, THANDLE(RC_PTR), rc_ptr_create_with_move_memory, const void*, ptr, RC_PTR_FREE_FUNC, free_func);
 
 #ifdef __cplusplus
 }

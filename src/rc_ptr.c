@@ -16,7 +16,7 @@
 
 THANDLE_TYPE_DEFINE(RC_PTR);
 
-static void rc_ptr_destroy(RC_PTR* rc_ptr)
+static void dispose(RC_PTR* rc_ptr)
 {
     if (rc_ptr == NULL)
     {
@@ -24,23 +24,26 @@ static void rc_ptr_destroy(RC_PTR* rc_ptr)
     }
     else
     {
-        rc_ptr->free_func((void*)rc_ptr->ptr);
+        if (rc_ptr->free_func != NULL)
+        {
+            rc_ptr->free_func((void*)rc_ptr->ptr);
+        }
     }
 }
 
 THANDLE(RC_PTR) rc_ptr_create_with_move_memory(const void* ptr, RC_PTR_FREE_FUNC free_func)
 {
     THANDLE(RC_PTR) result = NULL;
-    if (ptr == NULL || free_func == NULL)
+    if (ptr == NULL)
     {
         LogError("Invalid arguments: const void* ptr=%p, RC_PTR_FREE_FUNC free_func = %p", ptr, free_func);
     }
     else
     {
-        THANDLE(RC_PTR) thandle = THANDLE_MALLOC(RC_PTR)(rc_ptr_destroy);
+        THANDLE(RC_PTR) thandle = THANDLE_MALLOC(RC_PTR)(dispose);
         if (thandle == NULL)
         {
-            LogError("Failure in THANDLE_MALLOC(RC_PTR)(rc_ptr_destroy=%p)", rc_ptr_destroy);
+            LogError("Failure in THANDLE_MALLOC(RC_PTR)(dispose=%p)", dispose);
         }
         else
         {

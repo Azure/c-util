@@ -91,7 +91,7 @@ all_ok:
 
 static void abandon(void* context)
 {
-    WAITER_HANDLE waiter = (WAITER_HANDLE)context;
+    WAITER_HANDLE waiter = context;
     srw_lock_acquire_exclusive(waiter->lock);
     if (!waiter->callbacks_called)
     {
@@ -181,12 +181,13 @@ THANDLE(ASYNC_OP) waiter_register_notification(WAITER_HANDLE waiter, NOTIFICATIO
             {
                 if (waiter->registered)
                 {
-                    LogError("waiter_register_notification called twice on WAITER waiter=%p."
-                    " Previous arguments: NOTIFICATION_CALLBACK notification_callback=%p, void* context=%p"
-                    " Current arguments: NOTIFICATION_CALLBACK notification_callback=%p, void* context=%p",
-                    waiter,
-                    waiter->notification_callback, waiter->notification_callback_context,
-                    notification_callback, context
+                    LogError(
+                        "waiter_register_notification called twice on WAITER waiter=%p."
+                        " Previous arguments: NOTIFICATION_CALLBACK notification_callback=%p, void* context=%p"
+                        " Current arguments: NOTIFICATION_CALLBACK notification_callback=%p, void* context=%p",
+                        waiter,
+                        waiter->notification_callback, waiter->notification_callback_context,
+                        notification_callback, context
                     );
                     success = false;
                 }
