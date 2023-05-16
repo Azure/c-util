@@ -11,25 +11,33 @@
 #include "c_logging/xlogging.h"
 
 #include "c_pal/thandle.h"
-#include "c_pal/sm.h"
-#include "c_pal/srw_lock.h"
+#include "c_pal/interlocked.h"
 
 #include "c_util/async_op.h"
 #include "c_util/rc_ptr.h"
 
 #include "c_util/waiter.h"
 
+#define WAITER_REGISTERED (1 << 0)
+#define WAITER_NOTIFIED (1 << 1)
+#define WAITER_COMPLETING (1 << 2)
+
+typedef struct OP_CONTEXT_TAG
+{
+    union
+    {
+        NOTIFICATION_CALLBACK notification_callback;
+        NOTIFY_COMPLETE_CALLBACK notify_complete_callback;
+    };
+    void* context;
+    THANDLE(RC_PTR) data;
+    volatile_atomic int32_t* state;
+} OP_CONTEXT;
+
 typedef struct WAITER_TAG
 {
-    SRW_LOCK_HANDLE lock;
-    THANDLE(RC_PTR) data;
-    NOTIFICATION_CALLBACK notification_callback;
-    void* notification_callback_context;
-    NOTIFY_COMPLETE_CALLBACK notify_complete_callback;
-    void* notify_complete_callback_context;
-    bool registered;
-    bool notified;
-    bool callbacks_called;
+    volatile_atomic int32_t state;
+    THANDLE(ASYNC_OP) current_op;
 } WAITER;
 
 WAITER_HANDLE waiter_create(void)
@@ -38,33 +46,15 @@ WAITER_HANDLE waiter_create(void)
     WAITER_HANDLE waiter = malloc(sizeof(WAITER));
     if (waiter == NULL)
     {
-        LogError("Failure in malloc(sizeof(WAITER_HANDLE))");
+        LogError("Failure in malloc(sizeof(WAITER_HANDLE)=%zu)", sizeof(WAITER));
         result = NULL;
     }
     else
     {
-        waiter->lock = srw_lock_create("waiter", false);
-        if (waiter->lock == NULL)
-        {
-            LogError("Failure in srw_lock_create(\"waiter\", false)");
-            result = NULL;
-        }
-        else
-        {
-            THANDLE_INITIALIZE(RC_PTR)(&waiter->data, NULL);
-            waiter->notification_callback = NULL;
-            waiter->notification_callback_context = NULL;
-            waiter->notify_complete_callback = NULL;
-            waiter->notify_complete_callback_context = NULL;
-            waiter->registered = false;
-            waiter->notified = false;
-            waiter->callbacks_called = false;
-            result = waiter;
-            goto all_ok;
-        }
-        free(waiter);
+        (void)interlocked_exchange(&waiter->state, 0);
+        THANDLE_INITIALIZE(ASYNC_OP)(&waiter->current_op, NULL);
+        result = waiter;
     }
-all_ok:
     return result;
 }
 
@@ -76,95 +66,107 @@ void waiter_destroy(WAITER_HANDLE waiter)
     }
     else
     {
-        srw_lock_acquire_exclusive(waiter->lock);
-        if (!waiter->callbacks_called)
+        int32_t state = interlocked_or(&waiter->state, WAITER_REGISTERED | WAITER_NOTIFIED);
+        OP_CONTEXT* op_context = (OP_CONTEXT*)(waiter->current_op)->context;
+        if (state & WAITER_REGISTERED)
         {
-            if (waiter->registered)
-            {
-                waiter->notification_callback(waiter->notification_callback_context, NULL, WAITER_RESULT_ABANDONED);
-            }
-            if (waiter->notified)
-            {
-                waiter->notify_complete_callback(waiter->notify_complete_callback_context, WAITER_RESULT_ABANDONED);
-                THANDLE_ASSIGN(RC_PTR)(&waiter->data, NULL);
-            }
-            waiter->callbacks_called = true;
+            op_context->notification_callback(op_context->context, NULL, WAITER_CALLBACK_RESULT_ABANDONED);
         }
-        srw_lock_release_exclusive(waiter->lock);
-        srw_lock_destroy(waiter->lock);
+        else if (state & WAITER_NOTIFIED)
+        {
+            op_context->notify_complete_callback(op_context->context, WAITER_CALLBACK_RESULT_ABANDONED);
+            THANDLE_ASSIGN(RC_PTR)(&op_context->data, NULL);
+        }
+        THANDLE_ASSIGN(ASYNC_OP)(&waiter->current_op, NULL);
         free(waiter);
     }
 }
 
 static void cancel_register_notification(void* context)
 {
-    WAITER_HANDLE waiter = context;
-    srw_lock_acquire_exclusive(waiter->lock);
+    OP_CONTEXT* op_context = context;
+    if (interlocked_or(op_context->state, WAITER_COMPLETING) & WAITER_COMPLETING)
     {
-        waiter->notification_callback(waiter->notification_callback_context, NULL, WAITER_RESULT_CANCELLED);
-        waiter->callbacks_called = true;
-    }
-    srw_lock_release_exclusive(waiter->lock);
-}
-
-static void dispose(void* context)
-{
-    (void)context;
-}
-
-static void try_complete(WAITER_HANDLE waiter)
-{
-    if (waiter->registered && waiter->notified && !waiter->callbacks_called)
-    {
-        waiter->notification_callback(waiter->notification_callback_context, waiter->data, WAITER_RESULT_OK);
-        THANDLE_ASSIGN(RC_PTR)(&waiter->data, NULL);
-        waiter->notify_complete_callback(waiter->notify_complete_callback_context, WAITER_RESULT_OK);
-        waiter->callbacks_called = true;
-    }
-}
-
-THANDLE(ASYNC_OP) waiter_register_notification(WAITER_HANDLE waiter, NOTIFICATION_CALLBACK notification_callback, void* context)
-{
-    THANDLE(ASYNC_OP) result = NULL;
-    if (waiter == NULL || notification_callback == NULL || context == NULL)
-    {
-        LogError("Invalid arguments: WAITER_HANDLE waiter = %p, NOTIFICATION_CALLBACK notification_callback = %p, void* context = %p",
-            waiter, notification_callback, context);
+        LogError("Cannot cancel a waiter that is completing");
     }
     else
     {
-        srw_lock_acquire_exclusive(waiter->lock);
+        op_context->notification_callback(op_context->context, NULL, WAITER_CALLBACK_RESULT_CANCELLED);
+        interlocked_and(op_context->state, ~WAITER_REGISTERED);
+    }
+}
+
+
+
+WAITER_RESULT waiter_register_notification(WAITER_HANDLE waiter, NOTIFICATION_CALLBACK notification_callback, void* context, THANDLE(ASYNC_OP)* op)
+{
+    WAITER_RESULT result;
+    THANDLE_ASSIGN(ASYNC_OP)(op, NULL);
+    if (
+        waiter == NULL ||
+        notification_callback == NULL ||
+        op == NULL
+        )
+    {
+        LogError("Invalid arguments: WAITER_HANDLE waiter = %p, NOTIFICATION_CALLBACK notification_callback = %p, void* context = %p, THANDLE(ASYNC_OP)* op = %p",
+            waiter, notification_callback, context, op);
+        result = WAITER_RESULT_ERROR;
+    }
+    else
+    {
+        do
         {
-            if (waiter->registered)
+            int32_t state = interlocked_or(&waiter->state, WAITER_REGISTERED);
+            if (state & WAITER_REGISTERED)
             {
+                OP_CONTEXT* op_context = waiter->current_op->context;
                 LogError(
-                    "waiter_register_notification called twice on WAITER waiter=%p."
+                    "waiter_register_notification called twice on WAITER_HANDLE waiter=%p."
                     " Previous arguments: NOTIFICATION_CALLBACK notification_callback=%p, void* context=%p"
                     " Current arguments: NOTIFICATION_CALLBACK notification_callback=%p, void* context=%p",
                     waiter,
-                    waiter->notification_callback, waiter->notification_callback_context,
+                    op_context->notification_callback, op_context->notification_callback_context,
                     notification_callback, context
                 );
+                result = WAITER_RESULT_REFUSED;
+                break;
             }
             else
             {
-                THANDLE(ASYNC_OP) async_op = async_op_create(cancel_register_notification, sizeof(WAITER_HANDLE), alignof(WAITER_HANDLE), dispose);
-                if (async_op == NULL)
+                if (state & WAITER_NOTIFIED)
                 {
-                    LogError("Failure in async_op_create(cancel_register_notification=%p, sizeof(WAITER_HANDLE)=%" PRIu32 ", alignof(WAITER_HANDLE)=%" PRIu32 ", dispose=%p)", cancel_register_notification, (uint32_t)sizeof(WAITER_HANDLE), (uint32_t)alignof(WAITER_HANDLE), dispose);
+                    OP_CONTEXT* op_context = waiter->current_op->context;
+                    if (interlocked_exchange(&op_context->completing, 1) != 0)
+                    {
+                        /* Previous operation is in progress, try again.*/
+                    }
+                    else
+                    {
+                        interlocked_and(op_context->state, ~WAITER_NOTIFIED);
+                        op_context->notify_complete_callback(op_context->context, WAITER_CALLBACK_RESULT_OK);
+                        interlocked_and(op_context->state, ~WAITER_REGISTERED);
+                        notification_callback(context, op_context->data, WAITER_CALLBACK_RESULT_OK);
+                        THANDLE_ASSIGN(RC_PTR)(&op_context->data, NULL);
+                        THANDLE_ASSIGN(ASYNC_OP)(&waiter->current_op, NULL);
+                        result = WAITER_RESULT_SYNC;
+                    }
                 }
                 else
                 {
-                    ((ASYNC_OP*)async_op)->context = waiter;
-                    waiter->notification_callback = notification_callback;
-                    waiter->notification_callback_context = context;
-                    waiter->registered = true;
-                    try_complete(waiter);
-                    THANDLE_INITIALIZE_MOVE(ASYNC_OP)(&result, &async_op);
+                    THANDLE(ASYNC_OP) async_op = async_op_create(cancel_register_notification, sizeof(WAITER_HANDLE), alignof(WAITER_HANDLE), NULL);
+                    if (async_op == NULL)
+                    {
+                        LogError("Failure in async_op_create(cancel_register_notification=%p, sizeof(WAITER_HANDLE)=%" PRIu32 ", alignof(WAITER_HANDLE)=%" PRIu32 ", NULL)", cancel_register_notification, (uint32_t)sizeof(WAITER_HANDLE), (uint32_t)alignof(WAITER_HANDLE));
+                    }
+                    else
+                    {
+                        ((ASYNC_OP*)async_op)->context = waiter;
+                        complete(waiter);
+                        THANDLE_INITIALIZE_MOVE(ASYNC_OP)(&result, &async_op);
+                    }
                 }
             }
-        }
-        srw_lock_release_exclusive(waiter->lock);
+        } while(1);
     }
     return result;
 }
@@ -174,7 +176,7 @@ static void cancel_notify(void* context)
     WAITER_HANDLE waiter = context;
     srw_lock_acquire_exclusive(waiter->lock);
     {
-        waiter->notify_complete_callback(waiter->notify_complete_callback_context, WAITER_RESULT_CANCELLED);
+        waiter->notify_complete_callback(waiter->notify_complete_callback_context, WAITER_CALLBACK_RESULT_CANCELLED);
         waiter->callbacks_called = true;
         THANDLE_ASSIGN(RC_PTR)(&waiter->data, NULL);
     }
@@ -184,7 +186,11 @@ static void cancel_notify(void* context)
 THANDLE(ASYNC_OP) waiter_notify(WAITER_HANDLE waiter, THANDLE(RC_PTR) data, NOTIFY_COMPLETE_CALLBACK notify_complete_callback, void* context)
 {
     THANDLE(ASYNC_OP) result = NULL;
-    if (waiter == NULL || data == NULL || notify_complete_callback == NULL || context == NULL)
+    if (
+        waiter == NULL ||
+        data == NULL ||
+        notify_complete_callback == NULL
+        )
     {
         LogError("Invalid arguments: WAITER_HANDLE waiter = %p, THANDLE(RC_PTR) data = %p, NOTIFY_COMPLETE_CALLBACK notify_complete_callback = %p, void* context = %p",
                    waiter, data, notify_complete_callback, context);
@@ -195,7 +201,7 @@ THANDLE(ASYNC_OP) waiter_notify(WAITER_HANDLE waiter, THANDLE(RC_PTR) data, NOTI
         {
             if (waiter->notified)
             {
-                LogError("waiter_notify called twice on WAITER waiter=%p."
+                LogError("waiter_notify called twice on WAITER_HANDLE waiter=%p."
                     "Previous arguments: THANDLE(RC_PTR) data=%" PRI_RC_PTR ", NOTIFY_COMPLETE_CALLBACK notify_complete_callback=%p, void* context=%p."
                     "Current arguments: THANDLE(RC_PTR) data=%" PRI_RC_PTR ", NOTIFY_COMPLETE_CALLBACK notify_complete_callback=%p, void* context=%p.",
                     waiter,
@@ -205,16 +211,15 @@ THANDLE(ASYNC_OP) waiter_notify(WAITER_HANDLE waiter, THANDLE(RC_PTR) data, NOTI
             }
             else
             {
-                THANDLE(ASYNC_OP) async_op = async_op_create(cancel_notify, sizeof(WAITER_HANDLE), alignof(WAITER_HANDLE), dispose);
+                THANDLE(ASYNC_OP) async_op = async_op_create(cancel_notify, sizeof(WAITER_HANDLE), alignof(WAITER_HANDLE), NULL);
                 if (async_op == NULL)
                 {
-                    LogError("Failure in async_op_create(cancel_notify=%p, sizeof(WAITER_HANDLE)=%" PRIu32 ", alignof(WAITER_HANDLE)=%" PRIu32 ", dispose=%p)", cancel_notify, (uint32_t)sizeof(WAITER_HANDLE), (uint32_t)alignof(WAITER_HANDLE), dispose);
+                    LogError("Failure in async_op_create(cancel_notify=%p, sizeof(WAITER_HANDLE)=%" PRIu32 ", alignof(WAITER_HANDLE)=%" PRIu32 ", NULL)", cancel_notify, (uint32_t)sizeof(WAITER_HANDLE), (uint32_t)alignof(WAITER_HANDLE));
                 }
                 else
                 {
                     ((ASYNC_OP*)async_op)->context = waiter;
-
-                    THANDLE_ASSIGN(RC_PTR)(&waiter->data, data);
+                    THANDLE_INITIALIZE(RC_PTR)(&waiter->data, data);
                     waiter->notify_complete_callback = notify_complete_callback;
                     waiter->notify_complete_callback_context = context;
                     waiter->notified = true;

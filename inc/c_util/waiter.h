@@ -14,11 +14,19 @@
 #include "c_util/rc_ptr.h"
 
 #define WAITER_RESULT_VALUES \
-    WAITER_RESULT_OK, \
-    WAITER_RESULT_CANCELLED, \
-    WAITER_RESULT_ABANDONED
+    WAITER_RESULT_SYNC, \
+    WAITER_RESULT_ASYNC, \
+    WAITER_RESULT_REFUSED, \
+    WAITER_RESULT_ERROR
 
 MU_DEFINE_ENUM(WAITER_RESULT, WAITER_RESULT_VALUES);
+
+#define WAITER_CALLBACK_RESULT_VALUES \
+    WAITER_CALLBACK_RESULT_OK, \
+    WAITER_CALLBACK_RESULT_CANCELLED, \
+    WAITER_CALLBACK_RESULT_ABANDONED
+
+MU_DEFINE_ENUM(WAITER_CALLBACK_RESULT, WAITER_CALLBACK_RESULT_VALUES);
 
 #include "umock_c/umock_c_prod.h"
 
@@ -27,13 +35,13 @@ extern "C" {
 #endif /* __cplusplus */
 
 typedef struct WAITER_TAG* WAITER_HANDLE;
-typedef void(*NOTIFICATION_CALLBACK)(void* context, THANDLE(RC_PTR) data, WAITER_RESULT result);
-typedef void(*NOTIFY_COMPLETE_CALLBACK)(void* context, WAITER_RESULT result);
+typedef void(*NOTIFICATION_CALLBACK)(void* context, THANDLE(RC_PTR) data, WAITER_CALLBACK_RESULT result);
+typedef void(*NOTIFY_COMPLETE_CALLBACK)(void* context, WAITER_CALLBACK_RESULT result);
 
     MOCKABLE_FUNCTION(, WAITER_HANDLE, waiter_create)
     MOCKABLE_FUNCTION(, void, waiter_destroy, WAITER_HANDLE, waiter)
-    MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), waiter_register_notification, WAITER_HANDLE, waiter, NOTIFICATION_CALLBACK, notification_callback, void*, context);
-    MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), waiter_notify, WAITER_HANDLE, waiter, THANDLE(RC_PTR), data, NOTIFY_COMPLETE_CALLBACK, notify_complete_callback, void*, context);
+    MOCKABLE_FUNCTION(, WAITER_RESULT, waiter_register_notification, WAITER_HANDLE, waiter, NOTIFICATION_CALLBACK, notification_callback, void*, context, THANDLE(ASYNC_OP)*, op);
+    MOCKABLE_FUNCTION(, WAITER_RESULT, waiter_notify, WAITER_HANDLE, waiter, THANDLE(RC_PTR), data, NOTIFY_COMPLETE_CALLBACK, notify_complete_callback, void*, context, THANDLE(ASYNC_OP)*, op);
 
 #ifdef __cplusplus
 }
