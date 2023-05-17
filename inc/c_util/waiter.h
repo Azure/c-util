@@ -28,8 +28,13 @@ MU_DEFINE_ENUM(WAITER_RESULT, WAITER_RESULT_VALUES);
 
 MU_DEFINE_ENUM(WAITER_CALLBACK_RESULT, WAITER_CALLBACK_RESULT_VALUES);
 
-#include "umock_c/umock_c_prod.h"
+typedef struct WAITER_TAG
+{
+    volatile_atomic int32_t state;
+    THANDLE(ASYNC_OP) current_op;
+} WAITER;
 
+#include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
