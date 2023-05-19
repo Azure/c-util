@@ -28,25 +28,20 @@ MU_DEFINE_ENUM(WAITER_RESULT, WAITER_RESULT_VALUES);
 
 MU_DEFINE_ENUM(WAITER_CALLBACK_RESULT, WAITER_CALLBACK_RESULT_VALUES);
 
-typedef struct WAITER_TAG
-{
-    volatile_atomic int32_t state;
-    THANDLE(ASYNC_OP) current_op;
-} WAITER;
-
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-typedef struct WAITER_TAG* WAITER_HANDLE;
 typedef void(*NOTIFICATION_CALLBACK)(void* context, THANDLE(RC_PTR) data, WAITER_CALLBACK_RESULT result);
 typedef void(*NOTIFY_COMPLETE_CALLBACK)(void* context, WAITER_CALLBACK_RESULT result);
+typedef struct WAITER_TAG WAITER;
 
-    MOCKABLE_FUNCTION(, WAITER_HANDLE, waiter_create)
-    MOCKABLE_FUNCTION(, void, waiter_destroy, WAITER_HANDLE, waiter)
-    MOCKABLE_FUNCTION(, WAITER_RESULT, waiter_register_notification, WAITER_HANDLE, waiter, NOTIFICATION_CALLBACK, notification_callback, void*, context, THANDLE(ASYNC_OP)*, op);
-    MOCKABLE_FUNCTION(, WAITER_RESULT, waiter_notify, WAITER_HANDLE, waiter, THANDLE(RC_PTR), data, NOTIFY_COMPLETE_CALLBACK, notify_complete_callback, void*, context, THANDLE(ASYNC_OP)*, op);
+THANDLE_TYPE_DECLARE(WAITER);
+
+    MOCKABLE_FUNCTION(, THANDLE(WAITER), waiter_create)
+    MOCKABLE_FUNCTION(, WAITER_RESULT, waiter_register_notification, THANDLE(WAITER), waiter, NOTIFICATION_CALLBACK, notification_callback, void*, context, THANDLE(ASYNC_OP)*, out_op);
+    MOCKABLE_FUNCTION(, WAITER_RESULT, waiter_notify, THANDLE(WAITER), waiter, THANDLE(RC_PTR), data, NOTIFY_COMPLETE_CALLBACK, notify_complete_callback, void*, context, THANDLE(ASYNC_OP)*, out_op);
 
 #ifdef __cplusplus
 }

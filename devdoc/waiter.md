@@ -4,29 +4,80 @@
 
 `waiter` is a module that allows the user to move data asynchronously from producer to consumer without having to block the thread.
 
-Consumers call `waiter_register_notification` to register a `NOTIFICATION_CALLBACK` function to be called when data becomes available.
+Consumers of data call `waiter_register_notification` to register a `NOTIFICATION_CALLBACK` function to be called when data becomes available.
 
-Producers call `waiter_notify` to notify the waiter that data is available.
+Producers of data call `waiter_notify` to notify the waiter that data is available.
 
 `waiter_register_notification` and `waiter_notify` can be called from different threads in any order.
+
+## `waiter` state
+
+The state of the `waiter` module consists of three components:
+- `EPOCH`: This is a monotonically increasing integer that is incremented every time an operation is completed or cancelled.
+- `NOTIFIED`: This is a bit signifying that `waiter_notify` has been called previously and a `waiter_register_notification` call is expected to complete the operation.
+- `REGISTERED`: This is a bit signifying that `waiter_register_notification` has been called previously and a `waiter_notify` call is expected to complete the operation.
+
+All three components are stored in a single `volatile_atomic` variable that is manipulated using `interlocked` APIs.
+
+```mermaid
+stateDiagram-v2
+    B: EPOCH=x,N=0,R=0
+    N: EPOCH=x,N=1,R=0
+    R: EPOCH=x,N=0,R=1
+    E: EPOCH=x+1,N=0,R=0
+
+    B --> N:  waiter_notify
+    B --> R:  waiter_register_notification
+
+    N --> E:  waiter_register_notification
+    R --> E: waiter_notify
+
+    N --> E:  cancel waiter_notify
+    R --> E: cancel waiter_register_notification
+
+    R --> R: waiter_register_notification
+    N --> N: waiter_notify
+```
+
+## Reentrancy
+
+`waiter` is reentrant. This means that `waiter_register_notification` and `waiter_notify` can be called from `NOTIFICATION_CALLBACK` and `NOTIFY_COMPLETE_CALLBACK` functions.
 
 ## Exposed API
 ```c
 #define WAITER_RESULT_VALUES \
-    WAITER_RESULT_OK, \
-    WAITER_RESULT_CANCELLED, \
-    WAITER_RESULT_ABANDONED
+    WAITER_RESULT_SYNC, \
+    WAITER_RESULT_ASYNC, \
+    WAITER_RESULT_REFUSED, \
+    WAITER_RESULT_ERROR
 
 MU_DEFINE_ENUM(WAITER_RESULT, WAITER_RESULT_VALUES);
 
-typedef struct WAITER_TAG* WAITER_HANDLE;
-typedef void(*NOTIFICATION_CALLBACK)(void* context, THANDLE(RC_PTR) data, WAITER_RESULT result);
-typedef void(*NOTIFY_COMPLETE_CALLBACK)(void* context, WAITER_RESULT result);
+#define WAITER_CALLBACK_RESULT_VALUES \
+    WAITER_CALLBACK_RESULT_OK, \
+    WAITER_CALLBACK_RESULT_CANCELLED, \
+    WAITER_CALLBACK_RESULT_ABANDONED
 
-    MOCKABLE_FUNCTION(, WAITER_HANDLE, waiter_create)
-    MOCKABLE_FUNCTION(, void, waiter_destroy, WAITER_HANDLE, waiter)
-    MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), waiter_register_notification, WAITER_HANDLE, waiter, NOTIFICATION_CALLBACK, notification_callback, void*, context);
-    MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), waiter_notify, WAITER_HANDLE, waiter, THANDLE(RC_PTR), data, NOTIFY_COMPLETE_CALLBACK, notify_complete_callback, void*, context);
+MU_DEFINE_ENUM(WAITER_CALLBACK_RESULT, WAITER_CALLBACK_RESULT_VALUES);
+
+#include "umock_c/umock_c_prod.h"
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+typedef void(*NOTIFICATION_CALLBACK)(void* context, THANDLE(RC_PTR) data, WAITER_CALLBACK_RESULT result);
+typedef void(*NOTIFY_COMPLETE_CALLBACK)(void* context, WAITER_CALLBACK_RESULT result);
+typedef struct WAITER_TAG WAITER;
+
+THANDLE_TYPE_DECLARE(WAITER);
+
+    MOCKABLE_FUNCTION(, THANDLE(WAITER), waiter_create)
+    MOCKABLE_FUNCTION(, WAITER_RESULT, waiter_register_notification, THANDLE(WAITER), waiter, NOTIFICATION_CALLBACK, notification_callback, void*, context, THANDLE(ASYNC_OP)*, out_op);
+    MOCKABLE_FUNCTION(, WAITER_RESULT, waiter_notify, THANDLE(WAITER), waiter, THANDLE(RC_PTR), data, NOTIFY_COMPLETE_CALLBACK, notify_complete_callback, void*, context, THANDLE(ASYNC_OP)*, out_op);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 ```
 
@@ -37,41 +88,144 @@ typedef void(*NOTIFY_COMPLETE_CALLBACK)(void* context, WAITER_RESULT result);
 
 `waiter_create` creates the waiter and returns it.
 
-### waiter_destroy
+**SRS_WAITER_43_001: [** `waiter_create` shall call `THANDLE_MALLOC` with `dispose` as `waiter_dispose`. **]**
+
+**SRS_WAITER_43_002: [** If there are any failures, `waiter_create` shall fail and return `NULL`. **]**
+
+### waiter_dispose
 ```c
-    MOCKABLE_FUNCTION(, void, waiter_destroy, WAITER_HANDLE, waiter)
+    void waiter_dispose(WAITER* waiter)
 ```
 
-`waiter_destroy` destroys the given `waiter`.
+**SRS_WAITER_43_003: [** `waiter_dispose` disposes the given `waiter`. **]**
 
-- If `waiter_register_notification` has been called previously but `waiter_notify` has not been called, `waiter_destroy` shall call the `notification_callback` given to `waiter_register_notification` with `context` as the `context` given to `waiter_register_notification`, `data` as `NULL` and `result` as `WAITER_RESULT_ABANDONED`.
-- If `waiter_notify` has been called previously but `waiter_register_notification` has not been called, `waiter_destroy` shall call the `notify_complete_callback` given to `waiter_notify` with `context` as the `context` given to `waiter_notify`, and `result` as `WAITER_RESULT_ABANDONED`.
-- `waiter_destroy` shall destroy the given `waiter`.
+**SRS_WAITER_43_004: [** `waiter_dispose` shall obtain the current state of the waiter by calling `interlocked_and`. **]**
+
+**SRS_WAITER_43_005: [** If the `REGISTERED` bit is set, `waiter_dispose` shall call the `notification_callback` given to `waiter_register_notification` with `context` as the `context` given to `waiter_register_notification`, `data` as `NULL` and `result` as `WAITER_RESULT_ABANDONED`. **]**
+
+**SRS_WAITER_43_006: [** If the `NOTIFIED` bit is set, `waiter_dispose` shall: **]**
+
+- **SRS_WAITER_43_044: [** call the `notify_complete_callback` given to `waiter_notify` with `context` as the `context` given to `waiter_notify`, and `result` as `WAITER_RESULT_ABANDONED`. **]**
+
+- **SRS_WAITER_43_045: [** release the reference to `data` stored in `waiter` by calling `THANDLE_ASSIGN`. **]**
 
 ### waiter_register_notification
 ```c
-    MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), waiter_register_notification, WAITER_HANDLE, waiter, NOTIFICATION_CALLBACK, notification_callback, void*, context);
+    MOCKABLE_FUNCTION(, WAITER_RESULT, waiter_register_notification, THANDLE(WAITER), waiter, NOTIFICATION_CALLBACK, notification_callback, void*, context, THANDLE(ASYNC_OP)*, out_op);
 ```
 
 `waiter_register_notification` registers the given `notification_callback` to be called when `waiter_notify` is called.
 
-- If `waiter_notify` has been called previously, `waiter_register_notification` shall call:
-    - the given `notification_callback` with `context` as the given `context`, `data` as the `data` that was given to `waiter_notify` and `result` as `WAITER_RESULT_OK`.
-    - the `notify_callback` given to `waiter_notify` with `context` as the `context` given to `waiter_notify` and `result` as `WAITER_RESULT_OK`.
-- `waiter_register_notification` shall return a `THANDLE(ASYNC_OP)` that the user can use to cancel the operation.
-- If the user calls `async_op_cancel` on the returned `THANDLE(ASYNC_OP)` before `waiter_notify` is called, the given `notification_callback` is called with `context` as the given `context`, `data` as `NULL` and `result` as `WAITER_RESULT_CANCELLED`.
-- If `waiter_register_notification` is called more than once, it shall fail and return `NULL`.
+**SRS_WAITER_43_007: [** If `waiter` is `NULL`, `waiter_register_notification` shall fail and return `WAITER_RESULT_ERROR`. **]**
+
+**SRS_WAITER_43_008: [** If `notification_callback` is `NULL`, `waiter_register_notification` shall fail and return `WAITER_RESULT_ERROR`. **]**
+
+**SRS_WAITER_43_009: [** If `out_op` is `NULL`, `waiter_register_notification` shall fail and return `WAITER_RESULT_ERROR`. **]**
+
+**SRS_WAITER_43_010: [** `waiter_register_notification` shall call `interlocked_or` to set the `REGISTERED` bit and obtain the current state of the `waiter`. **]**
+
+**SRS_WAITER_43_011: [** If the `REGISTERED` bit was already set in the current state, `waiter_register_notification` shall fail and return `WAITER_RESULT_REFUSED`. **]**
+
+**SRS_WAITER_43_012: [** If the `NOTIFIED` bit is set, `waiter_register_notification` shall : **]**
+
+- **SRS_WAITER_43_042: [** call `interlocked_exchange` to increment the `EPOCH` and unset the `NOTIFIED` bit and `REGISTERED` bit. **]**
+
+- **SRS_WAITER_43_013: [** call the given `notification_callback` with `context` as the given `context`, `data` as the `data` that was given to `waiter_notify` and `result` as `WAITER_RESULT_OK`. **]**
+
+- **SRS_WAITER_43_053: [** release the reference to `data` stored in `waiter` by calling `THANDLE_ASSIGN`. **]**
+
+- **SRS_WAITER_43_014: [** call the `notify_complete_callback` given to `waiter_notify` with `context` as the `context` given to `waiter_notify` and `result` as `WAITER_RESULT_OK`. **]**
+
+- **SRS_WAITER_43_015: [** return `WAITER_RESULT_SYNC`. **]**
+
+
+**SRS_WAITER_43_016: [** If the `NOTIFIED` bit was not already set, `waiter_register_notification` shall: **]**
+
+- **SRS_WAITER_43_017: [** call `async_op_create` with `cancel_register_notification` as the cancel function. **]**
+
+- **SRS_WAITER_43_018: [** store the given `notification_callback` and the given `context` in the `waiter`. **]**
+
+- **SRS_WAITER_43_019: [** store the current state of the `waiter` in the created `THANDLE(ASYNC_OP)`. **]**
+
+- **SRS_WAITER_43_020: [** store the given `waiter` in the created `THANDLE(ASYNC_OP)` by calling `THANDLE_INITIALIZE`. **]**
+
+- **SRS_WAITER_43_021: [** store the created `THANDLE(ASYNC_OP)` in `out_op`by calling `THANDLE_INITIALIZE_MOVE`. **]**
+
+- **SRS_WAITER_43_022: [** return `WAITER_RESULT_ASYNC`. **]**
+
+**SRS_WAITER_43_023: [** If there are any failures, `waiter_register_notification` shall fail and return `WAITER_RESULT_ERROR`. **]**
+
+### cancel_register_notification
+```
+static void cancel_register_notification(void* context)
+```
+
+`cancel_register_notification` is the cancel function given to `async_op_create` when `waiter_register_notification` is called.
+
+**SRS_WAITER_43_046: [** If the current state of the `waiter` is the same as the initial state of the `waiter` when `waiter_register_notification` was called, `cancel_register_notification` shall: **]**
+
+ **SRS_WAITER_43_047: [** increment the `EPOCH` and unset the `REGISTERED` bit by calling `interlocked_compare_exchange`. **]**
+
+ **SRS_WAITER_43_048: [** call the `notification_callback` given to `waiter_register_notification` with `context` as the `context` given to `waiter_register_notification`, `data` as `NULL` and `result` as `WAITER_RESULT_CANCELLED`. **]**
+
 
 ### waiter_notify
 ```c
-    MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), waiter_notify, WAITER_HANDLE, waiter, THANDLE(RC_PTR), data, NOTIFY_COMPLETE_CALLBACK, notify_complete_callback, void*, context);
+    MOCKABLE_FUNCTION(, WAITER_RESULT, waiter_notify, THANDLE(WAITER), waiter, THANDLE(RC_PTR), data, NOTIFY_COMPLETE_CALLBACK, notify_complete_callback, void*, context, THANDLE(ASYNC_OP)*, out_op);
 ```
 
 `waiter_notify` notifies the waiter that there is data available and registers the given `notify_complete_callback` to be called when the given `data` has been consumed.
 
-- If `waiter_register_notification` has been called previously, `waiter_notify` shall call:
-    - the given `notify_complete_callback` with `context` as the given `context` and `result` as `WAITER_RESULT_OK`.
-    - the `notification_callback` given to `waiter_register_notification` with `context` as the `context` given to `waiter_register_notification`, `data` as the given `data` and `result` as `WAITER_RESULT_OK`.
-- `waiter_notify` shall return a `THANDLE(ASYNC_OP)` that the user can use to cancel the operation.
-- If the user calls `async_op_cancel` on the returned `THANDLE(ASYNC_OP)` before `waiter_register_notification` is called, the given `notify_complete_callback` is called with `context` as the given `context` and `result` as `WAITER_RESULT_CANCELLED`.
-- If `waiter_notify` is called more than once, it shall fail and return `NULL`.
+**SRS_WAITER_43_024: [** If `waiter` is `NULL`, `waiter_notify` shall fail and return `WAITER_RESULT_ERROR`. **]**
+
+**SRS_WAITER_43_025: [** If `notify_complete_callback` is `NULL`, `waiter_notify` shall fail and return `WAITER_RESULT_ERROR`. **]**
+
+**SRS_WAITER_43_026: [** If `out_op` is `NULL`, `waiter_notify` shall fail and return `WAITER_RESULT_ERROR`. **]**
+
+**SRS_WAITER_43_027: [** `waiter_notify` shall call `interlocked_or` to set the `NOTIFIED` bit and obtain the current state of the `waiter`. **]**
+
+**SRS_WAITER_43_028: [** If the `NOTIFIED` bit was already set in the current state, `waiter_notify` shall fail and return `WAITER_RESULT_REFUSED`. **]**
+
+**SRS_WAITER_43_029: [** If the `REGISTERED` bit is set, `waiter_notify` shall: **]**
+
+- **SRS_WAITER_43_043: [** call `interlocked_exchange` to increment the `EPOCH` and unset the `NOTIFIED` bit and `REGISTERED` bit. **]**
+
+- **SRS_WAITER_43_030: [** call the given `notification_callback` with `context` as the `context` given to `waiter_register_notification`, `data` as the given `data` and `result` as `WAITER_RESULT_OK`. **]**
+
+- **SRS_WAITER_43_031: [** call the given `notify_complete_callback` with `context` as the given `context` and `result` as `WAITER_RESULT_OK`. **]**
+
+- **SRS_WAITER_43_032: [** return `WAITER_RESULT_SYNC`. **]**
+
+**SRS_WAITER_43_033: [** If the `REGISTERED` bit was not already set, `waiter_notify` shall: **]**
+
+- **SRS_WAITER_43_034: [** call `async_op_create` with `cancel_notify` as the cancel function. **]**
+
+- **SRS_WAITER_43_035: [** store the given `notify_complete_callback` and the given `context` in the `waiter`. **]**
+
+- **SRS_WAITER_43_036: [** store the given `data` in the `waiter` by calling `THANDLE_INITIALIZE`. **]**
+
+- **SRS_WAITER_43_037: [** store the current state of the `waiter` in the created `THANDLE(ASYNC_OP)`. **]**
+
+- **SRS_WAITER_43_038: [** store the given `waiter` in the created `THANDLE(ASYNC_OP)` by calling `THANDLE_INITIALIZE`. **]**
+
+- **SRS_WAITER_43_039: [** store the created `THANDLE(ASYNC_OP)` in `out_op`by calling `THANDLE_INITIALIZE_MOVE`. **]**
+
+- **SRS_WAITER_43_040: [** return `WAITER_RESULT_ASYNC`. **]**
+
+**SRS_WAITER_43_041: [** If there are any failures, `waiter_notify` shall fail and return `WAITER_RESULT_ERROR`. **]**
+
+
+### cancel_notify
+```c
+static void cancel_notify(void* context)
+```
+
+`cancel_notify` is the cancel function given to `async_op_create` when `waiter_notify` is called.
+
+**SRS_WAITER_43_049: [** If the current state of the `waiter` is the same as the initial state of the `waiter` when `waiter_notify` was called, `cancel_notify` shall: **]**
+
+- **SRS_WAITER_43_050: [** increment the `EPOCH` and unset the `NOTIFIED` bit by calling `interlocked_compare_exchange`. **]**
+
+- **SRS_WAITER_43_051: [** call the `notify_complete_callback` given to `waiter_notify` with `context` as the `context` given to `waiter_notify` and `result` as `WAITER_RESULT_CANCELLED`. **]**
+
+- **SRS_WAITER_43_052: [** release the reference to `data` stored in `waiter` by calling `THANDLE_ASSIGN`. **]**
