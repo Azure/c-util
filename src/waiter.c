@@ -12,16 +12,25 @@
 
 #include "c_pal/thandle.h"
 #include "c_pal/interlocked.h"
+#include "c_pal/sync.h"
 
 #include "c_util/async_op.h"
 #include "c_util/rc_ptr.h"
 
 #include "c_util/waiter.h"
 
-#define WAITER_REGISTERED (1 << 0)
-#define WAITER_NOTIFIED (1 << 1)
-#define WAITER_STATE_MASK (WAITER_REGISTERED | WAITER_NOTIFIED)
-#define WAITER_EPOCH_INCREMENT (1 << 2)
+#define WAITER_STATE_VALUES \
+    WAITER_READY, \
+    WAITER_NOTIFYING, \
+    WAITER_NOTIFIED, \
+    WAITER_REGISTERING, \
+    WAITER_REGISTERED
+
+MU_DEFINE_ENUM(WAITER_STATE, WAITER_STATE_VALUES)
+
+#define WAITER_EPOCH_INCREMENT (1 << 3)
+
+#define WAITER_STATE_MASK ((1 << 3) - 1)
 
 struct WAITER_TAG{
     union
@@ -45,11 +54,11 @@ typedef struct OP_CONTEXT_TAG
 void waiter_dispose(WAITER* waiter)
 {
     int32_t state = interlocked_add(&waiter->state, 0);
-    if(state & WAITER_REGISTERED)
+    if((state & WAITER_STATE_MASK) == WAITER_REGISTERED)
     {
         waiter->notification_callback(waiter->context, NULL, WAITER_CALLBACK_RESULT_ABANDONED);
     }
-    else if (state & WAITER_NOTIFIED)
+    else if ((state & WAITER_STATE_MASK) == WAITER_NOTIFIED)
     {
         waiter->notify_complete_callback(waiter->context, WAITER_CALLBACK_RESULT_ABANDONED);
         THANDLE_ASSIGN(RC_PTR)(&waiter->data, NULL);
@@ -70,7 +79,7 @@ THANDLE(WAITER) waiter_create(void)
         waiter->notify_complete_callback = NULL;
         waiter->context = NULL;
         THANDLE_INITIALIZE(RC_PTR)(&waiter->data, NULL);
-        (void)interlocked_exchange(&waiter->state, 0);
+        (void)interlocked_exchange(&waiter->state, WAITER_READY);
     }
     return result;
 }
@@ -85,7 +94,7 @@ static void cancel_register_notification(void* context)
     {
         OP_CONTEXT* op_context = context;
         WAITER* waiter = THANDLE_GET_T(WAITER)(op_context->waiter);
-        if (interlocked_compare_exchange(&waiter->state, op_context->initial_state - WAITER_REGISTERED + WAITER_EPOCH_INCREMENT, op_context->initial_state) != op_context->initial_state)
+        if (interlocked_compare_exchange(&waiter->state, op_context->initial_state + WAITER_EPOCH_INCREMENT - WAITER_REGISTERED + WAITER_READY, op_context->initial_state) != op_context->initial_state)
         {
             LogError("Operation OP_CONTEXT* op_context = %p has been already cancelled or completed", op_context);
         }
@@ -120,56 +129,91 @@ WAITER_RESULT waiter_register_notification(THANDLE(WAITER) waiter, NOTIFICATION_
     {
         LogError("Invalid arguments: WAITER_HANDLE waiter = %p, NOTIFICATION_CALLBACK notification_callback = %p, void* context = %p, THANDLE(ASYNC_OP)* out_op = %p",
             waiter, notification_callback, context, out_op);
-        result = WAITER_RESULT_ERROR;
+        result = WAITER_RESULT_INVALID_ARGS;
     }
     else
     {
         WAITER* waiter_ptr = THANDLE_GET_T(WAITER)(waiter);
-        int32_t state = interlocked_or(&waiter_ptr->state, WAITER_REGISTERED);
-        if (state & WAITER_REGISTERED)
+        do
         {
-            LogError("waiter_register_notification called twice on WAITER_HANDLE waiter=%p.", waiter);
-            result = WAITER_RESULT_REFUSED;
-        }
-        else
-        {
-            if (state & WAITER_NOTIFIED)
+            int32_t state = interlocked_add(&waiter_ptr->state, 0);
+
+            if (
+                 (state & WAITER_STATE_MASK) == WAITER_REGISTERED ||
+                 (state & WAITER_STATE_MASK) == WAITER_REGISTERING
+                )
             {
-                if(interlocked_compare_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT - WAITER_NOTIFIED, (state | WAITER_REGISTERED)) != (state | WAITER_REGISTERED))
+                LogError("waiter_register_notification called twice on WAITER_HANDLE waiter=%p.", waiter);
+                result = WAITER_RESULT_REFUSED;
+                break;
+            }
+            else if ((state & WAITER_STATE_MASK) == WAITER_NOTIFYING)
+            {
+                /* waiter_notify is running, wait for it to finish */
+                if (wait_on_address(&waiter_ptr->state, state, UINT32_MAX) != WAIT_ON_ADDRESS_OK)
                 {
-                    LogError("State should not have changed");
+                    LogError("Failure in wait_on_address(&waiter_ptr->state = %p, state = %" PRIx32 ", UINT32_MAX=% " PRIx32 ")", &waiter_ptr->state, state, UINT32_MAX);
                     result = WAITER_RESULT_ERROR;
+                    break;
                 }
                 else
                 {
-                    notification_callback(context, waiter_ptr->data, WAITER_CALLBACK_RESULT_OK);
-                    waiter_ptr->notify_complete_callback(waiter_ptr->context, WAITER_CALLBACK_RESULT_OK);
-                    THANDLE_ASSIGN(RC_PTR)(&waiter_ptr->data, NULL);
-                    result = WAITER_RESULT_SYNC;
+                    /* waiter_notify complete, try again*/
                 }
             }
             else
             {
-                THANDLE(ASYNC_OP) async_op = async_op_create(cancel_register_notification, sizeof(OP_CONTEXT), alignof(OP_CONTEXT), dispose_async_op);
-                if (async_op == NULL)
+                if ((state & WAITER_STATE_MASK) == WAITER_NOTIFIED)
                 {
-                    LogError("Failure in async_op_create(cancel_register_notification=%p, sizeof(OP_CONTEXT)=%" PRIu32 ", alignof(OP_CONTEXT)=%" PRIu32 ", dispose_async_op=%p)", cancel_register_notification, (uint32_t)sizeof(OP_CONTEXT), (uint32_t)alignof(OP_CONTEXT), dispose_async_op);
-                    result = WAITER_RESULT_ERROR;
+                    NOTIFY_COMPLETE_CALLBACK notify_complete_callback = waiter_ptr->notify_complete_callback;
+                    void* notify_complete_context = waiter_ptr->context;
+                    if(interlocked_compare_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT - WAITER_NOTIFIED + WAITER_READY, state) != state)
+                    {
+                        /*state changed by another thread, try again*/
+                    }
+                    else
+                    {
+                        /* waiter_notify has been called previous, complete operation synchronously */
+                        notification_callback(context, waiter_ptr->data, WAITER_CALLBACK_RESULT_OK);
+                        notify_complete_callback(notify_complete_context, WAITER_CALLBACK_RESULT_OK);
+                        THANDLE_ASSIGN(RC_PTR)(&waiter_ptr->data, NULL);
+                        THANDLE_ASSIGN(ASYNC_OP)(out_op, NULL);
+                        result = WAITER_RESULT_SYNC;
+                        break;
+                    }
                 }
                 else
                 {
-                    waiter_ptr->notification_callback = notification_callback;
-                    waiter_ptr->context = context;
+                    if (interlocked_compare_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT - WAITER_READY + WAITER_REGISTERING, state) != state)
+                    {
+                        /*state changed by another thread, try again*/
+                    }
+                    else
+                    {
+                        THANDLE(ASYNC_OP) async_op = async_op_create(cancel_register_notification, sizeof(OP_CONTEXT), alignof(OP_CONTEXT), dispose_async_op);
+                        if (async_op == NULL)
+                        {
+                            LogError("Failure in async_op_create(cancel_register_notification=%p, sizeof(OP_CONTEXT)=%" PRIu32 ", alignof(OP_CONTEXT)=%" PRIu32 ", dispose_async_op=%p)", cancel_register_notification, (uint32_t)sizeof(OP_CONTEXT), (uint32_t)alignof(OP_CONTEXT), dispose_async_op);
+                            result = WAITER_RESULT_ERROR;
+                        }
+                        else
+                        {
+                            waiter_ptr->notification_callback = notification_callback;
+                            waiter_ptr->context = context;
 
-                    OP_CONTEXT* op_context = async_op->context;
-                    op_context->initial_state = state | WAITER_REGISTERED;
-                    THANDLE_INITIALIZE(WAITER)(&op_context->waiter, waiter);
-                    THANDLE_INITIALIZE_MOVE(ASYNC_OP)(out_op, &async_op);
-
-                    result = WAITER_RESULT_ASYNC;
+                            OP_CONTEXT* op_context = async_op->context;
+                            op_context->initial_state = state + WAITER_EPOCH_INCREMENT - WAITER_READY + WAITER_REGISTERED;
+                            THANDLE_INITIALIZE(WAITER)(&op_context->waiter, waiter);
+                            THANDLE_INITIALIZE_MOVE(ASYNC_OP)(out_op, &async_op);
+                            (void)interlocked_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT- WAITER_READY + WAITER_REGISTERED);
+                            wake_by_address_all(&waiter_ptr->state);
+                            result = WAITER_RESULT_ASYNC;
+                        }
+                        break;
+                    }
                 }
             }
-        }
+        } while(1);
     }
     return result;
 }
@@ -185,7 +229,7 @@ static void cancel_notify(void* context)
 
         OP_CONTEXT* op_context = context;
         WAITER* waiter = THANDLE_GET_T(WAITER)(op_context->waiter);
-        if (interlocked_compare_exchange(&waiter->state, op_context->initial_state - WAITER_NOTIFIED + WAITER_EPOCH_INCREMENT, op_context->initial_state) != op_context->initial_state)
+        if (interlocked_compare_exchange(&waiter->state, op_context->initial_state + WAITER_EPOCH_INCREMENT - WAITER_NOTIFIED + WAITER_READY, op_context->initial_state) != op_context->initial_state)
         {
             LogError("Operation OP_CONTEXT* op_context = %p has been already cancelled or completed", op_context);
         }
@@ -208,56 +252,91 @@ WAITER_RESULT waiter_notify(THANDLE(WAITER) waiter, THANDLE(RC_PTR) data, NOTIFY
     {
         LogError("Invalid arguments: WAITER_HANDLE waiter = %p, NOTIFY_COMPLETE_CALLBACK notify_complete_callback = %p, void* context = %p, THANDLE(ASYNC_OP)* out_op = %p",
             waiter, notify_complete_callback, context, out_op);
-        result = WAITER_RESULT_ERROR;
+        result = WAITER_RESULT_INVALID_ARGS;
     }
     else
     {
         WAITER* waiter_ptr = THANDLE_GET_T(WAITER)(waiter);
-        int32_t state = interlocked_or(&waiter_ptr->state, WAITER_NOTIFIED);
-        if (state & WAITER_NOTIFIED)
+        do
         {
-            LogError("waiter_notify called twice on WAITER_HANDLE waiter=%p.", waiter);
-            result = WAITER_RESULT_REFUSED;
-        }
-        else
-        {
-            if (state & WAITER_REGISTERED)
+            int32_t state = interlocked_add(&waiter_ptr->state, 0);
+            if (
+                (state & WAITER_STATE_MASK) == WAITER_NOTIFIED ||
+                (state & WAITER_STATE_MASK) == WAITER_NOTIFYING
+                )
             {
-                if (interlocked_compare_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT - WAITER_REGISTERED, (state | WAITER_NOTIFIED)) != (state | WAITER_NOTIFIED))
+                LogError("waiter_notify called twice on WAITER_HANDLE waiter=%p.", waiter);
+                result = WAITER_RESULT_REFUSED;
+                break;
+            }
+            else if ((state & WAITER_STATE_MASK) == WAITER_REGISTERING)
+            {
+                /* waiter_register_notification is running, wait for it to finish */
+                if (wait_on_address(&waiter_ptr->state, state, UINT32_MAX) != WAIT_ON_ADDRESS_OK)
                 {
-                    LogError("State should not have changed");
+                    LogError("Failure in wait_on_address(&waiter_ptr->state = %p, state = %" PRIx32 ", UINT32_MAX=% " PRIx32 ")", &waiter_ptr->state, state, UINT32_MAX);
                     result = WAITER_RESULT_ERROR;
+                    break;
                 }
                 else
                 {
-                    waiter_ptr->notification_callback(waiter_ptr->context, data, WAITER_CALLBACK_RESULT_OK);
-                    notify_complete_callback(context, WAITER_CALLBACK_RESULT_OK);
-                    result = WAITER_RESULT_SYNC;
+                    /* waiter_register_notification complete, try again*/
                 }
             }
             else
             {
-                THANDLE(ASYNC_OP) async_op = async_op_create(cancel_notify, sizeof(OP_CONTEXT), alignof(OP_CONTEXT), dispose_async_op);
-                if (async_op == NULL)
+                if ((state & WAITER_STATE_MASK) == WAITER_REGISTERED)
                 {
-                    LogError("Failure in async_op_create(cancel_notify=%p, sizeof(OP_CONTEXT)=%" PRIu32 ", alignof(OP_CONTEXT)=%" PRIu32 ", dispose_async_op=%p)", cancel_notify, (uint32_t)sizeof(OP_CONTEXT), (uint32_t)alignof(OP_CONTEXT), dispose_async_op);
-                    result = WAITER_RESULT_ERROR;
+                    NOTIFICATION_CALLBACK notification_callback = waiter_ptr->notification_callback;
+                    void* notification_context = waiter_ptr->context;
+                    if (interlocked_compare_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT - WAITER_REGISTERED + WAITER_READY, state) != state)
+
+                    {
+                        /*state changed by another thread, try again*/
+                    }
+                    else
+                    {
+                        notification_callback(notification_context, data, WAITER_CALLBACK_RESULT_OK);
+                        notify_complete_callback(context, WAITER_CALLBACK_RESULT_OK);
+                        THANDLE_ASSIGN(ASYNC_OP)(out_op, NULL);
+                        result = WAITER_RESULT_SYNC;
+                        break;
+                    }
                 }
                 else
                 {
-                    waiter_ptr->notify_complete_callback = notify_complete_callback;
-                    waiter_ptr->context = context;
-                    THANDLE_INITIALIZE(RC_PTR)(&waiter_ptr->data, data);
+                    if (interlocked_compare_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT - WAITER_READY + WAITER_NOTIFYING, state) != state)
+                    {
+                        /*state changed by another thread, try again*/
+                    }
+                    else
+                    {
+                        THANDLE(ASYNC_OP) async_op = async_op_create(cancel_notify, sizeof(OP_CONTEXT), alignof(OP_CONTEXT), dispose_async_op);
+                        if (async_op == NULL)
+                        {
+                            LogError("Failure in async_op_create(cancel_notify=%p, sizeof(OP_CONTEXT)=%" PRIu32 ", alignof(OP_CONTEXT)=%" PRIu32 ", dispose_async_op=%p)", cancel_notify, (uint32_t)sizeof(OP_CONTEXT), (uint32_t)alignof(OP_CONTEXT), dispose_async_op);
+                            result = WAITER_RESULT_ERROR;
+                        }
+                        else
+                        {
+                            waiter_ptr->notify_complete_callback = notify_complete_callback;
+                            waiter_ptr->context = context;
+                            THANDLE_INITIALIZE(RC_PTR)(&waiter_ptr->data, data);
 
-                    OP_CONTEXT* op_context = async_op->context;
-                    op_context->initial_state = state | WAITER_NOTIFIED;
-                    THANDLE_INITIALIZE(WAITER)(&op_context->waiter, waiter);
+                            OP_CONTEXT* op_context = async_op->context;
+                            op_context->initial_state = state + WAITER_EPOCH_INCREMENT - WAITER_READY + WAITER_NOTIFIED;
+                            THANDLE_INITIALIZE(WAITER)(&op_context->waiter, waiter);
 
-                    THANDLE_INITIALIZE_MOVE(ASYNC_OP)(out_op, &async_op);
-                    result = WAITER_RESULT_ASYNC;
+                            THANDLE_INITIALIZE_MOVE(ASYNC_OP)(out_op, &async_op);
+                            (void)interlocked_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT - WAITER_READY + WAITER_NOTIFIED);
+                            wake_by_address_all(&waiter_ptr->state);
+                            result = WAITER_RESULT_ASYNC;
+                        }
+                        break;
+                    }
                 }
             }
-        }
+        } while(1);
     }
     return result;
 }

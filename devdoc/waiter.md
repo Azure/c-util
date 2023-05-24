@@ -12,10 +12,14 @@ Producers of data call `waiter_notify` to notify the waiter that data is availab
 
 ## `waiter` state
 
-The state of the `waiter` module consists of three components:
+The state of the `waiter` module consists of two components:
 - `EPOCH`: This is a monotonically increasing integer that is incremented every time an operation is completed or cancelled.
-- `NOTIFIED`: This is a bit signifying that `waiter_notify` has been called previously and a `waiter_register_notification` call is expected to complete the operation.
-- `REGISTERED`: This is a bit signifying that `waiter_register_notification` has been called previously and a `waiter_notify` call is expected to complete the operation.
+- Internal state: This is an enum that can have the following values:
+  - `WAITER_READY`: This is the default state. In this state, the module accepts calls to `waiter_register_notification` and `waiter_notify`
+  - `WAITER_NOTIFYING`: This is a temporary state when `waiter_notify` is executing. It causes concurrent calls to `waiter_register_notification` to wait.
+  - `WAITER_NOTIFIED`: This is the state when `waiter_notify` has completed execution. A subsequent call to `waiter_register_notification` will result in the callbacks being called synchronously.
+  - `WAITER_REGISTERING`: This is a temporary state when `waiter_register_notification` is executing. It causes concurrent calls to `waiter_notify` to wait.
+  - `WAITER_REGISTERED`: This is the state when `waiter
 
 All three components are stored in a single `volatile_atomic` variable that is manipulated using `interlocked` APIs.
 
@@ -41,7 +45,7 @@ stateDiagram-v2
 
 ## Reentrancy
 
-`waiter` is reentrant. This means that `waiter_register_notification` and `waiter_notify` can be called from `NOTIFICATION_CALLBACK` and `NOTIFY_COMPLETE_CALLBACK` functions.
+`waiter` is reentrant. This means that `waiter_register_notification` and `waiter_notify` can be called from callbacks of this module.
 
 ## Exposed API
 ```c
@@ -49,6 +53,7 @@ stateDiagram-v2
     WAITER_RESULT_SYNC, \
     WAITER_RESULT_ASYNC, \
     WAITER_RESULT_REFUSED, \
+    WAITER_RESULT_INVALID_ARGS, \
     WAITER_RESULT_ERROR
 
 MU_DEFINE_ENUM(WAITER_RESULT, WAITER_RESULT_VALUES);
@@ -97,7 +102,7 @@ THANDLE_TYPE_DECLARE(WAITER);
     void waiter_dispose(WAITER* waiter)
 ```
 
-**SRS_WAITER_43_003: [** `waiter_dispose` disposes the given `waiter`. **]**
+`waiter_dispose` disposes the given `waiter`.
 
 **SRS_WAITER_43_004: [** `waiter_dispose` shall obtain the current state of the waiter by calling `interlocked_and`. **]**
 
@@ -114,13 +119,13 @@ THANDLE_TYPE_DECLARE(WAITER);
     MOCKABLE_FUNCTION(, WAITER_RESULT, waiter_register_notification, THANDLE(WAITER), waiter, NOTIFICATION_CALLBACK, notification_callback, void*, context, THANDLE(ASYNC_OP)*, out_op);
 ```
 
-`waiter_register_notification` registers the given `notification_callback` to be called when `waiter_notify` is called.
+`waiter_register_notification` registers the given `notification_callback` to be called when there is data to be consumed.
 
-**SRS_WAITER_43_007: [** If `waiter` is `NULL`, `waiter_register_notification` shall fail and return `WAITER_RESULT_ERROR`. **]**
+**SRS_WAITER_43_007: [** If `waiter` is `NULL`, `waiter_register_notification` shall fail and return `WAITER_RESULT_INVALID_ARGS`. **]**
 
-**SRS_WAITER_43_008: [** If `notification_callback` is `NULL`, `waiter_register_notification` shall fail and return `WAITER_RESULT_ERROR`. **]**
+**SRS_WAITER_43_008: [** If `notification_callback` is `NULL`, `waiter_register_notification` shall fail and return `WAITER_RESULT_INVALID_ARGS`. **]**
 
-**SRS_WAITER_43_009: [** If `out_op` is `NULL`, `waiter_register_notification` shall fail and return `WAITER_RESULT_ERROR`. **]**
+**SRS_WAITER_43_009: [** If `out_op` is `NULL`, `waiter_register_notification` shall fail and return `WAITER_RESULT_INVALID_ARGS`. **]**
 
 **SRS_WAITER_43_010: [** `waiter_register_notification` shall call `interlocked_or` to set the `REGISTERED` bit and obtain the current state of the `waiter`. **]**
 
@@ -136,6 +141,8 @@ THANDLE_TYPE_DECLARE(WAITER);
 
 - **SRS_WAITER_43_014: [** call the `notify_complete_callback` given to `waiter_notify` with `context` as the `context` given to `waiter_notify` and `result` as `WAITER_RESULT_OK`. **]**
 
+- **SRS_WAITER_43_054: [** set `out_op` to `NULL` by calling `THANDLE_ASSIGN`. **]**
+
 - **SRS_WAITER_43_015: [** return `WAITER_RESULT_SYNC`. **]**
 
 
@@ -149,7 +156,7 @@ THANDLE_TYPE_DECLARE(WAITER);
 
 - **SRS_WAITER_43_020: [** store the given `waiter` in the created `THANDLE(ASYNC_OP)` by calling `THANDLE_INITIALIZE`. **]**
 
-- **SRS_WAITER_43_021: [** store the created `THANDLE(ASYNC_OP)` in `out_op`by calling `THANDLE_INITIALIZE_MOVE`. **]**
+- **SRS_WAITER_43_021: [** store the created `THANDLE(ASYNC_OP)` in `out_op` by calling `THANDLE_INITIALIZE_MOVE`. **]**
 
 - **SRS_WAITER_43_022: [** return `WAITER_RESULT_ASYNC`. **]**
 
@@ -176,11 +183,11 @@ static void cancel_register_notification(void* context)
 
 `waiter_notify` notifies the waiter that there is data available and registers the given `notify_complete_callback` to be called when the given `data` has been consumed.
 
-**SRS_WAITER_43_024: [** If `waiter` is `NULL`, `waiter_notify` shall fail and return `WAITER_RESULT_ERROR`. **]**
+**SRS_WAITER_43_024: [** If `waiter` is `NULL`, `waiter_notify` shall fail and return `WAITER_RESULT_INVALID_ARGS`. **]**
 
-**SRS_WAITER_43_025: [** If `notify_complete_callback` is `NULL`, `waiter_notify` shall fail and return `WAITER_RESULT_ERROR`. **]**
+**SRS_WAITER_43_025: [** If `notify_complete_callback` is `NULL`, `waiter_notify` shall fail and return `WAITER_RESULT_INVALID_ARGS`. **]**
 
-**SRS_WAITER_43_026: [** If `out_op` is `NULL`, `waiter_notify` shall fail and return `WAITER_RESULT_ERROR`. **]**
+**SRS_WAITER_43_026: [** If `out_op` is `NULL`, `waiter_notify` shall fail and return `WAITER_RESULT_INVALID_ARGS`. **]**
 
 **SRS_WAITER_43_027: [** `waiter_notify` shall call `interlocked_or` to set the `NOTIFIED` bit and obtain the current state of the `waiter`. **]**
 
@@ -193,6 +200,8 @@ static void cancel_register_notification(void* context)
 - **SRS_WAITER_43_030: [** call the given `notification_callback` with `context` as the `context` given to `waiter_register_notification`, `data` as the given `data` and `result` as `WAITER_RESULT_OK`. **]**
 
 - **SRS_WAITER_43_031: [** call the given `notify_complete_callback` with `context` as the given `context` and `result` as `WAITER_RESULT_OK`. **]**
+
+- **SRS_WAITER_43_055: [** set `out_op` to `NULL` by calling `THANDLE_ASSIGN`. **]**
 
 - **SRS_WAITER_43_032: [** return `WAITER_RESULT_SYNC`. **]**
 
