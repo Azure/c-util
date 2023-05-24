@@ -53,16 +53,42 @@ typedef struct OP_CONTEXT_TAG
 
 void waiter_dispose(WAITER* waiter)
 {
-    int32_t state = interlocked_add(&waiter->state, 0);
-    if((state & WAITER_STATE_MASK) == WAITER_REGISTERED)
+    do
     {
-        waiter->notification_callback(waiter->context, NULL, WAITER_CALLBACK_RESULT_ABANDONED);
-    }
-    else if ((state & WAITER_STATE_MASK) == WAITER_NOTIFIED)
-    {
-        waiter->notify_complete_callback(waiter->context, WAITER_CALLBACK_RESULT_ABANDONED);
-        THANDLE_ASSIGN(RC_PTR)(&waiter->data, NULL);
-    }
+        int32_t state = interlocked_add(&waiter->state, 0);
+        if (
+            (state & WAITER_STATE_MASK) == WAITER_REGISTERING ||
+            (state & WAITER_STATE_MASK) == WAITER_NOTIFYING
+            )
+        {
+            /* Operation in progress, wait */
+            if (wait_on_address(&waiter->state, state, UINT32_MAX) != WAIT_ON_ADDRESS_OK)
+            {
+                LogError("Failure in wait_on_address(&waiter->state=%p, state=%" PRIx32 ", UINT32_MAX=%" PRIx32 ")", &waiter->state, state, UINT32_MAX);
+                break;
+            }
+            else
+            {
+                /* Operation complete, try again */
+            }
+        }
+        else if ((state & WAITER_STATE_MASK) == WAITER_REGISTERED)
+        {
+            waiter->notification_callback(waiter->context, NULL, WAITER_CALLBACK_RESULT_ABANDONED);
+            break;
+        }
+        else if ((state & WAITER_STATE_MASK) == WAITER_NOTIFIED)
+        {
+            waiter->notify_complete_callback(waiter->context, WAITER_CALLBACK_RESULT_ABANDONED);
+            THANDLE_ASSIGN(RC_PTR)(&waiter->data, NULL);
+            break;
+        }
+        else
+        {
+            break;
+        }
+    } while(1);
+
 }
 
 THANDLE(WAITER) waiter_create(void)
@@ -161,57 +187,63 @@ WAITER_RESULT waiter_register_notification(THANDLE(WAITER) waiter, NOTIFICATION_
                     /* waiter_notify complete, try again*/
                 }
             }
-            else
+            else if ((state & WAITER_STATE_MASK) == WAITER_NOTIFIED)
             {
-                if ((state & WAITER_STATE_MASK) == WAITER_NOTIFIED)
+                NOTIFY_COMPLETE_CALLBACK notify_complete_callback = waiter_ptr->notify_complete_callback;
+                void* notify_complete_context = waiter_ptr->context;
+                THANDLE(RC_PTR) data = NULL;
+                THANDLE_INITIALIZE_MOVE(RC_PTR)(&data, &waiter_ptr->data);
+                if(interlocked_compare_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT - WAITER_NOTIFIED + WAITER_READY, state) != state)
                 {
-                    NOTIFY_COMPLETE_CALLBACK notify_complete_callback = waiter_ptr->notify_complete_callback;
-                    void* notify_complete_context = waiter_ptr->context;
-                    if(interlocked_compare_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT - WAITER_NOTIFIED + WAITER_READY, state) != state)
-                    {
-                        /*state changed by another thread, try again*/
-                    }
-                    else
-                    {
-                        /* waiter_notify has been called previous, complete operation synchronously */
-                        notification_callback(context, waiter_ptr->data, WAITER_CALLBACK_RESULT_OK);
-                        notify_complete_callback(notify_complete_context, WAITER_CALLBACK_RESULT_OK);
-                        THANDLE_ASSIGN(RC_PTR)(&waiter_ptr->data, NULL);
-                        THANDLE_ASSIGN(ASYNC_OP)(out_op, NULL);
-                        result = WAITER_RESULT_SYNC;
-                        break;
-                    }
+                    /*state changed by another thread, try again*/
                 }
                 else
                 {
-                    if (interlocked_compare_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT - WAITER_READY + WAITER_REGISTERING, state) != state)
+                    /* waiter_notify has been called previous, complete operation synchronously */
+                    notification_callback(context, data, WAITER_CALLBACK_RESULT_OK);
+                    notify_complete_callback(notify_complete_context, WAITER_CALLBACK_RESULT_OK);
+                    THANDLE_ASSIGN(RC_PTR)(&data, NULL);
+                    THANDLE_ASSIGN(ASYNC_OP)(out_op, NULL);
+                    result = WAITER_RESULT_SYNC;
+                    break;
+                }
+            }
+            else if ((state & WAITER_STATE_MASK) == WAITER_READY)
+            {
+                if (interlocked_compare_exchange(&waiter_ptr->state, state - WAITER_READY + WAITER_REGISTERING, state) != state)
+                {
+                    /*state changed by another thread, try again*/
+                }
+                else
+                {
+                    THANDLE(ASYNC_OP) async_op = async_op_create(cancel_register_notification, sizeof(OP_CONTEXT), alignof(OP_CONTEXT), dispose_async_op);
+                    if (async_op == NULL)
                     {
-                        /*state changed by another thread, try again*/
+                        LogError("Failure in async_op_create(cancel_register_notification=%p, sizeof(OP_CONTEXT)=%" PRIu32 ", alignof(OP_CONTEXT)=%" PRIu32 ", dispose_async_op=%p)", cancel_register_notification, (uint32_t)sizeof(OP_CONTEXT), (uint32_t)alignof(OP_CONTEXT), dispose_async_op);
+                        result = WAITER_RESULT_ERROR;
                     }
                     else
                     {
-                        THANDLE(ASYNC_OP) async_op = async_op_create(cancel_register_notification, sizeof(OP_CONTEXT), alignof(OP_CONTEXT), dispose_async_op);
-                        if (async_op == NULL)
-                        {
-                            LogError("Failure in async_op_create(cancel_register_notification=%p, sizeof(OP_CONTEXT)=%" PRIu32 ", alignof(OP_CONTEXT)=%" PRIu32 ", dispose_async_op=%p)", cancel_register_notification, (uint32_t)sizeof(OP_CONTEXT), (uint32_t)alignof(OP_CONTEXT), dispose_async_op);
-                            result = WAITER_RESULT_ERROR;
-                        }
-                        else
-                        {
-                            waiter_ptr->notification_callback = notification_callback;
-                            waiter_ptr->context = context;
+                        waiter_ptr->notification_callback = notification_callback;
+                        waiter_ptr->context = context;
 
-                            OP_CONTEXT* op_context = async_op->context;
-                            op_context->initial_state = state + WAITER_EPOCH_INCREMENT - WAITER_READY + WAITER_REGISTERED;
-                            THANDLE_INITIALIZE(WAITER)(&op_context->waiter, waiter);
-                            THANDLE_INITIALIZE_MOVE(ASYNC_OP)(out_op, &async_op);
-                            (void)interlocked_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT- WAITER_READY + WAITER_REGISTERED);
-                            wake_by_address_all(&waiter_ptr->state);
-                            result = WAITER_RESULT_ASYNC;
-                        }
-                        break;
+                        OP_CONTEXT* op_context = async_op->context;
+                        op_context->initial_state = state - WAITER_READY + WAITER_REGISTERED;
+                        THANDLE_INITIALIZE(WAITER)(&op_context->waiter, waiter);
+                        THANDLE_INITIALIZE_MOVE(ASYNC_OP)(out_op, &async_op);
+
+                        (void)interlocked_exchange(&waiter_ptr->state, state - WAITER_READY + WAITER_REGISTERED);
+                        wake_by_address_all(&waiter_ptr->state);
+
+                        result = WAITER_RESULT_ASYNC;
                     }
+                    break;
                 }
+            }
+            else
+            {
+                LogError("waiter=%p in unexpected state waiter->state=%d", waiter, waiter_ptr->state);
+                result = WAITER_RESULT_ERROR;
             }
         } while(1);
     }
@@ -283,58 +315,61 @@ WAITER_RESULT waiter_notify(THANDLE(WAITER) waiter, THANDLE(RC_PTR) data, NOTIFY
                     /* waiter_register_notification complete, try again*/
                 }
             }
-            else
+            else if ((state & WAITER_STATE_MASK) == WAITER_REGISTERED)
             {
-                if ((state & WAITER_STATE_MASK) == WAITER_REGISTERED)
-                {
-                    NOTIFICATION_CALLBACK notification_callback = waiter_ptr->notification_callback;
-                    void* notification_context = waiter_ptr->context;
-                    if (interlocked_compare_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT - WAITER_REGISTERED + WAITER_READY, state) != state)
+                NOTIFICATION_CALLBACK notification_callback = waiter_ptr->notification_callback;
+                void* notification_context = waiter_ptr->context;
+                if (interlocked_compare_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT - WAITER_REGISTERED + WAITER_READY, state) != state)
 
-                    {
-                        /*state changed by another thread, try again*/
-                    }
-                    else
-                    {
-                        notification_callback(notification_context, data, WAITER_CALLBACK_RESULT_OK);
-                        notify_complete_callback(context, WAITER_CALLBACK_RESULT_OK);
-                        THANDLE_ASSIGN(ASYNC_OP)(out_op, NULL);
-                        result = WAITER_RESULT_SYNC;
-                        break;
-                    }
+                {
+                    /*state changed by another thread, try again*/
                 }
                 else
                 {
-                    if (interlocked_compare_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT - WAITER_READY + WAITER_NOTIFYING, state) != state)
+                    notification_callback(notification_context, data, WAITER_CALLBACK_RESULT_OK);
+                    notify_complete_callback(context, WAITER_CALLBACK_RESULT_OK);
+                    THANDLE_ASSIGN(ASYNC_OP)(out_op, NULL);
+                    result = WAITER_RESULT_SYNC;
+                    break;
+                }
+            }
+            else if ((state & WAITER_STATE_MASK) == WAITER_READY)
+            {
+                if (interlocked_compare_exchange(&waiter_ptr->state, state - WAITER_READY + WAITER_NOTIFYING, state) != state)
+                {
+                    /*state changed by another thread, try again*/
+                }
+                else
+                {
+                    THANDLE(ASYNC_OP) async_op = async_op_create(cancel_notify, sizeof(OP_CONTEXT), alignof(OP_CONTEXT), dispose_async_op);
+                    if (async_op == NULL)
                     {
-                        /*state changed by another thread, try again*/
+                        LogError("Failure in async_op_create(cancel_notify=%p, sizeof(OP_CONTEXT)=%" PRIu32 ", alignof(OP_CONTEXT)=%" PRIu32 ", dispose_async_op=%p)", cancel_notify, (uint32_t)sizeof(OP_CONTEXT), (uint32_t)alignof(OP_CONTEXT), dispose_async_op);
+                        result = WAITER_RESULT_ERROR;
                     }
                     else
                     {
-                        THANDLE(ASYNC_OP) async_op = async_op_create(cancel_notify, sizeof(OP_CONTEXT), alignof(OP_CONTEXT), dispose_async_op);
-                        if (async_op == NULL)
-                        {
-                            LogError("Failure in async_op_create(cancel_notify=%p, sizeof(OP_CONTEXT)=%" PRIu32 ", alignof(OP_CONTEXT)=%" PRIu32 ", dispose_async_op=%p)", cancel_notify, (uint32_t)sizeof(OP_CONTEXT), (uint32_t)alignof(OP_CONTEXT), dispose_async_op);
-                            result = WAITER_RESULT_ERROR;
-                        }
-                        else
-                        {
-                            waiter_ptr->notify_complete_callback = notify_complete_callback;
-                            waiter_ptr->context = context;
-                            THANDLE_INITIALIZE(RC_PTR)(&waiter_ptr->data, data);
+                        waiter_ptr->notify_complete_callback = notify_complete_callback;
+                        waiter_ptr->context = context;
+                        THANDLE_INITIALIZE(RC_PTR)(&waiter_ptr->data, data);
 
-                            OP_CONTEXT* op_context = async_op->context;
-                            op_context->initial_state = state + WAITER_EPOCH_INCREMENT - WAITER_READY + WAITER_NOTIFIED;
-                            THANDLE_INITIALIZE(WAITER)(&op_context->waiter, waiter);
+                        OP_CONTEXT* op_context = async_op->context;
+                        op_context->initial_state = state - WAITER_READY + WAITER_NOTIFIED;
+                        THANDLE_INITIALIZE(WAITER)(&op_context->waiter, waiter);
 
-                            THANDLE_INITIALIZE_MOVE(ASYNC_OP)(out_op, &async_op);
-                            (void)interlocked_exchange(&waiter_ptr->state, state + WAITER_EPOCH_INCREMENT - WAITER_READY + WAITER_NOTIFIED);
-                            wake_by_address_all(&waiter_ptr->state);
-                            result = WAITER_RESULT_ASYNC;
-                        }
-                        break;
+                        THANDLE_INITIALIZE_MOVE(ASYNC_OP)(out_op, &async_op);
+                        (void)interlocked_exchange(&waiter_ptr->state, state - WAITER_READY + WAITER_NOTIFIED);
+
+                        wake_by_address_all(&waiter_ptr->state);
+                        result = WAITER_RESULT_ASYNC;
                     }
+                    break;
                 }
+            }
+            else
+            {
+                LogError("waiter=%p in unexpected state waiter->state=%d", waiter, waiter_ptr->state);
+                result = WAITER_RESULT_ERROR;
             }
         } while(1);
     }

@@ -13,22 +13,24 @@ Producers of data call `waiter_notify` to notify the waiter that data is availab
 ## `waiter` state
 
 The state of the `waiter` module consists of two components:
-- `EPOCH`: This is a monotonically increasing integer that is incremented every time an operation is completed or cancelled.
+- EPOCH: This is a monotonically increasing integer that is incremented every time an operation is completed or cancelled.
 - Internal state: This is an enum that can have the following values:
   - `WAITER_READY`: This is the default state. In this state, the module accepts calls to `waiter_register_notification` and `waiter_notify`
   - `WAITER_NOTIFYING`: This is a temporary state when `waiter_notify` is executing. It causes concurrent calls to `waiter_register_notification` to wait.
   - `WAITER_NOTIFIED`: This is the state when `waiter_notify` has completed execution. A subsequent call to `waiter_register_notification` will result in the callbacks being called synchronously.
   - `WAITER_REGISTERING`: This is a temporary state when `waiter_register_notification` is executing. It causes concurrent calls to `waiter_notify` to wait.
-  - `WAITER_REGISTERED`: This is the state when `waiter
+  - `WAITER_REGISTERED`: This is the state when `waiter_register_notification` has completed execution. A subsequent call to `waiter_notify` will result in the callback being called synchronously.
 
-All three components are stored in a single `volatile_atomic` variable that is manipulated using `interlocked` APIs.
+Both components are stored in a single `volatile_atomic` variable that is manipulated using `interlocked` APIs.
 
 ```mermaid
 stateDiagram-v2
-    B: EPOCH=x,N=0,R=0
-    N: EPOCH=x,N=1,R=0
-    R: EPOCH=x,N=0,R=1
-    E: EPOCH=x+1,N=0,R=0
+    B: EPOCH=x,STATE=WAITER_READY
+    N: EPOCH=x,STATE=WAITER_NOTIFIED
+    R: EPOCH=x,STATE=WAITER_REGISTERED
+    E: EPOCH=x+1,STATE=WAITER_READY
+
+    [*] --> B: waiter_create
 
     B --> N:  waiter_notify
     B --> R:  waiter_register_notification
@@ -41,6 +43,8 @@ stateDiagram-v2
 
     R --> R: waiter_register_notification
     N --> N: waiter_notify
+
+    E --> [*]: waiter_destroy
 ```
 
 ## Reentrancy
@@ -95,6 +99,8 @@ THANDLE_TYPE_DECLARE(WAITER);
 
 **SRS_WAITER_43_001: [** `waiter_create` shall call `THANDLE_MALLOC` with `dispose` as `waiter_dispose`. **]**
 
+**SRS_WAITER_43_056: [** `waiter_create` shall set the `state` to `WAITER_READY` and `EPOCH` to `0` by calling `interlocked_exchange`. **]**
+
 **SRS_WAITER_43_002: [** If there are any failures, `waiter_create` shall fail and return `NULL`. **]**
 
 ### waiter_dispose
@@ -104,11 +110,13 @@ THANDLE_TYPE_DECLARE(WAITER);
 
 `waiter_dispose` disposes the given `waiter`.
 
-**SRS_WAITER_43_004: [** `waiter_dispose` shall obtain the current state of the waiter by calling `interlocked_and`. **]**
+**SRS_WAITER_43_004: [** `waiter_dispose` shall obtain the current state of the waiter by calling `interlocked_add`. **]**
 
-**SRS_WAITER_43_005: [** If the `REGISTERED` bit is set, `waiter_dispose` shall call the `notification_callback` given to `waiter_register_notification` with `context` as the `context` given to `waiter_register_notification`, `data` as `NULL` and `result` as `WAITER_RESULT_ABANDONED`. **]**
+**SRS_WAITER_43_057: [** If the current `state` is `WAITER_REGISTERING` or `WAITER_NOTIFYING`, `waiter_dispose` shall wait for the state to change by calling `wait_on_address`. **]**
 
-**SRS_WAITER_43_006: [** If the `NOTIFIED` bit is set, `waiter_dispose` shall: **]**
+**SRS_WAITER_43_058: [** If the current `state` is `WAITER_REGISTERED`, `waiter_dispose` shall call the `notification_callback` given to `waiter_register_notification` with `context` as the `context` given to `waiter_register_notification`, and `result` as `WAITER_CALLBACK_RESULT_ABANDONED`. **]**
+
+**SRS_WAITER_43_006: [** If the current `state` is `WAITER_NOTIFIED`, `waiter_dispose` shall: **]**
 
 - **SRS_WAITER_43_044: [** call the `notify_complete_callback` given to `waiter_notify` with `context` as the `context` given to `waiter_notify`, and `result` as `WAITER_RESULT_ABANDONED`. **]**
 
@@ -127,36 +135,45 @@ THANDLE_TYPE_DECLARE(WAITER);
 
 **SRS_WAITER_43_009: [** If `out_op` is `NULL`, `waiter_register_notification` shall fail and return `WAITER_RESULT_INVALID_ARGS`. **]**
 
-**SRS_WAITER_43_010: [** `waiter_register_notification` shall call `interlocked_or` to set the `REGISTERED` bit and obtain the current state of the `waiter`. **]**
+**SRS_WAITER_43_010: [** `waiter_register_notification` shall call `interlocked_add` to obtain the current `state` of the `waiter`. **]**
 
-**SRS_WAITER_43_011: [** If the `REGISTERED` bit was already set in the current state, `waiter_register_notification` shall fail and return `WAITER_RESULT_REFUSED`. **]**
+**SRS_WAITER_43_011: [** If the current `state` is `WAITER_REGISTERING` or `WAITER_REGISTERED`, `waiter_register_notification` shall fail and return `WAITER_RESULT_REFUSED`. **]**
 
-**SRS_WAITER_43_012: [** If the `NOTIFIED` bit is set, `waiter_register_notification` shall : **]**
+**SRS_WAITER_43_059: [** If the current `state` is `WAITER_NOTIFYING`, `waiter_register_notification` shall wait for the `state` to change by calling `wait_on_address`. **]**
 
-- **SRS_WAITER_43_042: [** call `interlocked_exchange` to increment the `EPOCH` and unset the `NOTIFIED` bit and `REGISTERED` bit. **]**
+**SRS_WAITER_43_012: [** If the current `state` is `WAITER_NOTIFIED`, `waiter_register_notification` shall : **]**
 
-- **SRS_WAITER_43_013: [** call the given `notification_callback` with `context` as the given `context`, `data` as the `data` that was given to `waiter_notify` and `result` as `WAITER_RESULT_OK`. **]**
+- **SRS_WAITER_43_060: [** store `notify_complete_callback`, `context` and `data` given to `waiter_notify`. **]**
 
-- **SRS_WAITER_43_053: [** release the reference to `data` stored in `waiter` by calling `THANDLE_ASSIGN`. **]**
+- **SRS_WAITER_43_042: [** call `interlocked_compare_exchange` to increment the `EPOCH` and change the state to `WAITER_READY`. **]**
 
-- **SRS_WAITER_43_014: [** call the `notify_complete_callback` given to `waiter_notify` with `context` as the `context` given to `waiter_notify` and `result` as `WAITER_RESULT_OK`. **]**
+- **SRS_WAITER_43_013: [** call the given `notification_callback` with `context` as the given `context`, `data` as the stored `data` and `result` as `WAITER_RESULT_OK`. **]**
+
+- **SRS_WAITER_43_053: [** release the reference to the stored `data` by calling `THANDLE_ASSIGN`. **]**
+
+- **SRS_WAITER_43_014: [** call the `notify_complete_callback` given to `waiter_notify` with the `context` given to `waiter_notify` and `result` as `WAITER_RESULT_OK`. **]**
 
 - **SRS_WAITER_43_054: [** set `out_op` to `NULL` by calling `THANDLE_ASSIGN`. **]**
 
 - **SRS_WAITER_43_015: [** return `WAITER_RESULT_SYNC`. **]**
 
+**SRS_WAITER_43_016: [** If the current state is `WAITER_READY`, `waiter_register_notification` shall: **]**
 
-**SRS_WAITER_43_016: [** If the `NOTIFIED` bit was not already set, `waiter_register_notification` shall: **]**
+**SRS_WAITER_43_061: [** set the state to `WAITER_REGISTERING` by calling `interlocked_compare_exchange`. **]**
 
 - **SRS_WAITER_43_017: [** call `async_op_create` with `cancel_register_notification` as the cancel function. **]**
 
 - **SRS_WAITER_43_018: [** store the given `notification_callback` and the given `context` in the `waiter`. **]**
 
-- **SRS_WAITER_43_019: [** store the current state of the `waiter` in the created `THANDLE(ASYNC_OP)`. **]**
+- **SRS_WAITER_43_019: [** store `state` in the created `THANDLE(ASYNC_OP)`. **]**
 
 - **SRS_WAITER_43_020: [** store the given `waiter` in the created `THANDLE(ASYNC_OP)` by calling `THANDLE_INITIALIZE`. **]**
 
 - **SRS_WAITER_43_021: [** store the created `THANDLE(ASYNC_OP)` in `out_op` by calling `THANDLE_INITIALIZE_MOVE`. **]**
+
+- **SRS_WAITER_43_062: [** set the `state` of the given `waiter` to `WAITER_REGISTERED` by calling `interlocked_exchange`. **]**
+
+- **SRS_WAITER_43_063: [** signal waiting threads by calling `wake_by_address_all`. **]**
 
 - **SRS_WAITER_43_022: [** return `WAITER_RESULT_ASYNC`. **]**
 
@@ -171,7 +188,7 @@ static void cancel_register_notification(void* context)
 
 **SRS_WAITER_43_046: [** If the current state of the `waiter` is the same as the initial state of the `waiter` when `waiter_register_notification` was called, `cancel_register_notification` shall: **]**
 
- **SRS_WAITER_43_047: [** increment the `EPOCH` and unset the `REGISTERED` bit by calling `interlocked_compare_exchange`. **]**
+ **SRS_WAITER_43_047: [** increment the `EPOCH` and set the `state` of the `waiter` stored in the given `context` to `WAITER_READY` by calling `interlocked_compare_exchange`. **]**
 
  **SRS_WAITER_43_048: [** call the `notification_callback` given to `waiter_register_notification` with `context` as the `context` given to `waiter_register_notification`, `data` as `NULL` and `result` as `WAITER_RESULT_CANCELLED`. **]**
 
@@ -189,15 +206,17 @@ static void cancel_register_notification(void* context)
 
 **SRS_WAITER_43_026: [** If `out_op` is `NULL`, `waiter_notify` shall fail and return `WAITER_RESULT_INVALID_ARGS`. **]**
 
-**SRS_WAITER_43_027: [** `waiter_notify` shall call `interlocked_or` to set the `NOTIFIED` bit and obtain the current state of the `waiter`. **]**
+**SRS_WAITER_43_027: [** `waiter_notify` shall call `interlocked_add` to obtain the current `state` of the `waiter`. **]**
 
-**SRS_WAITER_43_028: [** If the `NOTIFIED` bit was already set in the current state, `waiter_notify` shall fail and return `WAITER_RESULT_REFUSED`. **]**
+**SRS_WAITER_43_028: [** If the current `state` is `WAITER_NOTIFYING` or `WAITER_NOTIFIED`, `waiter_notify` shall fail and return `WAITER_RESULT_REFUSED`. **]**
 
-**SRS_WAITER_43_029: [** If the `REGISTERED` bit is set, `waiter_notify` shall: **]**
+**SRS_WAITER_43_064: [** If the current `state` is `WAITER_REGISTERING`, `waiter_notify` shall wait for the `state` to change by calling `wait_on_address`. **]**
 
-- **SRS_WAITER_43_043: [** call `interlocked_exchange` to increment the `EPOCH` and unset the `NOTIFIED` bit and `REGISTERED` bit. **]**
+**SRS_WAITER_43_029: [** If the current `state` is `WAITER_REGISTERED`, `waiter_notify` shall: **]**
 
-- **SRS_WAITER_43_030: [** call the given `notification_callback` with `context` as the `context` given to `waiter_register_notification`, `data` as the given `data` and `result` as `WAITER_RESULT_OK`. **]**
+- **SRS_WAITER_43_043: [** call `interlocked_compare_exchange` to increment the `EPOCH` and change the state to `WAITER_READY`. **]**
+
+- **SRS_WAITER_43_030: [** call the `notification_callback` given to `waiter_register_notification` with `context` as the `context` given to `waiter_register_notification`, `data` as the given `data` and `result` as `WAITER_RESULT_OK`. **]**
 
 - **SRS_WAITER_43_031: [** call the given `notify_complete_callback` with `context` as the given `context` and `result` as `WAITER_RESULT_OK`. **]**
 
@@ -205,7 +224,9 @@ static void cancel_register_notification(void* context)
 
 - **SRS_WAITER_43_032: [** return `WAITER_RESULT_SYNC`. **]**
 
-**SRS_WAITER_43_033: [** If the `REGISTERED` bit was not already set, `waiter_notify` shall: **]**
+**SRS_WAITER_43_033: [** If the current state is `WAITER_READY`, `waiter_notify` shall: **]**
+
+- **SRS_WAITER_43_065: [** set the state to `WAITER_NOTIFYING` by calling `interlocked_compare_exchange`. **]**
 
 - **SRS_WAITER_43_034: [** call `async_op_create` with `cancel_notify` as the cancel function. **]**
 
@@ -213,11 +234,15 @@ static void cancel_register_notification(void* context)
 
 - **SRS_WAITER_43_036: [** store the given `data` in the `waiter` by calling `THANDLE_INITIALIZE`. **]**
 
-- **SRS_WAITER_43_037: [** store the current state of the `waiter` in the created `THANDLE(ASYNC_OP)`. **]**
+- **SRS_WAITER_43_037: [** store `state` in the created `THANDLE(ASYNC_OP)`. **]**
 
 - **SRS_WAITER_43_038: [** store the given `waiter` in the created `THANDLE(ASYNC_OP)` by calling `THANDLE_INITIALIZE`. **]**
 
 - **SRS_WAITER_43_039: [** store the created `THANDLE(ASYNC_OP)` in `out_op`by calling `THANDLE_INITIALIZE_MOVE`. **]**
+
+set the `state` of the given `waiter` to `WAITER_NOTIFIED` by calling `interlocked_exchange`.
+
+signal waiting threads by calling `wake_by_address_all`.
 
 - **SRS_WAITER_43_040: [** return `WAITER_RESULT_ASYNC`. **]**
 
