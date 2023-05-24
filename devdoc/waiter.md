@@ -186,7 +186,7 @@ static void cancel_register_notification(void* context)
 
 `cancel_register_notification` is the cancel function given to `async_op_create` when `waiter_register_notification` is called.
 
-**SRS_WAITER_43_046: [** If the current state of the `waiter` is the same as the initial state of the `waiter` when `waiter_register_notification` was called, `cancel_register_notification` shall: **]**
+**SRS_WAITER_43_046: [** If the current `EPOCH` and `state` of the `waiter` is the same as the initial `EPOCH` and `state` of the `waiter` when `waiter_register_notification` was called, `cancel_register_notification` shall: **]**
 
  **SRS_WAITER_43_047: [** increment the `EPOCH` and set the `state` of the `waiter` stored in the given `context` to `WAITER_READY` by calling `interlocked_compare_exchange`. **]**
 
@@ -256,7 +256,7 @@ static void cancel_notify(void* context)
 
 `cancel_notify` is the cancel function given to `async_op_create` when `waiter_notify` is called.
 
-**SRS_WAITER_43_049: [** If the current state of the `waiter` is the same as the initial state of the `waiter` when `waiter_notify` was called, `cancel_notify` shall: **]**
+**SRS_WAITER_43_049: [** If the current `EPOCH` and `state` of the `waiter` is the same as the initial `EPOCH` and `state` of the `waiter` when `waiter_notify` was called, `cancel_notify` shall: **]**
 
 - **SRS_WAITER_43_050: [** increment the `EPOCH` and unset the `NOTIFIED` bit by calling `interlocked_compare_exchange`. **]**
 
