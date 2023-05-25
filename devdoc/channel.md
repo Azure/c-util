@@ -150,7 +150,7 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
   - **SRS_CHANNEL_43_042: [** atomically compare the current `state` with the previously obtained `state`, increment the `EPOCH` and set the `state` to `CHANNEL_READY` if the `state` is has not changed by calling `interlocked_compare_exchange`. **]**
 
-  - **SRS_CHANNEL_43_071: [** If the `state` has changed, `channel_pull` shall retry from SRS_CHANNEL_43_010. **]**
+  - **SRS_CHANNEL_43_071: [** If the `state` has changed, `channel_pull` shall retry from requirement 43_010. **]**
 
   - **SRS_CHANNEL_43_013: [** call the given `pull_callback` with `pull_context` as the given `pull_context`, `data` as the stored `data` and `result` as `CHANNEL_RESULT_OK`. **]**
 
@@ -166,7 +166,7 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
   - **SRS_CHANNEL_43_068: [** atomically compare the current `state` with the previously obtained `state` and set the `state` to `CHANNEL_PULLING` if the `state` has not changed by calling `interlocked_compare_exchange`. **]**
 
-  - **SRS_CHANNEL_43_069: [** If the `state` has changed, `channel_pull` shall retry from SRS_CHANNEL_43_010. **]**
+  - **SRS_CHANNEL_43_069: [** If the `state` has changed, `channel_pull` shall retry from requirement 43_010. **]**
 
   - **SRS_CHANNEL_43_017: [** call `async_op_create` with `cancel_pull` as the cancel function. **]**
 
@@ -219,11 +219,11 @@ static void cancel_pull(void* context)
 
 **SRS_CHANNEL_43_029: [** If the obtained `state` is `CHANNEL_PULLED`, `channel_push` shall: **]**
 
-  - **SRS_CHANNEL_43_001: [** store `pull_callback` and `pull_context` given to `channel_pull`. **]**
+  - **SRS_CHANNEL_43_076: [** store `pull_callback` and `pull_context` given to `channel_pull`. **]**
 
   - **SRS_CHANNEL_43_043: [** atomically compare the current `state` with the previously obtained `state`, increment the `EPOCH` and set the `state` to `CHANNEL_READY` if the `state` is has not changed by calling `interlocked_compare_exchange`. **]**
 
-  - **SRS_CHANNEL_43_072: [** If the `state` has changed, `channel_push` shall retry from SRS_CHANNEL_43_027. **]**
+  - **SRS_CHANNEL_43_072: [** If the `state` has changed, `channel_push` shall retry from requirement 43_027. **]**
 
   - **SRS_CHANNEL_43_030: [** call the stored `pull_callback` with the stored `pull_context`, `data` as the given `data` and `result` as `CHANNEL_RESULT_OK`. **]**
 
@@ -237,7 +237,7 @@ static void cancel_pull(void* context)
 
   - **SRS_CHANNEL_43_065: [** atomically compare the current `state` with the previously obtained `state` and set the `state` to `CHANNEL_PUSHING` if the `state` has not changed by calling `interlocked_compare_exchange`. **]**
 
-  - **SRS_CHANNEL_43_070: [** If the `state` has changed, `channel_push` shall retry from SRS_CHANNEL_43_027. **]**
+  - **SRS_CHANNEL_43_070: [** If the `state` has changed, `channel_push` shall retry from requirement 43_027. **]**
 
   - **SRS_CHANNEL_43_034: [** call `async_op_create` with `cancel_push` as the cancel function. **]**
 
