@@ -22,14 +22,20 @@ THANDLE_TYPE_DECLARE(RC_PTR);
 
 #define RC_PTR_AS_VOIDPTR(rc) (((rc) == NULL) ? NULL : (rc)->ptr)
 
-MOCKABLE_FUNCTION(, THANDLE(RC_PTR), rc_ptr_create_with_move_memory, const void*, ptr, RC_PTR_FREE_FUNC, free_func);
+MOCKABLE_FUNCTION(, THANDLE(RC_PTR), rc_ptr_create_with_move_pointer, void*, ptr, RC_PTR_FREE_FUNC, free_func);
 ```
 
-### rc_ptr_create_with_move_memory
+### rc_ptr_create_with_move_pointer
 ```c
-MOCKABLE_FUNCTION(, THANDLE(RC_PTR), rc_ptr_create_with_move_memory, const void*, ptr, RC_PTR_FREE_FUNC, free_func);
+MOCKABLE_FUNCTION(, THANDLE(RC_PTR), rc_ptr_create_with_move_pointer, void*, ptr, RC_PTR_FREE_FUNC, free_func);
 ```
 
-`rc_ptr_create_with_move_memory` creates a `THANDLE(RC_PTR)` that encapsulates the given `ptr`.
+`rc_ptr_create_with_move_pointer` creates a `THANDLE(RC_PTR)` that encapsulates the given `ptr`.
 
-- When the reference count for the returned `THANDLE(RC_PTR)` reaches `0`, the given `free_func` shall be called with the given `ptr`.
+**SRS_RC_PTR_43_001: [** If `ptr` is `NULL`, `rc_ptr_create_with_move_pointer` shall fail and return `NULL`. **]**
+
+**SRS_RC_PTR_43_002: [** `rc_ptr_create_with_move_pointer` shall allocate memory by calling `THANDLE_MALLOC`. **]**
+
+**SRS_RC_PTR_43_003: [** If there are any failures, `rc_ptr_create_with_move_pointer` shall fail and return `NULL`. **]**
+
+**SRS_RC_PTR_43_004: [** `rc_ptr_create_with_move_pointer` shall succeed and return a non-`NULL` value. **]**

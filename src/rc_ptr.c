@@ -18,25 +18,18 @@ THANDLE_TYPE_DEFINE(RC_PTR);
 
 static void dispose(RC_PTR* rc_ptr)
 {
-    if (rc_ptr == NULL)
+    if (rc_ptr->free_func != NULL)
     {
-        LogError("Invalid arguments: RC_PTR* rc_ptr=%p", rc_ptr);
-    }
-    else
-    {
-        if (rc_ptr->free_func != NULL)
-        {
-            rc_ptr->free_func((void*)rc_ptr->ptr);
-        }
+        rc_ptr->free_func((void*)rc_ptr->ptr);
     }
 }
 
-THANDLE(RC_PTR) rc_ptr_create_with_move_memory(const void* ptr, RC_PTR_FREE_FUNC free_func)
+THANDLE(RC_PTR) rc_ptr_create_with_move_pointer(void* ptr, RC_PTR_FREE_FUNC free_func)
 {
     THANDLE(RC_PTR) result = NULL;
     if (ptr == NULL)
     {
-        LogError("Invalid arguments: const void* ptr=%p, RC_PTR_FREE_FUNC free_func = %p", ptr, free_func);
+        LogError("Invalid arguments: void* ptr=%p, RC_PTR_FREE_FUNC free_func = %p", ptr, free_func);
     }
     else
     {

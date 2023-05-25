@@ -159,7 +159,7 @@ set(c_util_c_files
     ./src/tarray.c
     ./src/uuid_string.c
     ./src/async_op.c
-    ./src/waiter.c
+    ./src/channel.c
     ./src/rc_ptr.c
 )
 
@@ -191,7 +191,7 @@ set(c_util_h_files
     ./inc/c_util/thandle_tuple_array.h
     ./inc/c_util/uuid_string.h
     ./inc/c_util/async_op.h
-    ./inc/c_util/waiter.h
+    ./inc/c_util/channel.h
     ./inc/c_util/rc_ptr.h
 )
 
