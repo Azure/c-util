@@ -9,6 +9,7 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/thandle.h"
+#include "c_pal/threadpool.h"
 
 #include "c_util/async_op.h"
 #include "c_util/rc_ptr.h"
@@ -40,7 +41,7 @@ typedef struct CHANNEL_TAG CHANNEL;
 
 THANDLE_TYPE_DECLARE(CHANNEL);
 
-    MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create)
+    MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPOOL), threadpool);
     MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
     MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
 

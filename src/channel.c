@@ -13,6 +13,7 @@
 #include "c_pal/thandle.h"
 #include "c_pal/interlocked.h"
 #include "c_pal/sync.h"
+#include "c_pal/threadpool.h"
 
 #include "c_util/async_op.h"
 #include "c_util/rc_ptr.h"
@@ -45,8 +46,9 @@ struct CHANNEL_TAG{
 
 THANDLE_TYPE_DEFINE(CHANNEL);
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create)
+IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPOOL), threadpool)
 {
+    (void)threadpool;
     return NULL;
 }
 
