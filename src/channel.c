@@ -52,6 +52,17 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPO
     return NULL;
 }
 
+IMPLEMENT_MOCKABLE_FUNCTION(, int, channel_open, THANDLE(CHANNEL), channel)
+{
+    (void)channel;
+    return 0;
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, void, channel_close, THANDLE(CHANNEL), channel)
+{
+    (void)channel;
+}
+
 IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull)
 {
     (void)channel;
