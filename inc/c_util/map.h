@@ -180,13 +180,13 @@ MOCKABLE_FUNCTION(, MAP_RESULT, Map_ContainsValue, MAP_HANDLE, handle, const cha
 MOCKABLE_FUNCTION(, const char*, Map_GetValueFromKey, MAP_HANDLE, handle, const char*, key);
 
 /**
- * @brief   Retrieves the complete list of keys and values from the map
- *          in @p values and @p keys. Also writes the size of the list
+ * @brief   Retrieves the complete op_list of keys and values from the map
+ *          in @p values and @p keys. Also writes the size of the op_list
  *          in @p count.
  *
  * @param   handle      The handle to an existing map.
- * @param   keys        The location where the list of keys is to be written.
- * @param   values      The location where the list of values is to be written.
+ * @param   keys        The location where the op_list of keys is to be written.
+ * @param   values      The location where the op_list of values is to be written.
  * @param   count       The number of stored keys and values is written at the
  *                      location indicated by this pointer.
  *

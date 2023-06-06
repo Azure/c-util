@@ -214,7 +214,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, ob
         srw_lock_acquire_exclusive(object_lifetime_tracker->lock);
 
         KEY_MATCH_CONTEXT key_match_context = { .key = key, .key_match_function = object_lifetime_tracker->key_match_function, .found_list_entry = NULL };
-        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_017: [ object_lifetime_tracker_register_object shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
+        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_017: [ object_lifetime_tracker_register_object shall find the op_list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
         if (DList_ForEach(&(object_lifetime_tracker->keys), is_same_key, &key_match_context) != 0)
         {
             /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_021: [ If there are any failures, object_lifetime_tracker_register_object shall fail and return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR. ]*/
@@ -260,7 +260,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, ob
 
                 OBJECT_MATCH_CONTEXT object_match_context = { .object = object, .object_match_function = object_lifetime_tracker->object_match_function, .found_list_entry = NULL };
 
-                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_076: [ object_lifetime_tracker_register_object shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object. ]*/
+                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_076: [ object_lifetime_tracker_register_object shall find the op_list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object. ]*/
                 if (DList_ForEach(&(found_key_struct->objects), is_same_object, &object_match_context) != 0)
                 {
                     /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_021: [ If there are any failures, object_lifetime_tracker_register_object shall fail and return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_ERROR. ]*/
@@ -345,7 +345,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, 
         srw_lock_acquire_exclusive(object_lifetime_tracker->lock);
 
         KEY_MATCH_CONTEXT key_match_context = { .key = key, .key_match_function = object_lifetime_tracker->key_match_function, .found_list_entry = NULL };
-        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_026: [ object_lifetime_tracker_unregister_object shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
+        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_026: [ object_lifetime_tracker_unregister_object shall find the op_list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
         if (DList_ForEach(&(object_lifetime_tracker->keys), is_same_key, &key_match_context) != 0)
         {
             /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_032: [ If there are any failures, object_lifetime_tracker_unregister_object shall fail and return OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_ERROR. ]*/
@@ -357,14 +357,14 @@ IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, 
             if (key_match_context.found_list_entry == NULL)
             {
                 /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_046: [ If the given key is not found, object_lifetime_tracker_unregister_object shall return OBJECT_LIFETIME_TRACKER_UNREGISTER_KEY_NOT_FOUND. ]*/
-                LogError("key=%p was not found in list of keys", key);
+                LogError("key=%p was not found in op_list of keys", key);
                 result = OBJECT_LIFETIME_TRACKER_UNREGISTER_KEY_NOT_FOUND;
             }
             else
             {
                 KEY* key_struct = CONTAINING_RECORD(key_match_context.found_list_entry, KEY, anchor);
                 OBJECT_MATCH_CONTEXT object_match_context = { .object = object, .object_match_function = object_lifetime_tracker->object_match_function, .found_list_entry = NULL };
-                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_027: [ object_lifetime_tracker_unregister_object shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object. ]*/
+                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_027: [ object_lifetime_tracker_unregister_object shall find the op_list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object. ]*/
                 if (DList_ForEach(&(key_struct->objects), is_same_object, &object_match_context) != 0)
                 {
                     /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_032: [ If there are any failures, object_lifetime_tracker_unregister_object shall fail and return OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_ERROR. ]*/
@@ -376,12 +376,12 @@ IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, 
                     if (object_match_context.found_list_entry == NULL)
                     {
                         /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_047: [ If the given object is not found, object_lifetime_tracker_unregister_object shall return OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_NOT_FOUND. ]*/
-                        LogError("object=%p was not found in list of objects", object);
+                        LogError("object=%p was not found in op_list of objects", object);
                         result = OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_NOT_FOUND;
                     }
                     else
                     {
-                        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_029: [ object_lifetime_tracker_unregister_object shall remove the list entry for the given object from the DList of objects for the given key by calling DList_RemoveEntryList. ]*/
+                        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_029: [ object_lifetime_tracker_unregister_object shall remove the op_list entry for the given object from the DList of objects for the given key by calling DList_RemoveEntryList. ]*/
                         int is_object_list_empty = DList_RemoveEntryList(object_match_context.found_list_entry);
                         /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_061: [ object_lifetime_tracker_unregister_object shall free the memory associated with the given object. ]*/
                         free(CONTAINING_RECORD(object_match_context.found_list_entry, OBJECT, anchor));
@@ -389,7 +389,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, 
                         if (is_object_list_empty)
                         {
                             /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_030: [ If the DList of objects for the given key is empty: ]*/
-                            /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_062: [ object_lifetime_tracker_unregister_object shall remove the list entry for the given key from the DList of keys by calling DList_RemoveEntryList. ]*/
+                            /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_062: [ object_lifetime_tracker_unregister_object shall remove the op_list entry for the given key from the DList of keys by calling DList_RemoveEntryList. ]*/
                             (void)DList_RemoveEntryList(&(key_struct->anchor));
                             /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_063: [ object_lifetime_tracker_unregister_object shall free the memory associated with the given key. ]*/
                             free(key_struct);
@@ -419,7 +419,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy_all_objects_
         srw_lock_acquire_exclusive(object_lifetime_tracker->lock);
 
         KEY_MATCH_CONTEXT key_match_context = { .key = key, .key_match_function = object_lifetime_tracker->key_match_function, .found_list_entry = NULL };
-        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_036: [ object_lifetime_tracker_destroy_all_objects_for_key shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
+        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_036: [ object_lifetime_tracker_destroy_all_objects_for_key shall find the op_list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
         if (DList_ForEach(&(object_lifetime_tracker->keys), is_same_key, &key_match_context) != 0)
         {
             LogError("failure in DList_ForEach(&(object_lifetime_tracker->keys), is_same_key, &key_match_context)");
@@ -429,13 +429,13 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy_all_objects_
             if (key_match_context.found_list_entry == NULL)
             {
                 /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_048: [ If the given key is not found, object_lifetime_tracker_destroy_all_objects_for_key shall return. ]*/
-                LogError("Could not find key=%p in list of keys", key);
+                LogError("Could not find key=%p in op_list of keys", key);
             }
             else
             {
                 KEY* key_struct = CONTAINING_RECORD(key_match_context.found_list_entry, KEY, anchor);
                 PDLIST_ENTRY removed_entry;
-                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_038: [ object_lifetime_tracker_destroy_all_objects_for_key shall remove the list entries for all the objects in the DList of objects for the given key by calling DList_RemoveHeadList for each list entry. ]*/
+                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_038: [ object_lifetime_tracker_destroy_all_objects_for_key shall remove the op_list entries for all the objects in the DList of objects for the given key by calling DList_RemoveHeadList for each op_list entry. ]*/
                 while ((removed_entry = DList_RemoveHeadList(&(key_struct->objects))) != &(key_struct->objects))
                 {
                     OBJECT* object_struct = CONTAINING_RECORD(removed_entry, OBJECT, anchor);
@@ -446,7 +446,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy_all_objects_
                     /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_066: [ object_lifetime_tracker_destroy_all_objects_for_key shall free the memory associated with all the objects. ]*/
                     free(object_struct);
                 }
-                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_039: [ object_lifetime_tracker_destroy_all_objects_for_key shall remove the list entry for the given key from the DList of keys by calling DList_RemoveEntryList. ]*/
+                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_039: [ object_lifetime_tracker_destroy_all_objects_for_key shall remove the op_list entry for the given key from the DList of keys by calling DList_RemoveEntryList. ]*/
                 (void)DList_RemoveEntryList(&(key_struct->anchor));
                 /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_065: [ object_lifetime_tracker_destroy_all_objects_for_key shall free the memory associated with the given key. ]*/
                 free(key_struct);
