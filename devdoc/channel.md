@@ -59,8 +59,8 @@ stateDiagram-v2
 ## Exposed API
 ```c
 #define CHANNEL_RESULT_VALUES \
-    CHANNEL_RESULT_COMPLETED_SYNC, \
-    CHANNEL_RESULT_WILL_COMPLETE_ASYNC, \
+    CHANNEL_RESULT_CALLBACKS_SCHEDULED, \
+    CHANNEL_RESULT_WAITING, \
     CHANNEL_RESULT_REFUSED, \
     CHANNEL_RESULT_INVALID_ARGS, \
     CHANNEL_RESULT_ERROR
@@ -160,7 +160,7 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
   - **SRS_CHANNEL_43_054: [** set `out_op_pull` to `NULL` by calling `THANDLE_ASSIGN`. **]**
 
-  - **SRS_CHANNEL_43_015: [** return `CHANNEL_RESULT_COMPLETED_SYNC`. **]**
+  - **SRS_CHANNEL_43_015: [** return `CHANNEL_RESULT_CALLBACKS_SCHEDULED`. **]**
 
 **SRS_CHANNEL_43_016: [** If the obtained `state` is `CHANNEL_READY`, `channel_pull` shall: **]**
 
@@ -182,7 +182,7 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
   - **SRS_CHANNEL_43_063: [** signal waiting threads by calling `wake_by_address_all`. **]**
 
-  - **SRS_CHANNEL_43_022: [** return `CHANNEL_RESULT_WILL_COMPLETE_ASYNC`. **]**
+  - **SRS_CHANNEL_43_022: [** return `CHANNEL_RESULT_WAITING`. **]**
 
 **SRS_CHANNEL_43_023: [** If there are any failures, `channel_pull` shall fail and return `CHANNEL_RESULT_ERROR`. **]**
 
@@ -231,7 +231,7 @@ static void cancel_pull(void* context)
 
   - **SRS_CHANNEL_43_055: [** set `out_op_push` to `NULL` by calling `THANDLE_ASSIGN`. **]**
 
-  - **SRS_CHANNEL_43_032: [** return `CHANNEL_RESULT_COMPLETED_SYNC`. **]**
+  - **SRS_CHANNEL_43_032: [** return `CHANNEL_RESULT_CALLBACKS_SCHEDULED`. **]**
 
 **SRS_CHANNEL_43_033: [** If the obtained `state` is `CHANNEL_READY`, `channel_push` shall: **]**
 
@@ -255,7 +255,7 @@ static void cancel_pull(void* context)
 
   - **SRS_CHANNEL_43_067: [** signal waiting threads by calling `wake_by_address_all`. **]**
 
-  - **SRS_CHANNEL_43_040: [** return `CHANNEL_RESULT_WILL_COMPLETE_ASYNC`. **]**
+  - **SRS_CHANNEL_43_040: [** return `CHANNEL_RESULT_WAITING`. **]**
 
 **SRS_CHANNEL_43_041: [** If there are any failures, `channel_push` shall fail and return `CHANNEL_RESULT_ERROR`. **]**
 
