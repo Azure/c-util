@@ -6,7 +6,7 @@
 #include "macro_utils/macro_utils.h"
 #include "umock_c/umock_c_prod.h"
 
-#include "c_logging/xlogging.h"
+#include "c_logging/logger.h"
 
 #include "c_pal/containing_record.h"
 #include "c_pal/gballoc_hl.h"
