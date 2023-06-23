@@ -37,9 +37,12 @@ MU_DEFINE_ENUM(CHANNEL_STATE, CHANNEL_STATE_VALUES)
     CHANNEL_OP_CREATED, \
     CHANNEL_OP_SCHEDULED, \
     CHANNEL_OP_PULL_CB_CALLED, \
+    CHANNEL_OP_COMPLETED, \
+    CHANNEL_OP_CANCELLED, \
     CHANNEL_OP_ABANDONED
 
 MU_DEFINE_ENUM(CHANNEL_OP_STATE, CHANNEL_OP_STATE_VALUES)
+MU_DEFINE_ENUM_STRINGS(CHANNEL_OP_STATE, CHANNEL_OP_STATE_VALUES)
 
 typedef struct CHANNEL_INTERNAL_TAG
 {
@@ -65,6 +68,7 @@ typedef struct CHANNEL_OP_TAG
     THANDLE(ASYNC_OP) async_op; // self reference to keep op alive even after user disposes (watch out for deadlocks)
 
     volatile_atomic int32_t state;
+    volatile_atomic int32_t can_deinit;
 }CHANNEL_OP;
 
 typedef struct CHANNEL_TAG
@@ -102,7 +106,7 @@ static void channel_close(void* context)
             else
             {
                 /* channel is LOCKED */
-                for (DLIST_ENTRY* entry = DList_RemoveHeadList(&channel_internal_ptr->op_list); entry != &channel_internal_ptr->op_list;)
+                for (DLIST_ENTRY* entry = DList_RemoveHeadList(&channel_internal_ptr->op_list); entry != &channel_internal_ptr->op_list; entry = DList_RemoveHeadList(&channel_internal_ptr->op_list))
                 {
                     CHANNEL_OP* channel_op = CONTAINING_RECORD(entry, CHANNEL_OP, anchor);
                     (void)interlocked_exchange(&channel_op->state, CHANNEL_OP_ABANDONED);
@@ -111,6 +115,7 @@ static void channel_close(void* context)
                         LogError("Failure in threadpool_schedule_work(execute_callbacks, channel_op)");
                     }
                 }
+                break;
             }
         }
         else
@@ -223,6 +228,7 @@ static void channel_op_init(CHANNEL_OP* channel_op, THANDLE(ASYNC_OP) parent_asy
     THANDLE_INITIALIZE(CHANNEL_INTERNAL)(&channel_op->channel_internal, channel_internal);
     THANDLE_INITIALIZE(RC_PTR)(&channel_op->data, data);
     (void)interlocked_exchange(&channel_op->state, CHANNEL_OP_CREATED);
+    (void)interlocked_exchange(&channel_op->can_deinit, 0);
 }
 
 static void channel_op_deinit(CHANNEL_OP* channel_op)
@@ -239,7 +245,6 @@ static void channel_op_deinit(CHANNEL_OP* channel_op)
 
 static void execute_callbacks(void* context)
 {
-
     if (context == NULL)
     {
         LogError("Invalid arguments: void* context=%p", context);
@@ -251,47 +256,62 @@ static void execute_callbacks(void* context)
         do
         {
             int32_t state = interlocked_add(&channel_op->state, 0);
-            switch(state)
+            if (state == CHANNEL_OP_SCHEDULED)
             {
-                case CHANNEL_OP_SCHEDULED:
+                if (interlocked_compare_exchange(&channel_op->state, CHANNEL_OP_PULL_CB_CALLED, state) != state)
                 {
-                    if (interlocked_compare_exchange(&channel_op->state, state, CHANNEL_OP_PULL_CB_CALLED) != state)
+                    /* state changed by another thread, try again */
+                }
+                else
+                {
+                    channel_op->pull_callback(channel_op->pull_context, channel_op->data, CHANNEL_RESULT_OK);
+                    sm_exec_end(channel_op->channel_internal->sm);
+                    if (interlocked_compare_exchange(&channel_op->can_deinit, 1, 0) == 0)
                     {
-                        /* state changed by another thread, try again */
+                        /* other callback still has not finished, cannot deinit yet*/
                     }
                     else
                     {
-                        channel_op->pull_callback(channel_op->pull_context, channel_op->data, CHANNEL_RESULT_OK);
+                        channel_op_deinit(channel_op);
                     }
-                    break;
-                }
-                case CHANNEL_OP_PULL_CB_CALLED:
-                {
-                    channel_op->push_callback(channel_op->push_context, CHANNEL_RESULT_OK);
-                    channel_op_deinit(channel_op);
-                    break;
-                }
-                case CHANNEL_OP_ABANDONED:
-                {
-                    if (channel_op->pull_callback)
-                    {
-                        channel_op->pull_callback(channel_op->pull_context, NULL, CHANNEL_CALLBACK_RESULT_ABANDONED);
-                    }
-                    if (channel_op->push_callback)
-                    {
-                        channel_op->push_callback(channel_op->push_context, CHANNEL_CALLBACK_RESULT_ABANDONED);
-                    }
-                    channel_op_deinit(channel_op);
-                    break;
-                }
-                default:
-                {
-                    LogError("Invalid state: CHANNEL_OP_STATE state=%" PRI_MU_ENUM "", MU_ENUM_VALUE(CHANNEL_OP_STATE, state));
                     break;
                 }
             }
+            else if (state == CHANNEL_OP_PULL_CB_CALLED)
+            {
+                channel_op->push_callback(channel_op->push_context, CHANNEL_RESULT_OK);
+                sm_exec_end(channel_op->channel_internal->sm);
+                if (interlocked_compare_exchange(&channel_op->can_deinit, 1, 0) == 0)
+                {
+                    /* other callback still has not finished, cannot deinit yet*/
+                }
+                else
+                {
+                    channel_op_deinit(channel_op);
+                }
+                break;
+            }
+            else if (state == CHANNEL_OP_ABANDONED || state == CHANNEL_OP_CANCELLED)
+            {
+                CHANNEL_CALLBACK_RESULT callback_result = (state == CHANNEL_OP_ABANDONED) ? CHANNEL_CALLBACK_RESULT_ABANDONED : CHANNEL_CALLBACK_RESULT_CANCELLED;
+                if (channel_op->pull_callback)
+                {
+                    channel_op->pull_callback(channel_op->pull_context, NULL, callback_result);
+                }
+                if (channel_op->push_callback)
+                {
+                    channel_op->push_callback(channel_op->push_context, callback_result);
+                }
+                sm_exec_end(channel_op->channel_internal->sm);
+                channel_op_deinit(channel_op);
+                break;
+            }
+            else
+            {
+                LogError("Invalid state: CHANNEL_OP_STATE state=%" PRI_MU_ENUM "", MU_ENUM_VALUE(CHANNEL_OP_STATE, state));
+                break;
+            }
         } while(1);
-        sm_exec_end(channel_op->channel_internal->sm);
     }
 }
 
@@ -346,6 +366,7 @@ static void cancel_channel_op(void* context)
                       }
                       else
                       {
+                          (void)interlocked_exchange(&channel_op->state, CHANNEL_OP_CANCELLED);
                           /* remove from the list */
                           if (DList_RemoveEntryList(&channel_op->anchor) != 0)
                           {
@@ -357,8 +378,11 @@ static void cancel_channel_op(void* context)
                           }
                           (void)wake_by_address_single(&channel_internal_ptr->state);
 
-                          /* clean up channel_op */
-                          channel_op_deinit(channel_op);
+                          if (threadpool_schedule_work(channel_internal_ptr->threadpool, execute_callbacks, channel_op) != 0)
+                          {
+                              LogError("Failure in threadpool_schedule_work(execute_callbacks, channel_op)");
+                          }
+                          break;
                       }
                   }
               }
@@ -448,7 +472,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), ch
                             wake_by_address_single(&channel_internal_ptr->state);
                             THANDLE_INITIALIZE_MOVE(ASYNC_OP)(out_op_pull, &async_op);
                             result = CHANNEL_RESULT_OK;
-                            break;
+                            goto all_ok;
                         }
                     }
                 }
@@ -477,7 +501,6 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), ch
 
                         channel_op->pull_callback = pull_callback;
                         channel_op->pull_context = pull_context;
-                        THANDLE_INITIALIZE(RC_PTR)(&channel_op->data, NULL);
 
                         THANDLE_INITIALIZE(ASYNC_OP)(out_op_pull, channel_op->async_op);
 
@@ -502,6 +525,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), ch
                     if (InterlockedHL_WaitForNotValue(&channel_internal_ptr->state, state, UINT32_MAX) != INTERLOCKED_HL_OK)
                     {
                         LogError("Failure in InterlockedHL_WaitForNotValue(&channel_ptr->state, state, UINT32_MAX)");
+                        result = CHANNEL_RESULT_ERROR;
                         break;
                     }
                     else
@@ -573,7 +597,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), ch
                         else
                         {
                             DList_InsertTailList(&channel_internal_ptr->op_list, &channel_op->anchor);
-                            (void)interlocked_exchange(&channel_internal_ptr->state, CHANNEL_PULLED);
+                            (void)interlocked_exchange(&channel_internal_ptr->state, CHANNEL_PUSHED);
                             wake_by_address_single(&channel_internal_ptr->state);
                             THANDLE_INITIALIZE_MOVE(ASYNC_OP)(out_op_push, &async_op);
                             result = CHANNEL_RESULT_OK;
@@ -630,6 +654,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), ch
                     if (InterlockedHL_WaitForNotValue(&channel_internal_ptr->state, state, UINT32_MAX) != INTERLOCKED_HL_OK)
                     {
                         LogError("Failure in InterlockedHL_WaitForNotValue(&channel_ptr->state, state, UINT32_MAX)");
+                        result = CHANNEL_RESULT_ERROR;
                         break;
                     }
                     else
