@@ -12,4 +12,4 @@ set(tarray_int_reals_h_files
 
 add_library(tarray_int_reals ${tarray_int_reals_c_files} ${tarray_int_reals_h_files})
 target_include_directories(tarray_int_reals PUBLIC .)
-target_link_libraries(tarray_int_reals c_logging c_pal_reals)
+target_link_libraries(tarray_int_reals c_logging_v2 c_pal_reals)
