@@ -7,7 +7,7 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
-#include "c_logging/xlogging.h"
+#include "c_logging/logger.h"
 
 #include "c_util/azure_base64.h"
 

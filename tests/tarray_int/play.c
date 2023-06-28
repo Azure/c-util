@@ -3,7 +3,7 @@
 
 #include <inttypes.h>
 
-#include "c_logging/xlogging.h"
+#include "c_logging/logger.h"
 
 #include "c_pal/thandle_ll.h"
 #include "c_util/tarray.h"
