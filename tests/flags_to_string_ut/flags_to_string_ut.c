@@ -25,6 +25,12 @@
 
 #include "flags_to_string_helper.h"
 
+// For gcc build that causes a false negative
+#ifndef _MSC_VER
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
+
+
 /*following function cannot be mocked because of variable number of arguments:( so it is copy&pasted here*/
 char* sprintf_char_function(const char* format, ...)
 {
