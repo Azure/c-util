@@ -123,7 +123,7 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
 ### channel_dispose
 ```c
-    void channel_dispose(CHANNEL* channel);
+    static void channel_dispose(CHANNEL* channel);
 ```
 
 `channel_dispose` disposes the given `channel`.
