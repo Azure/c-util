@@ -6,41 +6,31 @@
 
 Consumers of data call `channel_pull` to register a `PULL_CALLBACK` function to be called when data becomes available.
 
-Producers of data call `channel_push` to notify the channel that data is available.
+Producers of data call `channel_push` to notify the channel that data is available and provide a `PUSH_CALLBACK` to be called when the data has been consumed.
 
-`channel_pull` and `channel_push` can be called from different threads in any order.
+`channel_pull` and `channel_push` can be called from different threads in any order. The callbacks are executed on threadpool threads.
 
-## `channel` state
+## `channel` internal state
 
-The state of the `channel` module consists of two components:
-- EPOCH: This is a monotonically increasing integer that is incremented every time an operation is completed or cancelled.
-- Internal state: This is an enum that can have the following values:
-  - `CHANNEL_READY`: This is the default state. In this state, the module accepts calls to `channel_pull` and `channel_push`
-  - `CHANNEL_PUSHING`: This is a temporary state when `channel_push` is executing. It causes concurrent calls to `channel_pull` to wait.
-  - `CHANNEL_PUSHED`: This is the state when `channel_push` has completed execution. A subsequent call to `channel_pull` will result in the callbacks being called synchronously.
-  - `CHANNEL_PULLING`: This is a temporary state when `channel_pull` is executing. It causes concurrent calls to `channel_push` to wait.
-  - `CHANNEL_PULLED`: This is the state when `channel_pull` has completed execution. A subsequent call to `channel_push` will result in the callback being called synchronously.
-
-Both components are stored in a single `volatile_atomic` variable that is manipulated using `interlocked` APIs.
+The internal state of the `channel` module can have the following values:
+  - `CHANNEL_EMPTY`: This is the initial state of the `channel`. It means that there is no data available to be pulled. Calling `channel_pull` or `channel_push` will cause the state to transition to `CHANNEL_PUSHING` or `CHANNEL_PULLING` respectively.
+  - `CHANNEL_PUSHED`: This is the state after `channel_push` has been called. A subsequent call to `channel_pull` will schedule the callbacks on the threadpool.
+  - `CHANNEL_PULLED`: This is the state after `channel_pull` has been called. A subsequent call to `channel_push` will the callbacks on the threadpool.
 
 ```mermaid
 stateDiagram-v2
-    B: EPOCH=x,STATE=CHANNEL_READY
-    Nx: EPOCH=x,STATE=CHANNEL_PUSHING
-    N: EPOCH=x,STATE=CHANNEL_PUSHED
-    R: EPOCH=x,STATE=CHANNEL_PULLED
-    Rx: EPOCH=x,STATE=CHANNEL_PULLING
-    E: EPOCH=x+1,STATE=CHANNEL_READY
+    B: STATE=CHANNEL_EMPTY
+    N: STATE=CHANNEL_PUSHED
+    R: STATE=CHANNEL_PULLED
+    E: STATE=CHANNEL_EMPTY
 
     [*] --> B: channel_create
 
-    B --> Nx:  channel_push
-    B --> Rx:  channel_pull
-
-    Nx --> N
-    Rx --> R
+    B --> N: channel_push
+    B --> R: channel_pull
 
     N --> E:  channel_pull
+
     R --> E: channel_push
 
     N --> E:  cancel channel_push
@@ -54,14 +44,16 @@ stateDiagram-v2
 
 ## Reentrancy
 
-`channel` is reentrant. This means that `channel_pull` and `channel_push` can be called from callbacks of this module. The user must keep in mind that API calls from callbacks can lead to stack overflow if there is no base case.
+`channel_pull` and `channel_push` can be called from callbacks of this module. Since the callbacks are executed on threadpool threads, there is no risk of stack overflow.
+
+## Internal Reference Counting
+
+`THANDLE(CHANNEL)` maintains a reference to an internal `THANDLE(CHANNEL_INTERNAL)`. `CHANNEL_INTERNAL` is the object that contains the state of the module. This two-level reference counting is needed because the lifetime of the module is linked to the `THANDLE(CHANNEL)` and the `THANDLE(ASYNC_OP)`s returned by `channel_pull` and `channel_push`. 
 
 ## Exposed API
 ```c
 #define CHANNEL_RESULT_VALUES \
-    CHANNEL_RESULT_CALLBACKS_SCHEDULED, \
-    CHANNEL_RESULT_WAITING, \
-    CHANNEL_RESULT_REFUSED, \
+    CHANNEL_RESULT_OK, \
     CHANNEL_RESULT_INVALID_ARGS, \
     CHANNEL_RESULT_ERROR
 
@@ -85,7 +77,7 @@ typedef struct CHANNEL_TAG CHANNEL;
 
 THANDLE_TYPE_DECLARE(CHANNEL);
 
-    MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create)
+    MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPOOL), threadpool);
     MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
     MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
 
@@ -97,33 +89,77 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
 ### channel_create
 ```c
-    MOCKABLE_FUNCTION(, CHANNEL_HANDLE, channel_create)
+    MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPOOL), threadpool);
 ```
 
 `channel_create` creates the channel and returns it.
 
-**SRS_CHANNEL_43_001: [** `channel_create` shall call `THANDLE_MALLOC` with `dispose` as `channel_dispose`. **]**
+**SRS_CHANNEL_43_077: [** If `threadpool` is `NULL`, `channel_create` shall fail and return `NULL`. **]**
 
-**SRS_CHANNEL_43_056: [** `channel_create` shall set the `state` to `CHANNEL_READY` and `EPOCH` to `0` by calling `interlocked_exchange`. **]**
+**SRS_CHANNEL_43_001: [** `channel_create` shall create a `CHANNEL` object by calling `THANDLE_MALLOC` with `channel_dispose` as `dispose`. **]**
+
+**SRS_CHANNEL_43_078: [** `channel_create` shall create a `CHANNEL_INTERNAL` object by calling `THANDLE_MALLOC`.**]**
+
+**SRS_CHANNEL_43_079: [** `channel_create` shall store the created `THANDLE(CHANNEL_INTERNAL)` in the `THANDLE(CHANNEL)`. **]**
+
+**SRS_CHANNEL_43_080: [** `channel_create` shall initialize the `CHANNEL_INTERNAL` with the given `threadpool`. **]**
+
+**SRS_CHANNEL_43_098: [** `channel_create` shall call `srw_lock_create`. **]**
+
+**SRS_CHANNEL_43_081: [** `channel_create` shall call `sm_create`. **]**
+
+**SRS_CHANNEL_43_082: [** `channel_create` shall call `sm_open_begin`. **]**
+
+**SRS_CHANNEL_43_083: [** `channel_create` shall call `sm_open_end`. **]**
+
+**SRS_CHANNEL_43_084: [** `channel_create` shall call `DList_InitializeListHead`. **]**
+
+**SRS_CHANNEL_43_085: [** `channel_create` shall call `interlocked_exchange` to set the `state` to `CHANNEL_EMPTY`. **]**
+
+**SRS_CHANNEL_43_086: [** `channel_create` shall succeed and return the created `THANDLE(CHANNEL)`. **]**
 
 **SRS_CHANNEL_43_002: [** If there are any failures, `channel_create` shall fail and return `NULL`. **]**
 
+
 ### channel_dispose
 ```c
-    void channel_dispose(CHANNEL* channel)
+    void channel_dispose(CHANNEL* channel);
 ```
 
 `channel_dispose` disposes the given `channel`.
 
-**SRS_CHANNEL_43_004: [** `channel_dispose` shall obtain the current `state` of the channel by calling `interlocked_add`. **]**
+**SRS_CHANNEL_43_087: [** `channel_dispose` disposes the given `channel`. **]**
 
-**SRS_CHANNEL_43_058: [** If the current `state` is `CHANNEL_PULLED`, `channel_dispose` shall call the `pull_callback` given to `channel_pull` with `pull_context` as the `pull_context` given to `channel_pull`, `data` as `NULL`, and `result` as `CHANNEL_CALLBACK_RESULT_ABANDONED`. **]**
+**SRS_CHANNEL_43_088: [** `channel_dispose` shall `sm_close_begin_with_cb` with `channel_close` as the callback. **]**
 
-**SRS_CHANNEL_43_006: [** If the current `state` is `CHANNEL_PUSHED`, `channel_dispose` shall: **]**
+**SRS_CHANNEL_43_089: [** `channel_dispose` shall `sm_close_end`. **]**
 
-  - **SRS_CHANNEL_43_044: [** call the `push_callback` given to `channel_push` with `push_context` as the `push_context` given to `channel_push`, and `result` as `CHANNEL_RESULT_ABANDONED`. **]**
+**SRS_CHANNEL_43_090: [** `channel_dispose` shall `sm_destroy`. **]**
 
-  - **SRS_CHANNEL_43_045: [** release the reference to `data` stored in `channel` by calling `THANDLE_ASSIGN`. **]**
+**SRS_CHANNEL_43_099: [** `channel_dispose` shall call `srw_lock_destroy`. **]**
+
+**SRS_CHANNEL_43_091: [** `channel_dispose` shall release the reference to `THANDLE(THREADPOOL)`. **]**
+
+**SRS_CHANNEL_43_092: [** `channel_dispose` shall release the reference to `THANDLE(CHANNEL_INTERNAL)`. **]**
+
+
+### channel_close
+```c
+    static void channel_close(void* context);
+```
+
+`channel_close` is the callback passed to `sm_close_begin_with_cb` by `channel_dispose`. It abandons all pending operations
+
+**SRS_CHANNEL_43_094: [** `channel_close` shall call `srw_lock_acquire_exclusive`. **]**
+
+**SRS_CHANNEL_43_095: [** `channel_close` shall iterate over the list of pending operations and do the following: **]**
+
+ - **SRS_CHANNEL_43_096: [** set the `operation state` to `CHANNEL_OP_ABANDONED`. **]**
+ 
+ - **SRS_CHANNEL_43_097: [** call `threadpool_schedule_work` with `execute_callbacks` as `work_function`. **]**
+
+**SRS_CHANNEL_43_100: [** `channel_close` shall call `srw_lock_release_exclusive`. **]**
+
 
 ### channel_pull
 ```c
@@ -138,64 +174,41 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
 **SRS_CHANNEL_43_009: [** If `out_op_pull` is `NULL`, `channel_pull` shall fail and return `CHANNEL_RESULT_INVALID_ARGS`. **]**
 
-**SRS_CHANNEL_43_010: [** `channel_pull` shall call `interlocked_add` to obtain the `state` of the `channel`. **]**
+**SRS_CHANNEL_43_010: [** `channel_pull` shall call `srw_lock_acquire_exclusive`. **]**
 
-**SRS_CHANNEL_43_011: [** If the obtained `state` is `CHANNEL_PULLING` or `CHANNEL_PULLED`, `channel_pull` shall fail and return `CHANNEL_RESULT_REFUSED`. **]**
+**SRS_CHANNEL_43_101: [** If the `state` of the `channel` is `CHANNEL_EMPTY` or `CHANNEL_PULLED`: **]**
 
-**SRS_CHANNEL_43_059: [** If the obtained `state` is `CHANNEL_PUSHING`, `channel_pull` shall wait for the `state` to change by calling `InterlockedHL_WaitForNotValue`. **]**
+ - **SRS_CHANNEL_43_102: [** `channel_pull` shall call `sm_exec_begin`. **]**
 
-**SRS_CHANNEL_43_012: [** If the obtained `state` is `CHANNEL_PUSHED`, `channel_pull` shall : **]**
+ - **SRS_CHANNEL_43_103: [** `channel_pull` shall create a `THANDLE(ASYNC_OP)` by calling `async_op_create` with `cancel_channel_op` as `cancel`. **]**
 
-  - **SRS_CHANNEL_43_060: [** save on the stack `push_callback`, `push_context` and `data` given to `channel_push`. **]**
+ - **SRS_CHANNEL_43_104: [** `channel_pull` shall store the `pull_callback` and `pull_context` in the `THANDLE(ASYNC_OP)`. **]**
 
-  - **SRS_CHANNEL_43_042: [** atomically compare the current `state` with the previously obtained `state`, increment the `EPOCH` and set the `state` to `CHANNEL_READY` if the `state` is has not changed by calling `interlocked_compare_exchange`. **]**
+ - **SRS_CHANNEL_43_105: [** `channel_pull` shall insert the created `THANDLE(ASYNC_OP)` in the list of pending operations by calling `DList_InsertTailList`. **]**
 
-  - **SRS_CHANNEL_43_071: [** If the `state` has changed, `channel_pull` shall retry from requirement 43_010. **]**
+ - **SRS_CHANNEL_43_106: [** set the `state` to `CHANNEL_PULLED`. **]**
 
-  - **SRS_CHANNEL_43_013: [** call the given `pull_callback` with `pull_context` as the given `pull_context`, `data` as the stored `data` and `result` as `CHANNEL_RESULT_OK`. **]**
+ - **SRS_CHANNEL_43_107: [** set `*out_op_pull` to the created `THANDLE(ASYNC_OP)`. **]**
 
-  - **SRS_CHANNEL_43_053: [** release the reference to the stored `data` by calling `THANDLE_ASSIGN`. **]**
+**SRS_CHANNEL_43_108: [** If the `state` of the `channel` is `CHANNEL_PUSHED`: **]**
 
-  - **SRS_CHANNEL_43_014: [** call the stored `push_callback` with the stored `push_context` and `result` as `CHANNEL_RESULT_OK`. **]**
+ - **SRS_CHANNEL_43_109: [** `channel_pull` shall call `DList_RemoveHeadList` on the list of pending operations to obtain the `operation`. **]**
 
-  - **SRS_CHANNEL_43_054: [** set `out_op_pull` to `NULL` by calling `THANDLE_ASSIGN`. **]**
+ - **SRS_CHANNEL_43_110: [** If the list of pending operations is now empty, `channel_pull` shall set the `state` to `CHANNEL_EMPTY`. **]**
 
-  - **SRS_CHANNEL_43_015: [** return `CHANNEL_RESULT_CALLBACKS_SCHEDULED`. **]**
+ - **SRS_CHANNEL_43_111: [** `channel_pull` shall set the `state` of the obtained `operation` to `CHANNEL_OP_SCHEDULED`. **]**
 
-**SRS_CHANNEL_43_016: [** If the obtained `state` is `CHANNEL_READY`, `channel_pull` shall: **]**
+ - **SRS_CHANNEL_43_112: [** `channel_pull` shall store the `pull_callback` and `pull_context` in the obtained `operation`. **]**
 
-  - **SRS_CHANNEL_43_068: [** atomically compare the current `state` with the previously obtained `state` and set the `state` to `CHANNEL_PULLING` if the `state` has not changed by calling `interlocked_compare_exchange`. **]**
+ - **SRS_CHANNEL_43_113: [** `channel_pull` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the obtained `operation` as `work_function_context`. **]**
 
-  - **SRS_CHANNEL_43_069: [** If the `state` has changed, `channel_pull` shall retry from requirement 43_010. **]**
+ - **SRS_CHANNEL_43_114: [** `channel_pull` shall set `*out_op_pull` to the `THANDLE(ASYNC_OP)` of the obtained `operation`. **]**
 
-  - **SRS_CHANNEL_43_017: [** call `async_op_create` with `cancel_pull` as the cancel function. **]**
+**SRS_CHANNEL_43_115: [** `channel_pull` shall call `srw_lock_release_exclusive`. **]**
 
-  - **SRS_CHANNEL_43_018: [** store the given `pull_callback` and the given `pull_context` in the `channel`. **]**
-
-  - **SRS_CHANNEL_43_019: [** store `EPOCH` in the created `THANDLE(ASYNC_OP)`. **]**
-
-  - **SRS_CHANNEL_43_020: [** store the given `channel` in the created `THANDLE(ASYNC_OP)` by calling `THANDLE_INITIALIZE`. **]**
-
-  - **SRS_CHANNEL_43_021: [** store the created `THANDLE(ASYNC_OP)` in `out_op_pull` by calling `THANDLE_INITIALIZE_MOVE`. **]**
-
-  - **SRS_CHANNEL_43_062: [** set the `state` of the given `channel` to `CHANNEL_PULLED` by calling `interlocked_exchange`. **]**
-
-  - **SRS_CHANNEL_43_063: [** signal waiting threads by calling `wake_by_address_all`. **]**
-
-  - **SRS_CHANNEL_43_022: [** return `CHANNEL_RESULT_WAITING`. **]**
+**SRS_CHANNEL_43_011: [** `channel_pull` shall succeeds and return `CHANNEL_RESULT_OK`. **]**
 
 **SRS_CHANNEL_43_023: [** If there are any failures, `channel_pull` shall fail and return `CHANNEL_RESULT_ERROR`. **]**
-
-### cancel_pull
-```
-static void cancel_pull(void* context)
-```
-
-`cancel_pull` is the cancel function given to `async_op_create` when `channel_pull` is called.
-
-**SRS_CHANNEL_43_046: [** atomically compare the current `EPOCH` with the `EPOCH` stored during `channel_pull`, increment the `EPOCH` and set the `state` of the `channel` stored in the given `context` to `CHANNEL_READY` if the `EPOCH` has not changed by calling `interlocked_compare_exchange`**]**
-
-**SRS_CHANNEL_43_048: [** If the `EPOCH` has not changed, `cancel_pull` shall call the `pull_callback` given to `channel_pull` with `pull_context` as the `pull_context` given to `channel_pull`, `data` as `NULL` and `result` as `CHANNEL_RESULT_CANCELLED`. **]**
 
 
 ### channel_push
@@ -211,64 +224,74 @@ static void cancel_pull(void* context)
 
 **SRS_CHANNEL_43_026: [** If `out_op_push` is `NULL`, `channel_push` shall fail and return `CHANNEL_RESULT_INVALID_ARGS`. **]**
 
-**SRS_CHANNEL_43_027: [** `channel_push` shall call `interlocked_add` to obtain the current `state` of the `channel`. **]**
+**SRS_CHANNEL_43_116: [** `channel_push` shall call `srw_lock_acquire_exclusive`. **]**
 
-**SRS_CHANNEL_43_028: [** If the obtained `state` is `CHANNEL_PUSHING` or `CHANNEL_PUSHED`, `channel_push` shall fail and return `CHANNEL_RESULT_REFUSED`. **]**
+**SRS_CHANNEL_43_117: [** If the `state` of the `channel` is `CHANNEL_EMPTY` or `CHANNEL_PUSHED`: **]**
 
-**SRS_CHANNEL_43_064: [** If the obtained `state` is `CHANNEL_PULLING`, `channel_push` shall wait for the `state` to change by calling `InterlockedHL_WaitForNotValue`. **]**
+ - **SRS_CHANNEL_43_118: [** `channel_push` shall call `sm_exec_begin`. **]**
 
-**SRS_CHANNEL_43_029: [** If the obtained `state` is `CHANNEL_PULLED`, `channel_push` shall: **]**
+ - **SRS_CHANNEL_43_119: [** `channel_push` shall create a `THANDLE(ASYNC_OP)` by calling `async_op_create` with `cancel_channel_op` as `cancel`. **]**
 
-  - **SRS_CHANNEL_43_076: [** save on the stack `pull_callback` and `pull_context` given to `channel_pull`. **]**
+ - **SRS_CHANNEL_43_120: [** `channel_push` shall store the `push_callback`, `push_context` and `data` in the `THANDLE(ASYNC_OP)`. **]**
 
-  - **SRS_CHANNEL_43_043: [** atomically compare the current `state` with the previously obtained `state`, increment the `EPOCH` and set the `state` to `CHANNEL_READY` if the `state` is has not changed by calling `interlocked_compare_exchange`. **]**
+ - **SRS_CHANNEL_43_121: [** `channel_push` shall insert the created `THANDLE(ASYNC_OP)` in the list of pending operations by calling `DList_InsertTailList`. **]**
 
-  - **SRS_CHANNEL_43_072: [** If the `state` has changed, `channel_push` shall retry from requirement 43_027. **]**
+ - **SRS_CHANNEL_43_122: [** set the `state` to `CHANNEL_PUSHED`. **]**
 
-  - **SRS_CHANNEL_43_030: [** call the stored `pull_callback` with the stored `pull_context`, `data` as the given `data` and `result` as `CHANNEL_RESULT_OK`. **]**
+ - **SRS_CHANNEL_43_123: [** set `*out_op_push` to the created `THANDLE(ASYNC_OP)`. **]**
 
-  - **SRS_CHANNEL_43_031: [** call the given `push_callback` with `push_context` as the given `push_context` and `result` as `CHANNEL_RESULT_OK`. **]**
+**SRS_CHANNEL_43_124: [** If the `state` of the `channel` is `CHANNEL_PULLED`: **]**
 
-  - **SRS_CHANNEL_43_055: [** set `out_op_push` to `NULL` by calling `THANDLE_ASSIGN`. **]**
+ - **SRS_CHANNEL_43_125: [** `channel_push` shall call `DList_RemoveHeadList` on the list of pending operations to obtain the `operation`. **]**
 
-  - **SRS_CHANNEL_43_032: [** return `CHANNEL_RESULT_CALLBACKS_SCHEDULED`. **]**
+ - **SRS_CHANNEL_43_126: [** If the list of pending operations is now empty, `channel_push` shall set the `state` to `CHANNEL_EMPTY`. **]**
 
-**SRS_CHANNEL_43_033: [** If the obtained `state` is `CHANNEL_READY`, `channel_push` shall: **]**
+ - **SRS_CHANNEL_43_127: [** `channel_push` shall set the `state` of the obtained `operation` to `CHANNEL_OP_SCHEDULED`. **]**
 
-  - **SRS_CHANNEL_43_065: [** atomically compare the current `state` with the previously obtained `state` and set the `state` to `CHANNEL_PUSHING` if the `state` has not changed by calling `interlocked_compare_exchange`. **]**
+ - **SRS_CHANNEL_43_128: [** `channel_push` shall store the `push_callback`, `push_context` and `data` in the obtained `operation`. **]**
 
-  - **SRS_CHANNEL_43_070: [** If the `state` has changed, `channel_push` shall retry from requirement 43_027. **]**
+ - **SRS_CHANNEL_43_129: [** `channel_push` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the obtained `operation` as `work_function_context`. **]**
 
-  - **SRS_CHANNEL_43_034: [** call `async_op_create` with `cancel_push` as the cancel function. **]**
+ - **SRS_CHANNEL_43_130: [** `channel_push` shall set `*out_op_push` to the `THANDLE(ASYNC_OP)` of the obtained `operation`. **]**
 
-  - **SRS_CHANNEL_43_035: [** store the given `push_callback` and the given `push_context` in the `channel`. **]**
+**SRS_CHANNEL_43_131: [** `channel_push` shall call `srw_lock_release_exclusive`. **]**
 
-  - **SRS_CHANNEL_43_036: [** store the given `data` in the `channel` by calling `THANDLE_INITIALIZE`. **]**
-
-  - **SRS_CHANNEL_43_037: [** store `EPOCH` in the created `THANDLE(ASYNC_OP)`. **]**
-
-  - **SRS_CHANNEL_43_038: [** store the given `channel` in the created `THANDLE(ASYNC_OP)` by calling `THANDLE_INITIALIZE`. **]**
-
-  - **SRS_CHANNEL_43_039: [** store the created `THANDLE(ASYNC_OP)` in `out_op_push`by calling `THANDLE_INITIALIZE_MOVE`. **]**
-
-  - **SRS_CHANNEL_43_066: [** set the `state` of the given `channel` to `CHANNEL_PUSHED` by calling `interlocked_exchange`. **]**
-
-  - **SRS_CHANNEL_43_067: [** signal waiting threads by calling `wake_by_address_all`. **]**
-
-  - **SRS_CHANNEL_43_040: [** return `CHANNEL_RESULT_WAITING`. **]**
+**SRS_CHANNEL_43_132: [** `channel_push` shall succeeds and return `CHANNEL_RESULT_OK`. **]**
 
 **SRS_CHANNEL_43_041: [** If there are any failures, `channel_push` shall fail and return `CHANNEL_RESULT_ERROR`. **]**
 
 
-### cancel_push
+### cancel_channel_op
 ```c
-static void cancel_push(void* context)
+    static void cancel_channel_op(void* channel_op_context);
 ```
 
-`cancel_push` is the cancel function given to `async_op_create` when `channel_push` is called.
+**SRS_CHANNEL_43_133: [** `cancel_channel_op` is the cancel callback that is passed to `async_op_create` when creating a `THANDLE(ASYNC_OP)` for a `channel_push` or `channel_pull` operation. **]**
 
-**SRS_CHANNEL_43_073: [** atomically compare the current `EPOCH` with the `EPOCH` stored during `channel_push`, increment the `EPOCH` and set the `state` of the `channel` stored in the given `context` to `CHANNEL_READY` if the `EPOCH` has not changed by calling `interlocked_compare_exchange` **]**
+**SRS_CHANNEL_43_134: [** `cancel_channel_op` shall call `srw_lock_acquire_exclusive`. **]**
 
-**SRS_CHANNEL_43_074: [** If the `EPOCH` has not changed, `cancel_push` shall call the `push_callback` given to `channel_push` with `push_context` as the `push_context` given to `channel_push`, `data` as `NULL` and `result` as `CHANNEL_RESULT_CANCELLED`. **]**
+**SRS_CHANNEL_43_135: [** If the `state` of `operation` is `CHANNEL_OP_CREATED`: **]**
 
-**SRS_CHANNEL_43_075: [** If the `EPOCH` has not changed, `cancel_push` shall release the reference to `data` stored in `channel` by calling `THANDLE_ASSIGN`. **]**
+ - **SRS_CHANNEL_43_136: [** `cancel_channel_op` shall set the `state` to `CHANNEL_OP_CANCELLED` **]**
+
+ - **SRS_CHANNEL_43_137: [** `cancel_channel_op` shall call `DList_RemoveEntryList` to remove the `operation` from the list of pending operations. **]**
+
+ - **SRS_CHANNEL_43_138: [** `cancel_channel_op` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the `operation` as `work_function_context`. **]**
+
+**SRS_CHANNEL_43_139: [** `cancel_channel_op` shall call `srw_lock_release_exclusive`. **]**
+
+
+### execute_callbacks
+```c
+    static void execute_callbacks(void* channel_op_context);
+```
+
+`execute_callbacks` is the work function that is passed to `threadpool_schedule_work` when scheduling the execution of the callbacks for a `channel_push` or `channel_pull` operation.
+
+**SRS_CHANNEL_43_140: [** If the `state` of the `operation` is `CHANNEL_OP_SCHEDULED`, `execute_callbacks` shall call the `pull_callback` and the `push_callback` with `CHANNEL_CALLBACK_RESULT_OK`. **]**
+
+**SRS_CHANNEL_43_141: [** If the `state` of the `operation` is `CHANNEL_OP_CANCELLED`, `execute_callbacks` shall call whichever callback has been registered with `CHANNEL_CALLBACK_RESULT_CANCELLED`. **]**
+
+**SRS_CHANNEL_43_142: [** If the `state` of the `operation` is `CHANNEL_OP_ABANDONED`, `execute_callbacks` shall call whichever callback has been registered with `CHANNEL_CALLBACK_RESULT_ABANDONED`. **]**
+
+**SRS_CHANNEL_43_143: [** `execute_callbacks` shall call `sm_exec_end`. **]**
