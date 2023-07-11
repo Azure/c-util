@@ -127,19 +127,13 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
 **SRS_CHANNEL_43_001: [** `channel_create` shall create a `CHANNEL` object by calling `THANDLE_MALLOC` with `channel_dispose` as `dispose`. **]**
 
-**SRS_CHANNEL_43_078: [** `channel_create` shall create a `CHANNEL_INTERNAL` object by calling `THANDLE_MALLOC`.**]**
+**SRS_CHANNEL_43_078: [** `channel_create` shall create a `CHANNEL_INTERNAL` object by calling `THANDLE_MALLOC` with `channel_internal_dispose` as `dispose`.**]**
 
 **SRS_CHANNEL_43_079: [** `channel_create` shall store the created `THANDLE(CHANNEL_INTERNAL)` in the `THANDLE(CHANNEL)`. **]**
 
 **SRS_CHANNEL_43_080: [** `channel_create` shall initialize the `CHANNEL_INTERNAL` with the given `threadpool`. **]**
 
 **SRS_CHANNEL_43_098: [** `channel_create` shall call `srw_lock_create`. **]**
-
-**SRS_CHANNEL_43_081: [** `channel_create` shall call `sm_create`. **]**
-
-**SRS_CHANNEL_43_082: [** `channel_create` shall call `sm_open_begin`. **]**
-
-**SRS_CHANNEL_43_083: [** `channel_create` shall call `sm_open_end`. **]**
 
 **SRS_CHANNEL_43_084: [** `channel_create` shall call `DList_InitializeListHead`. **]**
 
@@ -155,40 +149,31 @@ THANDLE_TYPE_DECLARE(CHANNEL);
     static void channel_dispose(CHANNEL* channel);
 ```
 
-`channel_dispose` disposes the given `channel`.
+`channel_dispose` disposes the given `channel` and schedules all pending operations to be abandoned.
 
-**SRS_CHANNEL_43_087: [** `channel_dispose` disposes the given `channel`. **]**
+**SRS_CHANNEL_43_094: [** `channel_dispose` shall call `srw_lock_acquire_exclusive`. **]**
 
-**SRS_CHANNEL_43_088: [** `channel_dispose` shall `sm_close_begin_with_cb` with `channel_close` as the callback. **]**
-
-**SRS_CHANNEL_43_089: [** `channel_dispose` shall `sm_close_end`. **]**
-
-**SRS_CHANNEL_43_090: [** `channel_dispose` shall `sm_destroy`. **]**
-
-**SRS_CHANNEL_43_099: [** `channel_dispose` shall call `srw_lock_destroy`. **]**
-
-**SRS_CHANNEL_43_091: [** `channel_dispose` shall release the reference to `THANDLE(THREADPOOL)`. **]**
-
-**SRS_CHANNEL_43_092: [** `channel_dispose` shall release the reference to `THANDLE(CHANNEL_INTERNAL)`. **]**
-
-
-### channel_close
-```c
-    static void channel_close(void* context);
-```
-
-`channel_close` is the callback passed to `sm_close_begin_with_cb` by `channel_dispose`. It abandons all pending operations
-
-**SRS_CHANNEL_43_094: [** `channel_close` shall call `srw_lock_acquire_exclusive`. **]**
-
-**SRS_CHANNEL_43_095: [** `channel_close` shall iterate over the list of pending operations and do the following: **]**
+**SRS_CHANNEL_43_095: [** `channel_dispose` shall iterate over the list of pending operations and do the following: **]**
 
  - **SRS_CHANNEL_43_096: [** set the `operation state` to `CHANNEL_OP_ABANDONED`. **]**
  
  - **SRS_CHANNEL_43_097: [** call `threadpool_schedule_work` with `execute_callbacks` as `work_function`. **]**
 
-**SRS_CHANNEL_43_100: [** `channel_close` shall call `srw_lock_release_exclusive`. **]**
+**SRS_CHANNEL_43_100: [** `channel_dispose` shall call `srw_lock_release_exclusive`. **]**
 
+**SRS_CHANNEL_43_092: [** `channel_dispose` shall release the reference to `THANDLE(CHANNEL_INTERNAL)`. **]**
+
+
+### channel_dispose_internal
+```c
+    static void channel_dispose_internal(CHANNEL_INTERNAL* channel_internal);
+```
+
+`channel_dispose_internal` disposes the given `channel_internal`.
+
+**SRS_CHANNEL_43_099: [** `channel_dispose_internal` shall call `srw_lock_destroy`. **]**
+
+**SRS_CHANNEL_43_091: [** `channel_dispose_internal` shall release the reference to `THANDLE(THREADPOOL)`. **]**
 
 ### channel_pull
 ```c
