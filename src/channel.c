@@ -106,18 +106,6 @@ static void channel_internal_dispose(CHANNEL_INTERNAL* channel_internal)
 
 static void channel_dispose(CHANNEL* channel)
 {
-    //SM_RESULT sm_close_begin_result = sm_close_begin_with_cb(channel->channel_internal->sm, channel_close, channel, NULL, NULL);
-    //if (sm_close_begin_result != SM_EXEC_GRANTED)
-    //{
-    //    LogError("Failure in sm_close_begin(channel->sm): SM_RESULT sm_close_begin_result=%" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_RESULT, sm_close_begin_result));
-    //}
-    //else
-    //{
-    //    srw_lock_destroy(channel->channel_internal->lock);
-    //    THANDLE_ASSIGN(THREADPOOL)(&channel->channel_internal->threadpool, NULL);
-    //    THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel->channel_internal, NULL);
-    //}
-
     CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel->channel_internal);
 
     srw_lock_acquire_exclusive(channel_internal_ptr->lock);
