@@ -10,7 +10,7 @@ typedef void (*RC_PTR_FREE_FUNC)(void* context);
 
 typedef struct RC_PTR_TAG
 {
-    const void* ptr;
+    void* ptr;
     RC_PTR_FREE_FUNC free_func;
 } RC_PTR;
 
@@ -20,7 +20,7 @@ THANDLE_TYPE_DECLARE(RC_PTR);
 
 #define RC_PTR_VALUE(rc) ((rc)->ptr)
 
-#define RC_PTR_AS_VOIDPTR(rc) (((rc) == NULL) ? NULL : (rc)->ptr)
+#define RC_PTR_OR_NULL(rc) (((rc) == NULL) ? NULL : (rc)->ptr)
 
 MOCKABLE_FUNCTION(, THANDLE(RC_PTR), rc_ptr_create_with_move_pointer, void*, ptr, RC_PTR_FREE_FUNC, free_func);
 ```

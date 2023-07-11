@@ -26,7 +26,7 @@ THANDLE_TYPE_DECLARE(RC_PTR);
 
 #define RC_PTR_VALUE(rc) ((rc)->ptr)
 
-#define RC_PTR_VALUE_OR_NULL(rc) (((rc) == NULL) ? NULL : (rc)->ptr)
+#define RC_PTR_OR_NULL(rc) (((rc) == NULL) ? NULL : (rc)->ptr)
 
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
