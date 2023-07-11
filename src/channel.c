@@ -8,7 +8,7 @@
 
 #include "macro_utils/macro_utils.h"
 
-#include "c_logging/xlogging.h"
+#include "c_logging/logger.h"
 
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
@@ -17,7 +17,6 @@
 #include "c_pal/interlocked_hl.h"
 #include "c_pal/sync.h"
 #include "c_pal/threadpool.h"
-#include "c_pal/sm.h"
 #include "c_pal/srw_lock.h"
 
 #include "c_util/doublylinkedlist.h"
@@ -48,7 +47,6 @@ typedef struct CHANNEL_INTERNAL_TAG
     int32_t state;
     SRW_LOCK_HANDLE lock;
     DLIST_ENTRY op_list;
-    SM_HANDLE sm;
 }CHANNEL_INTERNAL;
 
 THANDLE_TYPE_DECLARE(CHANNEL_INTERNAL);
@@ -80,20 +78,49 @@ static void execute_callbacks(void* context);
 
 static void channel_internal_dispose(CHANNEL_INTERNAL* channel_internal)
 {
-    /* nothing to do here, actual cleanup is done in channel_close */
-    (void)channel_internal;
+    srw_lock_destroy(channel_internal->lock);
+    THANDLE_ASSIGN(THREADPOOL)(&channel_internal->threadpool, NULL);
 }
 
-static void channel_close(void* context)
+//static void channel_close(void* context)
+//{
+//    (void)context;
+//    // acquire lock over channel, call all callbacks with ABANDONED status
+//    // dispose reference to channel_internal
+//    CHANNEL* channel_ptr = (CHANNEL*)context;
+//    CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_ptr->channel_internal);
+//
+//    srw_lock_acquire_exclusive(channel_internal_ptr->lock);
+//    /* channel is LOCKED */
+//    for (DLIST_ENTRY* entry = DList_RemoveHeadList(&channel_internal_ptr->op_list); entry != &channel_internal_ptr->op_list; entry = DList_RemoveHeadList(&channel_internal_ptr->op_list))
+//    {
+//        CHANNEL_OP* channel_op = CONTAINING_RECORD(entry, CHANNEL_OP, anchor);
+//        (void)interlocked_exchange(&channel_op->state, CHANNEL_OP_ABANDONED);
+//        if (threadpool_schedule_work(channel_internal_ptr->threadpool, execute_callbacks, channel_op) != 0)
+//        {
+//            LogError("Failure in threadpool_schedule_work(execute_callbacks, channel_op)");
+//        }
+//    }
+//    srw_lock_release_exclusive(channel_internal_ptr->lock);
+//}
+
+static void channel_dispose(CHANNEL* channel)
 {
-    (void)context;
-    // acquire lock over channel, call all callbacks with ABANDONED status
-    // dispose reference to channel_internal
-    CHANNEL* channel_ptr = (CHANNEL*)context;
-    CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_ptr->channel_internal);
+    //SM_RESULT sm_close_begin_result = sm_close_begin_with_cb(channel->channel_internal->sm, channel_close, channel, NULL, NULL);
+    //if (sm_close_begin_result != SM_EXEC_GRANTED)
+    //{
+    //    LogError("Failure in sm_close_begin(channel->sm): SM_RESULT sm_close_begin_result=%" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_RESULT, sm_close_begin_result));
+    //}
+    //else
+    //{
+    //    srw_lock_destroy(channel->channel_internal->lock);
+    //    THANDLE_ASSIGN(THREADPOOL)(&channel->channel_internal->threadpool, NULL);
+    //    THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel->channel_internal, NULL);
+    //}
+
+    CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel->channel_internal);
 
     srw_lock_acquire_exclusive(channel_internal_ptr->lock);
-    /* channel is LOCKED */
     for (DLIST_ENTRY* entry = DList_RemoveHeadList(&channel_internal_ptr->op_list); entry != &channel_internal_ptr->op_list; entry = DList_RemoveHeadList(&channel_internal_ptr->op_list))
     {
         CHANNEL_OP* channel_op = CONTAINING_RECORD(entry, CHANNEL_OP, anchor);
@@ -104,23 +131,8 @@ static void channel_close(void* context)
         }
     }
     srw_lock_release_exclusive(channel_internal_ptr->lock);
-}
 
-static void channel_dispose(CHANNEL* channel)
-{
-    SM_RESULT sm_close_begin_result = sm_close_begin_with_cb(channel->channel_internal->sm, channel_close, channel, NULL, NULL);
-    if (sm_close_begin_result != SM_EXEC_GRANTED)
-    {
-        LogError("Failure in sm_close_begin(channel->sm): SM_RESULT sm_close_begin_result=%" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_RESULT, sm_close_begin_result));
-    }
-    else
-    {
-        sm_close_end(channel->channel_internal->sm);
-        sm_destroy(channel->channel_internal->sm);
-        srw_lock_destroy(channel->channel_internal->lock);
-        THANDLE_ASSIGN(THREADPOOL)(&channel->channel_internal->threadpool, NULL);
-        THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel->channel_internal, NULL);
-    }
+    THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel->channel_internal, NULL);
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPOOL), threadpool)
@@ -157,30 +169,11 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPO
                 }
                 else
                 {
-                    channel_internal_ptr->sm = sm_create("channel");
-                    if (channel_internal_ptr->sm == NULL)
-                    {
-                        LogError("Failure in sm_create(\"channel\")");
-                    }
-                    else
-                    {
-                        SM_RESULT sm_open_begin_result = sm_open_begin(channel_internal_ptr->sm);
-                        if (sm_open_begin_result != SM_EXEC_GRANTED)
-                        {
-                            LogError("Failure in sm_open_begin(channel_internal_ptr->sm): SM_RESULT sm_open_begin_result=%" PRI_MU_ENUM "", MU_ENUM_VALUE(SM_RESULT, sm_open_begin_result));
-                        }
-                        else
-                        {
-                            sm_open_end(channel_internal_ptr->sm, true);
-                            DList_InitializeListHead(&channel_internal_ptr->op_list);
-                            channel_internal_ptr->state = CHANNEL_EMPTY;
-                            THANDLE_INITIALIZE_MOVE(CHANNEL)(&result, &channel);
-                            goto all_ok;
-                        }
-                    }
-                    sm_destroy(channel_internal_ptr->sm);
+                    DList_InitializeListHead(&channel_internal_ptr->op_list);
+                    channel_internal_ptr->state = CHANNEL_EMPTY;
+                    THANDLE_INITIALIZE_MOVE(CHANNEL)(&result, &channel);
+                    goto all_ok;
                 }
-                srw_lock_destroy(channel_internal_ptr->lock);
                 THANDLE_ASSIGN(THREADPOOL)(&channel_internal_ptr->threadpool, NULL);
             }
             THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_ptr->channel_internal, NULL);
@@ -205,7 +198,7 @@ static void execute_callbacks(void* context)
         {
             case CHANNEL_OP_SCHEDULED:
             {
-                channel_op->pull_callback(channel_op->pull_context, channel_op->data, CHANNEL_RESULT_OK);
+                channel_op->pull_callback(channel_op->pull_context, CHANNEL_RESULT_OK, channel_op->data);
                 channel_op->push_callback(channel_op->push_context, CHANNEL_RESULT_OK);
                 break;
             }
@@ -215,7 +208,7 @@ static void execute_callbacks(void* context)
                 CHANNEL_CALLBACK_RESULT callback_result = (channel_op->state == CHANNEL_OP_ABANDONED) ? CHANNEL_CALLBACK_RESULT_ABANDONED : CHANNEL_CALLBACK_RESULT_CANCELLED;
                 if (channel_op->pull_callback)
                 {
-                    channel_op->pull_callback(channel_op->pull_context, NULL, callback_result);
+                    channel_op->pull_callback(channel_op->pull_context, callback_result, NULL);
                 }
                 if (channel_op->push_callback)
                 {
@@ -229,7 +222,6 @@ static void execute_callbacks(void* context)
                 break;
             }
         }
-        sm_exec_end(channel_op->channel_internal->sm);
 
         THANDLE_ASSIGN(RC_PTR)(&channel_op->data, NULL);
         THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_op->channel_internal, NULL);
@@ -280,41 +272,30 @@ static void dispose_channel_op(void* context)
 static int enqueue_operation(CHANNEL_INTERNAL* channel_internal, THANDLE(ASYNC_OP)* out_op, PULL_CALLBACK pull_callback, void* pull_context, PUSH_CALLBACK push_callback, void* push_context, THANDLE(RC_PTR) data)
 {
     int result;
-    if (sm_exec_begin(channel_internal->sm) != SM_EXEC_GRANTED)
+    THANDLE(ASYNC_OP) async_op = async_op_create(cancel_channel_op, sizeof(CHANNEL_OP), alignof(CHANNEL_OP), dispose_channel_op);
+    if (async_op == NULL)
     {
-        LogError("Failure in sm_exec_begin.");
+        LogError("Failure in async_op_create(cancel_channel_op, sizeof(CHANNEL_OP), alignof(CHANNEL_OP), dispose_channel_op)");
         result = MU_FAILURE;
     }
     else
     {
-        THANDLE(ASYNC_OP) async_op = async_op_create(cancel_channel_op, sizeof(CHANNEL_OP), alignof(CHANNEL_OP), dispose_channel_op);
-        if (async_op == NULL)
-        {
-            LogError("Failure in async_op_create(cancel_channel_op, sizeof(CHANNEL_OP), alignof(CHANNEL_OP), dispose_channel_op)");
-            result = MU_FAILURE;
-        }
-        else
-        {
-            CHANNEL_OP* channel_op = async_op->context;
-            channel_op->pull_callback = pull_callback;
-            channel_op->pull_context = pull_context;
-            channel_op->push_callback = push_callback;
-            channel_op->push_context = push_context;
+        CHANNEL_OP* channel_op = async_op->context;
+        channel_op->pull_callback = pull_callback;
+        channel_op->pull_context = pull_context;
+        channel_op->push_callback = push_callback;
+        channel_op->push_context = push_context;
 
-            THANDLE_INITIALIZE(ASYNC_OP)(&channel_op->async_op, async_op);
-            THANDLE_INITIALIZE(CHANNEL_INTERNAL)(&channel_op->channel_internal, channel_internal);
-            THANDLE_INITIALIZE(RC_PTR)(&channel_op->data, data);
-            channel_op->state = CHANNEL_OP_CREATED;
+        THANDLE_INITIALIZE(ASYNC_OP)(&channel_op->async_op, async_op);
+        THANDLE_INITIALIZE(CHANNEL_INTERNAL)(&channel_op->channel_internal, channel_internal);
+        THANDLE_INITIALIZE(RC_PTR)(&channel_op->data, data);
+        channel_op->state = CHANNEL_OP_CREATED;
 
-            DList_InsertTailList(&channel_internal->op_list, &channel_op->anchor);
-            channel_internal->state = (pull_context != NULL) ? CHANNEL_PULLED : CHANNEL_PUSHED;
-            THANDLE_INITIALIZE_MOVE(ASYNC_OP)(out_op, &async_op);
-            result = 0;
-            goto all_ok;
-        }
+        DList_InsertTailList(&channel_internal->op_list, &channel_op->anchor);
+        channel_internal->state = (pull_context != NULL) ? CHANNEL_PULLED : CHANNEL_PUSHED;
+        THANDLE_INITIALIZE_MOVE(ASYNC_OP)(out_op, &async_op);
+        result = 0;
     }
-    sm_exec_end(channel_internal->sm);
-all_ok:
     return result;
 }
 

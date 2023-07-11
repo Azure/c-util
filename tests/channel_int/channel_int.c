@@ -8,9 +8,9 @@
 #include "c_pal/interlocked.h"
 #include "c_pal/thandle.h"
 #include "c_pal/threadpool.h"
+#include "c_pal/sync.h"
 
 #include "c_util/rc_ptr.h"
-
 #include "c_util/channel.h"
 
 TEST_DEFINE_ENUM_TYPE(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_VALUES);
@@ -32,9 +32,10 @@ static int32_t pull_abandoned = 0x0006;
 static int32_t push_abandoned = 0x0007;
 static void* test_data2 = (void*)0x0008;
 
-static void test_on_pull_callback_cancelled(void* context, THANDLE(RC_PTR) data, CHANNEL_CALLBACK_RESULT result)
+static void test_on_pull_callback_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data)
 {
     int32_t original_value = interlocked_exchange(context, pull_cancelled);
+    wake_by_address_single(context);
     ASSERT_ARE_EQUAL(int32_t, 0, original_value);
     ASSERT_IS_NULL(data);
     ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_CANCELLED, result);
@@ -43,13 +44,15 @@ static void test_on_pull_callback_cancelled(void* context, THANDLE(RC_PTR) data,
 static void test_on_push_callback_cancelled(void* context, CHANNEL_CALLBACK_RESULT result)
 {
     int32_t original_value = interlocked_exchange(context, push_cancelled);
+    wake_by_address_single(context);
     ASSERT_ARE_EQUAL(int32_t, 0, original_value);
     ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_CANCELLED, result);
 }
 
-static void test_on_pull_callback_abandoned(void* context, THANDLE(RC_PTR) data, CHANNEL_CALLBACK_RESULT result)
+static void test_on_pull_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data)
 {
     int32_t original_value = interlocked_exchange(context, pull_abandoned);
+    wake_by_address_single(context);
     ASSERT_ARE_EQUAL(int32_t, 0, original_value);
     ASSERT_IS_NULL(data);
     ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
@@ -58,13 +61,15 @@ static void test_on_pull_callback_abandoned(void* context, THANDLE(RC_PTR) data,
 static void test_on_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result)
 {
     int32_t original_value = interlocked_exchange(context, push_abandoned);
+    wake_by_address_single(context);
     ASSERT_ARE_EQUAL(int32_t, 0, original_value);
     ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
 }
 
-static void test_on_pull_callback_success(void* context, THANDLE(RC_PTR) data, CHANNEL_CALLBACK_RESULT result)
+static void test_on_pull_callback_success(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data)
 {
     int32_t original_value = interlocked_exchange(context, pull_success);
+    wake_by_address_single(context);
     ASSERT_ARE_EQUAL(int32_t, 0, original_value);
     ASSERT_IS_NOT_NULL(data);
     ASSERT_ARE_EQUAL(void_ptr, test_data, RC_PTR_VALUE(data));
@@ -74,6 +79,7 @@ static void test_on_pull_callback_success(void* context, THANDLE(RC_PTR) data, C
 static void test_on_push_callback_success(void* context, CHANNEL_CALLBACK_RESULT result)
 {
     int32_t original_value = interlocked_exchange(context, push_success);
+    wake_by_address_single(context);
     ASSERT_ARE_EQUAL(int32_t, 0, original_value);
     ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_OK, result);
 }
@@ -157,8 +163,8 @@ TEST_FUNCTION(test_pull_and_cancel)
     CHANNEL_RESULT result = channel_pull(channel, test_on_pull_callback_cancelled, (void*)&context, &async_op);
     async_op_cancel(async_op);
 
-    //force callback to execute
-    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+    //wait for callback to execute
+    wait_on_address(&context, 0, UINT32_MAX);
 
     /// assert
     ASSERT_IS_NOT_NULL(async_op);
@@ -167,6 +173,8 @@ TEST_FUNCTION(test_pull_and_cancel)
 
     // cleanup
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+
 }
 
 TEST_FUNCTION(test_push_and_cancel)
@@ -182,8 +190,8 @@ TEST_FUNCTION(test_push_and_cancel)
     CHANNEL_RESULT result = channel_push(channel, channel_data, test_on_push_callback_cancelled, (void*)&context,  &async_op);
     async_op_cancel(async_op);
 
-    //force callback to execute
-    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+    //wait for callback to execute
+    wait_on_address(&context, 0, UINT32_MAX);
 
     /// assert
     ASSERT_IS_NOT_NULL(async_op);
@@ -193,6 +201,7 @@ TEST_FUNCTION(test_push_and_cancel)
     // cleanup
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
     THANDLE_ASSIGN(RC_PTR)(&channel_data, NULL);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
 TEST_FUNCTION(test_pull_and_abandon)
@@ -207,6 +216,9 @@ TEST_FUNCTION(test_pull_and_abandon)
     CHANNEL_RESULT result = channel_pull(channel, test_on_pull_callback_abandoned, (void*)&context, &async_op);
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+
+    //wait for callback to execute
+    wait_on_address(&context, 0, UINT32_MAX);
 
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
@@ -228,6 +240,9 @@ TEST_FUNCTION(test_push_and_abandon)
     CHANNEL_RESULT result = channel_push(channel, channel_data, test_on_push_callback_abandoned, (void*)&context, &async_op);
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+
+    //wait for callback to execute
+    wait_on_address(&context, 0, UINT32_MAX);
 
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
@@ -253,8 +268,9 @@ TEST_FUNCTION(test_pull_and_then_push)
     CHANNEL_RESULT pull_result = channel_pull(channel, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
     CHANNEL_RESULT push_result = channel_push(channel, channel_data, test_on_push_callback_success, (void*)&push_context, &push_op);
 
-    //force callback to execute
-    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+    //wait for callback to execute
+    wait_on_address(&pull_context, 0, UINT32_MAX);
+    wait_on_address(&push_context, 0, UINT32_MAX);
 
     /// assert
     ASSERT_IS_NOT_NULL(pull_op);
@@ -268,6 +284,7 @@ TEST_FUNCTION(test_pull_and_then_push)
     THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
     THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
     THANDLE_ASSIGN(RC_PTR)(&channel_data, NULL);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
 TEST_FUNCTION(test_push_and_then_pull)
@@ -286,8 +303,9 @@ TEST_FUNCTION(test_push_and_then_pull)
     CHANNEL_RESULT push_result = channel_push(channel, channel_data, test_on_push_callback_success, (void*)&push_context, &push_op);
     CHANNEL_RESULT pull_result = channel_pull(channel, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
 
-    //force callback to execute
-    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+    //wait for callback to execute
+    wait_on_address(&pull_context, 0, UINT32_MAX);
+    wait_on_address(&push_context, 0, UINT32_MAX);
 
     /// assert
     ASSERT_IS_NOT_NULL(push_op);
@@ -301,6 +319,7 @@ TEST_FUNCTION(test_push_and_then_pull)
     THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
     THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
     THANDLE_ASSIGN(RC_PTR)(&channel_data, NULL);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
 TEST_FUNCTION(test_pull_after_pull_fails)
@@ -322,9 +341,12 @@ TEST_FUNCTION(test_pull_after_pull_fails)
     CHANNEL_RESULT pull_result1 = channel_pull(channel, test_on_pull_callback_success, (void*)&pull_context_1, &pull_op1);
     CHANNEL_RESULT pull_result2 = channel_pull(channel, test_on_pull_callback_abandoned, (void*)&pull_context_2, &pull_op2);
     CHANNEL_RESULT push_result = channel_push(channel, channel_data, test_on_push_callback_success, (void*)&push_context, &push_op);
-
-    //force callback to execute
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+
+    //wait for callback to execute
+    wait_on_address(&pull_context_1, 0, UINT32_MAX);
+    wait_on_address(&pull_context_2, 0, UINT32_MAX);
+    wait_on_address(&push_context, 0, UINT32_MAX);
 
     /// assert
     ASSERT_IS_NOT_NULL(pull_op1);
@@ -342,7 +364,6 @@ TEST_FUNCTION(test_pull_after_pull_fails)
     THANDLE_ASSIGN(ASYNC_OP)(&pull_op1, NULL);
     THANDLE_ASSIGN(ASYNC_OP)(&pull_op2, NULL);
     THANDLE_ASSIGN(RC_PTR)(&channel_data, NULL);
-    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
 TEST_FUNCTION(test_push_after_push_fails)
@@ -369,9 +390,12 @@ TEST_FUNCTION(test_push_after_push_fails)
     CHANNEL_RESULT push_result1 = channel_push(channel, channel_data1, test_on_push_callback_success, (void*)&push_context_1, &push_op1);
     CHANNEL_RESULT push_result2 = channel_push(channel, channel_data2, test_on_push_callback_abandoned, (void*)&push_context_2, &push_op2);
     CHANNEL_RESULT pull_result = channel_pull(channel, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
-
-    //force callback to execute
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+
+    //wait for callback to execute
+    wait_on_address(&push_context_1, 0, UINT32_MAX);
+    wait_on_address(&push_context_2, 0, UINT32_MAX);
+    wait_on_address(&pull_context, 0, UINT32_MAX);
 
     /// assert
     ASSERT_IS_NOT_NULL(push_op1);
