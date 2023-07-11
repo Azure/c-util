@@ -6,8 +6,6 @@
 
 #include "macro_utils/macro_utils.h"
 
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/thandle.h"
 #include "c_pal/threadpool.h"
 
@@ -28,14 +26,15 @@ MU_DEFINE_ENUM(CHANNEL_RESULT, CHANNEL_RESULT_VALUES);
 
 MU_DEFINE_ENUM(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_VALUES);
 
+typedef void(*PULL_CALLBACK)(void* pull_context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data);
+typedef void(*PUSH_CALLBACK)(void* push_context, CHANNEL_CALLBACK_RESULT result);
+typedef struct CHANNEL_TAG CHANNEL;
+
+
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-typedef void(*PULL_CALLBACK)(void* pull_context, THANDLE(RC_PTR) data, CHANNEL_CALLBACK_RESULT result);
-typedef void(*PUSH_CALLBACK)(void* push_context, CHANNEL_CALLBACK_RESULT result);
-typedef struct CHANNEL_TAG CHANNEL;
 
 THANDLE_TYPE_DECLARE(CHANNEL);
 

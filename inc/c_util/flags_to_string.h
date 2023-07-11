@@ -9,7 +9,7 @@
 
 #include "macro_utils/macro_utils.h"
 
-#include "c_logging/xlogging.h"
+#include "c_logging/logger.h"
 
 #include "c_pal/string_utils.h"
 
@@ -19,7 +19,7 @@
 /*this macro declares a function to be used in a header*/
 #define FLAGS_TO_STRING_DECLARE_FUNCTION(X) MOCKABLE_FUNCTION(, char*, FLAGS_TO_STRING(X), uint32_t, argument)
 
-/*this macro defined a function to be used in a .c file. ... is a op_list of pairs of FLAG_VALUE and FLAG_NAME. FLAG_VALUE is a number and FLAG_NAME is a string*/
+/*this macro defined a function to be used in a .c file. ... is a list of pairs of FLAG_VALUE and FLAG_NAME. FLAG_VALUE is a number and FLAG_NAME is a string*/
 #define FLAGS_TO_STRING_DEFINE_FUNCTION(X, ...) \
 char* FLAGS_TO_STRING(X)(uint32_t argument)                                                                                                                             \
 {                                                                                                                                                                       \

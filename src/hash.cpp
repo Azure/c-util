@@ -6,7 +6,7 @@
 #include <cstddef>
 #include "macro_utils/macro_utils.h"
 #include "c_util/hash.h"
-#include "c_logging/xlogging.h"
+#include "c_logging/logger.h"
 #include "MurmurHash2.h"
 
 int hash_compute_hash(const void* buffer, size_t length, uint32_t* hash)
