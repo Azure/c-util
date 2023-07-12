@@ -48,29 +48,12 @@ The first call to `channel_pull`/`channel_push` either creates an `operation` an
 
  - `CHANNEL_OP_CREATED`: This is the initial state of the `operation` after only one of `channel_pull`/`channel_push` have been called. It means that the `operation` has been created and added to the `list of pending operations`. A subsequent call to `channel_push`/`channel_pull` will cause the `operation` to transition to `CHANNEL_OP_SCHEDULED`.
 
- - `CHANNEL_OP_SCHEDULED`: This is the state after the a pair of `channel_pull`/`channel_push` have been called. It means that the `operation` has been removed from the `list of pending operations` and is scheduled to have its callbacks called on the threadpool with result `CHANNEL_CALLBACK_RESULT_OK`. This is a final state. The `operation` can no longer be cancelled.
+ - `CHANNEL_OP_SCHEDULED`: This is the state after the a pair of `channel_pull`/`channel_push` have been called. It means that the `operation` has been removed from the `list of pending operations` and is scheduled to have its callbacks called on the threadpool with result `CHANNEL_CALLBACK_RESULT_OK`. 
 
- - `CHANNEL_OP_CANCELLED`: This is the state after the `operation` has been cancelled. It means that the `operation` has been removed from the `list of pending operations` and is scheduled to have a callback (either `PULL_CALLBACK` XOR `PUSH_CALLBACK`, depending on which of `channel_pull`/`channel_push` created it) called with result `CHANNEL_CALLBACK_RESULT_CANCELLED`. This is a final state
+ - `CHANNEL_OP_CANCELLED`: This is the state after the `operation` has been cancelled. It means that the `operation` has been removed from the `list of pending operations` and is scheduled to have a callback (either `PULL_CALLBACK` XOR `PUSH_CALLBACK`, depending on which of `channel_pull`/`channel_push` created it) called with result `CHANNEL_CALLBACK_RESULT_CANCELLED`. 
 
- - `CHANNEL_OP_ABANDONED`: This is the state after the `operation` has been abandoned. It means that the `operation` has been removed from the `list of pending operations` and is scheduled to have a callback (either `PULL_CALLBACK` XOR `PUSH_CALLBACK`, depending on which of `channel_pull`/`channel_push` created it) called with result `CHANNEL_CALLBACK_RESULT_ABANDONED`. This is a final state.
+ - `CHANNEL_OP_ABANDONED`: This is the state after the `operation` has been abandoned. It means that the `operation` has been removed from the `list of pending operations` and is scheduled to have a callback (either `PULL_CALLBACK` XOR `PUSH_CALLBACK`, depending on which of `channel_pull`/`channel_push` created it) called with result `CHANNEL_CALLBACK_RESULT_ABANDONED`.
 
-
-```mermaid
-stateDiagram-v2
-    N: STATE=CHANNEL_OP_CREATED
-    S: STATE=CHANNEL_OP_SCHEDULED
-    C: STATE=CHANNEL_OP_CANCELLED
-    A: STATE=CHANNEL_OP_ABANDONED
-
-    [*] --> N: channel_pull/channel_push
-    N --> S: channel_push/channel_pull
-    N --> C: async_op_cancel
-    N --> A: THANDLE(CHANNEL)(&channel, NULL)
-
-    S --> [*]
-    C --> [*]
-    A --> [*]
-```
 ## Reentrancy
 
 `channel_pull` and `channel_push` can be called from callbacks of this module. Since the callbacks are executed on threadpool threads, there is no risk of stack overflow.
@@ -156,7 +139,7 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 **SRS_CHANNEL_43_095: [** `channel_dispose` shall iterate over the list of pending operations and do the following: **]**
 
  - **SRS_CHANNEL_43_096: [** set the `operation state` to `CHANNEL_OP_ABANDONED`. **]**
- 
+
  - **SRS_CHANNEL_43_097: [** call `threadpool_schedule_work` with `execute_callbacks` as `work_function`. **]**
 
 **SRS_CHANNEL_43_100: [** `channel_dispose` shall call `srw_lock_release_exclusive`. **]**
@@ -196,11 +179,13 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
  - **SRS_CHANNEL_43_104: [** `channel_pull` shall store the `pull_callback` and `pull_context` in the `THANDLE(ASYNC_OP)`. **]**
 
+ - **SRS_CHANNEL_43_144: [** `channel_pull`  shall call `interlocked_exchange` to set the `state` of the created `operation` to `CHANNEL_OP_CREATED`. **]**
+
  - **SRS_CHANNEL_43_105: [** `channel_pull` shall insert the created `THANDLE(ASYNC_OP)` in the list of pending operations by calling `DList_InsertTailList`. **]**
 
- - **SRS_CHANNEL_43_106: [** set the `state` to `CHANNEL_PULLED`. **]**
+ - **SRS_CHANNEL_43_106: [** `channel_pull` shall set the `state` to `CHANNEL_PULLED`. **]**
 
- - **SRS_CHANNEL_43_107: [** set `*out_op_pull` to the created `THANDLE(ASYNC_OP)`. **]**
+ - **SRS_CHANNEL_43_107: [** `channel_pull` shall set `*out_op_pull` to the created `THANDLE(ASYNC_OP)`. **]**
 
 **SRS_CHANNEL_43_108: [** If the `state` of the `channel` is `CHANNEL_PUSHED`: **]**
 
@@ -244,11 +229,13 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
  - **SRS_CHANNEL_43_120: [** `channel_push` shall store the `push_callback`, `push_context` and `data` in the `THANDLE(ASYNC_OP)`. **]**
 
+ - **SRS_CHANNEL_43_143: [** `channel_push` shall call `interlocked_exchange` to set the `state` of the created `operation` to `CHANNEL_OP_CREATED`. **]**
+
  - **SRS_CHANNEL_43_121: [** `channel_push` shall insert the created `THANDLE(ASYNC_OP)` in the list of pending operations by calling `DList_InsertTailList`. **]**
 
- - **SRS_CHANNEL_43_122: [** set the `state` to `CHANNEL_PUSHED`. **]**
+ - **SRS_CHANNEL_43_122: [** `channel_push` shall set the `state` to `CHANNEL_PUSHED`. **]**
 
- - **SRS_CHANNEL_43_123: [** set `*out_op_push` to the created `THANDLE(ASYNC_OP)`. **]**
+ - **SRS_CHANNEL_43_123: [** `channel_push` shall set `*out_op_push` to the created `THANDLE(ASYNC_OP)`. **]**
 
 **SRS_CHANNEL_43_124: [** If the `state` of the `channel` is `CHANNEL_PULLED`: **]**
 
@@ -280,9 +267,9 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
 **SRS_CHANNEL_43_134: [** `cancel_channel_op` shall call `srw_lock_acquire_exclusive`. **]**
 
-**SRS_CHANNEL_43_135: [** If the `state` of `operation` is `CHANNEL_OP_CREATED`: **]**
+**SRS_CHANNEL_43_136: [** `cancel_channel_op` shall call `interlocked_exchange` to obtain and set the `state` of the `operation` to `CHANNEL_OP_CANCELLED`. **]**
 
- - **SRS_CHANNEL_43_136: [** `cancel_channel_op` shall set the `state` to `CHANNEL_OP_CANCELLED` **]**
+**SRS_CHANNEL_43_135: [** If the obtained `state` of the`operation` is `CHANNEL_OP_CREATED`: **]**
 
  - **SRS_CHANNEL_43_137: [** `cancel_channel_op` shall call `DList_RemoveEntryList` to remove the `operation` from the list of pending operations. **]**
 
@@ -298,8 +285,10 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
 `execute_callbacks` is the work function that is passed to `threadpool_schedule_work` when scheduling the execution of the callbacks for an operation.
 
-**SRS_CHANNEL_43_140: [** If the `state` of the `operation` is `CHANNEL_OP_SCHEDULED`, `execute_callbacks` shall call the `pull_callback` and the `push_callback` with `CHANNEL_CALLBACK_RESULT_OK`. **]**
+**SRS_CHANNEL_43_145: [** `execute_callbacks` shall call `interlocked_exchange` to obtain the `state` of the `operation`.  **]**
 
-**SRS_CHANNEL_43_141: [** If the `state` of the `operation` is `CHANNEL_OP_CANCELLED`, `execute_callbacks` shall call the registered callback with `CHANNEL_CALLBACK_RESULT_CANCELLED`. **]**
+**SRS_CHANNEL_43_140: [** If the `state` of the `operation` is `CHANNEL_OP_SCHEDULED`, `execute_callbacks`shall call the registered callbacks with `CHANNEL_CALLBACK_RESULT_OK`. **]**
 
-**SRS_CHANNEL_43_142: [** If the `state` of the `operation` is `CHANNEL_OP_ABANDONED`, `execute_callbacks` shall call the registered callback with `CHANNEL_CALLBACK_RESULT_ABANDONED`. **]**
+**SRS_CHANNEL_43_141: [** If the `state` of the `operation` is `CHANNEL_OP_CANCELLED`, `execute_callbacks` shall call the registered callbacks with `CHANNEL_CALLBACK_RESULT_CANCELLED`. **]**
+
+**SRS_CHANNEL_43_142: [** If the `state` of the `operation` is `CHANNEL_OP_ABANDONED`, `execute_callbacks` shall call the registered callbacks with `CHANNEL_CALLBACK_RESULT_ABANDONED`. **]**
