@@ -192,8 +192,6 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
 **SRS_CHANNEL_43_101: [** If the `state` of the `channel` is `CHANNEL_EMPTY` or `CHANNEL_PULLED`: **]**
 
- - **SRS_CHANNEL_43_102: [** `channel_pull` shall call `sm_exec_begin`. **]**
-
  - **SRS_CHANNEL_43_103: [** `channel_pull` shall create a `THANDLE(ASYNC_OP)` by calling `async_op_create` with `cancel_channel_op` as `cancel`. **]**
 
  - **SRS_CHANNEL_43_104: [** `channel_pull` shall store the `pull_callback` and `pull_context` in the `THANDLE(ASYNC_OP)`. **]**
@@ -241,8 +239,6 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 **SRS_CHANNEL_43_116: [** `channel_push` shall call `srw_lock_acquire_exclusive`. **]**
 
 **SRS_CHANNEL_43_117: [** If the `state` of the `channel` is `CHANNEL_EMPTY` or `CHANNEL_PUSHED`: **]**
-
- - **SRS_CHANNEL_43_118: [** `channel_push` shall call `sm_exec_begin`. **]**
 
  - **SRS_CHANNEL_43_119: [** `channel_push` shall create a `THANDLE(ASYNC_OP)` by calling `async_op_create` with `cancel_channel_op` as `cancel`. **]**
 
@@ -307,5 +303,3 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 **SRS_CHANNEL_43_141: [** If the `state` of the `operation` is `CHANNEL_OP_CANCELLED`, `execute_callbacks` shall call the registered callback with `CHANNEL_CALLBACK_RESULT_CANCELLED`. **]**
 
 **SRS_CHANNEL_43_142: [** If the `state` of the `operation` is `CHANNEL_OP_ABANDONED`, `execute_callbacks` shall call the registered callback with `CHANNEL_CALLBACK_RESULT_ABANDONED`. **]**
-
-**SRS_CHANNEL_43_143: [** `execute_callbacks` shall call `sm_exec_end`. **]**
