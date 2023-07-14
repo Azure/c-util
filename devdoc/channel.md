@@ -45,7 +45,7 @@ The first call to `channel_pull`/`channel_push` creates an `operation` and adds 
 
 `CHANNEL_CALLBACK_RESULT_OK`: The callbacks are called with this result in the success case.
 
-## `CHANNEL_CALLBACK_RESULT_ABANDONED` trumps `CHANNEL_CALLBACK_RESULT_CANCELLED` trumps `CHANNEL_CALLBACK_RESULT_OK`
+`CHANNEL_CALLBACK_RESULT_ABANDONED` trumps `CHANNEL_CALLBACK_RESULT_CANCELLED` trumps `CHANNEL_CALLBACK_RESULT_OK`.
 
 ```mermaid
 stateDiagram-v2
