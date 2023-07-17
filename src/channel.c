@@ -20,10 +20,9 @@
 #include "c_util/async_op.h"
 #include "c_util/rc_ptr.h"
 
+#define COMPILING_CHANNEL_C
 #include "c_util/channel.h"
-
-MU_DEFINE_ENUM(CHANNEL_OP_STATE, CHANNEL_OP_STATE_VALUES)
-MU_DEFINE_ENUM_STRINGS(CHANNEL_OP_STATE, CHANNEL_OP_STATE_VALUES)
+#undef COMPILING_CHANNEL_C
 
 typedef struct CHANNEL_INTERNAL_TAG
 {
