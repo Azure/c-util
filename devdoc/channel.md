@@ -116,7 +116,7 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
 **SRS_CHANNEL_43_079: [** `channel_create` shall store the created `THANDLE(CHANNEL_INTERNAL)` in the `THANDLE(CHANNEL)`. **]**
 
-**SRS_CHANNEL_43_080: [** `channel_create` shall initialize the `CHANNEL_INTERNAL` with the given `threadpool`. **]**
+**SRS_CHANNEL_43_080: [** `channel_create` shall store given `threadpool` in the created `CHANNEL_INTERNAL`. **]**
 
 **SRS_CHANNEL_43_098: [** `channel_create` shall call `srw_lock_create`. **]**
 
@@ -147,16 +147,16 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 **SRS_CHANNEL_43_092: [** `channel_dispose` shall release the reference to `THANDLE(CHANNEL_INTERNAL)`. **]**
 
 
-### channel_dispose_internal
+### channel_internal_dispose
 ```c
-    static void channel_dispose_internal(CHANNEL_INTERNAL* channel_internal);
+    static void channel_internal_dispose(CHANNEL_INTERNAL* channel_internal);
 ```
 
-`channel_dispose_internal` disposes the given `channel_internal`.
+`channel_internal_dispose` disposes the given `channel_internal`.
 
-**SRS_CHANNEL_43_099: [** `channel_dispose_internal` shall call `srw_lock_destroy`. **]**
+**SRS_CHANNEL_43_099: [** `channel_internal_dispose` shall call `srw_lock_destroy`. **]**
 
-**SRS_CHANNEL_43_091: [** `channel_dispose_internal` shall release the reference to `THANDLE(THREADPOOL)`. **]**
+**SRS_CHANNEL_43_091: [** `channel_internal_dispose` shall release the reference to `THANDLE(THREADPOOL)`. **]**
 
 ### channel_pull
 ```c
@@ -179,7 +179,7 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
  - **SRS_CHANNEL_43_104: [** `channel_pull` shall store the `pull_callback` and `pull_context` in the `THANDLE(ASYNC_OP)`. **]**
 
- - **SRS_CHANNEL_43_144: [** `channel_pull`  shall call `interlocked_exchange` to set the `state` of the created `operation` to `CHANNEL_OP_CREATED`. **]**
+ - **SRS_CHANNEL_43_111: [** `channel_pull` shall set the `result` of the created `operation` to `CHANNEL_CALLBACK_RESULT_OK`. **]**
 
  - **SRS_CHANNEL_43_105: [** `channel_pull` shall insert the created `THANDLE(ASYNC_OP)` in the list of pending operations by calling `DList_InsertTailList`. **]**
 
@@ -188,8 +188,6 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 **SRS_CHANNEL_43_108: [** If the first operation in the list of pending operations contains a `non-NULL` `push_callback`: **]**
 
  - **SRS_CHANNEL_43_109: [** `channel_pull` shall call `DList_RemoveHeadList` on the list of pending operations to obtain the `operation`. **]**
-
- - **SRS_CHANNEL_43_111: [** `channel_pull` shall set the `result` of the obtained `operation` to `CHANNEL_CALLBACK_RESULT_OK`. **]**
 
  - **SRS_CHANNEL_43_112: [** `channel_pull` shall store the `pull_callback` and `pull_context` in the obtained `operation`. **]**
 
@@ -225,7 +223,7 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
  - **SRS_CHANNEL_43_120: [** `channel_push` shall store the `push_callback`, `push_context` and `data` in the `THANDLE(ASYNC_OP)`. **]**
 
- - **SRS_CHANNEL_43_143: [** `channel_push` shall call `interlocked_exchange` to set the `state` of the created `operation` to `CHANNEL_OP_CREATED`. **]**
+ - **SRS_CHANNEL_43_127: [** `channel_push` shall set the `result` of the created `operation` to `CHANNEL_CALLBACK_RESULT_OK`. **]**
 
  - **SRS_CHANNEL_43_121: [** `channel_push` shall insert the created `THANDLE(ASYNC_OP)` in the list of pending operations by calling `DList_InsertTailList`. **]**
 
@@ -234,8 +232,6 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 **SRS_CHANNEL_43_124: [** If the first operation in the list of pending operations contains a `non-NULL` `pull_callback`: **]**
 
  - **SRS_CHANNEL_43_125: [** `channel_push` shall call `DList_RemoveHeadList` on the list of pending operations to obtain the `operation`. **]**
-
- - **SRS_CHANNEL_43_127: [** `channel_push` shall set the `result` of the obtained `operation` to `CHANNEL_CALLBACK_RESULT_OK`. **]**
 
  - **SRS_CHANNEL_43_128: [** `channel_push` shall store the `push_callback`, `push_context` and `data` in the obtained `operation`. **]**
 
@@ -259,7 +255,7 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 
 **SRS_CHANNEL_43_134: [** `cancel_channel_op` shall call `srw_lock_acquire_exclusive`. **]**
 
-**SRS_CHANNEL_43_135: [** If the`operation` is in the list of pending `operations`: **]**
+**SRS_CHANNEL_43_135: [** If the `operation` is in the list of pending `operations`: **]**
 
  - **SRS_CHANNEL_43_137: [** `cancel_channel_op` shall call `DList_RemoveEntryList` to remove the `operation` from the list of pending operations. **]**
 
@@ -280,3 +276,5 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 `execute_callbacks` is the work function that is passed to `threadpool_schedule_work` when scheduling the execution of the callbacks for an operation.
 
 **SRS_CHANNEL_43_145: [** `execute_callbacks` shall call the stored callback(s) with the `result` of the `operation`.  **]**
+
+**SRS_CHANNEL_43_147: [** `execute_callbacks` shall perform cleanup of the `operation`. **]**
