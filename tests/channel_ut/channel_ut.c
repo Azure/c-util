@@ -24,6 +24,8 @@
 #include "c_util/rc_ptr.h"
 #undef ENABLE_MOCKS
 
+#include "umock_c/umock_c_prod.h"
+
 #include "real_gballoc_hl.h"
 #include "real_srw_lock.h"
 #include "real_threadpool.h"
