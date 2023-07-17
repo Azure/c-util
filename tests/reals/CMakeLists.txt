@@ -2,12 +2,15 @@
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 set(c_util_reals_c_files
+    real_async_op.c
+    real_channel.c
     real_constbuffer.c
     real_constbuffer_array.c
     real_constbuffer_array_batcher_nv.c
     real_doublylinkedlist.c
     real_external_command_helper.c
     real_memory_data.c
+    real_rc_ptr.c
     real_rc_string.c
     real_rc_string_array.c
     real_singlylinkedlist.c   
@@ -20,6 +23,10 @@ set(c_util_reals_cpp_files
 )
 
 set(c_util_reals_h_files
+    real_async_op.h
+    real_async_op_renames.h
+    real_channel.h
+    real_channel_renames.h
     real_constbuffer.h
     real_constbuffer_renames.h
     real_constbuffer_array.h
@@ -36,6 +43,8 @@ set(c_util_reals_h_files
     real_memory_data_renames.h 
     real_murmurhash2.h
     real_murmurhash2_renames.h
+    real_rc_ptr.h
+    real_rc_ptr_renames.h
     real_rc_string.h
     real_rc_string_renames.h
     real_rc_string_array.h

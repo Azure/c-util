@@ -10,11 +10,7 @@ typedef void (*RC_PTR_FREE_FUNC)(void* context);
 
 typedef struct RC_PTR_TAG
 {
-<<<<<<< HEAD
-    const void* ptr;
-=======
     void* ptr;
->>>>>>> channel-md
     RC_PTR_FREE_FUNC free_func;
 } RC_PTR;
 

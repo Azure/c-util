@@ -13,11 +13,8 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/thandle.h"
-#include "c_pal/interlocked.h"
-#include "c_pal/interlocked_hl.h"
-#include "c_pal/sync.h"
-#include "c_pal/threadpool.h"
 #include "c_pal/srw_lock.h"
+#include "c_pal/threadpool.h"
 
 #include "c_util/doublylinkedlist.h"
 #include "c_util/async_op.h"
