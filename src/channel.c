@@ -20,12 +20,21 @@
 #include "c_util/async_op.h"
 #include "c_util/rc_ptr.h"
 
-#define COMPILING_CHANNEL_C
 #include "c_util/channel.h"
+
+#define COMPILING_CHANNEL_C
+#include "../inc/c_util/channel_internal.h"
 #undef COMPILING_CHANNEL_C
 
-
 THANDLE_TYPE_DEFINE(CHANNEL_INTERNAL);
+
+typedef struct CHANNEL_TAG
+{
+    THANDLE(CHANNEL_INTERNAL) channel_internal;
+}CHANNEL;
+THANDLE_TYPE_DEFINE(CHANNEL);
+
+
 
 typedef struct CHANNEL_OP_TAG
 {
@@ -44,7 +53,6 @@ typedef struct CHANNEL_OP_TAG
 
 
 
-THANDLE_TYPE_DEFINE(CHANNEL);
 
 static void execute_callbacks(void* context);
 

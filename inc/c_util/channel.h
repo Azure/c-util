@@ -8,11 +8,10 @@
 
 #include "c_pal/thandle.h"
 #include "c_pal/threadpool.h"
-#include "c_pal/srw_lock.h"
 
 #include "c_util/async_op.h"
-#include "c_util/doublylinkedlist.h"
 #include "c_util/rc_ptr.h"
+
 
 #define CHANNEL_RESULT_VALUES \
     CHANNEL_RESULT_OK, \
@@ -38,22 +37,8 @@ typedef struct CHANNEL_TAG CHANNEL;
 extern "C" {
 #endif /* __cplusplus */
 
-#ifdef COMPILING_CHANNEL_C
-typedef struct CHANNEL_INTERNAL_TAG
-{
-    THANDLE(THREADPOOL) threadpool;
-    SRW_LOCK_HANDLE lock;
-    DLIST_ENTRY op_list;
-}CHANNEL_INTERNAL;
 
-THANDLE_TYPE_DECLARE(CHANNEL_INTERNAL);
-
-typedef struct CHANNEL_TAG
-{
-    THANDLE(CHANNEL_INTERNAL) channel_internal;
-}CHANNEL;
-
-#endif COMPILING_CHANNEL_C
+typedef struct CHANNEL_TAG CHANNEL;
 
 THANDLE_TYPE_DECLARE(CHANNEL);
 
