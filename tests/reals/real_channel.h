@@ -24,8 +24,25 @@
 extern "C" {
 #endif /* __cplusplus */
 
-    typedef struct CHANNEL_TAG real_CHANNEL;
-    THANDLE_TYPE_DECLARE(real_CHANNEL);
+typedef struct CHANNEL_INTERNAL_TAG
+{
+    THANDLE(THREADPOOL) threadpool;
+    SRW_LOCK_HANDLE lock;
+    DLIST_ENTRY op_list;
+}CHANNEL_INTERNAL;
+
+THANDLE_TYPE_DECLARE(CHANNEL_INTERNAL);
+typedef struct CHANNEL_INTERNAL_TAG real_CHANNEL_INTERNAL;
+THANDLE_TYPE_DECLARE(real_CHANNEL_INTERNAL);
+
+typedef struct CHANNEL_TAG
+{
+    THANDLE(CHANNEL_INTERNAL) channel_internal;
+}CHANNEL;
+
+THANDLE_TYPE_DECLARE(CHANNEL);
+typedef struct CHANNEL_TAG real_CHANNEL;
+THANDLE_TYPE_DECLARE(real_CHANNEL);
 
     MOCKABLE_FUNCTION(, THANDLE(CHANNEL), real_channel_create, THANDLE(THREADPOOL), threadpool);
     MOCKABLE_FUNCTION(, CHANNEL_RESULT, real_channel_pull, THANDLE(CHANNEL), channel, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);

@@ -14,4 +14,4 @@ set(${theseTestsName}_h_files
 ../../inc/c_util/channel.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util_reals c_pal_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util_reals c_pal_reals c_pal)

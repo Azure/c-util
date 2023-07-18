@@ -24,14 +24,7 @@
 #include "c_util/channel.h"
 #undef COMPILING_CHANNEL_C
 
-typedef struct CHANNEL_INTERNAL_TAG
-{
-    THANDLE(THREADPOOL) threadpool;
-    SRW_LOCK_HANDLE lock;
-    DLIST_ENTRY op_list;
-}CHANNEL_INTERNAL;
 
-THANDLE_TYPE_DECLARE(CHANNEL_INTERNAL);
 THANDLE_TYPE_DEFINE(CHANNEL_INTERNAL);
 
 typedef struct CHANNEL_OP_TAG
@@ -49,10 +42,7 @@ typedef struct CHANNEL_OP_TAG
     CHANNEL_CALLBACK_RESULT result;
 }CHANNEL_OP;
 
-typedef struct CHANNEL_TAG
-{
-    THANDLE(CHANNEL_INTERNAL) channel_internal;
-}CHANNEL;
+
 
 THANDLE_TYPE_DEFINE(CHANNEL);
 
