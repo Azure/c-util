@@ -160,6 +160,7 @@ set(c_util_c_files
     ./src/uuid_string.c
     ./src/async_op.c
     ./src/channel.c
+    ./src/channel_internal.c
     ./src/rc_ptr.c
 )
 

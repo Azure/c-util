@@ -4,6 +4,7 @@
 set(c_util_reals_c_files
     real_async_op.c
     real_channel.c
+    real_channel_internal.c
     real_constbuffer.c
     real_constbuffer_array.c
     real_constbuffer_array_batcher_nv.c
@@ -27,6 +28,8 @@ set(c_util_reals_h_files
     real_async_op_renames.h
     real_channel.h
     real_channel_renames.h
+    real_channel_internal_renames.h
+    real_channel_internal.h
     real_constbuffer.h
     real_constbuffer_renames.h
     real_constbuffer_array.h

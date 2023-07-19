@@ -15,7 +15,7 @@
 
 #include "c_pal/interlocked.h"
 #include "c_pal/execution_engine.h"
-
+#include "c_pal/thandle.h"
 
 #define ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
@@ -26,10 +26,7 @@
 #include "c_util/async_op.h"
 #include "c_util/doublylinkedlist.h"
 #include "c_util/rc_ptr.h"
-
-#define TEST_CHANNEL
-#include "../../inc/c_util/channel_internal.h"
-#undef TEST_CHANNEL
+#include "c_util/channel_internal.h"
 
 #undef ENABLE_MOCKS
 
@@ -41,14 +38,9 @@
 #include "real_async_op.h"
 #include "real_doublylinkedlist.h"
 #include "real_rc_ptr.h"
-#include "../reals/real_channel_internal.h"
+#include "real_channel_internal.h"
 
 #include "c_util/channel.h"
-
-#define CHANNEL_INTERNAL TEST_CHANNEL_INTERNAL
-
-//THANDLE_LL_TYPE_DECLARE(TEST_CHANNEL_INTERNAL, CHANNEL_INTERNAL);
-//THANDLE_LL_TYPE_DEFINE(TEST_CHANNEL_INTERNAL, CHANNEL_INTERNAL);
 
 static EXECUTION_ENGINE_HANDLE g_execution_engine = NULL;
 static struct G_TAG /*g comes from "global*/
@@ -70,18 +62,22 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 }
 
 static void* test_threadpool = (void*)0x1000;
+static PULL_CALLBACK test_pull_callback = (PULL_CALLBACK)0x1001;
+static void* test_pull_context = (void*)0x1002;
+static PUSH_CALLBACK test_push_callback = (PUSH_CALLBACK)0x1003;
+static void* test_push_context = (void*)0x1004;
+static THANDLE(ASYNC_OP) test_out_op_pull = (THANDLE(ASYNC_OP))0x1005;
+static THANDLE(ASYNC_OP) test_out_op_push = (THANDLE(ASYNC_OP))0x1006;
+static THANDLE(RC_PTR) test_data = (THANDLE(RC_PTR))0x1007;
+static THANDLE(CHANNEL) test_channel = (THANDLE(CHANNEL))0x1008;
 
 static void setup_channel_create_expectations(void)
 {
     CHANNEL* channel;
-    CHANNEL_INTERNAL* channel_internal;
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
         .CaptureReturn(&channel);
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-        .CaptureReturn(&channel_internal);
+    STRICT_EXPECTED_CALL(channel_internal_create_and_open(g.g_threadpool));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(CHANNEL_INTERNAL)(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(THREADPOOL)(IGNORED_ARG, g.g_threadpool));
-
 }
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
@@ -99,16 +95,12 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_ASYNC_OP_GLOBAL_MOCK_HOOKS();
     REGISTER_DOUBLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
     REGISTER_RC_PTR_GLOBAL_MOCK_HOOKS();
+    REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
 
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(srw_lock_create, NULL);
 
-    //REGISTER_GLOBAL_MOCK_HOOK(THANDLE_MOVE(CHANNEL_INTERNAL), THANDLE_MOVE(TEST_CHANNEL_INTERNAL));
-    //REGISTER_GLOBAL_MOCK_HOOK(THANDLE_INITIALIZE(CHANNEL_INTERNAL), THANDLE_INITIALIZE(TEST_CHANNEL_INTERNAL));
-    //REGISTER_GLOBAL_MOCK_HOOK(THANDLE_INITIALIZE_MOVE(CHANNEL_INTERNAL), THANDLE_INITIALIZE_MOVE(TEST_CHANNEL_INTERNAL));
-    //REGISTER_GLOBAL_MOCK_HOOK(THANDLE_ASSIGN(CHANNEL_INTERNAL), THANDLE_ASSIGN(TEST_CHANNEL_INTERNAL));
-
-    //REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
+    REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
 
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(THREADPOOL), void*);
     REGISTER_UMOCK_ALIAS_TYPE(SRW_LOCK_HANDLE, void*);
@@ -184,8 +176,18 @@ TEST_FUNCTION(channel_create_succeeds)
 
     //cleanup
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
-
 }
 
+TEST_FUNCTION(channel_pull_fails_with_null_channel)
+{
+    //arrange
+
+    //act
+    CHANNEL_RESULT result = channel_pull(NULL, test_pull_callback, test_pull_context, test_out_op_pull);
+
+    //assert
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

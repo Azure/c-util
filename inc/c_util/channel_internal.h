@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-//#ifndef CHANNEL_INTERNAL_H
-//#define CHANNEL_INTERNAL_H
+#ifndef CHANNEL_INTERNAL_H
+#define CHANNEL_INTERNAL_H
 
 #include "macro_utils/macro_utils.h"
 
@@ -12,37 +12,25 @@
 
 #include "c_util/doublylinkedlist.h"
 
+#include "channel_common.h"
+
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
 
-#ifdef COMPILING_CHANNEL_C
-typedef struct CHANNEL_INTERNAL_TAG
-{
-    THANDLE(THREADPOOL) threadpool;
-    SRW_LOCK_HANDLE lock;
-    DLIST_ENTRY op_list;
-}
-CHANNEL_INTERNAL;
+typedef struct CHANNEL_INTERNAL_TAG CHANNEL_INTERNAL;
+
 THANDLE_TYPE_DECLARE(CHANNEL_INTERNAL);
-#endif
 
-#ifdef TEST_CHANNEL
-typedef struct TEST_CHANNEL_INTERNAL_TAG
-{
-    THANDLE(THREADPOOL) threadpool;
-    SRW_LOCK_HANDLE lock;
-    DLIST_ENTRY op_list;
-}
-TEST_CHANNEL_INTERNAL;
-THANDLE_TYPE_DECLARE(TEST_CHANNEL_INTERNAL);
-#endif
-
+    MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create_and_open, THANDLE(THREADPOOL), threadpool);
+    MOCKABLE_FUNCTION(, void, channel_internal_close, THANDLE(CHANNEL_INTERNAL), channel_internal);
+    MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
+    MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-//#endif // CHANNEL_INTERNAL_H
+#endif // CHANNEL_INTERNAL_H
