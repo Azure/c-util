@@ -28,21 +28,11 @@ typedef void(*PUSH_CALLBACK)(void* push_context, CHANNEL_CALLBACK_RESULT result)
 `channel_internal.h`
 
 ```
-#include "umock_c/umock_c_prod.h"
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 THANDLE_TYPE_DECLARE(CHANNEL_INTERNAL);
 
-    MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create, THANDLE(THREADPOOL), threadpool);
-    MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
-    MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
+MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create, THANDLE(THREADPOOL), threadpool);
+MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
+MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
 ```
 
 ### channel_internal_create
