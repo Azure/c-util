@@ -66,10 +66,10 @@ static PULL_CALLBACK test_pull_callback = (PULL_CALLBACK)0x1001;
 static void* test_pull_context = (void*)0x1002;
 static PUSH_CALLBACK test_push_callback = (PUSH_CALLBACK)0x1003;
 static void* test_push_context = (void*)0x1004;
-static THANDLE(ASYNC_OP) test_out_op_pull = (THANDLE(ASYNC_OP))0x1005;
-static THANDLE(ASYNC_OP) test_out_op_push = (THANDLE(ASYNC_OP))0x1006;
-static THANDLE(RC_PTR) test_data = (THANDLE(RC_PTR))0x1007;
-static THANDLE(CHANNEL) test_channel = (THANDLE(CHANNEL))0x1008;
+static THANDLE(ASYNC_OP) test_out_op_pull = (ASYNC_OP*)0x1005;
+static THANDLE(ASYNC_OP) test_out_op_push = (ASYNC_OP*)0x1006;
+static THANDLE(RC_PTR) test_data = (RC_PTR*)0x1007;
+static THANDLE(CHANNEL) test_channel = (CHANNEL*)0x1008;
 
 static void setup_channel_create_expectations(void)
 {
@@ -183,7 +183,7 @@ TEST_FUNCTION(channel_pull_fails_with_null_channel)
     //arrange
 
     //act
-    CHANNEL_RESULT result = channel_pull(NULL, test_pull_callback, test_pull_context, test_out_op_pull);
+    CHANNEL_RESULT result = channel_pull(NULL, test_pull_callback, test_pull_context, &test_out_op_pull);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
