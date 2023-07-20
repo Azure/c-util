@@ -29,15 +29,13 @@ MOCK_FUNCTION_WITH_CODE(, int, test_action_function, PDLIST_ENTRY, list_entry, v
     (void)list_entry;
     (void)action_context;
     *continueProcessing = true;
-    return 0;
-MOCK_FUNCTION_END();
+MOCK_FUNCTION_END(0);
 
 MOCK_FUNCTION_WITH_CODE(, int, test_action_function_2, PDLIST_ENTRY, list_entry, void*, action_context, bool*, continueProcessing);
     (void)action_context;
     simpleItem* item = CONTAINING_RECORD(list_entry, simpleItem, link);
     *continueProcessing = !(item->index == 3);
-    return 0;
-MOCK_FUNCTION_END();
+MOCK_FUNCTION_END(0);
 
 
 MOCK_FUNCTION_WITH_CODE(, int, test_action_function_fail, PDLIST_ENTRY, list_entry, void*, action_context, bool*, continueProcessing);
@@ -48,16 +46,14 @@ MOCK_FUNCTION_WITH_CODE(, int, test_action_function_fail, PDLIST_ENTRY, list_ent
     {
         return MU_FAILURE;
     }
-    return 0;
-MOCK_FUNCTION_END();
+MOCK_FUNCTION_END(0);
 
 MOCK_FUNCTION_WITH_CODE(, int, test_action_function_delete, PDLIST_ENTRY, list_entry, void*, action_context, bool*, continueProcessing);
     (void)action_context;
     *continueProcessing = true;
     simpleItem* item = CONTAINING_RECORD(list_entry, simpleItem, link);
     free(item);
-    return 0;
-MOCK_FUNCTION_END();
+MOCK_FUNCTION_END(0);
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
@@ -74,7 +70,6 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
     ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types(), "umocktypes_charptr_register_types");
 
     REGISTER_UMOCK_ALIAS_TYPE(PDLIST_ENTRY, void*);
-
 }
 
 TEST_SUITE_CLEANUP(TestClassCleanup)
