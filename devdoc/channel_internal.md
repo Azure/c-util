@@ -5,7 +5,7 @@
 `channel_internal` is a module that contains the implementation for the `channel` module.
 
 ## Exposed API
-`channel_common.h`:
+`channel_common.h` (contains type definitions for types used in `channel.h` and `channel_internal.h`):
 ```c
 #define CHANNEL_RESULT_VALUES \
     CHANNEL_RESULT_OK, \
@@ -30,29 +30,30 @@ typedef void(*PUSH_CALLBACK)(void* push_context, CHANNEL_CALLBACK_RESULT result)
 ```
 THANDLE_TYPE_DECLARE(CHANNEL_INTERNAL);
 
-MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create, THANDLE(THREADPOOL), threadpool);
+MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create_and_open, THANDLE(THREADPOOL), threadpool);
+MOCKABLE_FUNCTION(, void, channel_internal_close, THANDLE(CHANNEL_INTERNAL), channel_internal);
 MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
 MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
 ```
 
-### channel_internal_create
+### channel_internal_create_and_open
 ```c
-    MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create, THANDLE(THREADPOOL), threadpool);
+    MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create_and_open, THANDLE(THREADPOOL), threadpool);
 ```
 
-`channel_internal_create` creates the channel_internal and returns it.
+`channel_internal_create_and_open` creates the channel_internal and returns it.
 
-**SRS_CHANNEL_INTERNAL_43_078: [** `channel_internal_create` shall create a `CHANNEL_INTERNAL` object by calling `THANDLE_MALLOC` with `channel_internal_dispose` as `dispose`.**]**
+**SRS_CHANNEL_INTERNAL_43_078: [** `channel_internal_create_and_open` shall create a `CHANNEL_INTERNAL` object by calling `THANDLE_MALLOC` with `channel_internal_dispose` as `dispose`.**]**
 
-**SRS_CHANNEL_INTERNAL_43_098: [** `channel_internal_create` shall call `srw_lock_create`. **]**
+**SRS_CHANNEL_INTERNAL_43_098: [** `channel_internal_create_and_open` shall call `srw_lock_create`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_080: [** `channel_internal_create` shall store given `threadpool` in the created `CHANNEL_INTERNAL`. **]**
+**SRS_CHANNEL_INTERNAL_43_080: [** `channel_internal_create_and_open` shall store given `threadpool` in the created `CHANNEL_INTERNAL`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_084: [** `channel_internal_create` shall call `DList_InitializeListHead`. **]**
+**SRS_CHANNEL_INTERNAL_43_084: [** `channel_internal_create_and_open` shall call `DList_InitializeListHead`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_086: [** `channel_internal_create` shall succeed and return the created `THANDLE(CHANNEL_INTERNAL)`. **]**
+**SRS_CHANNEL_INTERNAL_43_086: [** `channel_internal_create_and_open` shall succeed and return the created `THANDLE(CHANNEL_INTERNAL)`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_002: [** If there are any failures, `channel_internal_create` shall fail and return `NULL`. **]**
+**SRS_CHANNEL_INTERNAL_43_002: [** If there are any failures, `channel_internal_create_and_open` shall fail and return `NULL`. **]**
 
 
 ### channel_internal_close
