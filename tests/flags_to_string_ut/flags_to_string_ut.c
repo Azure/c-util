@@ -25,12 +25,6 @@
 
 #include "flags_to_string_helper.h"
 
-// For gcc build that causes a false negative
-#ifndef _MSC_VER
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#endif
-
-
 /*following function cannot be mocked because of variable number of arguments:( so it is copy&pasted here*/
 char* sprintf_char_function(const char* format, ...)
 {
@@ -113,6 +107,12 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
     umock_c_negative_tests_deinit();
 }
 
+// For gcc build that causes a false negative
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
+
 /*Tests_SRS_FLAGS_TO_STRING_02_007: [ If following the reset of the known flags, there are no bits set in argument, then FLAGS_TO_STRING(X) shall prepare a string using the format "%s%s...%s", where each pair of %s%s corresponds to a pair of separator_N/value_N; ]*/
 /*Tests_SRS_FLAGS_TO_STRING_02_008: [ FLAGS_TO_STRING(X) shall succeed and return a non-NULL string. ]*/
 TEST_FUNCTION(FLAGS_TO_STRING_with_0_flags_succeeds)
@@ -188,7 +188,6 @@ TEST_FUNCTION(FLAGS_TO_STRING_with_1_known_flag_succeeds)
     ///clean
     real_gballoc_hl_free(result);
 }
-
 
 /*Tests_SRS_FLAGS_TO_STRING_02_001: [ For each of the known flags FLAGS_TO_STRING(X) shall define 2 variables: separator_N and value_N both of them of type const char*. N is a decreasing number (all the way to 1) for every of the predefined flags. ]*/
 /*Tests_SRS_FLAGS_TO_STRING_02_002: [ separator_N shall contain either "" (empty string) or " | ", depending on whether this is the first known flag or not. ]*/
@@ -345,5 +344,9 @@ TEST_FUNCTION(FLAGS_TO_STRING_with_2_known_flag_fails_when_vsprintf_char_fails)
 
     ///clean
 }
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

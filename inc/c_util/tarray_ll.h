@@ -19,12 +19,12 @@
 /*TARRAY is backed by a THANDLE build on the structure below*/
 #define TARRAY_STRUCT_TYPE_NAME_TAG(T) MU_C2(TARRAY_TYPEDEF_NAME(T), _TAG)
 // For gcc build that causes a false negative
-#ifndef _MSC_VER
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 #define TARRAY_TYPEDEF_NAME(T) MU_C2(TARRAY_STRUCT_, T)
-#ifndef _MSC_VER
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
 
