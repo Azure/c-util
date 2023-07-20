@@ -76,7 +76,7 @@ To decouple the lifetime of the state from the `THANDLE(CHANNEL)` references, `T
 
 ## Exposed API
 
-`channel_common.h`:
+`channel_common.h` (contains type definitions for types used in `channel.h` and `channel_internal.h`):
 ```c
 #define CHANNEL_RESULT_VALUES \
     CHANNEL_RESULT_OK, \
