@@ -18,15 +18,8 @@
 
 /*TARRAY is backed by a THANDLE build on the structure below*/
 #define TARRAY_STRUCT_TYPE_NAME_TAG(T) MU_C2(TARRAY_TYPEDEF_NAME(T), _TAG)
-// For gcc build that causes a false negative
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
+
 #define TARRAY_TYPEDEF_NAME(T) MU_C2(TARRAY_STRUCT_, T)
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
 
 /*TARRAY_CLEANUP_FUNCTION_TYPE_NAME(T) introduces a new name for the type of the function that is called when the TARRAY(T) is about to be deallocated.*/
 #define TARRAY_LL_CLEANUP_FUNCTION_TYPE_NAME(T) MU_C2(TARRAY_TYPEDEF_NAME(T), _CLEANUP)
