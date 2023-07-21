@@ -193,6 +193,7 @@ set(c_util_h_files
     ./inc/c_util/uuid_string.h
     ./inc/c_util/async_op.h
     ./inc/c_util/channel.h
+    ./inc/c_util/channel_common.h
     ./inc/c_util/rc_ptr.h
 )
 

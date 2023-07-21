@@ -26,8 +26,8 @@
 #include "c_util/async_op.h"
 #include "c_util/doublylinkedlist.h"
 #include "c_util/rc_ptr.h"
-#include "c_util/channel_internal.h"
 
+#include "c_util/channel_internal.h"
 #undef ENABLE_MOCKS
 
 #include "umock_c/umock_c_prod.h"
@@ -73,9 +73,7 @@ static THANDLE(CHANNEL) test_channel = (CHANNEL*)0x1008;
 
 static void setup_channel_create_expectations(void)
 {
-    CHANNEL* channel;
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-        .CaptureReturn(&channel);
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(channel_internal_create_and_open(g.g_threadpool));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(CHANNEL_INTERNAL)(IGNORED_ARG, IGNORED_ARG));
 }
@@ -99,6 +97,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(srw_lock_create, NULL);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(channel_internal_create_and_open, NULL);
 
     REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
 
@@ -157,10 +156,8 @@ TEST_FUNCTION(channel_create_fails_with_null_threadpool)
 
 /*Codes_SRS_CHANNEL_43_001: [ channel_create shall create a CHANNEL object by calling THANDLE_MALLOC with channel_dispose as dispose. ]*/
 /*Codes_SRS_CHANNEL_43_078: [ channel_create shall create a CHANNEL_INTERNAL object by calling THANDLE_MALLOC with channel_internal_dispose as dispose.]*/
+/*Codes_SRS_CHANNEL_43_078: [ channel_create shall call create a THANDLE(CHANNEL_INTERNAL) by calling channel_internal_create.]*/
 /*Codes_SRS_CHANNEL_43_079: [ channel_create shall store the created THANDLE(CHANNEL_INTERNAL) in the THANDLE(CHANNEL). ]*/
-/*Codes_SRS_CHANNEL_43_080: [ channel_create shall store given threadpool in the created CHANNEL_INTERNAL. ]*/
-/*Codes_SRS_CHANNEL_43_098: [ channel_create shall call srw_lock_create. ]*/
-/*Codes_SRS_CHANNEL_43_084: [ channel_create shall call DList_InitializeListHead. ]*/
 /*Codes_SRS_CHANNEL_43_086: [ channel_create shall succeed and return the created THANDLE(CHANNEL). ]*/
 TEST_FUNCTION(channel_create_succeeds)
 {
@@ -178,6 +175,26 @@ TEST_FUNCTION(channel_create_succeeds)
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
+TEST_FUNCTION(channel_create_fails_when_underlying_functions_fail)
+{
+    setup_channel_create_expectations();
+    umock_c_negative_tests_snapshot();
+
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            // act
+            THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+
+            // assert
+            ASSERT_IS_NULL(channel, "On failed call %zu", i);
+        }
+    }
+}
 TEST_FUNCTION(channel_pull_fails_with_null_channel)
 {
     //arrange
