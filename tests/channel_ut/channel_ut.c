@@ -73,8 +73,8 @@ static THANDLE(CHANNEL) test_channel = (CHANNEL*)0x1008;
 
 static void setup_channel_create_expectations(void)
 {
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(channel_internal_create_and_open(g.g_threadpool));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(CHANNEL_INTERNAL)(IGNORED_ARG, IGNORED_ARG));
 }
 
@@ -175,6 +175,7 @@ TEST_FUNCTION(channel_create_succeeds)
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
+/*Codes_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
 TEST_FUNCTION(channel_create_fails_when_underlying_functions_fail)
 {
     setup_channel_create_expectations();
@@ -195,6 +196,33 @@ TEST_FUNCTION(channel_create_fails_when_underlying_functions_fail)
         }
     }
 }
+
+/* channel_dispose */
+
+/*Codes_SRS_CHANNEL_43_094: [ channel_dispose shall call channel_internal_close. ]*/
+/*Codes_SRS_CHANNEL_43_092: [ channel_dispose shall release the reference to THANDLE(CHANNEL_INTERNAL). ]*/
+TEST_FUNCTION(channel_dispose_succeeds)
+{
+    //arrange
+    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(channel_internal_close(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(CHANNEL_INTERNAL)(IGNORED_ARG, NULL));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+
+    //act
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+
+    //assert
+    ASSERT_IS_NULL(channel);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+}
+
+/* channel_pull*/
+
+/*SRS_CHANNEL_43_007: [ If channel is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
 TEST_FUNCTION(channel_pull_fails_with_null_channel)
 {
     //arrange
@@ -207,4 +235,8 @@ TEST_FUNCTION(channel_pull_fails_with_null_channel)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
+TEST_FUNCTION(channel_pull_fails_with_null_pull_callback)
+{
+
+}
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

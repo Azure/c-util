@@ -47,21 +47,21 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPO
     }
     else
     {
-        /*Codes_SRS_CHANNEL_43_001: [ channel_create shall create a CHANNEL object by calling THANDLE_MALLOC with channel_dispose as dispose. ]*/
-        THANDLE(CHANNEL) channel = THANDLE_MALLOC(CHANNEL)(channel_dispose);
-        if (channel == NULL)
+        /*Codes_SRS_CHANNEL_43_078: [ channel_create shall create a CHANNEL_INTERNAL object by calling THANDLE_MALLOC with channel_internal_dispose as dispose.]*/
+        THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(threadpool);
+        if (channel_internal == NULL)
         {
             /*SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
-            LogError("Failure in THANDLE_MALLOC(CHANNEL)(channel_dispose)");
+            LogError("Failure in THANDLE_MALLOC(CHANNEL_INTERNAL)(channel_internal_dispose)");
         }
         else
         {
-            /*Codes_SRS_CHANNEL_43_078: [ channel_create shall create a CHANNEL_INTERNAL object by calling THANDLE_MALLOC with channel_internal_dispose as dispose.]*/
-            THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(threadpool);
-            if (channel_internal == NULL)
+            /*Codes_SRS_CHANNEL_43_001: [ channel_create shall create a CHANNEL object by calling THANDLE_MALLOC with channel_dispose as dispose. ]*/
+            THANDLE(CHANNEL) channel = THANDLE_MALLOC(CHANNEL)(channel_dispose);
+            if (channel == NULL)
             {
                 /*SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
-                LogError("Failure in THANDLE_MALLOC(CHANNEL_INTERNAL)(channel_internal_dispose)");
+                LogError("Failure in THANDLE_MALLOC(CHANNEL)(channel_dispose)");
             }
             else
             {
@@ -71,8 +71,9 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPO
                 THANDLE_INITIALIZE_MOVE(CHANNEL)(&result, &channel);
                 goto all_ok;
             }
+            THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
         }
-        THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+        THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
     }
 all_ok:
     return result;
