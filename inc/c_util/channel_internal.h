@@ -8,9 +8,6 @@
 
 #include "c_pal/thandle.h"
 #include "c_pal/threadpool.h"
-#include "c_pal/srw_lock.h"
-
-#include "c_util/doublylinkedlist.h"
 
 #include "channel_common.h"
 

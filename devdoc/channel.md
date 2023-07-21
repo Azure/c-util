@@ -70,10 +70,6 @@ Since the `THANDLE(ASYNC_OP)`s can outlive the `THANDLE(CHANNEL)` references and
 
 To decouple the lifetime of the state from the `THANDLE(CHANNEL)` references, `THANDLE(CHANNEL_INTERNAL)` is used to store the state of the module. `THANDLE(CHANNEL)` holds a single reference to `THANDLE(CHANNEL_INTERNAL)` and each `THANDLE(ASYNC_OP)` also holds a reference to `THANDLE(CHANNEL_INTERNAL)`. When the last `THANDLE(CHANNEL)` reference is released, all pending operations are abandoned and `THANDLE(CHANNEL)` releases its reference to `THANDLE(CHANNEL_INTERNAL)`. However, `THANDLE(CHANNEL_INTERNAL)` is not freed yet because `THANDLE(ASYNC_OP)`s still hold references to it.
 
-## Future Work
-
-`CHANNEL_INTERNAL` is only needed because `THANDLE` does not support a two-step dispose (close and then destroy). If `THANDLE` were to support two kinds of references: an `open-close` type of reference and a `create-destroy` kind of reference, then `CHANNEL_INTERNAL` would not be needed.
-
 ## Exposed API
 
 `channel_common.h` (contains type definitions for types used in `channel.h` and `channel_internal.h`):
