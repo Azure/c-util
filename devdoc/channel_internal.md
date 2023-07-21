@@ -98,7 +98,7 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 **SRS_CHANNEL_INTERNAL_43_101: [** If the list of pending operations is empty or the first operation in the list of pending operations contains a `non-NULL` `pull_callback`: **]**
 
- - **SRS_CHANNEL_INTERNAL_43_103: [** `channel_internal_pull` shall create a `THANDLE(ASYNC_OP)` by calling `async_op_create` with `cancel_channel_internal_op` as `cancel`. **]**
+ - **SRS_CHANNEL_INTERNAL_43_103: [** `channel_internal_pull` shall create a `THANDLE(ASYNC_OP)` by calling `async_op_create` with `cancel_op` as `cancel`. **]**
 
  - **SRS_CHANNEL_INTERNAL_43_104: [** `channel_internal_pull` shall store the `pull_callback` and `pull_context` in the `THANDLE(ASYNC_OP)`. **]**
 
@@ -136,7 +136,7 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 **SRS_CHANNEL_INTERNAL_43_117: [** If the list of pending operations is empty or the first operation in the list of pending operations contains a `non-NULL` `push_callback`: **]**
 
- - **SRS_CHANNEL_INTERNAL_43_119: [** `channel_internal_push` shall create a `THANDLE(ASYNC_OP)` by calling `async_op_create` with `cancel_channel_internal_op` as `cancel`. **]**
+ - **SRS_CHANNEL_INTERNAL_43_119: [** `channel_internal_push` shall create a `THANDLE(ASYNC_OP)` by calling `async_op_create` with `cancel_op` as `cancel`. **]**
 
  - **SRS_CHANNEL_INTERNAL_43_120: [** `channel_internal_push` shall store the `push_callback`, `push_context` and `data` in the `THANDLE(ASYNC_OP)`. **]**
 
@@ -163,26 +163,26 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 **SRS_CHANNEL_INTERNAL_43_041: [** If there are any failures, `channel_internal_push` shall fail and return `CHANNEL_RESULT_ERROR`. **]**
 
 
-### cancel_channel_internal_op
+### cancel_op
 ```c
-    static void cancel_channel_internal_op(void* channel_internal_op_context);
+    static void cancel_op(void* channel_internal_op_context);
 ```
 
-`cancel_channel_internal_op` is the cancel callback that is passed to `async_op_create` when creating a `THANDLE(ASYNC_OP)` for a `channel_internal_push` or `channel_internal_pull` operation.
+`cancel_op` is the cancel callback that is passed to `async_op_create` when creating a `THANDLE(ASYNC_OP)` for a `channel_internal_push` or `channel_internal_pull` operation.
 
-**SRS_CHANNEL_INTERNAL_43_134: [** `cancel_channel_internal_op` shall call `srw_lock_acquire_exclusive`. **]**
+**SRS_CHANNEL_INTERNAL_43_134: [** `cancel_op` shall call `srw_lock_acquire_exclusive`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_135: [** If the `operation` is in the list of pending `operations`: **]**
 
- - **SRS_CHANNEL_INTERNAL_43_137: [** `cancel_channel_internal_op` shall call `DList_RemoveEntryList` to remove the `operation` from the list of pending operations. **]**
+ - **SRS_CHANNEL_INTERNAL_43_137: [** `cancel_op` shall call `DList_RemoveEntryList` to remove the `operation` from the list of pending operations. **]**
 
- - **SRS_CHANNEL_INTERNAL_43_136: [** `cancel_channel_internal_op` shall set the `result` of the `operation` to `CHANNEL_CALLBACK_RESULT_CANCELLED`. **]**
+ - **SRS_CHANNEL_INTERNAL_43_136: [** `cancel_op` shall set the `result` of the `operation` to `CHANNEL_CALLBACK_RESULT_CANCELLED`. **]**
 
- - **SRS_CHANNEL_INTERNAL_43_138: [** `cancel_channel_internal_op` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the `operation` as `work_function_context`. **]**
+ - **SRS_CHANNEL_INTERNAL_43_138: [** `cancel_op` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the `operation` as `work_function_context`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_146: [** If the`operation` is not in the list of pending `operations` and the `result` of the operation is `CHANNEL_CALLBACK_RESULT_OK`, `cancel_channel_internal_op` shall set the `result` of the `operation` to `CHANNEL_CALLBACK_RESULT_CANCELLED`. **]**
+**SRS_CHANNEL_INTERNAL_43_146: [** If the`operation` is not in the list of pending `operations` and the `result` of the operation is `CHANNEL_CALLBACK_RESULT_OK`, `cancel_op` shall set the `result` of the `operation` to `CHANNEL_CALLBACK_RESULT_CANCELLED`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_139: [** `cancel_channel_internal_op` shall call `srw_lock_release_exclusive`. **]**
+**SRS_CHANNEL_INTERNAL_43_139: [** `cancel_op` shall call `srw_lock_release_exclusive`. **]**
 
 
 ### execute_callbacks
