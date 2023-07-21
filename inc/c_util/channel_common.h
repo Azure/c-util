@@ -7,9 +7,6 @@
 #include "macro_utils/macro_utils.h"
 
 #include "c_pal/thandle.h"
-#include "c_pal/threadpool.h"
-
-#include "c_util/async_op.h"
 #include "c_util/rc_ptr.h"
 
 #define CHANNEL_RESULT_VALUES \
