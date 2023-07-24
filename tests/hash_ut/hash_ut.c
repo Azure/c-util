@@ -56,7 +56,7 @@ TEST_FUNCTION(hash_compute_hash_calls_the_underlying_Murmur_hash)
 {
     // arrange
     uint32_t hash;
-    uint8_t a;
+    uint8_t a = 0;
     int result;
 
     STRICT_EXPECTED_CALL(MurmurHash2(&a, sizeof(a), 0));
@@ -91,7 +91,7 @@ TEST_FUNCTION(hash_compute_hash_with_0_length_fails)
 {
     // arrange
     uint32_t hash;
-    uint8_t a;
+    uint8_t a = 0;
     int result;
 
     // act
@@ -106,7 +106,7 @@ TEST_FUNCTION(hash_compute_hash_with_0_length_fails)
 TEST_FUNCTION(hash_compute_hash_with_NULL_hash_pointer_fails)
 {
     // arrange
-    uint8_t a;
+    uint8_t a = 0;
     int result;
 
     // act
@@ -121,7 +121,7 @@ TEST_FUNCTION(hash_compute_hash_with_NULL_hash_pointer_fails)
 TEST_FUNCTION(hash_compute_hash_with_INT_MAX_fails)
 {
     // arrange
-    uint8_t a;
+    uint8_t a = 0;
     int result;
 
     // act
@@ -137,7 +137,7 @@ TEST_FUNCTION(hash_compute_hash_with_INT_MAX_fails)
 TEST_FUNCTION(hash_compute_hash_with_INT_MAX_plus_1_fails)
 {
     // arrange
-    uint8_t a;
+    uint8_t a = 0;
     int result;
 
     // act

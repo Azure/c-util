@@ -1,10 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
 #include <stdbool.h>
 #include <stdlib.h>
-
 
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
@@ -13,9 +11,6 @@
 
 static size_t currentmalloc_call = 0;
 static size_t whenShallmalloc_fail = 0;
-
-static size_t currentrealloc_call = 0;
-static size_t whenShallrealloc_fail = 0;
 
 static void* my_gballoc_malloc(size_t size)
 {
