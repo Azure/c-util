@@ -9,6 +9,9 @@
 #include "c_pal/thandle.h"
 #include "c_pal/threadpool.h"
 
+#include "c_util/async_op.h"
+#include "c_util/rc_ptr.h"
+
 #include "channel_common.h"
 
 #include "umock_c/umock_c_prod.h"

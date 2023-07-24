@@ -5,4 +5,3 @@
 #define channel_internal_pull real_channel_internal_pull
 #define channel_internal_push real_channel_internal_push
 #define channel_internal_close real_channel_internal_close
-

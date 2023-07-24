@@ -284,69 +284,54 @@ static int dequeue_operation(CHANNEL_INTERNAL* channel_internal, THANDLE(ASYNC_O
 IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull)
 {
     CHANNEL_RESULT result;
+    CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_internal);
 
-    /*Codes_SRS_CHANNEL_INTERNAL_43_007: [ If channel is NULL, channel_internal_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
-    /*Codes_SRS_CHANNEL_INTERNAL_43_008: [ If pull_callback is NULL, channel_internal_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
-    /*Codes_SRS_CHANNEL_INTERNAL_43_009: [ If out_op_pull is NULL, channel_internal_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
-    if (channel_internal == NULL ||
-        pull_callback == NULL ||
-        out_op_pull == NULL
-        )
+    /*Codes_SRS_CHANNEL_INTERNAL_43_010: [ channel_internal_pull shall call srw_lock_acquire_exclusive. ]*/
+    srw_lock_acquire_exclusive(channel_internal_ptr->lock);
     {
-        LogError("Invalid arguments: THANDLE(CHANNEL) channel=%p, PULL_CALLBACK pull_callback=%p, void* pull_context=%p, THANDLE(ASYNC_OP)* out_op_pull=%p",
-            channel_internal, pull_callback, pull_context, out_op_pull);
-        result = CHANNEL_RESULT_INVALID_ARGS;
-    }
-    else
-    {
-        CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_internal);
-
-        /*Codes_SRS_CHANNEL_INTERNAL_43_010: [ channel_internal_pull shall call srw_lock_acquire_exclusive. ]*/
-        srw_lock_acquire_exclusive(channel_internal_ptr->lock);
+        /*Codes_SRS_CHANNEL_INTERNAL_43_101: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL pull_callback: ]*/
+        if (
+            DList_IsListEmpty(&channel_internal_ptr->op_list) ||
+            CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->pull_callback != NULL
+            )
         {
-            /*Codes_SRS_CHANNEL_INTERNAL_43_101: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL pull_callback: ]*/
-            if (
-                DList_IsListEmpty(&channel_internal_ptr->op_list) ||
-                CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->pull_callback != NULL
-                )
+            if (enqueue_operation(channel_internal_ptr, out_op_pull, pull_callback, pull_context, NULL, NULL, NULL) != 0)
             {
-                if (enqueue_operation(channel_internal_ptr, out_op_pull, pull_callback, pull_context, NULL, NULL, NULL) != 0)
-                {
-                    /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                    LogError("Failure in enqueue_operation(channel_internal_ptr, out_op_pull, pull_callback, pull_context, NULL, NULL, NULL)");
-                    result = CHANNEL_RESULT_ERROR;
-                }
-                else
-                {
-                    /*Codes_SRS_CHANNEL_INTERNAL_43_011: [ channel_internal_pull shall succeeds and return CHANNEL_RESULT_OK. ]*/
-                    result = CHANNEL_RESULT_OK;
-                }
-            }
-            /*Codes_SRS_CHANNEL_INTERNAL_43_108: [ If the first operation in the list of pending operations contains a non-NULL push_callback: ]*/
-            else if (CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->push_callback != NULL)
-            {
-                if (dequeue_operation(channel_internal_ptr, out_op_pull, pull_callback, pull_context, NULL, NULL, NULL) != 0)
-                {
-                    /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                    LogError("Failure in dequeue_operation(channel_internal_ptr, out_op_pull, pull_callback, pull_context, NULL, NULL, NULL)");
-                    result = CHANNEL_RESULT_ERROR;
-                }
-                else
-                {
-                    /* Codes_SRS_CHANNEL_INTERNAL_43_011: [ channel_internal_pull shall succeeds and return CHANNEL_RESULT_OK. ]*/
-                    result = CHANNEL_RESULT_OK;
-                }
+                /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
+                LogError("Failure in enqueue_operation(channel_internal_ptr, out_op_pull, pull_callback, pull_context, NULL, NULL, NULL)");
+                result = CHANNEL_RESULT_ERROR;
             }
             else
             {
-                /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                LogError("THANDLE(CHANNEL) channel = %p is in unexpected state", channel_internal);
-                result = CHANNEL_RESULT_ERROR;
+                /*Codes_SRS_CHANNEL_INTERNAL_43_011: [ channel_internal_pull shall succeeds and return CHANNEL_RESULT_OK. ]*/
+                result = CHANNEL_RESULT_OK;
             }
         }
-        /*Codes_SRS_CHANNEL_INTERNAL_43_115: [ channel_internal_pull shall call srw_lock_release_exclusive. ]*/
-        srw_lock_release_exclusive(channel_internal_ptr->lock);
+        /*Codes_SRS_CHANNEL_INTERNAL_43_108: [ If the first operation in the list of pending operations contains a non-NULL push_callback: ]*/
+        else if (CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->push_callback != NULL)
+        {
+            if (dequeue_operation(channel_internal_ptr, out_op_pull, pull_callback, pull_context, NULL, NULL, NULL) != 0)
+            {
+                /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
+                LogError("Failure in dequeue_operation(channel_internal_ptr, out_op_pull, pull_callback, pull_context, NULL, NULL, NULL)");
+                result = CHANNEL_RESULT_ERROR;
+            }
+            else
+            {
+                /* Codes_SRS_CHANNEL_INTERNAL_43_011: [ channel_internal_pull shall succeeds and return CHANNEL_RESULT_OK. ]*/
+                result = CHANNEL_RESULT_OK;
+            }
+        }
+        else
+        {
+            /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
+            LogError("THANDLE(CHANNEL) channel = %p is in unexpected state", channel_internal);
+            result = CHANNEL_RESULT_ERROR;
+        }
     }
+    /*Codes_SRS_CHANNEL_INTERNAL_43_115: [ channel_internal_pull shall call srw_lock_release_exclusive. ]*/
+    srw_lock_release_exclusive(channel_internal_ptr->lock);
+
     return result;
 }
 

@@ -16,28 +16,19 @@
 #include "c_pal/interlocked.h"
 #include "c_pal/execution_engine.h"
 #include "c_pal/thandle.h"
+#include "c_pal/threadpool.h"
+
+#include "c_util/async_op.h"
 
 #define ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
-#include "c_pal/srw_lock.h"
-#include "c_pal/threadpool.h"
-
-#include "c_util/async_op.h"
-#include "c_util/doublylinkedlist.h"
-#include "c_util/rc_ptr.h"
-
 #include "c_util/channel_internal.h"
 #undef ENABLE_MOCKS
 
 #include "umock_c/umock_c_prod.h"
 
 #include "real_gballoc_hl.h"
-#include "real_srw_lock.h"
-#include "real_threadpool.h"
-#include "real_async_op.h"
-#include "real_doublylinkedlist.h"
-#include "real_rc_ptr.h"
 #include "real_channel_internal.h"
 
 #include "c_util/channel.h"
@@ -62,14 +53,39 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 }
 
 static void* test_threadpool = (void*)0x1000;
-static PULL_CALLBACK test_pull_callback = (PULL_CALLBACK)0x1001;
 static void* test_pull_context = (void*)0x1002;
-static PUSH_CALLBACK test_push_callback = (PUSH_CALLBACK)0x1003;
 static void* test_push_context = (void*)0x1004;
-static THANDLE(ASYNC_OP) test_out_op_pull = (ASYNC_OP*)0x1005;
-static THANDLE(ASYNC_OP) test_out_op_push = (ASYNC_OP*)0x1006;
-static THANDLE(RC_PTR) test_data = (RC_PTR*)0x1007;
+
+
+static PULL_CALLBACK test_pull_callback = (PULL_CALLBACK)0x1005;
+static PUSH_CALLBACK test_push_callback = (PUSH_CALLBACK)0x1006;
+static THANDLE(RC_PTR) test_data_rc_ptr = (RC_PTR*)0x1007;
 static THANDLE(CHANNEL) test_channel = (CHANNEL*)0x1008;
+static void* test_data = (void*)0x1009;
+
+static struct TEST_OUT_OP_TAG
+{
+    THANDLE(ASYNC_OP) out_op_pull;
+    THANDLE(ASYNC_OP) out_op_push;
+} test_out_op = { NULL, NULL };
+
+static void do_nothing(void* data)
+{
+    (void)data;
+}
+
+static void test_pull_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data)
+{
+    ASSERT_ARE_EQUAL(void_ptr, test_pull_context, context);
+    ASSERT_IS_NULL(data);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
+}
+
+static void test_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result)
+{
+    ASSERT_ARE_EQUAL(void_ptr, test_push_context, context);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
+}
 
 static void setup_channel_create_expectations(void)
 {
@@ -87,37 +103,30 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_ARE_EQUAL(int, 0, umocktypes_stdint_register_types(), "umocktypes_stdint_register_types failed");
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
-    REGISTER_SRW_LOCK_GLOBAL_MOCK_HOOK();
-    REGISTER_THREADPOOL_GLOBAL_MOCK_HOOK();
-
-    REGISTER_ASYNC_OP_GLOBAL_MOCK_HOOKS();
-    REGISTER_DOUBLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
-    REGISTER_RC_PTR_GLOBAL_MOCK_HOOKS();
     REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
 
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(srw_lock_create, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(channel_internal_create_and_open, NULL);
 
     REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
 
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(THREADPOOL), void*);
-    REGISTER_UMOCK_ALIAS_TYPE(SRW_LOCK_HANDLE, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(PDLIST_ENTRY, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(const PDLIST_ENTRY, void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(CHANNEL), void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(CHANNEL_INTERNAL), void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(RC_PTR), void*);
+    REGISTER_UMOCK_ALIAS_TYPE(RC_PTR_FREE_FUNC, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(PULL_CALLBACK, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(PUSH_CALLBACK, void*);
     REGISTER_TYPE(CHANNEL_RESULT, CHANNEL_RESULT);
     REGISTER_TYPE(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT);
 
     g_execution_engine = execution_engine_create(NULL);
     ASSERT_IS_NOT_NULL(g_execution_engine);
-    THANDLE(THREADPOOL) temp = real_threadpool_create(g_execution_engine);
+    THANDLE(THREADPOOL) temp = threadpool_create(g_execution_engine);
     ASSERT_IS_NOT_NULL(temp);
     THANDLE_INITIALIZE_MOVE(THREADPOOL)(&g.g_threadpool, &temp);
     ASSERT_IS_NOT_NULL(g.g_threadpool);
-    ASSERT_ARE_EQUAL(int, 0, real_threadpool_open(g.g_threadpool));
+    ASSERT_ARE_EQUAL(int, 0, threadpool_open(g.g_threadpool));
 
 }
 
@@ -220,7 +229,7 @@ TEST_FUNCTION(channel_dispose_succeeds)
 
 }
 
-/* channel_pull*/
+/* channel_pull */
 
 /*SRS_CHANNEL_43_007: [ If channel is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
 TEST_FUNCTION(channel_pull_fails_with_null_channel)
@@ -228,15 +237,125 @@ TEST_FUNCTION(channel_pull_fails_with_null_channel)
     //arrange
 
     //act
-    CHANNEL_RESULT result = channel_pull(NULL, test_pull_callback, test_pull_context, &test_out_op_pull);
+    CHANNEL_RESULT result = channel_pull(NULL, test_pull_callback, test_pull_context, &test_out_op.out_op_pull);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
+/*Codes_SRS_CHANNEL_43_008: [ If pull_callback is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
 TEST_FUNCTION(channel_pull_fails_with_null_pull_callback)
 {
+    //arrange
 
+    //act
+    CHANNEL_RESULT result = channel_pull(test_channel, NULL, test_pull_context, &test_out_op.out_op_pull);
+
+    //assert
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
+
+/*Codes_SRS_CHANNEL_43_009: [ If out_op_pull is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
+TEST_FUNCTION(channel_pull_fails_with_null_out_op_pull)
+{
+    //arrange
+
+    //act
+    CHANNEL_RESULT result = channel_pull(test_channel, test_pull_callback, test_pull_context, NULL);
+
+    //assert
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Codes_SRS_CHANNEL_43_011: [ channel_pull shall call channel_internal_pull and return as it returns. ]*/
+TEST_FUNCTION(channel_pull_calls_channel_internal_pull)
+{
+    //arrange
+    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(ASYNC_OP) pull_op = NULL;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(channel_internal_pull(IGNORED_ARG, test_pull_callback_abandoned, test_pull_context, &pull_op));
+
+    //act
+    CHANNEL_RESULT result = channel_pull(channel, test_pull_callback_abandoned, test_pull_context, &pull_op);
+
+    //assert
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(pull_op);
+
+    //cleanup
+    THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/* channel_push */
+
+/*Codes_SRS_CHANNEL_43_024: [ If channel is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
+TEST_FUNCTION(channel_push_fails_with_null_channel)
+{
+    //arrange
+
+    //act
+    CHANNEL_RESULT result = channel_push(NULL, test_data_rc_ptr, test_push_callback, test_push_context, &test_out_op.out_op_push);
+
+    //assert
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Codes_SRS_CHANNEL_43_025: [ If push_callback is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
+TEST_FUNCTION(channel_push_fails_with_null_push_callback)
+{
+    //arrange
+
+    //act
+    CHANNEL_RESULT result = channel_push(test_channel, test_data_rc_ptr, NULL, test_push_context, &test_out_op.out_op_push);
+
+    //assert
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Codes_SRS_CHANNEL_43_026: [ If out_op_push is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
+TEST_FUNCTION(channel_push_fails_with_null_out_op_push)
+{
+    //arrange
+
+    //act
+    CHANNEL_RESULT result = channel_push(test_channel, test_data_rc_ptr, test_push_callback, test_push_context, NULL);
+
+    //assert
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(channel_push_calls_channel_internal_push)
+{
+    //arrange
+    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(ASYNC_OP) push_op = NULL;
+    THANDLE(RC_PTR) data_rc_ptr = rc_ptr_create_with_move_pointer(test_data, do_nothing);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(channel_internal_push(IGNORED_ARG, data_rc_ptr, test_push_callback_abandoned, test_push_context, &push_op));
+
+    //act
+    CHANNEL_RESULT result = channel_push(channel, data_rc_ptr, test_push_callback_abandoned, test_push_context, &push_op);
+
+    //assert
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_NOT_NULL(push_op);
+
+    //cleanup
+    THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
+    THANDLE_ASSIGN(RC_PTR)(&data_rc_ptr, NULL);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
