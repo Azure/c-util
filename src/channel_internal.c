@@ -90,26 +90,29 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create
 {
     THANDLE(CHANNEL_INTERNAL) result = NULL;
 
-    /*Codes_SRS_CHANNEL_INTERNAL_43_078: [ channel_create shall create a CHANNEL_INTERNAL object by calling THANDLE_MALLOC with channel_internal_dispose as dispose.]*/
-    THANDLE(CHANNEL_INTERNAL) channel_internal = THANDLE_MALLOC(CHANNEL_INTERNAL)(channel_internal_dispose);
-    if (channel_internal == NULL)
+
+    /*Codes_SRS_CHANNEL_INTERNAL_43_098: [ channel_create shall call srw_lock_create. ]*/
+    SRW_LOCK_HANDLE lock = srw_lock_create(false, "channel");
+    if (lock == NULL)
     {
-        /*SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
-        LogError("Failure in THANDLE_MALLOC(CHANNEL_INTERNAL)(channel_internal_dispose)");
+        /*Codes_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
+        LogError("Failure in srw_lock_create(false, \"channel\")");
     }
     else
     {
-        CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_internal);
-
-        /*Codes_SRS_CHANNEL_INTERNAL_43_098: [ channel_create shall call srw_lock_create. ]*/
-        channel_internal_ptr->lock = srw_lock_create(false, "channel");
-        if (channel_internal_ptr->lock == NULL)
+        /*Codes_SRS_CHANNEL_INTERNAL_43_078: [ channel_create shall create a CHANNEL_INTERNAL object by calling THANDLE_MALLOC with channel_internal_dispose as dispose.]*/
+        THANDLE(CHANNEL_INTERNAL) channel_internal = THANDLE_MALLOC(CHANNEL_INTERNAL)(channel_internal_dispose);
+        if (channel_internal == NULL)
         {
-            /*SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
-            LogError("Failure in srw_lock_create(false, \"channel\")");
+            /*Codes_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
+            LogError("Failure in THANDLE_MALLOC(CHANNEL_INTERNAL)(channel_internal_dispose)");
         }
         else
         {
+            CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_internal);
+
+            channel_internal_ptr->lock = lock;
+
             /*Codes_SRS_CHANNEL_INTERNAL_43_080: [ channel_create shall store given threadpool in the created CHANNEL_INTERNAL. ]*/
             THANDLE_INITIALIZE(THREADPOOL)(&channel_internal_ptr->threadpool, threadpool);
 
@@ -120,8 +123,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create
             THANDLE_INITIALIZE_MOVE(CHANNEL_INTERNAL)(&result, &channel_internal);
             goto all_ok;
         }
+        srw_lock_destroy(lock);
     }
-    THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
 all_ok:
     return result;
 }

@@ -43,9 +43,9 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 `channel_internal_create_and_open` creates the channel_internal and returns it.
 
-**SRS_CHANNEL_INTERNAL_43_078: [** `channel_internal_create_and_open` shall create a `CHANNEL_INTERNAL` object by calling `THANDLE_MALLOC` with `channel_internal_dispose` as `dispose`.**]**
-
 **SRS_CHANNEL_INTERNAL_43_098: [** `channel_internal_create_and_open` shall call `srw_lock_create`. **]**
+
+**SRS_CHANNEL_INTERNAL_43_078: [** `channel_internal_create_and_open` shall create a `CHANNEL_INTERNAL` object by calling `THANDLE_MALLOC` with `channel_internal_dispose` as `dispose`.**]**
 
 **SRS_CHANNEL_INTERNAL_43_080: [** `channel_internal_create_and_open` shall store given `threadpool` in the created `CHANNEL_INTERNAL`. **]**
 

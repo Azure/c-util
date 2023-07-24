@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-#include <stdbool.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <inttypes.h>
 
 #include "macro_utils/macro_utils.h"
@@ -14,6 +15,8 @@
 #include "umock_c/umock_c_negative_tests.h"
 
 #include "c_pal/interlocked.h"
+#include "c_pal/interlocked_hl.h"
+#include "c_pal/sync.h"
 #include "c_pal/execution_engine.h"
 
 #define ENABLE_MOCKS
@@ -50,6 +53,10 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(CHANNEL_RESULT, CHANNEL_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_VALUES);
 
+TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
+IMPLEMENT_UMOCK_C_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
+
+
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
@@ -80,9 +87,9 @@ static void do_nothing(void* data)
 
 static void test_pull_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data)
 {
-    ASSERT_ARE_EQUAL(void_ptr, test_pull_context, context);
     ASSERT_IS_NULL(data);
     ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWake(context, 1));
 }
 
 static void test_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result)
@@ -93,8 +100,8 @@ static void test_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT 
 
 static void setup_channel_internal_create_and_open_expectations()
 {
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(srw_lock_create(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(THREADPOOL)(IGNORED_ARG, g.g_threadpool));
     STRICT_EXPECTED_CALL(DList_InitializeListHead(IGNORED_ARG));
 }
@@ -118,15 +125,23 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_UMOCK_ALIAS_TYPE(EXECUTION_ENGINE_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(THREADPOOL), void*);
+    REGISTER_UMOCK_ALIAS_TYPE(THREADPOOL_WORK_FUNCTION, void*);
     REGISTER_UMOCK_ALIAS_TYPE(SRW_LOCK_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(CHANNEL_INTERNAL), void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(RC_PTR), void*);
     REGISTER_UMOCK_ALIAS_TYPE(PDLIST_ENTRY, void*)
+    REGISTER_UMOCK_ALIAS_TYPE(const PDLIST_ENTRY, void*)
     REGISTER_UMOCK_ALIAS_TYPE(RC_PTR_FREE_FUNC, void*);
     REGISTER_UMOCK_ALIAS_TYPE(PULL_CALLBACK, void*);
     REGISTER_UMOCK_ALIAS_TYPE(PUSH_CALLBACK, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(ASYNC_OP_CANCEL_IMPL, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(ASYNC_OP_DISPOSE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(THANDLE(ASYNC_OP), void*);
+
+
     REGISTER_TYPE(CHANNEL_RESULT, CHANNEL_RESULT);
     REGISTER_TYPE(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT);
+
 
     g_execution_engine = execution_engine_create(NULL);
     ASSERT_IS_NOT_NULL(g_execution_engine);
@@ -158,6 +173,10 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 
 /* channel_internal_create_and_open */
 
+/*Codes_SRS_CHANNEL_INTERNAL_43_078: [ channel_create shall create a CHANNEL_INTERNAL object by calling THANDLE_MALLOC with channel_internal_dispose as dispose.]*/
+/*Codes_SRS_CHANNEL_INTERNAL_43_098: [ channel_create shall call srw_lock_create. ]*/
+/*Codes_SRS_CHANNEL_INTERNAL_43_080: [ channel_create shall store given threadpool in the created CHANNEL_INTERNAL. ]*/
+/*Codes_SRS_CHANNEL_INTERNAL_43_084: [ channel_create shall call DList_InitializeListHead. ]*/
 TEST_FUNCTION(channel_internal_create_and_open_succeeds)
 {
     //arrange
@@ -171,6 +190,61 @@ TEST_FUNCTION(channel_internal_create_and_open_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //cleanup
+    THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
+}
+
+/*Codes_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
+TEST_FUNCTION(channel_internal_create_and_open_fails_when_underlying_functions_fail)
+{
+    setup_channel_internal_create_and_open_expectations();
+    umock_c_negative_tests_snapshot();
+
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            // act
+            THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_threadpool);
+
+            // assert
+            ASSERT_IS_NULL(channel_internal, "On failed call %zu", i);
+        }
+    }
+}
+
+/* channel_internal_close */
+
+/*Codes_SRS_CHANNEL_INTERNAL_43_094: [ channel_dispose shall call srw_lock_acquire_exclusive. ]*/
+TEST_FUNCTION(channel_internal_close_succeeds)
+{
+    //arrange
+    volatile_atomic int32_t callback_counter = 0;
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_threadpool);
+    THANDLE(ASYNC_OP) pull_op = NULL;
+    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, test_pull_callback_abandoned, (void*)&callback_counter, &pull_op);
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(srw_lock_acquire_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(DList_RemoveHeadList(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(threadpool_schedule_work(g.g_threadpool, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(DList_RemoveHeadList(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL (THANDLE_ASSIGN(RC_PTR)(IGNORED_ARG, NULL));
+    STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(ASYNC_OP)(IGNORED_ARG, NULL));
+
+    //act
+    channel_internal_close(channel_internal);
+    InterlockedHL_WaitForValue(&callback_counter, 1, UINT32_MAX);
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
     THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
 }
 
