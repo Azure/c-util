@@ -67,7 +67,6 @@ void channel_internal_close(THANDLE(CHANNEL_INTERNAL) channel_internal)
     srw_lock_acquire_exclusive(channel_internal_ptr->lock);
 
     /*Codes_SRS_CHANNEL_INTERNAL_43_095: [ channel_dispose shall iterate over the list of pending operations and do the following: ]*/
-
     for (DLIST_ENTRY* entry = DList_RemoveHeadList(&channel_internal_ptr->op_list); entry != &channel_internal_ptr->op_list; entry = DList_RemoveHeadList(&channel_internal_ptr->op_list))
     {
         CHANNEL_OP* channel_op = CONTAINING_RECORD(entry, CHANNEL_OP, anchor);
