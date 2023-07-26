@@ -151,7 +151,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 /* channel_create */
 
 
-/* Codes_SRS_CHANNEL_43_077: [ If threadpool is NULL, channel_create shall fail and return NULL. ] */
+/* Tests_SRS_CHANNEL_43_077: [ If threadpool is NULL, channel_create shall fail and return NULL. ] */
 TEST_FUNCTION(channel_create_fails_with_null_threadpool)
 {
     //arrange
@@ -163,11 +163,11 @@ TEST_FUNCTION(channel_create_fails_with_null_threadpool)
     ASSERT_IS_NULL(channel);
 }
 
-/*Codes_SRS_CHANNEL_43_001: [ channel_create shall create a CHANNEL object by calling THANDLE_MALLOC with channel_dispose as dispose. ]*/
-/*Codes_SRS_CHANNEL_43_078: [ channel_create shall create a CHANNEL_INTERNAL object by calling THANDLE_MALLOC with channel_internal_dispose as dispose.]*/
-/*Codes_SRS_CHANNEL_43_078: [ channel_create shall call create a THANDLE(CHANNEL_INTERNAL) by calling channel_internal_create.]*/
-/*Codes_SRS_CHANNEL_43_079: [ channel_create shall store the created THANDLE(CHANNEL_INTERNAL) in the THANDLE(CHANNEL). ]*/
-/*Codes_SRS_CHANNEL_43_086: [ channel_create shall succeed and return the created THANDLE(CHANNEL). ]*/
+/*Tests_SRS_CHANNEL_43_001: [ channel_create shall create a CHANNEL object by calling THANDLE_MALLOC with channel_dispose as dispose. ]*/
+/*Tests_SRS_CHANNEL_43_078: [ channel_create shall create a CHANNEL_INTERNAL object by calling THANDLE_MALLOC with channel_internal_dispose as dispose.]*/
+/*Tests_SRS_CHANNEL_43_078: [ channel_create shall call create a THANDLE(CHANNEL_INTERNAL) by calling channel_internal_create.]*/
+/*Tests_SRS_CHANNEL_43_079: [ channel_create shall store the created THANDLE(CHANNEL_INTERNAL) in the THANDLE(CHANNEL). ]*/
+/*Tests_SRS_CHANNEL_43_086: [ channel_create shall succeed and return the created THANDLE(CHANNEL). ]*/
 TEST_FUNCTION(channel_create_succeeds)
 {
     //arrange
@@ -184,7 +184,7 @@ TEST_FUNCTION(channel_create_succeeds)
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
-/*Codes_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
+/*Tests_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
 TEST_FUNCTION(channel_create_fails_when_underlying_functions_fail)
 {
     setup_channel_create_expectations();
@@ -208,8 +208,8 @@ TEST_FUNCTION(channel_create_fails_when_underlying_functions_fail)
 
 /* channel_dispose */
 
-/*Codes_SRS_CHANNEL_43_094: [ channel_dispose shall call channel_internal_close. ]*/
-/*Codes_SRS_CHANNEL_43_092: [ channel_dispose shall release the reference to THANDLE(CHANNEL_INTERNAL). ]*/
+/*Tests_SRS_CHANNEL_43_094: [ channel_dispose shall call channel_internal_close. ]*/
+/*Tests_SRS_CHANNEL_43_092: [ channel_dispose shall release the reference to THANDLE(CHANNEL_INTERNAL). ]*/
 TEST_FUNCTION(channel_dispose_succeeds)
 {
     //arrange
@@ -231,7 +231,7 @@ TEST_FUNCTION(channel_dispose_succeeds)
 
 /* channel_pull */
 
-/*SRS_CHANNEL_43_007: [ If channel is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
+/*Tests_SRS_CHANNEL_43_007: [ If channel is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
 TEST_FUNCTION(channel_pull_fails_with_null_channel)
 {
     //arrange
@@ -244,7 +244,7 @@ TEST_FUNCTION(channel_pull_fails_with_null_channel)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Codes_SRS_CHANNEL_43_008: [ If pull_callback is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
+/*Tests_SRS_CHANNEL_43_008: [ If pull_callback is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
 TEST_FUNCTION(channel_pull_fails_with_null_pull_callback)
 {
     //arrange
@@ -257,7 +257,7 @@ TEST_FUNCTION(channel_pull_fails_with_null_pull_callback)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Codes_SRS_CHANNEL_43_009: [ If out_op_pull is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
+/*Tests_SRS_CHANNEL_43_009: [ If out_op_pull is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
 TEST_FUNCTION(channel_pull_fails_with_null_out_op_pull)
 {
     //arrange
@@ -270,7 +270,7 @@ TEST_FUNCTION(channel_pull_fails_with_null_out_op_pull)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Codes_SRS_CHANNEL_43_011: [ channel_pull shall call channel_internal_pull and return as it returns. ]*/
+/*Tests_SRS_CHANNEL_43_011: [ channel_pull shall call channel_internal_pull and return as it returns. ]*/
 TEST_FUNCTION(channel_pull_calls_channel_internal_pull)
 {
     //arrange
@@ -295,7 +295,7 @@ TEST_FUNCTION(channel_pull_calls_channel_internal_pull)
 
 /* channel_push */
 
-/*Codes_SRS_CHANNEL_43_024: [ If channel is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
+/*Tests_SRS_CHANNEL_43_024: [ If channel is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
 TEST_FUNCTION(channel_push_fails_with_null_channel)
 {
     //arrange
@@ -308,7 +308,7 @@ TEST_FUNCTION(channel_push_fails_with_null_channel)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Codes_SRS_CHANNEL_43_025: [ If push_callback is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
+/*Tests_SRS_CHANNEL_43_025: [ If push_callback is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
 TEST_FUNCTION(channel_push_fails_with_null_push_callback)
 {
     //arrange
@@ -321,7 +321,7 @@ TEST_FUNCTION(channel_push_fails_with_null_push_callback)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Codes_SRS_CHANNEL_43_026: [ If out_op_push is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
+/*Tests_SRS_CHANNEL_43_026: [ If out_op_push is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
 TEST_FUNCTION(channel_push_fails_with_null_out_op_push)
 {
     //arrange
@@ -334,6 +334,7 @@ TEST_FUNCTION(channel_push_fails_with_null_out_op_push)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
+/*Tests_SRS_CHANNEL_43_041: [ channel_push shall call channel_internal_push and return as it returns. ]*/
 TEST_FUNCTION(channel_push_calls_channel_internal_push)
 {
     //arrange

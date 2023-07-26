@@ -63,10 +63,10 @@ void channel_internal_close(THANDLE(CHANNEL_INTERNAL) channel_internal)
 {
     CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_internal);
 
-    /*Codes_SRS_CHANNEL_INTERNAL_43_094: [ channel_dispose shall call srw_lock_acquire_exclusive. ]*/
+    /*Codes_SRS_CHANNEL_INTERNAL_43_094: [ channel_internal_close shall call srw_lock_acquire_exclusive. ]*/
     srw_lock_acquire_exclusive(channel_internal_ptr->lock);
 
-    /*Codes_SRS_CHANNEL_INTERNAL_43_095: [ channel_dispose shall iterate over the list of pending operations and do the following: ]*/
+    /*Codes_SRS_CHANNEL_INTERNAL_43_095: [ channel_internal_close shall iterate over the list of pending operations and do the following: ]*/
     for (DLIST_ENTRY* entry = DList_RemoveHeadList(&channel_internal_ptr->op_list); entry != &channel_internal_ptr->op_list; entry = DList_RemoveHeadList(&channel_internal_ptr->op_list))
     {
         CHANNEL_OP* channel_op = CONTAINING_RECORD(entry, CHANNEL_OP, anchor);
@@ -81,7 +81,7 @@ void channel_internal_close(THANDLE(CHANNEL_INTERNAL) channel_internal)
         }
     }
 
-    /*Codes_SRS_CHANNEL_INTERNAL_43_100: [ channel_dispose shall call srw_lock_release_exclusive. ]*/
+    /*Codes_SRS_CHANNEL_INTERNAL_43_100: [ channel_internal_close shall call srw_lock_release_exclusive. ]*/
     srw_lock_release_exclusive(channel_internal_ptr->lock);
 }
 
@@ -94,7 +94,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create
     SRW_LOCK_HANDLE lock = srw_lock_create(false, "channel");
     if (lock == NULL)
     {
-        /*Codes_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
+        /*Codes_SRS_CHANNEL_INTERNAL_43_002: [ If there are any failures, channel_internal_create_and_open shall fail and return NULL. ]*/
         LogError("Failure in srw_lock_create(false, \"channel\")");
     }
     else
@@ -103,7 +103,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create
         THANDLE(CHANNEL_INTERNAL) channel_internal = THANDLE_MALLOC(CHANNEL_INTERNAL)(channel_internal_dispose);
         if (channel_internal == NULL)
         {
-            /*Codes_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
+            /*Codes_SRS_CHANNEL_INTERNAL_43_002: [ If there are any failures, channel_internal_create_and_open shall fail and return NULL. ]*/
             LogError("Failure in THANDLE_MALLOC(CHANNEL_INTERNAL)(channel_internal_dispose)");
         }
         else
@@ -182,7 +182,7 @@ static void cancel_op(void* context)
                 LogError("Failure in threadpool_schedule_work(execute_callbacks, channel_op)");
             }
         }
-        /*Codes_SRS_CHANNEL_INTERNAL_43_146: [ If theoperation is not in the list of pending operations and the result of the operation is CHANNEL_CALLBACK_RESULT_OK, cancel_op shall set the result of the operation to CHANNEL_CALLBACK_RESULT_CANCELLED. ]*/
+        /*Codes_SRS_CHANNEL_INTERNAL_43_146: [ If the operation is not in the list of pending operations and the result of the operation is CHANNEL_CALLBACK_RESULT_OK, cancel_op shall set the result of the operation to CHANNEL_CALLBACK_RESULT_CANCELLED. ]*/
         else if (channel_op->result == CHANNEL_CALLBACK_RESULT_OK)
         {
             channel_op->result = CHANNEL_CALLBACK_RESULT_CANCELLED;
@@ -274,8 +274,8 @@ static int dequeue_operation(CHANNEL_INTERNAL* channel_internal, THANDLE(ASYNC_O
     }
     else
     {
-        /*SRS_CHANNEL_43_114: [ channel_internal_pull shall set *out_op_pull to the THANDLE(ASYNC_OP) of the obtained operation. ]*/
-        /*SRS_CHANNEL_43_130: [ channel_internal_push shall set *out_op_push to the THANDLE(ASYNC_OP) of the obtained operation. ]*/
+        /*Codes_SRS_CHANNEL_INTERNAL_43_114: [ channel_internal_pull shall set *out_op_pull to the THANDLE(ASYNC_OP) of the obtained operation. ] ]*/
+        /*Codes_SRS_CHANNEL_INTERNAL_43_130: [ channel_internal_push shall set *out_op_push to the THANDLE(ASYNC_OP) of the obtained operation. ]*/
         THANDLE_INITIALIZE(ASYNC_OP)(out_op, channel_op->async_op);
         result = 0;
     }

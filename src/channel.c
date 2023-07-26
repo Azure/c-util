@@ -32,6 +32,7 @@ THANDLE_TYPE_DEFINE(CHANNEL);
 
 static void channel_dispose(CHANNEL* channel)
 {
+    /*Codes_SRS_CHANNEL_43_094: [ channel_dispose shall call channel_internal_close. ]*/
     channel_internal_close(channel->channel_internal);
     /*Codes_SRS_CHANNEL_43_092: [ channel_dispose shall release the reference to THANDLE(CHANNEL_INTERNAL). ]*/
     THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel->channel_internal, NULL);
@@ -51,7 +52,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPO
         THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(threadpool);
         if (channel_internal == NULL)
         {
-            /*SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
+            /*Codes_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
             LogError("Failure in THANDLE_MALLOC(CHANNEL_INTERNAL)(channel_internal_dispose)");
         }
         else
@@ -60,7 +61,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPO
             THANDLE(CHANNEL) channel = THANDLE_MALLOC(CHANNEL)(channel_dispose);
             if (channel == NULL)
             {
-                /*SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
+                /*Codes_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
                 LogError("Failure in THANDLE_MALLOC(CHANNEL)(channel_dispose)");
             }
             else
@@ -68,6 +69,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPO
                 CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
                 /*Codes_SRS_CHANNEL_43_079: [ channel_create shall store the created THANDLE(CHANNEL_INTERNAL) in the THANDLE(CHANNEL). ]*/
                 THANDLE_INITIALIZE_MOVE(CHANNEL_INTERNAL)(&channel_ptr->channel_internal, &channel_internal);
+
+                /*Codes_SRS_CHANNEL_43_086: [ channel_create shall succeed and return the created THANDLE(CHANNEL). ]*/
                 THANDLE_INITIALIZE_MOVE(CHANNEL)(&result, &channel);
                 goto all_ok;
             }
@@ -100,6 +103,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), ch
     else
     {
         CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
+
+        /*Codes_SRS_CHANNEL_43_011: [ channel_pull shall call channel_internal_pull and return as it returns. ]*/
         result = channel_internal_pull(channel_ptr->channel_internal, pull_callback, pull_context, out_op_pull);
     }
     return result;
@@ -123,6 +128,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), ch
     else
     {
         CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
+
+        /*Codes_SRS_CHANNEL_43_041: [ channel_push shall call channel_internal_push and return as it returns. ]*/
         result = channel_internal_push(channel_ptr->channel_internal, data, push_callback, push_context, out_op_push);
     }
     return result;

@@ -63,17 +63,15 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 `channel_internal_close` schedules all pending operations to be abandoned.
 
-**SRS_CHANNEL_INTERNAL_43_094: [** `channel_internal_dispose` shall call `srw_lock_acquire_exclusive`. **]**
+**SRS_CHANNEL_INTERNAL_43_094: [** `channel_internal_close` shall call `srw_lock_acquire_exclusive`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_095: [** `channel_internal_dispose` shall iterate over the list of pending operations and do the following: **]**
+**SRS_CHANNEL_INTERNAL_43_095: [** `channel_internal_close` shall iterate over the list of pending operations and do the following: **]**
 
  - **SRS_CHANNEL_INTERNAL_43_096: [** set the `result` of the `operation` to `CHANNEL_CALLBACK_RESULT_ABANDONED`. **]**
 
  - **SRS_CHANNEL_INTERNAL_43_097: [** call `threadpool_schedule_work` with `execute_callbacks` as `work_function`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_100: [** `channel_internal_dispose` shall call `srw_lock_release_exclusive`. **]**
-
-**SRS_CHANNEL_INTERNAL_43_092: [** `channel_internal_dispose` shall release the reference to `THANDLE(CHANNEL_INTERNAL)`. **]**
+**SRS_CHANNEL_INTERNAL_43_100: [** `channel_internal_close` shall call `srw_lock_release_exclusive`. **]**
 
 
 ### channel_internal_dispose
@@ -180,7 +178,7 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
  - **SRS_CHANNEL_INTERNAL_43_138: [** `cancel_op` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the `operation` as `work_function_context`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_146: [** If the`operation` is not in the list of pending `operations` and the `result` of the operation is `CHANNEL_CALLBACK_RESULT_OK`, `cancel_op` shall set the `result` of the `operation` to `CHANNEL_CALLBACK_RESULT_CANCELLED`. **]**
+**SRS_CHANNEL_INTERNAL_43_146: [** If the `operation` is not in the list of pending `operations` and the `result` of the operation is `CHANNEL_CALLBACK_RESULT_OK`, `cancel_op` shall set the `result` of the `operation` to `CHANNEL_CALLBACK_RESULT_CANCELLED`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_139: [** `cancel_op` shall call `srw_lock_release_exclusive`. **]**
 
