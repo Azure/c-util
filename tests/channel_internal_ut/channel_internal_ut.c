@@ -13,13 +13,9 @@
 #include "umock_c/umocktypes_bool.h"
 #include "umock_c/umocktypes_stdint.h"
 #include "umock_c/umock_c_negative_tests.h"
-#include "umock_c/umock_lock_factory_default.h"
 
-#include "c_pal/interlocked.h"
-#include "c_pal/interlocked_hl.h"
-#include "c_pal/sync.h"
 #include "c_pal/execution_engine.h"
-#include "c_pal/threadapi.h"
+#include "c_pal/interlocked.h"
 
 #define ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
@@ -47,9 +43,6 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(CHANNEL_RESULT, CHANNEL_RESULT_VALUES);
 
 TEST_DEFINE_ENUM_TYPE(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_VALUES);
-
-TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
-IMPLEMENT_UMOCK_C_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
