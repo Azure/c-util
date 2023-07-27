@@ -125,8 +125,9 @@ static void pull_callback_order_checker(void* context, CHANNEL_CALLBACK_RESULT r
     free(context);
 }
 
-static int pull_data(THANDLE(CHANNEL) channel)
+static int pull_data(void* context)
 {
+    THANDLE(CHANNEL) channel = context;
     for (int32_t i = 1; i <= CHANNEL_ORDER_TEST_COUNT; i++)
     {
         int32_t* pull_id = malloc(sizeof(int32_t));
@@ -156,8 +157,9 @@ static void push_callback_order_checker(void* context, CHANNEL_CALLBACK_RESULT r
     wake_by_address_single(&g_push_callback_count);
 }
 
-static int push_data(THANDLE(CHANNEL) channel)
+static int push_data(void* context)
 {
+    THANDLE(CHANNEL) channel = context;
     for (int32_t i = 1; i <= CHANNEL_ORDER_TEST_COUNT; i++)
     {
         THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer((void*)(int64_t)i, dummy_free_func);
