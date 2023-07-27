@@ -6,15 +6,21 @@
 #include "testrunnerswitcher.h"
 
 #include "c_pal/interlocked.h"
+#include "c_pal/interlocked_hl.h"
 #include "c_pal/thandle.h"
 #include "c_pal/threadpool.h"
+#include "c_pal/threadapi.h"
 #include "c_pal/sync.h"
 
 #include "c_util/rc_ptr.h"
 #include "c_util/channel.h"
 
 TEST_DEFINE_ENUM_TYPE(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_VALUES);
-TEST_DEFINE_ENUM_TYPE(CHANNEL_RESULT, CHANNEL_RESULT);
+TEST_DEFINE_ENUM_TYPE(CHANNEL_RESULT, CHANNEL_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
+
+#define CHANNEL_ORDER_TEST_COUNT 1000
 
 static struct
 {
@@ -22,6 +28,8 @@ static struct
 }g;
 
 static EXECUTION_ENGINE_HANDLE g_execution_engine = NULL;
+
+static volatile_atomic int32_t g_push_callback_count;
 
 static void* test_data = (void*)0x0001;
 static int32_t pull_cancelled = 0x0002;
@@ -31,6 +39,7 @@ static int32_t push_success = 0x0005;
 static int32_t pull_abandoned = 0x0006;
 static int32_t push_abandoned = 0x0007;
 static void* test_data2 = (void*)0x0008;
+
 
 static void test_on_pull_callback_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data)
 {
@@ -104,9 +113,65 @@ static THANDLE(THREADPOOL) setup_threadpool()
     return threadpool;
 }
 
-static void cleanup_threadpool()
+static void pull_callback_order_checker(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data)
 {
+    ASSERT_IS_NOT_NULL(context);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_OK, result);
+    ASSERT_IS_NOT_NULL(data);
 
+    //assert that n-th pull is matched with n-th push
+     ASSERT_ARE_EQUAL(int32_t, *((int32_t*)context), (int32_t)(int64_t)((void*)data->ptr)); //casts needed to suppress pointer truncation warning
+
+    free(context);
+    THANDLE_ASSIGN(RC_PTR)(&data, NULL);
+}
+
+static int pull_data(THANDLE(CHANNEL) channel)
+{
+    for (int32_t i = 1; i <= CHANNEL_ORDER_TEST_COUNT; i++)
+    {
+        int32_t* pull_id = malloc(sizeof(int32_t));
+        *pull_id = i; 
+        THANDLE(ASYNC_OP) async_op = NULL;
+        CHANNEL_RESULT pull_result = channel_pull(channel, pull_callback_order_checker, pull_id, &async_op);
+
+        ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
+        ASSERT_IS_NOT_NULL(async_op);
+
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
+    return 0;
+}
+
+static void dummy_free_func(void* ptr)
+{
+    (void)ptr;
+}
+
+static void push_callback_order_checker(void* context, CHANNEL_CALLBACK_RESULT result)
+{
+    ASSERT_IS_NOT_NULL(context);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_OK, result);
+
+    interlocked_increment(&g_push_callback_count);
+    wake_by_address_single(&g_push_callback_count);
+}
+
+static int push_data(THANDLE(CHANNEL) channel)
+{
+    for (int32_t i = 1; i <= CHANNEL_ORDER_TEST_COUNT; i++)
+    {
+        THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer((void*)(int64_t)i, dummy_free_func);
+        THANDLE(ASYNC_OP) async_op = NULL;
+        CHANNEL_RESULT push_result = channel_push(channel, data, push_callback_order_checker, (void*)(int64_t)i, &async_op);
+
+        ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result);
+        ASSERT_IS_NOT_NULL(async_op);
+
+        THANDLE_ASSIGN(RC_PTR)(&data, NULL);
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
+    return 0;
 }
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
@@ -322,7 +387,7 @@ TEST_FUNCTION(test_push_and_then_pull)
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
-TEST_FUNCTION(test_pull_after_pull_fails)
+TEST_FUNCTION(test_pull_after_pull)
 {
     /// arrange
     THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
@@ -366,7 +431,7 @@ TEST_FUNCTION(test_pull_after_pull_fails)
     THANDLE_ASSIGN(RC_PTR)(&channel_data, NULL);
 }
 
-TEST_FUNCTION(test_push_after_push_fails)
+TEST_FUNCTION(test_push_after_push)
 {
     /// arrange
     THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
@@ -414,6 +479,26 @@ TEST_FUNCTION(test_push_after_push_fails)
     THANDLE_ASSIGN(ASYNC_OP)(&push_op2, NULL);
     THANDLE_ASSIGN(RC_PTR)(&channel_data2, NULL);
     THANDLE_ASSIGN(RC_PTR)(&channel_data1, NULL);
+}
+
+TEST_FUNCTION(test_channel_maintains_data_order)
+{
+    //arrange
+    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    (void)interlocked_exchange(&g_push_callback_count, 0);
+
+    THREAD_HANDLE pull_thread;
+    THREAD_HANDLE push_thread;
+
+    //act
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&pull_thread, pull_data, (void*)channel));
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&push_thread, push_data, (void*)channel));
+    
+    //assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&g_push_callback_count, CHANNEL_ORDER_TEST_COUNT, UINT32_MAX));
+
+    //cleanup
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

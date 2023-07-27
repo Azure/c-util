@@ -59,9 +59,6 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
-MOCK_FUNCTION_WITH_CODE(, void, mocked_threadpool_schedule_work, THANDLE(THREADPOOL), threadpool, THREADPOOL_WORK_FUNCTION, work_function, void*, work_function_context)
-MOCK_FUNCTION_END()
-
 static struct TEST_THREADPOOL_TAG
 {
     THANDLE(THREADPOOL) test_threadpool;
@@ -75,7 +72,7 @@ static struct TEST_OUT_OP_TAG
     THANDLE(ASYNC_OP) out_op_push;
 } test_out_op = { NULL, NULL };
 
-static void do_nothing(void* data)
+static void test_data_dispose(void* data)
 {
     (void)data;
 }
@@ -451,7 +448,7 @@ TEST_FUNCTION(channel_internal_pull_after_push_succeeds)
     THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(test_threadpool.test_threadpool);
     int32_t push_context = 0;
     THANDLE(ASYNC_OP) push_op = NULL;
-    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_data, do_nothing);
+    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
     CHANNEL_RESULT push_result_1 = channel_internal_push(channel_internal, rc_ptr, test_push_callback_ok, &push_context, &push_op);
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result_1);
     ASSERT_IS_NOT_NULL(push_op);
@@ -534,7 +531,7 @@ TEST_FUNCTION(channel_internal_push_on_empty_succeeds)
 {
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(test_threadpool.test_threadpool);
-    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, do_nothing);
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
     THANDLE(ASYNC_OP) push_op = NULL;
     umock_c_reset_all_calls();
 
@@ -571,13 +568,13 @@ TEST_FUNCTION(channel_internal_push_after_push_succeeds)
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(test_threadpool.test_threadpool);
     int32_t push_context_1 = 0;
-    THANDLE(RC_PTR) data_1 = rc_ptr_create_with_move_pointer(test_data, do_nothing);
+    THANDLE(RC_PTR) data_1 = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
     THANDLE(ASYNC_OP) push_op_1 = NULL;
     CHANNEL_RESULT push_result_1 = channel_internal_push(channel_internal, data_1, test_push_callback_abandoned, &push_context_1, &push_op_1);
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result_1);
     ASSERT_IS_NOT_NULL(push_op_1);
     int32_t push_context_2 = 0;
-    THANDLE(RC_PTR) data_2 = rc_ptr_create_with_move_pointer(test_data_2, do_nothing);
+    THANDLE(RC_PTR) data_2 = rc_ptr_create_with_move_pointer(test_data_2, test_data_dispose);
     THANDLE(ASYNC_OP) push_op_2 = NULL;
     umock_c_reset_all_calls();
 
@@ -621,7 +618,7 @@ TEST_FUNCTION(channel_internal_push_after_pull_succeeds)
 
     int32_t push_context = 0;
     THANDLE(ASYNC_OP) push_op = NULL;
-    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_data, do_nothing);
+    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
     THREADPOOL_WORK_FUNCTION work_function;
     void* work_context;
     umock_c_reset_all_calls();
@@ -657,7 +654,7 @@ TEST_FUNCTION(channel_internal_push_fails_when_underlying_functions_fail)
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(test_threadpool.test_threadpool);
     THANDLE(ASYNC_OP) push_op = NULL;
-    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, do_nothing);
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
     umock_c_reset_all_calls();
 
     int32_t push_context = 0;
@@ -739,7 +736,7 @@ TEST_FUNCTION(cancel_op_cancels_matched_op)
 {
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(test_threadpool.test_threadpool);
-    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, do_nothing);
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
     umock_c_reset_all_calls();
 
     THREADPOOL_WORK_FUNCTION work_function;
