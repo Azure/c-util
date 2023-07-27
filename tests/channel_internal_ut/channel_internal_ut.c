@@ -36,6 +36,8 @@
 #include "real_async_op.h"
 #include "real_rc_ptr.h"
 
+#include "c_pal/thandle.h"
+
 #include "c_util/channel_internal.h"
 
 TEST_DEFINE_ENUM_TYPE(CHANNEL_RESULT, CHANNEL_RESULT_VALUES);
