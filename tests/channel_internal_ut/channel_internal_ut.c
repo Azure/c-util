@@ -32,6 +32,7 @@
 
 #include "real_gballoc_hl.h"
 #include "real_srw_lock.h"
+#include "real_threadpool.h"
 #include "real_doublylinkedlist.h"
 #include "real_async_op.h"
 #include "real_rc_ptr.h"
