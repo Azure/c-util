@@ -18,6 +18,7 @@
 
 /*TARRAY is backed by a THANDLE build on the structure below*/
 #define TARRAY_STRUCT_TYPE_NAME_TAG(T) MU_C2(TARRAY_TYPEDEF_NAME(T), _TAG)
+
 #define TARRAY_TYPEDEF_NAME(T) MU_C2(TARRAY_STRUCT_, T)
 
 /*TARRAY_CLEANUP_FUNCTION_TYPE_NAME(T) introduces a new name for the type of the function that is called when the TARRAY(T) is about to be deallocated.*/
