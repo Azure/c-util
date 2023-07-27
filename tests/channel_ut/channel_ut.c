@@ -52,7 +52,6 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
-static void* test_threadpool = (void*)0x1000;
 static void* test_pull_context = (void*)0x1002;
 static void* test_push_context = (void*)0x1004;
 

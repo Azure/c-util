@@ -66,12 +66,6 @@ static struct TEST_THREADPOOL_TAG
 static void* test_data = (void*)0x1001;
 static void* test_data_2 = (void*)0x1002;
 
-static struct TEST_OUT_OP_TAG
-{
-    THANDLE(ASYNC_OP) out_op_pull;
-    THANDLE(ASYNC_OP) out_op_push;
-} test_out_op = { NULL, NULL };
-
 static void test_data_dispose(void* data)
 {
     (void)data;
@@ -434,7 +428,7 @@ TEST_FUNCTION(channel_internal_pull_after_pull_succeeds)
     THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
 }
 
-/*Tests_SRS_CHANNEL_INTERNAL_43_010: [channel_internal_pull shall call srw_lock_acquire_exclusive.]
+/*Tests_SRS_CHANNEL_INTERNAL_43_010: [channel_internal_pull shall call srw_lock_acquire_exclusive.]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_108 : [If the first operation in the list of pending operations contains a non - NULL push_callback : ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_109 : [channel_internal_pull shall call DList_RemoveHeadList on the list of pending operations to obtain the operation.]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_112 : [channel_internal_pull shall store the pull_callback and pull_context in the obtained operation.]*/
