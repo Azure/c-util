@@ -151,10 +151,10 @@ static void setup_second_op_expectations(bool is_pull, THREADPOOL_WORK_FUNCTION*
     STRICT_EXPECTED_CALL(DList_IsListEmpty(IGNORED_ARG));
     STRICT_EXPECTED_CALL(DList_RemoveHeadList(IGNORED_ARG));
     is_pull? (void)0 : (void)STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_PTR)(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(threadpool_schedule_work(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CaptureArgumentValue_work_function(captured_work_function)
         .CaptureArgumentValue_work_function_context(captured_work_context);
-    STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
 }
 

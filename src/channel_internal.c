@@ -265,18 +265,20 @@ static int dequeue_operation(CHANNEL_INTERNAL* channel_internal, THANDLE(ASYNC_O
         THANDLE_ASSIGN(RC_PTR)(&channel_op->data, data);
     }
 
+    /*Codes_SRS_CHANNEL_INTERNAL_43_114: [ channel_internal_pull shall set *out_op_pull to the THANDLE(ASYNC_OP) of the obtained operation. ] ]*/
+    /*Codes_SRS_CHANNEL_INTERNAL_43_130: [ channel_internal_push shall set *out_op_push to the THANDLE(ASYNC_OP) of the obtained operation. ]*/
+    THANDLE_INITIALIZE(ASYNC_OP)(out_op, channel_op->async_op);
+
     /*Codes_SRS_CHANNEL_INTERNAL_43_113: [ channel_internal_pull shall call threadpool_schedule_work with execute_callbacks as work_function and the obtained operation as work_function_context. ]*/
     /*Codes_SRS_CHANNEL_INTERNAL_43_129: [ channel_internal_push shall call threadpool_schedule_work with execute_callbacks as work_function and the obtained operation as work_function_context. ]*/
     if (threadpool_schedule_work(channel_internal->threadpool, execute_callbacks, channel_op) != 0)
     {
         LogError("Failure in threadpool_schedule_work(execute_callbacks, channel_op)");
+        THANDLE_ASSIGN(ASYNC_OP)(out_op, NULL);
         result = MU_FAILURE;
     }
     else
     {
-        /*Codes_SRS_CHANNEL_INTERNAL_43_114: [ channel_internal_pull shall set *out_op_pull to the THANDLE(ASYNC_OP) of the obtained operation. ] ]*/
-        /*Codes_SRS_CHANNEL_INTERNAL_43_130: [ channel_internal_push shall set *out_op_push to the THANDLE(ASYNC_OP) of the obtained operation. ]*/
-        THANDLE_INITIALIZE(ASYNC_OP)(out_op, channel_op->async_op);
         result = 0;
     }
     return result;

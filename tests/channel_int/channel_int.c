@@ -20,7 +20,7 @@ TEST_DEFINE_ENUM_TYPE(CHANNEL_RESULT, CHANNEL_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
-#define CHANNEL_ORDER_TEST_COUNT 1000
+#define CHANNEL_ORDER_TEST_COUNT 100000
 
 static struct
 {
@@ -123,7 +123,6 @@ static void pull_callback_order_checker(void* context, CHANNEL_CALLBACK_RESULT r
      ASSERT_ARE_EQUAL(int32_t, *((int32_t*)context), (int32_t)(int64_t)((void*)data->ptr)); //casts needed to suppress pointer truncation warning
 
     free(context);
-    THANDLE_ASSIGN(RC_PTR)(&data, NULL);
 }
 
 static int pull_data(THANDLE(CHANNEL) channel)
@@ -131,7 +130,7 @@ static int pull_data(THANDLE(CHANNEL) channel)
     for (int32_t i = 1; i <= CHANNEL_ORDER_TEST_COUNT; i++)
     {
         int32_t* pull_id = malloc(sizeof(int32_t));
-        *pull_id = i; 
+        *pull_id = i;
         THANDLE(ASYNC_OP) async_op = NULL;
         CHANNEL_RESULT pull_result = channel_pull(channel, pull_callback_order_checker, pull_id, &async_op);
 
@@ -493,7 +492,7 @@ TEST_FUNCTION(test_channel_maintains_data_order)
     //act
     ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&pull_thread, pull_data, (void*)channel));
     ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&push_thread, push_data, (void*)channel));
-    
+
     //assert
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&g_push_callback_count, CHANNEL_ORDER_TEST_COUNT, UINT32_MAX));
 
