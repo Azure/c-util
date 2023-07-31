@@ -1,10 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
 #include <stdlib.h>
 #include <stddef.h>
-
 
 static void* my_gballoc_malloc(size_t size)
 {
@@ -44,11 +42,8 @@ static const char MULTIPLE_TEST_STRING_VALUE[] = "DataValueTestDataValueTest";
 static const char* COMBINED_STRING_VALUE = "Initial_DataValueTest";
 static const char* QUOTED_TEST_STRING_VALUE = "\"DataValueTest\"";
 static const char* FORMAT_STRING = "test_format_%s";
-static const char* FORMAT_INTEGER = "test_format_%d";
 static const char* FORMAT_STRING_RESULT = "test_format_DataValueTest";
-static const char* FORMAT_INTEGER_RESULT = "test_format_1234";
 static const char* INIT_FORMAT_STRING_RESULT = "Initial_test_format_DataValueTest";
-static const char* INIT_FORMAT_INTEGER_RESULT = "Initial_test_format_1234";
 static const char* EMPTY_STRING = "";
 static const char* MODIFIED_STRING_VALUE = "Initial*";
 static const char* MODIFIED_STRING_VALUE2 = "*nitial_";
