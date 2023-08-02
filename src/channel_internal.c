@@ -41,7 +41,7 @@ typedef struct CHANNEL_OP_TAG
     DLIST_ENTRY anchor;
 
     THANDLE(CHANNEL_INTERNAL) channel_internal;
-    THANDLE(ASYNC_OP) async_op; // self reference to keep op alive even after user disposes (watch out for deadlocks)
+    THANDLE(ASYNC_OP) async_op; // self reference to keep op alive even after user disposes
 
     CHANNEL_CALLBACK_RESULT result;
 }CHANNEL_OP;
