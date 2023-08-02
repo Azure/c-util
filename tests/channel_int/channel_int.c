@@ -490,10 +490,18 @@ TEST_FUNCTION(test_channel_maintains_data_order)
 
     THREAD_HANDLE pull_thread;
     THREAD_HANDLE push_thread;
+    int pull_result;
+    int push_result;
 
     //act
     ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&pull_thread, pull_data, (void*)channel));
     ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&push_thread, push_data, (void*)channel));
+
+
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(pull_thread, &pull_result));
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(push_thread, &push_result));
+    ASSERT_ARE_EQUAL(int, 0, pull_result);
+    ASSERT_ARE_EQUAL(int, 0, push_result);
 
     //assert
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&g_push_callback_count, CHANNEL_ORDER_TEST_COUNT, UINT32_MAX));
