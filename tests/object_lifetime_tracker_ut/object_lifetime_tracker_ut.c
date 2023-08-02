@@ -40,7 +40,6 @@ MOCK_FUNCTION_END((lhs == rhs) ? KEY_MATCH_FUNCTION_RESULT_MATCHING : KEY_MATCH_
 MOCK_FUNCTION_WITH_CODE(, OBJECT_MATCH_FUNCTION_RESULT, test_object_match_function, const void*, lhs, const void*, rhs)
 MOCK_FUNCTION_END((lhs == rhs) ? OBJECT_MATCH_FUNCTION_RESULT_MATCHING : OBJECT_MATCH_FUNCTION_RESULT_NOT_MATCHING);
 
-static OBJECT_LIFETIME_TRACKER_HANDLE test_object_lifetime_tracker = (OBJECT_LIFETIME_TRACKER_HANDLE)0x1001;
 static void* test_key_1 = (void*)0x1003;
 static void* test_key_2 = (void*)0x1004;
 static void* test_object_1 = (void*)0x1005;
