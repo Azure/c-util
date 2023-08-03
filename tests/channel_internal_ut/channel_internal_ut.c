@@ -676,11 +676,10 @@ TEST_FUNCTION(channel_internal_push_fails_when_underlying_functions_fail)
 /* cancel_op */
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_134: [ cancel_op shall call srw_lock_acquire_exclusive. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_135: [ If the operation is in the list of pending operations: ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_137: [ cancel_op shall call DList_RemoveEntryList to remove the operation from the list of pending operations. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_136: [ cancel_op shall set the result of the operation to CHANNEL_CALLBACK_RESULT_CANCELLED. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_138: [ cancel_op shall call threadpool_schedule_work with execute_callbacks as work_function and the operation as work_function_context. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_135: [ If the operation is in the list of pending operations, cancel_op shall call DList_RemoveEntryList to remove it. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_139: [ cancel_op shall call srw_lock_release_exclusive. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_136: [ If the result of the operation is CHANNEL_CALLBACK_RESULT_OK, cancel_op shall set it to CHANNEL_CALLBACK_RESULT_CANCELLED. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_138: [ If the operation had been found in the list of pending operations, cancel_op shall call threadpool_schedule_work with execute_callbacks as work_function and the operation as work_function_context. ]*/
 TEST_FUNCTION(cancel_op_cancels_pull)
 {
     //arrange
@@ -697,10 +696,10 @@ TEST_FUNCTION(cancel_op_cancels_pull)
 
     STRICT_EXPECTED_CALL(srw_lock_acquire_exclusive(IGNORED_ARG));
     STRICT_EXPECTED_CALL(DList_RemoveEntryList(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
     STRICT_EXPECTED_CALL(threadpool_schedule_work(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CaptureArgumentValue_work_function(&work_function)
         .CaptureArgumentValue_work_function_context(&work_context);
-    STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_PTR)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(ASYNC_OP)(IGNORED_ARG, NULL));

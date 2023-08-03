@@ -27,8 +27,8 @@ typedef struct CHANNEL_INTERNAL_TAG
     THANDLE(THREADPOOL) threadpool;
     SRW_LOCK_HANDLE lock;
     DLIST_ENTRY op_list;
-}
-CHANNEL_INTERNAL;
+}CHANNEL_INTERNAL;
+
 THANDLE_TYPE_DEFINE(CHANNEL_INTERNAL);
 
 typedef struct CHANNEL_OP_TAG
@@ -88,7 +88,6 @@ void channel_internal_close(THANDLE(CHANNEL_INTERNAL) channel_internal)
 IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create_and_open, THANDLE(THREADPOOL), threadpool)
 {
     THANDLE(CHANNEL_INTERNAL) result = NULL;
-
 
     /*Codes_SRS_CHANNEL_INTERNAL_43_098: [ channel_create shall call srw_lock_create. ]*/
     SRW_LOCK_HANDLE lock = srw_lock_create(false, "channel");
@@ -164,32 +163,36 @@ static void cancel_op(void* context)
     CHANNEL_OP* channel_op = context;
     CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_op->channel_internal);
 
+    bool was_in_list = false;
+
     /*Codes_SRS_CHANNEL_INTERNAL_43_134: [ cancel_op shall call srw_lock_acquire_exclusive. ]*/
     srw_lock_acquire_exclusive(channel_internal_ptr->lock);
     {
-        /*Codes_SRS_CHANNEL_INTERNAL_43_135: [ If the operation is in the list of pending operations: ]*/
+        /*Codes_SRS_CHANNEL_INTERNAL_43_135: [ If the operation is in the list of pending operations, cancel_op shall call DList_RemoveEntryList to remove it. ]*/
         if (channel_op->anchor.Flink != &channel_op->anchor && &channel_op->anchor == channel_op->anchor.Flink->Blink)
         {
-            /*Codes_SRS_CHANNEL_INTERNAL_43_137: [ cancel_op shall call DList_RemoveEntryList to remove the operation from the list of pending operations. ]*/
             (void)DList_RemoveEntryList(&channel_op->anchor);
-
-            /*Codes_SRS_CHANNEL_INTERNAL_43_136: [ cancel_op shall set the result of the operation to CHANNEL_CALLBACK_RESULT_CANCELLED. ]*/
-            channel_op->result = CHANNEL_CALLBACK_RESULT_CANCELLED;
-
-            /*Codes_SRS_CHANNEL_INTERNAL_43_138: [ cancel_op shall call threadpool_schedule_work with execute_callbacks as work_function and the operation as work_function_context. ]*/
-            if (threadpool_schedule_work(channel_internal_ptr->threadpool, execute_callbacks, channel_op) != 0)
-            {
-                LogError("Failure in threadpool_schedule_work(execute_callbacks, channel_op)");
-            }
-        }
-        /*Codes_SRS_CHANNEL_INTERNAL_43_146: [ If the operation is not in the list of pending operations and the result of the operation is CHANNEL_CALLBACK_RESULT_OK, cancel_op shall set the result of the operation to CHANNEL_CALLBACK_RESULT_CANCELLED. ]*/
-        else if (channel_op->result == CHANNEL_CALLBACK_RESULT_OK)
-        {
-            channel_op->result = CHANNEL_CALLBACK_RESULT_CANCELLED;
+            was_in_list = true;
         }
     }
     /*Codes_SRS_CHANNEL_INTERNAL_43_139: [ cancel_op shall call srw_lock_release_exclusive. ]*/
     srw_lock_release_exclusive(channel_internal_ptr->lock);
+
+    /*Codes_SRS_CHANNEL_INTERNAL_43_136: [ If the result of the operation is CHANNEL_CALLBACK_RESULT_OK, cancel_op shall set it to CHANNEL_CALLBACK_RESULT_CANCELLED. ]*/
+    if (channel_op->result == CHANNEL_CALLBACK_RESULT_OK)
+    {
+        channel_op->result = CHANNEL_CALLBACK_RESULT_CANCELLED;
+    }
+
+    /*Codes_SRS_CHANNEL_INTERNAL_43_138: [ If the operation had been found in the list of pending operations, cancel_op shall call threadpool_schedule_work with execute_callbacks as work_function and the operation as work_function_context. ]*/
+    if(was_in_list)
+    {
+        if (threadpool_schedule_work(channel_internal_ptr->threadpool, execute_callbacks, channel_op) != 0)
+        {
+            LogError("Failure in threadpool_schedule_work(execute_callbacks, channel_op)");
+        }
+    }
+
 }
 
 static void dispose_channel_op(void* context)

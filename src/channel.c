@@ -48,7 +48,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPO
         if (channel_internal == NULL)
         {
             /*Codes_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
-            LogError("Failure in THANDLE_MALLOC(CHANNEL_INTERNAL)(channel_internal_dispose)");
+            LogError("Failure in channel_internal_create_and_open(threadpool=%p)", threadpool);
         }
         else
         {
