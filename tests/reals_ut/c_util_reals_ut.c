@@ -8,6 +8,7 @@
 
 #include "../reals/real_async_op.h"
 #include "../reals/real_channel.h"
+#include "../reals/real_channel_internal.h"
 #include "../reals/real_constbuffer.h"
 #include "../reals/real_constbuffer_array.h"
 #include "../reals/real_constbuffer_array_batcher_nv.h"
@@ -54,6 +55,7 @@ TEST_FUNCTION(check_all_c_util_reals)
     // act
     REGISTER_ASYNC_OP_GLOBAL_MOCK_HOOKS();
     REGISTER_CHANNEL_GLOBAL_MOCK_HOOKS();
+    REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
     REGISTER_CONSTBUFFER_GLOBAL_MOCK_HOOK();
     REGISTER_CONSTBUFFER_ARRAY_GLOBAL_MOCK_HOOK();
     REGISTER_CONSTBUFFER_ARRAY_BATCHER_GLOBAL_MOCK_HOOK();

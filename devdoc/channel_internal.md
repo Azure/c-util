@@ -186,6 +186,8 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 `execute_callbacks` is the work function that is passed to `threadpool_schedule_work` when scheduling the execution of the callbacks for an operation.
 
+**SRS_CHANNEL_INTERNAL_43_148: [** If `channel_internal_op_context` is `NULL`, `execute_callbacks` shall fail. **]**
+
 **SRS_CHANNEL_INTERNAL_43_145: [** `execute_callbacks` shall call the stored callback(s) with the `result` of the `operation`.  **]**
 
 **SRS_CHANNEL_INTERNAL_43_147: [** `execute_callbacks` shall perform cleanup of the `operation`. **]**

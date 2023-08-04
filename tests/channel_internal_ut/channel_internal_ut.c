@@ -72,7 +72,6 @@ static void test_pull_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT 
     ASSERT_ARE_EQUAL(int, 0, (*(int32_t*)context)++);
     ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
     ASSERT_IS_NULL(data);
-
 }
 
 static void test_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result)
@@ -135,8 +134,9 @@ static void setup_first_op_expectations()
     STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
 }
 
-static void setup_second_op_expectations(bool is_pull, THREADPOOL_WORK_FUNCTION* captured_work_function, void** captured_work_context)
+static void setup_second_op_expectations(bool is_pull, bool expected_fail, THREADPOOL_WORK_FUNCTION* captured_work_function, void** captured_work_context)
 {
+
     STRICT_EXPECTED_CALL(srw_lock_acquire_exclusive(IGNORED_ARG));
     STRICT_EXPECTED_CALL(DList_IsListEmpty(IGNORED_ARG));
     STRICT_EXPECTED_CALL(DList_RemoveHeadList(IGNORED_ARG));
@@ -144,7 +144,14 @@ static void setup_second_op_expectations(bool is_pull, THREADPOOL_WORK_FUNCTION*
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(threadpool_schedule_work(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CaptureArgumentValue_work_function(captured_work_function)
-        .CaptureArgumentValue_work_function_context(captured_work_context);
+        .CaptureArgumentValue_work_function_context(captured_work_context)
+        .SetReturn(expected_fail? 1 : 0);
+    if (expected_fail)
+    {
+        STRICT_EXPECTED_CALL(THANDLE_ASSIGN(ASYNC_OP)(IGNORED_ARG, NULL));
+        is_pull ? (void)0 : (void)STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_PTR)(IGNORED_ARG, NULL));
+        STRICT_EXPECTED_CALL(DList_InsertHeadList(IGNORED_ARG, IGNORED_ARG));
+    }
     STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
 }
 
@@ -167,6 +174,19 @@ static void setup_channel_internal_close_expectations(size_t num_ops, THREADPOOL
         STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
         STRICT_EXPECTED_CALL(THANDLE_ASSIGN(ASYNC_OP)(IGNORED_ARG, NULL));
     }
+}
+
+static void setup_cancel_op_expectations(THREADPOOL_WORK_FUNCTION* work_function, void** work_context)
+{
+    STRICT_EXPECTED_CALL(srw_lock_acquire_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(DList_RemoveEntryList(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(threadpool_schedule_work(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+        .CaptureArgumentValue_work_function(work_function)
+        .CaptureArgumentValue_work_function_context(work_context);
+    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_PTR)(IGNORED_ARG, NULL));
+    STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(ASYNC_OP)(IGNORED_ARG, NULL));
 }
 
 static void cleanup_pending_ops(THANDLE(CHANNEL_INTERNAL) channel_internal, int32_t** op_contexts, size_t num_ops)
@@ -202,6 +222,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(srw_lock_create, NULL);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(threadpool_schedule_work, 1);
 
     REGISTER_UMOCK_ALIAS_TYPE(EXECUTION_ENGINE_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(THREADPOOL), void*);
@@ -448,7 +469,7 @@ TEST_FUNCTION(channel_internal_pull_after_push_succeeds)
     THANDLE(ASYNC_OP) pull_op = NULL;
     THREADPOOL_WORK_FUNCTION work_function;
     void* work_context;
-    setup_second_op_expectations(true, &work_function, &work_context);
+    setup_second_op_expectations(true, false, &work_function, &work_context);
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_PTR)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(ASYNC_OP)(IGNORED_ARG, NULL));
@@ -505,6 +526,57 @@ TEST_FUNCTION(channel_internal_pull_fails_when_underlying_functions_fail)
     THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
 }
 
+/*Tests_SRS_CHANNEL_INTERNAL_43_023: [If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR.]*/
+TEST_FUNCTION(channel_internal_pull_after_push_fails_when_underlying_functions_fail)
+{
+    //arrange
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(test_threadpool.test_threadpool);
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
+    int32_t push_context = 0;
+    THANDLE(ASYNC_OP) push_op = NULL;
+    CHANNEL_RESULT push_result = channel_internal_push(channel_internal, data, test_push_callback_cancelled, &push_context, &push_op);
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result);
+    ASSERT_IS_NOT_NULL(push_op);
+
+    THANDLE(ASYNC_OP) pull_op = NULL;
+
+    umock_c_reset_all_calls();
+
+    THREADPOOL_WORK_FUNCTION work_function;
+    void* work_context;
+    setup_second_op_expectations(true, true, &work_function, &work_context);
+    int pull_context = 0;
+
+    //act
+    CHANNEL_RESULT result = channel_internal_pull(channel_internal, test_pull_callback_abandoned, &pull_context, &pull_op);
+
+    // assert
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_ERROR, result);
+    ASSERT_IS_NULL(pull_op);
+    ASSERT_ARE_EQUAL(int, 0, pull_context);
+    ASSERT_ARE_EQUAL(int, 0, push_context);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //arrange
+    THREADPOOL_WORK_FUNCTION cancel_work_function;
+    void* cancel_work_context;
+    umock_c_reset_all_calls();
+    setup_cancel_op_expectations(&cancel_work_function, &cancel_work_context);
+
+    //act
+    real_async_op_cancel(push_op);
+    cancel_work_function(cancel_work_context);
+
+    //assert
+    ASSERT_ARE_EQUAL(int, 0, pull_context);
+    ASSERT_ARE_EQUAL(int, 1, push_context);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
+    THANDLE_ASSIGN(RC_PTR)(&data, NULL);
+    THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
+}
 
 /* channel_internal_push */
 
@@ -579,7 +651,7 @@ TEST_FUNCTION(channel_internal_push_after_push_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //cleanup
-    cleanup_pending_ops(channel_internal, (int32_t * []) { &push_context_1, & push_context_2 }, 2);
+    cleanup_pending_ops(channel_internal, (int32_t * []) { &push_context_1, &push_context_2 }, 2);
     THANDLE_ASSIGN(ASYNC_OP)(&push_op_2, NULL);
     THANDLE_ASSIGN(RC_PTR)(&data_2, NULL);
     THANDLE_ASSIGN(ASYNC_OP)(&push_op_1, NULL);
@@ -613,7 +685,7 @@ TEST_FUNCTION(channel_internal_push_after_pull_succeeds)
     void* work_context;
     umock_c_reset_all_calls();
 
-    setup_second_op_expectations(false, &work_function, &work_context);
+    setup_second_op_expectations(false, false, &work_function, &work_context);
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_PTR)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(ASYNC_OP)(IGNORED_ARG, NULL));
@@ -673,6 +745,58 @@ TEST_FUNCTION(channel_internal_push_fails_when_underlying_functions_fail)
     THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
 }
 
+/*Tests_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
+TEST_FUNCTION(channel_internal_push_after_pull_fails_when_underlying_functions_fail)
+{
+    //arrange
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(test_threadpool.test_threadpool);
+    THANDLE(ASYNC_OP) pull_op = NULL;
+    int32_t pull_context = 0;
+    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, test_pull_callback_cancelled, &pull_context, &pull_op);
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
+    ASSERT_IS_NOT_NULL(pull_op);
+
+    THANDLE(ASYNC_OP) push_op = NULL;
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
+
+    umock_c_reset_all_calls();
+
+    THREADPOOL_WORK_FUNCTION work_function;
+    void* work_context;
+    setup_second_op_expectations(false, true, &work_function, &work_context);
+    int push_context = 0;
+
+    //act
+    CHANNEL_RESULT result = channel_internal_push(channel_internal, data, test_push_callback_abandoned, &push_context, &push_op);
+
+    // assert
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_ERROR, result);
+    ASSERT_IS_NULL(push_op);
+    ASSERT_ARE_EQUAL(int, 0, push_context);
+    ASSERT_ARE_EQUAL(int, 0, pull_context);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //arrange
+    THREADPOOL_WORK_FUNCTION cancel_work_function;
+    void* cancel_work_context;
+    umock_c_reset_all_calls();
+    setup_cancel_op_expectations(&cancel_work_function, &cancel_work_context);
+
+    //act
+    real_async_op_cancel(pull_op);
+    cancel_work_function(cancel_work_context);
+
+    //assert
+    ASSERT_ARE_EQUAL(int, 0, push_context);
+    ASSERT_ARE_EQUAL(int, 1, pull_context);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    THANDLE_ASSIGN(RC_PTR)(&data, NULL);
+    THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
+    THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
+}
+
 /* cancel_op */
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_134: [ cancel_op shall call srw_lock_acquire_exclusive. ]*/
@@ -680,7 +804,7 @@ TEST_FUNCTION(channel_internal_push_fails_when_underlying_functions_fail)
 /*Tests_SRS_CHANNEL_INTERNAL_43_139: [ cancel_op shall call srw_lock_release_exclusive. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_136: [ If the result of the operation is CHANNEL_CALLBACK_RESULT_OK, cancel_op shall set it to CHANNEL_CALLBACK_RESULT_CANCELLED. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_138: [ If the operation had been found in the list of pending operations, cancel_op shall call threadpool_schedule_work with execute_callbacks as work_function and the operation as work_function_context. ]*/
-TEST_FUNCTION(cancel_op_cancels_pull)
+TEST_FUNCTION(channel_internal_cancel_op_cancels_pull)
 {
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(test_threadpool.test_threadpool);
@@ -694,15 +818,7 @@ TEST_FUNCTION(cancel_op_cancels_pull)
     THREADPOOL_WORK_FUNCTION work_function;
     void* work_context;
 
-    STRICT_EXPECTED_CALL(srw_lock_acquire_exclusive(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(DList_RemoveEntryList(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(threadpool_schedule_work(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
-        .CaptureArgumentValue_work_function(&work_function)
-        .CaptureArgumentValue_work_function_context(&work_context);
-    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_PTR)(IGNORED_ARG, NULL));
-    STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(ASYNC_OP)(IGNORED_ARG, NULL));
+    setup_cancel_op_expectations(&work_function, &work_context);
 
     //act
     real_async_op_cancel(pull_op);
@@ -717,11 +833,10 @@ TEST_FUNCTION(cancel_op_cancels_pull)
     THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
 }
 
-
 /*Tests_SRS_CHANNEL_INTERNAL_43_134: [ cancel_op shall call srw_lock_acquire_exclusive. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_136: [ If the result of the operation is CHANNEL_CALLBACK_RESULT_OK, cancel_op shall set it to CHANNEL_CALLBACK_RESULT_CANCELLED. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_139: [ cancel_op shall call srw_lock_release_exclusive. ]*/
-TEST_FUNCTION(cancel_op_cancels_matched_op)
+TEST_FUNCTION(channel_internal_cancel_op_cancels_matched_op)
 {
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(test_threadpool.test_threadpool);
@@ -731,7 +846,7 @@ TEST_FUNCTION(cancel_op_cancels_matched_op)
     THREADPOOL_WORK_FUNCTION work_function;
     void* work_context;
     setup_first_op_expectations();
-    setup_second_op_expectations(false, &work_function, &work_context);
+    setup_second_op_expectations(false, false, &work_function, &work_context);
 
     int32_t pull_context = 0;
     THANDLE(ASYNC_OP) pull_op = NULL;
@@ -761,6 +876,107 @@ TEST_FUNCTION(cancel_op_cancels_matched_op)
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
     ASSERT_ARE_EQUAL(int, 1, pull_context);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
+    THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
+    THANDLE_ASSIGN(RC_PTR)(&data, NULL);
+    THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
+}
+
+/*Tests_SRS_CHANNEL_INTERNAL_43_138: [ If the operation had been found in the list of pending operations, cancel_op shall call threadpool_schedule_work with execute_callbacks as work_function and the operation as work_function_context. ]*/
+TEST_FUNCTION(channel_internal_cancel_fails_when_underlying_functions_fail)
+{
+    //arrange
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(test_threadpool.test_threadpool);
+    int32_t pull_context = 0;
+    THANDLE(ASYNC_OP) pull_op = NULL;
+    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, test_pull_callback_cancelled, &pull_context, &pull_op);
+    ASSERT_IS_NOT_NULL(pull_op);
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
+    umock_c_reset_all_calls();
+
+    THREADPOOL_WORK_FUNCTION work_function;
+    void* work_context;
+    int result = 0;
+
+    STRICT_EXPECTED_CALL(srw_lock_acquire_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(DList_RemoveEntryList(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(threadpool_schedule_work(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+        .CaptureArgumentValue_work_function(&work_function)
+        .CaptureArgumentValue_work_function_context(&work_context)
+        .SetReturn(1)
+        .CaptureReturn(&result);
+
+    //act
+    real_async_op_cancel(pull_op);
+
+    //assert
+    ASSERT_ARE_EQUAL(int, 0, pull_context); //callback should not have been called because threadpool_schedule_work failed
+    ASSERT_ARE_EQUAL(int, 1, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_PTR)(IGNORED_ARG, NULL));
+    STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(ASYNC_OP)(IGNORED_ARG, NULL));
+
+    work_function(work_context);
+    ASSERT_ARE_EQUAL(int, 1, pull_context);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
+    THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
+}
+
+/* execute_callbacks */
+
+/*Tests_SRS_CHANNEL_INTERNAL_43_148: [ If channel_internal_op_context is NULL, execute_callbacks shall fail. ]*/
+TEST_FUNCTION(channel_internal_execute_callback_fails_with_NULL_context)
+{
+    //arrange
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(test_threadpool.test_threadpool);
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
+    umock_c_reset_all_calls();
+
+    THREADPOOL_WORK_FUNCTION work_function;
+    void* work_context;
+    setup_first_op_expectations();
+    setup_second_op_expectations(false, false, &work_function, &work_context);
+
+    int32_t pull_context = 0;
+    THANDLE(ASYNC_OP) pull_op = NULL;
+    int32_t push_context = 0;
+    THANDLE(ASYNC_OP) push_op = NULL;
+
+    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, test_pull_callback_ok, &pull_context, &pull_op);
+    CHANNEL_RESULT push_result = channel_internal_push(channel_internal, data, test_push_callback_ok, &push_context, &push_op);
+
+    ASSERT_IS_NOT_NULL(pull_op);
+    ASSERT_IS_NOT_NULL(push_op);
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    umock_c_reset_all_calls();
+
+    //act
+    work_function(NULL);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // calling execute_callbacks with NULL context should not have had any effect. Calling again to make sure all is well.
+    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_PTR)(IGNORED_ARG, NULL));
+    STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(ASYNC_OP)(IGNORED_ARG, NULL));
+
+    work_function(work_context);
+
+    //assert
+    ASSERT_ARE_EQUAL(int, 1, pull_context);
+    ASSERT_ARE_EQUAL(int, 1, push_context);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //cleanup
