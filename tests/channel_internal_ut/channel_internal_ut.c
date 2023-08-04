@@ -719,7 +719,7 @@ TEST_FUNCTION(cancel_op_cancels_pull)
 
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_134: [ cancel_op shall call srw_lock_acquire_exclusive. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_146: [ If the operation is not in the list of pending operations and the result of the operation is CHANNEL_CALLBACK_RESULT_OK, cancel_op shall set the result of the operation to CHANNEL_CALLBACK_RESULT_CANCELLED. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_136: [ If the result of the operation is CHANNEL_CALLBACK_RESULT_OK, cancel_op shall set it to CHANNEL_CALLBACK_RESULT_CANCELLED. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_139: [ cancel_op shall call srw_lock_release_exclusive. ]*/
 TEST_FUNCTION(cancel_op_cancels_matched_op)
 {

@@ -41,7 +41,5 @@ if(${run_int_tests})
     build_test_folder(flags_to_string_int)
     build_test_folder(external_command_helper_int)
     build_test_folder(tarray_2_int)
-    if(WIN32)
-        build_test_folder(channel_int) # this test is not working on Linux, needs threadpool_linux fix
-    endif()
+    build_test_folder(channel_int)
 endif()
