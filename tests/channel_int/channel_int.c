@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 #include <stdint.h>
-
+#include <stdlib.h>
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
@@ -135,7 +135,7 @@ static void pull_callback_order_checker(void* context, CHANNEL_CALLBACK_RESULT r
     ASSERT_IS_NOT_NULL(data);
 
     //assert that n-th pull is matched with n-th push
-     ASSERT_ARE_EQUAL(int32_t, *((int32_t*)context), (int32_t)(int64_t)((void*)data->ptr)); //casts needed to suppress pointer truncation warning
+     ASSERT_ARE_EQUAL(int32_t, *((int32_t*)context), (intptr_t)((void*)data->ptr)); //casts needed to suppress pointer truncation warning
 
     free(context);
 }
@@ -177,7 +177,7 @@ static int push_data(void* context)
     THANDLE(CHANNEL) channel = context;
     for (int32_t i = 1; i <= CHANNEL_ORDER_TEST_COUNT; i++)
     {
-        THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer((void*)(int64_t)i, dummy_free_func);
+        THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer((void*)(intptr_t)i, dummy_free_func);
         THANDLE(ASYNC_OP) async_op = NULL;
         CHANNEL_RESULT push_result = channel_push(channel, data, push_callback_order_checker, (void*)(int64_t)i, &async_op);
         ASSERT_IS_NOT_NULL(async_op);
