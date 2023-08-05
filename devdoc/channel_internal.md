@@ -43,9 +43,9 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 `channel_internal_create_and_open` creates the channel_internal and returns it.
 
-**SRS_CHANNEL_INTERNAL_43_078: [** `channel_internal_create_and_open` shall create a `CHANNEL_INTERNAL` object by calling `THANDLE_MALLOC` with `channel_internal_dispose` as `dispose`.**]**
-
 **SRS_CHANNEL_INTERNAL_43_098: [** `channel_internal_create_and_open` shall call `srw_lock_create`. **]**
+
+**SRS_CHANNEL_INTERNAL_43_078: [** `channel_internal_create_and_open` shall create a `CHANNEL_INTERNAL` object by calling `THANDLE_MALLOC` with `channel_internal_dispose` as `dispose`.**]**
 
 **SRS_CHANNEL_INTERNAL_43_080: [** `channel_internal_create_and_open` shall store given `threadpool` in the created `CHANNEL_INTERNAL`. **]**
 
@@ -63,17 +63,15 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 `channel_internal_close` schedules all pending operations to be abandoned.
 
-**SRS_CHANNEL_INTERNAL_43_094: [** `channel_internal_dispose` shall call `srw_lock_acquire_exclusive`. **]**
+**SRS_CHANNEL_INTERNAL_43_094: [** `channel_internal_close` shall call `srw_lock_acquire_exclusive`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_095: [** `channel_internal_dispose` shall iterate over the list of pending operations and do the following: **]**
+**SRS_CHANNEL_INTERNAL_43_095: [** `channel_internal_close` shall iterate over the list of pending operations and do the following: **]**
 
  - **SRS_CHANNEL_INTERNAL_43_096: [** set the `result` of the `operation` to `CHANNEL_CALLBACK_RESULT_ABANDONED`. **]**
 
  - **SRS_CHANNEL_INTERNAL_43_097: [** call `threadpool_schedule_work` with `execute_callbacks` as `work_function`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_100: [** `channel_internal_dispose` shall call `srw_lock_release_exclusive`. **]**
-
-**SRS_CHANNEL_INTERNAL_43_092: [** `channel_internal_dispose` shall release the reference to `THANDLE(CHANNEL_INTERNAL)`. **]**
+**SRS_CHANNEL_INTERNAL_43_100: [** `channel_internal_close` shall call `srw_lock_release_exclusive`. **]**
 
 
 ### channel_internal_dispose
@@ -172,17 +170,13 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 **SRS_CHANNEL_INTERNAL_43_134: [** `cancel_op` shall call `srw_lock_acquire_exclusive`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_135: [** If the `operation` is in the list of pending `operations`: **]**
-
- - **SRS_CHANNEL_INTERNAL_43_137: [** `cancel_op` shall call `DList_RemoveEntryList` to remove the `operation` from the list of pending operations. **]**
-
- - **SRS_CHANNEL_INTERNAL_43_136: [** `cancel_op` shall set the `result` of the `operation` to `CHANNEL_CALLBACK_RESULT_CANCELLED`. **]**
-
- - **SRS_CHANNEL_INTERNAL_43_138: [** `cancel_op` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the `operation` as `work_function_context`. **]**
-
-**SRS_CHANNEL_INTERNAL_43_146: [** If the`operation` is not in the list of pending `operations` and the `result` of the operation is `CHANNEL_CALLBACK_RESULT_OK`, `cancel_op` shall set the `result` of the `operation` to `CHANNEL_CALLBACK_RESULT_CANCELLED`. **]**
+**SRS_CHANNEL_INTERNAL_43_135: [** If the `operation` is in the list of pending `operations`, `cancel_op` shall call `DList_RemoveEntryList` to remove it. **]**
 
 **SRS_CHANNEL_INTERNAL_43_139: [** `cancel_op` shall call `srw_lock_release_exclusive`. **]**
+
+**SRS_CHANNEL_INTERNAL_43_136: [** If the `result` of the `operation` is `CHANNEL_CALLBACK_RESULT_OK`, `cancel_op` shall set it to `CHANNEL_CALLBACK_RESULT_CANCELLED`. **]**
+
+**SRS_CHANNEL_INTERNAL_43_138: [** If the `operation` had been found in the list of pending `operations`, `cancel_op` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the `operation` as `work_function_context`. **]**
 
 
 ### execute_callbacks
@@ -191,6 +185,8 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 ```
 
 `execute_callbacks` is the work function that is passed to `threadpool_schedule_work` when scheduling the execution of the callbacks for an operation.
+
+**SRS_CHANNEL_INTERNAL_43_148: [** If `channel_internal_op_context` is `NULL`, `execute_callbacks` shall fail. **]**
 
 **SRS_CHANNEL_INTERNAL_43_145: [** `execute_callbacks` shall call the stored callback(s) with the `result` of the `operation`.  **]**
 

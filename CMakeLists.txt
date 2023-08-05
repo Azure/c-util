@@ -143,8 +143,11 @@ set(C_UTIL_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what
 include_directories(${UMOCK_C_INC_FOLDER})
 
 set(c_util_c_files
+    ./src/async_op.c
     ./src/azure_base64.c
     ./src/buffer.c
+    ./src/channel.c
+    ./src/channel_internal.c
     ./src/constbuffer.c
     ./src/constbuffer_array.c
     ./src/constbuffer_array_batcher_nv.c
@@ -152,13 +155,13 @@ set(c_util_c_files
     ./src/external_command_helper.c
     ./src/map.c
     ./src/memory_data.c
+    ./src/rc_ptr.c
     ./src/rc_string.c
     ./src/rc_string_array.c
     ./src/singlylinkedlist.c
     ./src/strings.c
     ./src/tarray.c
     ./src/uuid_string.c
-    ./src/async_op.c
 )
 
 set(c_util_cpp_files
@@ -166,9 +169,11 @@ set(c_util_cpp_files
 )
 
 set(c_util_h_files
-    ./inc/c_util/flags_to_string.h
+    ./inc/c_util/async_op.h
     ./inc/c_util/azure_base64.h
     ./inc/c_util/buffer_.h
+    ./inc/c_util/channel.h
+    ./inc/c_util/channel_common.h
     ./inc/c_util/constbuffer.h
     ./inc/c_util/constbuffer_format.h
     ./inc/c_util/constbuffer_version.h
@@ -176,9 +181,11 @@ set(c_util_h_files
     ./inc/c_util/constbuffer_array_batcher_nv.h
     ./inc/c_util/doublylinkedlist.h
     ./inc/c_util/external_command_helper.h
+    ./inc/c_util/flags_to_string.h
     ./inc/c_util/hash.h
     ./inc/c_util/map.h
     ./inc/c_util/memory_data.h
+    ./inc/c_util/rc_ptr.h
     ./inc/c_util/rc_string.h
     ./inc/c_util/rc_string_array.h
     ./inc/c_util/singlylinkedlist.h
@@ -188,7 +195,6 @@ set(c_util_h_files
     ./inc/c_util/tarray.h
     ./inc/c_util/thandle_tuple_array.h
     ./inc/c_util/uuid_string.h
-    ./inc/c_util/async_op.h
 )
 
 function(get_murmurhash2_directory MURMURHASH2_DIR)

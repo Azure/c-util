@@ -6,6 +6,9 @@
 #define REGISTER_GLOBAL_MOCK_HOOK(original, real) \
     (original == real) ? (void)0 : (void)1;
 
+#include "../reals/real_async_op.h"
+#include "../reals/real_channel.h"
+#include "../reals/real_channel_internal.h"
 #include "../reals/real_constbuffer.h"
 #include "../reals/real_constbuffer_array.h"
 #include "../reals/real_constbuffer_array_batcher_nv.h"
@@ -13,11 +16,14 @@
 #include "../reals/real_external_command_helper.h"
 #include "../reals/real_hash.h"
 #include "../reals/real_memory_data.h"
+#include "../reals/real_rc_ptr.h"
 #include "../reals/real_rc_string.h"
 #include "../reals/real_rc_string_array.h"
 #include "../reals/real_singlylinkedlist.h"
 #include "../reals/real_uuid_string.h"
 
+#include "c_util/async_op.h"
+#include "c_util/channel.h"
 #include "c_util/constbuffer.h"
 #include "c_util/constbuffer_array.h"
 #include "c_util/constbuffer_array_batcher_nv.h"
@@ -25,6 +31,7 @@
 #include "c_util/external_command_helper.h"
 #include "c_util/hash.h"
 #include "c_util/memory_data.h"
+#include "c_util/rc_ptr.h"
 #include "c_util/rc_string.h"
 #include "c_util/rc_string_array.h"
 #include "c_util/singlylinkedlist.h"
@@ -46,12 +53,16 @@ TEST_FUNCTION(check_all_c_util_reals)
     // arrange
 
     // act
+    REGISTER_ASYNC_OP_GLOBAL_MOCK_HOOKS();
+    REGISTER_CHANNEL_GLOBAL_MOCK_HOOKS();
+    REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
     REGISTER_CONSTBUFFER_GLOBAL_MOCK_HOOK();
     REGISTER_CONSTBUFFER_ARRAY_GLOBAL_MOCK_HOOK();
     REGISTER_CONSTBUFFER_ARRAY_BATCHER_GLOBAL_MOCK_HOOK();
     REGISTER_DOUBLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
     REGISTER_EXTERNAL_COMMAND_HELPER_GLOBAL_MOCK_HOOKS();
     REGISTER_MEMORY_DATA_GLOBAL_MOCK_HOOK();
+    REGISTER_RC_PTR_GLOBAL_MOCK_HOOKS();
     REGISTER_RC_STRING_GLOBAL_MOCK_HOOKS();
     REGISTER_SINGLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
     REGISTER_UUID_STRING_GLOBAL_MOCK_HOOK();
