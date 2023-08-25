@@ -29,8 +29,10 @@ static void my_gballoc_free(void* ptr)
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/interlocked.h"
 #include "c_pal/sm.h"
-#include "c_util/singlylinkedlist.h"
+#include "c_pal/sync.h"
 #include "c_pal/threadapi.h"
+
+#include "c_util/singlylinkedlist.h"
 #undef ENABLE_MOCKS
 
 #include "real_gballoc_hl.h"
@@ -292,6 +294,7 @@ TEST_FUNCTION(destroy_also_closes_the_worker_thread)
 
     STRICT_EXPECTED_CALL(sm_close_begin(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(wake_by_address_single(IGNORED_ARG));
     STRICT_EXPECTED_CALL(ThreadAPI_Join(test_thread_handle, IGNORED_ARG));
     STRICT_EXPECTED_CALL(sm_close_end(IGNORED_ARG));
     STRICT_EXPECTED_CALL(sm_destroy(IGNORED_ARG));
@@ -481,6 +484,7 @@ TEST_FUNCTION(worker_thread_close_closes_the_worker_thread)
 
     STRICT_EXPECTED_CALL(sm_close_begin(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(wake_by_address_single(IGNORED_ARG));
     STRICT_EXPECTED_CALL(ThreadAPI_Join(test_thread_handle, IGNORED_ARG));
     STRICT_EXPECTED_CALL(sm_close_end(IGNORED_ARG));
 
@@ -542,6 +546,7 @@ TEST_FUNCTION(worker_thread_schedule_process_succeeds)
 
     STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(wake_by_address_single(IGNORED_ARG));
     STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
 
     // act
