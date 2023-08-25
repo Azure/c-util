@@ -3,7 +3,6 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#include <time.h>
 
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
@@ -35,8 +34,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
-    time_t rand_time = time(NULL);
-    srand((unsigned int)rand_time);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -91,8 +88,7 @@ TEST_FUNCTION(run_worker_thread_with_waits)
     for (int32_t index = 0; index < WORKER_THREAD_ITERATIONS_WITH_SLEEP; index++)
     {
         // Sleep here to let the worker_thread_function to go idle sometimes
-        uint32_t sleep_amt = rand() * 10 / (RAND_MAX + 1);
-        ThreadAPI_Sleep(sleep_amt);
+        ThreadAPI_Sleep(10);
 
         ASSERT_ARE_EQUAL(WORKER_THREAD_SCHEDULE_PROCESS_RESULT, WORKER_THREAD_SCHEDULE_PROCESS_OK, worker_thread_schedule_process(worker_handle));
 
