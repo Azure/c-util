@@ -4,17 +4,17 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "windows.h"
-
 #include "macro_utils/macro_utils.h"
 
 #include "c_logging/logger.h"
 
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
+#include "c_pal/interlocked.h"
+#include "c_pal/interlocked_hl.h"
 #include "c_pal/threadapi.h"
-
 #include "c_pal/sm.h"
+#include "c_pal/sync.h"
 
 #include "c_util/worker_thread.h"
 
@@ -25,42 +25,48 @@ typedef struct WORKER_THREAD_TAG
     WORKER_FUNC worker_func;
     void* worker_func_context;
     THREAD_HANDLE thread_handle;
-    HANDLE worker_thread_shutdown_event;
-    HANDLE execute_worker_event;
+    volatile_atomic int32_t state;
+
     SM_HANDLE sm;
 } WORKER_THREAD;
+
+#define WORKER_THREAD_STATE_VALUES \
+    WORKER_THREAD_STATE_IDLE, \
+    WORKER_THREAD_STATE_PROCESS_ITEM, \
+    WORKER_THREAD_STATE_CLOSE
+
+MU_DEFINE_ENUM(WORKER_THREAD_STATE, WORKER_THREAD_STATE_VALUES)
 
 static int worker_thread_func(void* arg)
 {
     WORKER_THREAD_HANDLE worker_thread = arg;
     int result = 0;
-    HANDLE wait_events[2];
+    bool continue_run = true;
 
-    wait_events[0] = worker_thread->worker_thread_shutdown_event;
-    wait_events[1] = worker_thread->execute_worker_event;
-
-    while (1)
+    do
     {
-        /* Codes_SRS_WORKER_THREAD_01_019: [ The worker thread started by worker_thread_create shall wait for the 2 events: thread shutdown event and execute worker function event. ]*/
-        DWORD wait_result = WaitForMultipleObjects(2, wait_events, FALSE, INFINITE);
-        if (wait_result == WAIT_OBJECT_0)
+        // Codes_SRS_WORKER_THREAD_01_019: [ The worker thread started by worker_thread_create shall get the module state. ]
+        WORKER_THREAD_STATE current_state = interlocked_add(&worker_thread->state, 0);
+        switch (current_state)
         {
-            /* Codes_SRS_WORKER_THREAD_01_020: [ When the shutdown event is signaled, the worker thread shall exit. ]*/
-            result = 0;
-            break;
-        }
+            default:
+            case WORKER_THREAD_STATE_IDLE:
+                // Codes_SRS_WORKER_THREAD_11_002: [ If the module state is WORKER_THREAD_STATE_IDLE, the worker thread shall wait for the state to transition to something else. ]
+                (void)wait_on_address(&worker_thread->state, current_state, UINT32_MAX);
+                break;
+            case WORKER_THREAD_STATE_PROCESS_ITEM:
+                // Codes_SRS_WORKER_THREAD_11_001: [ ... and set the module state to idle if it has not been changed. ]
+                (void)interlocked_compare_exchange(&worker_thread->state, WORKER_THREAD_STATE_IDLE, current_state);
 
-        if (wait_result != WAIT_OBJECT_0 + 1)
-        {
-            /* Codes_SRS_WORKER_THREAD_01_025: [ In case of any error, the worker thread shall exit. ]*/
-            LogLastError("Error while waiting for objects, wait_result=%" PRIu32 "", wait_result);
-            result = MU_FAILURE;
-            break;
+                /* Codes_SRS_WORKER_THREAD_01_021: [ When the execute worker function event is signaled, the worker thread shall call the worker_func function passed to worker_thread_create and it shall pass worker_func_context as argument. ]*/
+                worker_thread->worker_func(worker_thread->worker_func_context);
+                break;
+            case WORKER_THREAD_STATE_CLOSE:
+                // Codes_SRS_WORKER_THREAD_01_020: [ If the module state is WORKER_THREAD_STATE_CLOSE, the worker thread shall exit. ]
+                continue_run = false;
+                break;
         }
-
-        /* Codes_SRS_WORKER_THREAD_01_021: [ When the execute worker function event is signaled, the worker thread shall call the worker_func function passed to worker_thread_create and it shall pass worker_func_context as argument. ]*/
-        worker_thread->worker_func(worker_thread->worker_func_context);
-    }
+    } while (continue_run);
 
     return result;
 }
@@ -100,39 +106,14 @@ WORKER_THREAD_HANDLE worker_thread_create(WORKER_FUNC worker_func, void* worker_
             {
                 /* Codes_SRS_WORKER_THREAD_01_022: [ worker_thread_create shall perform the following actions in order: ]*/
 
-                /* Codes_SRS_WORKER_THREAD_01_006: [ worker_thread_create shall create an auto reset unnamed event used for signaling the thread to shutdown by calling CreateEvent. ]*/
-                worker_thread->worker_thread_shutdown_event = CreateEvent(NULL, FALSE, FALSE, NULL);
-                if (worker_thread->worker_thread_shutdown_event == NULL)
-                {
-                    /* Codes_SRS_WORKER_THREAD_01_008: [ If any error occurs, worker_thread_create shall fail and return NULL. ]*/
-                    LogError("Cannot create shutdown event");
-                }
-                else
-                {
-                    /* Codes_SRS_WORKER_THREAD_01_007: [ worker_thread_create shall create an auto reset unnamed event used for signaling that a new execution of the worker function should be done by calling CreateEvent. ]*/
-                    worker_thread->execute_worker_event = CreateEvent(NULL, FALSE, FALSE, NULL);
-                    if (worker_thread->execute_worker_event == NULL)
-                    {
-                        /* Codes_SRS_WORKER_THREAD_01_008: [ If any error occurs, worker_thread_create shall fail and return NULL. ]*/
-                        LogError("Cannot create process event");
-                    }
-                    else
-                    {
-                        goto all_ok;
-
-                        //(void)CloseHandle(worker_thread->execute_worker_event);
-                    }
-
-                    (void)CloseHandle(worker_thread->worker_thread_shutdown_event);
-                }
-
-                sm_destroy(worker_thread->sm);
+                /* Codes_SRS_WORKER_THREAD_01_006: [ worker_thread_create shall initialize the internal objects. ]*/
+                (void)interlocked_exchange(&worker_thread->state, 0);
+                goto all_ok;
             }
 
             free(worker_thread);
         }
     }
-
     worker_thread = NULL;
 
 all_ok:
@@ -144,7 +125,9 @@ static void internal_close(WORKER_THREAD_HANDLE worker_thread)
     int dont_care;
 
     /* Codes_SRS_WORKER_THREAD_01_034: [ worker_thread_close shall signal the thread shutdown event in order to indicate that the thread shall shutdown. ]*/
-    (void)SetEvent(worker_thread->worker_thread_shutdown_event);
+    (void)interlocked_exchange(&worker_thread->state, WORKER_THREAD_STATE_CLOSE);
+    wake_by_address_single(&worker_thread->state);
+
     /* Codes_SRS_WORKER_THREAD_01_035: [ worker_thread_close shall wait for the thread to join by using ThreadAPI_Join. ]*/
     (void)ThreadAPI_Join(worker_thread->thread_handle, &dont_care);
 
@@ -168,12 +151,6 @@ void worker_thread_destroy(WORKER_THREAD_HANDLE worker_thread)
         {
             internal_close(worker_thread);
         }
-
-        /* Codes_SRS_WORKER_THREAD_01_023: [ Any errors in worker_thread_destroy shall be ignored. ]*/
-
-        /* Codes_SRS_WORKER_THREAD_01_013: [ worker_thread_destroy shall free the events created in worker_thread_create by calling CloseHandle on them. ]*/
-        (void)CloseHandle(worker_thread->execute_worker_event);
-        (void)CloseHandle(worker_thread->worker_thread_shutdown_event);
 
         /* Codes_SRS_WORKER_THREAD_01_038: [ worker_thread_destroy shall destroy the state manager object created in worker_thread_create. ]*/
         sm_destroy(worker_thread->sm);
@@ -267,18 +244,12 @@ WORKER_THREAD_SCHEDULE_PROCESS_RESULT worker_thread_schedule_process(WORKER_THRE
         }
         else
         {
-            /* Codes_SRS_WORKER_THREAD_01_017: [ worker_thread_schedule_process shall set the process event created in worker_thread_create. ]*/
-            if (!SetEvent(worker_thread->execute_worker_event))
-            {
-                /* Codes_SRS_WORKER_THREAD_01_018: [ If any other error occurs, worker_thread_schedule_process shall fail and return WORKER_THREAD_SCHEDULE_PROCESS_ERROR. ]*/
-                LogLastError("Cannot set event");
-                result = WORKER_THREAD_SCHEDULE_PROCESS_ERROR;
-            }
-            else
-            {
-                /* Codes_SRS_WORKER_THREAD_01_015: [ On success worker_thread_schedule_process shall return WORKER_THREAD_SCHEDULE_PROCESS_OK. ]*/
-                result = WORKER_THREAD_SCHEDULE_PROCESS_OK;
-            }
+            /* Codes_SRS_WORKER_THREAD_01_017: [ worker_thread_schedule_process shall set the state to WORKER_THREAD_STATE_PROCESS_ITEM. ]*/
+            (void)interlocked_exchange(&worker_thread->state, WORKER_THREAD_STATE_PROCESS_ITEM);
+            wake_by_address_single(&worker_thread->state);
+
+            /* Codes_SRS_WORKER_THREAD_01_015: [ On success worker_thread_schedule_process shall return WORKER_THREAD_SCHEDULE_PROCESS_OK. ]*/
+            result = WORKER_THREAD_SCHEDULE_PROCESS_OK;
 
             /* Codes_SRS_WORKER_THREAD_01_043: [ worker_thread_schedule_process shall call sm_exec_end. ]*/
             sm_exec_end(worker_thread->sm);

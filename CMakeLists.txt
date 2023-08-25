@@ -155,6 +155,7 @@ set(c_util_c_files
     ./src/external_command_helper.c
     ./src/map.c
     ./src/memory_data.c
+    ./src/object_lifetime_tracker.c
     ./src/rc_ptr.c
     ./src/rc_string.c
     ./src/rc_string_array.c
@@ -162,6 +163,7 @@ set(c_util_c_files
     ./src/strings.c
     ./src/tarray.c
     ./src/uuid_string.c
+    ./src/worker_thread.c
 )
 
 set(c_util_cpp_files
@@ -185,6 +187,7 @@ set(c_util_h_files
     ./inc/c_util/hash.h
     ./inc/c_util/map.h
     ./inc/c_util/memory_data.h
+    ./inc/c_util/object_lifetime_tracker.h
     ./inc/c_util/rc_ptr.h
     ./inc/c_util/rc_string.h
     ./inc/c_util/rc_string_array.h
@@ -195,6 +198,7 @@ set(c_util_h_files
     ./inc/c_util/tarray.h
     ./inc/c_util/thandle_tuple_array.h
     ./inc/c_util/uuid_string.h
+    ./inc/c_util/worker_thread.h
 )
 
 function(get_murmurhash2_directory MURMURHASH2_DIR)
@@ -212,22 +216,6 @@ if (EXISTS ${MURMURHASH2_DIR}/MurmurHash2.cpp )
     set(c_util_h_files ${c_util_h_files} ${MURMURHASH2_DIR}/MurmurHash2.h)
 else()
     message(FATAL_ERROR "${CMAKE_CURRENT_LIST_DIR}/deps/smhasher/src/MurmurHash2.cpp does not exist (need to update submodules?)" )
-endif()
-
-if(WIN32)
-    #add worker_thread only on Windows (until we fix it)
-    #object_lifetime_tracker requires srw lock (which we only have implemented for Windows)
-    set(c_util_c_files
-        ${c_util_c_files}
-        ./src/object_lifetime_tracker.c
-        ./src/worker_thread.c
-    )
-
-    set(c_util_h_files
-        ${c_util_h_files}
-        ./inc/c_util/object_lifetime_tracker.h
-        ./inc/c_util/worker_thread.h
-    )
 endif()
 
 FILE(GLOB c_util_md_files "devdoc/*.md")
