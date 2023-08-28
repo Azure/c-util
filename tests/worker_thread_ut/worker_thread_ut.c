@@ -96,6 +96,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 
+MU_DEFINE_ENUM_STRINGS(SM_RESULT, SM_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(SM_RESULT, SM_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(SM_RESULT, SM_RESULT_VALUES);
 
@@ -160,7 +161,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 /* Tests_SRS_WORKER_THREAD_01_001: [ worker_thread_create shall allocate memory for a new worker thread object and on success return a non-NULL handle to it. ]*/
 /* Tests_SRS_WORKER_THREAD_01_022: [ worker_thread_create shall perform the following actions in order: ]*/
 /* Tests_SRS_WORKER_THREAD_01_037: [ worker_thread_create shall create a state manager object by calling sm_create with the name worker_thread. ]*/
-// Tests_SRS_WORKER_THREAD_01_006: [ worker_thread_create shall initialize the internal objects. ]
+// Tests_SRS_WORKER_THREAD_01_006: [ worker_thread_create shall initialize the state object. ]
 TEST_FUNCTION(worker_thread_create_succeeds)
 {
     // arrange
@@ -330,6 +331,7 @@ TEST_FUNCTION(worker_thread_open_succeeds)
     WORKER_THREAD_HANDLE worker_thread = setup_worker_thread_create(&sm);
 
     STRICT_EXPECTED_CALL(sm_open_begin(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(ThreadAPI_Create(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CopyOutArgumentBuffer_threadHandle(&test_thread_handle, sizeof(test_thread_handle));
     STRICT_EXPECTED_CALL(sm_open_end(IGNORED_ARG, true));
@@ -354,6 +356,8 @@ TEST_FUNCTION(when_underlying_calls_fail_open_fails)
 
     STRICT_EXPECTED_CALL(sm_open_begin(IGNORED_ARG))
         .SetFailReturn(SM_EXEC_REFUSED);
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG))
+        .CallCannotFail();
     STRICT_EXPECTED_CALL(ThreadAPI_Create(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CopyOutArgumentBuffer_threadHandle(&test_thread_handle, sizeof(test_thread_handle))
         .SetFailReturn(THREADAPI_ERROR);
@@ -388,6 +392,7 @@ TEST_FUNCTION(when_ThreadAPI_Create_fails_sm_open_end_is_called_with_false)
     WORKER_THREAD_HANDLE worker_thread = setup_worker_thread_create(&sm);
 
     STRICT_EXPECTED_CALL(sm_open_begin(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(ThreadAPI_Create(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CopyOutArgumentBuffer_threadHandle(&test_thread_handle, sizeof(test_thread_handle))
         .SetReturn(THREADAPI_ERROR);
@@ -434,6 +439,7 @@ TEST_FUNCTION(a_seconds_open_after_a_failed_open_succeeds)
     WORKER_THREAD_HANDLE worker_thread = setup_worker_thread_create(&sm);
 
     STRICT_EXPECTED_CALL(sm_open_begin(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(ThreadAPI_Create(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CopyOutArgumentBuffer_threadHandle(&test_thread_handle, sizeof(test_thread_handle))
         .SetReturn(THREADAPI_ERROR);
@@ -442,6 +448,7 @@ TEST_FUNCTION(a_seconds_open_after_a_failed_open_succeeds)
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(sm_open_begin(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(ThreadAPI_Create(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CopyOutArgumentBuffer_threadHandle(&test_thread_handle, sizeof(test_thread_handle));
     STRICT_EXPECTED_CALL(sm_open_end(IGNORED_ARG, true));
@@ -471,7 +478,7 @@ TEST_FUNCTION(worker_thread_close_with_NULL_worker_thread_returns)
 }
 
 /* Tests_SRS_WORKER_THREAD_01_033: [ Otherwise, worker_thread_close shall call sm_close_begin. ]*/
-/* Tests_SRS_WORKER_THREAD_01_034: [ worker_thread_close shall signal the thread shutdown event in order to indicate that the thread shall shutdown. ]*/
+/* Tests_SRS_WORKER_THREAD_01_034: [ worker_thread_close shall set the worker thread state to close in order to indicate that the thread shall shutdown. ]*/
 /* Tests_SRS_WORKER_THREAD_01_035: [ worker_thread_close shall wait for the thread to join by using ThreadAPI_Join. ]*/
 /* Tests_SRS_WORKER_THREAD_01_036: [ worker_thread_close shall call sm_close_end. ]*/
 TEST_FUNCTION(worker_thread_close_closes_the_worker_thread)
@@ -579,11 +586,11 @@ TEST_FUNCTION(when_sm_foes_not_grant_the_execution_worker_thread_schedule_proces
 
 /* worker_thread */
 
-/* Tests_SRS_WORKER_THREAD_01_019: [ The worker thread started by worker_thread_create shall get the module state. ]*/
+/* Tests_SRS_WORKER_THREAD_01_019: [ The worker thread started by worker_thread_create shall get the thread state. ]*/
 /* Tests_SRS_WORKER_THREAD_01_021: [ When the execute worker function event is signaled, the worker thread shall call the worker_func function passed to worker_thread_create and it shall pass worker_func_context as argument. ]*/
-// Tests_SRS_WORKER_THREAD_11_001: [ ... and set the module state to idle if it has not been changed. ]
-// Tests_SRS_WORKER_THREAD_01_020: [ If the module state is WORKER_THREAD_STATE_CLOSE, the worker thread shall exit. ]
-// Tests_SRS_WORKER_THREAD_11_002: [ If the module state is WORKER_THREAD_STATE_IDLE, the worker thread shall wait for the state to transition to something else. ]
+// Tests_SRS_WORKER_THREAD_11_001: [ ... and set the thread state to idle if it has not been changed. ]
+// Tests_SRS_WORKER_THREAD_01_020: [ If the thread state is WORKER_THREAD_STATE_CLOSE, the worker thread shall exit. ]
+// Tests_SRS_WORKER_THREAD_11_002: [ If the thread state is WORKER_THREAD_STATE_IDLE, the worker thread shall wait for the state to transition to something else. ]
 TEST_FUNCTION(when_the_execute_work_event_is_signaled_the_worker_thread_executes_the_work_function)
 {
     // arrange

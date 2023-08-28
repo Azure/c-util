@@ -17,6 +17,8 @@
 TEST_DEFINE_ENUM_TYPE(WORKER_THREAD_SCHEDULE_PROCESS_RESULT, WORKER_THREAD_SCHEDULE_PROCESS_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
+#define WORKER_THREAD_REENTRANCY                10
+
 #define WORKER_THREAD_ITERATIONS                300
 #define WORKER_THREAD_ITERATIONS_WITH_SLEEP     100
 
@@ -26,8 +28,6 @@ static void worker_thread_func(void* context)
 
     (void)interlocked_increment(worker_ctx);
     wake_by_address_single(worker_ctx);
-
-    //LogInfo("worker thread function call with value %" PRId32 "", value);
 }
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
@@ -99,6 +99,48 @@ TEST_FUNCTION(run_worker_thread_with_waits)
     // cleanup
     worker_thread_close(worker_handle);
     worker_thread_destroy(worker_handle);
+}
+
+typedef struct WORKER_THREAD_DATA_TAG
+{
+    volatile_atomic int32_t worker_ctx;
+    WORKER_THREAD_HANDLE worker_handle;
+} WORKER_THREAD_DATA;
+
+static void worker_thread_schedule_thread_func(void* context)
+{
+    WORKER_THREAD_DATA* worker_data = (WORKER_THREAD_DATA*)context;
+
+    if (interlocked_add(&worker_data->worker_ctx, 0) < WORKER_THREAD_REENTRANCY)
+    {
+        ASSERT_ARE_EQUAL(WORKER_THREAD_SCHEDULE_PROCESS_RESULT, WORKER_THREAD_SCHEDULE_PROCESS_OK, worker_thread_schedule_process(worker_data->worker_handle));
+        if (interlocked_increment(&worker_data->worker_ctx) == WORKER_THREAD_REENTRANCY)
+        {
+            wake_by_address_single(&worker_data->worker_ctx);
+        }
+    }
+}
+
+TEST_FUNCTION(run_worker_thread_from_within_worker_thread_schedule_process)
+{
+    WORKER_THREAD_DATA worker_data;
+    (void)interlocked_exchange(&worker_data.worker_ctx, 0);
+
+    // arrange
+    worker_data.worker_handle = worker_thread_create(worker_thread_schedule_thread_func, (void*)&worker_data);
+    ASSERT_IS_NOT_NULL(worker_data.worker_handle);
+
+    // act
+    ASSERT_ARE_EQUAL(int32_t, 0, worker_thread_open(worker_data.worker_handle));
+
+    ASSERT_ARE_EQUAL(WORKER_THREAD_SCHEDULE_PROCESS_RESULT, WORKER_THREAD_SCHEDULE_PROCESS_OK, worker_thread_schedule_process(worker_data.worker_handle));
+
+    // assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&worker_data.worker_ctx, WORKER_THREAD_REENTRANCY, UINT32_MAX));
+
+    // cleanup
+    worker_thread_close(worker_data.worker_handle);
+    worker_thread_destroy(worker_data.worker_handle);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

@@ -45,24 +45,24 @@ static int worker_thread_func(void* arg)
 
     do
     {
-        // Codes_SRS_WORKER_THREAD_01_019: [ The worker thread started by worker_thread_create shall get the module state. ]
+        // Codes_SRS_WORKER_THREAD_01_019: [ The worker thread started by worker_thread_create shall get the thread state. ]
         WORKER_THREAD_STATE current_state = interlocked_add(&worker_thread->state, 0);
         switch (current_state)
         {
             default:
             case WORKER_THREAD_STATE_IDLE:
-                // Codes_SRS_WORKER_THREAD_11_002: [ If the module state is WORKER_THREAD_STATE_IDLE, the worker thread shall wait for the state to transition to something else. ]
-                (void)wait_on_address(&worker_thread->state, current_state, UINT32_MAX);
+                // Codes_SRS_WORKER_THREAD_11_002: [ If the thread state is WORKER_THREAD_STATE_IDLE, the worker thread shall wait for the state to transition to something else. ]
+                (void)InterlockedHL_WaitForNotValue(&worker_thread->state, WORKER_THREAD_STATE_IDLE, UINT32_MAX);
                 break;
             case WORKER_THREAD_STATE_PROCESS_ITEM:
-                // Codes_SRS_WORKER_THREAD_11_001: [ ... and set the module state to idle if it has not been changed. ]
+                // Codes_SRS_WORKER_THREAD_11_001: [ ... and set the thread state to WORKER_THREAD_STATE_IDLE if it has not been changed. ]
                 (void)interlocked_compare_exchange(&worker_thread->state, WORKER_THREAD_STATE_IDLE, current_state);
 
                 /* Codes_SRS_WORKER_THREAD_01_021: [ When the execute worker function event is signaled, the worker thread shall call the worker_func function passed to worker_thread_create and it shall pass worker_func_context as argument. ]*/
                 worker_thread->worker_func(worker_thread->worker_func_context);
                 break;
             case WORKER_THREAD_STATE_CLOSE:
-                // Codes_SRS_WORKER_THREAD_01_020: [ If the module state is WORKER_THREAD_STATE_CLOSE, the worker thread shall exit. ]
+                // Codes_SRS_WORKER_THREAD_01_020: [ If the thread state is WORKER_THREAD_STATE_CLOSE, the worker thread shall exit. ]
                 continue_run = false;
                 break;
         }
@@ -106,8 +106,8 @@ WORKER_THREAD_HANDLE worker_thread_create(WORKER_FUNC worker_func, void* worker_
             {
                 /* Codes_SRS_WORKER_THREAD_01_022: [ worker_thread_create shall perform the following actions in order: ]*/
 
-                /* Codes_SRS_WORKER_THREAD_01_006: [ worker_thread_create shall initialize the internal objects. ]*/
-                (void)interlocked_exchange(&worker_thread->state, 0);
+                /* Codes_SRS_WORKER_THREAD_01_006: [ worker_thread_create shall initialize the state object. ]*/
+                (void)interlocked_exchange(&worker_thread->state, WORKER_THREAD_STATE_IDLE);
                 goto all_ok;
             }
 
@@ -124,15 +124,12 @@ static void internal_close(WORKER_THREAD_HANDLE worker_thread)
 {
     int dont_care;
 
-    /* Codes_SRS_WORKER_THREAD_01_034: [ worker_thread_close shall signal the thread shutdown event in order to indicate that the thread shall shutdown. ]*/
+    /* Codes_SRS_WORKER_THREAD_01_034: [ worker_thread_close shall set the worker thread state to close in order to indicate that the thread shall shutdown. ]*/
     (void)interlocked_exchange(&worker_thread->state, WORKER_THREAD_STATE_CLOSE);
     wake_by_address_single(&worker_thread->state);
 
     /* Codes_SRS_WORKER_THREAD_01_035: [ worker_thread_close shall wait for the thread to join by using ThreadAPI_Join. ]*/
     (void)ThreadAPI_Join(worker_thread->thread_handle, &dont_care);
-
-    /* Codes_SRS_WORKER_THREAD_01_036: [ worker_thread_close shall call sm_close_end. ]*/
-    sm_close_end(worker_thread->sm);
 }
 
 void worker_thread_destroy(WORKER_THREAD_HANDLE worker_thread)
@@ -150,6 +147,8 @@ void worker_thread_destroy(WORKER_THREAD_HANDLE worker_thread)
         if (sm_close_begin(worker_thread->sm) == SM_EXEC_GRANTED)
         {
             internal_close(worker_thread);
+
+            sm_close_end(worker_thread->sm);
         }
 
         /* Codes_SRS_WORKER_THREAD_01_038: [ worker_thread_destroy shall destroy the state manager object created in worker_thread_create. ]*/
@@ -180,6 +179,8 @@ int worker_thread_open(WORKER_THREAD_HANDLE worker_thread)
         }
         else
         {
+            (void)interlocked_exchange(&worker_thread->state, WORKER_THREAD_STATE_IDLE);
+
             /* Codes_SRS_WORKER_THREAD_01_028: [ worker_thread_open shall start a worker_thread thread that will call worker_func by calling ThreadAPI_Create. ]*/
             if (ThreadAPI_Create(&worker_thread->thread_handle, worker_thread_func, worker_thread) != THREADAPI_OK)
             {
@@ -211,14 +212,18 @@ void worker_thread_close(WORKER_THREAD_HANDLE worker_thread)
     else
     {
         /* Codes_SRS_WORKER_THREAD_01_033: [ Otherwise, worker_thread_close shall call sm_close_begin. ]*/
-        if (sm_close_begin(worker_thread->sm) != SM_EXEC_GRANTED)
+        SM_RESULT sm_result = sm_close_begin(worker_thread->sm);
+        if (sm_result != SM_EXEC_GRANTED)
         {
             /* Codes_SRS_WORKER_THREAD_01_040: [ If sm_close_begin does not return SM_EXEC_GRANTED, worker_thread_close shall return. ]*/
-            LogError("sm_close_begin did not grat execution of close");
+            LogError("sm_close_begin did not grant execution of close %" PRI_MU_ENUM, MU_ENUM_VALUE(SM_RESULT, sm_result));
         }
         else
         {
             internal_close(worker_thread);
+
+            /* Codes_SRS_WORKER_THREAD_01_036: [ worker_thread_close shall call sm_close_end. ]*/
+            sm_close_end(worker_thread->sm);
         }
     }
 }
