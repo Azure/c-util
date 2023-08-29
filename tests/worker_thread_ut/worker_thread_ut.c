@@ -552,7 +552,8 @@ TEST_FUNCTION(worker_thread_schedule_process_succeeds)
     WORKER_THREAD_HANDLE worker_thread = setup_worker_thread_open();
 
     STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+        .SetReturn(TEST_STATE_IDLE);
     STRICT_EXPECTED_CALL(wake_by_address_single(IGNORED_ARG));
     STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
 
@@ -562,6 +563,30 @@ TEST_FUNCTION(worker_thread_schedule_process_succeeds)
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(WORKER_THREAD_SCHEDULE_PROCESS_RESULT, WORKER_THREAD_SCHEDULE_PROCESS_OK, result);
+
+    // cleanup
+    worker_thread_destroy(worker_thread);
+}
+
+// Tests_SRS_WORKER_THREAD_11_003: [ If the thread state is not WORKER_THREAD_STATE_IDLE, worker_thread_schedule_process shall fail and return WORKER_THREAD_SCHEDULE_PROCESS_INVALID_STATE. ]
+TEST_FUNCTION(worker_thread_schedule_process_invalid_state_succeeds)
+{
+    // arrange
+    int result;
+
+    WORKER_THREAD_HANDLE worker_thread = setup_worker_thread_open();
+
+    STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+        .SetReturn(TEST_STATE_PROCESS_ITEM);
+    STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
+
+    // act
+    result = worker_thread_schedule_process(worker_thread);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(WORKER_THREAD_SCHEDULE_PROCESS_RESULT, WORKER_THREAD_SCHEDULE_PROCESS_INVALID_STATE, result);
 
     // cleanup
     worker_thread_destroy(worker_thread);
@@ -600,6 +625,10 @@ TEST_FUNCTION(when_the_execute_work_event_is_signaled_the_worker_thread_executes
 {
     // arrange
     WORKER_THREAD_HANDLE worker_thread = setup_worker_thread_open();
+    STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+        .SetReturn(TEST_STATE_IDLE);
+    STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
     ASSERT_ARE_EQUAL(WORKER_THREAD_SCHEDULE_PROCESS_RESULT, WORKER_THREAD_SCHEDULE_PROCESS_OK, worker_thread_schedule_process(worker_thread));
     umock_c_reset_all_calls();
 

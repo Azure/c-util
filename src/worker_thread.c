@@ -249,13 +249,20 @@ WORKER_THREAD_SCHEDULE_PROCESS_RESULT worker_thread_schedule_process(WORKER_THRE
         }
         else
         {
-            /* Codes_SRS_WORKER_THREAD_01_017: [ worker_thread_schedule_process shall set the state to WORKER_THREAD_STATE_PROCESS_ITEM. ]*/
-            (void)interlocked_exchange(&worker_thread->state, WORKER_THREAD_STATE_PROCESS_ITEM);
-            wake_by_address_single(&worker_thread->state);
+            /* Codes_SRS_WORKER_THREAD_01_017: [ worker_thread_schedule_process shall set the thread state to WORKER_THREAD_STATE_PROCESS_ITEM. ]*/
+            if (interlocked_compare_exchange(&worker_thread->state, WORKER_THREAD_STATE_PROCESS_ITEM, WORKER_THREAD_STATE_IDLE) != WORKER_THREAD_STATE_IDLE)
+            {
+                // Codes_SRS_WORKER_THREAD_11_003: [ If the thread state is not WORKER_THREAD_STATE_IDLE, worker_thread_schedule_process shall fail and return WORKER_THREAD_SCHEDULE_PROCESS_INVALID_STATE. ]
+                LogError("Cannot start execution of worker_thread_schedule_process");
+                result = WORKER_THREAD_SCHEDULE_PROCESS_INVALID_STATE;
+            }
+            else
+            {
+                wake_by_address_single(&worker_thread->state);
 
-            /* Codes_SRS_WORKER_THREAD_01_015: [ On success worker_thread_schedule_process shall return WORKER_THREAD_SCHEDULE_PROCESS_OK. ]*/
-            result = WORKER_THREAD_SCHEDULE_PROCESS_OK;
-
+                /* Codes_SRS_WORKER_THREAD_01_015: [ On success worker_thread_schedule_process shall return WORKER_THREAD_SCHEDULE_PROCESS_OK. ]*/
+                result = WORKER_THREAD_SCHEDULE_PROCESS_OK;
+            }
             /* Codes_SRS_WORKER_THREAD_01_043: [ worker_thread_schedule_process shall call sm_exec_end. ]*/
             sm_exec_end(worker_thread->sm);
         }

@@ -19,7 +19,7 @@ TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
 #define WORKER_THREAD_REENTRANCY                10
 
-#define WORKER_THREAD_ITERATIONS                300
+#define WORKER_THREAD_ITERATIONS                500
 #define WORKER_THREAD_ITERATIONS_WITH_SLEEP     100
 
 static void worker_thread_func(void* context)
@@ -48,7 +48,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 {
 }
 
-TEST_FUNCTION(MU_C3(worker_thread_runs, WORKER_THREAD_ITERATIONS, process_work_succeeds))
+TEST_FUNCTION(MU_C3(worker_thread_runs_, WORKER_THREAD_ITERATIONS, _process_work_succeeds))
 {
     volatile_atomic int32_t worker_ctx;
     (void)interlocked_exchange(&worker_ctx, 0);
