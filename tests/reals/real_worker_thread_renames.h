@@ -7,3 +7,4 @@
 #define worker_thread_close                                         real_worker_thread_close
 
 #define WORKER_THREAD_SCHEDULE_PROCESS_RESULT                       real_WORKER_THREAD_SCHEDULE_PROCESS_RESULT
+#define WORKER_THREAD_STATE                                         real_WORKER_THREAD_STATE
