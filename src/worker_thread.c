@@ -256,7 +256,10 @@ WORKER_THREAD_SCHEDULE_PROCESS_RESULT worker_thread_schedule_process(WORKER_THRE
         {
             /* Codes_SRS_WORKER_THREAD_01_017: [ worker_thread_schedule_process shall set the thread state to WORKER_THREAD_STATE_PROCESS_ITEM. ]*/
             WORKER_THREAD_STATE worker_thread_state = interlocked_compare_exchange(&worker_thread->state, WORKER_THREAD_STATE_PROCESS_ITEM, WORKER_THREAD_STATE_IDLE);
-            if (worker_thread_state != WORKER_THREAD_STATE_IDLE)
+            if (
+                (worker_thread_state != WORKER_THREAD_STATE_IDLE) &&
+                (worker_thread_state != WORKER_THREAD_STATE_PROCESS_ITEM)
+                )
             {
                 // Codes_SRS_WORKER_THREAD_11_003: [ If the thread state is not WORKER_THREAD_STATE_IDLE, worker_thread_schedule_process shall fail and return WORKER_THREAD_SCHEDULE_PROCESS_INVALID_STATE. ]
                 LogError("Cannot start execution of worker_thread_schedule_process, worker_thread_state=%" PRI_MU_ENUM "", MU_ENUM_VALUE(WORKER_THREAD_STATE, worker_thread_state));
