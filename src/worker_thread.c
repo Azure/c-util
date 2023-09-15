@@ -50,6 +50,10 @@ static int worker_thread_func(void* arg)
         switch (current_state)
         {
             default:
+                LogError("Invalid state: %" PRI_MU_ENUM "", MU_ENUM_VALUE(WORKER_THREAD_STATE, current_state));
+                continue_run = false;
+                break;
+
             case WORKER_THREAD_STATE_IDLE:
                 // Codes_SRS_WORKER_THREAD_11_002: [ If the thread state is WORKER_THREAD_STATE_IDLE, the worker thread shall wait for the state to transition to something else. ]
                 (void)InterlockedHL_WaitForNotValue(&worker_thread->state, WORKER_THREAD_STATE_IDLE, UINT32_MAX);
@@ -250,10 +254,11 @@ WORKER_THREAD_SCHEDULE_PROCESS_RESULT worker_thread_schedule_process(WORKER_THRE
         else
         {
             /* Codes_SRS_WORKER_THREAD_01_017: [ worker_thread_schedule_process shall set the thread state to WORKER_THREAD_STATE_PROCESS_ITEM. ]*/
-            if (interlocked_compare_exchange(&worker_thread->state, WORKER_THREAD_STATE_PROCESS_ITEM, WORKER_THREAD_STATE_IDLE) != WORKER_THREAD_STATE_IDLE)
+            WORKER_THREAD_STATE worker_thread_state = interlocked_compare_exchange(&worker_thread->state, WORKER_THREAD_STATE_PROCESS_ITEM, WORKER_THREAD_STATE_IDLE);
+            if (worker_thread_state != WORKER_THREAD_STATE_IDLE)
             {
                 // Codes_SRS_WORKER_THREAD_11_003: [ If the thread state is not WORKER_THREAD_STATE_IDLE, worker_thread_schedule_process shall fail and return WORKER_THREAD_SCHEDULE_PROCESS_INVALID_STATE. ]
-                LogError("Cannot start execution of worker_thread_schedule_process");
+                LogError("Cannot start execution of worker_thread_schedule_process, worker_thread_state=%" PRI_MU_ENUM "", MU_ENUM_VALUE(WORKER_THREAD_STATE, worker_thread_state));
                 result = WORKER_THREAD_SCHEDULE_PROCESS_INVALID_STATE;
             }
             else
