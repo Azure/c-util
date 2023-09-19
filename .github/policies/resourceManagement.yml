@@ -50,6 +50,8 @@ configuration:
           reviewer: ACKPaul
       - requestReview:
           reviewer: M-iceberg
+      - requestReview:
+          reviewer: hagauaga
       description: 
     - if:
       - payloadType: Pull_Request
