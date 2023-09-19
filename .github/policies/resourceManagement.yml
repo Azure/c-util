@@ -13,8 +13,8 @@ configuration:
       - payloadType: Pull_Request
       - includesModifiedFiles:
           files:
-          - deps/
-          - .github/
+          - deps/*
+          - .github/*
       - isOpen
       then:
       - approvePullRequest:
