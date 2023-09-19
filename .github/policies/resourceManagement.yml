@@ -14,6 +14,7 @@ configuration:
       - includesModifiedFiles:
           files:
           - deps/
+          - .github/
       - isOpen
       then:
       - approvePullRequest:
