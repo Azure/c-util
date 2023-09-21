@@ -12,7 +12,7 @@ configuration:
     - if:
       - payloadType: Pull_Request
       - filesMatchPattern:
-          files:
+          pattern:
           - deps/*
       - isOpen
       then:
@@ -54,7 +54,7 @@ configuration:
       - payloadType: Pull_Request
       - not:
           filesMatchPattern:
-            files:
+            pattern:
             - deps/*
       - isOpen
       then:
