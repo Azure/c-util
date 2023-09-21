@@ -12,8 +12,7 @@ configuration:
     - if:
       - payloadType: Pull_Request
       - filesMatchPattern:
-          pattern:
-          - deps/*
+          pattern: deps/*
       - isOpen
       then:
       - approvePullRequest:
@@ -54,8 +53,7 @@ configuration:
       - payloadType: Pull_Request
       - not:
           filesMatchPattern:
-            pattern:
-            - deps/*
+            pattern: deps/*
       - isOpen
       then:
       - dismissPullRequestReview:
