@@ -11,9 +11,9 @@ configuration:
     eventResponderTasks:
     - if:
       - payloadType: Pull_Request
-      - includesModifiedFiles:
+      - filesMatchPattern:
           files:
-          - deps/
+          - deps/*
       - isOpen
       then:
       - approvePullRequest:
@@ -53,9 +53,9 @@ configuration:
     - if:
       - payloadType: Pull_Request
       - not:
-          includesModifiedFiles:
+          filesMatchPattern:
             files:
-            - deps/
+            - deps/*
       - isOpen
       then:
       - dismissPullRequestReview:
