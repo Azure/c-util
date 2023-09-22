@@ -118,16 +118,6 @@ static void test_free_channel_data2(void* data)
     ASSERT_ARE_EQUAL(void_ptr, test_data2, data);
 }
 
-static THANDLE(THREADPOOL) setup_threadpool()
-{
-    EXECUTION_ENGINE_HANDLE execution_engine = execution_engine_create(NULL);
-    ASSERT_IS_NOT_NULL(execution_engine);
-    THANDLE(THREADPOOL) threadpool = threadpool_create(execution_engine);
-    ASSERT_IS_NOT_NULL(threadpool);
-    ASSERT_ARE_EQUAL(int, 0, threadpool_open(threadpool));
-    return threadpool;
-}
-
 static void pull_callback_order_checker(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data)
 {
     ASSERT_IS_NOT_NULL(context);
@@ -206,7 +196,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_IS_NOT_NULL(temp);
     THANDLE_INITIALIZE_MOVE(THREADPOOL)(&g.g_threadpool, &temp);
     ASSERT_IS_NOT_NULL(g.g_threadpool);
-    ASSERT_ARE_EQUAL(int, 0, threadpool_open(g.g_threadpool));
+    
 
     THANDLE_INITIALIZE_MOVE(RC_PTR)(&g.g_data, &(THANDLE(RC_PTR)){ rc_ptr_create_with_move_pointer(test_data, test_free_channel_data) });
     THANDLE_INITIALIZE_MOVE(RC_PTR)(&g.g_data2, &(THANDLE(RC_PTR)){ rc_ptr_create_with_move_pointer(test_data2, test_free_channel_data2) });
@@ -223,10 +213,12 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
+    ASSERT_ARE_EQUAL(int, 0, threadpool_open(g.g_threadpool));
 }
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
 {
+    threadpool_close(g.g_threadpool);
 }
 
 
