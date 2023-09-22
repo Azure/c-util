@@ -185,11 +185,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 TEST_SUITE_INITIALIZE(suite_init)
 {
     void* execution_engine_parameters = NULL;
-#ifdef WIN32
-    execution_engine_parameters = &(EXECUTION_ENGINE_PARAMETERS_WIN32) { .min_thread_count = 1, .max_thread_count = 1 };
-#else
-    execution_engine_parameters = &(EXECUTION_ENGINE_PARAMETERS_LINUX) { .min_thread_count = 1, .max_thread_count = 1 };
-#endif
+
+    execution_engine_parameters = &(EXECUTION_ENGINE_PARAMETERS) { .min_thread_count = 1, .max_thread_count = 1 };
     g_execution_engine = execution_engine_create(execution_engine_parameters);
     ASSERT_IS_NOT_NULL(g_execution_engine);
     THANDLE(THREADPOOL) temp = threadpool_create(g_execution_engine);

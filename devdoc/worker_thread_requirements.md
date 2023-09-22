@@ -5,11 +5,19 @@
 `worker_thread` is a helper module that implements execution of a work item on a single separate thread. It can be used in batching operations, sequencing completions, etc.
 The user instantiates a worker thread instance and then signals when the work shall be executed by calling `worker_thread_schedule_process`.
 
+## Thread Concerns
+
+A calls to `worker_thread_schedule_process` must wait for the resulting `WORKER_FUNC` call or the call will not be delivered.  For this reason `worker_thread_schedule_process` function should be called in a single threaded manner.
+
+### Reentrancy
+
+Users can not call worker_thread_close or worker_thread_destroy functions from within `WORKER_FUNC` call.  This action will result in a deadlock waiting for the `WORKER_FUNC` to end.  The user is allowed to call `worker_thread_schedule_process` from within `WORKER_FUNC`.
+
 ## Exposed API
 
 ```c
     /* this is the callback that is to be called each time processing (worker executing) is scheduled */
-    /* Note that if a processing (worker executing) is scheduled already, a new one might not be scheduled 
+    /* Note that if worker_thread_schedule_process is called multiple time before WORKER_FUNC executes (worker executing), a new WORKER_FUNC process will not be scheduled 
     (the number of executed WORKER_FUNC calls is <= number of worker_thread_schedule_process calls made ) */
     typedef void(*WORKER_FUNC)(void* worker_func_context);
 
@@ -47,9 +55,7 @@ MOCKABLE_FUNCTION(, WORKER_THREAD_HANDLE, worker_thread_create, WORKER_FUNC, wor
 
 - **SRS_WORKER_THREAD_01_037: [** `worker_thread_create` shall create a state manager object by calling `sm_create` with the name `worker_thread`. **]**
 
-- **SRS_WORKER_THREAD_01_006: [** `worker_thread_create` shall create an auto reset unnamed event used for signaling the thread to shutdown by calling `CreateEvent`. **]**
-
-- **SRS_WORKER_THREAD_01_007: [** `worker_thread_create` shall create an auto reset unnamed event used for signaling that a new execution of the worker function should be done by calling `CreateEvent`. **]**
+- **SRS_WORKER_THREAD_01_006: [** `worker_thread_create` shall initialize the state object. **]**
 
 **SRS_WORKER_THREAD_01_008: [** If any error occurs, `worker_thread_create` shall fail and return NULL. **]**
 
@@ -66,10 +72,6 @@ MOCKABLE_FUNCTION(, void, worker_thread_destroy, WORKER_THREAD_HANDLE, worker_th
 **SRS_WORKER_THREAD_01_039: [** If the worker thread is open, `worker_thread_destroy` shall perform a close. **]**
 
 **SRS_WORKER_THREAD_01_038: [** `worker_thread_destroy` shall destroy the state manager object created in `worker_thread_create`. **]**
-
-**SRS_WORKER_THREAD_01_013: [** `worker_thread_destroy` shall free the events created in `worker_thread_create` by calling `CloseHandle` on them. **]**
-
-**SRS_WORKER_THREAD_01_023: [** Any errors in `worker_thread_destroy` shall be ignored. **]**
 
 ### worker_thread_open
 
@@ -105,7 +107,7 @@ MOCKABLE_FUNCTION(, void, worker_thread_close, WORKER_THREAD_HANDLE, worker_thre
 
 **SRS_WORKER_THREAD_01_040: [** If `sm_close_begin` does not return `SM_EXEC_GRANTED`, `worker_thread_close` shall return. **]**
 
-**SRS_WORKER_THREAD_01_034: [** `worker_thread_close` shall signal the thread shutdown event in order to indicate that the thread shall shutdown. **]**
+**SRS_WORKER_THREAD_01_034: [** `worker_thread_close` shall set the worker thread state to close in order to indicate that the thread shall shutdown. **]**
 
 **SRS_WORKER_THREAD_01_035: [** `worker_thread_close` shall wait for the thread to join by using `ThreadAPI_Join`. **]**
 
@@ -117,7 +119,7 @@ MOCKABLE_FUNCTION(, void, worker_thread_close, WORKER_THREAD_HANDLE, worker_thre
 MOCKABLE_FUNCTION(, WORKER_THREAD_SCHEDULE_PROCESS_RESULT, worker_thread_schedule_process, WORKER_THREAD_HANDLE, worker_thread);
 ```
 
-`worker_thread_schedule_process` signals that a new execution of the worker function should happen.
+`worker_thread_schedule_process` signals that a new execution of the worker function should happen.  Multiple calls to `worker_thread_schedule_process` before a `WORKER_FUNC` happens will result in only 1 call to the `WORKER_FUNC`
 
 **SRS_WORKER_THREAD_01_016: [** If `worker_thread` is NULL, `worker_thread_schedule_process` shall fail and return `WORKER_THREAD_SCHEDULE_PROCESS_ERROR`. **]**
 
@@ -125,21 +127,22 @@ MOCKABLE_FUNCTION(, WORKER_THREAD_SCHEDULE_PROCESS_RESULT, worker_thread_schedul
 
 **SRS_WORKER_THREAD_01_042: [** If `sm_exec_begin` does not grant the execution, `worker_thread_schedule_process` shall fail and return `WORKER_THREAD_SCHEDULE_PROCESS_INVALID_STATE`. **]**
 
-**SRS_WORKER_THREAD_01_017: [** `worker_thread_schedule_process` shall set the process event created in `worker_thread_create`. **]**
+**SRS_WORKER_THREAD_01_017: [** `worker_thread_schedule_process` shall set the thread state to `WORKER_THREAD_STATE_PROCESS_ITEM`. **]**
+
+**SRS_WORKER_THREAD_11_003: [** If the thread state is not `WORKER_THREAD_STATE_IDLE` or `WORKER_THREAD_STATE_PROCESS_ITEM`, `worker_thread_schedule_process` shall fail and return `WORKER_THREAD_SCHEDULE_PROCESS_INVALID_STATE`. **]**
 
 **SRS_WORKER_THREAD_01_043: [** `worker_thread_schedule_process` shall call `sm_exec_end`. **]**
 
 **SRS_WORKER_THREAD_01_015: [** On success `worker_thread_schedule_process` shall return `WORKER_THREAD_SCHEDULE_PROCESS_OK`. **]**
 
-**SRS_WORKER_THREAD_01_018: [** If any other error occurs, `worker_thread_schedule_process` shall fail and return `WORKER_THREAD_SCHEDULE_PROCESS_ERROR`. **]**
-
 ### worker_thread
 
-**SRS_WORKER_THREAD_01_019: [** The worker thread started by `worker_thread_create` shall wait for the 2 events: thread shutdown event and execute worker function event. **]**
+**SRS_WORKER_THREAD_01_019: [** The worker thread started by `worker_thread_create` shall get the thread state. **]**
 
-**SRS_WORKER_THREAD_01_020: [** When the shutdown event is signaled, the worker thread shall exit. **]**
+**SRS_WORKER_THREAD_01_020: [** If the thread state is `WORKER_THREAD_STATE_CLOSE`, the worker thread shall exit. **]**
 
-**SRS_WORKER_THREAD_01_021: [** When the execute worker function event is signaled, the worker thread shall call the `worker_func` function passed to `worker_thread_create` and it shall pass `worker_func_context` as argument. **]**
+**SRS_WORKER_THREAD_01_021: [** If the thread state is `WORKER_THREAD_STATE_PROCESS_ITEM`, the worker thread shall call the `worker_func` function passed to `worker_thread_create` and it shall pass `worker_func_context` as argument... **]**
 
-**SRS_WORKER_THREAD_01_025: [** In case of any error, the worker thread shall exit. **]**
+**SRS_WORKER_THREAD_11_001: [** ... and set the thread state to `WORKER_THREAD_STATE_IDLE` if it has not been changed. **]**
 
+**SRS_WORKER_THREAD_11_002: [** If the thread state is `WORKER_THREAD_STATE_IDLE`, the worker thread shall wait for the state to transition to something else. **]**
