@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifndef REAL_HASH_H
-#define REAL_HASH_H
+#ifndef REAL_MURMURHASH2_H
+#define REAL_MURMURHASH2_H
 
 #include "macro_utils/macro_utils.h"
 #include "MurmurHash2.h"
 
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 
-#define REGISTER_HASH_GLOBAL_MOCK_HOOK() \
+#define REGISTER_MURMURHASH2_GLOBAL_MOCK_HOOK() \
     MU_FOR_EACH_1(R2, \
         MurmurHash2 \
         MurmurHash64A \
@@ -34,4 +34,4 @@ uint32_t real_MurmurHashAligned2 ( const void * key, int len, uint32_t seed );
 }
 #endif
 
-#endif // REAL_HASH_H
+#endif // REAL_MURMURHASH2_H
