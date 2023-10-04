@@ -26,6 +26,8 @@
 #include <stdint.h>
 #include <stdarg.h>
 
+#include "umock_c/umock_c_prod.h"
+
     typedef struct RC_STRING_TAG real_RC_STRING;
     THANDLE_TYPE_DECLARE(real_RC_STRING);
 
