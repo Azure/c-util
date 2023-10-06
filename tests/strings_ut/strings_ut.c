@@ -4,21 +4,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-static void* my_gballoc_malloc(size_t size)
-{
-    return malloc(size);
-}
-
-static void* my_gballoc_realloc(void* ptr, size_t size)
-{
-    return realloc(ptr, size);
-}
-
-static void my_gballoc_free(void* ptr)
-{
-    free(ptr);
-}
-
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"

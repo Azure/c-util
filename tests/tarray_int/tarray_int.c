@@ -5,21 +5,10 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-
 #include "macro_utils/macro_utils.h"
 
 #include "testrunnerswitcher.h"
 #include "umock_c/umocktypes_stdint.h"
-
-void* my_gballoc_malloc(size_t size)
-{
-    return malloc(size);
-}
-
-void my_gballoc_free(void* ptr)
-{
-    free(ptr);
-}
 
 #include "c_pal/interlocked.h"
 

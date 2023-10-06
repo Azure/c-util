@@ -5,13 +5,6 @@
 
 #include "macro_utils/macro_utils.h"
 
-#include "real_gballoc_ll.h"
-
-static void my_gballoc_free(void* ptr)
-{
-    real_gballoc_ll_free(ptr);
-}
-
 #include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_charptr.h"
@@ -2120,7 +2113,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRICT_EXPECTED_CALL(malloc_2(1, sizeof(char*))) /*this is creating a clone of the storage for values*/
             .SetReturn(NULL);
 
-        STRICT_EXPECTED_CALL(free(IGNORED_ARG)); 
+        STRICT_EXPECTED_CALL(free(IGNORED_ARG));
         STRICT_EXPECTED_CALL(free(IGNORED_ARG));
         STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
@@ -2285,7 +2278,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_REDVALUE) + 1)); /*this is creating a clone of RED value*/
 
-        
+
         STRICT_EXPECTED_CALL(malloc(strlen(TEST_BLUEVALUE) + 1)) /*this is creating a clone of BLUE value*/
             .SetReturn(NULL);
 
@@ -2668,7 +2661,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey"*/
 
         STRICT_EXPECTED_CALL(STRING_concat(IGNORED_ARG, ":")); /*now JSON is {"redkey":*/
-        
+
         STRICT_EXPECTED_CALL(STRING_concat_with_STRING(IGNORED_ARG, IGNORED_ARG)); /*now JSON is {"redkey":"reddoor"*/
 
         STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)); /*delete the key*/
@@ -2863,7 +2856,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRICT_EXPECTED_CALL(STRING_construct("{"));
 
         STRICT_EXPECTED_CALL(STRING_new_JSON("redkey")) /*prepare the key*/
-            .SetReturn(NULL); 
+            .SetReturn(NULL);
 
         STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG));
 
@@ -2945,7 +2938,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ASSERT_IS_NOT_NULL(toJSON);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-        ///cleanup 
+        ///cleanup
         Map_Destroy(handle);
         STRING_delete(toJSON);
     }
