@@ -31,7 +31,7 @@ MOCKABLE_FUNCTION(, TWO_D_ARRAY_HANDLE, two_d_array_create, uint64_t, row_size);
 
 `two_d_array_create` shall create a new empty two_dimensional_array.
 
-If `row_size` or `col_size` equals to zero, `two_d_array_create` shall return `NULL`.
+If `row_size` equals to zero, `two_d_array_create` shall return `NULL`.
 
 `two_d_array_create` shall allocate memory for the first dimention of array using `row_size`.
 
