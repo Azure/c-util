@@ -162,6 +162,7 @@ set(c_util_c_files
     ./src/singlylinkedlist.c
     ./src/strings.c
     ./src/tarray.c
+    ./src/two_dimensional_array.c
     ./src/uuid_string.c
     ./src/worker_thread.c
 )
@@ -197,6 +198,7 @@ set(c_util_h_files
     ./inc/c_util/tarray_ll.h
     ./inc/c_util/tarray.h
     ./inc/c_util/thandle_tuple_array.h
+    ./inc/c_util/two_dimensional_array.h
     ./inc/c_util/uuid_string.h
     ./inc/c_util/worker_thread.h
 )
