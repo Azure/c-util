@@ -197,6 +197,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, two_d_array_destroy, TWO_D_ARRAY_HANDLE, two
         {
             free(two_d_array_handle->row_arrays[i]);
         }
-        free(two_d_array_handle);
+        free(two_d_array_handle->row_arrays);
     }
+    free(two_d_array_handle);
 }
