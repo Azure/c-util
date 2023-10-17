@@ -131,6 +131,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
+    threadpool_close(g.g_threadpool);
     THANDLE_ASSIGN(THREADPOOL)(&g.g_threadpool, NULL);
     execution_engine_dec_ref(g_execution_engine);
     umock_c_deinit();
@@ -148,7 +149,6 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 }
 
 /* channel_create */
-
 
 /* Tests_SRS_CHANNEL_43_077: [ If threadpool is NULL, channel_create shall fail and return NULL. ] */
 TEST_FUNCTION(channel_create_fails_with_null_threadpool)
