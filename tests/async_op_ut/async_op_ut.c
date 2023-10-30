@@ -122,7 +122,7 @@ TEST_FUNCTION(async_op_create_no_overflow_max_alignment) /*note:asks for a 2GB a
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
 }
 
-/*Tests_SRS_ASYNC_OP_02_002: [ async_op_create shall call THANDLE_MALLOC_WITH_EXTRA_SIZE with the extra size set as (context_size > 0) * (context_size + context_align - 1).]*/
+/*Tests_SRS_ASYNC_OP_02_002: [ async_op_create shall call THANDLE_MALLOC_FLEX with the extra size set as (context_size > 0) * (context_size + context_align - 1).]*/
 /*Tests_SRS_ASYNC_OP_02_003: [ async_op_create shall compute context (that the user is supposed to use), record cancel, dispose, set state to ASYNC_RUNNING and return a non-NULL value. ]*/
 TEST_FUNCTION(async_op_create_succeeds)
 {
@@ -142,7 +142,7 @@ TEST_FUNCTION(async_op_create_succeeds)
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
 }
 
-/*Tests_SRS_ASYNC_OP_02_002: [ async_op_create shall call THANDLE_MALLOC_WITH_EXTRA_SIZE with the extra size set as (context_size > 0) * (context_size + context_align - 1).]*/
+/*Tests_SRS_ASYNC_OP_02_002: [ async_op_create shall call THANDLE_MALLOC_FLEX with the extra size set as (context_size > 0) * (context_size + context_align - 1).]*/
 TEST_FUNCTION(async_op_create_with_context_size_0_succeeds)
 {
     ///arrange

@@ -81,11 +81,11 @@ static THANDLE(RC_STRING) rc_string_create_impl(const char* string)
     else
     {
         /* Codes_SRS_RC_STRING_01_003: [ rc_string_create shall allocate memory for the THANDLE(RC_STRING), ensuring all the bytes in string can be copied (including the zero terminator). ]*/
-        THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator);
+        THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_FLEX(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, 1);
         if (temp_result == NULL)
         {
             /* Codes_SRS_RC_STRING_01_006: [ If any error occurs, rc_string_create shall fail and return NULL. ]*/
-            LogError("THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING) failed, extra size is %zu, string_length_with_terminator=%zu", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, string_length_with_terminator);
+            LogError("THANDLE_MALLOC_FLEX(RC_STRING) failed, extra size is %zu, string_length_with_terminator=%zu", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, string_length_with_terminator);
         }
         else
         {
@@ -153,11 +153,11 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_vformat,
             else
             {
                 /*Codes_SRS_RC_STRING_07_004: [ rc_string_create_with_vformat shall allocate memory for the THANDLE(RC_STRING)and the number of bytes for the resulting formatted string. ]*/
-                THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + (size_t)string_length_with_terminator);
+                THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_FLEX(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + (size_t)string_length_with_terminator, 1);
                 if (temp_result == NULL)
                 {
                     /*Codes_SRS_RC_STRING_07_008: [ If any error occurs, rc_string_create_with_vformat shall fail and return NULL. ]*/
-                    LogError("THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING) failed, extra size is %zu, string_length_with_terminator=%d", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + (size_t)string_length_with_terminator, string_length_with_terminator);
+                    LogError("THANDLE_MALLOC_FLEX(RC_STRING) failed, extra size is %zu, string_length_with_terminator=%d", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + (size_t)string_length_with_terminator, string_length_with_terminator);
                 }
                 else
                 {
@@ -207,11 +207,11 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_move_mem
     else
     {
         /* Codes_SRS_RC_STRING_01_008: [ Otherwise, rc_string_create_with_move_memory shall allocate memory for the THANDLE(RC_STRING). ]*/
-        THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING));
+        THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_FLEX(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING), 1);
         if (temp_result == NULL)
         {
             /* Codes_SRS_RC_STRING_01_011: [ If any error occurs, rc_string_create_with_move_memory shall fail and return NULL. ]*/
-            LogError("THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING) failed");
+            LogError("THANDLE_MALLOC_FLEX(RC_STRING) failed");
         }
         else
         {
@@ -247,11 +247,11 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_custom_f
     else
     {
         /* Codes_SRS_RC_STRING_01_015: [ rc_string_create_with_custom_free shall allocate memory for the THANDLE(RC_STRING). ]*/
-        THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING));
+        THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_FLEX(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING), 1);
         if (temp_result == NULL)
         {
             /* Codes_SRS_RC_STRING_01_019: [ If any error occurs, rc_string_create_with_custom_free shall fail and return NULL. ]*/
-            LogError("THANDLE_MALLOC_WITH_EXTRA_SIZE(RC_STRING) failed");
+            LogError("THANDLE_MALLOC_FLEX(RC_STRING) failed");
         }
         else
         {

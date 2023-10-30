@@ -52,12 +52,12 @@ THANDLE(ASYNC_OP) async_op_create(ASYNC_OP_CANCEL_IMPL cancel, uint32_t context_
     }
     else
     {
-        /*Codes_SRS_ASYNC_OP_02_002: [ async_op_create shall call THANDLE_MALLOC_WITH_EXTRA_SIZE with the extra size set as (context_size > 0) * (context_size + context_align - 1).]*/
-        THANDLE(ASYNC_OP) async_op = THANDLE_MALLOC_WITH_EXTRA_SIZE(ASYNC_OP)(async_op_dispose, (context_size > 0) * (context_size + context_align - 1));
+        /*Codes_SRS_ASYNC_OP_02_002: [ async_op_create shall call THANDLE_MALLOC_FLEX with the extra size set as (context_size > 0) * (context_size + context_align - 1).]*/
+        THANDLE(ASYNC_OP) async_op = THANDLE_MALLOC_FLEX(ASYNC_OP)(async_op_dispose, (context_size > 0) * (context_size + context_align - 1), 1);
         if (async_op == NULL)
         {
             /*Codes_SRS_ASYNC_OP_02_004: [ If there are any failures then async_op_create shall fail and return NULL. ]*/
-            LogError("failure in THANDLE_MALLOC_WITH_EXTRA_SIZE(ASYNC_OP)(async_op_dispose, context_size=%" PRIu32 " + context_align=%" PRIu32 " - 1);",
+            LogError("failure in THANDLE_MALLOC_FLEX(ASYNC_OP)(async_op_dispose, context_size=%" PRIu32 " + context_align=%" PRIu32 " - 1);",
                 context_size, context_align);
             /*return as is*/
         }

@@ -61,7 +61,7 @@ MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), async_op_create, ASYNC_OP_CANCEL_IMPL, ca
 
 **SRS_ASYNC_OP_02_001: [** If `context_align` is not a power of 2 then `async_op_create` shall fail and return `NULL`. **]**
 
-**SRS_ASYNC_OP_02_002: [** `async_op_create` shall call `THANDLE_MALLOC_WITH_EXTRA_SIZE` with the extra size set as (`context_size` > 0) * (`context_size` + `context_align` - 1).**]**
+**SRS_ASYNC_OP_02_002: [** `async_op_create` shall call `THANDLE_MALLOC_FLEX` with the extra size set as (`context_size` > 0) * (`context_size` + `context_align` - 1).**]**
 
 Note: the above formula will always store an address with `context_align` alignment in `private_context`.
 
