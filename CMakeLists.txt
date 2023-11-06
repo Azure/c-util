@@ -162,6 +162,8 @@ set(c_util_c_files
     ./src/singlylinkedlist.c
     ./src/strings.c
     ./src/tarray.c
+    ./src/tcall_dispatcher.c
+    ./src/tqueue.c
     ./src/uuid_string.c
     ./src/worker_thread.c
 )
@@ -196,10 +198,30 @@ set(c_util_h_files
     ./inc/c_util/strings_types.h
     ./inc/c_util/tarray_ll.h
     ./inc/c_util/tarray.h
+    ./inc/c_util/tcall_dispatcher.h
+    ./inc/c_util/tcall_dispatcher_ll.h
+    ./inc/c_util/tqueue.h
+    ./inc/c_util/tqueue_ll.h
     ./inc/c_util/thandle_tuple_array.h
     ./inc/c_util/uuid_string.h
     ./inc/c_util/worker_thread.h
 )
+
+if (WIN32)
+    set(c_util_h_files
+        ${c_util_h_files}
+        ./inc/c_util/thread_notifications_dispatcher.h
+        ./inc/c_util/tcall_dispatcher_thread_notification_call.h
+    )
+endif()
+
+if (WIN32)
+    set(c_util_c_files
+        ${c_util_c_files}
+        ./src/thread_notifications_dispatcher.c
+        ./src/tcall_dispatcher_thread_notification_call.c
+    )
+endif()
 
 function(get_murmurhash2_directory MURMURHASH2_DIR)
     if(EXISTS "${PROJECT_SOURCE_DIR}/deps/smhasher/src/MurmurHash2.cpp" )
@@ -238,10 +260,16 @@ if(${use_applessl})
     set(c_util_target_libs ${c_util_target_libs} ${cf_foundation} ${cf_network})
 endif()
 
+if(WIN32)
+    # maybe this should make its way to c-pal at some point ... maybe
+    add_subdirectory(thread_notifications_lackey_dll)
+
+    target_link_libraries(c_util thread_notifications_lackey_dll)
+endif()
+
 include_directories(${MACRO_UTILS_INC_FOLDER})
 include_directories(${UMOCK_C_INC_FOLDER})
 include_directories(${CMAKE_CURRENT_LIST_DIR}/inc)
-
 
 if((CMAKE_GENERATOR MATCHES "Visual Studio") AND (${run_traceability}))
     #add traceability custom target
