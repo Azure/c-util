@@ -65,6 +65,8 @@ if(WIN32)
         ${c_util_reals_c_files}
         real_object_lifetime_tracker.c
         real_worker_thread.c
+        real_tcall_dispatcher_thread_notification_call.c
+        real_thread_notifications_dispatcher.c
     )
 
     set(c_util_reals_h_files
@@ -73,6 +75,10 @@ if(WIN32)
         real_object_lifetime_tracker.h
         real_worker_thread.h
         real_worker_thread_renames.h
+        real_tcall_dispatcher_thread_notification_call.h
+        real_tcall_dispatcher_thread_notification_call_renames.h
+        real_thread_notifications_dispatcher.h
+        real_thread_notifications_dispatcher_renames.h
     )
 endif()
 
@@ -82,3 +88,6 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)
 add_library(c_util_reals ${c_util_reals_c_files} ${c_util_reals_cpp_files} ${c_util_reals_h_files})
 target_include_directories(c_util_reals PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests/reals> ${MURMURHASH2_DIR} $<TARGET_PROPERTY:c_util,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(c_util_reals c_logging_v2 c_pal_reals)
+if (WIN32)
+    target_link_libraries(c_util_reals thread_notifications_lackey_dll)
+endif()
