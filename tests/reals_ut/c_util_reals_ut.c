@@ -7,6 +7,7 @@
     (original == real) ? (void)0 : (void)1;
 
 #include "../reals/real_async_op.h"
+#include "../reals/real_bs_filename_helper.h"
 #include "../reals/real_channel.h"
 #include "../reals/real_channel_internal.h"
 #include "../reals/real_constbuffer.h"
@@ -59,6 +60,7 @@ TEST_FUNCTION(check_all_c_util_reals)
 
     // act
     REGISTER_ASYNC_OP_GLOBAL_MOCK_HOOKS();
+    REGISTER_BS_FILENAME_HELPER_GLOBAL_MOCK_HOOK();
     REGISTER_CHANNEL_GLOBAL_MOCK_HOOKS();
     REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
     REGISTER_CONSTBUFFER_GLOBAL_MOCK_HOOK();
