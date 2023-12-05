@@ -10,7 +10,7 @@
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/string_utils.h"
 
-#include "for_each_in_sub_folder.h"
+#include "c_util/for_each_in_sub_folder.h"
 
 typedef struct FOR_EACH_IN_SUBFOLDER_TAG
 {

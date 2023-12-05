@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #endif
 
-#include "for_each_in_folder.h"
+#include "c_util/for_each_in_folder.h"
 
 #include "macro_utils/macro_utils.h"
 

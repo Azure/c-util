@@ -23,7 +23,7 @@
 #include "real_gballoc_hl.h"
 #include "real_interlocked.h"
 
-#include "bs_watchdog_threadpool.h"
+#include "c_util/bs_watchdog_threadpool.h"
 
 static EXECUTION_ENGINE_HANDLE test_execution_engine = (EXECUTION_ENGINE_HANDLE)0x1001;
 

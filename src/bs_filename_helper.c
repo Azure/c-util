@@ -8,7 +8,7 @@
 
 #include "c_pal/string_utils.h"
 
-#include "bs_filename_helper.h"
+#include "c_util/bs_filename_helper.h"
 
 char* bs_filename_append_suffix(const char* filename, const char* suffix)
 {

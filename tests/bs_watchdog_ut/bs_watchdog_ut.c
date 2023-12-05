@@ -31,7 +31,7 @@
 #include "real_interlocked.h"
 #include "real_rc_string.h"
 
-#include "bs_watchdog.h"
+#include "c_util/bs_watchdog.h"
 
 static void* test_callback_context = (void*)0x100A;
 

@@ -11,7 +11,7 @@ set(${theseTestsName}_c_files
 )
 
 set(${theseTestsName}_h_files
-../../inc/bs_watchdog.h
+../../inc/c_util/bs_watchdog.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/block_storage_2" ADDITIONAL_LIBS c_pal_reals c_util_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_pal_reals c_util_reals)

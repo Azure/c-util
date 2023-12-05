@@ -21,7 +21,8 @@
 #define ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
-#include "for_each_in_folder.h"
+
+#include "c_util/for_each_in_folder.h"
 
 MOCKABLE_FUNCTION(, int, TEST_ON_EACH_IN_FOLDER, const char*, folder, const WIN32_FIND_DATAA*, findData, void*, context, bool*, enumerationShouldContinue)
 
@@ -31,7 +32,7 @@ MOCKABLE_FUNCTION(, int, TEST_ON_EACH_IN_FOLDER, const char*, folder, const WIN3
 
 
 
-#include "for_each_in_sub_folder.h"
+#include "c_util/for_each_in_sub_folder.h"
 
 #define TEST_FOLDER_DEFINE "c:\\folder"
 static const char* TEST_FOLDER = TEST_FOLDER_DEFINE;

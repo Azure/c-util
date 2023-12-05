@@ -21,8 +21,8 @@
 #include "c_util/rc_string.h"
 #include "c_pal/thandle.h"
 
-#include "bs_watchdog.h"
-#include "bs_watchdog_threadpool.h"
+#include "c_util/bs_watchdog.h"
+#include "c_util/bs_watchdog_threadpool.h"
 
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);

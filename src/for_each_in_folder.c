@@ -10,7 +10,7 @@
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/string_utils.h"
 
-#include "for_each_in_folder.h"
+#include "c_util/for_each_in_folder.h"
 
 int for_each_in_folder(const char* folder, ON_EACH_IN_FOLDER on_each_in_folder, void* context)
 {

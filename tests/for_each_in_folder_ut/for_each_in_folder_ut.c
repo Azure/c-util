@@ -46,7 +46,7 @@
 
 #include "real_gballoc_hl.h"
 
-#include "for_each_in_folder.h"
+#include "c_util/for_each_in_folder.h"
 
 static HANDLE hook_FindFirstFileA(
     LPCSTR lpFileName,

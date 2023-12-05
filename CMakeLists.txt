@@ -145,6 +145,9 @@ include_directories(${UMOCK_C_INC_FOLDER})
 set(c_util_c_files
     ./src/async_op.c
     ./src/azure_base64.c
+    ./src/bs_filename_helper.c
+    ./src/bs_watchdog.c
+    ./src/bs_watchdog_threadpool.c
     ./src/buffer.c
     ./src/channel.c
     ./src/channel_internal.c
@@ -153,6 +156,8 @@ set(c_util_c_files
     ./src/constbuffer_array_batcher_nv.c
     ./src/doublylinkedlist.c
     ./src/external_command_helper.c
+    ./src/for_each_in_folder.c
+    ./src/for_each_in_sub_folder.c
     ./src/map.c
     ./src/memory_data.c
     ./src/object_lifetime_tracker.c
@@ -175,6 +180,9 @@ set(c_util_cpp_files
 set(c_util_h_files
     ./inc/c_util/async_op.h
     ./inc/c_util/azure_base64.h
+    ./inc/c_util/bs_filename_helper.h
+    ./inc/c_util/bs_watchdog.h
+    ./inc/c_util/bs_watchdog_threadpool.h
     ./inc/c_util/buffer_.h
     ./inc/c_util/channel.h
     ./inc/c_util/channel_common.h
@@ -186,6 +194,8 @@ set(c_util_h_files
     ./inc/c_util/doublylinkedlist.h
     ./inc/c_util/external_command_helper.h
     ./inc/c_util/flags_to_string.h
+    ./inc/c_util/for_each_in_folder.h
+    ./inc/c_util/for_each_in_sub_folder.h
     ./inc/c_util/hash.h
     ./inc/c_util/map.h
     ./inc/c_util/memory_data.h

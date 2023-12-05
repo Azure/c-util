@@ -11,7 +11,7 @@
 #include "c_pal/threadpool.h"
 #include "c_pal/thandle.h"
 
-#include "bs_watchdog_threadpool.h"
+#include "c_util/bs_watchdog_threadpool.h"
 
 typedef struct BS_WATCHDOG_THREADPOOL_TAG
 {

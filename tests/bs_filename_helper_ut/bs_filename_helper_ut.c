@@ -25,7 +25,7 @@
 #include "real_gballoc_hl.h"
 #include "real_string_utils.h"
 
-#include "bs_filename_helper.h"
+#include "c_util/bs_filename_helper.h"
 
 /*following function cannot be mocked because of variable number of arguments:( so it is copy&pasted here*/
 char* sprintf_char_function(const char* format, ...)

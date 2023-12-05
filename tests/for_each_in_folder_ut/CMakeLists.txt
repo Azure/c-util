@@ -12,7 +12,7 @@ for_each_in_folder_mocked.c
 )
 
 set(${theseTestsName}_h_files
-../../inc/for_each_in_folder.h
+../../inc/c_util/for_each_in_folder.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/block_storage_2" ADDITIONAL_LIBS c_util c_pal_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util c_pal_reals)

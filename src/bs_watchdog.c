@@ -13,7 +13,7 @@
 #include "c_util/rc_string.h"
 #include "c_pal/thandle.h"
 
-#include "bs_watchdog.h"
+#include "c_util/bs_watchdog.h"
 
 #define BS_WATCHDOG_STATE_VALUES \
         BS_WATCHDOG_RUNNING, \
