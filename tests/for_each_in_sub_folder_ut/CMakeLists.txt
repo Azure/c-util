@@ -15,4 +15,4 @@ set(${theseTestsName}_h_files
 ../../inc/c_util/for_each_in_sub_folder.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util c_pal_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_pal_reals c_util_reals)
