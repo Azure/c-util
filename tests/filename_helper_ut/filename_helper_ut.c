@@ -25,7 +25,7 @@
 #include "real_gballoc_hl.h"
 #include "real_string_utils.h"
 
-#include "c_util/bs_filename_helper.h"
+#include "c_util/filename_helper.h"
 
 /*following function cannot be mocked because of variable number of arguments:( so it is copy&pasted here*/
 char* sprintf_char_function(const char* format, ...)
@@ -138,36 +138,36 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
     umock_c_negative_tests_deinit();
 }
 
-/*Tests_SRS_BS_FILENAME_HELPER_42_001: [ If filename is NULL then bs_filename_append_suffix shall fail and return NULL. ]*/
-TEST_FUNCTION(bs_filename_append_suffix_with_filename_NULL_fails)
+/*Tests_SRS_FILENAME_HELPER_42_001: [ If filename is NULL then filename_append_suffix shall fail and return NULL. ]*/
+TEST_FUNCTION(filename_append_suffix_with_filename_NULL_fails)
 {
     ///arrange
     const char suffix[] = DEFAULT_SUFFIX;
 
     ///act
-    char* result = bs_filename_append_suffix(NULL, suffix);
+    char* result = filename_append_suffix(NULL, suffix);
 
     ///assert
     ASSERT_IS_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_BS_FILENAME_HELPER_42_002: [ If suffix is NULL then bs_filename_append_suffix shall fail and return NULL. ]*/
-TEST_FUNCTION(bs_filename_append_suffix_with_suffix_NULL_fails)
+/*Tests_SRS_FILENAME_HELPER_42_002: [ If suffix is NULL then filename_append_suffix shall fail and return NULL. ]*/
+TEST_FUNCTION(filename_append_suffix_with_suffix_NULL_fails)
 {
     ///arrange
     const char filename[] = FILENAME_NO_DOT;
 
     ///act
-    char* result = bs_filename_append_suffix(filename, NULL);
+    char* result = filename_append_suffix(filename, NULL);
 
     ///assert
     ASSERT_IS_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_BS_FILENAME_HELPER_42_003: [ If filename does not contain a . then bs_filename_append_suffix shall return filename + suffix. ]*/
-TEST_FUNCTION(bs_filename_append_suffix_without_dot_creates_a_new_string_and_succeeds)
+/*Tests_SRS_FILENAME_HELPER_42_003: [ If filename does not contain a . then filename_append_suffix shall return filename + suffix. ]*/
+TEST_FUNCTION(filename_append_suffix_without_dot_creates_a_new_string_and_succeeds)
 {
     ///arrange
     const char filename[] = FILENAME_NO_DOT;
@@ -176,7 +176,7 @@ TEST_FUNCTION(bs_filename_append_suffix_without_dot_creates_a_new_string_and_suc
     STRICT_EXPECTED_CALL(vsprintf_char("%s%s", IGNORED_ARG));
 
     ///act
-    char* result = bs_filename_append_suffix(filename, suffix);
+    char* result = filename_append_suffix(filename, suffix);
 
     ///assert
     ASSERT_IS_NOT_NULL(result);
@@ -187,8 +187,8 @@ TEST_FUNCTION(bs_filename_append_suffix_without_dot_creates_a_new_string_and_suc
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_BS_FILENAME_HELPER_42_004: [ If filename does not contain a \ then bs_filename_append_suffix shall return the name of the file + suffix + . + extension. ]*/
-TEST_FUNCTION(bs_filename_append_suffix_without_backslash_creates_a_new_string_and_succeeds)
+/*Tests_SRS_FILENAME_HELPER_42_004: [ If filename does not contain a \ then filename_append_suffix shall return the name of the file + suffix + . + extension. ]*/
+TEST_FUNCTION(filename_append_suffix_without_backslash_creates_a_new_string_and_succeeds)
 {
     ///arrange
     const char filename[] = FULL_FILENAME_NO_BACKSLASH;
@@ -197,7 +197,7 @@ TEST_FUNCTION(bs_filename_append_suffix_without_backslash_creates_a_new_string_a
     STRICT_EXPECTED_CALL(vsprintf_char("%.*s%s%s", IGNORED_ARG));
 
     ///act
-    char* result = bs_filename_append_suffix(filename, suffix);
+    char* result = filename_append_suffix(filename, suffix);
 
     ///assert
     ASSERT_IS_NOT_NULL(result);
@@ -208,8 +208,8 @@ TEST_FUNCTION(bs_filename_append_suffix_without_backslash_creates_a_new_string_a
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_BS_FILENAME_HELPER_42_005: [ If filename contains last . before last \ then bs_filename_append_suffix shall return filename + suffix. ]*/
-TEST_FUNCTION(bs_filename_append_suffix_with_last_dot_before_backslash_creates_a_new_string_and_succeeds)
+/*Tests_SRS_FILENAME_HELPER_42_005: [ If filename contains last . before last \ then filename_append_suffix shall return filename + suffix. ]*/
+TEST_FUNCTION(filename_append_suffix_with_last_dot_before_backslash_creates_a_new_string_and_succeeds)
 {
     ///arrange
     const char filename[] = FILENAME_DOT_BEFORE_BACKSLASH;
@@ -218,7 +218,7 @@ TEST_FUNCTION(bs_filename_append_suffix_with_last_dot_before_backslash_creates_a
     STRICT_EXPECTED_CALL(vsprintf_char("%s%s", IGNORED_ARG));
 
     ///act
-    char* result = bs_filename_append_suffix(filename, suffix);
+    char* result = filename_append_suffix(filename, suffix);
 
     ///assert
     ASSERT_IS_NOT_NULL(result);
@@ -229,8 +229,8 @@ TEST_FUNCTION(bs_filename_append_suffix_with_last_dot_before_backslash_creates_a
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_BS_FILENAME_HELPER_42_006: [ If filename contains last . after last \ then bs_filename_append_suffix shall return the name of the file + suffix + . + extension. ]*/
-TEST_FUNCTION(bs_filename_append_suffix_with_dot_after_backslash_creates_a_new_string_and_succeeds)
+/*Tests_SRS_FILENAME_HELPER_42_006: [ If filename contains last . after last \ then filename_append_suffix shall return the name of the file + suffix + . + extension. ]*/
+TEST_FUNCTION(filename_append_suffix_with_dot_after_backslash_creates_a_new_string_and_succeeds)
 {
     ///arrange
     const char filename[] = FULL_FILENAME_DOT_AFTER_BACKSLASH;
@@ -239,7 +239,7 @@ TEST_FUNCTION(bs_filename_append_suffix_with_dot_after_backslash_creates_a_new_s
     STRICT_EXPECTED_CALL(vsprintf_char("%.*s%s%s", IGNORED_ARG));
 
     ///act
-    char* result = bs_filename_append_suffix(filename, suffix);
+    char* result = filename_append_suffix(filename, suffix);
 
     ///assert
     ASSERT_IS_NOT_NULL(result);
@@ -250,8 +250,8 @@ TEST_FUNCTION(bs_filename_append_suffix_with_dot_after_backslash_creates_a_new_s
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_BS_FILENAME_HELPER_42_006: [ If filename contains last . after last \ then bs_filename_append_suffix shall return the name of the file + suffix + . + extension. ]*/
-TEST_FUNCTION(bs_filename_append_suffix_creates_a_new_string_and_succeeds_5)
+/*Tests_SRS_FILENAME_HELPER_42_006: [ If filename contains last . after last \ then filename_append_suffix shall return the name of the file + suffix + . + extension. ]*/
+TEST_FUNCTION(filename_append_suffix_creates_a_new_string_and_succeeds_5)
 {
     ///arrange
     const char filename[] = FULL_FILENAME_DOT_AFTER_BACKSLASH_2;
@@ -260,7 +260,7 @@ TEST_FUNCTION(bs_filename_append_suffix_creates_a_new_string_and_succeeds_5)
     STRICT_EXPECTED_CALL(vsprintf_char("%.*s%s%s", IGNORED_ARG));
 
     ///act
-    char* result = bs_filename_append_suffix(filename, suffix);
+    char* result = filename_append_suffix(filename, suffix);
 
     ///assert
     ASSERT_IS_NOT_NULL(result);
@@ -271,8 +271,8 @@ TEST_FUNCTION(bs_filename_append_suffix_creates_a_new_string_and_succeeds_5)
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_BS_FILENAME_HELPER_42_007: [ If there are any failures then bs_filename_append_suffix shall return NULL. ]*/
-TEST_FUNCTION(bs_filename_append_suffix_fails_when_malloc_fails_1)
+/*Tests_SRS_FILENAME_HELPER_42_007: [ If there are any failures then filename_append_suffix shall return NULL. ]*/
+TEST_FUNCTION(filename_append_suffix_fails_when_malloc_fails_1)
 {
     ///arrange
     const char filename[] = FULL_FILENAME_DOT_AFTER_BACKSLASH;
@@ -282,15 +282,15 @@ TEST_FUNCTION(bs_filename_append_suffix_fails_when_malloc_fails_1)
         .SetReturn(NULL);
 
     ///act
-    char* result = bs_filename_append_suffix(filename, suffix);
+    char* result = filename_append_suffix(filename, suffix);
 
     ///assert
     ASSERT_IS_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_BS_FILENAME_HELPER_42_007: [ If there are any failures then bs_filename_append_suffix shall return NULL. ]*/
-TEST_FUNCTION(bs_filename_append_suffix_fails_when_malloc_fails_2)
+/*Tests_SRS_FILENAME_HELPER_42_007: [ If there are any failures then filename_append_suffix shall return NULL. ]*/
+TEST_FUNCTION(filename_append_suffix_fails_when_malloc_fails_2)
 {
     ///arrange
     const char filename[] = FILENAME_NO_DOT;
@@ -300,7 +300,7 @@ TEST_FUNCTION(bs_filename_append_suffix_fails_when_malloc_fails_2)
         .SetReturn(NULL);
 
     ///act
-    char* result = bs_filename_append_suffix(filename, suffix);
+    char* result = filename_append_suffix(filename, suffix);
 
     ///assert
     ASSERT_IS_NULL(result);

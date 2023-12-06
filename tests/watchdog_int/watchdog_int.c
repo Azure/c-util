@@ -21,8 +21,8 @@
 #include "c_util/rc_string.h"
 #include "c_pal/thandle.h"
 
-#include "c_util/bs_watchdog.h"
-#include "c_util/bs_watchdog_threadpool.h"
+#include "c_util/watchdog.h"
+#include "c_util/watchdog_threadpool.h"
 
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
@@ -75,12 +75,12 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 TEST_FUNCTION_INITIALIZE(method_init)
 {
     (void)interlocked_exchange(&g_watchdog.count, 0);
-    ASSERT_ARE_EQUAL(int, 0, bs_watchdog_threadpool_init());
+    ASSERT_ARE_EQUAL(int, 0, watchdog_threadpool_init());
 }
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
 {
-    bs_watchdog_threadpool_deinit();
+    watchdog_threadpool_deinit();
 }
 
 TEST_FUNCTION(when_something_completes_watchdog_does_not_fire)
@@ -93,9 +93,9 @@ TEST_FUNCTION(when_something_completes_watchdog_does_not_fire)
 
     LogInfo("Begin watchdog");
     THANDLE(RC_STRING) message = rc_string_create("test watchdog should never fire");
-    THANDLE(THREADPOOL) threadpool = bs_watchdog_threadpool_get();
+    THANDLE(THREADPOOL) threadpool = watchdog_threadpool_get();
     ASSERT_IS_NOT_NULL(threadpool);
-    BS_WATCHDOG_HANDLE watchdog = bs_watchdog_start(threadpool, 5000, message, test_watchdog_handler, &g_watchdog);
+    WATCHDOG_HANDLE watchdog = watchdog_start(threadpool, 5000, message, test_watchdog_handler, &g_watchdog);
 
     ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&work_thread, test_task_thread, &task_context));
 
@@ -105,7 +105,7 @@ TEST_FUNCTION(when_something_completes_watchdog_does_not_fire)
     wake_by_address_single(&task_context.can_complete);
 
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&task_context.done, 1, 10000));
-    bs_watchdog_stop(watchdog);
+    watchdog_stop(watchdog);
     LogInfo("Stopped watchdog");
 
     // assert
@@ -127,9 +127,9 @@ TEST_FUNCTION(when_something_completes_watchdog_does_not_fire_in_loop_with_reset
 
     LogInfo("Begin watchdog");
     THANDLE(RC_STRING) message = rc_string_create("test watchdog should never fire");
-    THANDLE(THREADPOOL) threadpool = bs_watchdog_threadpool_get();
+    THANDLE(THREADPOOL) threadpool = watchdog_threadpool_get();
     ASSERT_IS_NOT_NULL(threadpool);
-    BS_WATCHDOG_HANDLE watchdog = bs_watchdog_start(threadpool, 5000, message, test_watchdog_handler, &g_watchdog);
+    WATCHDOG_HANDLE watchdog = watchdog_start(threadpool, 5000, message, test_watchdog_handler, &g_watchdog);
 
     for (uint32_t i = 0; i < 4; ++i)
     {
@@ -141,11 +141,11 @@ TEST_FUNCTION(when_something_completes_watchdog_does_not_fire_in_loop_with_reset
         wake_by_address_single(&task_context.can_complete);
 
         ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&task_context.done, 1, 10000));
-        bs_watchdog_reset(watchdog);
+        watchdog_reset(watchdog);
         LogInfo("Reset watchdog");
     }
 
-    bs_watchdog_stop(watchdog);
+    watchdog_stop(watchdog);
     LogInfo("Stopped watchdog");
 
     // assert
@@ -167,9 +167,9 @@ TEST_FUNCTION(when_something_takes_too_long_watchdog_fires_exactly_once)
 
     LogInfo("Begin watchdog");
     THANDLE(RC_STRING) message = rc_string_create("test watchdog is expected");
-    THANDLE(THREADPOOL) threadpool = bs_watchdog_threadpool_get();
+    THANDLE(THREADPOOL) threadpool = watchdog_threadpool_get();
     ASSERT_IS_NOT_NULL(threadpool);
-    BS_WATCHDOG_HANDLE watchdog = bs_watchdog_start(threadpool, 100, message, test_watchdog_handler, &g_watchdog);
+    WATCHDOG_HANDLE watchdog = watchdog_start(threadpool, 100, message, test_watchdog_handler, &g_watchdog);
 
     ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&work_thread, test_task_thread, &task_context));
 
@@ -179,7 +179,7 @@ TEST_FUNCTION(when_something_takes_too_long_watchdog_fires_exactly_once)
     wake_by_address_single(&task_context.can_complete);
 
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&task_context.done, 1, 10000));
-    bs_watchdog_stop(watchdog);
+    watchdog_stop(watchdog);
     LogInfo("Stopped watchdog");
 
     // assert
@@ -201,13 +201,13 @@ TEST_FUNCTION(when_something_takes_too_long_watchdog_fires_exactly_once_after_re
 
     LogInfo("Begin watchdog");
     THANDLE(RC_STRING) message = rc_string_create("test watchdog is expected");
-    THANDLE(THREADPOOL) threadpool = bs_watchdog_threadpool_get();
+    THANDLE(THREADPOOL) threadpool = watchdog_threadpool_get();
     ASSERT_IS_NOT_NULL(threadpool);
 
-    BS_WATCHDOG_HANDLE watchdog = bs_watchdog_start(threadpool, 3000, message, test_watchdog_handler, &g_watchdog);
+    WATCHDOG_HANDLE watchdog = watchdog_start(threadpool, 3000, message, test_watchdog_handler, &g_watchdog);
 
     ThreadAPI_Sleep(50);
-    bs_watchdog_reset(watchdog);
+    watchdog_reset(watchdog);
 
     ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&work_thread, test_task_thread, &task_context));
 
@@ -217,7 +217,7 @@ TEST_FUNCTION(when_something_takes_too_long_watchdog_fires_exactly_once_after_re
     wake_by_address_single(&task_context.can_complete);
 
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&task_context.done, 1, 10000));
-    bs_watchdog_stop(watchdog);
+    watchdog_stop(watchdog);
     LogInfo("Stopped watchdog");
 
     // assert

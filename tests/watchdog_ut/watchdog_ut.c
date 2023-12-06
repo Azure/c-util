@@ -31,7 +31,7 @@
 #include "real_interlocked.h"
 #include "real_rc_string.h"
 
-#include "c_util/bs_watchdog.h"
+#include "c_util/watchdog.h"
 
 static void* test_callback_context = (void*)0x100A;
 
@@ -73,13 +73,13 @@ static void expect_start(uint32_t timeout, THANDLE(real_RC_STRING) message, THRE
         .CopyOutArgumentBuffer_timer_handle(&test_timer_instance, sizeof(test_timer_instance));
 }
 
-static BS_WATCHDOG_HANDLE do_start(THREADPOOL_WORK_FUNCTION* callback, void** context)
+static WATCHDOG_HANDLE do_start(THREADPOOL_WORK_FUNCTION* callback, void** context)
 {
     THANDLE(real_RC_STRING) temp_message = real_rc_string_create("message");
     ASSERT_IS_NOT_NULL(temp_message);
 
     expect_start(42, temp_message, callback, context);
-    BS_WATCHDOG_HANDLE result = bs_watchdog_start(test_threadpool, 42, temp_message, test_callback, test_callback_context);
+    WATCHDOG_HANDLE result = watchdog_start(test_threadpool, 42, temp_message, test_callback, test_callback_context);
     ASSERT_IS_NOT_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -134,18 +134,18 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 }
 
 //
-// bs_watchdog_start
+// watchdog_start
 //
 
-/*Tests_SRS_BS_WATCHDOG_42_029: [ If threadpool is NULL then bs_watchdog_start shall fail and return NULL. ]*/
-TEST_FUNCTION(bs_watchdog_start_NULL_threadpool_fails)
+/*Tests_SRS_WATCHDOG_42_029: [ If threadpool is NULL then watchdog_start shall fail and return NULL. ]*/
+TEST_FUNCTION(watchdog_start_NULL_threadpool_fails)
 {
     // arrange
     THANDLE(real_RC_STRING) temp_message = real_rc_string_create("message");
     ASSERT_IS_NOT_NULL(temp_message);
 
     // act
-    BS_WATCHDOG_HANDLE result = bs_watchdog_start(NULL, 42, temp_message, test_callback, test_callback_context);
+    WATCHDOG_HANDLE result = watchdog_start(NULL, 42, temp_message, test_callback, test_callback_context);
 
     // arrange
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -155,15 +155,15 @@ TEST_FUNCTION(bs_watchdog_start_NULL_threadpool_fails)
     THANDLE_ASSIGN(real_RC_STRING)(&temp_message, NULL);
 }
 
-/*Tests_SRS_BS_WATCHDOG_42_030: [ If callback is NULL then bs_watchdog_start shall fail and return NULL. ]*/
-TEST_FUNCTION(bs_watchdog_start_NULL_callback_fails)
+/*Tests_SRS_WATCHDOG_42_030: [ If callback is NULL then watchdog_start shall fail and return NULL. ]*/
+TEST_FUNCTION(watchdog_start_NULL_callback_fails)
 {
     // arrange
     THANDLE(real_RC_STRING) temp_message = real_rc_string_create("message");
     ASSERT_IS_NOT_NULL(temp_message);
 
     // act
-    BS_WATCHDOG_HANDLE result = bs_watchdog_start(test_threadpool, 42, temp_message, NULL, test_callback_context);
+    WATCHDOG_HANDLE result = watchdog_start(test_threadpool, 42, temp_message, NULL, test_callback_context);
 
     // arrange
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -173,12 +173,12 @@ TEST_FUNCTION(bs_watchdog_start_NULL_callback_fails)
     THANDLE_ASSIGN(real_RC_STRING)(&temp_message, NULL);
 }
 
-/*Tests_SRS_BS_WATCHDOG_42_016: [ bs_watchdog_start shall allocate memory for the BS_WATCHDOG_HANDLE. ]*/
-/*Tests_SRS_BS_WATCHDOG_42_028: [ bs_watchdog_start shall store the message. ]*/
-/*Tests_SRS_BS_WATCHDOG_42_017: [ bs_watchdog_start shall set the state of the watchdog to RUNNING. ]*/
-/*Tests_SRS_BS_WATCHDOG_42_018: [ bs_watchdog_start shall create a timer that expires after timeout_ms by calling threadpool_timer_start with bs_watchdog_expired_callback as the callback. ]*/
-/*Tests_SRS_BS_WATCHDOG_42_020: [ bs_watchdog_start shall succeed and return the allocated handle. ]*/
-TEST_FUNCTION(bs_watchdog_start_succeeds)
+/*Tests_SRS_WATCHDOG_42_016: [ watchdog_start shall allocate memory for the WATCHDOG_HANDLE. ]*/
+/*Tests_SRS_WATCHDOG_42_028: [ watchdog_start shall store the message. ]*/
+/*Tests_SRS_WATCHDOG_42_017: [ watchdog_start shall set the state of the watchdog to RUNNING. ]*/
+/*Tests_SRS_WATCHDOG_42_018: [ watchdog_start shall create a timer that expires after timeout_ms by calling threadpool_timer_start with watchdog_expired_callback as the callback. ]*/
+/*Tests_SRS_WATCHDOG_42_020: [ watchdog_start shall succeed and return the allocated handle. ]*/
+TEST_FUNCTION(watchdog_start_succeeds)
 {
     // arrange
     THANDLE(real_RC_STRING) temp_message = real_rc_string_create("message");
@@ -189,19 +189,19 @@ TEST_FUNCTION(bs_watchdog_start_succeeds)
     expect_start(42, temp_message, &callback, &context);
 
     // act
-    BS_WATCHDOG_HANDLE result = bs_watchdog_start(test_threadpool, 42, temp_message, test_callback, test_callback_context);
+    WATCHDOG_HANDLE result = watchdog_start(test_threadpool, 42, temp_message, test_callback, test_callback_context);
 
     // arrange
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NOT_NULL(result);
 
     // cleanup
-    bs_watchdog_stop(result);
+    watchdog_stop(result);
     THANDLE_ASSIGN(real_RC_STRING)(&temp_message, NULL);
 }
 
-/*Tests_SRS_BS_WATCHDOG_42_019: [ If there are any errors then bs_watchdog_start shall fail and return NULL. ]*/
-TEST_FUNCTION(bs_watchdog_start_fails_when_underlying_functions_fail)
+/*Tests_SRS_WATCHDOG_42_019: [ If there are any errors then watchdog_start shall fail and return NULL. ]*/
+TEST_FUNCTION(watchdog_start_fails_when_underlying_functions_fail)
 {
     // arrange
     THANDLE(real_RC_STRING) temp_message = real_rc_string_create("message");
@@ -223,7 +223,7 @@ TEST_FUNCTION(bs_watchdog_start_fails_when_underlying_functions_fail)
             umock_c_negative_tests_fail_call(i);
 
             // act
-            BS_WATCHDOG_HANDLE result = bs_watchdog_start(test_threadpool, 42, temp_message, test_callback, test_callback_context);
+            WATCHDOG_HANDLE result = watchdog_start(test_threadpool, 42, temp_message, test_callback, test_callback_context);
 
             // assert
             ASSERT_IS_NULL(result, "On failed call %zu", i);
@@ -235,16 +235,16 @@ TEST_FUNCTION(bs_watchdog_start_fails_when_underlying_functions_fail)
 }
 
 //
-// bs_watchdog_expired_callback
+// watchdog_expired_callback
 //
 
-/*Tests_SRS_BS_WATCHDOG_42_027: [ If context is NULL then bs_watchdog_expired_callback shall terminate the process. ]*/
-TEST_FUNCTION(bs_watchdog_expired_callback_with_NULL_context_terminates_process)
+/*Tests_SRS_WATCHDOG_42_027: [ If context is NULL then watchdog_expired_callback shall terminate the process. ]*/
+TEST_FUNCTION(watchdog_expired_callback_with_NULL_context_terminates_process)
 {
     // arrange
     THREADPOOL_WORK_FUNCTION callback;
     void* context;
-    BS_WATCHDOG_HANDLE result = do_start(&callback, &context);
+    WATCHDOG_HANDLE result = do_start(&callback, &context);
 
     STRICT_EXPECTED_CALL(ps_util_terminate_process());
 
@@ -255,16 +255,16 @@ TEST_FUNCTION(bs_watchdog_expired_callback_with_NULL_context_terminates_process)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    bs_watchdog_stop(result);
+    watchdog_stop(result);
 }
 
-/*Tests_SRS_BS_WATCHDOG_42_021: [ If the state of the watchdog is RUNNING then bs_watchdog_expired_callback shall call callback with the context and message from bs_watchdog_start. ]*/
-TEST_FUNCTION(bs_watchdog_expired_callback_works)
+/*Tests_SRS_WATCHDOG_42_021: [ If the state of the watchdog is RUNNING then watchdog_expired_callback shall call callback with the context and message from watchdog_start. ]*/
+TEST_FUNCTION(watchdog_expired_callback_works)
 {
     // arrange
     THREADPOOL_WORK_FUNCTION callback;
     void* context;
-    BS_WATCHDOG_HANDLE result = do_start(&callback, &context);
+    WATCHDOG_HANDLE result = do_start(&callback, &context);
 
     STRICT_EXPECTED_CALL(interlocked_add(IGNORED_ARG, 0));
     STRICT_EXPECTED_CALL(test_callback(test_callback_context, "message"));
@@ -276,35 +276,35 @@ TEST_FUNCTION(bs_watchdog_expired_callback_works)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    bs_watchdog_stop(result);
+    watchdog_stop(result);
 }
 
 //
-// bs_watchdog_reset
+// watchdog_reset
 //
 
-/*Tests_SRS_BS_WATCHDOG_42_031: [ If watchdog is NULL then bs_watchdog_reset shall return. ]*/
-TEST_FUNCTION(bs_watchdog_reset_with_NULL_watchdog_returns)
+/*Tests_SRS_WATCHDOG_42_031: [ If watchdog is NULL then watchdog_reset shall return. ]*/
+TEST_FUNCTION(watchdog_reset_with_NULL_watchdog_returns)
 {
     // arrange
 
     // act
-    bs_watchdog_reset(NULL);
+    watchdog_reset(NULL);
 
     // arrange
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_BS_WATCHDOG_42_032: [ bs_watchdog_reset shall set the state of the watchdog to STOP. ]*/
-/*Tests_SRS_BS_WATCHDOG_42_033: [ bs_watchdog_reset shall cancel the current timer by calling threadpool_timer_cancel. ]*/
-/*Tests_SRS_BS_WATCHDOG_42_034: [ bs_watchdog_reset shall set the state of the watchdog to RUNNING. ]*/
-/*Tests_SRS_BS_WATCHDOG_42_035: [ bs_watchdog_reset shall restart the timer by calling threadpool_timer_restart with the original timeout_ms from the call to start. ]*/
-TEST_FUNCTION(bs_watchdog_reset_cancels_and_restarts_the_timer)
+/*Tests_SRS_WATCHDOG_42_032: [ watchdog_reset shall set the state of the watchdog to STOP. ]*/
+/*Tests_SRS_WATCHDOG_42_033: [ watchdog_reset shall cancel the current timer by calling threadpool_timer_cancel. ]*/
+/*Tests_SRS_WATCHDOG_42_034: [ watchdog_reset shall set the state of the watchdog to RUNNING. ]*/
+/*Tests_SRS_WATCHDOG_42_035: [ watchdog_reset shall restart the timer by calling threadpool_timer_restart with the original timeout_ms from the call to start. ]*/
+TEST_FUNCTION(watchdog_reset_cancels_and_restarts_the_timer)
 {
     // arrange
     THREADPOOL_WORK_FUNCTION callback;
     void* context;
-    BS_WATCHDOG_HANDLE result = do_start(&callback, &context);
+    WATCHDOG_HANDLE result = do_start(&callback, &context);
 
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(threadpool_timer_cancel(test_timer_instance));
@@ -312,39 +312,39 @@ TEST_FUNCTION(bs_watchdog_reset_cancels_and_restarts_the_timer)
     STRICT_EXPECTED_CALL(threadpool_timer_restart(test_timer_instance, 42, 0));
 
     // act
-    bs_watchdog_reset(result);
+    watchdog_reset(result);
 
     // arrange
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    bs_watchdog_stop(result);
+    watchdog_stop(result);
 }
 
 //
-// bs_watchdog_stop
+// watchdog_stop
 //
 
-/*Tests_SRS_BS_WATCHDOG_42_022: [ If watchdog is NULL then bs_watchdog_stop shall return. ]*/
-TEST_FUNCTION(bs_watchdog_stop_with_NULL_watchdog_returns)
+/*Tests_SRS_WATCHDOG_42_022: [ If watchdog is NULL then watchdog_stop shall return. ]*/
+TEST_FUNCTION(watchdog_stop_with_NULL_watchdog_returns)
 {
     // arrange
 
     // act
-    bs_watchdog_stop(NULL);
+    watchdog_stop(NULL);
 
     // arrange
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_BS_WATCHDOG_42_024: [ bs_watchdog_stop shall stop and cleanup the timer by calling threadpool_timer_destroy. ]*/
-/*Tests_SRS_BS_WATCHDOG_42_025: [ bs_watchdog_stop shall free the watchdog. ]*/
-TEST_FUNCTION(bs_watchdog_stop_stops_the_timer)
+/*Tests_SRS_WATCHDOG_42_024: [ watchdog_stop shall stop and cleanup the timer by calling threadpool_timer_destroy. ]*/
+/*Tests_SRS_WATCHDOG_42_025: [ watchdog_stop shall free the watchdog. ]*/
+TEST_FUNCTION(watchdog_stop_stops_the_timer)
 {
     // arrange
     THREADPOOL_WORK_FUNCTION callback;
     void* context;
-    BS_WATCHDOG_HANDLE result = do_start(&callback, &context);
+    WATCHDOG_HANDLE result = do_start(&callback, &context);
 
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(threadpool_timer_destroy(test_timer_instance));
@@ -352,20 +352,20 @@ TEST_FUNCTION(bs_watchdog_stop_stops_the_timer)
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
-    bs_watchdog_stop(result);
+    watchdog_stop(result);
 
     // arrange
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_BS_WATCHDOG_42_024: [ bs_watchdog_stop shall stop and cleanup the timer by calling threadpool_timer_destroy. ]*/
-/*Tests_SRS_BS_WATCHDOG_42_025: [ bs_watchdog_stop shall free the watchdog. ]*/
-TEST_FUNCTION(bs_watchdog_stop_stops_the_timer_after_it_fired)
+/*Tests_SRS_WATCHDOG_42_024: [ watchdog_stop shall stop and cleanup the timer by calling threadpool_timer_destroy. ]*/
+/*Tests_SRS_WATCHDOG_42_025: [ watchdog_stop shall free the watchdog. ]*/
+TEST_FUNCTION(watchdog_stop_stops_the_timer_after_it_fired)
 {
     // arrange
     THREADPOOL_WORK_FUNCTION callback;
     void* context;
-    BS_WATCHDOG_HANDLE result = do_start(&callback, &context);
+    WATCHDOG_HANDLE result = do_start(&callback, &context);
 
     STRICT_EXPECTED_CALL(interlocked_add(IGNORED_ARG, 0));
     STRICT_EXPECTED_CALL(test_callback(test_callback_context, "message"));
@@ -377,7 +377,7 @@ TEST_FUNCTION(bs_watchdog_stop_stops_the_timer_after_it_fired)
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
-    bs_watchdog_stop(result);
+    watchdog_stop(result);
 
     // arrange
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -395,13 +395,13 @@ static void do_fire_timer(void* context)
     fire_timer_context->callback(fire_timer_context->context);
 }
 
-/*Tests_SRS_BS_WATCHDOG_42_023: [ bs_watchdog_stop shall set the state of the watchdog to STOP. ]*/
-/*Tests_SRS_BS_WATCHDOG_42_021: [ If the state of the watchdog is RUNNING then bs_watchdog_expired_callback shall call callback from bs_watchdog_init with the context from bs_watchdog_init. ]*/
-TEST_FUNCTION(bs_watchdog_stop_prevents_callback_from_calling_if_timer_fires_on_stop)
+/*Tests_SRS_WATCHDOG_42_023: [ watchdog_stop shall set the state of the watchdog to STOP. ]*/
+/*Tests_SRS_WATCHDOG_42_021: [ If the state of the watchdog is RUNNING then watchdog_expired_callback shall call callback from watchdog_init with the context from watchdog_init. ]*/
+TEST_FUNCTION(watchdog_stop_prevents_callback_from_calling_if_timer_fires_on_stop)
 {
     // arrange
     DO_FIRE_TIMER_CONTEXT fire_timer_context;
-    BS_WATCHDOG_HANDLE result = do_start(&fire_timer_context.callback, &fire_timer_context.context);
+    WATCHDOG_HANDLE result = do_start(&fire_timer_context.callback, &fire_timer_context.context);
 
     timer_stop_hook = do_fire_timer;
     timer_stop_hook_context = &fire_timer_context;
@@ -414,7 +414,7 @@ TEST_FUNCTION(bs_watchdog_stop_prevents_callback_from_calling_if_timer_fires_on_
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
-    bs_watchdog_stop(result);
+    watchdog_stop(result);
 
     // arrange
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());

@@ -1,9 +1,9 @@
-`bs_watchdog` requirements
+`watchdog` requirements
 ================
 
 ## Overview
 
-`bs_watchdog` is a module that can start a watchdog timer that will alert a callback when it expires if it has not been stopped by then.
+`watchdog` is a module that can start a watchdog timer that will alert a callback when it expires if it has not been stopped by then.
 
 This may be used to detect code that is stuck in a long-running operation.
 
@@ -16,81 +16,81 @@ Each time a watchdog timer instances is started, it has the following state:
 ## Exposed API
 
 ```c
-typedef void(*BS_WATCHDOG_EXPIRED_CALLBACK)(void* context, const char* message);
+typedef void(*WATCHDOG_EXPIRED_CALLBACK)(void* context, const char* message);
 
-typedef struct BS_WATCHDOG_TAG* BS_WATCHDOG_HANDLE;
+typedef struct WATCHDOG_TAG* WATCHDOG_HANDLE;
 
-MOCKABLE_FUNCTION(, BS_WATCHDOG_HANDLE, bs_watchdog_start, THANDLE(THREADPOOL), threadpool, uint32_t, timeout_ms, THANDLE(RC_STRING), message, BS_WATCHDOG_EXPIRED_CALLBACK, callback, void*, context);
-MOCKABLE_FUNCTION(, void, bs_watchdog_reset, BS_WATCHDOG_HANDLE, watchdog);
-MOCKABLE_FUNCTION(, void, bs_watchdog_stop, BS_WATCHDOG_HANDLE, watchdog);
+MOCKABLE_FUNCTION(, WATCHDOG_HANDLE, watchdog_start, THANDLE(THREADPOOL), threadpool, uint32_t, timeout_ms, THANDLE(RC_STRING), message, WATCHDOG_EXPIRED_CALLBACK, callback, void*, context);
+MOCKABLE_FUNCTION(, void, watchdog_reset, WATCHDOG_HANDLE, watchdog);
+MOCKABLE_FUNCTION(, void, watchdog_stop, WATCHDOG_HANDLE, watchdog);
 ```
 
-### bs_watchdog_start
+### watchdog_start
 
 ```c
-MOCKABLE_FUNCTION(, BS_WATCHDOG_HANDLE, bs_watchdog_start, THANDLE(THREADPOOL), threadpool, uint32_t, timeout_ms, THANDLE(RC_STRING), message, BS_WATCHDOG_EXPIRED_CALLBACK, callback, void*, context);
+MOCKABLE_FUNCTION(, WATCHDOG_HANDLE, watchdog_start, THANDLE(THREADPOOL), threadpool, uint32_t, timeout_ms, THANDLE(RC_STRING), message, WATCHDOG_EXPIRED_CALLBACK, callback, void*, context);
 ```
 
-`bs_watchdog_start` starts a watchdog timer in the `threadpool` with the specified `timeout_ms`. When the timer expires this will call the `callback` with `context` and `message`.
+`watchdog_start` starts a watchdog timer in the `threadpool` with the specified `timeout_ms`. When the timer expires this will call the `callback` with `context` and `message`.
 
-**SRS_BS_WATCHDOG_42_029: [** If `threadpool` is `NULL` then `bs_watchdog_start` shall fail and return `NULL`. **]**
+**SRS_WATCHDOG_42_029: [** If `threadpool` is `NULL` then `watchdog_start` shall fail and return `NULL`. **]**
 
-**SRS_BS_WATCHDOG_42_030: [** If `callback` is `NULL` then `bs_watchdog_start` shall fail and return `NULL`. **]**
+**SRS_WATCHDOG_42_030: [** If `callback` is `NULL` then `watchdog_start` shall fail and return `NULL`. **]**
 
-**SRS_BS_WATCHDOG_42_016: [** `bs_watchdog_start` shall allocate memory for the `BS_WATCHDOG_HANDLE`. **]**
+**SRS_WATCHDOG_42_016: [** `watchdog_start` shall allocate memory for the `WATCHDOG_HANDLE`. **]**
 
-**SRS_BS_WATCHDOG_42_028: [** `bs_watchdog_start` shall store the `message`. **]**
+**SRS_WATCHDOG_42_028: [** `watchdog_start` shall store the `message`. **]**
 
-**SRS_BS_WATCHDOG_42_017: [** `bs_watchdog_start` shall set the state of the watchdog to `RUNNING`. **]**
+**SRS_WATCHDOG_42_017: [** `watchdog_start` shall set the state of the watchdog to `RUNNING`. **]**
 
-**SRS_BS_WATCHDOG_42_018: [** `bs_watchdog_start` shall create a timer that expires after `timeout_ms` by calling `threadpool_timer_start` with `bs_watchdog_expired_callback` as the callback. **]**
+**SRS_WATCHDOG_42_018: [** `watchdog_start` shall create a timer that expires after `timeout_ms` by calling `threadpool_timer_start` with `watchdog_expired_callback` as the callback. **]**
 
-**SRS_BS_WATCHDOG_42_019: [** If there are any errors then `bs_watchdog_start` shall fail and return `NULL`. **]**
+**SRS_WATCHDOG_42_019: [** If there are any errors then `watchdog_start` shall fail and return `NULL`. **]**
 
-**SRS_BS_WATCHDOG_42_020: [** `bs_watchdog_start` shall succeed and return the allocated handle. **]**
+**SRS_WATCHDOG_42_020: [** `watchdog_start` shall succeed and return the allocated handle. **]**
 
-### bs_watchdog_expired_callback
+### watchdog_expired_callback
 
 ```c
-static void bs_watchdog_expired_callback(void* context)
+static void watchdog_expired_callback(void* context)
 ```
 
 Callback for the timer.
 
-**SRS_BS_WATCHDOG_42_027: [** If `context` is `NULL` then `bs_watchdog_expired_callback` shall terminate the process. **]**
+**SRS_WATCHDOG_42_027: [** If `context` is `NULL` then `watchdog_expired_callback` shall terminate the process. **]**
 
-**SRS_BS_WATCHDOG_42_021: [** If the state of the watchdog is `RUNNING` then `bs_watchdog_expired_callback` shall call `callback` with the `context` and `message` from `bs_watchdog_start`. **]**
+**SRS_WATCHDOG_42_021: [** If the state of the watchdog is `RUNNING` then `watchdog_expired_callback` shall call `callback` with the `context` and `message` from `watchdog_start`. **]**
 
-### bs_watchdog_reset
-
-```c
-MOCKABLE_FUNCTION(, void, bs_watchdog_reset, BS_WATCHDOG_HANDLE, watchdog);
-```
-
-`bs_watchdog_reset` restarts the current watchdog timer as if `bs_watchdog_stop` was called followed by `bs_watchdog_start` with the original parameters.
-
-**SRS_BS_WATCHDOG_42_031: [** If `watchdog` is `NULL` then `bs_watchdog_reset` shall return. **]**
-
-**SRS_BS_WATCHDOG_42_032: [** `bs_watchdog_reset` shall set the state of the watchdog to `STOP`. **]**
-
-**SRS_BS_WATCHDOG_42_033: [** `bs_watchdog_reset` shall cancel the current timer by calling `threadpool_timer_cancel`. **]**
-
-**SRS_BS_WATCHDOG_42_034: [** `bs_watchdog_reset` shall set the state of the watchdog to `RUNNING`. **]**
-
-**SRS_BS_WATCHDOG_42_035: [** `bs_watchdog_reset` shall restart the timer by calling `threadpool_timer_restart` with the original `timeout_ms` from the call to start. **]**
-
-### bs_watchdog_stop
+### watchdog_reset
 
 ```c
-MOCKABLE_FUNCTION(, void, bs_watchdog_stop, BS_WATCHDOG_INSTANCE_HANDLE, watchdog);
+MOCKABLE_FUNCTION(, void, watchdog_reset, WATCHDOG_HANDLE, watchdog);
 ```
 
-`bs_watchdog_stop` frees the resources from `bs_watchdog_start`. If the timer has not fired yet, then it will prevent the callback from being called.
+`watchdog_reset` restarts the current watchdog timer as if `watchdog_stop` was called followed by `watchdog_start` with the original parameters.
 
-**SRS_BS_WATCHDOG_42_022: [** If `watchdog` is `NULL` then `bs_watchdog_stop` shall return. **]**
+**SRS_WATCHDOG_42_031: [** If `watchdog` is `NULL` then `watchdog_reset` shall return. **]**
 
-**SRS_BS_WATCHDOG_42_023: [** `bs_watchdog_stop` shall set the state of the watchdog to `STOP`. **]**
+**SRS_WATCHDOG_42_032: [** `watchdog_reset` shall set the state of the watchdog to `STOP`. **]**
 
-**SRS_BS_WATCHDOG_42_024: [** `bs_watchdog_stop` shall stop and cleanup the timer by calling `threadpool_timer_destroy`. **]**
+**SRS_WATCHDOG_42_033: [** `watchdog_reset` shall cancel the current timer by calling `threadpool_timer_cancel`. **]**
 
-**SRS_BS_WATCHDOG_42_025: [** `bs_watchdog_stop` shall free the `watchdog`. **]**
+**SRS_WATCHDOG_42_034: [** `watchdog_reset` shall set the state of the watchdog to `RUNNING`. **]**
+
+**SRS_WATCHDOG_42_035: [** `watchdog_reset` shall restart the timer by calling `threadpool_timer_restart` with the original `timeout_ms` from the call to start. **]**
+
+### watchdog_stop
+
+```c
+MOCKABLE_FUNCTION(, void, watchdog_stop, WATCHDOG_INSTANCE_HANDLE, watchdog);
+```
+
+`watchdog_stop` frees the resources from `watchdog_start`. If the timer has not fired yet, then it will prevent the callback from being called.
+
+**SRS_WATCHDOG_42_022: [** If `watchdog` is `NULL` then `watchdog_stop` shall return. **]**
+
+**SRS_WATCHDOG_42_023: [** `watchdog_stop` shall set the state of the watchdog to `STOP`. **]**
+
+**SRS_WATCHDOG_42_024: [** `watchdog_stop` shall stop and cleanup the timer by calling `threadpool_timer_destroy`. **]**
+
+**SRS_WATCHDOG_42_025: [** `watchdog_stop` shall free the `watchdog`. **]**

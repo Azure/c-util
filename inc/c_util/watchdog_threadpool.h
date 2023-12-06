@@ -1,7 +1,7 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 
-#ifndef BS_WATCHDOG_THREADPOOL_H
-#define BS_WATCHDOG_THREADPOOL_H
+#ifndef WATCHDOG_THREADPOOL_H
+#define WATCHDOG_THREADPOOL_H
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -18,13 +18,13 @@
 extern "C" {
 #endif
 
-MOCKABLE_FUNCTION(, int, bs_watchdog_threadpool_init);
-MOCKABLE_FUNCTION(, void, bs_watchdog_threadpool_deinit);
+MOCKABLE_FUNCTION(, int, watchdog_threadpool_init);
+MOCKABLE_FUNCTION(, void, watchdog_threadpool_deinit);
 
-MOCKABLE_FUNCTION(, THANDLE(THREADPOOL), bs_watchdog_threadpool_get);
+MOCKABLE_FUNCTION(, THANDLE(THREADPOOL), watchdog_threadpool_get);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // BS_WATCHDOG_THREADPOOL_H
+#endif // WATCHDOG_THREADPOOL_H
