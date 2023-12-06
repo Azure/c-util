@@ -156,8 +156,6 @@ set(c_util_c_files
     ./src/constbuffer_array_batcher_nv.c
     ./src/doublylinkedlist.c
     ./src/external_command_helper.c
-    ./src/for_each_in_folder.c
-    ./src/for_each_in_sub_folder.c
     ./src/map.c
     ./src/memory_data.c
     ./src/object_lifetime_tracker.c
@@ -194,8 +192,6 @@ set(c_util_h_files
     ./inc/c_util/doublylinkedlist.h
     ./inc/c_util/external_command_helper.h
     ./inc/c_util/flags_to_string.h
-    ./inc/c_util/for_each_in_folder.h
-    ./inc/c_util/for_each_in_sub_folder.h
     ./inc/c_util/hash.h
     ./inc/c_util/map.h
     ./inc/c_util/memory_data.h
@@ -220,6 +216,8 @@ set(c_util_h_files
 if (WIN32)
     set(c_util_h_files
         ${c_util_h_files}
+        ./inc/c_util/for_each_in_folder.h
+        ./inc/c_util/for_each_in_sub_folder.h
         ./inc/c_util/thread_notifications_dispatcher.h
         ./inc/c_util/tcall_dispatcher_thread_notification_call.h
     )
@@ -228,6 +226,8 @@ endif()
 if (WIN32)
     set(c_util_c_files
         ${c_util_c_files}
+        ./src/for_each_in_folder.c
+        ./src/for_each_in_sub_folder.c
         ./src/thread_notifications_dispatcher.c
         ./src/tcall_dispatcher_thread_notification_call.c
     )
