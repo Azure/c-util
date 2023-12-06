@@ -60,6 +60,14 @@ char* sprintf_char_function(const char* format, ...)
 
 #define DEFAULT_SUFFIX "_suffix"
 
+// This ignore is due to gcc treating the STRICT_EXPECTED_CALL as a 
+// string function and complaining that it is 'accessing 24 bytes in a region of size 21'
+// This is not the case and cannot be fixed without making the test fail
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
+
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
