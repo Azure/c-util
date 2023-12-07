@@ -38,6 +38,34 @@ char* sprintf_char_function(const char* format, ...)
     return result;
 }
 
+static unsigned char va_list_to_string[] = "some va_list stringification";
+static char* umockvalue_stringify_va_list(const void* value)
+{
+    (void)value;
+    char* result = malloc(sizeof(va_list_to_string));
+    ASSERT_IS_NOT_NULL(result);
+    memcpy(result, va_list_to_string, sizeof(va_list_to_string));
+    return result;
+}
+
+static int umockvalue_are_equal_va_list(const void* left, const void* right)
+{
+    (void)memcmp(left, right, sizeof(va_list));
+    return 0;
+}
+
+static int umockvalue_copy_va_list(void* destination, const void* source)
+{
+    (void)memcpy(destination, source, sizeof(va_list));
+    return 0;
+}
+
+static void umockvalue_free_va_list(void* value)
+{
+    (void)value;
+}
+
+
 #define DOT "."
 #define EXTENSION "bsdl"
 
@@ -87,7 +115,8 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
     REGISTER_STRING_UTILS_GLOBAL_MOCK_HOOK();
 
-    REGISTER_UMOCK_ALIAS_TYPE(va_list, void*);
+    //linux says these days that sizeof(va_list) is 24, so REGISTER_UMOCK_ALIAS_TYPE(va_list, void*); would not work.
+    REGISTER_UMOCK_VALUE_TYPE(va_list, umockvalue_stringify_va_list, umockvalue_are_equal_va_list, umockvalue_copy_va_list, umockvalue_free_va_list);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
