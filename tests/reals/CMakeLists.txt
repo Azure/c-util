@@ -1,8 +1,10 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+
 set(c_util_reals_c_files
     real_async_op.c
+    real_filename_helper.c
     real_channel.c
     real_channel_internal.c
     real_constbuffer.c
@@ -26,6 +28,8 @@ set(c_util_reals_cpp_files
 set(c_util_reals_h_files
     real_async_op.h
     real_async_op_renames.h
+    real_filename_helper.h
+    real_filename_helper_renames.h
     real_channel_common_renames.h
     real_channel.h
     real_channel_renames.h

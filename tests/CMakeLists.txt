@@ -3,9 +3,11 @@
 
 add_subdirectory(reals)
 
+
 if(${run_unittests})
     build_test_folder(async_op_ut)
     build_test_folder(azure_base64_ut)
+    build_test_folder(filename_helper_ut)
     build_test_folder(buffer_ut)
     build_test_folder(channel_ut)
     build_test_folder(channel_internal_ut)
@@ -33,6 +35,10 @@ if(${run_unittests})
     build_test_folder(worker_thread_ut)
     build_test_folder(tqueue_ut)
     if(WIN32)
+        build_test_folder(watchdog_threadpool_ut)
+        build_test_folder(watchdog_ut)
+        build_test_folder(for_each_in_folder_ut)
+        build_test_folder(for_each_in_sub_folder_ut)
         # this test has a problem on Linux with the lack of srw_lock_ll reals
         # https://msazure.visualstudio.com/One/_backlogs/backlog/Azure%20Messaging%20Store/Backlog%20items/?workitem=25563889
         build_test_folder(tcall_dispatcher_ut)
@@ -52,6 +58,7 @@ if(${run_int_tests})
     build_test_folder(tqueue_int)
     build_test_folder(tcall_dispatcher_int)
     if(WIN32)
+        build_test_folder(watchdog_int)
         build_test_folder(thread_notifications_dispatcher_int)
     endif()
 endif()
