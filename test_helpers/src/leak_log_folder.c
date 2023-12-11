@@ -13,9 +13,8 @@
 #include "c_pal/gballoc_hl_redirect.h"
 
 #include "c_util_test_helpers/guid_as_string.h"
-#include "c_util_test_helpers/c_util_test_env_params.h"
 
-wchar_t* leak_log_folder_create(void)
+wchar_t* leak_log_folder_create(const char* leak_log_root_folder_name)
 {
     wchar_t* result = NULL;
 
@@ -26,8 +25,6 @@ wchar_t* leak_log_folder_create(void)
     }
     else
     {
-        const char* leak_log_folder_name = test_env_params_get_leak_log_folder();
-
         char computer_name[MAX_COMPUTERNAME_LENGTH + 1];
         DWORD buffer_size = sizeof(computer_name);
 
@@ -37,7 +34,7 @@ wchar_t* leak_log_folder_create(void)
         }
         else
         {
-            char* leak_log_folder_full_path = sprintf_char("\\\\%s\\%s\\%s", computer_name, leak_log_folder_name, guid);
+            char* leak_log_folder_full_path = sprintf_char("\\\\%s\\%s\\%s", computer_name, leak_log_root_folder_name, guid);
             if (leak_log_folder_full_path == NULL)
             {
                 LogError("sprintf_char failed");
