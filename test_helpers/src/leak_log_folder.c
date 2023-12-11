@@ -13,7 +13,7 @@
 #include "c_pal/gballoc_hl_redirect.h"
 
 #include "c_util_test_helpers/guid_as_string.h"
-#include "c_util_test_helpers/test_env_params.h"
+#include "c_util_test_helpers/c_util_test_env_params.h"
 
 wchar_t* leak_log_folder_create(void)
 {
