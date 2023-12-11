@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-wchar_t* leak_log_folder_create(void);
+wchar_t* leak_log_folder_create(const char* leak_log_root_folder_name);
 void leak_log_folder_destroy(wchar_t* leak_log_folder);
 
 #ifdef __cplusplus
