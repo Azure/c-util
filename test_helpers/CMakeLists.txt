@@ -15,14 +15,14 @@ set(c_util_test_helpers_c_files
 if(WIN32)
 set(c_util_test_helpers_h_files
     ${c_util_test_helpers_h_files}
-    inc/c_util_test_helpers/test_env_params.h
+    inc/c_util_test_helpers/c_util_test_env_params.h
     inc/c_util_test_helpers/leak_log_checker.h
     inc/c_util_test_helpers/leak_log_folder.h
 )
 
 set(c_util_test_helpers_c_files
     ${c_util_test_helpers_c_files}
-    src/test_env_params.c
+    src/c_util_test_env_params.c
     src/leak_log_checker.c
     src/leak_log_folder.c
 )

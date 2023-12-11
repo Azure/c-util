@@ -1,7 +1,7 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 
 #include <stdlib.h>
-#include "c_util_test_helpers/test_env_params.h"
+#include "c_util_test_helpers/c_util_test_env_params.h"
 
 #define DEFAULT_LEAK_LOG_FOLDER_NAME "g$\\blockstorage"
 
