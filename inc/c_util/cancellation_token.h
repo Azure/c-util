@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifndef CANCELLATION_TOKEN_SOURCE_H
-#define CANCELLATION_TOKEN_SOURCE_H
+#ifndef CANCELLATION_TOKEN_H
+#define CANCELLATION_TOKEN_H
 
 #include "macro_utils/macro_utils.h"
 #include "c_pal/thandle.h"
@@ -29,4 +29,4 @@ MOCKABLE_FUNCTION(, int, cancellation_token_cancel, THANDLE(CANCELLATION_TOKEN),
 }
 #endif /* __cplusplus */
 
-#endif /* CANCELLATION_TOKEN_SOURCE_H */
+#endif /* CANCELLATION_TOKEN_H */
