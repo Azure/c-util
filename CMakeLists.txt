@@ -147,6 +147,7 @@ set(c_util_c_files
     ./src/azure_base64.c
     ./src/filename_helper.c
     ./src/buffer.c
+    ./src/cancellation_token.c
     ./src/channel.c
     ./src/channel_internal.c
     ./src/constbuffer.c
@@ -164,6 +165,7 @@ set(c_util_c_files
     ./src/strings.c
     ./src/tarray.c
     ./src/tcall_dispatcher.c
+    ./src/tcall_dispatcher_cancellation_token_cancel_call.c
     ./src/tqueue.c
     ./src/uuid_string.c
     ./src/worker_thread.c
@@ -178,6 +180,7 @@ set(c_util_h_files
     ./inc/c_util/azure_base64.h
     ./inc/c_util/filename_helper.h
     ./inc/c_util/buffer_.h
+    ./inc/c_util/cancellation_token.h
     ./inc/c_util/channel.h
     ./inc/c_util/channel_common.h
     ./inc/c_util/constbuffer.h
@@ -202,6 +205,7 @@ set(c_util_h_files
     ./inc/c_util/tarray.h
     ./inc/c_util/tcall_dispatcher.h
     ./inc/c_util/tcall_dispatcher_ll.h
+    ./inc/c_util/tcall_dispatcher_cancellation_token_cancel_call.h
     ./inc/c_util/tqueue.h
     ./inc/c_util/tqueue_ll.h
     ./inc/c_util/thandle_tuple_array.h
