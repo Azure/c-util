@@ -21,7 +21,7 @@ typedef struct CANCELLATION_TOKEN_REGISTRATION_TAG CANCELLATION_TOKEN_REGISTRATI
 THANDLE_TYPE_DECLARE(CANCELLATION_TOKEN_REGISTRATION);
 
 MOCKABLE_FUNCTION(, THANDLE(CANCELLATION_TOKEN), cancellation_token_create, bool, canceled);
-MOCKABLE_FUNCTION(, int, cancellation_token_is_canceled, THANDLE(CANCELLATION_TOKEN), cancellation_token, bool*, canceled);
+MOCKABLE_FUNCTION(, bool, cancellation_token_is_canceled, THANDLE(CANCELLATION_TOKEN), cancellation_token);
 MOCKABLE_FUNCTION(, THANDLE(CANCELLATION_TOKEN_REGISTRATION), cancellation_token_register_notify, THANDLE(CANCELLATION_TOKEN), cancellation_token, TCALL_DISPATCHER_TARGET_FUNC_TYPE_NAME(CANCELLATION_TOKEN_CANCEL_CALL), on_cancel, void*, context);
 MOCKABLE_FUNCTION(, int, cancellation_token_cancel, THANDLE(CANCELLATION_TOKEN), cancellation_token);
 

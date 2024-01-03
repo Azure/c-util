@@ -20,9 +20,15 @@
 MU_DEFINE_ENUM(CANCELLATION_TOKEN_STATE, CANCELLATION_TOKEN_STATE_VALUES);
 MU_DEFINE_ENUM_STRINGS(CANCELLATION_TOKEN_STATE, CANCELLATION_TOKEN_STATE_VALUES);
 
-typedef struct CANCELLATION_TOKEN_TAG
+typedef union CANCELLATION_TOKEN_STATE_VALUE_TAG
 {
     volatile_atomic int32_t state;
+    volatile_atomic CANCELLATION_TOKEN_STATE state_enum;
+} CANCELLATION_TOKEN_STATE_VALUE;
+
+typedef struct CANCELLATION_TOKEN_TAG
+{
+    CANCELLATION_TOKEN_STATE_VALUE state;
     TCALL_DISPATCHER(CANCELLATION_TOKEN_CANCEL_CALL) cancel_notification_call_dispatcher;
 } CANCELLATION_TOKEN;
 
@@ -38,19 +44,25 @@ THANDLE_TYPE_DEFINE(CANCELLATION_TOKEN_REGISTRATION);
 
 static void cancellation_token_dispose(CANCELLATION_TOKEN* token)
 {
+    /*Codes_SRS_CANCELLATION_TOKEN_04_025: [ cancellation_token_dispose shall free the TCALL_DISPATCHER by assigning NULL to the dispatcher handle by calling TCALL_DISPATCHER_ASSIGN(CANCELLATION_TOKEN_CANCEL_CALL). ]*/
     TCALL_DISPATCHER_ASSIGN(CANCELLATION_TOKEN_CANCEL_CALL)(&token->cancel_notification_call_dispatcher, NULL);
 }
 
 static void cancellation_token_registration_dispose(CANCELLATION_TOKEN_REGISTRATION* registration)
 {
     CANCELLATION_TOKEN* token_ptr = THANDLE_GET_T(CANCELLATION_TOKEN)(registration->token);
+
+    /*Codes_SRS_CANCELLATION_TOKEN_04_023: [ cancellation_token_registration_dispose shall un-register the callback from TCALL_DISPATCHER by calling TCALL_DISPATCHER_UNREGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL). ]*/
     TCALL_DISPATCHER_UNREGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL)(token_ptr->cancel_notification_call_dispatcher, registration->cancel_notification_target_handle);
+
+    /*Codes_SRS_CANCELLATION_TOKEN_04_024: [ cancellation_token_registration_dispose shall free resources. ]*/
     THANDLE_ASSIGN(CANCELLATION_TOKEN)(&registration->token, NULL);
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CANCELLATION_TOKEN), cancellation_token_create, bool, canceled)
 {
     /*Codes_SRS_CANCELLATION_TOKEN_04_001: [ cancellation_token_create shall allocate memory for a THANDLE(CANCELLATION_TOKEN). ]*/
+    THANDLE(CANCELLATION_TOKEN) result = NULL;
     THANDLE(CANCELLATION_TOKEN) token = THANDLE_MALLOC(CANCELLATION_TOKEN)(cancellation_token_dispose);
     if (token == NULL)
     {
@@ -73,56 +85,53 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CANCELLATION_TOKEN), cancellation_token_cr
             if (canceled == false)
             {
                 /*Codes_SRS_CANCELLATION_TOKEN_04_004: [ cancellation_token_create shall set the initial state to be equal to canceled parameter. ]*/
-                (void)interlocked_exchange(&token_ptr->state, CANCELLATION_TOKEN_STATE_NOT_CANCELED);
+                (void)interlocked_exchange(&token_ptr->state.state, CANCELLATION_TOKEN_STATE_NOT_CANCELED);
             }
             else
             {
                 /*Codes_SRS_CANCELLATION_TOKEN_04_004: [ cancellation_token_create shall set the initial state to be equal to canceled parameter. ]*/
-                (void)interlocked_exchange(&token_ptr->state, CANCELLATION_TOKEN_STATE_CANCELED);
+                (void)interlocked_exchange(&token_ptr->state.state, CANCELLATION_TOKEN_STATE_CANCELED);
             }
 
             TCALL_DISPATCHER_INITIALIZE_MOVE(CANCELLATION_TOKEN_CANCEL_CALL)(&token_ptr->cancel_notification_call_dispatcher, &dispatcher);
+            THANDLE_INITIALIZE_MOVE(CANCELLATION_TOKEN)(&result, &token);
 
             /*Codes_SRS_CANCELLATION_TOKEN_04_005: [ cancellation_token_create shall return a valid THANDLE(CANCELLATION_TOKEN) when successful. ]*/
             goto all_ok;
         }
 
         /*Codes_SRS_CANCELLATION_TOKEN_04_002: [ If any underlying error occurs cancellation_token_create shall fail and return NULL. ]*/
-        THANDLE_ASSIGN(CANCELLATION_TOKEN)(&token, NULL);
+        THANDLE_FREE(CANCELLATION_TOKEN)((void *)token);
     }
 
 all_ok:
-    return token;
+    return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, cancellation_token_is_canceled, THANDLE(CANCELLATION_TOKEN), cancellation_token, bool*, canceled)
+IMPLEMENT_MOCKABLE_FUNCTION(, bool, cancellation_token_is_canceled, THANDLE(CANCELLATION_TOKEN), cancellation_token)
 {
-    int result;
+    bool result;
 
-    if (cancellation_token == NULL || canceled == NULL)
+    if (cancellation_token == NULL)
     {
-        /*Codes_SRS_CANCELLATION_TOKEN_04_006: [ cancellation_token_is_canceled shall return a non-zero value if cancellation_token is NULL. ]*/
-        /*Codes_SRS_CANCELLATION_TOKEN_04_007: [ cancellation_token_is_canceled shall return a non-zero value if canceled is NULL. ]*/
-        LogError("Invalid args: THANDLE(CANCELLATION_TOKEN) cancellation_token = %p, canceled = %p", cancellation_token, canceled);
-        result = MU_FAILURE;
+        /*Codes_SRS_CANCELLATION_TOKEN_04_006: [ cancellation_token_is_canceled shall return false if cancellation_token is NULL. ]*/
+        LogError("Invalid args: THANDLE(CANCELLATION_TOKEN) cancellation_token = %p", cancellation_token);
+        result = false;
     }
     else
     {
         CANCELLATION_TOKEN* token_ptr = THANDLE_GET_T(CANCELLATION_TOKEN)(cancellation_token);
-        CANCELLATION_TOKEN_STATE state = interlocked_add(&token_ptr->state, 0);
+        CANCELLATION_TOKEN_STATE state = interlocked_add(&token_ptr->state.state, 0);
 
-        /*Codes_SRS_CANCELLATION_TOKEN_04_008: [ cancellation_token_is_canceled shall assign true to *canceled if the token has been canceled and false otherwise. ]*/
+        /*Codes_SRS_CANCELLATION_TOKEN_04_008: [ cancellation_token_is_canceled shall return true if the token has been canceled and false otherwise. ]*/
         if (state == CANCELLATION_TOKEN_STATE_CANCELED)
         {
-            *canceled = true;
+            result = true;
         }
         else
         {
-            *canceled = false;
+            result = false;
         }
-
-        /*Codes_SRS_CANCELLATION_TOKEN_04_009: [ cancellation_token_is_canceled shall return 0 when successful. ]*/
-        result = 0;
     }
 
     return result;
@@ -142,12 +151,11 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CANCELLATION_TOKEN_REGISTRATION), cancella
     {
         CANCELLATION_TOKEN* token_ptr = THANDLE_GET_T(CANCELLATION_TOKEN)(cancellation_token);
 
-        /*Codes_SRS_CANCELLATION_TOKEN_04_013: [ cancellation_token_register_notify shall call TCALL_DISPATCHER_REGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL) to register on_cancel with the dispatcher. ]*/
-        TCALL_DISPATCHER_TARGET_HANDLE(CANCELLATION_TOKEN_CANCEL_CALL) cancel_notification_target_handle = TCALL_DISPATCHER_REGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL)(token_ptr->cancel_notification_call_dispatcher, on_cancel, context);
-        if (cancel_notification_target_handle == NULL)
+        /*Codes_SRS_CANCELLATION_TOKEN_04_022: [ If the cancellation token is already in canceled state, then cancellation_token_register_notify shall immediately call on_cancel and take no further action and return NULL. ]*/
+        CANCELLATION_TOKEN_STATE state = interlocked_add(&token_ptr->state.state, 0);
+        if (state == CANCELLATION_TOKEN_STATE_CANCELED)
         {
-            /*Codes_SRS_CANCELLATION_TOKEN_04_012: [ cancellation_token_register_notify shall fail and return NULL when any underlying call fails. ]*/
-            LogError("TCALL_DISPATCHER_REGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL)(token_ptr->cancel_notification_call_dispatcher, on_cancel, context) failed.");
+            on_cancel(context);
         }
         else
         {
@@ -160,17 +168,26 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CANCELLATION_TOKEN_REGISTRATION), cancella
             }
             else
             {
-                CANCELLATION_TOKEN_REGISTRATION* registration_ptr = THANDLE_GET_T(CANCELLATION_TOKEN_REGISTRATION)(registration);
-                registration_ptr->cancel_notification_target_handle = cancel_notification_target_handle;
-                THANDLE_INITIALIZE(CANCELLATION_TOKEN)(&registration_ptr->token, cancellation_token);
+                /*Codes_SRS_CANCELLATION_TOKEN_04_013: [ cancellation_token_register_notify shall call TCALL_DISPATCHER_REGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL) to register on_cancel with the dispatcher. ]*/
+                TCALL_DISPATCHER_TARGET_HANDLE(CANCELLATION_TOKEN_CANCEL_CALL) cancel_notification_target_handle = TCALL_DISPATCHER_REGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL)(token_ptr->cancel_notification_call_dispatcher, on_cancel, context);
+                if (cancel_notification_target_handle == NULL)
+                {
+                    /*Codes_SRS_CANCELLATION_TOKEN_04_012: [ cancellation_token_register_notify shall fail and return NULL when any underlying call fails. ]*/
+                    LogError("TCALL_DISPATCHER_REGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL)(token_ptr->cancel_notification_call_dispatcher = %p, on_cancel = %p, context = %p) failed.", token_ptr->cancel_notification_call_dispatcher, on_cancel, context);
+                }
+                else
+                {
+                    CANCELLATION_TOKEN_REGISTRATION* registration_ptr = THANDLE_GET_T(CANCELLATION_TOKEN_REGISTRATION)(registration);
+                    registration_ptr->cancel_notification_target_handle = cancel_notification_target_handle;
+                    THANDLE_INITIALIZE(CANCELLATION_TOKEN)(&registration_ptr->token, cancellation_token);
 
-                /*Codes_SRS_CANCELLATION_TOKEN_04_015: [ cancellation_token_register_notify shall initialize and return a valid THANDLE(CANCELLATION_TOKEN_REGISTRATION) when successful. ]*/
-                THANDLE_INITIALIZE_MOVE(CANCELLATION_TOKEN_REGISTRATION)(&result, &registration);
-                goto all_ok;
+                    /*Codes_SRS_CANCELLATION_TOKEN_04_015: [ cancellation_token_register_notify shall initialize and return a valid THANDLE(CANCELLATION_TOKEN_REGISTRATION) when successful. ]*/
+                    THANDLE_INITIALIZE_MOVE(CANCELLATION_TOKEN_REGISTRATION)(&result, &registration);
+                    goto all_ok;
+                }
+
+                THANDLE_FREE(CANCELLATION_TOKEN_REGISTRATION)((void*)registration);
             }
-
-            /*Codes_SRS_CANCELLATION_TOKEN_04_016: [ cancellation_token_register_notify shall call TCALL_DISPATCHER_UNREGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL) when an error occurs to undo the callback registration. ]*/
-            TCALL_DISPATCHER_UNREGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL)(token_ptr->cancel_notification_call_dispatcher, cancel_notification_target_handle);
         }
     }
 
@@ -193,14 +210,16 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, cancellation_token_cancel, THANDLE(CANCELLATI
         CANCELLATION_TOKEN* token_ptr = THANDLE_GET_T(CANCELLATION_TOKEN)(cancellation_token);
 
         /*Codes_SRS_CANCELLATION_TOKEN_04_019: [ cancellation_token_cancel shall set the state of the token to be "canceled". ]*/
-        if (interlocked_compare_exchange(&token_ptr->state, CANCELLATION_TOKEN_STATE_CANCELED, CANCELLATION_TOKEN_STATE_NOT_CANCELED) != CANCELLATION_TOKEN_STATE_NOT_CANCELED)
+        if (interlocked_compare_exchange(&token_ptr->state.state, CANCELLATION_TOKEN_STATE_CANCELED, CANCELLATION_TOKEN_STATE_NOT_CANCELED) != CANCELLATION_TOKEN_STATE_NOT_CANCELED)
         {
+            LogError("Cancellation token %p has been cancelled already.", cancellation_token);
+
             /*Codes_SRS_CANCELLATION_TOKEN_04_018: [ cancellation_token_cancel shall fail and return a non-zero value if the state of the token is already "canceled". ]*/
             result = MU_FAILURE;
         }
         else
         {
-            /*Codes_SRS_CANCELLATION_TOKEN_04_021: [ cancellation_token_cancel shall invoke all callbacks that have been registered on the token via cancellation_token_register_notify. ]*/
+            /*Codes_SRS_CANCELLATION_TOKEN_04_021: [ cancellation_token_cancel shall invoke all callbacks that have been registered on the token via cancellation_token_register_notify by calling TCALL_DISPATCHER_DISPATCH_CALL(CANCELLATION_TOKEN_CANCEL_CALL). ]*/
             TCALL_DISPATCHER_DISPATCH_CALL(CANCELLATION_TOKEN_CANCEL_CALL)(token_ptr->cancel_notification_call_dispatcher);
 
             /*Codes_SRS_CANCELLATION_TOKEN_04_020: [ cancellation_token_cancel shall return 0 when successful. ]*/

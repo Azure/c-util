@@ -135,9 +135,27 @@ TEST_FUNCTION(when_underlying_calls_fail_cancellation_token_create_fails)
     }
 }
 
+/*Tests_SRS_CANCELLATION_TOKEN_04_025: [ cancellation_token_dispose shall free the TCALL_DISPATCHER by assigning NULL to the dispatcher handle by calling TCALL_DISPATCHER_ASSIGN(CANCELLATION_TOKEN_CANCEL_CALL). ]*/
+TEST_FUNCTION(cancellation_token_dispose_frees_resources)
+{
+    // arrange
+    THANDLE(CANCELLATION_TOKEN) token = cancellation_token_create(false);
+    ASSERT_IS_NOT_NULL(token);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(interlocked_decrement(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TCALL_DISPATCHER_ASSIGN(CANCELLATION_TOKEN_CANCEL_CALL)(IGNORED_ARG, NULL));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+
+    // act
+    THANDLE_ASSIGN(CANCELLATION_TOKEN)(&token, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
 /*Tests_SRS_CANCELLATION_TOKEN_04_004: [ cancellation_token_create shall set the initial state to be equal to canceled parameter. ]*/
-/*Tests_SRS_CANCELLATION_TOKEN_04_008: [ cancellation_token_is_canceled shall assign true to *canceled if the token has been canceled and false otherwise. ]*/
-/*Tests_SRS_CANCELLATION_TOKEN_04_009: [ cancellation_token_is_canceled shall return 0 when successful. ]*/
+/*Tests_SRS_CANCELLATION_TOKEN_04_008: [ cancellation_token_is_canceled shall return true if the token has been canceled and false otherwise. ]*/
 TEST_FUNCTION(cancellation_token_create_not_cancelled)
 {
     // arrange
@@ -147,13 +165,10 @@ TEST_FUNCTION(cancellation_token_create_not_cancelled)
 
     STRICT_EXPECTED_CALL(interlocked_add(IGNORED_ARG, IGNORED_ARG));
 
-    bool canceled;
-
     // act
-    int result = cancellation_token_is_canceled(token, &canceled);
+    bool canceled = cancellation_token_is_canceled(token);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_IS_FALSE(canceled);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -162,8 +177,7 @@ TEST_FUNCTION(cancellation_token_create_not_cancelled)
 }
 
 /*Tests_SRS_CANCELLATION_TOKEN_04_004: [ cancellation_token_create shall set the initial state to be equal to canceled parameter. ]*/
-/*Tests_SRS_CANCELLATION_TOKEN_04_008: [ cancellation_token_is_canceled shall assign true to *canceled if the token has been canceled and false otherwise. ]*/
-/*Tests_SRS_CANCELLATION_TOKEN_04_009: [ cancellation_token_is_canceled shall return 0 when successful. ]*/
+/*Tests_SRS_CANCELLATION_TOKEN_04_008: [ cancellation_token_is_canceled shall return true if the token has been canceled and false otherwise. ]*/
 TEST_FUNCTION(cancellation_token_create_cancelled)
 {
     // arrange
@@ -173,13 +187,10 @@ TEST_FUNCTION(cancellation_token_create_cancelled)
 
     STRICT_EXPECTED_CALL(interlocked_add(IGNORED_ARG, IGNORED_ARG));
 
-    bool canceled;
-
     // act
-    int result = cancellation_token_is_canceled(token, &canceled);
+    bool canceled = cancellation_token_is_canceled(token);
 
     // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_IS_TRUE(canceled);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -187,39 +198,18 @@ TEST_FUNCTION(cancellation_token_create_cancelled)
     THANDLE_ASSIGN(CANCELLATION_TOKEN)(&token, NULL);
 }
 
-/*Tests_SRS_CANCELLATION_TOKEN_04_006: [ cancellation_token_is_canceled shall return a non-zero value if cancellation_token is NULL. ]*/
-TEST_FUNCTION(cancellation_token_is_canceled_fails_with_null_token)
+/*Tests_SRS_CANCELLATION_TOKEN_04_006: [ cancellation_token_is_canceled shall return false if cancellation_token is NULL. ]*/
+TEST_FUNCTION(cancellation_token_is_canceled_returns_false_with_null_token)
 {
     // arrange
-    bool canceled;
-
     // act
-    int result = cancellation_token_is_canceled(NULL, &canceled);
+    bool canceled = cancellation_token_is_canceled(NULL);
 
     // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_IS_FALSE(canceled);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // clean
-}
-
-/*Tests_SRS_CANCELLATION_TOKEN_04_007: [ cancellation_token_is_canceled shall return a non-zero value if canceled is NULL. ]*/
-TEST_FUNCTION(cancellation_token_is_canceled_fails_with_null_canceled_pointer)
-{
-    // arrange
-    THANDLE(CANCELLATION_TOKEN) token = cancellation_token_create(true);
-    ASSERT_IS_NOT_NULL(token);
-    umock_c_reset_all_calls();
-
-    // act
-    int result = cancellation_token_is_canceled(token, NULL);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // clean
-    THANDLE_ASSIGN(CANCELLATION_TOKEN)(&token, NULL);
 }
 
 /*Tests_SRS_CANCELLATION_TOKEN_04_013: [ cancellation_token_register_notify shall call TCALL_DISPATCHER_REGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL) to register on_cancel with the dispatcher. ]*/
@@ -233,9 +223,10 @@ TEST_FUNCTION(cancellation_token_register_notify_succeeds)
 
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(TCALL_DISPATCHER_REGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL)(IGNORED_ARG, on_cancel, (void*)0x42));
+    STRICT_EXPECTED_CALL(interlocked_add(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TCALL_DISPATCHER_REGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL)(IGNORED_ARG, on_cancel, (void*)0x42));
     STRICT_EXPECTED_CALL(interlocked_increment(IGNORED_ARG));
 
     // act
@@ -250,8 +241,57 @@ TEST_FUNCTION(cancellation_token_register_notify_succeeds)
     THANDLE_ASSIGN(CANCELLATION_TOKEN)(&token, NULL);
 }
 
+/*Tests_SRS_CANCELLATION_TOKEN_04_023: [ cancellation_token_registration_dispose shall un-register the callback from TCALL_DISPATCHER by calling TCALL_DISPATCHER_UNREGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL). ]*/
+/*Tests_SRS_CANCELLATION_TOKEN_04_024: [ cancellation_token_registration_dispose shall free resources. ]*/
+TEST_FUNCTION(cancellation_token_registration_dispose_frees_resources)
+{
+    // arrange
+    THANDLE(CANCELLATION_TOKEN) token = cancellation_token_create(false);
+    ASSERT_IS_NOT_NULL(token);
+    THANDLE(CANCELLATION_TOKEN_REGISTRATION) registration = cancellation_token_register_notify(token, on_cancel, (void*)0x42);
+    ASSERT_IS_NOT_NULL(registration);
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(interlocked_decrement(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TCALL_DISPATCHER_UNREGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL)(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_decrement(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+
+    // act
+    THANDLE_ASSIGN(CANCELLATION_TOKEN_REGISTRATION)(&registration, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // clean
+    THANDLE_ASSIGN(CANCELLATION_TOKEN)(&token, NULL);
+}
+
+/*Tests_SRS_CANCELLATION_TOKEN_04_022: [ If the cancellation token is already in canceled state, then cancellation_token_register_notify shall immediately call on_cancel and take no further action and return NULL. ]*/
+TEST_FUNCTION(cancellation_token_register_notify_calls_callback_on_canceled_token)
+{
+    // arrange
+    THANDLE(CANCELLATION_TOKEN) token = cancellation_token_create(true);
+    ASSERT_IS_NOT_NULL(token);
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(interlocked_add(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(on_cancel((void*)0x42));
+
+     // act
+    THANDLE(CANCELLATION_TOKEN_REGISTRATION) registration = cancellation_token_register_notify(token, on_cancel, (void*)0x42);
+
+    // assert
+    ASSERT_IS_NULL(registration);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // clean
+    THANDLE_ASSIGN(CANCELLATION_TOKEN)(&token, NULL);
+}
+
 /*Tests_SRS_CANCELLATION_TOKEN_04_012: [ cancellation_token_register_notify shall fail and return NULL when any underlying call fails. ]*/
-/*Tests_SRS_CANCELLATION_TOKEN_04_016: [ cancellation_token_register_notify shall call TCALL_DISPATCHER_UNREGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL) when an error occurs to undo the callback registration. ]*/
 TEST_FUNCTION(when_underlying_calls_fail_cancellation_token_register_notify_fails)
 {
     // arrange
@@ -259,10 +299,12 @@ TEST_FUNCTION(when_underlying_calls_fail_cancellation_token_register_notify_fail
     ASSERT_IS_NOT_NULL(token);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(TCALL_DISPATCHER_REGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL)(IGNORED_ARG, on_cancel, (void*)0x42));
+    STRICT_EXPECTED_CALL(interlocked_add(IGNORED_ARG, IGNORED_ARG))
+        .CallCannotFail();
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG))
         .CallCannotFail();
+    STRICT_EXPECTED_CALL(TCALL_DISPATCHER_REGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL)(IGNORED_ARG, on_cancel, (void*)0x42));
     STRICT_EXPECTED_CALL(interlocked_increment(IGNORED_ARG))
         .CallCannotFail();
 
@@ -322,7 +364,7 @@ TEST_FUNCTION(cancellation_token_register_notify_fails_with_null_callback)
 
 /*Tests_SRS_CANCELLATION_TOKEN_04_019: [ cancellation_token_cancel shall set the state of the token to be "canceled". ]*/
 /*Tests_SRS_CANCELLATION_TOKEN_04_020: [ cancellation_token_cancel shall return 0 when successful. ]*/
-/*Tests_SRS_CANCELLATION_TOKEN_04_021: [ cancellation_token_cancel shall invoke all callbacks that have been registered on the token via cancellation_token_register_notify. ]*/
+/*Tests_SRS_CANCELLATION_TOKEN_04_021: [ cancellation_token_cancel shall invoke all callbacks that have been registered on the token via cancellation_token_register_notify by calling TCALL_DISPATCHER_DISPATCH_CALL(CANCELLATION_TOKEN_CANCEL_CALL). ]*/
 TEST_FUNCTION(cancellation_token_cancel_calls_callback)
 {
     // arrange
@@ -344,10 +386,7 @@ TEST_FUNCTION(cancellation_token_cancel_calls_callback)
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    bool canceled;
-    ASSERT_ARE_EQUAL(int, 0, cancellation_token_is_canceled(token, &canceled));
-    ASSERT_IS_TRUE(canceled);
+    ASSERT_IS_TRUE(cancellation_token_is_canceled(token));
 
     // clean
     THANDLE_ASSIGN(CANCELLATION_TOKEN_REGISTRATION)(&registration, NULL);
@@ -356,7 +395,7 @@ TEST_FUNCTION(cancellation_token_cancel_calls_callback)
 
 /*Tests_SRS_CANCELLATION_TOKEN_04_019: [ cancellation_token_cancel shall set the state of the token to be "canceled". ]*/
 /*Tests_SRS_CANCELLATION_TOKEN_04_020: [ cancellation_token_cancel shall return 0 when successful. ]*/
-/*Tests_SRS_CANCELLATION_TOKEN_04_021: [ cancellation_token_cancel shall invoke all callbacks that have been registered on the token via cancellation_token_register_notify. ]*/
+/*Tests_SRS_CANCELLATION_TOKEN_04_021: [ cancellation_token_cancel shall invoke all callbacks that have been registered on the token via cancellation_token_register_notify by calling TCALL_DISPATCHER_DISPATCH_CALL(CANCELLATION_TOKEN_CANCEL_CALL). ]*/
 TEST_FUNCTION(cancellation_token_cancel_calls_multiple_callbacks)
 {
     // arrange
@@ -383,9 +422,7 @@ TEST_FUNCTION(cancellation_token_cancel_calls_multiple_callbacks)
     ASSERT_ARE_EQUAL(int, result, 0);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-    bool canceled;
-    ASSERT_ARE_EQUAL(int, 0, cancellation_token_is_canceled(token, &canceled));
-    ASSERT_IS_TRUE(canceled);
+    ASSERT_IS_TRUE(cancellation_token_is_canceled(token));
 
     // clean
     THANDLE_ASSIGN(CANCELLATION_TOKEN_REGISTRATION)(&registration1, NULL);
@@ -444,9 +481,6 @@ TEST_FUNCTION(cancellation_token_cancel_fails_on_cancelled_token)
     THANDLE(CANCELLATION_TOKEN) token = cancellation_token_create(true);
     ASSERT_IS_NOT_NULL(token);
 
-    THANDLE(CANCELLATION_TOKEN_REGISTRATION) registration = cancellation_token_register_notify(token, on_cancel, (void*)0x42);
-    ASSERT_IS_NOT_NULL(registration);
-
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
@@ -459,7 +493,6 @@ TEST_FUNCTION(cancellation_token_cancel_fails_on_cancelled_token)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // clean
-    THANDLE_ASSIGN(CANCELLATION_TOKEN_REGISTRATION)(&registration, NULL);
     THANDLE_ASSIGN(CANCELLATION_TOKEN)(&token, NULL);
 }
 
