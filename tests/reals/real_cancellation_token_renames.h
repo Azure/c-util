@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft. All rights reserved.
+
+typedef struct CANCELLATION_TOKEN_TAG real_CANCELLATION_TOKEN;
+typedef struct CANCELLATION_TOKEN_REGISTRATION_TAG real_CANCELLATION_TOKEN_REGISTRATION;
+
+#define CANCELLATION_TOKEN real_CANCELLATION_TOKEN
+#define CANCELLATION_TOKEN_REGISTRATION real_CANCELLATION_TOKEN_REGISTRATION
+#define CANCELLATION_TOKEN_STATE real_CANCELLATION_TOKEN_STATE
+
+#define cancellation_token_create real_cancellation_token_create
+#define cancellation_token_is_canceled real_cancellation_token_is_canceled
+#define cancellation_token_register_notify real_cancellation_token_register_notify
+#define cancellation_token_cancel real_cancellation_token_cancel

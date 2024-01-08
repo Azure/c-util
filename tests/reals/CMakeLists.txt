@@ -17,6 +17,7 @@ set(c_util_reals_c_files
     real_rc_string.c
     real_rc_string_array.c
     real_singlylinkedlist.c
+    real_cancellation_token.c
     real_tcall_dispatcher_cancellation_token_cancel_call.c
     real_uuid_string.c
 )
@@ -60,6 +61,8 @@ set(c_util_reals_h_files
     real_rc_string_array_renames.h
     real_singlylinkedlist.h
     real_singlylinkedlist_renames.h
+    real_cancellation_token.h
+    real_cancellation_token_renames.h
     real_tcall_dispatcher_cancellation_token_cancel_call.h
     real_tcall_dispatcher_cancellation_token_cancel_call_renames.h
     real_uuid_string.h
