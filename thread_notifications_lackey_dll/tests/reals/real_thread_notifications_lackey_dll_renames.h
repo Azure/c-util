@@ -1,0 +1,5 @@
+// Copyright (c) Microsoft. All rights reserved.
+
+#define thread_notifications_lackey_dll_init_callback real_thread_notifications_lackey_dll_init_callback
+#define thread_notifications_lackey_dll_deinit_callback real_thread_notifications_lackey_dll_deinit_callback
+#define DllMain real_DllMain

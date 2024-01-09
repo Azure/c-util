@@ -16,7 +16,7 @@ set(c_util_reals_c_files
     real_rc_ptr.c
     real_rc_string.c
     real_rc_string_array.c
-    real_singlylinkedlist.c   
+    real_singlylinkedlist.c
     real_uuid_string.c
 )
 
@@ -48,7 +48,7 @@ set(c_util_reals_h_files
     real_hash.h
     real_hash_renames.h
     real_memory_data.h
-    real_memory_data_renames.h 
+    real_memory_data_renames.h
     real_murmurhash2.h
     real_murmurhash2_renames.h
     real_rc_ptr.h
@@ -93,5 +93,5 @@ add_library(c_util_reals ${c_util_reals_c_files} ${c_util_reals_cpp_files} ${c_u
 target_include_directories(c_util_reals PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests/reals> ${MURMURHASH2_DIR} $<TARGET_PROPERTY:c_util,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(c_util_reals c_logging_v2 c_pal_reals)
 if (WIN32)
-    target_link_libraries(c_util_reals thread_notifications_lackey_dll)
+    target_link_libraries(c_util_reals thread_notifications_lackey_dll_reals)
 endif()

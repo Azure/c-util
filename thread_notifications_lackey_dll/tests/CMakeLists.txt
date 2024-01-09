@@ -1,5 +1,7 @@
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+add_subdirectory(reals)
+
 #unittests
 if(${run_unittests})
     build_test_folder(thread_notifications_lackey_dll_ut)
