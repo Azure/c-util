@@ -22,6 +22,7 @@
 #include "../reals/real_rc_string_array.h"
 #include "../reals/real_singlylinkedlist.h"
 #include "../reals/real_tcall_dispatcher_cancellation_token_cancel_call.h"
+#include "../reals/real_cancellation_token.h"
 #include "../reals/real_uuid_string.h"
 
 #include "c_util/async_op.h"
@@ -38,6 +39,7 @@
 #include "c_util/rc_string_array.h"
 #include "c_util/singlylinkedlist.h"
 #include "c_util/uuid_string.h"
+#include "c_util/cancellation_token.h"
 
 #if defined _MSC_VER
 #include "../reals/real_object_lifetime_tracker.h"
@@ -76,6 +78,7 @@ TEST_FUNCTION(check_all_c_util_reals)
     REGISTER_UUID_STRING_GLOBAL_MOCK_HOOK();
     REGISTER_HASH_GLOBAL_MOCK_HOOK();
     REGISTER_TCALL_DISPATCHER_CANCELLATION_TOKEN_CANCEL_CALL_GLOBAL_MOCK_HOOK();
+    REGISTER_CANCELLATION_TOKEN_GLOBAL_MOCK_HOOKS();
 
 #if defined _MSC_VER
     REGISTER_OBJECT_LIFETIME_TRACKER_GLOBAL_MOCK_HOOKS();
