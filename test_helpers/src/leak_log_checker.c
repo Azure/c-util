@@ -55,13 +55,13 @@ static int check_log_file(const char* folder, const WIN32_FIND_DATAA* findData, 
                 size_t total_file_size = 0;
 
                 size_t bytes_read = fread(text_buffer, 1, sizeof(text_buffer), log_file);
-                if (bytes_read < COUNT_CHARS(expected_vld_warning))
+                if (bytes_read < COUNT_CHARS(expected_no_leaks_vld_warning))
                 {
                     LogInfo("Most likely not a leak log, unexpected file: %s", full_filename);
                 }
                 else
                 {
-                    if (strncmp(text_buffer, expected_no_leaks_vld_warning, COUNT_CHARS(expected_no_leaks_vld_warning)) == 0)
+                    if (strncmp(text_buffer, expected_no_leaks_vld_warning, COUNT_CHARS(expected_no_leaks_vld_warning)) == 0) // CodeQL [SM01932] strncmp compares at most COUNT_CHARS(expected_no_leaks_vld_warning) characters and in the line above we test for having at least that
                     {
                         LogInfo("No leaks found in file: %s", full_filename);
                     }
@@ -69,24 +69,31 @@ static int check_log_file(const char* folder, const WIN32_FIND_DATAA* findData, 
                     {
                         LogInfo("Leaks found in file: %s", full_filename);
 
-                        if (strncmp(text_buffer, expected_vld_warning, COUNT_CHARS(expected_vld_warning)) != 0)
+                        if (bytes_read < COUNT_CHARS(expected_vld_warning))
                         {
-                            LogInfo("Most likely not a leak log, first line does not match for file: %s", full_filename);
-                            LogInfo("%*.*s", (int)bytes_read, (int)bytes_read, text_buffer);
+                            LogInfo("Most likely not a leak log, unexpected file: %s", full_filename);
                         }
                         else
                         {
-                            while (bytes_read > 0)
+                            if (strncmp(text_buffer, expected_vld_warning, COUNT_CHARS(expected_vld_warning)) != 0) // CodeQL [SM01932] strncmp compares at most COUNT_CHARS(expected_no_leaks_vld_warning) characters and in the line above we test for having at least that
                             {
+                                LogInfo("Most likely not a leak log, first line does not match for file: %s", full_filename);
                                 LogInfo("%*.*s", (int)bytes_read, (int)bytes_read, text_buffer);
-                                total_file_size += bytes_read;
+                            }
+                            else
+                            {
+                                while (bytes_read > 0)
+                                {
+                                    LogInfo("%*.*s", (int)bytes_read, (int)bytes_read, text_buffer);
+                                    total_file_size += bytes_read;
 
-                                // read next chunk
-                                bytes_read = fread(text_buffer, 1, sizeof(text_buffer), log_file);
-                            };
+                                    // read next chunk
+                                    bytes_read = fread(text_buffer, 1, sizeof(text_buffer), log_file);
+                                };
 
-                            // signal we got leaks
-                            *leaks_found_flag_ptr = true;
+                                // signal we got leaks
+                                *leaks_found_flag_ptr = true;
+                            }
                         }
                     }
                 }
