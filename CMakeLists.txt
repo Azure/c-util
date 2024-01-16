@@ -167,6 +167,7 @@ set(c_util_c_files
     ./src/tcall_dispatcher.c
     ./src/tcall_dispatcher_cancellation_token_cancel_call.c
     ./src/tqueue.c
+    ./src/two_dimensional_array.c
     ./src/uuid_string.c
     ./src/worker_thread.c
 )
