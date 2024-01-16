@@ -15,14 +15,15 @@
 #include "c_util/async_op.h"
 #include "c_util/rc_ptr.h"
 
-#include "c_util/channel.h"
+#include "c_util/channel_internal.h"
 
-#include "../inc/c_util/channel_internal.h"
+#include "c_util/channel.h"
 
 typedef struct CHANNEL_TAG
 {
     THANDLE(CHANNEL_INTERNAL) channel_internal;
-}CHANNEL;
+} CHANNEL;
+
 THANDLE_TYPE_DEFINE(CHANNEL);
 
 static void channel_dispose(CHANNEL* channel)
@@ -76,8 +77,6 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPO
 all_ok:
     return result;
 }
-
-
 
 IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull)
 {

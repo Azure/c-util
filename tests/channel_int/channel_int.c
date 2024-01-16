@@ -203,7 +203,6 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_IS_NOT_NULL(temp);
     THANDLE_INITIALIZE_MOVE(THREADPOOL)(&g.g_threadpool, &temp);
     ASSERT_IS_NOT_NULL(g.g_threadpool);
-    ASSERT_ARE_EQUAL(int, 0, threadpool_open(g.g_threadpool));
 
     THANDLE_INITIALIZE_MOVE(RC_PTR)(&g.g_data, &(THANDLE(RC_PTR)){ rc_ptr_create_with_move_pointer(test_data, test_free_channel_data) });
     THANDLE_INITIALIZE_MOVE(RC_PTR)(&g.g_data2, &(THANDLE(RC_PTR)){ rc_ptr_create_with_move_pointer(test_data2, test_free_channel_data2) });
@@ -220,10 +219,12 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
+    ASSERT_ARE_EQUAL(int, 0, threadpool_open(g.g_threadpool));
 }
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
 {
+    threadpool_close(g.g_threadpool);
 }
 
 
