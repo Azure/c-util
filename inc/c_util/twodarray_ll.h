@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifndef TWODARRAY_LL_H
-#define TWODARRAY_LL_H
+#ifndef TWO_D_ARRAY_LL_H
+#define TWO_D_ARRAY_LL_H
 
 #ifdef __cplusplus
 #include <cinttypes>
@@ -16,9 +16,9 @@
 #include "umock_c/umock_c_prod.h"
 
 /*TQUEUE is backed by a THANDLE build on the structure below*/
-#define TWODARRAY_STRUCT_TYPE_NAME_TAG(T) MU_C2(TWODARRAY_TYPEDEF_NAME(T), _TAG)
+#define TWO_D_ARRAY_STRUCT_TYPE_NAME_TAG(T) MU_C2(TWO_D_ARRAY_TYPEDEF_NAME(T), _TAG)
 
-#define TWODARRAY_TYPEDEF_NAME(T) MU_C2(TWODARRAY_STRUCT_, T)
+#define TWO_D_ARRAY_TYPEDEF_NAME(T) MU_C2(TWO_D_ARRAY_STRUCT_, T)
 
 
-#endif  /*TWODARRAY_LL_H*/
+#endif  /*TWO_D_ARRAY_LL_H*/
