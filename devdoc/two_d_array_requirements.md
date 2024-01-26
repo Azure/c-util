@@ -3,7 +3,7 @@
 
 ## Overview
 
-`TWO_D_ARRAY` is a module provides a 2D array with variable size of rows and columns. Each row has the same size to ensure easier access. The first dimension of array is resizable, it contains the pointer to the second dimension of array. The pointer is initialized to NULL and points to the allocated memory address when there's not enough space. When the memory stored in a row is not needed any more, the entire row shall be freed and set back to `NULL`.
+`TWO_D_ARRAY` is a module that provides a 2D array with variable size of rows and columns. Each row has the same size to ensure easier access. The first dimension of the array is resizable, it contains the pointer to the second dimension of array. The pointer is initialized to NULL and points to the allocated memory address when there's not enough space. When the memory stored in a row is not needed any more, the entire row is freed and set back to `NULL`.
 
 `TWO_D_ARRAY` is a kind of `THANDLE`, all of the `THANDLE`'s API apply to `TWO_D_ARRAY`. The following macros are provided with the same semantics as those of `THANDLE`'s:
 `TWO_D_ARRAY_INITIALIZE(T)`
@@ -113,7 +113,7 @@ void TWO_D_ARRAY_FREE(T)(TWO_D_ARRAY(T) two_d_array);
 
 If `two_d_array` is `NULL`, `TWO_D_ARRAY_FREE(T)` shall do nothing.
 
-`TWO_D_ARRAY_FREE(T)` shall free all rows with value (T*).
+`TWO_D_ARRAY_FREE(T)` shall free all rows that are non-`NULL`.
 
 `TWO_D_ARRAY_FREE(T)` shall free the memory associated with `TWO_D_ARRAY(T)`.
 
@@ -141,11 +141,11 @@ int TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_ind
 
 `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall allocate the memory for a new row.
 
-If `two_d_array` is `NULL`, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall fail return a non-zero value.
+If `two_d_array` is `NULL`, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall fail and return a non-zero value.
 
-If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall fail return a non-zero value.
+If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall fail and return a non-zero value.
 
-If the row specified by `row_index` already been allocated, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` fail and return a non-zero value.
+If the row specified by `row_index` has already been allocated, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall fail and return a non-zero value.
 
 Otherwise, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall allocate memory for the new row and return zero on success.
 
@@ -165,4 +165,4 @@ If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_GET(T)` shall f
 
 If the array stored in `row_index` is `NULL`, `TWO_D_ARRAY_GET(T)` shall fail and return `NULL`.
 
-Otherwise, `TWO_D_ARRAY_GET(T)` shall return the entire column stored in the correspding `row_index`.
+Otherwise, `TWO_D_ARRAY_GET(T)` shall return the entire column stored in the corresponding `row_index`.
