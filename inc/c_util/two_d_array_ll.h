@@ -106,7 +106,7 @@ TWO_D_ARRAY_LL(T) TWO_D_ARRAY_LL_CREATE(C)(uint64_t row_size, uint64_t col_size)
     /* Codes_SRS_TWO_D_ARRAY_07_002: [ If col_size equals to zero, TWO_D_ARRAY_CREATE(T) shall fail and return NULL. ]*/                                                                           \
        col_size == 0)                                                                                                                                                                              \
     {                                                                                                                                                                                              \
-        LogError("Invalid arguments: uint64_t row_size=%" PRIu64 ", col_size = % " PRIu64, row_size, col_size);                                                                                    \
+        LogError("Invalid arguments: uint64_t row_size=%" PRIu64 ", col_size = %" PRIu64, row_size, col_size);                                                                                    \
     }                                                                                                                                                                                              \
     else                                                                                                                                                                                           \
     {                                                                                                                                                                                              \
@@ -149,7 +149,7 @@ int TWO_D_ARRAY_LL_FREE_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint64_t row_index
         /* Codes_SRS_TWO_D_ARRAY_07_011: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_FREE_ROW(T) shall fail and return a non-zero value. ]*/      \
         if (row_index >= two_d_array->rows)                                                                                                                         \
         {                                                                                                                                                           \
-            LogError("Invalid arguments: uint64_t row_index=% " PRIu64 " out of bound, total_rows = %" PRIu64, row_index, two_d_array->rows);                       \
+            LogError("Invalid arguments: uint64_t row_index=%" PRIu64 " out of bound, total_rows = %" PRIu64, row_index, two_d_array->rows);                       \
             result = MU_FAILURE;                                                                                                                                    \
         }                                                                                                                                                           \
         else                                                                                                                                                        \
@@ -181,7 +181,7 @@ int TWO_D_ARRAY_LL_ALLOCATE_NEW_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint64_t r
         /* Codes_SRS_TWO_D_ARRAY_07_015: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) shall fail and return a non-zero value. ]*/                       \
         if (row_index >= two_d_array->rows)                                                                                                                                                  \
         {                                                                                                                                                                                    \
-            LogError("Invalid arguments: uint64_t row_index=% " PRIu64 " out of bound, total_rows = %" PRIu64, row_index, two_d_array->rows);                                                \
+            LogError("Invalid arguments: uint64_t row_index=%" PRIu64 " out of bound, total_rows = %" PRIu64, row_index, two_d_array->rows);                                                \
             result = MU_FAILURE;                                                                                                                                                             \
         }                                                                                                                                                                                    \
         else                                                                                                                                                                                 \
@@ -226,7 +226,7 @@ T* TWO_D_ARRAY_LL_GET(C)(TWO_D_ARRAY_LL(T) two_d_array, uint64_t row_index)     
         /* Codes_SRS_TWO_D_ARRAY_07_020: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_GET(T) shall fail return NULL. ]*/                  \
         if (row_index >= two_d_array->rows)                                                                                                                \
         {                                                                                                                                                  \
-            LogError("Invalid arguments: uint64_t row_index=% " PRIu64 " out of bound, total_rows = %" PRIu64, row_index, two_d_array->rows);              \
+            LogError("Invalid arguments: uint64_t row_index=%" PRIu64 " out of bound, total_rows = %" PRIu64, row_index, two_d_array->rows);              \
         }                                                                                                                                                  \
         else                                                                                                                                               \
         {                                                                                                                                                  \
