@@ -91,17 +91,17 @@ TWO_D_ARRAY(T) TWO_D_ARRAY_CREATE(T)(uint64_t row_size, uint64_t col_size);
 
 `TWO_D_ARRAY_CREATE(T)` shall create a new empty two dimensional array.
 
-If `row_size` equals to zero, `TWO_D_ARRAY_CREATE(T)` shall fail and return `NULL`.
+**SRS_TWO_D_ARRAY_07_001: [** If `row_size` equals to zero, `TWO_D_ARRAY_CREATE(T)` shall fail and return `NULL`. **]**
 
-If `col_size` equals to zero, `TWO_D_ARRAY_CREATE(T)` shall fail and return `NULL`.
+**SRS_TWO_D_ARRAY_07_002: [** If `col_size` equals to zero, `TWO_D_ARRAY_CREATE(T)` shall fail and return `NULL`. **]**
 
-`TWO_D_ARRAY_CREATE(T)` shall call `THANDLE_MALLOC_FLEX` with `TWO_D_ARRAY_FREE(T)` as dispose function, `nmemb` set to `row_size` and `size` set to `sizeof(T*)`.
+**SRS_TWO_D_ARRAY_07_003: [** `TWO_D_ARRAY_CREATE(T)` shall call `THANDLE_MALLOC_FLEX` with `TWO_D_ARRAY_FREE(T)` as dispose function, `nmemb` set to `row_size` and `size` set to `sizeof(T*)`. **]**
 
-`TWO_D_ARRAY_CREATE(T)` shall set all rows point to `NULL`.
+**SRS_TWO_D_ARRAY_07_004: [** `TWO_D_ARRAY_CREATE(T)` shall set all rows point to `NULL`. **]**
 
-If there are any errors then `TWO_D_ARRAY_CREATE(T)` shall fail and return `NULL`.
+**SRS_TWO_D_ARRAY_07_005: [** If there are any errors then `TWO_D_ARRAY_CREATE(T)` shall fail and return `NULL`. **]**
 
-`TWO_D_ARRAY_CREATE(T)` shall succeed and return a non-`NULL` value.
+**SRS_TWO_D_ARRAY_07_006: [** `TWO_D_ARRAY_CREATE(T)` shall succeed and return a non-`NULL` value. **]**
 
 ### TWO_D_ARRAY_FREE(T)
 
@@ -111,11 +111,11 @@ void TWO_D_ARRAY_FREE(T)(TWO_D_ARRAY(T) two_d_array);
 
 `TWO_D_ARRAY_FREE(T)` is called when there are no more references to the 2d array and the contents of it should be disposed of.
 
-If `two_d_array` is `NULL`, `TWO_D_ARRAY_FREE(T)` shall do nothing.
+**SRS_TWO_D_ARRAY_07_007: [** If `two_d_array` is `NULL`, `TWO_D_ARRAY_FREE(T)` shall do nothing. **]**
 
-`TWO_D_ARRAY_FREE(T)` shall free all rows that are non-`NULL`.
+**SRS_TWO_D_ARRAY_07_008: [** `TWO_D_ARRAY_FREE(T)` shall free all rows that are non-`NULL`. **]**
 
-`TWO_D_ARRAY_FREE(T)` shall free the memory associated with `TWO_D_ARRAY(T)`.
+**SRS_TWO_D_ARRAY_07_009: [** `TWO_D_ARRAY_FREE(T)` shall free the memory associated with `TWO_D_ARRAY(T)`. **]**
 
 ### TWO_D_ARRAY_FREE_ROW(T)
 
@@ -125,13 +125,13 @@ int TWO_D_ARRAY_FREE_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
 
 `TWO_D_ARRAY_FREE_ROW(T)` shall free the row specified by `row_index` and set it to `NULL`.
 
-If `two_d_array` is `NULL`, `TWO_D_ARRAY_FREE_ROW(T)` shall fail return a non-zero value.
+**SRS_TWO_D_ARRAY_07_010: [** If `two_d_array` is `NULL`, `TWO_D_ARRAY_FREE_ROW(T)` shall fail return a non-zero value. **]**
 
-If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_FREE_ROW(T)` shall fail and return a non-zero value.
+**SRS_TWO_D_ARRAY_07_011: [** If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_FREE_ROW(T)` shall fail and return a non-zero value. **]**
 
-`TWO_D_ARRAY_FREE_ROW(T)` shall free the memory associated with the row specified by `row_index` and set it to `NULL`.
+**SRS_TWO_D_ARRAY_07_012: [** `TWO_D_ARRAY_FREE_ROW(T)` shall free the memory associated with the row specified by `row_index` and set it to `NULL`. **]**
 
-`TWO_D_ARRAY_FREE_ROW(T)` shall return zero on success.
+**SRS_TWO_D_ARRAY_07_013: [** `TWO_D_ARRAY_FREE_ROW(T)` shall return zero on success. **]**
 
 ### TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)
 
@@ -141,15 +141,15 @@ int TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_ind
 
 `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall allocate the memory for a new row.
 
-If `two_d_array` is `NULL`, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall fail and return a non-zero value.
+**SRS_TWO_D_ARRAY_07_014: [** If `two_d_array` is `NULL`, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall fail and return a non-zero value. **]**
 
-If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall fail and return a non-zero value.
+**SRS_TWO_D_ARRAY_07_015: [** If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall fail and return a non-zero value. **]**
 
-If the row specified by `row_index` has already been allocated, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall fail and return a non-zero value.
+**SRS_TWO_D_ARRAY_07_016: [** If the row specified by `row_index` has already been allocated, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall fail and return a non-zero value. **]**
 
-Otherwise, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall allocate memory for the new row and return zero on success.
+**SRS_TWO_D_ARRAY_07_017: [** Otherwise, `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall allocate memory for the new row and return zero on success. **]**
 
-If there are any errors then `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall fail and return a non-zero value.
+**SRS_TWO_D_ARRAY_07_018: [** If there are any errors then `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall fail and return a non-zero value. **]**
 
 ### TWO_D_ARRAY_GET(T)
 
@@ -159,10 +159,10 @@ T* TWO_D_ARRAY_GET(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
 
 `TWO_D_ARRAY_GET(T)` shall return the entire column stored in `row_index`.
 
-If `two_d_array` is `NULL`, `TWO_D_ARRAY_GET(T)` shall fail return `NULL`.
+**SRS_TWO_D_ARRAY_07_019: [** If `two_d_array` is `NULL`, `TWO_D_ARRAY_GET(T)` shall fail return `NULL`. **]**
 
-If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_GET(T)` shall fail return `NULL`.
+**SRS_TWO_D_ARRAY_07_020: [** If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_GET(T)` shall fail return `NULL`. **]**
 
-If the array stored in `row_index` is `NULL`, `TWO_D_ARRAY_GET(T)` shall fail and return `NULL`.
+**SRS_TWO_D_ARRAY_07_021: [** If the array stored in `row_index` is `NULL`, `TWO_D_ARRAY_GET(T)` shall fail and return `NULL`. **]**
 
-Otherwise, `TWO_D_ARRAY_GET(T)` shall return the entire column stored in the corresponding `row_index`.
+**SRS_TWO_D_ARRAY_07_022: [** Otherwise, `TWO_D_ARRAY_GET(T)` shall return the entire column stored in the corresponding `row_index`. **]**
