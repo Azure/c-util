@@ -167,6 +167,7 @@ set(c_util_c_files
     ./src/tcall_dispatcher.c
     ./src/tcall_dispatcher_cancellation_token_cancel_call.c
     ./src/tqueue.c
+    ./src/tlog.c
     ./src/uuid_string.c
     ./src/worker_thread.c
 )
@@ -208,6 +209,8 @@ set(c_util_h_files
     ./inc/c_util/tcall_dispatcher_cancellation_token_cancel_call.h
     ./inc/c_util/tqueue.h
     ./inc/c_util/tqueue_ll.h
+    ./inc/c_util/tlog.h
+    ./inc/c_util/tlog_ll.h
     ./inc/c_util/thandle_tuple_array.h
     ./inc/c_util/uuid_string.h
     ./inc/c_util/worker_thread.h
