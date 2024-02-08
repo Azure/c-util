@@ -33,7 +33,7 @@ The macros expand to these useful somewhat more useful APIs:
 TWO_D_ARRAY(T) TWO_D_ARRAY_CREATE(T)(uint64_t row_size, uint64_t col_size);
 int TWO_D_ARRAY_FREE_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
 int TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
-T* TWO_D_ARRAY_GET(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
+T* TWO_D_ARRAY_GET_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
 void TWO_D_ARRAY_FREE(T)(TWO_D_ARRAY(T) two_d_array);
 
 ```
@@ -97,7 +97,7 @@ TWO_D_ARRAY(T) TWO_D_ARRAY_CREATE(T)(uint64_t row_size, uint64_t col_size);
 
 **SRS_TWO_D_ARRAY_07_003: [** `TWO_D_ARRAY_CREATE(T)` shall call `THANDLE_MALLOC_FLEX` with `TWO_D_ARRAY_FREE(T)` as dispose function, `nmemb` set to `row_size` and `size` set to `sizeof(T*)`. **]**
 
-**SRS_TWO_D_ARRAY_07_004: [** `TWO_D_ARRAY_CREATE(T)` shall set all rows point to `NULL`. **]**
+**SRS_TWO_D_ARRAY_07_004: [** `TWO_D_ARRAY_CREATE(T)` shall set all rows pointers to `NULL`. **]**
 
 **SRS_TWO_D_ARRAY_07_005: [** If there are any errors then `TWO_D_ARRAY_CREATE(T)` shall fail and return `NULL`. **]**
 
@@ -151,18 +151,18 @@ int TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_ind
 
 **SRS_TWO_D_ARRAY_07_018: [** If there are any errors then `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall fail and return a non-zero value. **]**
 
-### TWO_D_ARRAY_GET(T)
+### TWO_D_ARRAY_GET_ROW(T)
 
 ```c
-T* TWO_D_ARRAY_GET(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
+T* TWO_D_ARRAY_GET_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
 ```
 
-`TWO_D_ARRAY_GET(T)` shall return the entire column stored in `row_index`.
+`TWO_D_ARRAY_GET_ROW(T)` shall return the entire column stored in `row_index`.
 
-**SRS_TWO_D_ARRAY_07_019: [** If `two_d_array` is `NULL`, `TWO_D_ARRAY_GET(T)` shall fail return `NULL`. **]**
+**SRS_TWO_D_ARRAY_07_019: [** If `two_d_array` is `NULL`, `TWO_D_ARRAY_GET_ROW(T)` shall fail return `NULL`. **]**
 
-**SRS_TWO_D_ARRAY_07_020: [** If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_GET(T)` shall fail return `NULL`. **]**
+**SRS_TWO_D_ARRAY_07_020: [** If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_GET_ROW(T)` shall fail return `NULL`. **]**
 
-**SRS_TWO_D_ARRAY_07_021: [** If the array stored in `row_index` is `NULL`, `TWO_D_ARRAY_GET(T)` shall fail and return `NULL`. **]**
+**SRS_TWO_D_ARRAY_07_021: [** If the array stored in `row_index` is `NULL`, `TWO_D_ARRAY_GET_ROW(T)` shall fail and return `NULL`. **]**
 
-**SRS_TWO_D_ARRAY_07_022: [** Otherwise, `TWO_D_ARRAY_GET(T)` shall return the entire column stored in the corresponding `row_index`. **]**
+**SRS_TWO_D_ARRAY_07_022: [** Otherwise, `TWO_D_ARRAY_GET_ROW(T)` shall return the entire column stored in the corresponding `row_index`. **]**

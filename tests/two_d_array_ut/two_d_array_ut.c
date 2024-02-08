@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <stddef.h>
+#include <inttypes.h>
 
 #include "macro_utils/macro_utils.h"
 
@@ -30,6 +31,18 @@ THANDLE_TYPE_DEFINE(TWO_D_ARRAY_TYPEDEF_NAME(uint32_t));
 
 TWO_D_ARRAY_TYPE_DECLARE(uint32_t);
 TWO_D_ARRAY_TYPE_DEFINE(uint32_t);
+
+typedef struct B_TEST_TAG
+{
+    int b;
+}B_TEST;
+
+TWO_D_ARRAY_DEFINE_STRUCT_TYPE(B_TEST)
+THANDLE_TYPE_DECLARE(TWO_D_ARRAY_TYPEDEF_NAME(B_TEST));
+THANDLE_TYPE_DEFINE(TWO_D_ARRAY_TYPEDEF_NAME(B_TEST));
+
+TWO_D_ARRAY_TYPE_DECLARE(B_TEST);
+TWO_D_ARRAY_TYPE_DEFINE(B_TEST);
 
 typedef struct A_TEST_TAG
 {
@@ -87,9 +100,29 @@ TEST_FUNCTION_CLEANUP(cleans)
 /*TWO_D_ARRAY_CREATE(T)*/
 
 /* Tests_SRS_TWO_D_ARRAY_07_003: [ TWO_D_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX with TWO_D_ARRAY_FREE(T) as dispose function, nmemb set to row_size and size set to sizeof(T*). ]*/
-/* Tests_SRS_TWO_D_ARRAY_07_004: [ TWO_D_ARRAY_CREATE(T) shall set all rows point to NULL. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_004: [ TWO_D_ARRAY_CREATE(T) shall set all rows pointers to NULL. ]*/
 /* Tests_SRS_TWO_D_ARRAY_07_006: [ TWO_D_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_uint32_t_succeeds)
+TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_with_uint32_t_type_and_row_size_one_succeeds)
+{
+    //arrange
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, sizeof(uint32_t*)));
+
+    //act
+    TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(1, 5);
+
+    //assert
+    ASSERT_IS_NOT_NULL(tdarr);
+    ASSERT_IS_NULL(tdarr->row_arrays[0]);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+    TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
+}
+
+/* Tests_SRS_TWO_D_ARRAY_07_003: [ TWO_D_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX with TWO_D_ARRAY_FREE(T) as dispose function, nmemb set to row_size and size set to sizeof(T*). ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_004: [ TWO_D_ARRAY_CREATE(T) shall set all rows pointers to NULL. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_006: [ TWO_D_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_with_uint32_t_type_succeeds)
 {
     //arrange
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 5, sizeof(uint32_t*)));
@@ -99,7 +132,7 @@ TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_uint32_t_succeeds)
 
     //assert
     ASSERT_IS_NOT_NULL(tdarr);
-    for (unsigned int i = 0; i < 5; i++)
+    for (uint32_t i = 0; i < 5; i++)
     {
         ASSERT_IS_NULL(tdarr->row_arrays[i]);
     }
@@ -110,15 +143,15 @@ TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_uint32_t_succeeds)
 }
 
 /* Tests_SRS_TWO_D_ARRAY_07_003: [ TWO_D_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX with TWO_D_ARRAY_FREE(T) as dispose function, nmemb set to row_size and size set to sizeof(T*). ]*/
-/* Tests_SRS_TWO_D_ARRAY_07_004: [ TWO_D_ARRAY_CREATE(T) shall set all rows point to NULL. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_004: [ TWO_D_ARRAY_CREATE(T) shall set all rows pointers to NULL. ]*/
 /* Tests_SRS_TWO_D_ARRAY_07_006: [ TWO_D_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_uint32_t_with_bigger_size_succeeds)
+TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_with_uint32_t_type_and_bigger_row_size_succeeds)
 {
     //arrange
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 10000000, sizeof(uint32_t*)));
 
     //act
-    TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(10000000, 5000);
+    TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(10000000, 5);
 
     //assert
     ASSERT_IS_NOT_NULL(tdarr);
@@ -129,9 +162,9 @@ TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_uint32_t_with_bigger_size_succeeds)
 }
 
 /* Tests_SRS_TWO_D_ARRAY_07_003: [ TWO_D_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX with TWO_D_ARRAY_FREE(T) as dispose function, nmemb set to row_size and size set to sizeof(T*). ]*/
-/* Tests_SRS_TWO_D_ARRAY_07_004: [ TWO_D_ARRAY_CREATE(T) shall set all rows point to NULL. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_004: [ TWO_D_ARRAY_CREATE(T) shall set all rows pointers to NULL. ]*/
 /* Tests_SRS_TWO_D_ARRAY_07_006: [ TWO_D_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_THANDLE_succeeds)
+TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_with_THANDLE_type_succeeds)
 {
     //arrange
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 5, sizeof(THANDLE(A_TEST)*)));
@@ -141,7 +174,7 @@ TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_THANDLE_succeeds)
 
     //assert
     ASSERT_IS_NOT_NULL(tdarr);
-    for (unsigned int i = 0; i < 5; i++)
+    for (uint32_t i = 0; i < 5; i++)
     {
         ASSERT_IS_NULL(tdarr->row_arrays[i]);
     }
@@ -152,9 +185,32 @@ TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_THANDLE_succeeds)
 }
 
 /* Tests_SRS_TWO_D_ARRAY_07_003: [ TWO_D_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX with TWO_D_ARRAY_FREE(T) as dispose function, nmemb set to row_size and size set to sizeof(T*). ]*/
-/* Tests_SRS_TWO_D_ARRAY_07_004: [ TWO_D_ARRAY_CREATE(T) shall set all rows point to NULL. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_004: [ TWO_D_ARRAY_CREATE(T) shall set all rows pointers to NULL. ]*/
 /* Tests_SRS_TWO_D_ARRAY_07_006: [ TWO_D_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_THANDLE_with_bigger_size_succeeds)
+TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_with_struct_type_succeeds)
+{
+    //arrange
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 5, sizeof(B_TEST*)));
+
+    //act
+    TWO_D_ARRAY(B_TEST) tdarr = TWO_D_ARRAY_CREATE(B_TEST)(5, 5);
+
+    //assert
+    ASSERT_IS_NOT_NULL(tdarr);
+    for (uint32_t i = 0; i < 5; i++)
+    {
+        ASSERT_IS_NULL(tdarr->row_arrays[i]);
+    }
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+    TWO_D_ARRAY_ASSIGN(B_TEST)(&tdarr, NULL);
+}
+
+/* Tests_SRS_TWO_D_ARRAY_07_003: [ TWO_D_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX with TWO_D_ARRAY_FREE(T) as dispose function, nmemb set to row_size and size set to sizeof(T*). ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_004: [ TWO_D_ARRAY_CREATE(T) shall set all rows pointers to NULL. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_006: [ TWO_D_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_with_THANDLE_type_and_bigger_row_size_succeeds)
 {
     //arrange
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 10000000, sizeof(THANDLE(A_TEST)*)));
@@ -171,18 +227,27 @@ TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_THANDLE_with_bigger_size_succeeds)
 }
 
 /* Tests_SRS_TWO_D_ARRAY_07_005: [ If there are any errors then TWO_D_ARRAY_CREATE(T) shall fail and return NULL. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_CREATE_fails_when_underlying_calls_fails)
+TEST_FUNCTION(when_underlying_calls_fails_TWO_D_ARRAY_CREATE_also_fails)
 {
     //arrange
-    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 5, sizeof(uint32_t*)))
-        .SetReturn(NULL);
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 5, sizeof(uint32_t*)));
 
-    //act
-    TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
+    umock_c_negative_tests_snapshot();
 
-    //assert
-    ASSERT_IS_NULL(tdarr);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            //act
+            TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
+
+            //assert
+            ASSERT_IS_NULL(tdarr);
+        }
+    }
 
     //clean
 }
@@ -220,11 +285,12 @@ TEST_FUNCTION(TWO_D_ARRAY_CREATE_fails_when_col_size_is_zero)
 /* TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) */
 
 /* Tests_SRS_TWO_D_ARRAY_07_017: [ Otherwise, TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) shall allocate memory for the new row and return zero on success. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_with_uint32_t_succeeds)
+TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_with_uint32_t_type_succeeds)
 {
     //arrange
     int result;
     TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5000000);
+    ASSERT_IS_NOT_NULL(tdarr);
     umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(malloc_2(5000000, sizeof(uint32_t)));
 
@@ -232,7 +298,6 @@ TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_with_uint32_t_succeeds)
     result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
 
     //assert
-    ASSERT_IS_NOT_NULL(tdarr);
     ASSERT_ARE_EQUAL(int, result, 0);
     ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -242,19 +307,20 @@ TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_with_uint32_t_succeeds)
 }
 
 /* Tests_SRS_TWO_D_ARRAY_07_017: [ Otherwise, TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) shall allocate memory for the new row and return zero on success. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_uint32_t_all_rows_can_be_allocated)
+TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_with_uint32_t_type_all_rows_can_be_allocated_0)
 {
     //arrange
     int result;
     TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5000000);
+    ASSERT_IS_NOT_NULL(tdarr);
     umock_c_reset_all_calls();
-    for (unsigned int i = 0; i < 5; i++)
+    for (uint32_t i = 0; i < 5; i++)
     {
         STRICT_EXPECTED_CALL(malloc_2(5000000, sizeof(uint32_t)));
     }
 
     //act
-    for (unsigned int i = 0; i < 5; i++)
+    for (uint32_t i = 0; i < 5; i++)
     {
         result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, i);
         ASSERT_ARE_EQUAL(int, result, 0);
@@ -262,7 +328,6 @@ TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_uint32_t_all_rows_can_be_allocated)
     }
 
     //assert
-    ASSERT_IS_NOT_NULL(tdarr);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
@@ -270,11 +335,40 @@ TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_uint32_t_all_rows_can_be_allocated)
 }
 
 /* Tests_SRS_TWO_D_ARRAY_07_017: [ Otherwise, TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) shall allocate memory for the new row and return zero on success. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_of_THANDLE_succeeds)
+TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_with_uint32_t_type_all_rows_can_be_allocated_1)
+{
+    //arrange
+    int result;
+    TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(1000, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
+    umock_c_reset_all_calls();
+    for (uint32_t i = 0; i < 1000; i++)
+    {
+        STRICT_EXPECTED_CALL(malloc_2(5, sizeof(uint32_t)));
+    }
+
+    //act
+    for (uint32_t i = 0; i < 1000; i++)
+    {
+        result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, i);
+        ASSERT_ARE_EQUAL(int, result, 0);
+        ASSERT_IS_NOT_NULL(tdarr->row_arrays[i]);
+    }
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+    TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
+}
+
+/* Tests_SRS_TWO_D_ARRAY_07_017: [ Otherwise, TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) shall allocate memory for the new row and return zero on success. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_with_THANDLE_type_succeeds)
 {
     //arrange
     int result;
     TWO_D_ARRAY(THANDLE(A_TEST)) tdarr = TWO_D_ARRAY_CREATE(THANDLE(A_TEST))(5, 5000000);
+    ASSERT_IS_NOT_NULL(tdarr);
     umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(malloc_2(5000000, sizeof(THANDLE(A_TEST))));
 
@@ -282,7 +376,6 @@ TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_of_THANDLE_succeeds)
     result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(THANDLE(A_TEST))(tdarr, 0);
 
     //assert
-    ASSERT_IS_NOT_NULL(tdarr);
     ASSERT_ARE_EQUAL(int, result, 0);
     ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -296,6 +389,30 @@ TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_of_THANDLE_succeeds)
 
     //clean
     TWO_D_ARRAY_ASSIGN(THANDLE(A_TEST))(&tdarr, NULL);
+}
+
+/* Tests_SRS_TWO_D_ARRAY_07_017: [ Otherwise, TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) shall allocate memory for the new row and return zero on success. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_with_struct_type_succeeds)
+{
+    //arrange
+    int result;
+    TWO_D_ARRAY(B_TEST) tdarr = TWO_D_ARRAY_CREATE(B_TEST)(5, 5000000);
+    ASSERT_IS_NOT_NULL(tdarr);
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(malloc_2(5000000, sizeof(B_TEST)));
+
+    //act
+    result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(B_TEST)(tdarr, 0);
+
+    //assert
+    ASSERT_ARE_EQUAL(int, result, 0);
+    ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    /*able to assign*/
+    (tdarr->row_arrays[0][0]).b = 1;
+
+    //clean
+    TWO_D_ARRAY_ASSIGN(B_TEST)(&tdarr, NULL);
 }
 
 /* Tests_SRS_TWO_D_ARRAY_07_014: [ If two_d_array is NULL, TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) shall fail and return a non-zero value. ]*/
@@ -315,18 +432,18 @@ TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_fails_when_handle_is_null)
 }
 
 /* Tests_SRS_TWO_D_ARRAY_07_015: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) shall fail and return a non-zero value. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_fails_when_row_index_exceeds)
+TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_fails_when_row_index_too_high)
 {
     //arrange
     int result;
     TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
     umock_c_reset_all_calls();
 
     //act
     result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 5);
 
     //assert
-    ASSERT_IS_NOT_NULL(tdarr);
     ASSERT_ARE_NOT_EQUAL(int, result, 0);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -335,12 +452,15 @@ TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_fails_when_row_index_exceeds)
 }
 
 /* Tests_SRS_TWO_D_ARRAY_07_016: [ If the row specified by row_index has already been allocated, TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) shall fail and return a non-zero value. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_fails_when_that_row_has_already_been_added)
+TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_fails_when_that_row_has_already_been_allocated)
 {
     //arrange
     int result;
     TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
     int add_result_1 = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
+    ASSERT_ARE_EQUAL(int, add_result_1, 0);
+    ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
     umock_c_reset_all_calls();
 
     //act
@@ -348,9 +468,6 @@ TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_fails_when_that_row_has_already_been_
 
 
     //assert
-    ASSERT_IS_NOT_NULL(tdarr);
-    ASSERT_ARE_EQUAL(int, add_result_1, 0);
-    ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
     ASSERT_ARE_NOT_EQUAL(int, result, 0);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -364,6 +481,7 @@ TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_fails_when_malloc_fails)
     //arrange
     int result;
     TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
     umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(malloc_2(5, sizeof(uint32_t)))
         .SetReturn(NULL);
@@ -372,7 +490,6 @@ TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_fails_when_malloc_fails)
     result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
 
     //assert
-    ASSERT_IS_NOT_NULL(tdarr);
     ASSERT_ARE_NOT_EQUAL(int, result, 0);
     ASSERT_IS_NULL(tdarr->row_arrays[0]);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -423,12 +540,12 @@ TEST_FUNCTION(TWO_D_ARRAY_FREE_succeeds_with_rows_allocated)
 {
     //arrange
     TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(10000000, 5000);
-    int add_row_result_0 = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
-    int add_row_result_70 = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 70);
     ASSERT_IS_NOT_NULL(tdarr);
+    int add_row_result_0 = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
     ASSERT_ARE_EQUAL(int, add_row_result_0, 0);
-    ASSERT_ARE_EQUAL(int, add_row_result_70, 0);
     ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
+    int add_row_result_70 = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 70);
+    ASSERT_ARE_EQUAL(int, add_row_result_70, 0);
     ASSERT_IS_NOT_NULL(tdarr->row_arrays[70]);
     umock_c_reset_all_calls();
 
@@ -465,13 +582,13 @@ TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_fails_when_handle_is_null)
 }
 
 /* Tests_SRS_TWO_D_ARRAY_07_011: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_FREE_ROW(T) shall fail and return a non-zero value. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_fails_when_row_index_exceeds)
+TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_fails_when_row_index_too_high)
 {
     //arrange
     int result;
     TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
-    int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
     ASSERT_IS_NOT_NULL(tdarr);
+    int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
     ASSERT_ARE_EQUAL(int, add_row_result, 0);
     ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
     umock_c_reset_all_calls();
@@ -489,12 +606,14 @@ TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_fails_when_row_index_exceeds)
 
 /* Tests_SRS_TWO_D_ARRAY_07_012: [ TWO_D_ARRAY_FREE_ROW(T) shall free the memory associated with the row specified by row_index and set it to NULL. ]*/
 /* Tests_SRS_TWO_D_ARRAY_07_013: [ TWO_D_ARRAY_FREE_ROW(T) shall return zero on success. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_of_uint32_succeeds)
+TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_with_uint32_type_succeeds)
 {
     //arrange
     int result;
     TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
     int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
+    ASSERT_ARE_EQUAL(int, add_row_result, 0);
     ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
     umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
@@ -503,8 +622,6 @@ TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_of_uint32_succeeds)
     result = TWO_D_ARRAY_FREE_ROW(uint32_t)(tdarr, 0);
 
     //assert
-    ASSERT_IS_NOT_NULL(tdarr);
-    ASSERT_ARE_EQUAL(int, add_row_result, 0);
     ASSERT_ARE_EQUAL(int, result, 0);
     ASSERT_IS_NULL(tdarr->row_arrays[0]);
 
@@ -516,12 +633,14 @@ TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_of_uint32_succeeds)
 
 /* Tests_SRS_TWO_D_ARRAY_07_012: [ TWO_D_ARRAY_FREE_ROW(T) shall free the memory associated with the row specified by row_index and set it to NULL. ]*/
 /* Tests_SRS_TWO_D_ARRAY_07_013: [ TWO_D_ARRAY_FREE_ROW(T) shall return zero on success. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_of_THANDLE_succeeds)
+TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_with_THANDLE_type_succeeds)
 {
     //arrange
     int result;
     TWO_D_ARRAY(THANDLE(A_TEST)) tdarr = TWO_D_ARRAY_CREATE(THANDLE(A_TEST))(5, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
     int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(THANDLE(A_TEST))(tdarr, 0);
+    ASSERT_ARE_EQUAL(int, add_row_result, 0);
     ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
     umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
@@ -530,8 +649,6 @@ TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_of_THANDLE_succeeds)
     result = TWO_D_ARRAY_FREE_ROW(THANDLE(A_TEST))(tdarr, 0);
 
     //assert
-    ASSERT_IS_NOT_NULL(tdarr);
-    ASSERT_ARE_EQUAL(int, add_row_result, 0);
     ASSERT_ARE_EQUAL(int, result, 0);
     ASSERT_IS_NULL(tdarr->row_arrays[0]);
 
@@ -541,16 +658,43 @@ TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_of_THANDLE_succeeds)
     TWO_D_ARRAY_ASSIGN(THANDLE(A_TEST))(&tdarr, NULL);
 }
 
-/* TWO_D_ARRAY_GET(T) */
+/* Tests_SRS_TWO_D_ARRAY_07_012: [ TWO_D_ARRAY_FREE_ROW(T) shall free the memory associated with the row specified by row_index and set it to NULL. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_013: [ TWO_D_ARRAY_FREE_ROW(T) shall return zero on success. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_with_struct_type_succeeds)
+{
+    //arrange
+    int result;
+    TWO_D_ARRAY(B_TEST) tdarr = TWO_D_ARRAY_CREATE(B_TEST)(5, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
+    int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(B_TEST)(tdarr, 0);
+    ASSERT_ARE_EQUAL(int, add_row_result, 0);
+    ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
-/* Tests_SRS_TWO_D_ARRAY_07_019: [ If two_d_array is NULL, TWO_D_ARRAY_GET(T) shall fail return NULL. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_GET_fails_when_handle_is_null)
+    //act
+    result = TWO_D_ARRAY_FREE_ROW(B_TEST)(tdarr, 0);
+
+    //assert
+    ASSERT_ARE_EQUAL(int, result, 0);
+    ASSERT_IS_NULL(tdarr->row_arrays[0]);
+
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+    TWO_D_ARRAY_ASSIGN(B_TEST)(&tdarr, NULL);
+}
+
+/* TWO_D_ARRAY_GET_ROW(T) */
+
+/* Tests_SRS_TWO_D_ARRAY_07_019: [ If two_d_array is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail return NULL. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_handle_is_null)
 {
     //arrange
     uint32_t* row;
 
     //act
-    row = TWO_D_ARRAY_GET(uint32_t)(NULL, 0);
+    row = TWO_D_ARRAY_GET_ROW(uint32_t)(NULL, 0);
 
     //assert
     ASSERT_IS_NULL(row);
@@ -559,20 +703,20 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_fails_when_handle_is_null)
     //clean
 }
 
-/* Tests_SRS_TWO_D_ARRAY_07_020: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_GET(T) shall fail return NULL. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_GET_fails_when_row_index_exceeds)
+/* Tests_SRS_TWO_D_ARRAY_07_020: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_GET_ROW(T) shall fail return NULL. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_row_index_too_high)
 {
     //arrange
     uint32_t* row_result;
     TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
-    int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
     ASSERT_IS_NOT_NULL(tdarr);
+    int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
     ASSERT_ARE_EQUAL(int, add_row_result, 0);
     ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
     umock_c_reset_all_calls();
 
     //act
-    row_result = TWO_D_ARRAY_GET(uint32_t)(tdarr, 5);
+    row_result = TWO_D_ARRAY_GET_ROW(uint32_t)(tdarr, 5);
 
     //assert
     ASSERT_IS_NULL(row_result);
@@ -582,20 +726,20 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_fails_when_row_index_exceeds)
     TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
 }
 
-/* Tests_SRS_TWO_D_ARRAY_07_021: [ If the array stored in row_index is NULL, TWO_D_ARRAY_GET(T) shall fail and return NULL. ]*/
-TEST_FUNCTION(TWO_D_ARRAY_GET_fails_when_row_not_initialized_yet)
+/* Tests_SRS_TWO_D_ARRAY_07_021: [ If the array stored in row_index is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail and return NULL. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_row_not_initialized_yet)
 {
     //arrange
     uint32_t* row_result;
     TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
-    int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
     ASSERT_IS_NOT_NULL(tdarr);
+    int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
     ASSERT_ARE_EQUAL(int, add_row_result, 0);
     ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
     umock_c_reset_all_calls();
 
     //act
-    row_result = TWO_D_ARRAY_GET(uint32_t)(tdarr, 1);
+    row_result = TWO_D_ARRAY_GET_ROW(uint32_t)(tdarr, 1);
 
     //assert
     ASSERT_IS_NULL(row_result);
@@ -606,29 +750,28 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_fails_when_row_not_initialized_yet)
 
 }
 
-/* Tests_SRS_TWO_D_ARRAY_07_022: [ Otherwise, TWO_D_ARRAY_GET(T) shall return the entire column stored in the corresponding row_index. ]*/
-TEST_FUNCTION(get_all_rows_succeeds_with_uint32)
+/* Tests_SRS_TWO_D_ARRAY_07_022: [ Otherwise, TWO_D_ARRAY_GET_ROW(T) shall return the entire column stored in the corresponding row_index. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_get_all_rows_succeeds_with_uint32_t_type)
 {
     //arrange
     uint32_t* row_result;
     TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
-    int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
-
     ASSERT_IS_NOT_NULL(tdarr);
+    int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
     ASSERT_ARE_EQUAL(int, add_row_result, 0);
     ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
-    for (unsigned int i = 0; i < 5; i++)
+    for (uint32_t i = 0; i < 5; i++)
     {
         tdarr->row_arrays[0][i] = i;
     }
     umock_c_reset_all_calls();
 
     //act
-    row_result = TWO_D_ARRAY_GET(uint32_t)(tdarr, 0);
+    row_result = TWO_D_ARRAY_GET_ROW(uint32_t)(tdarr, 0);
 
     //assert
     ASSERT_IS_NOT_NULL(row_result);
-    for (unsigned int i = 0; i < 5; i++)
+    for (uint32_t i = 0; i < 5; i++)
     {
         ASSERT_ARE_EQUAL(uint32_t, row_result[i], i);
     }
@@ -636,7 +779,6 @@ TEST_FUNCTION(get_all_rows_succeeds_with_uint32)
 
     //clean
     TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
-
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
