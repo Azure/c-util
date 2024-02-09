@@ -45,7 +45,7 @@
     TWO_D_ARRAY_CREATE_DECLARE(T)                                                                                     \
     TWO_D_ARRAY_FREE_ROW_DECLARE(T)                                                                                   \
     TWO_D_ARRAY_ALLOCATE_NEW_ROW_DECLARE(T)                                                                           \
-    TWO_D_ARRAY_GET_ROW_DECLARE(T)                                                                                        \
+    TWO_D_ARRAY_GET_ROW_DECLARE(T)                                                                                    \
 
 #define TWO_D_ARRAY_TYPE_DEFINE(T)                                                                                    \
     /*hint: have THANDLE_TYPE_DEFINE(TWO_D_ARRAY_TYPEDEF_NAME(T)) before TWO_D_ARRAY_TYPE_DEFINE                   */ \
@@ -53,6 +53,6 @@
     TWO_D_ARRAY_CREATE_DEFINE(T)                                                                                      \
     TWO_D_ARRAY_FREE_ROW_DEFINE(T)                                                                                    \
     TWO_D_ARRAY_ALLOCATE_NEW_ROW_DEFINE(T)                                                                            \
-    TWO_D_ARRAY_GET_ROW_DEFINE(T)                                                                                         \
+    TWO_D_ARRAY_GET_ROW_DEFINE(T)                                                                                     \
 
 #endif /*TWO_D_ARRAY_H*/

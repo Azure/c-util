@@ -30,10 +30,10 @@ The macros expand to these useful somewhat more useful APIs:
 
 ```c
 
-TWO_D_ARRAY(T) TWO_D_ARRAY_CREATE(T)(uint64_t row_size, uint64_t col_size);
-int TWO_D_ARRAY_FREE_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
-int TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
-T* TWO_D_ARRAY_GET_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
+TWO_D_ARRAY(T) TWO_D_ARRAY_CREATE(T)(uint32_t row_size, uint32_t col_size);
+int TWO_D_ARRAY_FREE_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
+int TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
+T* TWO_D_ARRAY_GET_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
 void TWO_D_ARRAY_FREE(T)(TWO_D_ARRAY(T) two_d_array);
 
 ```
@@ -48,8 +48,8 @@ void TWO_D_ARRAY_FREE(T)(TWO_D_ARRAY(T) two_d_array);
 ```c
 typedef struct TWO_D_ARRAY_STRUCT_T_TAG
 {
-    uint64_t rows;
-    uint64_t cols;
+    uint32_t rows;
+    uint32_t cols;
     T * row_arrays[];
 }TWO_D_ARRAY_STRUCT_T;
 ```
@@ -86,7 +86,7 @@ TWO_D_ARRAY_TYPE_DEFINE(int32_t);
 ### TWO_D_ARRAY_CREATE(T)
 
 ```c
-TWO_D_ARRAY(T) TWO_D_ARRAY_CREATE(T)(uint64_t row_size, uint64_t col_size);
+TWO_D_ARRAY(T) TWO_D_ARRAY_CREATE(T)(uint32_t row_size, uint32_t col_size);
 ```
 
 `TWO_D_ARRAY_CREATE(T)` shall create a new empty two dimensional array.
@@ -120,7 +120,7 @@ void TWO_D_ARRAY_FREE(T)(TWO_D_ARRAY(T) two_d_array);
 ### TWO_D_ARRAY_FREE_ROW(T)
 
 ```c
-int TWO_D_ARRAY_FREE_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
+int TWO_D_ARRAY_FREE_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
 ```
 
 `TWO_D_ARRAY_FREE_ROW(T)` shall free the row specified by `row_index` and set it to `NULL`.
@@ -136,7 +136,7 @@ int TWO_D_ARRAY_FREE_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
 ### TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)
 
 ```c
-int TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
+int TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
 ```
 
 `TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)` shall allocate the memory for a new row.
@@ -154,7 +154,7 @@ int TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_ind
 ### TWO_D_ARRAY_GET_ROW(T)
 
 ```c
-T* TWO_D_ARRAY_GET_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint64_t row_index);
+T* TWO_D_ARRAY_GET_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
 ```
 
 `TWO_D_ARRAY_GET_ROW(T)` shall return the entire column stored in `row_index`.
