@@ -142,10 +142,12 @@ TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_with_uint32_t_type_succeeds)
     TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
 }
 
+#define TEST_UINT32_MAX 0
 /* Tests_SRS_TWO_D_ARRAY_07_003: [ TWO_D_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX with TWO_D_ARRAY_FREE(T) as dispose function, nmemb set to row_size and size set to sizeof(T*). ]*/
 /* Tests_SRS_TWO_D_ARRAY_07_004: [ TWO_D_ARRAY_CREATE(T) shall set all rows pointers to NULL. ]*/
 /* Tests_SRS_TWO_D_ARRAY_07_006: [ TWO_D_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
-/* running too long in the gate, comment out
+/* running too long in the gate, commented out*/
+#if TEST_UINT32_MAX
 TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_with_uint32_t_type_and_UINT32_MAX_minus_one_row_size_succeeds)
 {
     //arrange
@@ -161,12 +163,11 @@ TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_with_uint32_t_type_and_UINT32_MAX_minus_
     //clean
     TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
 }
-*/
+
 
 /* Tests_SRS_TWO_D_ARRAY_07_003: [ TWO_D_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX with TWO_D_ARRAY_FREE(T) as dispose function, nmemb set to row_size and size set to sizeof(T*). ]*/
 /* Tests_SRS_TWO_D_ARRAY_07_004: [ TWO_D_ARRAY_CREATE(T) shall set all rows pointers to NULL. ]*/
 /* Tests_SRS_TWO_D_ARRAY_07_006: [ TWO_D_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
-/* running too long in the gate, comment out
 TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_with_uint32_t_type_and_UINT32_MAX_row_size_succeeds)
 {
     //arrange
@@ -182,7 +183,7 @@ TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_with_uint32_t_type_and_UINT32_MAX_row_si
     //clean
     TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
 }
-*/
+#endif
 
 /* Tests_SRS_TWO_D_ARRAY_07_003: [ TWO_D_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX with TWO_D_ARRAY_FREE(T) as dispose function, nmemb set to row_size and size set to sizeof(T*). ]*/
 /* Tests_SRS_TWO_D_ARRAY_07_004: [ TWO_D_ARRAY_CREATE(T) shall set all rows pointers to NULL. ]*/
@@ -233,7 +234,8 @@ TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_with_struct_type_succeeds)
 /* Tests_SRS_TWO_D_ARRAY_07_003: [ TWO_D_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX with TWO_D_ARRAY_FREE(T) as dispose function, nmemb set to row_size and size set to sizeof(T*). ]*/
 /* Tests_SRS_TWO_D_ARRAY_07_004: [ TWO_D_ARRAY_CREATE(T) shall set all rows pointers to NULL. ]*/
 /* Tests_SRS_TWO_D_ARRAY_07_006: [ TWO_D_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
-/* running too long in the gate, comment out
+/* running too long in the gate, commented out*/
+#if TEST_UINT32_MAX
 TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_with_THANDLE_type_and_UINT32_MAX_row_size_succeeds)
 {
     //arrange
@@ -249,7 +251,7 @@ TEST_FUNCTION(TWO_D_ARRAY_CREATE_create_with_THANDLE_type_and_UINT32_MAX_row_siz
     //clean
     TWO_D_ARRAY_ASSIGN(THANDLE(A_TEST))(&tdarr, NULL);
 }
-*/
+#endif
 
 /* Tests_SRS_TWO_D_ARRAY_07_005: [ If there are any errors then TWO_D_ARRAY_CREATE(T) shall fail and return NULL. ]*/
 TEST_FUNCTION(when_underlying_calls_fails_TWO_D_ARRAY_CREATE_also_fails)
@@ -332,7 +334,8 @@ TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_with_uint32_t_type_succeeds)
 }
 
 /* Tests_SRS_TWO_D_ARRAY_07_017: [ Otherwise, TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) shall allocate memory for the new row and return zero on success. ]*/
-/* running too long in the gate, comment out
+/* running too long in the gate, commented out */
+#if TEST_UINT32_MAX
 TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_with_uint32_t_type_all_rows_can_be_allocated_with_col_size_UINT32_MAX)
 {
     //arrange
@@ -359,7 +362,7 @@ TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_with_uint32_t_type_all_rows_can_be_al
     //clean
     TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
 }
-*/
+#endif
 
 /* Tests_SRS_TWO_D_ARRAY_07_017: [ Otherwise, TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) shall allocate memory for the new row and return zero on success. ]*/
 TEST_FUNCTION(TWO_D_ARRAY_ALLOCATE_NEW_ROW_with_uint32_t_type_all_rows_can_be_allocated_1)
