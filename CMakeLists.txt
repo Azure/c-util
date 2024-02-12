@@ -169,6 +169,7 @@ set(c_util_c_files
     ./src/tqueue.c
     ./src/uuid_string.c
     ./src/watchdog.c
+    ./src/watchdog_threadpool.c
     ./src/worker_thread.c
 )
 
@@ -212,13 +213,13 @@ set(c_util_h_files
     ./inc/c_util/thandle_tuple_array.h
     ./inc/c_util/uuid_string.h
     ./inc/c_util/watchdog.h
+    ./inc/c_util/watchdog_threadpool.h
     ./inc/c_util/worker_thread.h
 )
 
 if (WIN32)
     set(c_util_h_files
         ${c_util_h_files}
-        ./inc/c_util/watchdog_threadpool.h
         ./inc/c_util/for_each_in_folder.h
         ./inc/c_util/for_each_in_sub_folder.h
         ./inc/c_util/thread_notifications_dispatcher.h
@@ -229,7 +230,6 @@ endif()
 if (WIN32)
     set(c_util_c_files
         ${c_util_c_files}
-        ./src/watchdog_threadpool.c
         ./src/for_each_in_folder.c
         ./src/for_each_in_sub_folder.c
         ./src/thread_notifications_dispatcher.c

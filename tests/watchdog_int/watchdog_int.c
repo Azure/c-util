@@ -120,7 +120,7 @@ TEST_FUNCTION(when_something_completes_watchdog_does_not_fire)
 TEST_FUNCTION(when_something_completes_watchdog_does_not_fire_in_loop_with_reset)
 {
     // arrange
-    THREAD_HANDLE work_thread;
+    THREAD_HANDLE work_thread[4];
     TEST_TASK_CONTEXT task_context;
     (void)interlocked_exchange(&task_context.can_complete, 0);
     (void)interlocked_exchange(&task_context.done, 0);
@@ -133,7 +133,7 @@ TEST_FUNCTION(when_something_completes_watchdog_does_not_fire_in_loop_with_reset
 
     for (uint32_t i = 0; i < 4; ++i)
     {
-        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&work_thread, test_task_thread, &task_context));
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&work_thread[i], test_task_thread, &task_context));
 
         // act
         ThreadAPI_Sleep(1000);
@@ -152,7 +152,10 @@ TEST_FUNCTION(when_something_completes_watchdog_does_not_fire_in_loop_with_reset
     ASSERT_ARE_EQUAL(int32_t, 0, interlocked_add(&g_watchdog.count, 0));
 
     // cleanup
-    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(work_thread, NULL));
+    for (uint32_t i = 0; i < 4; ++i)
+    {
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(work_thread[i], NULL));
+    }
     THANDLE_ASSIGN(RC_STRING)(&message, NULL);
     THANDLE_ASSIGN(THREADPOOL)(&threadpool, NULL);
 }
