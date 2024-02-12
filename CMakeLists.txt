@@ -148,6 +148,7 @@ set(c_util_c_files
     ./src/filename_helper.c
     ./src/buffer.c
     ./src/cancellation_token.c
+    ./src/channel_common.c
     ./src/channel.c
     ./src/channel_internal.c
     ./src/constbuffer.c
