@@ -182,6 +182,7 @@ TEST_FUNCTION(when_something_takes_too_long_watchdog_fires_exactly_once)
     wake_by_address_single(&task_context.can_complete);
 
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&task_context.done, 1, 10000));
+
     watchdog_stop(watchdog);
     LogInfo("Stopped watchdog");
 

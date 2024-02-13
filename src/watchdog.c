@@ -7,8 +7,8 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/interlocked.h"
+#include "c_pal/interlocked_hl.h"
 #include "c_pal/threadpool.h"
-
 #include "c_pal/log_critical_and_terminate.h"
 #include "c_util/rc_string.h"
 #include "c_pal/thandle.h"
@@ -17,6 +17,7 @@
 
 #define WATCHDOG_STATE_VALUES \
         WATCHDOG_RUNNING, \
+        WATCHDOG_EXPIRING, \
         WATCHDOG_STOP
 
 MU_DEFINE_ENUM(WATCHDOG_STATE, WATCHDOG_STATE_VALUES);
@@ -34,6 +35,7 @@ typedef struct WATCHDOG_TAG
 
 static void watchdog_expired_callback(void* context)
 {
+
     if (context == NULL)
     {
         /*Codes_SRS_WATCHDOG_42_027: [ If context is NULL then watchdog_expired_callback shall terminate the process. ]*/
@@ -43,14 +45,17 @@ static void watchdog_expired_callback(void* context)
     else
     {
         WATCHDOG_HANDLE handle = context;
-
-        WATCHDOG_STATE state = interlocked_add(&handle->state, 0);
+        /* Codes_SRS_WATCHDOG_45_005: [ If the state of the watchdog is RUNNING then ]*/
+          /* Codes_SRS_WATCHDOG_45_001: [ watchdog_expired_callback shall set the state to EXPIRING ]*/
+        WATCHDOG_STATE state = interlocked_compare_exchange(&handle->state, WATCHDOG_EXPIRING, WATCHDOG_RUNNING);
 
         if (state == WATCHDOG_RUNNING)
         {
-            /*Codes_SRS_WATCHDOG_42_021: [ If the state of the watchdog is RUNNING then watchdog_expired_callback shall call callback with the context and message from watchdog_start. ]*/
+            /*Codes_SRS_WATCHDOG_42_021: [ watchdog_expired_callback shall call callback with the context and message from watchdog_start. ]*/
             LogError("Watchdog timer %p fired!", handle);
             handle->callback(handle->context, (handle->message == NULL ? "" : handle->message->string));
+            /* Codes_SRS_WATCHDOG_45_002: [ watchdog_expired_callback shall return the state to RUNNING. ]*/
+            (void)InterlockedHL_SetAndWake(&handle->state, WATCHDOG_RUNNING);
         }
         else
         {
@@ -120,6 +125,7 @@ all_ok:
     return result;
 }
 
+
 IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_reset, WATCHDOG_HANDLE, watchdog)
 {
     if (watchdog == NULL)
@@ -129,6 +135,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_reset, WATCHDOG_HANDLE, watchdog)
     }
     else
     {
+        /* Codes_SRS_WATCHDOG_45_003: [ watchdog_reset shall wait until state is not EXPIRING. ]*/
+        (void)InterlockedHL_WaitForNotValue(&watchdog->state, WATCHDOG_EXPIRING, UINT32_MAX);
         /*Codes_SRS_WATCHDOG_42_032: [ watchdog_reset shall set the state of the watchdog to STOP. ]*/
         (void)interlocked_exchange(&watchdog->state, WATCHDOG_STOP);
 
@@ -156,6 +164,9 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_stop, WATCHDOG_HANDLE, watchdog)
     }
     else
     {
+        /* Codes_SRS_WATCHDOG_45_004: [ watchdog_stop shall wait until state is not EXPIRING. ]*/
+        (void)InterlockedHL_WaitForNotValue(&watchdog->state, WATCHDOG_EXPIRING, UINT32_MAX);
+
         /*Codes_SRS_WATCHDOG_42_023: [ watchdog_stop shall set the state of the watchdog to STOP. ]*/
         (void)interlocked_exchange(&watchdog->state, WATCHDOG_STOP);
 

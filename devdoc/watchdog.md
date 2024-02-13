@@ -11,6 +11,7 @@ Individual watchdog instances can be started with specific timeout times in mill
 
 Each time a watchdog timer instances is started, it has the following state:
  - `RUNNING` : The timer has started and if it expires it will call the callback.
+ - `EXPIRING` : The timer has expired, and the callback is being executed.
  - `STOP` : The explicit stop was called and if the timer expires then nothing will happen.
 
 ## Exposed API
@@ -59,7 +60,10 @@ Callback for the timer.
 
 **SRS_WATCHDOG_42_027: [** If `context` is `NULL` then `watchdog_expired_callback` shall terminate the process. **]**
 
-**SRS_WATCHDOG_42_021: [** If the state of the watchdog is `RUNNING` then `watchdog_expired_callback` shall call `callback` with the `context` and `message` from `watchdog_start`. **]**
+**SRS_WATCHDOG_45_005: [** If the state of the watchdog is `RUNNING` then **]**
+- **SRS_WATCHDOG_45_001: [** `watchdog_expired_callback` shall set the state to `EXPIRING` **]**
+- **SRS_WATCHDOG_42_021: [** `watchdog_expired_callback` shall call `callback` with the `context` and `message` from `watchdog_start`. **]**
+- **SRS_WATCHDOG_45_002: [** `watchdog_expired_callback` shall return the state to `RUNNING`. **]**
 
 ### watchdog_reset
 
@@ -70,6 +74,8 @@ MOCKABLE_FUNCTION(, void, watchdog_reset, WATCHDOG_HANDLE, watchdog);
 `watchdog_reset` restarts the current watchdog timer as if `watchdog_stop` was called followed by `watchdog_start` with the original parameters.
 
 **SRS_WATCHDOG_42_031: [** If `watchdog` is `NULL` then `watchdog_reset` shall return. **]**
+
+**SRS_WATCHDOG_45_003: [** `watchdog_reset` shall wait until state is not `EXPIRING`. **]**
 
 **SRS_WATCHDOG_42_032: [** `watchdog_reset` shall set the state of the watchdog to `STOP`. **]**
 
@@ -88,6 +94,8 @@ MOCKABLE_FUNCTION(, void, watchdog_stop, WATCHDOG_INSTANCE_HANDLE, watchdog);
 `watchdog_stop` frees the resources from `watchdog_start`. If the timer has not fired yet, then it will prevent the callback from being called.
 
 **SRS_WATCHDOG_42_022: [** If `watchdog` is `NULL` then `watchdog_stop` shall return. **]**
+
+**SRS_WATCHDOG_45_004: [** `watchdog_stop` shall wait until state is not `EXPIRING`. **]**
 
 **SRS_WATCHDOG_42_023: [** `watchdog_stop` shall set the state of the watchdog to `STOP`. **]**
 

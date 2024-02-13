@@ -19,7 +19,6 @@ cmake -Drun_valgrind:BOOL=ON $build_root -Drun_unittests:BOOL=ON -Drun_int_tests
 make --jobs=$CORES
 
 # /*reenable with this task Task 10086393: reenable sm_chaos (https://msazure.visualstudio.com/One/_workitems/edit/10086393)*/
-# timer_start created a detached thread which valgrind cannot track.
-ctest -j $CORES --output-on-failure -E "sm_int_helgrind|sm_int_valgrind|tqueue_int_valgrind|watchdog_int_valgrind|watchdog_int_helgrind"
+ctest -j $CORES --output-on-failure -E "sm_int_helgrind|sm_int_valgrind|tqueue_int_valgrind"
 
 popd 

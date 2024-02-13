@@ -296,6 +296,12 @@ endif()
 # make an install target so we can produce a Linux native client package.
 install_library_with_prefix(c_util c_util  ${c_util_h_files} )
 
+set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER
+    ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER}
+    "--suppressions=${CMAKE_CURRENT_LIST_DIR}/build_functions/c_util_suppressions.sup"
+    "--suppressions=${CMAKE_CURRENT_LIST_DIR}/deps/c-pal/build_functions/c-pal_suppressions.sup"
+)
+
 add_subdirectory(test_helpers)
 add_subdirectory(tests)
 
