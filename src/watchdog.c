@@ -6,28 +6,22 @@
 
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
-#include "c_pal/interlocked.h"
-#include "c_pal/interlocked_hl.h"
 #include "c_pal/threadpool.h"
 #include "c_pal/log_critical_and_terminate.h"
 #include "c_util/rc_string.h"
 #include "c_pal/thandle.h"
+#include "c_pal/sm.h"
 
 #include "c_util/watchdog.h"
 
-#define WATCHDOG_STATE_VALUES \
-        WATCHDOG_RUNNING, \
-        WATCHDOG_EXPIRING, \
-        WATCHDOG_STOP
 
-MU_DEFINE_ENUM(WATCHDOG_STATE, WATCHDOG_STATE_VALUES);
 
 typedef struct WATCHDOG_TAG
 {
     WATCHDOG_EXPIRED_CALLBACK callback;
     void* context;
 
-    volatile_atomic int32_t state; // WATCHDOG_STATE
+    SM_HANDLE state;
     uint32_t timeout_ms;
     TIMER_INSTANCE_HANDLE timer;
     THANDLE(RC_STRING) message;
@@ -45,21 +39,20 @@ static void watchdog_expired_callback(void* context)
     else
     {
         WATCHDOG_HANDLE handle = context;
-        /* Codes_SRS_WATCHDOG_45_005: [ If the state of the watchdog is RUNNING then ]*/
-          /* Codes_SRS_WATCHDOG_45_001: [ watchdog_expired_callback shall set the state to EXPIRING ]*/
-        WATCHDOG_STATE state = interlocked_compare_exchange(&handle->state, WATCHDOG_EXPIRING, WATCHDOG_RUNNING);
-
-        if (state == WATCHDOG_RUNNING)
+        /*Codes_SRS_WATCHDOG_45_009: [ watchdog_expired_callback shall call sm_exec_begin. ]*/
+        /*Codes_SRS_WATCHDOG_45_010: [ if sm_exec_begin returns SM_EXEC_GRANTED, ]*/
+        if (sm_exec_begin(handle->state) == SM_EXEC_GRANTED)
         {
             /*Codes_SRS_WATCHDOG_42_021: [ watchdog_expired_callback shall call callback with the context and message from watchdog_start. ]*/
-            LogError("Watchdog timer %p fired!", handle);
-            handle->callback(handle->context, (handle->message == NULL ? "" : handle->message->string));
-            /* Codes_SRS_WATCHDOG_45_002: [ watchdog_expired_callback shall return the state to RUNNING. ]*/
-            (void)InterlockedHL_SetAndWake(&handle->state, WATCHDOG_RUNNING);
+            const char * message_string = handle->message == NULL ? "" : handle->message->string;
+            LogError("Watchdog timer %p fired! message=%s", handle, message_string);
+            handle->callback(handle->context, message_string);
+            /*Codes_SRS_WATCHDOG_45_002: [ watchdog_expired_callback shall sm_exec_end ]*/
+            sm_exec_end(handle->state);
         }
         else
         {
-            LogVerbose("Watchdog timer %p fired after stop", handle);
+            LogVerbose("Watchdog timer %p fired when not running", handle);
         }
     }
 }
@@ -83,7 +76,6 @@ IMPLEMENT_MOCKABLE_FUNCTION(, WATCHDOG_HANDLE, watchdog_start, THANDLE(THREADPOO
     {
         /*Codes_SRS_WATCHDOG_42_016: [ watchdog_start shall allocate memory for the WATCHDOG_HANDLE. ]*/
         result = malloc(sizeof(WATCHDOG));
-
         if (result == NULL)
         {
             /*Codes_SRS_WATCHDOG_42_019: [ If there are any errors then watchdog_start shall fail and return NULL. ]*/
@@ -91,31 +83,49 @@ IMPLEMENT_MOCKABLE_FUNCTION(, WATCHDOG_HANDLE, watchdog_start, THANDLE(THREADPOO
         }
         else
         {
-            /*Codes_SRS_WATCHDOG_42_028: [ watchdog_start shall store the message. ]*/
-            THANDLE_INITIALIZE(RC_STRING)(&result->message, message);
-
-            result->callback = callback;
-            result->context = context;
-            result->timeout_ms = timeout_ms;
-
-            /*Codes_SRS_WATCHDOG_42_017: [ watchdog_start shall set the state of the watchdog to RUNNING. ]*/
-            (void)interlocked_exchange(&result->state, WATCHDOG_RUNNING);
-
-            LogVerbose("Starting watchdog %p", result);
-
-            /*Codes_SRS_WATCHDOG_42_018: [ watchdog_start shall create a timer that expires after timeout_ms by calling threadpool_timer_start with watchdog_expired_callback as the callback. ]*/
-            if (threadpool_timer_start(threadpool, timeout_ms, 0, watchdog_expired_callback, result, &result->timer) != 0)
+            /*Codes_SRS_WATCHDOG_45_006: [ watchdog_start shall call sm_create to create an SM_HANDLE handle state. ]*/
+            result->state = sm_create("watchdog");
+            if (result->state == NULL)
             {
                 /*Codes_SRS_WATCHDOG_42_019: [ If there are any errors then watchdog_start shall fail and return NULL. ]*/
-                LogError("threadpool_timer_start failed");
+                LogError("sm_create failed");
             }
             else
             {
-                /*Codes_SRS_WATCHDOG_42_020: [ watchdog_start shall succeed and return the allocated handle. ]*/
-                goto all_ok;
-            }
+                /*Codes_SRS_WATCHDOG_45_007: [ watchdog_start shall call sm_open_begin to move timer to the open state. ]*/
+                if (sm_open_begin(result->state) != SM_EXEC_GRANTED)
+                {
+                    /*Codes_SRS_WATCHDOG_42_019: [ If there are any errors then watchdog_start shall fail and return NULL. ]*/
+                    LogError("sm_open_begin failed");
+                }
+                else
+                {
+                    /*Codes_SRS_WATCHDOG_42_028: [ watchdog_start shall store the message. ]*/
+                    THANDLE_INITIALIZE(RC_STRING)(&result->message, message);
 
-            THANDLE_ASSIGN(RC_STRING)(&result->message, NULL);
+                    result->callback = callback;
+                    result->context = context;
+                    result->timeout_ms = timeout_ms;
+
+                    LogVerbose("Starting watchdog %p", result);
+                    /*Codes_SRS_WATCHDOG_45_008: [ watchdog_start shall call sm_open_end to move timer to the open state. ]*/
+                    sm_open_end(result->state, true);
+
+                    /*Codes_SRS_WATCHDOG_42_018: [ watchdog_start shall create a timer that expires after timeout_ms by calling threadpool_timer_start with watchdog_expired_callback as the callback. ]*/
+                    if (threadpool_timer_start(threadpool, timeout_ms, 0, watchdog_expired_callback, result, &result->timer) != 0)
+                    {
+                        /*Codes_SRS_WATCHDOG_42_019: [ If there are any errors then watchdog_start shall fail and return NULL. ]*/
+                        LogError("threadpool_timer_start failed");
+                    }
+                    else
+                    {
+                        /*Codes_SRS_WATCHDOG_42_020: [ watchdog_start shall succeed and return the allocated handle. ]*/
+                        goto all_ok;
+                    }
+                    THANDLE_ASSIGN(RC_STRING)(&result->message, NULL);
+                }
+                sm_destroy(result->state);
+            }
             free(result);
             result = NULL;
         }
@@ -135,20 +145,27 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_reset, WATCHDOG_HANDLE, watchdog)
     }
     else
     {
-        /* Codes_SRS_WATCHDOG_45_003: [ watchdog_reset shall wait until state is not EXPIRING. ]*/
-        (void)InterlockedHL_WaitForNotValue(&watchdog->state, WATCHDOG_EXPIRING, UINT32_MAX);
-        /*Codes_SRS_WATCHDOG_42_032: [ watchdog_reset shall set the state of the watchdog to STOP. ]*/
-        (void)interlocked_exchange(&watchdog->state, WATCHDOG_STOP);
-
         LogVerbose("Stopping watchdog for reset %p", watchdog);
+
+        /*Codes_SRS_WATCHDOG_45_011: [ watchdog_reset shall call sm_close_begin. ]*/
+        if (sm_close_begin(watchdog->state) != SM_EXEC_GRANTED)
+        {
+            LogError("Watchdog could not be closed for reset");
+        }
 
         /*Codes_SRS_WATCHDOG_42_033: [ watchdog_reset shall cancel the current timer by calling threadpool_timer_cancel. ]*/
         threadpool_timer_cancel(watchdog->timer);
+        /*Codes_SRS_WATCHDOG_45_012: [ watchdog_reset shall call sm_close_end. ]*/
+        sm_close_end(watchdog->state);
 
         LogVerbose("Restarting watchdog %p", watchdog);
-
-        /*Codes_SRS_WATCHDOG_42_034: [ watchdog_reset shall set the state of the watchdog to RUNNING. ]*/
-        (void)interlocked_exchange(&watchdog->state, WATCHDOG_RUNNING);
+        /*Codes_SRS_WATCHDOG_45_013: [ watchdog_reset shall call sm_open_begin. ]*/
+        if (sm_open_begin(watchdog->state) != SM_EXEC_GRANTED)
+        {
+            LogError("Watchdog could not be reopened for reset");
+        }
+        /*Codes_SRS_WATCHDOG_45_014: [ watchdog_reset shall call sm_open_end. ]*/
+        sm_open_end(watchdog->state, true);
 
         /*Codes_SRS_WATCHDOG_42_035: [ watchdog_reset shall restart the timer by calling threadpool_timer_restart with the original timeout_ms from the call to start. ]*/
         (void)threadpool_timer_restart(watchdog->timer, watchdog->timeout_ms, 0);
@@ -164,14 +181,22 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_stop, WATCHDOG_HANDLE, watchdog)
     }
     else
     {
-        /* Codes_SRS_WATCHDOG_45_004: [ watchdog_stop shall wait until state is not EXPIRING. ]*/
-        (void)InterlockedHL_WaitForNotValue(&watchdog->state, WATCHDOG_EXPIRING, UINT32_MAX);
-
-        /*Codes_SRS_WATCHDOG_42_023: [ watchdog_stop shall set the state of the watchdog to STOP. ]*/
-        (void)interlocked_exchange(&watchdog->state, WATCHDOG_STOP);
+        /*Codes_SRS_WATCHDOG_45_015: [ watchdog_stop shall call sm_close_begin. ]*/
+        if (sm_close_begin(watchdog->state) != SM_EXEC_GRANTED)
+        {
+            LogError("Watchdog could not be closed for Stop");
+        }
+        else
+        {
+            /*Codes_SRS_WATCHDOG_45_016: [ watchdog_stop shall call sm_close_end. ]*/
+            sm_close_end(watchdog->state);
+        }
 
         /*Codes_SRS_WATCHDOG_42_024: [ watchdog_stop shall stop and cleanup the timer by calling threadpool_timer_destroy. ]*/
         threadpool_timer_destroy(watchdog->timer);
+
+        /*Codes_SRS_WATCHDOG_45_017: [ watchdog_stop shall call sm_destroy. ]*/
+        sm_destroy(watchdog->state);
 
         /*Codes_SRS_WATCHDOG_42_025: [ watchdog_stop shall free the watchdog. ]*/
         THANDLE_ASSIGN(RC_STRING)(&watchdog->message, NULL);

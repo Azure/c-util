@@ -13,6 +13,7 @@
 #include "umock_c/umocktypes_charptr.h"
 #include "umock_c/umocktypes_stdint.h"
 #include "umock_c/umock_c_negative_tests.h"
+#include "umock_c/umocktypes_bool.h"
 
 #define ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
@@ -23,6 +24,7 @@
 #include "c_pal/ps_util.h"
 #include "c_util/rc_string.h"
 #include "c_pal/thandle.h"
+#include "c_pal/sm.h"
 #undef ENABLE_MOCKS
 
 // Must include umock_c_prod so mocks are not expanded in real_rc_string
@@ -32,6 +34,7 @@
 #include "real_interlocked.h"
 #include "real_interlocked_hl.h"
 #include "real_rc_string.h"
+#include "real_sm.h"
 
 #include "c_util/watchdog.h"
 
@@ -66,9 +69,11 @@ static void hook_threadpool_timer_destroy(TIMER_INSTANCE_HANDLE timer)
 static void expect_start(uint32_t timeout, THANDLE(real_RC_STRING) message, THREADPOOL_WORK_FUNCTION* callback, void** context)
 {
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_create("watchdog")).SetFailReturn(NULL);
+    STRICT_EXPECTED_CALL(sm_open_begin(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, message));
-    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG))
-        .CallCannotFail();
+    STRICT_EXPECTED_CALL(sm_open_end(IGNORED_ARG, true));
+
     STRICT_EXPECTED_CALL(threadpool_timer_start(test_threadpool, timeout, 0, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CaptureArgumentValue_work_function(callback)
         .CaptureArgumentValue_work_function_context(context)
@@ -99,10 +104,12 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error), "umock_c_init");
     ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types(), "umocktypes_charptr_register_types");
     ASSERT_ARE_EQUAL(int, 0, umocktypes_stdint_register_types(), "umocktypes_stdint_register_types");
+    ASSERT_ARE_EQUAL(int, 0, umocktypes_bool_register_types(), "umocktypes_bool_register_types");
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
     REGISTER_INTERLOCKED_GLOBAL_MOCK_HOOK();
     REGISTER_RC_STRING_GLOBAL_MOCK_HOOKS();
+    REGISTER_SM_GLOBAL_MOCK_HOOK();
 
 
     REGISTER_GLOBAL_MOCK_RETURNS(threadpool_timer_start, 0, MU_FAILURE);
@@ -113,6 +120,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(TIMER_INSTANCE_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(THREADPOOL_WORK_FUNCTION, void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(RC_STRING), void*);
+    REGISTER_UMOCK_ALIAS_TYPE(SM_HANDLE, void*);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -176,8 +184,10 @@ TEST_FUNCTION(watchdog_start_NULL_callback_fails)
 }
 
 /*Tests_SRS_WATCHDOG_42_016: [ watchdog_start shall allocate memory for the WATCHDOG_HANDLE. ]*/
+/*Tests_SRS_WATCHDOG_45_006: [ watchdog_start shall call sm_create to create an SM_HANDLE handle state. ]*/
+/*Tests_SRS_WATCHDOG_45_007: [ watchdog_start shall call sm_open_begin to move timer to the open state. ]*/
+/*Tests_SRS_WATCHDOG_45_008: [ watchdog_start shall call sm_open_end to move timer to the open state. ]*/
 /*Tests_SRS_WATCHDOG_42_028: [ watchdog_start shall store the message. ]*/
-/*Tests_SRS_WATCHDOG_42_017: [ watchdog_start shall set the state of the watchdog to RUNNING. ]*/
 /*Tests_SRS_WATCHDOG_42_018: [ watchdog_start shall create a timer that expires after timeout_ms by calling threadpool_timer_start with watchdog_expired_callback as the callback. ]*/
 /*Tests_SRS_WATCHDOG_42_020: [ watchdog_start shall succeed and return the allocated handle. ]*/
 TEST_FUNCTION(watchdog_start_succeeds)
@@ -260,10 +270,10 @@ TEST_FUNCTION(watchdog_expired_callback_with_NULL_context_terminates_process)
     watchdog_stop(result);
 }
 
-/*Tests_SRS_WATCHDOG_45_005: [ If the state of the watchdog is RUNNING then ]*/
-    /*Tests_SRS_WATCHDOG_45_001: [ watchdog_expired_callback shall set the state to EXPIRING ]*/
-    /*Tests_SRS_WATCHDOG_42_021: [ watchdog_expired_callback shall call callback with the context and message from watchdog_start. ]*/
-    /*Tests_SRS_WATCHDOG_45_002: [ watchdog_expired_callback shall return the state to RUNNING. ]*/
+/*Tests_SRS_WATCHDOG_45_009: [ watchdog_expired_callback shall call sm_exec_begin. ]*/
+/*Tests_SRS_WATCHDOG_45_010: [ if sm_exec_begin returns SM_EXEC_GRANTED, ]*/
+/*Tests_SRS_WATCHDOG_42_021: [ watchdog_expired_callback shall call callback with the context and message from watchdog_start. ]*/
+/*Tests_SRS_WATCHDOG_45_002: [ watchdog_expired_callback shall sm_exec_end ]*/
 TEST_FUNCTION(watchdog_expired_callback_works)
 {
     // arrange
@@ -271,9 +281,9 @@ TEST_FUNCTION(watchdog_expired_callback_works)
     void* context;
     WATCHDOG_HANDLE result = do_start(&callback, &context);
 
-    STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG));
     STRICT_EXPECTED_CALL(test_callback(test_callback_context, "message"));
-    STRICT_EXPECTED_CALL(InterlockedHL_SetAndWake(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
 
     // act
     callback(context);
@@ -301,10 +311,11 @@ TEST_FUNCTION(watchdog_reset_with_NULL_watchdog_returns)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_WATCHDOG_45_003: [ watchdog_reset shall wait until state is not EXPIRING. ]*/
-/*Tests_SRS_WATCHDOG_42_032: [ watchdog_reset shall set the state of the watchdog to STOP. ]*/
+/*Tests_SRS_WATCHDOG_45_011: [ watchdog_reset shall call sm_close_begin. ]*/
 /*Tests_SRS_WATCHDOG_42_033: [ watchdog_reset shall cancel the current timer by calling threadpool_timer_cancel. ]*/
-/*Tests_SRS_WATCHDOG_42_034: [ watchdog_reset shall set the state of the watchdog to RUNNING. ]*/
+/*Tests_SRS_WATCHDOG_45_012: [ watchdog_reset shall call sm_close_end. ]*/
+/*Tests_SRS_WATCHDOG_45_013: [ watchdog_reset shall call sm_open_begin. ]*/
+/*Tests_SRS_WATCHDOG_45_014: [ watchdog_reset shall call sm_open_end. ]*/
 /*Tests_SRS_WATCHDOG_42_035: [ watchdog_reset shall restart the timer by calling threadpool_timer_restart with the original timeout_ms from the call to start. ]*/
 TEST_FUNCTION(watchdog_reset_cancels_and_restarts_the_timer)
 {
@@ -313,10 +324,11 @@ TEST_FUNCTION(watchdog_reset_cancels_and_restarts_the_timer)
     void* context;
     WATCHDOG_HANDLE result = do_start(&callback, &context);
 
-    STRICT_EXPECTED_CALL(InterlockedHL_WaitForNotValue(IGNORED_ARG, IGNORED_ARG, UINT32_MAX));
-    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_close_begin(IGNORED_ARG));
     STRICT_EXPECTED_CALL(threadpool_timer_cancel(test_timer_instance));
-    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_close_end(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_open_begin(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_open_end(IGNORED_ARG, true));
     STRICT_EXPECTED_CALL(threadpool_timer_restart(test_timer_instance, 42, 0));
 
     // act
@@ -345,9 +357,10 @@ TEST_FUNCTION(watchdog_stop_with_NULL_watchdog_returns)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_WATCHDOG_45_004: [ watchdog_stop shall wait until state is not EXPIRING. ]*/
-/*Tests_SRS_WATCHDOG_42_023: [ watchdog_stop shall set the state of the watchdog to STOP. ]*/
+/*Tests_SRS_WATCHDOG_45_015: [ watchdog_stop shall call sm_close_begin. ]*/
+/*Tests_SRS_WATCHDOG_45_016: [ watchdog_stop shall call sm_close_end. ]*/
 /*Tests_SRS_WATCHDOG_42_024: [ watchdog_stop shall stop and cleanup the timer by calling threadpool_timer_destroy. ]*/
+/*Tests_SRS_WATCHDOG_45_017: [ watchdog_stop shall call sm_destroy. ]*/
 /*Tests_SRS_WATCHDOG_42_025: [ watchdog_stop shall free the watchdog. ]*/
 TEST_FUNCTION(watchdog_stop_stops_the_timer)
 {
@@ -356,9 +369,10 @@ TEST_FUNCTION(watchdog_stop_stops_the_timer)
     void* context;
     WATCHDOG_HANDLE result = do_start(&callback, &context);
 
-    STRICT_EXPECTED_CALL(InterlockedHL_WaitForNotValue(IGNORED_ARG, IGNORED_ARG, UINT32_MAX));
-    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_close_begin(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_close_end(IGNORED_ARG));
     STRICT_EXPECTED_CALL(threadpool_timer_destroy(test_timer_instance));
+    STRICT_EXPECTED_CALL(sm_destroy(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_STRING)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
@@ -369,9 +383,10 @@ TEST_FUNCTION(watchdog_stop_stops_the_timer)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_WATCHDOG_45_004: [ watchdog_stop shall wait until state is not EXPIRING. ]*/
-/*Tests_SRS_WATCHDOG_42_023: [ watchdog_stop shall set the state of the watchdog to STOP. ]*/
+/*Tests_SRS_WATCHDOG_45_015: [ watchdog_stop shall call sm_close_begin. ]*/
+/*Tests_SRS_WATCHDOG_45_016: [ watchdog_stop shall call sm_close_end. ]*/
 /*Tests_SRS_WATCHDOG_42_024: [ watchdog_stop shall stop and cleanup the timer by calling threadpool_timer_destroy. ]*/
+/*Tests_SRS_WATCHDOG_45_017: [ watchdog_stop shall call sm_destroy. ]*/
 /*Tests_SRS_WATCHDOG_42_025: [ watchdog_stop shall free the watchdog. ]*/
 TEST_FUNCTION(watchdog_stop_stops_the_timer_after_it_fired)
 {
@@ -380,14 +395,15 @@ TEST_FUNCTION(watchdog_stop_stops_the_timer_after_it_fired)
     void* context;
     WATCHDOG_HANDLE result = do_start(&callback, &context);
 
-    STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG));
     STRICT_EXPECTED_CALL(test_callback(test_callback_context, "message"));
-    STRICT_EXPECTED_CALL(InterlockedHL_SetAndWake(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
     callback(context);
 
-    STRICT_EXPECTED_CALL(InterlockedHL_WaitForNotValue(IGNORED_ARG, IGNORED_ARG, UINT32_MAX));
-    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_close_begin(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_close_end(IGNORED_ARG));
     STRICT_EXPECTED_CALL(threadpool_timer_destroy(test_timer_instance));
+    STRICT_EXPECTED_CALL(sm_destroy(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_STRING)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
@@ -410,12 +426,7 @@ static void do_fire_timer(void* context)
     fire_timer_context->callback(fire_timer_context->context);
 }
 
-/*Tests_SRS_WATCHDOG_45_004: [ watchdog_stop shall wait until state is not EXPIRING. ]*/
-/*Tests_SRS_WATCHDOG_42_023: [ watchdog_stop shall set the state of the watchdog to STOP. ]*/
-/*Tests_SRS_WATCHDOG_45_005: [ If the state of the watchdog is RUNNING then ]*/
-    /*Tests_SRS_WATCHDOG_45_001: [ watchdog_expired_callback shall set the state to EXPIRING ]*/
-    /*Tests_SRS_WATCHDOG_42_021: [ watchdog_expired_callback shall call callback with the context and message from watchdog_start. ]*/
-    /*Tests_SRS_WATCHDOG_45_002: [ watchdog_expired_callback shall return the state to RUNNING. ]*/
+/*Tests_SRS_WATCHDOG_42_021: [ watchdog_expired_callback shall call callback with the context and message from watchdog_start. ]*/
 TEST_FUNCTION(watchdog_stop_prevents_callback_from_calling_if_timer_fires_on_stop)
 {
     // arrange
@@ -426,11 +437,11 @@ TEST_FUNCTION(watchdog_stop_prevents_callback_from_calling_if_timer_fires_on_sto
     timer_stop_hook_context = &fire_timer_context;
     timer_stop_calls_callback = true;
 
-    STRICT_EXPECTED_CALL(InterlockedHL_WaitForNotValue(IGNORED_ARG, IGNORED_ARG, UINT32_MAX));
-    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_close_begin(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_close_end(IGNORED_ARG));
     STRICT_EXPECTED_CALL(threadpool_timer_destroy(test_timer_instance));
-
-    STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));  // callback checking state
+    STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG)); //callback checking state.
+    STRICT_EXPECTED_CALL(sm_destroy(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_STRING)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
