@@ -1,0 +1,21 @@
+{
+   <linux_sys_timer_mem_leak>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:timer_create@@GLIBC_2.3.3
+   ...
+}
+{
+   <timer_create race>
+   Helgrind:Race
+   fun:timer_create@@GLIBC_2.3.3
+   fun:threadpool_timer_start
+   ...
+}
+{
+   <logger_deinit gets flagged because of several instances of timer_sigev_thread reported by Helgrind - likely falsely based on what we know at the moment>
+   Helgrind:Race
+   fun:logger_deinit
+   ...
+}
