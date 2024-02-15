@@ -152,11 +152,13 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_reset, WATCHDOG_HANDLE, watchdog)
         {
             LogError("Watchdog could not be closed for reset");
         }
-
-        /*Codes_SRS_WATCHDOG_42_033: [ watchdog_reset shall cancel the current timer by calling threadpool_timer_cancel. ]*/
-        threadpool_timer_cancel(watchdog->timer);
-        /*Codes_SRS_WATCHDOG_45_012: [ watchdog_reset shall call sm_close_end. ]*/
-        sm_close_end(watchdog->state);
+        else /*Codes_SRS_WATCHDOG_45_018: [ If sm_close_begin returns SM_EXEC_GRANTED, ]*/
+        {
+            /*Codes_SRS_WATCHDOG_42_033: [ watchdog_reset shall cancel the current timer by calling threadpool_timer_cancel. ]*/
+            threadpool_timer_cancel(watchdog->timer);
+            /*Codes_SRS_WATCHDOG_45_012: [ watchdog_reset shall call sm_close_end. ]*/
+            sm_close_end(watchdog->state);
+        }
 
         LogVerbose("Restarting watchdog %p", watchdog);
         /*Codes_SRS_WATCHDOG_45_013: [ watchdog_reset shall call sm_open_begin. ]*/
@@ -164,9 +166,12 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_reset, WATCHDOG_HANDLE, watchdog)
         {
             LogError("Watchdog could not be reopened for reset");
         }
-        /*Codes_SRS_WATCHDOG_45_014: [ watchdog_reset shall call sm_open_end. ]*/
-        sm_open_end(watchdog->state, true);
-
+        else
+        {
+            /*Codes_SRS_WATCHDOG_45_014: [ watchdog_reset shall call sm_open_end if sm_open_begin succeeds. ]*/
+            sm_open_end(watchdog->state, true);
+        }
+        
         /*Codes_SRS_WATCHDOG_42_035: [ watchdog_reset shall restart the timer by calling threadpool_timer_restart with the original timeout_ms from the call to start. ]*/
         (void)threadpool_timer_restart(watchdog->timer, watchdog->timeout_ms, 0);
     }
@@ -188,7 +193,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_stop, WATCHDOG_HANDLE, watchdog)
         }
         else
         {
-            /*Codes_SRS_WATCHDOG_45_016: [ watchdog_stop shall call sm_close_end. ]*/
+            /*Codes_SRS_WATCHDOG_45_016: [ watchdog_stop shall call sm_close_end if sm_close_begin succeeds. ]*/
             sm_close_end(watchdog->state);
         }
 

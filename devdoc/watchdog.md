@@ -11,8 +11,9 @@ Individual watchdog instances can be started with specific timeout times in mill
 
 The watchdog timer uses state management to operate:
 - On start, it will move to the open state on success.
-- callbacks will only be called in the open state. The callback will call `sm_exec_begin` to ensure timer is ready and will call `sm_exec_end` upon completion.
-- When timer is reset or stopped, the state is transistioned to closed first to ensure any executing callback is complete.
+- Expiration callbacks will only be called in the open state. The callback will call `sm_exec_begin` to ensure timer is ready and will call `sm_exec_end` upon completion.
+- When the timer is reset the state is transitioned to closed first to ensure any executing callback is complete and block incoming callbacks. Then it is reopened to allow callbacks again.
+- When the timer is stopped, the state is transistioned to closed first to ensure any executing callback is complete, then the timer and state management are destroyed.
 
 ## Exposed API
 
@@ -70,6 +71,7 @@ Callback for the timer.
 **SRS_WATCHDOG_45_010: [** if `sm_exec_begin` returns `SM_EXEC_GRANTED`, **]**
 
 - **SRS_WATCHDOG_42_021: [** `watchdog_expired_callback` shall call `callback` with the `context` and `message` from `watchdog_start`. **]**
+
 - **SRS_WATCHDOG_45_002: [** `watchdog_expired_callback` shall `sm_exec_end` **]**
 
 ### watchdog_reset
@@ -84,13 +86,15 @@ MOCKABLE_FUNCTION(, void, watchdog_reset, WATCHDOG_HANDLE, watchdog);
 
 **SRS_WATCHDOG_45_011: [** `watchdog_reset` shall call `sm_close_begin`. **]**
 
-**SRS_WATCHDOG_42_033: [** `watchdog_reset` shall cancel the current timer by calling `threadpool_timer_cancel`. **]**
+**SRS_WATCHDOG_45_018: [** If `sm_close_begin` returns `SM_EXEC_GRANTED`, **]**
 
-**SRS_WATCHDOG_45_012: [** `watchdog_reset` shall call `sm_close_end`. **]**
+- **SRS_WATCHDOG_42_033: [** `watchdog_reset` shall cancel the current timer by calling `threadpool_timer_cancel`. **]**
+
+- **SRS_WATCHDOG_45_012: [** `watchdog_reset` shall call `sm_close_end`. **]**
 
 **SRS_WATCHDOG_45_013: [** `watchdog_reset` shall call `sm_open_begin`. **]**
 
-**SRS_WATCHDOG_45_014: [** `watchdog_reset` shall call `sm_open_end`. **]**
+**SRS_WATCHDOG_45_014: [** `watchdog_reset` shall call `sm_open_end` if `sm_open_begin` succeeds. **]**
 
 **SRS_WATCHDOG_42_035: [** `watchdog_reset` shall restart the timer by calling `threadpool_timer_restart` with the original `timeout_ms` from the call to start. **]**
 
@@ -106,7 +110,7 @@ MOCKABLE_FUNCTION(, void, watchdog_stop, WATCHDOG_INSTANCE_HANDLE, watchdog);
 
 **SRS_WATCHDOG_45_015: [** `watchdog_stop` shall call `sm_close_begin`. **]**
 
-**SRS_WATCHDOG_45_016: [** `watchdog_stop` shall call `sm_close_end`. **]**
+**SRS_WATCHDOG_45_016: [** `watchdog_stop` shall call `sm_close_end` if `sm_close_begin` succeeds. **]**
 
 **SRS_WATCHDOG_42_024: [** `watchdog_stop` shall stop and cleanup the timer by calling `threadpool_timer_destroy`. **]**
 

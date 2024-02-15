@@ -312,10 +312,11 @@ TEST_FUNCTION(watchdog_reset_with_NULL_watchdog_returns)
 }
 
 /*Tests_SRS_WATCHDOG_45_011: [ watchdog_reset shall call sm_close_begin. ]*/
-/*Tests_SRS_WATCHDOG_42_033: [ watchdog_reset shall cancel the current timer by calling threadpool_timer_cancel. ]*/
-/*Tests_SRS_WATCHDOG_45_012: [ watchdog_reset shall call sm_close_end. ]*/
+/*Tests_SRS_WATCHDOG_45_018: [ If sm_close_begin returns SM_EXEC_GRANTED, ]*/
+/*- Tests_SRS_WATCHDOG_42_033: [ watchdog_reset shall cancel the current timer by calling threadpool_timer_cancel. ]*/
+/*- Tests_SRS_WATCHDOG_45_012: [ watchdog_reset shall call sm_close_end. ]*/
 /*Tests_SRS_WATCHDOG_45_013: [ watchdog_reset shall call sm_open_begin. ]*/
-/*Tests_SRS_WATCHDOG_45_014: [ watchdog_reset shall call sm_open_end. ]*/
+/*Tests_SRS_WATCHDOG_45_014: [ watchdog_reset shall call sm_open_end if sm_open_begin succeeds. ]*/
 /*Tests_SRS_WATCHDOG_42_035: [ watchdog_reset shall restart the timer by calling threadpool_timer_restart with the original timeout_ms from the call to start. ]*/
 TEST_FUNCTION(watchdog_reset_cancels_and_restarts_the_timer)
 {
@@ -358,7 +359,7 @@ TEST_FUNCTION(watchdog_stop_with_NULL_watchdog_returns)
 }
 
 /*Tests_SRS_WATCHDOG_45_015: [ watchdog_stop shall call sm_close_begin. ]*/
-/*Tests_SRS_WATCHDOG_45_016: [ watchdog_stop shall call sm_close_end. ]*/
+/*Tests_SRS_WATCHDOG_45_016: [ watchdog_stop shall call sm_close_end if sm_close_begin succeeds. ]*/
 /*Tests_SRS_WATCHDOG_42_024: [ watchdog_stop shall stop and cleanup the timer by calling threadpool_timer_destroy. ]*/
 /*Tests_SRS_WATCHDOG_45_017: [ watchdog_stop shall call sm_destroy. ]*/
 /*Tests_SRS_WATCHDOG_42_025: [ watchdog_stop shall free the watchdog. ]*/
@@ -384,7 +385,7 @@ TEST_FUNCTION(watchdog_stop_stops_the_timer)
 }
 
 /*Tests_SRS_WATCHDOG_45_015: [ watchdog_stop shall call sm_close_begin. ]*/
-/*Tests_SRS_WATCHDOG_45_016: [ watchdog_stop shall call sm_close_end. ]*/
+/*Tests_SRS_WATCHDOG_45_016: [ watchdog_stop shall call sm_close_end if sm_close_begin succeeds. ]*/
 /*Tests_SRS_WATCHDOG_42_024: [ watchdog_stop shall stop and cleanup the timer by calling threadpool_timer_destroy. ]*/
 /*Tests_SRS_WATCHDOG_45_017: [ watchdog_stop shall call sm_destroy. ]*/
 /*Tests_SRS_WATCHDOG_42_025: [ watchdog_stop shall free the watchdog. ]*/
