@@ -170,10 +170,10 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_reset, WATCHDOG_HANDLE, watchdog)
         {
             /*Codes_SRS_WATCHDOG_45_014: [ watchdog_reset shall call sm_open_end if sm_open_begin succeeds. ]*/
             sm_open_end(watchdog->state, true);
+
+            /*Codes_SRS_WATCHDOG_42_035: [ watchdog_reset shall restart the timer by calling threadpool_timer_restart with the original timeout_ms from the call to start. ]*/
+            (void)threadpool_timer_restart(watchdog->timer, watchdog->timeout_ms, 0);
         }
-        
-        /*Codes_SRS_WATCHDOG_42_035: [ watchdog_reset shall restart the timer by calling threadpool_timer_restart with the original timeout_ms from the call to start. ]*/
-        (void)threadpool_timer_restart(watchdog->timer, watchdog->timeout_ms, 0);
     }
 }
 
