@@ -128,3 +128,18 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), ch
     }
     return result;
 }
+
+IMPLEMENT_MOCKABLE_FUNCTION(, void, channel_reset, THANDLE(CHANNEL), channel)
+{
+    /*Codes_SRS_CHANNEL_43_087: [If channel is NULL, channel_reset shall return.]*/
+    if(channel == NULL)
+    {
+        LogError("Invalid arguments: THANDLE(CHANNEL) channel=%p", channel);
+    }
+    else
+    {
+        CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
+        /*Codes_SRS_CHANNEL_43_095: [channel_reset shall call channel_internal_close.]*/
+        channel_internal_close(channel_ptr->channel_internal);
+    }
+}

@@ -100,6 +100,7 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(THREADPOOL), threadpool);
 MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
 MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
+MOCKABLE_FUNCTION(, void, channel_reset, THANDLE(CHANNEL), channel);
 
 ```
 
@@ -164,3 +165,15 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THA
 **SRS_CHANNEL_43_026: [** If `out_op_push` is `NULL`, `channel_push` shall fail and return `CHANNEL_RESULT_INVALID_ARGS`. **]**
 
 **SRS_CHANNEL_43_041: [** `channel_push` shall call `channel_internal_push` and return as it returns. **]**
+
+
+### channel_reset
+```c
+    MOCKABLE_FUNCTION(, void, channel_reset, THANDLE(CHANNEL), channel);
+```
+`channel_reset` closes the underlying `channel_internal` so  that all pending operations are abandoned.
+
+**SRS_CHANNEL_43_087: [** If `channel` is `NULL`, `channel_reset` shall return. **]**
+
+**SRS_CHANNEL_43_095: [** `channel_reset` shall call `channel_internal_close`. **]**
+

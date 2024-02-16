@@ -80,6 +80,12 @@ static void test_pull_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT 
     ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
 }
 
+MOCK_FUNCTION_WITH_CODE(, void, mock_test_pull_callback_abandoned, void*, context, CHANNEL_CALLBACK_RESULT, result, THANDLE(RC_PTR), data)
+    ASSERT_ARE_EQUAL(void_ptr, test_pull_context, context);
+    ASSERT_IS_NULL(data);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
+MOCK_FUNCTION_END()
+
 static void test_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result)
 {
     ASSERT_ARE_EQUAL(void_ptr, test_push_context, context);
@@ -355,6 +361,60 @@ TEST_FUNCTION(channel_push_calls_channel_internal_push)
     //cleanup
     THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
     THANDLE_ASSIGN(RC_PTR)(&data_rc_ptr, NULL);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/*Tests_SRS_CHANNEL_43_087: [If channel is NULL, channel_reset shall return.]*/
+TEST_FUNCTION(channel_reset_with_null_channel_returns)
+{
+    //arrange
+
+    //act
+    channel_reset(NULL);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CHANNEL_43_095: [channel_reset shall call channel_internal_close.]*/
+TEST_FUNCTION(channel_reset_calls_underlying_functions)
+{
+    //arrange
+    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(channel_internal_close(IGNORED_ARG));
+
+    //act
+    channel_reset(channel);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+TEST_FUNCTION(channel_reset_causes_pending_operation_to_get_abandoned)
+{
+    //arrange
+    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(ASYNC_OP) pull_op = NULL;
+    CHANNEL_RESULT pull_result = channel_pull(channel, mock_test_pull_callback_abandoned, test_pull_context, &pull_op);
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
+    ASSERT_IS_NOT_NULL(pull_op);
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(channel_internal_close(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(mock_test_pull_callback_abandoned(test_pull_context, CHANNEL_CALLBACK_RESULT_ABANDONED, NULL));
+
+    //act
+    channel_reset(channel);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
