@@ -41,6 +41,9 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
+    time_t seed = time(NULL);
+    LogInfo("Test using random seed = %u", (unsigned int)seed);
+    srand((unsigned int)seed);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -78,15 +81,19 @@ TEST_FUNCTION(TWO_D_ARRAY_create_and_allocate_succeeds)
     ASSERT_IS_NOT_NULL(tdarr);
 
     //act
+    int result;
     for (uint32_t i = 0; i < ROW_NUM; i++)
     {
-        TWO_D_ARRAY_ALLOCATE_NEW_ROW(TEST_THANDLE)(tdarr, i);
+        result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(TEST_THANDLE)(tdarr, i);
+        ASSERT_ARE_EQUAL(int, 0, result);
     }
 
     //assert
+    TEST_THANDLE* curr_row;
     for (uint32_t i = 0; i < ROW_NUM; i++)
     {
-        ASSERT_IS_NOT_NULL(tdarr->row_arrays[i]);
+        curr_row = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0);
+        ASSERT_IS_NOT_NULL(curr_row);
     }
 
     //cleanup
@@ -98,21 +105,26 @@ TEST_FUNCTION(TWO_D_ARRAY_allocate_row_and_free_row_succeeds)
     //arrange
     TWO_D_ARRAY(TEST_THANDLE) tdarr = TWO_D_ARRAY_CREATE(TEST_THANDLE)(ROW_NUM, 5);
     ASSERT_IS_NOT_NULL(tdarr);
+    int result;
     for (uint32_t i = 0; i < ROW_NUM; i++)
     {
-        TWO_D_ARRAY_ALLOCATE_NEW_ROW(TEST_THANDLE)(tdarr, i);
+        result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(TEST_THANDLE)(tdarr, i);
+        ASSERT_ARE_EQUAL(int, 0, result);
     }
 
     //act
     for (uint32_t i = 0; i < ROW_NUM; i++)
     {
-        TWO_D_ARRAY_FREE_ROW(TEST_THANDLE)(tdarr, i);
+        result = TWO_D_ARRAY_FREE_ROW(TEST_THANDLE)(tdarr, i);
+        ASSERT_ARE_EQUAL(int, 0, result);
     }
 
     //assert
+    TEST_THANDLE* curr_row;
     for (uint32_t i = 0; i < ROW_NUM; i++)
     {
-        ASSERT_IS_NULL(tdarr->row_arrays[i]);
+        curr_row = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0);
+        ASSERT_IS_NULL(curr_row);
     }
 
     //cleanup
@@ -190,9 +202,11 @@ TEST_FUNCTION(TWO_D_ARRAY_free_a_row_not_allocated_yet)
     int result;
     TWO_D_ARRAY(TEST_THANDLE) tdarr = TWO_D_ARRAY_CREATE(TEST_THANDLE)(5, 5);
     ASSERT_IS_NOT_NULL(tdarr);
+    TEST_THANDLE* curr_row;
     for (uint32_t i = 0; i < 5; i++)
     {
-        ASSERT_IS_NULL(tdarr->row_arrays[i]);
+        curr_row = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0);
+        ASSERT_IS_NULL(curr_row);
     }
 
     //act
@@ -211,16 +225,13 @@ TEST_FUNCTION(TWO_D_ARRAY_chaos)
     //arrange
     TWO_D_ARRAY(TEST_THANDLE) tdarr = TWO_D_ARRAY_CREATE(TEST_THANDLE)(ROW_NUM, 5);
     ASSERT_IS_NOT_NULL(tdarr);
-    for (uint32_t i = 0; i < ROW_NUM; i++)
-    {
-        TWO_D_ARRAY_ALLOCATE_NEW_ROW(TEST_THANDLE)(tdarr, i);
-    }
 
-    //action
-    uint32_t run_time = 0;
-    while (run_time < N_CHAOS_API_CALLS)
+    //act
+    uint32_t iteration_time = 0;
+    bool row_state[ROW_NUM] = { false };
+    while (iteration_time < N_CHAOS_API_CALLS)
     {
-        run_time++;
+        iteration_time++;
         // perform one of the several actions
         CHAOS_TEST_ACTION action = (CHAOS_TEST_ACTION)((rand() * (MU_ENUM_VALUE_COUNT(CHAOS_TEST_ACTION_VALUES) - 1) / RAND_MAX) + 1);
         uint32_t rand_row_index = rand() % ROW_NUM;
@@ -231,18 +242,55 @@ TEST_FUNCTION(TWO_D_ARRAY_chaos)
             break;
         case CHAOS_TEST_ACTION_FREE_ROW:
         {
-            TWO_D_ARRAY_FREE_ROW(TEST_THANDLE)(tdarr, rand_row_index);
+
+            int free_result = TWO_D_ARRAY_FREE_ROW(TEST_THANDLE)(tdarr, rand_row_index);
+            if (row_state[rand_row_index] == true)
+            {
+                ASSERT_ARE_EQUAL(int, free_result, 0);
+                row_state[rand_row_index] = false;
+            }
+            else
+            {
+                ASSERT_ARE_NOT_EQUAL(int, free_result, 0);
+            }
+
         }
         case CHAOS_TEST_ACTION_ALLOCATE_NEW_ROW:
         {
-            TWO_D_ARRAY_ALLOCATE_NEW_ROW(TEST_THANDLE)(tdarr, rand_row_index);
+            int allocate_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(TEST_THANDLE)(tdarr, rand_row_index);
+            if (row_state[rand_row_index] == true)
+            {
+                ASSERT_ARE_NOT_EQUAL(int, allocate_result, 0);
+            }
+            else
+            {
+                ASSERT_ARE_EQUAL(int, allocate_result, 0);
+                row_state[rand_row_index] = true;
+
+                for (uint32_t i = 0; i < 5; i++)
+                {
+                    TEST_THANDLE a = { i };
+                    tdarr->row_arrays[rand_row_index][i] = a;
+                }
+            }
         }
         case CHAOS_TEST_ACTION_GET_ROW:
         {
-            TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, rand_row_index);
+            TEST_THANDLE* row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, rand_row_index);
+            if (row_state[rand_row_index] == true)
+            {
+                ASSERT_IS_NOT_NULL(row_result);
+            }
+            else
+            {
+                ASSERT_IS_NULL(row_result);
+            }
         }
         }
     }
+
+    // assert
+    // Test verifies that nothing crashes
 
     //cleanup
     TWO_D_ARRAY_ASSIGN(TEST_THANDLE)(&tdarr, NULL);
