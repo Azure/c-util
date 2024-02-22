@@ -227,11 +227,11 @@ TEST_FUNCTION(TWO_D_ARRAY_chaos)
     ASSERT_IS_NOT_NULL(tdarr);
 
     //act
-    uint32_t iteration_time = 0;
+    uint32_t iteration_count = 0;
     bool row_state[ROW_NUM] = { false };
-    while (iteration_time < N_CHAOS_API_CALLS)
+    while (iteration_count < N_CHAOS_API_CALLS)
     {
-        iteration_time++;
+        iteration_count++;
         // perform one of the several actions
         CHAOS_TEST_ACTION action = (CHAOS_TEST_ACTION)((rand() * (MU_ENUM_VALUE_COUNT(CHAOS_TEST_ACTION_VALUES) - 1) / RAND_MAX) + 1);
         uint32_t rand_row_index = rand() % ROW_NUM;
@@ -244,7 +244,7 @@ TEST_FUNCTION(TWO_D_ARRAY_chaos)
         {
 
             int free_result = TWO_D_ARRAY_FREE_ROW(TEST_THANDLE)(tdarr, rand_row_index);
-            if (row_state[rand_row_index] == true)
+            if (row_state[rand_row_index])
             {
                 ASSERT_ARE_EQUAL(int, free_result, 0);
                 row_state[rand_row_index] = false;
@@ -258,7 +258,7 @@ TEST_FUNCTION(TWO_D_ARRAY_chaos)
         case CHAOS_TEST_ACTION_ALLOCATE_NEW_ROW:
         {
             int allocate_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(TEST_THANDLE)(tdarr, rand_row_index);
-            if (row_state[rand_row_index] == true)
+            if (row_state[rand_row_index])
             {
                 ASSERT_ARE_NOT_EQUAL(int, allocate_result, 0);
             }
@@ -277,7 +277,7 @@ TEST_FUNCTION(TWO_D_ARRAY_chaos)
         case CHAOS_TEST_ACTION_GET_ROW:
         {
             TEST_THANDLE* row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, rand_row_index);
-            if (row_state[rand_row_index] == true)
+            if (row_state[rand_row_index])
             {
                 ASSERT_IS_NOT_NULL(row_result);
             }
