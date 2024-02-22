@@ -134,35 +134,43 @@ all_ok:                                                                         
     return result;                                                                                                                                                                                 \
 }                                                                                                                                                                                                  \
 
-#define TWO_D_ARRAY_LL_FREE_ROW_DEFINE(C, T)                                                                                                                        \
-int TWO_D_ARRAY_LL_FREE_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t row_index)                                                                                   \
-{                                                                                                                                                                   \
-    int result;                                                                                                                                                     \
-    /* Codes_SRS_TWO_D_ARRAY_07_010: [ If two_d_array is NULL, TWO_D_ARRAY_FREE_ROW(T) shall fail return a non-zero value. ]*/                                      \
-    if (two_d_array == NULL) {                                                                                                                                      \
-        LogError("Invalid arguments: TWO_D_ARRAY (" MU_TOSTRING(T) ") two_d_array=%p", two_d_array);                                                                \
-        result = MU_FAILURE;                                                                                                                                        \
-    }                                                                                                                                                               \
-    else                                                                                                                                                            \
-    {                                                                                                                                                               \
-        /* Codes_SRS_TWO_D_ARRAY_07_011: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_FREE_ROW(T) shall fail and return a non-zero value. ]*/      \
-        if (row_index >= two_d_array->rows)                                                                                                                         \
-        {                                                                                                                                                           \
-            LogError("Invalid arguments: uint32_t row_index=%" PRIu32 " out of bound, total_rows = %" PRIu32, row_index, two_d_array->rows);                        \
-            result = MU_FAILURE;                                                                                                                                    \
-        }                                                                                                                                                           \
-        else                                                                                                                                                        \
-        {                                                                                                                                                           \
-            /* Codes_SRS_TWO_D_ARRAY_07_012: [ TWO_D_ARRAY_FREE_ROW(T) shall free the memory associated with the row specified by row_index and set it to NULL. ]*/ \
-            free((void*)two_d_array->row_arrays[row_index]);                                                                                                        \
-            TWO_D_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(TWO_D_ARRAY_TYPEDEF_NAME(T))(two_d_array);                                                           \
-            array->row_arrays[row_index] = NULL;                                                                                                                    \
-            /* Codes_SRS_TWO_D_ARRAY_07_013: [ TWO_D_ARRAY_FREE_ROW(T) shall return zero on success. ]*/                                                            \
-            result = 0;                                                                                                                                             \
-        }                                                                                                                                                           \
-    }                                                                                                                                                               \
-    return result;                                                                                                                                                  \
-}                                                                                                                                                                   \
+#define TWO_D_ARRAY_LL_FREE_ROW_DEFINE(C, T)                                                                                                                            \
+int TWO_D_ARRAY_LL_FREE_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t row_index)                                                                                       \
+{                                                                                                                                                                       \
+    int result;                                                                                                                                                         \
+    /* Codes_SRS_TWO_D_ARRAY_07_010: [ If two_d_array is NULL, TWO_D_ARRAY_FREE_ROW(T) shall fail return a non-zero value. ]*/                                          \
+    if (two_d_array == NULL) {                                                                                                                                          \
+        LogError("Invalid arguments: TWO_D_ARRAY (" MU_TOSTRING(T) ") two_d_array=%p", two_d_array);                                                                    \
+        result = MU_FAILURE;                                                                                                                                            \
+    }                                                                                                                                                                   \
+    else                                                                                                                                                                \
+    {                                                                                                                                                                   \
+        /* Codes_SRS_TWO_D_ARRAY_07_011: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_FREE_ROW(T) shall fail and return a non-zero value. ]*/          \
+        if (row_index >= two_d_array->rows)                                                                                                                             \
+        {                                                                                                                                                               \
+            LogError("Invalid arguments: uint32_t row_index=%" PRIu32 " out of bound, total_rows = %" PRIu32, row_index, two_d_array->rows);                            \
+            result = MU_FAILURE;                                                                                                                                        \
+        }                                                                                                                                                               \
+        else                                                                                                                                                            \
+        {                                                                                                                                                               \
+            TWO_D_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(TWO_D_ARRAY_TYPEDEF_NAME(T))(two_d_array);                                                               \
+            if(array->row_arrays[row_index] == NULL)                                                                                                                    \
+            {                                                                                                                                                           \
+                LogError("Row not allocated yet: uint64_t row_index=%" PRIu32 ", total_rows = %" PRIu32, row_index, two_d_array->rows);                                \
+                result = MU_FAILURE;                                                                                                                                    \
+            }                                                                                                                                                           \
+            else                                                                                                                                                        \
+            {                                                                                                                                                           \
+                /* Codes_SRS_TWO_D_ARRAY_07_012: [ TWO_D_ARRAY_FREE_ROW(T) shall free the memory associated with the row specified by row_index and set it to NULL. ]*/ \
+                free((void*)two_d_array->row_arrays[row_index]);                                                                                                        \
+                array->row_arrays[row_index] = NULL;                                                                                                                    \
+                /* Codes_SRS_TWO_D_ARRAY_07_013: [ TWO_D_ARRAY_FREE_ROW(T) shall return zero on success. ]*/                                                            \
+                result = 0;                                                                                                                                             \
+            }                                                                                                                                                           \
+        }                                                                                                                                                               \
+    }                                                                                                                                                                   \
+    return result;                                                                                                                                                      \
+}                                                                                                                                                                       \
 
 
 #define TWO_D_ARRAY_LL_ALLOCATE_NEW_ROW_DEFINE(C, T)                                                                                                                                         \
