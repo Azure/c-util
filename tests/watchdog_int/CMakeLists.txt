@@ -13,4 +13,4 @@ set(${theseTestsName}_h_files
 ../../inc/c_util/watchdog.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util c_pal )

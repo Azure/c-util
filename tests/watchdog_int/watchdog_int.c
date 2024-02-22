@@ -60,6 +60,22 @@ static void test_watchdog_handler(void* context, const char* message)
     (void)interlocked_increment(&watchdog_context->count);
 }
 
+typedef struct TEST_WATCHDOG_EVENTS_TAG
+{
+    WATCHDOG_HANDLE watchdog;
+    volatile_atomic int32_t completion_count;
+} TEST_WATCHDOG_EVENTS;
+
+static int test_watchdog_reset_thread(void* context)
+{
+    LogInfo("begin watchdog reset thread");
+    ASSERT_IS_NOT_NULL(context);
+    TEST_WATCHDOG_EVENTS* watchdog_events = context;
+    watchdog_reset(watchdog_events->watchdog);
+    (void)interlocked_increment(&watchdog_events->completion_count);
+    return 0;
+}
+
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -120,7 +136,7 @@ TEST_FUNCTION(when_something_completes_watchdog_does_not_fire)
 TEST_FUNCTION(when_something_completes_watchdog_does_not_fire_in_loop_with_reset)
 {
     // arrange
-    THREAD_HANDLE work_thread;
+    THREAD_HANDLE work_thread[4];
     TEST_TASK_CONTEXT task_context;
     (void)interlocked_exchange(&task_context.can_complete, 0);
     (void)interlocked_exchange(&task_context.done, 0);
@@ -133,7 +149,7 @@ TEST_FUNCTION(when_something_completes_watchdog_does_not_fire_in_loop_with_reset
 
     for (uint32_t i = 0; i < 4; ++i)
     {
-        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&work_thread, test_task_thread, &task_context));
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&work_thread[i], test_task_thread, &task_context));
 
         // act
         ThreadAPI_Sleep(1000);
@@ -152,7 +168,10 @@ TEST_FUNCTION(when_something_completes_watchdog_does_not_fire_in_loop_with_reset
     ASSERT_ARE_EQUAL(int32_t, 0, interlocked_add(&g_watchdog.count, 0));
 
     // cleanup
-    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(work_thread, NULL));
+    for (uint32_t i = 0; i < 4; ++i)
+    {
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(work_thread[i], NULL));
+    }
     THANDLE_ASSIGN(RC_STRING)(&message, NULL);
     THANDLE_ASSIGN(THREADPOOL)(&threadpool, NULL);
 }
@@ -179,6 +198,7 @@ TEST_FUNCTION(when_something_takes_too_long_watchdog_fires_exactly_once)
     wake_by_address_single(&task_context.can_complete);
 
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&task_context.done, 1, 10000));
+
     watchdog_stop(watchdog);
     LogInfo("Stopped watchdog");
 
@@ -225,6 +245,41 @@ TEST_FUNCTION(when_something_takes_too_long_watchdog_fires_exactly_once_after_re
 
     // cleanup
     ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(work_thread, NULL));
+    THANDLE_ASSIGN(RC_STRING)(&message, NULL);
+    THANDLE_ASSIGN(THREADPOOL)(&threadpool, NULL);
+}
+
+TEST_FUNCTION(can_run_watchdog_reset_concurrently)
+{
+    // arrange
+    THREAD_HANDLE reset_thread[2];
+
+    TEST_WATCHDOG_EVENTS watchdog_event;
+    (void)interlocked_exchange(&watchdog_event.completion_count, 0);
+
+    LogInfo("Begin watchdog");
+    THANDLE(RC_STRING) message = rc_string_create("test watchdog is expected after dueling resets");
+    THANDLE(THREADPOOL) threadpool = watchdog_threadpool_get();
+    ASSERT_IS_NOT_NULL(threadpool);
+
+    WATCHDOG_HANDLE watchdog = watchdog_start(threadpool, 500, message, test_watchdog_handler, &g_watchdog);
+    watchdog_event.watchdog = watchdog;
+
+    // act 
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&reset_thread[0], test_watchdog_reset_thread, &watchdog_event));
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&reset_thread[1], test_watchdog_reset_thread, &watchdog_event));
+
+    // wait long enough to allow expiration after reset.
+    ThreadAPI_Sleep(1000);
+
+    // assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&watchdog_event.completion_count, 2, 500));
+    ASSERT_ARE_EQUAL(int32_t, 1, interlocked_add(&g_watchdog.count, 0));
+
+    // cleanup
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(reset_thread[0], NULL));
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(reset_thread[1], NULL));
+    watchdog_stop(watchdog);
     THANDLE_ASSIGN(RC_STRING)(&message, NULL);
     THANDLE_ASSIGN(THREADPOOL)(&threadpool, NULL);
 }
