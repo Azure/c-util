@@ -145,7 +145,10 @@ include_directories(${UMOCK_C_INC_FOLDER})
 set(c_util_c_files
     ./src/async_op.c
     ./src/azure_base64.c
+    ./src/filename_helper.c
     ./src/buffer.c
+    ./src/cancellation_token.c
+    ./src/channel_common.c
     ./src/channel.c
     ./src/channel_internal.c
     ./src/constbuffer.c
@@ -162,7 +165,12 @@ set(c_util_c_files
     ./src/singlylinkedlist.c
     ./src/strings.c
     ./src/tarray.c
+    ./src/tcall_dispatcher.c
+    ./src/tcall_dispatcher_cancellation_token_cancel_call.c
+    ./src/tqueue.c
     ./src/uuid_string.c
+    ./src/watchdog.c
+    ./src/watchdog_threadpool.c
     ./src/worker_thread.c
 )
 
@@ -173,7 +181,9 @@ set(c_util_cpp_files
 set(c_util_h_files
     ./inc/c_util/async_op.h
     ./inc/c_util/azure_base64.h
+    ./inc/c_util/filename_helper.h
     ./inc/c_util/buffer_.h
+    ./inc/c_util/cancellation_token.h
     ./inc/c_util/channel.h
     ./inc/c_util/channel_common.h
     ./inc/c_util/constbuffer.h
@@ -196,10 +206,39 @@ set(c_util_h_files
     ./inc/c_util/strings_types.h
     ./inc/c_util/tarray_ll.h
     ./inc/c_util/tarray.h
+    ./inc/c_util/tcall_dispatcher.h
+    ./inc/c_util/tcall_dispatcher_ll.h
+    ./inc/c_util/tcall_dispatcher_cancellation_token_cancel_call.h
+    ./inc/c_util/tqueue.h
+    ./inc/c_util/tqueue_ll.h
+    ./inc/c_util/two_d_array.h
+    ./inc/c_util/two_d_array_ll.h
     ./inc/c_util/thandle_tuple_array.h
     ./inc/c_util/uuid_string.h
+    ./inc/c_util/watchdog.h
+    ./inc/c_util/watchdog_threadpool.h
     ./inc/c_util/worker_thread.h
 )
+
+if (WIN32)
+    set(c_util_h_files
+        ${c_util_h_files}
+        ./inc/c_util/for_each_in_folder.h
+        ./inc/c_util/for_each_in_sub_folder.h
+        ./inc/c_util/thread_notifications_dispatcher.h
+        ./inc/c_util/tcall_dispatcher_thread_notification_call.h
+    )
+endif()
+
+if (WIN32)
+    set(c_util_c_files
+        ${c_util_c_files}
+        ./src/for_each_in_folder.c
+        ./src/for_each_in_sub_folder.c
+        ./src/thread_notifications_dispatcher.c
+        ./src/tcall_dispatcher_thread_notification_call.c
+    )
+endif()
 
 function(get_murmurhash2_directory MURMURHASH2_DIR)
     if(EXISTS "${PROJECT_SOURCE_DIR}/deps/smhasher/src/MurmurHash2.cpp" )
@@ -238,10 +277,16 @@ if(${use_applessl})
     set(c_util_target_libs ${c_util_target_libs} ${cf_foundation} ${cf_network})
 endif()
 
+if(WIN32)
+    # maybe this should make its way to c-pal at some point ... maybe
+    add_subdirectory(thread_notifications_lackey_dll)
+
+    target_link_libraries(c_util thread_notifications_lackey_dll)
+endif()
+
 include_directories(${MACRO_UTILS_INC_FOLDER})
 include_directories(${UMOCK_C_INC_FOLDER})
 include_directories(${CMAKE_CURRENT_LIST_DIR}/inc)
-
 
 if((CMAKE_GENERATOR MATCHES "Visual Studio") AND (${run_traceability}))
     #add traceability custom target
@@ -252,6 +297,12 @@ endif()
 
 # make an install target so we can produce a Linux native client package.
 install_library_with_prefix(c_util c_util  ${c_util_h_files} )
+
+set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER
+    ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER}
+    "--suppressions=${CMAKE_CURRENT_LIST_DIR}/build_functions/c_util_suppressions.sup"
+    "--suppressions=${CMAKE_CURRENT_LIST_DIR}/deps/c-pal/build_functions/c-pal_suppressions.sup"
+)
 
 add_subdirectory(test_helpers)
 add_subdirectory(tests)

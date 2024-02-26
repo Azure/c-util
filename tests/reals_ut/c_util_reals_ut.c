@@ -7,6 +7,7 @@
     (original == real) ? (void)0 : (void)1;
 
 #include "../reals/real_async_op.h"
+#include "../reals/real_filename_helper.h"
 #include "../reals/real_channel.h"
 #include "../reals/real_channel_internal.h"
 #include "../reals/real_constbuffer.h"
@@ -20,6 +21,8 @@
 #include "../reals/real_rc_string.h"
 #include "../reals/real_rc_string_array.h"
 #include "../reals/real_singlylinkedlist.h"
+#include "../reals/real_tcall_dispatcher_cancellation_token_cancel_call.h"
+#include "../reals/real_cancellation_token.h"
 #include "../reals/real_uuid_string.h"
 
 #include "c_util/async_op.h"
@@ -36,12 +39,18 @@
 #include "c_util/rc_string_array.h"
 #include "c_util/singlylinkedlist.h"
 #include "c_util/uuid_string.h"
+#include "c_util/cancellation_token.h"
 
 #if defined _MSC_VER
 #include "../reals/real_object_lifetime_tracker.h"
 #include "../reals/real_worker_thread.h"
+#include "../reals/real_tcall_dispatcher_thread_notification_call.h"
+#include "../reals/real_thread_notifications_dispatcher.h"
+
 #include "c_util/object_lifetime_tracker.h"
 #include "c_util/worker_thread.h"
+#include "c_util/tcall_dispatcher_thread_notification_call.h"
+#include "c_util/thread_notifications_dispatcher.h"
 #endif
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
@@ -54,6 +63,7 @@ TEST_FUNCTION(check_all_c_util_reals)
 
     // act
     REGISTER_ASYNC_OP_GLOBAL_MOCK_HOOKS();
+    REGISTER_FILENAME_HELPER_GLOBAL_MOCK_HOOK();
     REGISTER_CHANNEL_GLOBAL_MOCK_HOOKS();
     REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
     REGISTER_CONSTBUFFER_GLOBAL_MOCK_HOOK();
@@ -67,10 +77,14 @@ TEST_FUNCTION(check_all_c_util_reals)
     REGISTER_SINGLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
     REGISTER_UUID_STRING_GLOBAL_MOCK_HOOK();
     REGISTER_HASH_GLOBAL_MOCK_HOOK();
+    REGISTER_TCALL_DISPATCHER_CANCELLATION_TOKEN_CANCEL_CALL_GLOBAL_MOCK_HOOK();
+    REGISTER_CANCELLATION_TOKEN_GLOBAL_MOCK_HOOKS();
 
 #if defined _MSC_VER
     REGISTER_OBJECT_LIFETIME_TRACKER_GLOBAL_MOCK_HOOKS();
     REGISTER_WORKER_THREAD_GLOBAL_MOCK_HOOK();
+    REGISTER_TCALL_DISPATCHER_THREAD_NOTIFICATION_CALL_GLOBAL_MOCK_HOOK();
+    REGISTER_THREAD_NOTIFICATIONS_DISPATCHER_GLOBAL_MOCK_HOOK();
 #endif
 
     // assert

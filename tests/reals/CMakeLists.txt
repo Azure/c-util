@@ -1,8 +1,10 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+
 set(c_util_reals_c_files
     real_async_op.c
+    real_filename_helper.c
     real_channel.c
     real_channel_internal.c
     real_constbuffer.c
@@ -14,7 +16,9 @@ set(c_util_reals_c_files
     real_rc_ptr.c
     real_rc_string.c
     real_rc_string_array.c
-    real_singlylinkedlist.c   
+    real_singlylinkedlist.c
+    real_cancellation_token.c
+    real_tcall_dispatcher_cancellation_token_cancel_call.c
     real_uuid_string.c
 )
 
@@ -26,6 +30,8 @@ set(c_util_reals_cpp_files
 set(c_util_reals_h_files
     real_async_op.h
     real_async_op_renames.h
+    real_filename_helper.h
+    real_filename_helper_renames.h
     real_channel_common_renames.h
     real_channel.h
     real_channel_renames.h
@@ -55,6 +61,10 @@ set(c_util_reals_h_files
     real_rc_string_array_renames.h
     real_singlylinkedlist.h
     real_singlylinkedlist_renames.h
+    real_cancellation_token.h
+    real_cancellation_token_renames.h
+    real_tcall_dispatcher_cancellation_token_cancel_call.h
+    real_tcall_dispatcher_cancellation_token_cancel_call_renames.h
     real_uuid_string.h
     real_uuid_string_renames.h
 )
@@ -65,6 +75,8 @@ if(WIN32)
         ${c_util_reals_c_files}
         real_object_lifetime_tracker.c
         real_worker_thread.c
+        real_tcall_dispatcher_thread_notification_call.c
+        real_thread_notifications_dispatcher.c
     )
 
     set(c_util_reals_h_files
@@ -73,6 +85,10 @@ if(WIN32)
         real_object_lifetime_tracker.h
         real_worker_thread.h
         real_worker_thread_renames.h
+        real_tcall_dispatcher_thread_notification_call.h
+        real_tcall_dispatcher_thread_notification_call_renames.h
+        real_thread_notifications_dispatcher.h
+        real_thread_notifications_dispatcher_renames.h
     )
 endif()
 
@@ -82,3 +98,6 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)
 add_library(c_util_reals ${c_util_reals_c_files} ${c_util_reals_cpp_files} ${c_util_reals_h_files})
 target_include_directories(c_util_reals PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests/reals> ${MURMURHASH2_DIR} $<TARGET_PROPERTY:c_util,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(c_util_reals c_logging_v2 c_pal_reals)
+if (WIN32)
+    target_link_libraries(c_util_reals thread_notifications_lackey_dll)
+endif()
