@@ -162,12 +162,11 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
     }
     else if (
         /* Codes_SRS_CONSTBUFFER_ARRAY_42_011: [ If start_buffer_index is greater than the number of buffers in original then constbuffer_array_create_from_buffer_index_and_count shall fail and return NULL. ]*/
-        start_buffer_index > original->nBuffers ||
+        (start_buffer_index > original->nBuffers) ||
         /* Codes_SRS_CONSTBUFFER_ARRAY_42_012: [ If start_buffer_index + buffer_count is greater than the number of buffers in original then constbuffer_array_create_from_buffer_index_and_count shall fail and return NULL. ]*/
-        start_buffer_index + buffer_count > original->nBuffers
+        buffer_count > original->nBuffers - start_buffer_index
         )
     {
-
         LogError("Invalid arguments: CONSTBUFFER_ARRAY_HANDLE original=%p (nBuffers=%" PRIu32 "), uint32_t start_buffer_index=%" PRIu32 ", uint32_t buffer_count=%" PRIu32,
             original, original->nBuffers, start_buffer_index, buffer_count);
         result = NULL;
