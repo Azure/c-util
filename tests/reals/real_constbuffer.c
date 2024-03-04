@@ -7,4 +7,4 @@
 
 #include "real_constbuffer_renames.h" // IWYU pragma: keep
 
-#include "../src/constbuffer.c"
+#include "../../src/constbuffer.c"

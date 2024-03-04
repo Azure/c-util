@@ -4,4 +4,4 @@
 #include "real_hash_renames.h" // IWYU pragma: keep
 #include "real_murmurhash2_renames.h" // IWYU pragma: keep
 
-#include "hash.cpp"
+#include "../../src/hash.cpp"

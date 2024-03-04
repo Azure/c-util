@@ -6,4 +6,4 @@
 
 #include "real_uuid_string_renames.h" // IWYU pragma: keep
 
-#include "uuid_string.c"
+#include "../../src/uuid_string.c"
