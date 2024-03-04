@@ -3,4 +3,4 @@
 
 #include "real_doublylinkedlist_renames.h" // IWYU pragma: keep
 
-#include "doublylinkedlist.c"
+#include "../../src/doublylinkedlist.c"

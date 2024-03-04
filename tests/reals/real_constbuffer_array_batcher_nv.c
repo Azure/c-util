@@ -8,4 +8,4 @@
 
 #include "real_constbuffer_array_batcher_nv_renames.h" // IWYU pragma: keep
 
-#include "constbuffer_array_batcher_nv.c"
+#include "../../src/constbuffer_array_batcher_nv.c"
