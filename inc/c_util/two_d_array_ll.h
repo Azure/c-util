@@ -259,7 +259,7 @@ all_ok:                                                                         
     return result;                                                                                                                                         \
 }                                                                                                                                                          \
 
-/*macro to be used in headers*/                                                                                     \
+/*"macros to use in 'reals_' headers"*/                                                                                     \
 #define TWO_D_ARRAY_LL_TYPE_DECLARE(C, T)                                                                           \
     /*hint: have TWO_D_ARRAY_DEFINE_STRUCT_TYPE(T) before TWO_D_ARRAY_LL_TYPE_DECLARE*/                             \
     THANDLE_LL_TYPE_DECLARE(TWO_D_ARRAY_TYPEDEF_NAME(C), TWO_D_ARRAY_TYPEDEF_NAME(T))                               \
