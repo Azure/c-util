@@ -60,7 +60,7 @@ struct TWO_D_ARRAY_STRUCT_TYPE_NAME_TAG(T)                                      
 /*introduces a name for the function that free's a TWO_D_ARRAY when it's ref count got to 0*/
 #define TWO_D_ARRAY_LL_FREE_NAME(C) MU_C2(TWO_D_ARRAY_LL_FREE_, C)
 
-/*introduces a function declaration for tarray_create*/
+/*introduces a function declaration for two_d_array_create*/
 #define TWO_D_ARRAY_LL_CREATE_DECLARE(C, T) MOCKABLE_FUNCTION(, TWO_D_ARRAY_LL(T), TWO_D_ARRAY_LL_CREATE(C), uint32_t, row_size, uint32_t, col_size);
 
 /*introduces a function declaration for two_d_array_free_row*/
@@ -258,5 +258,22 @@ T* TWO_D_ARRAY_LL_GET_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t row_index) 
 all_ok:                                                                                                                                                    \
     return result;                                                                                                                                         \
 }                                                                                                                                                          \
+
+/*macro to be used in headers*/                                                                                     \
+#define TWO_D_ARRAY_LL_TYPE_DECLARE(C, T)                                                                           \
+    /*hint: have TWO_D_ARRAY_DEFINE_STRUCT_TYPE(T) before TWO_D_ARRAY_LL_TYPE_DECLARE*/                             \
+    THANDLE_LL_TYPE_DECLARE(TWO_D_ARRAY_TYPEDEF_NAME(C), TWO_D_ARRAY_TYPEDEF_NAME(T))                               \
+    TWO_D_ARRAY_LL_CREATE_DECLARE(C, T)                                                                             \
+    TWO_D_ARRAY_LL_FREE_ROW_DECLARE(C, T)                                                                           \
+    TWO_D_ARRAY_LL_ALLOCATE_NEW_ROW_DECLARE(C, T)                                                                   \
+    TWO_D_ARRAY_LL_GET_ROW_DECLARE(C, T)                                                                            \
+
+#define TWO_D_ARRAY_LL_TYPE_DEFINE(C, T)                                                                            \
+    /*hint: have THANDLE_TYPE_DEFINE(TWO_D_ARRAY_TYPEDEF_NAME(T)) before TWO_D_ARRAY_LL_TYPE_DEFINE*/               \
+    TWO_D_ARRAY_LL_FREE_DEFINE(C, T)                                                                                \
+    TWO_D_ARRAY_LL_CREATE_DEFINE(C, T)                                                                              \
+    TWO_D_ARRAY_LL_FREE_ROW_DEFINE(C, T)                                                                            \
+    TWO_D_ARRAY_LL_ALLOCATE_NEW_ROW_DEFINE(C, T)                                                                    \
+    TWO_D_ARRAY_LL_GET_ROW_DEFINE(C, T)                                                                             \
 
 #endif  /*TWO_D_ARRAY_LL_H*/
