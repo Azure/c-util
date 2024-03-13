@@ -153,7 +153,7 @@ int TWO_D_ARRAY_LL_FREE_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t row_index
         }                                                                                                                                                               \
         else                                                                                                                                                            \
         {                                                                                                                                                               \
-            TWO_D_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(TWO_D_ARRAY_TYPEDEF_NAME(T))(two_d_array);                                                               \
+            TWO_D_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(TWO_D_ARRAY_TYPEDEF_NAME(C))(two_d_array);                                                               \
             if(array->row_arrays[row_index] == NULL)                                                                                                                    \
             {                                                                                                                                                           \
                 LogError("Row not allocated yet: uint64_t row_index=%" PRIu32 ", total_rows = %" PRIu32, row_index, two_d_array->rows);                                \
@@ -212,7 +212,7 @@ int TWO_D_ARRAY_LL_ALLOCATE_NEW_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t r
                 }                                                                                                                                                                            \
                 else                                                                                                                                                                         \
                 {                                                                                                                                                                            \
-                    TWO_D_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(TWO_D_ARRAY_TYPEDEF_NAME(T))(two_d_array);                                                                            \
+                    TWO_D_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(TWO_D_ARRAY_TYPEDEF_NAME(C))(two_d_array);                                                                            \
                     array->row_arrays[row_index] = new_row;                                                                                                                                  \
                     result = 0;                                                                                                                                                              \
                 }                                                                                                                                                                            \
