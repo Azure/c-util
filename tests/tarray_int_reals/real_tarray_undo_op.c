@@ -21,5 +21,6 @@ THANDLE_LL_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS(TARRAY_TYPEDEF_NAME(real_UNDO_OP), 
 
 #define realloc_2 real_gballoc_ll_realloc_2
 #define malloc_2 real_gballoc_ll_malloc_2
+#define free real_gballoc_ll_free
 TARRAY_LL_TYPE_DEFINE(real_UNDO_OP, UNDO_OP);
 
