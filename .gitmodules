@@ -25,3 +25,6 @@
 [submodule "deps/smhasher"]
 	path = deps/smhasher
 	url = https://github.com/hcoona/smhasher.git
+[submodule "deps/vcpkg"]
+	path = deps/vcpkg
+	url = https://github.com/microsoft/vcpkg.git
