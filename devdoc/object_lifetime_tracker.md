@@ -41,8 +41,8 @@ MU_DEFINE_ENUM(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME
 #define OBJECT_LIFETIME_TRACKER_ACT_RESULT_VALUES \
     OBJECT_LIFETIME_TRACKER_ACT_OK, \
     OBJECT_LIFETIME_TRACKER_ACT_ERROR, \
-    OBJECT_LIFETIME_TRACKER_ACT_NOT_FOUND, \
-    OBJECT_LIFETIME_TRACKER_UNREGISTER_KEY_NOT_FOUND
+    OBJECT_LIFETIME_TRACKER_ACT_KEY_NOT_FOUND, \
+    OBJECT_LIFETIME_TRACKER_ACT_OBJECT_NOT_FOUND
 
 MU_DEFINE_ENUM(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_RESULT_VALUES);
 
@@ -274,11 +274,11 @@ MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_ACT_RESULT, object_lifetime_tracker_
 
 **OBJECT_LIFETIME_TRACKER_43_086: [** `object_lifetime_tracker_act` shall find the list entry for the given `key` in the DList of keys by calling `DList_ForEach` with `is_same_key`. **]**
 
-**OBJECT_LIFETIME_TRACKER_43_087: [** If the given `key` is not found, `object_lifetime_tracker_act` shall return `OBJECT_LIFETIME_TRACKER_ACT_NOT_FOUND`. **]**
+**OBJECT_LIFETIME_TRACKER_43_087: [** If the given `key` is not found, `object_lifetime_tracker_act` shall return `OBJECT_LIFETIME_TRACKER_ACT_KEY_NOT_FOUND`. **]**
 
 **OBJECT_LIFETIME_TRACKER_43_088: [** `object_lifetime_tracker_act` shall find the list entry for the given `object` in the DList of objects for the given `key` by calling `DList_ForEach` with `is_same_object`. **]**
 
-**OBJECT_LIFETIME_TRACKER_43_089: [** If the given `object` is not found, `object_lifetime_tracker_act` shall return `OBJECT_LIFETIME_TRACKER_ACT_NOT_FOUND`. **]**
+**OBJECT_LIFETIME_TRACKER_43_089: [** If the given `object` is not found, `object_lifetime_tracker_act` shall return `OBJECT_LIFETIME_TRACKER_ACT_OBJECT_NOT_FOUND`. **]**
 
 **OBJECT_LIFETIME_TRACKER_43_090: [** `object_lifetime_tracker_act` shall call `action_function` with the given `object` and `context`. **]**
 
