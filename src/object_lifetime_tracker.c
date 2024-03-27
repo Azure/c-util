@@ -60,6 +60,7 @@ MU_DEFINE_ENUM_STRINGS(OBJECT_MATCH_FUNCTION_RESULT, OBJECT_MATCH_FUNCTION_RESUL
 
 MU_DEFINE_ENUM_STRINGS(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT_VALUES)
 
+MU_DEFINE_ENUM_STRINGS(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_RESULT_VALUES)
 
 static int is_same_key(PDLIST_ENTRY listEntry, void* context, bool* continueProcessing)
 {
@@ -455,4 +456,14 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy_all_objects_
         /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_053: [ object_lifetime_tracker_destroy_all_objects_for_key shall release the lock. ]*/
         srw_lock_release_exclusive(object_lifetime_tracker->lock);
     }
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_ACT_RESULT, object_lifetime_tracker_act, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, OBJECT_LIFETIME_TRACKER_ACTION_FUNCTION, action_function, void*, context)
+{
+    (void)object_lifetime_tracker;
+    (void)key;
+    (void)object;
+    (void)action_function;
+    (void)context;
+    return OBJECT_LIFETIME_TRACKER_ACT_OK;
 }
