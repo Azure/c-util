@@ -35,10 +35,19 @@ MU_DEFINE_ENUM(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_T
 
 MU_DEFINE_ENUM(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT_VALUES);
 
+#define OBJECT_LIFETIME_TRACKER_ACT_RESULT_VALUES \
+    OBJECT_LIFETIME_TRACKER_ACT_OK, \
+    OBJECT_LIFETIME_TRACKER_ACT_ERROR, \
+    OBJECT_LIFETIME_TRACKER_ACT_NOT_FOUND, \
+    OBJECT_LIFETIME_TRACKER_ACT_KEY_NOT_FOUND
+
+MU_DEFINE_ENUM(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_RESULT_VALUES);
+
 typedef struct OBJECT_LIFETIME_TRACKER_TAG* OBJECT_LIFETIME_TRACKER_HANDLE;
 typedef void(*DESTROY_OBJECT)(void* object, const void* context);
 typedef KEY_MATCH_FUNCTION_RESULT(*KEY_MATCH_FUNCTION)(const void* lhs, const void* rhs);
 typedef OBJECT_MATCH_FUNCTION_RESULT(*OBJECT_MATCH_FUNCTION)(const void* lhs, const void* rhs);
+typedef int(*OBJECT_LIFETIME_TRACKER_ACTION_FUNCTION)(void* object, void* context);
 
 #include "umock_c/umock_c_prod.h"
 
@@ -52,6 +61,8 @@ extern "C" {
     MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, object_lifetime_tracker_register_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, DESTROY_OBJECT, destroy_object, const void*, destroy_context);
     MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, object_lifetime_tracker_unregister_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object);
     MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy_all_objects_for_key, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key);
+
+    MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_ACT_RESULT, object_lifetime_tracker_act, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, OBJECT_LIFETIME_TRACKER_ACTION_FUNCTION, action_function, void*, context);
 
 #ifdef __cplusplus
 }

@@ -38,10 +38,19 @@ MU_DEFINE_ENUM(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_T
 
 MU_DEFINE_ENUM(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT_VALUES);
 
+#define OBJECT_LIFETIME_TRACKER_ACT_RESULT_VALUES \
+    OBJECT_LIFETIME_TRACKER_ACT_OK, \
+    OBJECT_LIFETIME_TRACKER_ACT_ERROR, \
+    OBJECT_LIFETIME_TRACKER_ACT_NOT_FOUND, \
+    OBJECT_LIFETIME_TRACKER_UNREGISTER_KEY_NOT_FOUND
+
+MU_DEFINE_ENUM(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_RESULT_VALUES);
+
 typedef struct OBJECT_LIFETIME_TRACKER_TAG* OBJECT_LIFETIME_TRACKER_HANDLE;
 typedef void(*DESTROY_OBJECT)(void* object, void* context);
 typedef KEY_MATCH_FUNCTION_RESULT(*KEY_MATCH_FUNCTION)(const void* lhs, const void* rhs);
 typedef OBJECT_MATCH_FUNCTION_RESULT(*OBJECT_MATCH_FUNCTION)(const void* lhs, const void* rhs);
+typedef int(*OBJECT_LIFETIME_TRACKER_ACTION_FUNCTION)(void* object, void* context);
 
 MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker_create, KEY_MATCH_FUNCTION, key_match_function, OBJECT_MATCH_FUNCTION, object_match_function);
 MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker);
@@ -49,6 +58,8 @@ MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy, OBJECT_LIFETIME_TRACK
 MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, object_lifetime_tracker_register_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, DESTROY_OBJECT, destroy_object, const void*, destroy_context);
 MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, object_lifetime_tracker_unregister_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object);
 MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy_all_objects_for_key, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key);
+MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_ACT_RESULT, object_lifetime_tracker_act, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, OBJECT_LIFETIME_TRACKER_ACTION_FUNCTION, action_function, void*, context);
+
 ```
 
 ### object_lifetime_tracker_create
@@ -241,3 +252,38 @@ MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy_all_objects_for_key, O
 **SRS_OBJECT_LIFETIME_TRACKER_43_065: [** `object_lifetime_tracker_destroy_all_objects_for_key` shall free the memory associated with the given `key`. **]**
 
 **SRS_OBJECT_LIFETIME_TRACKER_43_053: [** `object_lifetime_tracker_destroy_all_objects_for_key` shall release the lock. **]**
+
+
+### object_lifetime_tracker_act
+
+```c
+MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_ACT_RESULT, object_lifetime_tracker_act, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, OBJECT_LIFETIME_TRACKER_ACTION_FUNCTION, action_function, void*, context);
+```
+
+`object_lifetime_tracker_act` performs an action on the object that was registered with the given key. The action is performed by calling the given `action_function` with the given `context`. The `action_function` is called under lock, so the user must ensure that it does not call any functions that may cause a deadlock.
+
+**OBJECT_LIFETIME_TRACKER_43_081: [** If `object_lifetime_tracker` is `NULL`, `object_lifetime_tracker_act` shall fail and return `OBJECT_LIFETIME_TRACKER_ACT_ERROR`. **]**
+
+**OBJECT_LIFETIME_TRACKER_43_082: [** If `key` is `NULL`, `object_lifetime_tracker_act` shall fail and return `OBJECT_LIFETIME_TRACKER_ACT_ERROR`. **]**
+
+**OBJECT_LIFETIME_TRACKER_43_083: [** If `object` is `NULL`, `object_lifetime_tracker_act` shall fail and return `OBJECT_LIFETIME_TRACKER_ACT_ERROR`. **]**
+
+**OBJECT_LIFETIME_TRACKER_43_084: [** If `action_function` is `NULL`, `object_lifetime_tracker_act` shall fail and return `OBJECT_LIFETIME_TRACKER_ACT_ERROR`. **]**
+
+**OBJECT_LIFETIME_TRACKER_43_085: [** `object_lifetime_tracker_act` shall acquire the lock in shared mode. **]**
+
+**OBJECT_LIFETIME_TRACKER_43_086: [** `object_lifetime_tracker_act` shall find the list entry for the given `key` in the DList of keys by calling `DList_ForEach` with `is_same_key`. **]**
+
+**OBJECT_LIFETIME_TRACKER_43_087: [** If the given `key` is not found, `object_lifetime_tracker_act` shall return `OBJECT_LIFETIME_TRACKER_ACT_NOT_FOUND`. **]**
+
+**OBJECT_LIFETIME_TRACKER_43_088: [** `object_lifetime_tracker_act` shall find the list entry for the given `object` in the DList of objects for the given `key` by calling `DList_ForEach` with `is_same_object`. **]**
+
+**OBJECT_LIFETIME_TRACKER_43_089: [** If the given `object` is not found, `object_lifetime_tracker_act` shall return `OBJECT_LIFETIME_TRACKER_ACT_NOT_FOUND`. **]**
+
+**OBJECT_LIFETIME_TRACKER_43_090: [** `object_lifetime_tracker_act` shall call `action_function` with the given `object` and `context`. **]**
+
+**OBJECT_LIFETIME_TRACKER_43_091: [** `object_lifetime_tracker_act` shall release the lock. **]**
+
+**OBJECT_LIFETIME_TRACKER_43_092: [** `object_lifetime_tracker_act` shall succeed and return `OBJECT_LIFETIME_TRACKER_ACT_OK`. **]**
+
+**OBJECT_LIFETIME_TRACKER_43_093: [** If there are any failures, `object_lifetime_tracker_act` shall fail and return `OBJECT_LIFETIME_TRACKER_ACT_ERROR`. **]**

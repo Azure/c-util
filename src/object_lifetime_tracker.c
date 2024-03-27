@@ -456,3 +456,13 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy_all_objects_
         srw_lock_release_exclusive(object_lifetime_tracker->lock);
     }
 }
+
+IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_ACT_RESULT, object_lifetime_tracker_act, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, OBJECT_LIFETIME_TRACKER_ACTION_FUNCTION, action_function, void*, context)
+{
+    (void)object_lifetime_tracker;
+    (void)key;
+    (void)object;
+    (void)action_function;
+    (void)context;
+    return OBJECT_LIFETIME_TRACKER_ACT_OK;
+}

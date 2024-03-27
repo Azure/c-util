@@ -31,6 +31,7 @@ void real_object_lifetime_tracker_destroy(OBJECT_LIFETIME_TRACKER_HANDLE object_
 OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT real_object_lifetime_tracker_register_object(OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker, const void* key, void* object, DESTROY_OBJECT destroy_object, const void* destroy_context);
 OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT real_object_lifetime_tracker_unregister_object(OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker, const void* key, void* object);
 void real_object_lifetime_tracker_destroy_all_objects_for_key(OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker, const void* key);
+OBJECT_LIFETIME_TRACKER_ACT_RESULT real_object_lifetime_tracker_act(OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker, const void* key, void* object, OBJECT_LIFETIME_TRACKER_ACTION_FUNCTION action_function, void* context);
 
 #ifdef __cplusplus
 }
