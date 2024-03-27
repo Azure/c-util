@@ -487,7 +487,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_ACT_RESULT, object_lifetim
             if (DList_ForEach(&(object_lifetime_tracker->keys), is_same_key, &key_match_context) != 0)
             {
                 /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_093: [ If there are any failures, object_lifetime_tracker_act shall fail and return OBJECT_LIFETIME_TRACKER_ACT_ERROR. ]*/
-                LogError("failure in DList_ForEach(&(object_lifetime_tracker->keys)=%p, is_same_key=%p, &key_match_context=%p)", &(object_lifetime_tracker->keys), is_same_key, &key_match_context);
+                LogError("Failure in DList_ForEach(&(object_lifetime_tracker->keys)=%p, is_same_key=%p, &key_match_context=%p)", &(object_lifetime_tracker->keys), is_same_key, &key_match_context);
                 result = OBJECT_LIFETIME_TRACKER_ACT_ERROR;
             }
             else
