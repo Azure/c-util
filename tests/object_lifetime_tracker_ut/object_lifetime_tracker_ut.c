@@ -40,6 +40,9 @@ MOCK_FUNCTION_END((lhs == rhs) ? KEY_MATCH_FUNCTION_RESULT_MATCHING : KEY_MATCH_
 MOCK_FUNCTION_WITH_CODE(, OBJECT_MATCH_FUNCTION_RESULT, test_object_match_function, const void*, lhs, const void*, rhs)
 MOCK_FUNCTION_END((lhs == rhs) ? OBJECT_MATCH_FUNCTION_RESULT_MATCHING : OBJECT_MATCH_FUNCTION_RESULT_NOT_MATCHING);
 
+MOCK_FUNCTION_WITH_CODE(, int, test_action_function, void*, object, void*, context)
+MOCK_FUNCTION_END(0);
+
 static void* test_key_1 = (void*)0x1003;
 static void* test_key_2 = (void*)0x1004;
 static void* test_object_1 = (void*)0x1005;
@@ -48,12 +51,16 @@ static void* test_object_3 = (void*)0x1007;
 static void* test_object_4 = (void*)0x1008;
 static const void* test_destroy_context = (void*)0x1009;
 static const void* test_destroy_context_2 = (void*)0x100A;
+static void* test_context = (void*)0x100B;
 
 TEST_DEFINE_ENUM_TYPE(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT_VALUES);
 
 TEST_DEFINE_ENUM_TYPE(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT_VALUES);
 IMPLEMENT_UMOCK_C_ENUM_TYPE(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT_VALUES);
+
+TEST_DEFINE_ENUM_TYPE(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_RESULT_VALUES);
+IMPLEMENT_UMOCK_C_ENUM_TYPE(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_RESULT_VALUES);
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
@@ -136,6 +143,23 @@ static void setup_object_lifetime_tracker_unregister_object_expectations(const v
     STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
 }
 
+static void setup_object_lifetime_tracker_act_expectations(const void* key, void* object, size_t num_keys_before, size_t num_objects_before)
+{
+    STRICT_EXPECTED_CALL(srw_lock_acquire_shared(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(DList_ForEach(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    for (size_t i = 0; i <= num_keys_before; i++)
+    {
+        STRICT_EXPECTED_CALL(test_key_match_function(IGNORED_ARG, key));
+    }
+    STRICT_EXPECTED_CALL(DList_ForEach(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    for (size_t i = 0; i <= num_objects_before; i++)
+    {
+        STRICT_EXPECTED_CALL(test_object_match_function(IGNORED_ARG, object));
+    }
+    STRICT_EXPECTED_CALL(test_action_function(object, test_context));
+    STRICT_EXPECTED_CALL(srw_lock_release_shared(IGNORED_ARG));
+}
+
 /*
 Set up expectations for object_lifetime_tracker_destroy_all_objects_for_key.
 
@@ -185,13 +209,16 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(srw_lock_create, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(test_key_match_function, KEY_MATCH_FUNCTION_RESULT_ERROR);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(test_object_match_function, OBJECT_MATCH_FUNCTION_RESULT_ERROR);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(test_action_function, MU_FAILURE);
 
     REGISTER_UMOCK_ALIAS_TYPE(OBJECT_LIFETIME_TRACKER_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(SRW_LOCK_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(PDLIST_ENTRY, void*);
     REGISTER_UMOCK_ALIAS_TYPE(const PDLIST_ENTRY, void*);
     REGISTER_UMOCK_ALIAS_TYPE(DLIST_ACTION_FUNCTION, void*);
+
     REGISTER_TYPE(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT);
+    REGISTER_TYPE(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_RESULT);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -1199,6 +1226,221 @@ TEST_FUNCTION(object_lifetime_tracker_destroy_all_objects_for_key_key_not_found)
 
     // cleanup
     object_lifetime_tracker_destroy_all_objects_for_key(object_lifetime_tracker, test_key_1);
+    object_lifetime_tracker_destroy(object_lifetime_tracker);
+}
+
+/* object_lifetime_tracker_act */
+
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_081: [ If object_lifetime_tracker is NULL, object_lifetime_tracker_act shall fail and return OBJECT_LIFETIME_TRACKER_ACT_ERROR. ]*/
+TEST_FUNCTION(object_lifetime_tracker_act_with_NULL_handle_fails)
+{
+    // arrange
+
+    // act
+    OBJECT_LIFETIME_TRACKER_ACT_RESULT result = object_lifetime_tracker_act(NULL, test_key_1, test_object_1, test_action_function, test_context);
+
+    // assert
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_ERROR, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_082: [ If key is NULL, object_lifetime_tracker_act shall fail and return OBJECT_LIFETIME_TRACKER_ACT_ERROR. ]*/
+TEST_FUNCTION(object_lifetime_tracker_act_with_NULL_key_fails)
+{
+    // arrange
+    OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
+
+    // act
+    OBJECT_LIFETIME_TRACKER_ACT_RESULT result = object_lifetime_tracker_act(object_lifetime_tracker, NULL, test_object_1, test_action_function, test_context);
+
+    // assert
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_ERROR, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    object_lifetime_tracker_destroy(object_lifetime_tracker);
+}
+
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_083: [ If object is NULL, object_lifetime_tracker_act shall fail and return OBJECT_LIFETIME_TRACKER_ACT_ERROR. ]*/
+TEST_FUNCTION(object_lifetime_tracker_act_with_NULL_object_fails)
+{
+    // arrange
+    OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
+
+    // act
+    OBJECT_LIFETIME_TRACKER_ACT_RESULT result = object_lifetime_tracker_act(object_lifetime_tracker, test_key_1, NULL, test_action_function, test_context);
+
+    // assert
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_ERROR, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    object_lifetime_tracker_destroy(object_lifetime_tracker);
+}
+
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_084: [ If action_function is NULL, object_lifetime_tracker_act shall fail and return OBJECT_LIFETIME_TRACKER_ACT_ERROR. ]*/
+TEST_FUNCTION(object_lifetime_tracker_act_with_NULL_action_function_fails)
+{
+    // arrange
+    OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
+
+    // act
+    OBJECT_LIFETIME_TRACKER_ACT_RESULT result = object_lifetime_tracker_act(object_lifetime_tracker, test_key_1, test_object_1, NULL, test_context);
+
+    // assert
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_ERROR, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    object_lifetime_tracker_destroy(object_lifetime_tracker);
+}
+
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_087: [If the given key is not found, object_lifetime_tracker_act shall return OBJECT_LIFETIME_TRACKER_ACT_KEY_NOT_FOUND.]*/
+TEST_FUNCTION(object_lifetime_tracker_act_with_key_not_found_fails)
+{
+    // arrange
+    OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
+    STRICT_EXPECTED_CALL(srw_lock_acquire_shared(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(DList_ForEach(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_release_shared(IGNORED_ARG));
+
+    // act
+    OBJECT_LIFETIME_TRACKER_ACT_RESULT result = object_lifetime_tracker_act(object_lifetime_tracker, test_key_1, test_object_1, test_action_function, test_context);
+
+    // assert
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_KEY_NOT_FOUND, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    object_lifetime_tracker_destroy(object_lifetime_tracker);
+}
+
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_089: [If the given object is not found, object_lifetime_tracker_act shall return OBJECT_LIFETIME_TRACKER_ACT_OBJECT_NOT_FOUND.]*/
+TEST_FUNCTION(object_lifetime_tracker_act_with_object_not_found_fails)
+{
+    // arrange
+    OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(srw_lock_acquire_shared(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(DList_ForEach(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(test_key_match_function(IGNORED_ARG, test_key_1));
+    STRICT_EXPECTED_CALL(DList_ForEach(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(test_object_match_function(IGNORED_ARG, test_object_2));
+    STRICT_EXPECTED_CALL(srw_lock_release_shared(IGNORED_ARG));
+
+    // act
+    OBJECT_LIFETIME_TRACKER_ACT_RESULT result = object_lifetime_tracker_act(object_lifetime_tracker, test_key_1, test_object_2, test_action_function, test_context);
+
+    // assert
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_OBJECT_NOT_FOUND, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_OK, object_lifetime_tracker_unregister_object(object_lifetime_tracker, test_key_1, test_object_1));
+    object_lifetime_tracker_destroy(object_lifetime_tracker);
+}
+
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_085: [object_lifetime_tracker_act shall acquire the lock in shared mode.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_086 : [object_lifetime_tracker_act shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_088 : [object_lifetime_tracker_act shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_090 : [object_lifetime_tracker_act shall call action_function with the given object and context.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_091 : [object_lifetime_tracker_act shall release the lock.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_092 : [object_lifetime_tracker_act shall succeed and return OBJECT_LIFETIME_TRACKER_ACT_OK.]*/
+TEST_FUNCTION(object_lifetime_tracker_act_succeeds_for_1_key_with_1_object)
+{
+    // arrange
+    OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    umock_c_reset_all_calls();
+
+    setup_object_lifetime_tracker_act_expectations(test_key_1, test_object_1, 0, 0);
+
+    // act
+    OBJECT_LIFETIME_TRACKER_ACT_RESULT result = object_lifetime_tracker_act(object_lifetime_tracker, test_key_1, test_object_1, test_action_function, test_context);
+
+    // assert
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_OK, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_OK, object_lifetime_tracker_unregister_object(object_lifetime_tracker, test_key_1, test_object_1));
+    object_lifetime_tracker_destroy(object_lifetime_tracker);
+}
+
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_085: [object_lifetime_tracker_act shall acquire the lock in shared mode.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_086 : [object_lifetime_tracker_act shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_088 : [object_lifetime_tracker_act shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_090 : [object_lifetime_tracker_act shall call action_function with the given object and context.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_091 : [object_lifetime_tracker_act shall release the lock.]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_092 : [object_lifetime_tracker_act shall succeed and return OBJECT_LIFETIME_TRACKER_ACT_OK.]*/
+TEST_FUNCTION(object_lifetime_tracker_act_succeeds_for_2_keys_and_2_objects)
+{
+    // arrange
+    OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, true, 0, true);
+    setup_object_lifetime_tracker_register_object_expectations(1, false, 1, true);
+
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_2, test_destroy_object, test_destroy_context));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_2, test_object_3, test_destroy_object, test_destroy_context));
+
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    umock_c_reset_all_calls();
+
+    setup_object_lifetime_tracker_act_expectations(test_key_2, test_object_3, 0, 0);
+
+    // act
+    OBJECT_LIFETIME_TRACKER_ACT_RESULT result = object_lifetime_tracker_act(object_lifetime_tracker, test_key_2, test_object_3, test_action_function, test_context);
+
+    // assert
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_OK, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_OK, object_lifetime_tracker_unregister_object(object_lifetime_tracker, test_key_2, test_object_3));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_OK, object_lifetime_tracker_unregister_object(object_lifetime_tracker, test_key_2, test_object_2));
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_OK, object_lifetime_tracker_unregister_object(object_lifetime_tracker, test_key_1, test_object_1));
+    object_lifetime_tracker_destroy(object_lifetime_tracker);
+}
+
+
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_093: [ If there are any failures, object_lifetime_tracker_act shall fail and return OBJECT_LIFETIME_TRACKER_ACT_ERROR. ]*/
+TEST_FUNCTION(object_lifetime_tracker_act_fails_when_underlying_functions_fail)
+{
+    // arrange
+    OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
+    setup_object_lifetime_tracker_register_object_expectations(0, true, 0, true);
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
+
+    umock_c_reset_all_calls();
+
+    setup_object_lifetime_tracker_act_expectations(test_key_1, test_object_1, 0, 0);
+    umock_c_negative_tests_snapshot();
+
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            // act
+            OBJECT_LIFETIME_TRACKER_ACT_RESULT result = object_lifetime_tracker_act(object_lifetime_tracker, test_key_1, test_object_1, test_action_function, test_context);
+
+            // assert
+            ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_ACT_RESULT, OBJECT_LIFETIME_TRACKER_ACT_ERROR, result);
+        }
+    }
+
+    // cleanup
+    ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_OK, object_lifetime_tracker_unregister_object(object_lifetime_tracker, test_key_1, test_object_1));
     object_lifetime_tracker_destroy(object_lifetime_tracker);
 }
 

@@ -460,10 +460,86 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy_all_objects_
 
 IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_ACT_RESULT, object_lifetime_tracker_act, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, OBJECT_LIFETIME_TRACKER_ACTION_FUNCTION, action_function, void*, context)
 {
-    (void)object_lifetime_tracker;
-    (void)key;
-    (void)object;
-    (void)action_function;
-    (void)context;
-    return OBJECT_LIFETIME_TRACKER_ACT_OK;
+   OBJECT_LIFETIME_TRACKER_ACT_RESULT result;
+
+    if (
+        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_081: [ If object_lifetime_tracker is NULL, object_lifetime_tracker_act shall fail and return OBJECT_LIFETIME_TRACKER_ACT_ERROR. ]*/
+        (object_lifetime_tracker == NULL) ||
+        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_082: [ If key is NULL, object_lifetime_tracker_act shall fail and return OBJECT_LIFETIME_TRACKER_ACT_ERROR. ]*/
+        (key == NULL) ||
+        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_083: [ If object is NULL, object_lifetime_tracker_act shall fail and return OBJECT_LIFETIME_TRACKER_ACT_ERROR. ]*/
+        (object == NULL) ||
+        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_084: [ If action_function is NULL, object_lifetime_tracker_act shall fail and return OBJECT_LIFETIME_TRACKER_ACT_ERROR. ]*/
+        (action_function == NULL)
+    )
+    {
+        LogError("Invalid arguments: OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker=%p, const void* key=%p, void* object=%p, OBJECT_LIFETIME_TRACKER_ACTION_FUNCTION action_function=%p, void* context=%p", object_lifetime_tracker, key, object, action_function, context);
+        result = OBJECT_LIFETIME_TRACKER_ACT_ERROR;
+    }
+    else
+    {
+        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_085: [ object_lifetime_tracker_act shall acquire the lock in shared mode. ]*/
+        srw_lock_acquire_shared(object_lifetime_tracker->lock);
+        {
+            KEY_MATCH_CONTEXT key_match_context = { .key = key, .key_match_function = object_lifetime_tracker->key_match_function, .found_list_entry = NULL };
+
+            /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_086: [ object_lifetime_tracker_act shall find the list entry for the given key in the DList of keys by calling DList_ForEach with is_same_key. ]*/
+            if (DList_ForEach(&(object_lifetime_tracker->keys), is_same_key, &key_match_context) != 0)
+            {
+                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_093: [ If there are any failures, object_lifetime_tracker_act shall fail and return OBJECT_LIFETIME_TRACKER_ACT_ERROR. ]*/
+                LogError("Failure in DList_ForEach(&(object_lifetime_tracker->keys)=%p, is_same_key=%p, &key_match_context=%p)", &(object_lifetime_tracker->keys), is_same_key, &key_match_context);
+                result = OBJECT_LIFETIME_TRACKER_ACT_ERROR;
+            }
+            else
+            {
+                if (key_match_context.found_list_entry == NULL)
+                {
+                    /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_087: [ If the given key is not found, object_lifetime_tracker_act shall return OBJECT_LIFETIME_TRACKER_ACT_KEY_NOT_FOUND. ]*/
+                    LogError("Could not find key=%p in list of keys", key);
+                    result = OBJECT_LIFETIME_TRACKER_ACT_KEY_NOT_FOUND;
+                }
+                else
+                {
+                    KEY* key_struct = CONTAINING_RECORD(key_match_context.found_list_entry, KEY, anchor);
+                    OBJECT_MATCH_CONTEXT object_match_context = { .object = object, .object_match_function = object_lifetime_tracker->object_match_function, .found_list_entry = NULL };
+                    /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_088: [ object_lifetime_tracker_act shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object. ]*/
+                    if (DList_ForEach(&(key_struct->objects), is_same_object, &object_match_context) != 0)
+                    {
+                        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_093: [ If there are any failures, object_lifetime_tracker_act shall fail and return OBJECT_LIFETIME_TRACKER_ACT_ERROR. ]*/
+                        LogError("Failure in DList_ForEach(&(key_struct->objects)=%p, is_same_object=%p, &object_match_context=%p)", &(key_struct->objects), is_same_object, &object_match_context);
+                        result = OBJECT_LIFETIME_TRACKER_ACT_ERROR;
+                    }
+                    else
+                    {
+                        if (object_match_context.found_list_entry == NULL)
+                        {
+                            /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_089: [ If the given object is not found, object_lifetime_tracker_act shall return OBJECT_LIFETIME_TRACKER_ACT_OBJECT_NOT_FOUND. ]*/
+                            LogError("Could not find object=%p in list of objects", object);
+                            result = OBJECT_LIFETIME_TRACKER_ACT_OBJECT_NOT_FOUND;
+                        }
+                        else
+                        {
+                            OBJECT* object_struct = CONTAINING_RECORD(object_match_context.found_list_entry, OBJECT, anchor);
+
+                            /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_090: [ object_lifetime_tracker_act shall call action_function with the given object and context. ]*/
+                            if (action_function(object_struct->object, context) != 0)
+                            {
+                                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_093: [ If there are any failures, object_lifetime_tracker_act shall fail and return OBJECT_LIFETIME_TRACKER_ACT_ERROR. ]*/
+                                LogError("Failure in action_function(object_struct->object=%p, context=%p)", object_struct->object, context);
+                                result = OBJECT_LIFETIME_TRACKER_ACT_ERROR;
+                            }
+                            else
+                            {
+                                /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_092: [ object_lifetime_tracker_act shall succeed and return OBJECT_LIFETIME_TRACKER_ACT_OK. ]*/
+                                result = OBJECT_LIFETIME_TRACKER_ACT_OK;
+                            }
+                        }
+                    }
+                }
+            }
+            /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_091: [ object_lifetime_tracker_act shall release the lock. ]*/
+            srw_lock_release_shared(object_lifetime_tracker->lock);
+        }
+    }
+    return result;
 }
