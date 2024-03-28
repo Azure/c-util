@@ -1262,7 +1262,7 @@ TEST_FUNCTION(object_lifetime_tracker_act_with_NULL_key_fails)
 }
 
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_083: [ If object is NULL, object_lifetime_tracker_act shall fail and return OBJECT_LIFETIME_TRACKER_ACT_ERROR. ]*/
-TEST_FUNCTION(object_lifetime_tracker_act_with_NULL_OBJECT_FAILS)
+TEST_FUNCTION(object_lifetime_tracker_act_with_NULL_object_fails)
 {
     // arrange
     OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker = test_create_object_lifetime_tracker();
@@ -1420,6 +1420,8 @@ TEST_FUNCTION(object_lifetime_tracker_act_fails_when_underlying_functions_fail)
     ASSERT_ARE_EQUAL(OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY, object_lifetime_tracker_register_object(object_lifetime_tracker, test_key_1, test_object_1, test_destroy_object, test_destroy_context));
 
     umock_c_reset_all_calls();
+
+    setup_object_lifetime_tracker_act_expectations(test_key_1, test_object_1, 0, 0);
     umock_c_negative_tests_snapshot();
 
     for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
