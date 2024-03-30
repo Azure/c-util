@@ -158,6 +158,7 @@ set(c_util_c_files
     ./src/channel_internal.c
     ./src/constbuffer.c
     ./src/constbuffer_array.c
+    ./src/constbuffer_array_array.c
     ./src/constbuffer_array_batcher_nv.c
     ./src/doublylinkedlist.c
     ./src/external_command_helper.c
@@ -195,6 +196,7 @@ set(c_util_h_files
     ./inc/c_util/constbuffer_format.h
     ./inc/c_util/constbuffer_version.h
     ./inc/c_util/constbuffer_array.h
+    ./inc/c_util/constbuffer_array_array.h
     ./inc/c_util/constbuffer_array_batcher_nv.h
     ./inc/c_util/doublylinkedlist.h
     ./inc/c_util/external_command_helper.h
