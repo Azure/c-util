@@ -142,7 +142,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
     umock_c_negative_tests_deinit();
 }
 
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_001: [ If buffers is NULL then constbuffer_array_splitter_split shall fail and return NULL. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_001: [ If buffers is NULL then constbuffer_array_splitter_split shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_with_null_buffers_fails)
 {
     /// act
@@ -153,7 +153,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_with_null_buffers_fails)
     ASSERT_IS_NULL(result);
 }
 
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_002: [ If max_buffer_size is 0 then constbuffer_array_splitter_split shall fail and return NULL. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_002: [ If max_buffer_size is 0 then constbuffer_array_splitter_split shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_with_0_max_buffer_size_fails)
 {
     /// arrange
@@ -170,8 +170,8 @@ TEST_FUNCTION(constbuffer_array_splitter_split_with_0_max_buffer_size_fails)
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_019: [ If the buffer count is 0 then constbuffer_array_splitter_split shall call constbuffer_array_create_empty and return the result. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_019: [ If the buffer count is 0 then constbuffer_array_splitter_split shall call constbuffer_array_create_empty and return the result. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_with_empty_array_succeeds)
 {
     /// arrange
@@ -196,9 +196,9 @@ TEST_FUNCTION(constbuffer_array_splitter_split_with_empty_array_succeeds)
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_020: [ If the remaining_buffer_size is 0 (all buffers are empty) then constbuffer_array_splitter_split shall call constbuffer_array_create_empty and return the result. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_020: [ If the remaining_buffer_size is 0 (all buffers are empty) then constbuffer_array_splitter_split shall call constbuffer_array_create_empty and return the result. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_with_all_empty_buffers_succeeds)
 {
     /// arrange
@@ -225,20 +225,20 @@ TEST_FUNCTION(constbuffer_array_splitter_split_with_all_empty_buffers_succeeds)
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_005: [ constbuffer_array_splitter_split shall allocate an array of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_006: [ constbuffer_array_splitter_split shall initialize the current buffer index to 0 and the current buffer offset to 0. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_007: [ constbuffer_array_splitter_split shall get the first buffer in buffers that is not empty. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_008: [ While the remaining_buffer_size is greater than 0: ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_009: [ constbuffer_array_splitter_split shall allocate memory of size min(max_buffer_size, remaining_buffer_size). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_010: [ constbuffer_array_splitter_split shall copy data from the buffers starting at the current buffer index and buffer offset until it has filled the allocated memory. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_011: [ constbuffer_array_splitter_split shall update the current buffer offset as it copies the memory. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_012: [ If the end of the current buffer in buffers is reached then constbuffer_array_splitter_split shall increment the buffer index and reset the buffer offset to 0, to read the next buffer in the original array (skipping over empty buffers). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_013: [ constbuffer_array_splitter_split shall decrement the remaining_buffer_size by the amount of data copied. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_014: [ constbuffer_array_splitter_split shall call CONSTBUFFER_CreateWithMoveMemory for the allocated memory and store it in the allocated array. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_015: [ constbuffer_array_splitter_split shall call constbuffer_array_create with the allocated array of buffer handles as split_buffers. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_016: [ constbuffer_array_splitter_split shall succeed and return the split_buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_005: [ constbuffer_array_splitter_split shall allocate an array of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_006: [ constbuffer_array_splitter_split shall initialize the current buffer index to 0 and the current buffer offset to 0. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_007: [ constbuffer_array_splitter_split shall get the first buffer in buffers that is not empty. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_008: [ While the remaining_buffer_size is greater than 0: ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_009: [ constbuffer_array_splitter_split shall allocate memory of size min(max_buffer_size, remaining_buffer_size). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_010: [ constbuffer_array_splitter_split shall copy data from the buffers starting at the current buffer index and buffer offset until it has filled the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_011: [ constbuffer_array_splitter_split shall update the current buffer offset as it copies the memory. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_012: [ If the end of the current buffer in buffers is reached then constbuffer_array_splitter_split shall increment the buffer index and reset the buffer offset to 0, to read the next buffer in the original array (skipping over empty buffers). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_013: [ constbuffer_array_splitter_split shall decrement the remaining_buffer_size by the amount of data copied. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_014: [ constbuffer_array_splitter_split shall call CONSTBUFFER_CreateWithMoveMemory for the allocated memory and store it in the allocated array. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_015: [ constbuffer_array_splitter_split shall call constbuffer_array_create with the allocated array of buffer handles as split_buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_016: [ constbuffer_array_splitter_split shall succeed and return the split_buffers. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_with_1_buffer_1_byte_succeeds)
 {
     /// arrange
@@ -277,20 +277,20 @@ TEST_FUNCTION(constbuffer_array_splitter_split_with_1_buffer_1_byte_succeeds)
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_005: [ constbuffer_array_splitter_split shall allocate an array of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_006: [ constbuffer_array_splitter_split shall initialize the current buffer index to 0 and the current buffer offset to 0. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_007: [ constbuffer_array_splitter_split shall get the first buffer in buffers that is not empty. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_008: [ While the remaining_buffer_size is greater than 0: ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_009: [ constbuffer_array_splitter_split shall allocate memory of size min(max_buffer_size, remaining_buffer_size). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_010: [ constbuffer_array_splitter_split shall copy data from the buffers starting at the current buffer index and buffer offset until it has filled the allocated memory. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_011: [ constbuffer_array_splitter_split shall update the current buffer offset as it copies the memory. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_012: [ If the end of the current buffer in buffers is reached then constbuffer_array_splitter_split shall increment the buffer index and reset the buffer offset to 0, to read the next buffer in the original array (skipping over empty buffers). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_013: [ constbuffer_array_splitter_split shall decrement the remaining_buffer_size by the amount of data copied. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_014: [ constbuffer_array_splitter_split shall call CONSTBUFFER_CreateWithMoveMemory for the allocated memory and store it in the allocated array. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_015: [ constbuffer_array_splitter_split shall call constbuffer_array_create with the allocated array of buffer handles as split_buffers. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_016: [ constbuffer_array_splitter_split shall succeed and return the split_buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_005: [ constbuffer_array_splitter_split shall allocate an array of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_006: [ constbuffer_array_splitter_split shall initialize the current buffer index to 0 and the current buffer offset to 0. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_007: [ constbuffer_array_splitter_split shall get the first buffer in buffers that is not empty. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_008: [ While the remaining_buffer_size is greater than 0: ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_009: [ constbuffer_array_splitter_split shall allocate memory of size min(max_buffer_size, remaining_buffer_size). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_010: [ constbuffer_array_splitter_split shall copy data from the buffers starting at the current buffer index and buffer offset until it has filled the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_011: [ constbuffer_array_splitter_split shall update the current buffer offset as it copies the memory. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_012: [ If the end of the current buffer in buffers is reached then constbuffer_array_splitter_split shall increment the buffer index and reset the buffer offset to 0, to read the next buffer in the original array (skipping over empty buffers). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_013: [ constbuffer_array_splitter_split shall decrement the remaining_buffer_size by the amount of data copied. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_014: [ constbuffer_array_splitter_split shall call CONSTBUFFER_CreateWithMoveMemory for the allocated memory and store it in the allocated array. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_015: [ constbuffer_array_splitter_split shall call constbuffer_array_create with the allocated array of buffer handles as split_buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_016: [ constbuffer_array_splitter_split shall succeed and return the split_buffers. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_with_multiple_buffers_1_byte_each_merge_succeeds)
 {
     /// arrange
@@ -332,20 +332,20 @@ TEST_FUNCTION(constbuffer_array_splitter_split_with_multiple_buffers_1_byte_each
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_005: [ constbuffer_array_splitter_split shall allocate an array of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_006: [ constbuffer_array_splitter_split shall initialize the current buffer index to 0 and the current buffer offset to 0. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_007: [ constbuffer_array_splitter_split shall get the first buffer in buffers that is not empty. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_008: [ While the remaining_buffer_size is greater than 0: ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_009: [ constbuffer_array_splitter_split shall allocate memory of size min(max_buffer_size, remaining_buffer_size). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_010: [ constbuffer_array_splitter_split shall copy data from the buffers starting at the current buffer index and buffer offset until it has filled the allocated memory. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_011: [ constbuffer_array_splitter_split shall update the current buffer offset as it copies the memory. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_012: [ If the end of the current buffer in buffers is reached then constbuffer_array_splitter_split shall increment the buffer index and reset the buffer offset to 0, to read the next buffer in the original array (skipping over empty buffers). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_013: [ constbuffer_array_splitter_split shall decrement the remaining_buffer_size by the amount of data copied. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_014: [ constbuffer_array_splitter_split shall call CONSTBUFFER_CreateWithMoveMemory for the allocated memory and store it in the allocated array. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_015: [ constbuffer_array_splitter_split shall call constbuffer_array_create with the allocated array of buffer handles as split_buffers. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_016: [ constbuffer_array_splitter_split shall succeed and return the split_buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_005: [ constbuffer_array_splitter_split shall allocate an array of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_006: [ constbuffer_array_splitter_split shall initialize the current buffer index to 0 and the current buffer offset to 0. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_007: [ constbuffer_array_splitter_split shall get the first buffer in buffers that is not empty. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_008: [ While the remaining_buffer_size is greater than 0: ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_009: [ constbuffer_array_splitter_split shall allocate memory of size min(max_buffer_size, remaining_buffer_size). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_010: [ constbuffer_array_splitter_split shall copy data from the buffers starting at the current buffer index and buffer offset until it has filled the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_011: [ constbuffer_array_splitter_split shall update the current buffer offset as it copies the memory. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_012: [ If the end of the current buffer in buffers is reached then constbuffer_array_splitter_split shall increment the buffer index and reset the buffer offset to 0, to read the next buffer in the original array (skipping over empty buffers). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_013: [ constbuffer_array_splitter_split shall decrement the remaining_buffer_size by the amount of data copied. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_014: [ constbuffer_array_splitter_split shall call CONSTBUFFER_CreateWithMoveMemory for the allocated memory and store it in the allocated array. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_015: [ constbuffer_array_splitter_split shall call constbuffer_array_create with the allocated array of buffer handles as split_buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_016: [ constbuffer_array_splitter_split shall succeed and return the split_buffers. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_with_multiple_buffers_1000_bytes_each_merge_succeeds)
 {
     /// arrange
@@ -387,20 +387,20 @@ TEST_FUNCTION(constbuffer_array_splitter_split_with_multiple_buffers_1000_bytes_
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_005: [ constbuffer_array_splitter_split shall allocate an array of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_006: [ constbuffer_array_splitter_split shall initialize the current buffer index to 0 and the current buffer offset to 0. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_007: [ constbuffer_array_splitter_split shall get the first buffer in buffers that is not empty. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_008: [ While the remaining_buffer_size is greater than 0: ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_009: [ constbuffer_array_splitter_split shall allocate memory of size min(max_buffer_size, remaining_buffer_size). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_010: [ constbuffer_array_splitter_split shall copy data from the buffers starting at the current buffer index and buffer offset until it has filled the allocated memory. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_011: [ constbuffer_array_splitter_split shall update the current buffer offset as it copies the memory. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_012: [ If the end of the current buffer in buffers is reached then constbuffer_array_splitter_split shall increment the buffer index and reset the buffer offset to 0, to read the next buffer in the original array (skipping over empty buffers). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_013: [ constbuffer_array_splitter_split shall decrement the remaining_buffer_size by the amount of data copied. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_014: [ constbuffer_array_splitter_split shall call CONSTBUFFER_CreateWithMoveMemory for the allocated memory and store it in the allocated array. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_015: [ constbuffer_array_splitter_split shall call constbuffer_array_create with the allocated array of buffer handles as split_buffers. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_016: [ constbuffer_array_splitter_split shall succeed and return the split_buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_005: [ constbuffer_array_splitter_split shall allocate an array of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_006: [ constbuffer_array_splitter_split shall initialize the current buffer index to 0 and the current buffer offset to 0. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_007: [ constbuffer_array_splitter_split shall get the first buffer in buffers that is not empty. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_008: [ While the remaining_buffer_size is greater than 0: ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_009: [ constbuffer_array_splitter_split shall allocate memory of size min(max_buffer_size, remaining_buffer_size). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_010: [ constbuffer_array_splitter_split shall copy data from the buffers starting at the current buffer index and buffer offset until it has filled the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_011: [ constbuffer_array_splitter_split shall update the current buffer offset as it copies the memory. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_012: [ If the end of the current buffer in buffers is reached then constbuffer_array_splitter_split shall increment the buffer index and reset the buffer offset to 0, to read the next buffer in the original array (skipping over empty buffers). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_013: [ constbuffer_array_splitter_split shall decrement the remaining_buffer_size by the amount of data copied. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_014: [ constbuffer_array_splitter_split shall call CONSTBUFFER_CreateWithMoveMemory for the allocated memory and store it in the allocated array. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_015: [ constbuffer_array_splitter_split shall call constbuffer_array_create with the allocated array of buffer handles as split_buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_016: [ constbuffer_array_splitter_split shall succeed and return the split_buffers. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_with_multiple_buffers_1000_bytes_each_merge_and_split_succeeds)
 {
     /// arrange
@@ -499,20 +499,20 @@ TEST_FUNCTION(constbuffer_array_splitter_split_with_multiple_buffers_1000_bytes_
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_005: [ constbuffer_array_splitter_split shall allocate an array of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_006: [ constbuffer_array_splitter_split shall initialize the current buffer index to 0 and the current buffer offset to 0. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_007: [ constbuffer_array_splitter_split shall get the first buffer in buffers that is not empty. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_008: [ While the remaining_buffer_size is greater than 0: ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_009: [ constbuffer_array_splitter_split shall allocate memory of size min(max_buffer_size, remaining_buffer_size). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_010: [ constbuffer_array_splitter_split shall copy data from the buffers starting at the current buffer index and buffer offset until it has filled the allocated memory. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_011: [ constbuffer_array_splitter_split shall update the current buffer offset as it copies the memory. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_012: [ If the end of the current buffer in buffers is reached then constbuffer_array_splitter_split shall increment the buffer index and reset the buffer offset to 0, to read the next buffer in the original array (skipping over empty buffers). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_013: [ constbuffer_array_splitter_split shall decrement the remaining_buffer_size by the amount of data copied. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_014: [ constbuffer_array_splitter_split shall call CONSTBUFFER_CreateWithMoveMemory for the allocated memory and store it in the allocated array. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_015: [ constbuffer_array_splitter_split shall call constbuffer_array_create with the allocated array of buffer handles as split_buffers. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_016: [ constbuffer_array_splitter_split shall succeed and return the split_buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_005: [ constbuffer_array_splitter_split shall allocate an array of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_006: [ constbuffer_array_splitter_split shall initialize the current buffer index to 0 and the current buffer offset to 0. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_007: [ constbuffer_array_splitter_split shall get the first buffer in buffers that is not empty. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_008: [ While the remaining_buffer_size is greater than 0: ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_009: [ constbuffer_array_splitter_split shall allocate memory of size min(max_buffer_size, remaining_buffer_size). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_010: [ constbuffer_array_splitter_split shall copy data from the buffers starting at the current buffer index and buffer offset until it has filled the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_011: [ constbuffer_array_splitter_split shall update the current buffer offset as it copies the memory. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_012: [ If the end of the current buffer in buffers is reached then constbuffer_array_splitter_split shall increment the buffer index and reset the buffer offset to 0, to read the next buffer in the original array (skipping over empty buffers). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_013: [ constbuffer_array_splitter_split shall decrement the remaining_buffer_size by the amount of data copied. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_014: [ constbuffer_array_splitter_split shall call CONSTBUFFER_CreateWithMoveMemory for the allocated memory and store it in the allocated array. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_015: [ constbuffer_array_splitter_split shall call constbuffer_array_create with the allocated array of buffer handles as split_buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_016: [ constbuffer_array_splitter_split shall succeed and return the split_buffers. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_large_buffers_to_100MB_chunks_succeeds)
 {
     /// arrange
@@ -599,20 +599,20 @@ TEST_FUNCTION(constbuffer_array_splitter_split_large_buffers_to_100MB_chunks_suc
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_005: [ constbuffer_array_splitter_split shall allocate an array of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_006: [ constbuffer_array_splitter_split shall initialize the current buffer index to 0 and the current buffer offset to 0. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_007: [ constbuffer_array_splitter_split shall get the first buffer in buffers that is not empty. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_008: [ While the remaining_buffer_size is greater than 0: ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_009: [ constbuffer_array_splitter_split shall allocate memory of size min(max_buffer_size, remaining_buffer_size). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_010: [ constbuffer_array_splitter_split shall copy data from the buffers starting at the current buffer index and buffer offset until it has filled the allocated memory. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_011: [ constbuffer_array_splitter_split shall update the current buffer offset as it copies the memory. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_012: [ If the end of the current buffer in buffers is reached then constbuffer_array_splitter_split shall increment the buffer index and reset the buffer offset to 0, to read the next buffer in the original array (skipping over empty buffers). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_013: [ constbuffer_array_splitter_split shall decrement the remaining_buffer_size by the amount of data copied. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_014: [ constbuffer_array_splitter_split shall call CONSTBUFFER_CreateWithMoveMemory for the allocated memory and store it in the allocated array. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_015: [ constbuffer_array_splitter_split shall call constbuffer_array_create with the allocated array of buffer handles as split_buffers. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_016: [ constbuffer_array_splitter_split shall succeed and return the split_buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_005: [ constbuffer_array_splitter_split shall allocate an array of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_006: [ constbuffer_array_splitter_split shall initialize the current buffer index to 0 and the current buffer offset to 0. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_007: [ constbuffer_array_splitter_split shall get the first buffer in buffers that is not empty. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_008: [ While the remaining_buffer_size is greater than 0: ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_009: [ constbuffer_array_splitter_split shall allocate memory of size min(max_buffer_size, remaining_buffer_size). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_010: [ constbuffer_array_splitter_split shall copy data from the buffers starting at the current buffer index and buffer offset until it has filled the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_011: [ constbuffer_array_splitter_split shall update the current buffer offset as it copies the memory. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_012: [ If the end of the current buffer in buffers is reached then constbuffer_array_splitter_split shall increment the buffer index and reset the buffer offset to 0, to read the next buffer in the original array (skipping over empty buffers). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_013: [ constbuffer_array_splitter_split shall decrement the remaining_buffer_size by the amount of data copied. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_014: [ constbuffer_array_splitter_split shall call CONSTBUFFER_CreateWithMoveMemory for the allocated memory and store it in the allocated array. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_015: [ constbuffer_array_splitter_split shall call constbuffer_array_create with the allocated array of buffer handles as split_buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_016: [ constbuffer_array_splitter_split shall succeed and return the split_buffers. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_with_empty_buffers_at_start_succeeds)
 {
     /// arrange
@@ -709,20 +709,20 @@ TEST_FUNCTION(constbuffer_array_splitter_split_with_empty_buffers_at_start_succe
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_005: [ constbuffer_array_splitter_split shall allocate an array of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_006: [ constbuffer_array_splitter_split shall initialize the current buffer index to 0 and the current buffer offset to 0. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_007: [ constbuffer_array_splitter_split shall get the first buffer in buffers that is not empty. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_008: [ While the remaining_buffer_size is greater than 0: ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_009: [ constbuffer_array_splitter_split shall allocate memory of size min(max_buffer_size, remaining_buffer_size). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_010: [ constbuffer_array_splitter_split shall copy data from the buffers starting at the current buffer index and buffer offset until it has filled the allocated memory. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_011: [ constbuffer_array_splitter_split shall update the current buffer offset as it copies the memory. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_012: [ If the end of the current buffer in buffers is reached then constbuffer_array_splitter_split shall increment the buffer index and reset the buffer offset to 0, to read the next buffer in the original array (skipping over empty buffers). ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_013: [ constbuffer_array_splitter_split shall decrement the remaining_buffer_size by the amount of data copied. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_014: [ constbuffer_array_splitter_split shall call CONSTBUFFER_CreateWithMoveMemory for the allocated memory and store it in the allocated array. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_015: [ constbuffer_array_splitter_split shall call constbuffer_array_create with the allocated array of buffer handles as split_buffers. ]*/
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_016: [ constbuffer_array_splitter_split shall succeed and return the split_buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_018: [ constbuffer_array_splitter_split shall call constbuffer_array_get_buffer_count. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_004: [ constbuffer_array_splitter_split shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_005: [ constbuffer_array_splitter_split shall allocate an array of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_006: [ constbuffer_array_splitter_split shall initialize the current buffer index to 0 and the current buffer offset to 0. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_007: [ constbuffer_array_splitter_split shall get the first buffer in buffers that is not empty. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_008: [ While the remaining_buffer_size is greater than 0: ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_009: [ constbuffer_array_splitter_split shall allocate memory of size min(max_buffer_size, remaining_buffer_size). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_010: [ constbuffer_array_splitter_split shall copy data from the buffers starting at the current buffer index and buffer offset until it has filled the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_011: [ constbuffer_array_splitter_split shall update the current buffer offset as it copies the memory. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_012: [ If the end of the current buffer in buffers is reached then constbuffer_array_splitter_split shall increment the buffer index and reset the buffer offset to 0, to read the next buffer in the original array (skipping over empty buffers). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_013: [ constbuffer_array_splitter_split shall decrement the remaining_buffer_size by the amount of data copied. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_014: [ constbuffer_array_splitter_split shall call CONSTBUFFER_CreateWithMoveMemory for the allocated memory and store it in the allocated array. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_015: [ constbuffer_array_splitter_split shall call constbuffer_array_create with the allocated array of buffer handles as split_buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_016: [ constbuffer_array_splitter_split shall succeed and return the split_buffers. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_with_empty_buffers_in_middle_succeeds)
 {
     /// arrange
@@ -825,7 +825,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_with_empty_buffers_in_middle_succ
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_017: [ If there are any other failures then constbuffer_array_splitter_split shall fail and return NULL. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_017: [ If there are any other failures then constbuffer_array_splitter_split shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_with_multiple_buffers_1000_bytes_each_merge_and_split_fails_if_underlying_functions_fail)
 {
     /// arrange
@@ -926,7 +926,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_with_multiple_buffers_1000_bytes_
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_017: [ If there are any other failures then constbuffer_array_splitter_split shall fail and return NULL. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_017: [ If there are any other failures then constbuffer_array_splitter_split shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_with_empty_array_fails_if_underlying_functions_fail)
 {
     /// arrange
@@ -958,7 +958,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_with_empty_array_fails_if_underly
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/*Tests_SRS_OFFLOAD_STORE_BLOB_SPLITTER_42_017: [ If there are any other failures then constbuffer_array_splitter_split shall fail and return NULL. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_017: [ If there are any other failures then constbuffer_array_splitter_split shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_with_all_empty_buffers_fails_if_underlying_functions_fail)
 {
     /// arrange
