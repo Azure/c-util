@@ -17,6 +17,7 @@
         constbuffer_array_create, \
         constbuffer_array_create_with_move_buffers, \
         constbuffer_array_create_from_buffer_index_and_count, \
+        constbuffer_array_create_from_start_and_end, \
         constbuffer_array_create_empty, \
         constbuffer_array_create_from_array_array, \
         constbuffer_array_inc_ref, \

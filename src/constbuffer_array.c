@@ -197,6 +197,95 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
     return result;
 }
 
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_start_and_end, CONSTBUFFER_ARRAY_HANDLE, original, uint32_t, start_buffer_index, uint32_t, start_buffer_offset, uint32_t, start_buffer_size, uint32_t, end_buffer_index, uint32_t, end_buffer_offset, uint32_t, end_buffer_size)
+{
+    CONSTBUFFER_ARRAY_HANDLE result;
+
+    if (original == NULL)
+    {
+        /* Codes_SRS_CONSTBUFFER_ARRAY_07_001: [ If original is NULL then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
+        LogError("Invalid arguments: CONSTBUFFER_ARRAY_HANDLE original=%p, uint32_t start_buffer_index=%" PRIu32 ", uint32_t start_buffer_offset=%" PRIu32 ", uint32_t start_buffer_size=%" PRIu32 ", uint32_t end_buffer_index=%" PRIu32 ", uint32_t end_buffer_offset=%" PRIu32 ", uint32_t end_buffer_size=%" PRIu32,
+            original, start_buffer_index, start_buffer_offset, start_buffer_size, end_buffer_index, end_buffer_offset, end_buffer_size);
+        result = NULL;
+    }
+    else if (
+        /* Codes_SRS_CONSTBUFFER_ARRAY_07_002: [ If start_buffer_index is greater than the number of buffers in original then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
+        (start_buffer_index > original->nBuffers) ||
+        /* Codes_SRS_CONSTBUFFER_ARRAY_07_003: [ If end_buffer_index is greater than the number of buffers in original then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
+        (end_buffer_index > original->nBuffers) ||
+        /* Codes_SRS_CONSTBUFFER_ARRAY_07_004: [ If start_buffer_index is greater than or equal to end_buffer_index then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
+        (start_buffer_index >= end_buffer_index)
+        )
+    {
+         LogError("Invalid arguments: CONSTBUFFER_ARRAY_HANDLE original=%p, uint32_t start_buffer_index=%" PRIu32 ", uint32_t start_buffer_offset=%" PRIu32 ", uint32_t start_buffer_size=%" PRIu32 ", uint32_t end_buffer_index=%" PRIu32 ", uint32_t end_buffer_offset=%" PRIu32 ", uint32_t end_buffer_size=%" PRIu32,
+             original, start_buffer_index, start_buffer_offset, start_buffer_size, end_buffer_index, end_buffer_offset, end_buffer_size);
+         result = NULL;
+    }
+    else
+    {
+        /* Codes_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the subset of the start_buffer and end_buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+        CONSTBUFFER_HANDLE start_buffer = CONSTBUFFER_CreateFromOffsetAndSize(original->buffers[start_buffer_index], start_buffer_offset, start_buffer_size);
+        if (start_buffer == NULL)
+        {
+            /* Codes_SRS_CONSTBUFFER_ARRAY_07_006: [ If CONSTBUFFER_CreateFromOffsetAndSize fails, constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
+            LogError("failure in CONSTBUFFER_CreateFromOffsetAndSize(original->buffers[start_buffer_index]=%p, start_buffer_offset=%" PRIu32 ", start_buffer_size=%" PRIu32 ");",
+                original->buffers[start_buffer_index], start_buffer_offset, start_buffer_size);
+            result = NULL;
+        }
+        else
+        {
+            CONSTBUFFER_HANDLE end_buffer = CONSTBUFFER_CreateFromOffsetAndSize(original->buffers[end_buffer_index], end_buffer_offset, end_buffer_size);
+            if (end_buffer == NULL)
+            {
+                /* Codes_SRS_CONSTBUFFER_ARRAY_07_006: [ If CONSTBUFFER_CreateFromOffsetAndSize fails, constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
+                LogError("failure in CONSTBUFFER_CreateFromOffsetAndSize(original->buffers[end_buffer_index]=%p, end_buffer_offset=%" PRIu32 ", end_buffer_size=%" PRIu32 ");",
+                    original->buffers[end_buffer_index], end_buffer_offset, end_buffer_size);
+                result = NULL;
+            }
+            else
+            {
+                /* Codes_SRS_CONSTBUFFER_ARRAY_07_007: [ constbuffer_array_create_from_start_and_end shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+                result = REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, end_buffer_index - start_buffer_index + 1, sizeof(CONSTBUFFER_HANDLE));
+                if (result == NULL)
+                {
+                    /* Codes_SRS_CONSTBUFFER_ARRAY_07_010: [ If REFCOUNT_TYPE_CREATE_FLEX fails, constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
+                    LogError("failure in REFCOUNT_TYPE_CREATE(CONSTBUFFER_ARRAY_HANDLE_DATA)");
+                    /*return as is*/
+                }
+                else
+                {
+                    uint32_t i;
+
+                    /* Codes_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
+                    result->buffers = result->buffers_memory;
+                    result->nBuffers = end_buffer_index - start_buffer_index + 1;
+                    result->custom_free = NULL;
+
+                    for (i = start_buffer_index; i < end_buffer_index + 1; i++)
+                    {
+                        if (i == start_buffer_index)
+                        {
+                            result->buffers[0] = start_buffer;
+                        }
+                        else if (i == end_buffer_index)
+                        {
+                            result->buffers[end_buffer_index - start_buffer_index] = end_buffer;
+                        }
+                        else
+                        {
+                            /* Codes_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
+                            CONSTBUFFER_IncRef(original->buffers[i]);
+                            result->buffers[i - start_buffer_index] = original->buffers[i];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
 IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_array_array, const CONSTBUFFER_ARRAY_HANDLE*, buffer_arrays, uint32_t, buffer_array_count)
 {
     CONSTBUFFER_ARRAY_HANDLE result;

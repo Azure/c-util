@@ -98,6 +98,34 @@ Note: `constbuffer_array_create_from_buffer_index_and_count` does not increment 
 
 **SRS_CONSTBUFFER_ARRAY_42_016: [** If any error occurs then `constbuffer_array_create_from_buffer_index_and_count` shall fail and return `NULL`. **]**
 
+### constbuffer_array_create_from_start_and_end
+
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_start_and_end, CONSTBUFFER_ARRAY_HANDLE, original, uint32_t, start_buffer_index, uint32_t, start_buffer_offset, uint32_t, start_buffer_size, uint32_t, end_buffer_index, uint32_t, end_buffer_offset, uint32_t, end_buffer_size);
+```
+
+`constbuffer_array_create_from_start_and_end` creates a new const buffer array which is a subset of the existing array in `original`.
+
+**SRS_CONSTBUFFER_ARRAY_07_001: [** If `original` is `NULL` then `constbuffer_array_create_from_start_and_end` shall fail and return `NULL`.  **]**
+
+**SRS_CONSTBUFFER_ARRAY_07_002: [** If `start_buffer_index` is greater than the number of buffers in `original` then `constbuffer_array_create_from_start_and_end` shall fail and return `NULL`.  **]**
+
+**SRS_CONSTBUFFER_ARRAY_07_003: [** If `end_buffer_index` is greater than the number of buffers in `original` then `constbuffer_array_create_from_start_and_end` shall fail and return `NULL`.  **]**
+
+**SRS_CONSTBUFFER_ARRAY_07_004: [** If `start_buffer_index` is greater than or equal to `end_buffer_index` then `constbuffer_array_create_from_start_and_end` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_07_005: [** `constbuffer_array_create_from_start_and_end` shall get the subset of the `start_buffer` and `end_buffer` by calling `CONSTBUFFER_CreateFromOffsetAndSize`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_07_006: [** If `CONSTBUFFER_CreateFromOffsetAndSize` fails, `constbuffer_array_create_from_start_and_end` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_07_007: [**  `constbuffer_array_create_from_start_and_end` shall allocate memory for a new `CONSTBUFFER_ARRAY_HANDLE`.  **]**
+
+**SRS_CONSTBUFFER_ARRAY_07_010: [** If `REFCOUNT_TYPE_CREATE_FLEX` fails, `constbuffer_array_create_from_start_and_end` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_07_008: [** `constbuffer_array_create_from_start_and_end` shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. **]**
+
+**SRS_CONSTBUFFER_ARRAY_07_009: [** `constbuffer_array_create_from_start_and_end` shall return a non-`NULL` handle.  **]**
+
 ### constbuffer_array_create_empty
 
 ```c
