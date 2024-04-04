@@ -70,7 +70,8 @@ static void constbuffer_array_create_from_start_and_end_inert_path(uint32_t nBuf
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
         .CallCannotFail();
-    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG))
+        .CallCannotFail();
     STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, start_offset, start_size));
     STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, end_offset, end_size));
     for (uint32_t i = 0; i < nBuffers; i++)
@@ -906,7 +907,7 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_start_buffer_inde
     umock_c_reset_all_calls();
 
     // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 5, 0, 0);
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 3, 0, 0);
 
     // assert
     ASSERT_IS_NULL(constbuffer_array);
@@ -917,12 +918,12 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_start_buffer_inde
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_014: [ If any error occurs then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_get_start_buffer_return_null_fails)
+TEST_FUNCTION(constbuffer_array_create_from_start_and_end_fails_when_underlying_functions_fail)
 {
     // arrange
     CONSTBUFFER_HANDLE test_buffers[4];
     CONSTBUFFER_ARRAY_HANDLE original;
-    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
+    size_t i;
 
     test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
     test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
@@ -932,88 +933,28 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_get_start_buffer_
     original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
-        .CallCannotFail();
-    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, 0, 2)).SetReturn(NULL);
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+    constbuffer_array_create_from_start_and_end_inert_path(1, 0, 1, 0, 3);
 
-    // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 2, 0, 1);
+    umock_c_negative_tests_snapshot();
+    for (i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
 
-    // assert
-    ASSERT_IS_NULL(constbuffer_array);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
 
-    // cleanup
-    constbuffer_array_dec_ref(original);
-    constbuffer_array_dec_ref(constbuffer_array);
-}
+            ///act
+            constbuffer_array = constbuffer_array_create_from_start_and_end(original, 0, 3, 0, 3);
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_014: [ If any error occurs then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_get_end_buffer_return_null_fails)
-{
-    // arrange
-    CONSTBUFFER_HANDLE test_buffers[3];
-    CONSTBUFFER_ARRAY_HANDLE original;
-    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
-
-    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
-    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
-    test_buffers[2] = TEST_CONSTBUFFER_HANDLE_3;
-
-    original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
-        .CallCannotFail();
-    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, 0, 1));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, 0, 1)).SetReturn(NULL);
-    STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
-
-    // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 0, 2, 0, 1);
-
-    // assert
-    ASSERT_IS_NULL(constbuffer_array);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+            ///assert
+            ASSERT_IS_NULL(constbuffer_array);
+        }
+    }
 
     // cleanup
     constbuffer_array_dec_ref(original);
-    constbuffer_array_dec_ref(constbuffer_array);
-}
-
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_014: [ If any error occurs then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_malloc_return_null_fails)
-{
-    // arrange
-    CONSTBUFFER_HANDLE test_buffers[3];
-    CONSTBUFFER_ARRAY_HANDLE original;
-    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
-
-    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
-    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
-    test_buffers[2] = TEST_CONSTBUFFER_HANDLE_3;
-
-    original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
-    umock_c_reset_all_calls();
-
-    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)).SetReturn(NULL);
-
-    // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 0, 2, 0, 2);
-
-    // assert
-    ASSERT_IS_NULL(constbuffer_array);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    constbuffer_array_dec_ref(original);
-    constbuffer_array_dec_ref(constbuffer_array);
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_014: [ If any error occurs then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/

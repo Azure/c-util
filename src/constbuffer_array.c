@@ -285,7 +285,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
                             }
                             else if (i == buffer_count - 1)
                             {
-                                result->buffers[buffer_count - 1] = end_buffer;
+                                result->buffers[i] = end_buffer;
                             }
                             else
                             {
