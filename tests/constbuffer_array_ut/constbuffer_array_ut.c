@@ -67,11 +67,12 @@ static void constbuffer_array_create_from_buffer_index_and_count_inert_path(void
 
 static void constbuffer_array_create_from_start_and_end_inert_path(uint32_t nBuffers, uint32_t start_offset, uint32_t start_size, uint32_t end_offset, uint32_t end_size)
 {
-    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, start_offset, start_size));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, end_offset, end_size));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
         .CallCannotFail();
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, start_offset, start_size));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, end_offset, end_size));
     for (uint32_t i = 0; i < nBuffers; i++)
     {
         STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(IGNORED_ARG));
@@ -835,7 +836,7 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_NULL_original_fai
     CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
 
     ///act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(NULL, 0, 0, 0, 0, 0, 0);
+    constbuffer_array = constbuffer_array_create_from_start_and_end(NULL, 0, 0, 0, 0);
 
     ///assert
     ASSERT_IS_NULL(constbuffer_array);
@@ -858,7 +859,7 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_start_buffer_inde
     umock_c_reset_all_calls();
 
     // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 4, 0, 0, 0, 0, 0);
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 4, 0, 0, 0);
 
     // assert
     ASSERT_IS_NULL(constbuffer_array);
@@ -879,7 +880,7 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_start_buffer_inde
     umock_c_reset_all_calls();
 
     // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 0, 0, 0, 0, 0);
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 0, 0, 0);
 
     // assert
     ASSERT_IS_NULL(constbuffer_array);
@@ -889,8 +890,8 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_start_buffer_inde
     constbuffer_array_dec_ref(original);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_003: [ If end_buffer_index is greater than the number of buffers in original then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_end_buffer_index_greater_than_buffer_count_fails)
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_003: [ If start_buffer_index + buffer_count is greater than the number of buffers in original then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_start_buffer_index_add_buffer_count_greater_than_original_buffer_size_fails)
 {
     // arrange
     CONSTBUFFER_HANDLE test_buffers[3];
@@ -905,7 +906,7 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_end_buffer_index_
     umock_c_reset_all_calls();
 
     // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 0, 0, 5, 0, 0);
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 5, 0, 0);
 
     // assert
     ASSERT_IS_NULL(constbuffer_array);
@@ -915,59 +916,7 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_end_buffer_index_
     constbuffer_array_dec_ref(original);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_004: [ If start_buffer_index is greater than or equal to end_buffer_index then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_same_start_and_end_buffer_index_fails)
-{
-    // arrange
-    CONSTBUFFER_HANDLE test_buffers[3];
-    CONSTBUFFER_ARRAY_HANDLE original;
-    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
-
-    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
-    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
-    test_buffers[2] = TEST_CONSTBUFFER_HANDLE_3;
-
-    original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
-    umock_c_reset_all_calls();
-
-    // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 0, 0, 1, 0, 0);
-
-    // assert
-    ASSERT_IS_NULL(constbuffer_array);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    constbuffer_array_dec_ref(original);
-}
-
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_004: [ If start_buffer_index is greater than or equal to end_buffer_index then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_start_buffer_index_greater_than_end_buffer_index_fails)
-{
-    // arrange
-    CONSTBUFFER_HANDLE test_buffers[3];
-    CONSTBUFFER_ARRAY_HANDLE original;
-    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
-
-    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
-    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
-    test_buffers[2] = TEST_CONSTBUFFER_HANDLE_3;
-
-    original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
-    umock_c_reset_all_calls();
-
-    // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 2, 0, 0, 1, 0, 0);
-
-    // assert
-    ASSERT_IS_NULL(constbuffer_array);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    // cleanup
-    constbuffer_array_dec_ref(original);
-}
-
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_006: [ If CONSTBUFFER_CreateFromOffsetAndSize fails, constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_014: [ If any error occurs then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_get_start_buffer_return_null_fails)
 {
     // arrange
@@ -983,22 +932,26 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_get_start_buffer_
     original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, 1, 1)).SetReturn(NULL);
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
+        .CallCannotFail();
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, 0, 2)).SetReturn(NULL);
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 1, 1, 3, 0, 4);
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 2, 0, 1);
 
     // assert
     ASSERT_IS_NULL(constbuffer_array);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    real_CONSTBUFFER_DecRef(test_buffers[1]);
     constbuffer_array_dec_ref(original);
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_006: [ If CONSTBUFFER_CreateFromOffsetAndSize fails, constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_014: [ If any error occurs then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_get_end_buffer_return_null_fails)
 {
     // arrange
@@ -1013,24 +966,28 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_get_end_buffer_re
     original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
     umock_c_reset_all_calls();
 
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
+        .CallCannotFail();
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
     STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, 0, 1));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, 0, 3)).SetReturn(NULL);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, 0, 1)).SetReturn(NULL);
+    STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 0, 0, 1, 2, 0, 3);
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 0, 2, 0, 1);
 
     // assert
     ASSERT_IS_NULL(constbuffer_array);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    real_CONSTBUFFER_DecRef(test_buffers[0]);
-    real_CONSTBUFFER_DecRef(test_buffers[2]);
     constbuffer_array_dec_ref(original);
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_010: [ If REFCOUNT_TYPE_CREATE_FLEX fails, constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_014: [ If any error occurs then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_malloc_return_null_fails)
 {
     // arrange
@@ -1045,26 +1002,57 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_malloc_return_nul
     original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, 0, 1));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, 0, 3));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)).SetReturn(NULL);
 
     // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 0, 0, 1, 2, 0, 3);
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 0, 2, 0, 2);
 
     // assert
     ASSERT_IS_NULL(constbuffer_array);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    real_CONSTBUFFER_DecRef(test_buffers[0]);
-    real_CONSTBUFFER_DecRef(test_buffers[2]);
     constbuffer_array_dec_ref(original);
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the subset of the start_buffer and end_buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_014: [ If any error occurs then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_only_buffer_return_null_fails)
+{
+    // arrange
+    CONSTBUFFER_HANDLE test_buffers[3];
+    CONSTBUFFER_ARRAY_HANDLE original;
+    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
+
+    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
+    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
+    test_buffers[2] = TEST_CONSTBUFFER_HANDLE_3;
+
+    original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
+        .CallCannotFail();
+    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, 0, 2)).SetReturn(NULL);
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
+
+    // act
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 1, 0, 2);
+
+    // assert
+    ASSERT_IS_NULL(constbuffer_array);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    constbuffer_array_dec_ref(original);
+    constbuffer_array_dec_ref(constbuffer_array);
+}
+
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_007: [ constbuffer_array_create_from_start_and_end shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_start_and_end_succeeds_full_array)
@@ -1084,7 +1072,7 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_succeeds_full_array)
     constbuffer_array_create_from_start_and_end_inert_path(1, 0, 1, 0, 3);
 
     // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 0, 0, 1, 2, 0, 3);
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 0, 3, 0, 3);
 
     // assert
     ASSERT_IS_NOT_NULL(constbuffer_array);
@@ -1103,8 +1091,10 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_succeeds_full_array)
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the subset of the start_buffer and end_buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_007: [ constbuffer_array_create_from_start_and_end shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only_get_part_of_start_buffer)
@@ -1125,7 +1115,7 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only
     constbuffer_array_create_from_start_and_end_inert_path(1, 1, 1, 0, 4);
 
     // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 1, 1, 3, 0, 4);
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 3, 1, 4);
 
     // assert
     ASSERT_IS_NOT_NULL(constbuffer_array);
@@ -1147,52 +1137,10 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the subset of the start_buffer and end_buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_007: [ constbuffer_array_create_from_start_and_end shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only_get_part_of_start_buffer_not_connected)
-{
-    // arrange
-    CONSTBUFFER_HANDLE test_buffers[4];
-    CONSTBUFFER_ARRAY_HANDLE original;
-    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
-
-    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
-    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
-    test_buffers[2] = TEST_CONSTBUFFER_HANDLE_3;
-    test_buffers[3] = TEST_CONSTBUFFER_HANDLE_4;
-
-    original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
-    umock_c_reset_all_calls();
-
-    constbuffer_array_create_from_start_and_end_inert_path(1, 0, 1, 0, 4);
-
-    // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 0, 1, 3, 0, 4);
-
-    // assert
-    ASSERT_IS_NOT_NULL(constbuffer_array);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    uint32_t actual_buffer_count;
-    (void)constbuffer_array_get_buffer_count(constbuffer_array, &actual_buffer_count);
-    ASSERT_ARE_EQUAL(uint32_t, 3, actual_buffer_count);
-    const CONSTBUFFER_HANDLE* internal_array = constbuffer_array_get_const_buffer_handle_array(constbuffer_array);
-    CONSTBUFFER_HANDLE start_buffer = real_CONSTBUFFER_CreateFromOffsetAndSize(TEST_CONSTBUFFER_HANDLE_2, 0, 1);
-
-    ASSERT_ARE_EQUAL(bool, true, real_CONSTBUFFER_HANDLE_contain_same(start_buffer, internal_array[0]));
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_3, internal_array[1]);
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_4, internal_array[2]);
-
-    // cleanup
-    real_CONSTBUFFER_DecRef(start_buffer);
-    constbuffer_array_dec_ref(original);
-    constbuffer_array_dec_ref(constbuffer_array);
-}
-
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the subset of the start_buffer and end_buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_007: [ constbuffer_array_create_from_start_and_end shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only_get_part_of_start_buffer_0_start_buffer_size)
@@ -1213,7 +1161,7 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only
     constbuffer_array_create_from_start_and_end_inert_path(1, 2, 0, 0, 4);
 
     // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 2, 0, 3, 0, 4);
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 3, 2, 4);
 
     // assert
     ASSERT_IS_NOT_NULL(constbuffer_array);
@@ -1235,8 +1183,10 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the subset of the start_buffer and end_buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_007: [ constbuffer_array_create_from_start_and_end shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only_get_part_of_end_buffer)
@@ -1257,7 +1207,7 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only
     constbuffer_array_create_from_start_and_end_inert_path(2, 0, 1, 0, 3);
 
     // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 0, 0, 1, 3, 0, 3);
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 0, 4, 0, 3);
 
     // assert
     ASSERT_IS_NOT_NULL(constbuffer_array);
@@ -1280,53 +1230,10 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the subset of the start_buffer and end_buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_007: [ constbuffer_array_create_from_start_and_end shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
-TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only_get_part_of_end_buffer_not_connected)
-{
-    // arrange
-    CONSTBUFFER_HANDLE test_buffers[4];
-    CONSTBUFFER_ARRAY_HANDLE original;
-    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
-
-    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
-    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
-    test_buffers[2] = TEST_CONSTBUFFER_HANDLE_3;
-    test_buffers[3] = TEST_CONSTBUFFER_HANDLE_4;
-
-    original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
-    umock_c_reset_all_calls();
-
-    constbuffer_array_create_from_start_and_end_inert_path(2, 0, 1, 1, 3);
-
-    // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 0, 0, 1, 3, 1, 3);
-
-    // assert
-    ASSERT_IS_NOT_NULL(constbuffer_array);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    uint32_t actual_buffer_count;
-    (void)constbuffer_array_get_buffer_count(constbuffer_array, &actual_buffer_count);
-    ASSERT_ARE_EQUAL(uint32_t, 4, actual_buffer_count);
-    const CONSTBUFFER_HANDLE* internal_array = constbuffer_array_get_const_buffer_handle_array(constbuffer_array);
-    CONSTBUFFER_HANDLE end_buffer = real_CONSTBUFFER_CreateFromOffsetAndSize(TEST_CONSTBUFFER_HANDLE_4, 1, 3);
-
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, internal_array[0]);
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_2, internal_array[1]);
-    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_3, internal_array[2]);
-    ASSERT_ARE_EQUAL(bool, true, real_CONSTBUFFER_HANDLE_contain_same(end_buffer, internal_array[3]));
-
-    // cleanup
-    real_CONSTBUFFER_DecRef(end_buffer);
-    constbuffer_array_dec_ref(original);
-    constbuffer_array_dec_ref(constbuffer_array);
-}
-
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the subset of the start_buffer and end_buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_007: [ constbuffer_array_create_from_start_and_end shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only_get_part_of_end_buffer_0_end_buffer_size)
@@ -1344,10 +1251,10 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only
     original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
     umock_c_reset_all_calls();
 
-    constbuffer_array_create_from_start_and_end_inert_path(2, 0, 1, 4, 0);
+    constbuffer_array_create_from_start_and_end_inert_path(2, 0, 1, 0, 0);
 
     // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 0, 0, 1, 3, 4, 0);
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 0, 4, 0, 0);
 
     // assert
     ASSERT_IS_NOT_NULL(constbuffer_array);
@@ -1370,8 +1277,10 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the subset of the start_buffer and end_buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_007: [ constbuffer_array_create_from_start_and_end shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_when_get_part_of_start_and_end_buffer)
@@ -1392,7 +1301,7 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_when
     constbuffer_array_create_from_start_and_end_inert_path(1, 1, 1, 0, 2);
 
     // act
-    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 1, 1, 3, 0, 2);
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 1, 3, 1, 2);
 
     // assert
     ASSERT_IS_NOT_NULL(constbuffer_array);
@@ -1416,8 +1325,58 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_when
     constbuffer_array_dec_ref(constbuffer_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the subset of the start_buffer and end_buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_007: [ constbuffer_array_create_from_start_and_end shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_013: [ If buffer_count is 1, constbuffer_array_create_from_start_and_end shall get the only buffer by calling CONSTBUFFER_CreateFromOffsetAndSize with paramter start_buffer_offset and end_buffer_size. ]*/
+TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_when_only_get_one_buffer)
+{
+    // arrange
+    CONSTBUFFER_HANDLE test_buffers[4];
+    CONSTBUFFER_ARRAY_HANDLE original;
+    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
+
+    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
+    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
+    test_buffers[2] = TEST_CONSTBUFFER_HANDLE_3;
+    test_buffers[3] = TEST_CONSTBUFFER_HANDLE_4;
+
+    original = constbuffer_array_create(test_buffers, sizeof(test_buffers) / sizeof(test_buffers[0]));
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
+        .CallCannotFail();
+    STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, 1, 2));
+
+    // act
+    constbuffer_array = constbuffer_array_create_from_start_and_end(original, 2, 1, 1, 2);
+
+    // assert
+    ASSERT_IS_NOT_NULL(constbuffer_array);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    uint32_t actual_buffer_count;
+    (void)constbuffer_array_get_buffer_count(constbuffer_array, &actual_buffer_count);
+    ASSERT_ARE_EQUAL(uint32_t, 1, actual_buffer_count);
+    const CONSTBUFFER_HANDLE* internal_array = constbuffer_array_get_const_buffer_handle_array(constbuffer_array);
+    CONSTBUFFER_HANDLE only_buffer = real_CONSTBUFFER_CreateFromOffsetAndSize(TEST_CONSTBUFFER_HANDLE_3, 1, 2);
+
+    ASSERT_ARE_EQUAL(bool, true, real_CONSTBUFFER_HANDLE_contain_same(only_buffer, internal_array[0]));
+
+    // cleanup
+    real_CONSTBUFFER_DecRef(only_buffer);
+    constbuffer_array_dec_ref(original);
+    constbuffer_array_dec_ref(constbuffer_array);
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_007: [ constbuffer_array_create_from_start_and_end shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_start_and_end_succeeds_when_nested_calls)
@@ -1440,10 +1399,10 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_succeeds_when_nested_c
     constbuffer_array_create_from_start_and_end_inert_path(0, 2, 1, 0, 1);
 
     // act
-    constbuffer_array_1_2_3 = constbuffer_array_create_from_start_and_end(original, 1, 1, 1, 3, 0, 2);
+    constbuffer_array_1_2_3 = constbuffer_array_create_from_start_and_end(original, 1, 3, 1, 2);
     ASSERT_IS_NOT_NULL(constbuffer_array_1_2_3);
 
-    constbuffer_array_2_3 = constbuffer_array_create_from_start_and_end(constbuffer_array_1_2_3, 1, 2, 1, 2, 0, 1);
+    constbuffer_array_2_3 = constbuffer_array_create_from_start_and_end(constbuffer_array_1_2_3, 1, 2, 2, 1);
     ASSERT_IS_NOT_NULL(constbuffer_array_2_3);
 
     // assert
