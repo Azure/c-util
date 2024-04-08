@@ -13,6 +13,10 @@ For example, it is used to upload large payloads to Blob store, split across lar
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_splitter_split, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size);
 ```
 
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE*, constbuffer_array_splitter_split_to_array_of_array, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size);
+```
+
 ### constbuffer_array_splitter_split
 
 ```c
@@ -58,3 +62,38 @@ This takes the `buffers` from a `CONSTBUFFER_ARRAY_HANDLE` and splits them into 
 **SRS_CONSTBUFFER_ARRAY_SPLITTER_42_016: [** `constbuffer_array_splitter_split` shall succeed and return the `split_buffers`. **]**
 
 **SRS_CONSTBUFFER_ARRAY_SPLITTER_42_017: [** If there are any other failures then `constbuffer_array_splitter_split` shall fail and return `NULL`. **]**
+
+### constbuffer_array_splitter_split_to_array_of_array
+
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE*, constbuffer_array_splitter_split_to_array_of_array, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size);
+```
+
+This takes the `buffers` from a `CONSTBUFFER_ARRAY_HANDLE` and splits them into a new `CONSTBUFFER_ARRAY_HANDLE*` where each `CONSTBUFFER_ARRAY_HANDLE` is of size `max_buffer_size` (or smaller for the final remaining buffer). The caller is responsible for cleaning up the returned `CONSTBUFFER_ARRAY_HANDLE*`.
+
+If `buffers` is `NULL` then `constbuffer_array_splitter_split_to_array_of_array` shall fail and return `NULL`.
+
+If `max_buffer_size` is `0` then `constbuffer_array_splitter_split_to_array_of_array` shall fail and return `NULL`.
+
+`constbuffer_array_splitter_split_to_array_of_array` shall call `constbuffer_array_get_buffer_count`.
+
+If the buffer count is 0 then `constbuffer_array_splitter_split_to_array_of_array` shall call `constbuffer_array_create_empty` and return the result.
+
+`constbuffer_array_splitter_split_to_array_of_array` shall call `constbuffer_array_get_all_buffers_size` for `buffers` and store the result as `remaining_buffer_size`.
+
+If the `remaining_buffer_size` is `0` (all buffers are empty) then `constbuffer_array_splitter_split_to_array_of_array` shall call `constbuffer_array_create_empty` and return the result.
+
+`constbuffer_array_splitter_split_to_array_of_array` shall initialize the start buffer index and offset to `0`, current buffer count to `0` and end buffer size to `0`.
+
+For every buffer in the original buffer:
+
+- `constbuffer_array_splitter_split_to_array_of_array` shall get the buffer currently checking for the size by calling `constbuffer_array_get_buffer`.
+- `constbuffer_array_splitter_split_to_array_of_array` shall get the buffer content by calling `CONSTBUFFER_GetContent`.
+- If current buffer size added the current sub-array size is smaller than `max_buffer_size`, `constbuffer_array_splitter_split_to_array_of_array` shall include the current buffer in the current array.
+  - If current buffer is the last buffer in the original buffer, `constbuffer_array_splitter_split_to_array_of_array` shall add a new array with size smaller than `max_buffer_size` as the last array.
+- If current buffer size added the current splitted buffer size is greater than `max_buffer_size`, then `constbuffer_array_splitter_split_to_array_of_array` shall get part of the current buffer as end buffer and added a new array into the result.
+- If current buffer size added the current splitted buffer size is equal to `max_buffer_size`, then `constbuffer_array_splitter_split_to_array_of_array` shall get the entire current buffer as end buffer and added a new array into the result.
+
+`constbuffer_array_splitter_split_to_array_of_array` shall succeed and return the `split_buffers`
+
+If there are any other failures then `constbuffer_array_splitter_split_to_array_of_array` shall fail and return `NULL`.

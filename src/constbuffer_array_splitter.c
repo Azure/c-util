@@ -208,3 +208,150 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_splitter_split(CONSTBUFFER_ARRAY_HAND
 
     return result;
 }
+
+CONSTBUFFER_ARRAY_HANDLE* constbuffer_array_splitter_split_to_array_of_array(CONSTBUFFER_ARRAY_HANDLE buffers, uint32_t max_buffer_size)
+{
+    CONSTBUFFER_ARRAY_HANDLE* result;
+
+    if (buffers == NULL || max_buffer_size == 0)
+    {
+        LogError("Invalid args : CONSTBUFFER_ARRAY_HANDLE buffers = %p, size_t max_buffer_size = %" PRIu32,
+            buffers, max_buffer_size);
+        result = NULL;
+    }
+    else
+    {
+        uint32_t buffer_count;
+        (void)constbuffer_array_get_buffer_count(buffers, &buffer_count);
+
+        if (buffer_count == 0)
+        {
+            result[0] = constbuffer_array_create_empty();
+
+            if (result == NULL)
+            {
+                LogError("constbuffer_array_create_empty failed");
+            }
+            // return as-is
+        }
+        else
+        {
+            uint32_t remaining_buffer_size;
+            int temp_result = constbuffer_array_get_all_buffers_size(buffers, &remaining_buffer_size);
+            if (temp_result != 0)
+            {
+                LogError("constbuffer_array_get_all_buffers_size failed");
+                result = NULL;
+            }
+            else
+            {
+                if (remaining_buffer_size == 0)
+                {
+                    result[0] = constbuffer_array_create_empty();
+
+                    if (result == NULL)
+                    {
+                        LogError("constbuffer_array_create_empty failed");
+                    }
+                    // return as-is
+                }
+                else
+                {
+                    uint32_t start_buffer_index = 0;
+                    uint32_t start_buffer_offset = 0;
+                    uint32_t end_buffer_size = 0;
+                    uint32_t current_buffer_count = 0; //buffer count in sub-array
+
+                    uint32_t current_buffer_size = 0; //sub-array size
+                    uint32_t i = 0; //index in original buffer
+                    uint32_t index = 0; //index in result array handle*
+                    uint32_t total_size = 0; //total buffer size in current result
+
+                    while(i < buffer_count)
+                    {
+                        CONSTBUFFER_HANDLE curr_buffer = constbuffer_array_get_buffer(buffers, i);
+                        const CONSTBUFFER* buffer = CONSTBUFFER_GetContent(curr_buffer);
+                        if(current_buffer_size + buffer->size < max_buffer_size)
+                        {
+                            current_buffer_count++;
+                            current_buffer_size += buffer->size;
+                            if(i == buffer_count - 1)
+                            {
+                                CONSTBUFFER_ARRAY_HANDLE arr = constbuffer_array_create_from_start_and_end(buffers, start_buffer_index, current_buffer_count, start_buffer_offset, buffer->size);
+                                if(arr == NULL)
+                                {
+                                    LogError("constbuffer_array_create_from_start_and_end failed buffers=%p, uint32_t start_buffer_index=%" PRIu32 ", uint32_t buffer_count=%" PRIu32 ", uint32_t start_buffer_offset=%" PRIu32 ", uint32_t end_buffer_size=%" PRIu32 ,
+                                        buffers, start_buffer_index, current_buffer_count, start_buffer_offset, buffer->size);
+                                    result = NULL;
+                                    break;
+                                }
+                                else
+                                {
+                                    result[index] = arr;
+                                }
+                            }
+                            i++;
+                        }
+                        else if(current_buffer_size + buffer->size > max_buffer_size)
+                        {
+                            current_buffer_count++;
+                            end_buffer_size = max_buffer_size - current_buffer_size;
+                            CONSTBUFFER_ARRAY_HANDLE arr = constbuffer_array_create_from_start_and_end(buffers, start_buffer_index, current_buffer_count, start_buffer_offset, end_buffer_size);
+                            if(arr == NULL)
+                            {
+                                LogError("constbuffer_array_create_from_start_and_end failed buffers=%p, uint32_t start_buffer_index=%" PRIu32 ", uint32_t buffer_count=%" PRIu32 ", uint32_t start_buffer_offset=%" PRIu32 ", uint32_t end_buffer_size=%" PRIu32 ,
+                                    buffers, start_buffer_index, current_buffer_count, start_buffer_offset, end_buffer_size);
+                                result = NULL;
+                                break;
+                            }
+                            else
+                            {
+                                result[index] = arr;
+                                current_buffer_size += end_buffer_size;
+                                total_size += current_buffer_size;
+
+                                //reset for another sub array
+                                start_buffer_index = i;
+                                start_buffer_offset = end_buffer_size;
+                                end_buffer_size = 0;
+                                current_buffer_count = 1;
+                                current_buffer_size = buffer->size - end_buffer_size;
+
+                                index++;
+                                i++;
+                            }
+                        }
+                        else
+                        {
+                            current_buffer_count++;
+                            CONSTBUFFER_ARRAY_HANDLE arr = constbuffer_array_create_from_start_and_end(buffers, start_buffer_index, current_buffer_count, start_buffer_offset, buffer->size);
+                            if(arr == NULL)
+                            {
+                                LogError("constbuffer_array_create_from_start_and_end failed buffers=%p, uint32_t start_buffer_index=%" PRIu32 ", uint32_t buffer_count=%" PRIu32 ", uint32_t start_buffer_offset=%" PRIu32 ", uint32_t end_buffer_size=%" PRIu32 ,
+                                    buffers, start_buffer_index, current_buffer_count, start_buffer_offset, buffer->size);
+                                result = NULL;
+                                break;
+                            }
+                            else
+                            {
+                                result[index] = arr;
+                                current_buffer_size += buffer->size;
+                                total_size += current_buffer_size;
+
+                                i++;
+                                start_buffer_index = i;
+                                start_buffer_offset = 0;
+                                current_buffer_count = 0;
+                                current_buffer_size = 0;
+
+                                index++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return result;
+}
