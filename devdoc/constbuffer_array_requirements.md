@@ -123,6 +123,8 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_star
 
 **SRS_CONSTBUFFER_ARRAY_07_007: [**  `constbuffer_array_create_from_start_and_end` shall allocate memory for a new `CONSTBUFFER_ARRAY_HANDLE`.  **]**
 
+**SRS_CONSTBUFFER_ARRAY_07_015: [** `constbuffer_array_create_from_start_and_end` shall skip any empty buffers in the middle of the original buffer.  **]**
+
 **SRS_CONSTBUFFER_ARRAY_07_008: [** `constbuffer_array_create_from_start_and_end` shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. **]**
 
 **SRS_CONSTBUFFER_ARRAY_07_009: [** `constbuffer_array_create_from_start_and_end` shall return a non-`NULL` handle.  **]**

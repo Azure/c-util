@@ -76,6 +76,8 @@ static void constbuffer_array_create_from_start_and_end_inert_path(uint32_t nBuf
     STRICT_EXPECTED_CALL(CONSTBUFFER_CreateFromOffsetAndSize(IGNORED_ARG, end_offset, end_size));
     for (uint32_t i = 0; i < nBuffers; i++)
     {
+        STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG))
+            .CallCannotFail();
         STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(IGNORED_ARG));
     }
 }
@@ -994,6 +996,7 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_with_only_buffer_retur
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_015: [ constbuffer_array_create_from_start_and_end shall skip any empty buffers in the middle of the original buffer. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_start_and_end_succeeds_full_array)
@@ -1036,6 +1039,7 @@ TEST_FUNCTION(constbuffer_array_create_from_start_and_end_succeeds_full_array)
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_015: [ constbuffer_array_create_from_start_and_end shall skip any empty buffers in the middle of the original buffer. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only_get_part_of_start_buffer)
@@ -1082,6 +1086,7 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_015: [ constbuffer_array_create_from_start_and_end shall skip any empty buffers in the middle of the original buffer. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only_get_part_of_start_buffer_0_start_buffer_size)
@@ -1128,6 +1133,7 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_015: [ constbuffer_array_create_from_start_and_end shall skip any empty buffers in the middle of the original buffer. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only_get_part_of_end_buffer)
@@ -1175,6 +1181,7 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_015: [ constbuffer_array_create_from_start_and_end shall skip any empty buffers in the middle of the original buffer. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only_get_part_of_end_buffer_0_end_buffer_size)
@@ -1222,6 +1229,7 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_only
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_015: [ constbuffer_array_create_from_start_and_end shall skip any empty buffers in the middle of the original buffer. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_when_get_part_of_start_and_end_buffer)
@@ -1270,6 +1278,7 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_when
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_015: [ constbuffer_array_create_from_start_and_end shall skip any empty buffers in the middle of the original buffer. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_013: [ If buffer_count is 1, constbuffer_array_create_from_start_and_end shall get the only buffer by calling CONSTBUFFER_CreateFromOffsetAndSize with paramter start_buffer_offset and end_buffer_size. ]*/
@@ -1318,6 +1327,7 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_when
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_011: [ constbuffer_array_create_from_start_and_end shall compute the start buffer size. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_start_and_end shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_start_and_end shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_015: [ constbuffer_array_create_from_start_and_end shall skip any empty buffers in the middle of the original buffer. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_start_and_end shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_start_and_end_succeeds_when_nested_calls)

@@ -9,6 +9,7 @@ set(c_util_reals_c_files
     real_channel_internal.c
     real_constbuffer.c
     real_constbuffer_array.c
+    real_constbuffer_array_splitter_array.c
     real_constbuffer_array_batcher_nv.c
     real_doublylinkedlist.c
     real_external_command_helper.c
@@ -41,6 +42,8 @@ set(c_util_reals_h_files
     real_constbuffer_renames.h
     real_constbuffer_array.h
     real_constbuffer_array_renames.h
+    real_constbuffer_array_splitter_array.h
+    real_constbuffer_array_splitter_array_renames.h
     real_constbuffer_array_batcher_nv.h
     real_constbuffer_array_batcher_nv_renames.h
     real_doublylinkedlist.h
@@ -50,7 +53,7 @@ set(c_util_reals_h_files
     real_hash.h
     real_hash_renames.h
     real_memory_data.h
-    real_memory_data_renames.h 
+    real_memory_data_renames.h
     real_murmurhash2.h
     real_murmurhash2_renames.h
     real_rc_ptr.h

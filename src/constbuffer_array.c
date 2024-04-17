@@ -204,7 +204,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
     if (original == NULL)
     {
         /* Codes_SRS_CONSTBUFFER_ARRAY_07_001: [ If original is NULL then constbuffer_array_create_from_start_and_end shall fail and return NULL. ]*/
-        LogError("Invalid arguments: CONSTBUFFER_ARRAY_HANDLE original=%p, uint32_t start_buffer_index=%" PRIu32 ", uint32_t buffer_count=%" PRIu32 ", uint32_t start_buffer_offset=%" PRIu32 ", uint32_t end_buffer_size=%" PRIu32 ,
+        LogError("Invalid arguments: CONSTBUFFER_ARRAY_HANDLE original=%p, uint32_t start_buffer_index=%" PRIu32 ", uint32_t buffer_count=%" PRIu32 ", uint32_t start_buffer_offset=%" PRIu32 ", uint32_t end_buffer_size=%" PRIu32,
             original, start_buffer_index, buffer_count, start_buffer_offset, end_buffer_size);
         result = NULL;
     }
@@ -215,9 +215,9 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
         (buffer_count > original->nBuffers - start_buffer_index)
         )
     {
-         LogError("Invalid arguments: CONSTBUFFER_ARRAY_HANDLE original=%p, uint32_t start_buffer_index=%" PRIu32 ", uint32_t start_buffer_offset=%" PRIu32 ", uint32_t buffer_count=%" PRIu32 ", uint32_t end_buffer_size=%" PRIu32,
-             original, start_buffer_index, start_buffer_offset, buffer_count, end_buffer_size);
-         result = NULL;
+        LogError("Invalid arguments: CONSTBUFFER_ARRAY_HANDLE original=%p, uint32_t start_buffer_index=%" PRIu32 ", uint32_t start_buffer_offset=%" PRIu32 ", uint32_t buffer_count=%" PRIu32 ", uint32_t end_buffer_size=%" PRIu32,
+            original, start_buffer_index, start_buffer_offset, buffer_count, end_buffer_size);
+        result = NULL;
     }
     else
     {
@@ -231,6 +231,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
         }
         else
         {
+            uint32_t empty_buffer_count = 0;
             result->buffers = result->buffers_memory;
             result->nBuffers = buffer_count;
             result->custom_free = NULL;
@@ -281,19 +282,29 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
                         {
                             if (i == 0)
                             {
-                                result->buffers[i] = start_buffer;
+                                result->buffers[i - empty_buffer_count] = start_buffer;
                             }
                             else if (i == buffer_count - 1)
                             {
-                                result->buffers[i] = end_buffer;
+                                result->buffers[i - empty_buffer_count] = end_buffer;
                             }
                             else
                             {
-                                /* Codes_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
-                                CONSTBUFFER_IncRef(original->buffers[start_buffer_index + i]);
-                                result->buffers[i] = original->buffers[start_buffer_index + i];
+                                /* Codes_SRS_CONSTBUFFER_ARRAY_07_015: [ constbuffer_array_create_from_start_and_end shall skip any empty buffers in the middle of the original buffer. ]*/
+                                const CONSTBUFFER* curr_buffer = CONSTBUFFER_GetContent(original->buffers[start_buffer_index + i]);
+                                if (curr_buffer->size != 0)
+                                {
+                                    /* Codes_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_start_and_end shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
+                                    CONSTBUFFER_IncRef(original->buffers[start_buffer_index + i]);
+                                    result->buffers[i - empty_buffer_count] = original->buffers[start_buffer_index + i];
+                                }
+                                else
+                                {
+                                    empty_buffer_count ++;
+                                }
                             }
                         }
+                        result->nBuffers = buffer_count - empty_buffer_count;
                         goto all_ok;
                     }
                     CONSTBUFFER_DecRef(start_buffer);
