@@ -123,7 +123,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(constbuffer_array_create_empty, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(TARRAY_CREATE(CONSTBUFFER_ARRAY_HANDLE), NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE), MU_FAILURE);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(constbuffer_array_create_from_start_and_end, NULL);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(constbuffer_array_create_from_buffer_offset_and_count, NULL);
 
     REGISTER_UMOCK_ALIAS_TYPE(CONSTBUFFER_ARRAY_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(CONSTBUFFER_HANDLE, void*);
@@ -1031,18 +1031,19 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_0_max_buff
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_003: [ constbuffer_array_splitter_split_to_array_of_array shall create a TARRAY(CONSTBUFFER_ARRAY_HANDLE) by calling TARRAY_CREATE. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_006: [ constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_ENSURE_CAPACITY to be able to add a CONSTBUFFER_ARRAY_HANDLE entry in the TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_007: [ If the buffer count is 0 then constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_create_empty and return the result. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_007: [ If the buffer_count is 0 then constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_create_empty and return the result. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_021: [ If buffer_count or remaining_buffer_size is 0, constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_CREATE_WITH_CAPACITY with size 1. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_array_succeeds)
 {
     /// arrange
     CONSTBUFFER_ARRAY_HANDLE buffers = real_constbuffer_array_create_empty();
 
-    STRICT_EXPECTED_CALL(TARRAY_CREATE(CONSTBUFFER_ARRAY_HANDLE)());
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
+    STRICT_EXPECTED_CALL(constbuffer_array_get_all_buffers_size(buffers, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(1));
     STRICT_EXPECTED_CALL(constbuffer_array_create_empty());
     STRICT_EXPECTED_CALL(TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, IGNORED_ARG));
 
@@ -1064,20 +1065,19 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_arra
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_003: [ constbuffer_array_splitter_split_to_array_of_array shall create a TARRAY(CONSTBUFFER_ARRAY_HANDLE) by calling TARRAY_CREATE. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_006: [ constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_ENSURE_CAPACITY to be able to add a CONSTBUFFER_ARRAY_HANDLE entry in the TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_009: [ If the remaining_buffer_size is 0 (all buffers are empty) then constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_create_empty and return the result. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_021: [ If buffer_count or remaining_buffer_size is 0, constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_CREATE_WITH_CAPACITY with size 1. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_split_with_all_empty_buffers_succeeds)
 {
     /// arrange
     CONSTBUFFER_ARRAY_HANDLE buffers = generate_test_buffer_array(3, 0);
 
-    STRICT_EXPECTED_CALL(TARRAY_CREATE(CONSTBUFFER_ARRAY_HANDLE)());
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(constbuffer_array_get_all_buffers_size(buffers, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(1));
     STRICT_EXPECTED_CALL(constbuffer_array_create_empty());
     STRICT_EXPECTED_CALL(TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, IGNORED_ARG));
 
@@ -1098,31 +1098,19 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_split_with_all_
     real_constbuffer_array_dec_ref(buffers);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_003: [ constbuffer_array_splitter_split_to_array_of_array shall create a TARRAY(CONSTBUFFER_ARRAY_HANDLE) by calling TARRAY_CREATE. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_006: [ constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_ENSURE_CAPACITY to be able to add a CONSTBUFFER_ARRAY_HANDLE entry in the TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_010: [ constbuffer_array_splitter_split_to_array_of_array shall initialize the start buffer index and offset to 0, current buffer count to 0 and end buffer size to 0. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_011: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer currently checking for the size by calling constbuffer_array_get_buffer. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_012: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer content by calling CONSTBUFFER_GetContent. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_016: [ If current buffer size added the current sub - tarray size is smaller than max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall include the current buffer to the current sub - tarray. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_014: [ If current buffer is the last buffer in the original constbuffer_array, constbuffer_array_splitter_split_to_array_of_array shall store the sub - tarray with size smaller than max_buffer_size to result. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_022: [ If remaining_buffers_size is smaller or equal to max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_CREATE_WITH_CAPACITY with size 1, inc ref the original buffer and return it. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_1_buffer_1_byte_succeeds)
 {
     /// arrange
     CONSTBUFFER_ARRAY_HANDLE buffers = generate_test_buffer_array(1, 1);
 
-    STRICT_EXPECTED_CALL(TARRAY_CREATE(CONSTBUFFER_ARRAY_HANDLE)());
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(constbuffer_array_get_all_buffers_size(buffers, IGNORED_ARG));
-
-    STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 0));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 0, 1, 0, 1));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(1));
+    STRICT_EXPECTED_CALL(constbuffer_array_inc_ref(IGNORED_ARG));
     STRICT_EXPECTED_CALL(TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, IGNORED_ARG));
 
     /// act
@@ -1145,39 +1133,19 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_1_buffer_1
     TARRAY_ASSIGN(CONSTBUFFER_ARRAY_HANDLE)(&result, NULL);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_003: [ constbuffer_array_splitter_split_to_array_of_array shall create a TARRAY(CONSTBUFFER_ARRAY_HANDLE) by calling TARRAY_CREATE. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_006: [ constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_ENSURE_CAPACITY to be able to add a CONSTBUFFER_ARRAY_HANDLE entry in the TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_010: [ constbuffer_array_splitter_split_to_array_of_array shall initialize the start buffer index and offset to 0, current buffer count to 0 and end buffer size to 0. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_011: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer currently checking for the size by calling constbuffer_array_get_buffer. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_012: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer content by calling CONSTBUFFER_GetContent. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_016: [ If current buffer size added the current sub - tarray size is smaller than max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall include the current buffer to the current sub - tarray. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_014: [ If current buffer is the last buffer in the original constbuffer_array, constbuffer_array_splitter_split_to_array_of_array shall store the sub - tarray with size smaller than max_buffer_size to result. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_022: [ If remaining_buffers_size is smaller or equal to max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_CREATE_WITH_CAPACITY with size 1, inc ref the original buffer and return it. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_buffers_1_byte_each_merge_succeeds)
 {
     /// arrange
     CONSTBUFFER_ARRAY_HANDLE buffers = generate_test_buffer_array(100, 1);
 
-    STRICT_EXPECTED_CALL(TARRAY_CREATE(CONSTBUFFER_ARRAY_HANDLE)());
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(constbuffer_array_get_all_buffers_size(buffers, IGNORED_ARG));
-
-    for (uint32_t i = 0; i < 99; i++)
-    {
-        STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i));
-        STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
-
-    }
-
-    STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 99));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 0, 100, 0, 1));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(1));
+    STRICT_EXPECTED_CALL(constbuffer_array_inc_ref(IGNORED_ARG));
     STRICT_EXPECTED_CALL(TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, IGNORED_ARG));
 
     /// act
@@ -1203,38 +1171,19 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
     TARRAY_ASSIGN(CONSTBUFFER_ARRAY_HANDLE)(&result, NULL);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_003: [ constbuffer_array_splitter_split_to_array_of_array shall create a TARRAY(CONSTBUFFER_ARRAY_HANDLE) by calling TARRAY_CREATE. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_006: [ constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_ENSURE_CAPACITY to be able to add a CONSTBUFFER_ARRAY_HANDLE entry in the TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_010: [ constbuffer_array_splitter_split_to_array_of_array shall initialize the start buffer index and offset to 0, current buffer count to 0 and end buffer size to 0. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_011: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer currently checking for the size by calling constbuffer_array_get_buffer. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_012: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer content by calling CONSTBUFFER_GetContent. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_016: [ If current buffer size added the current sub - tarray size is smaller than max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall include the current buffer to the current sub - tarray. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_014: [ If current buffer is the last buffer in the original constbuffer_array, constbuffer_array_splitter_split_to_array_of_array shall store the sub - tarray with size smaller than max_buffer_size to result. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_022: [ If remaining_buffers_size is smaller or equal to max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_CREATE_WITH_CAPACITY with size 1, inc ref the original buffer and return it. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_buffers_1000_bytes_each_merge_succeeds)
 {
     /// arrange
     CONSTBUFFER_ARRAY_HANDLE buffers = generate_test_buffer_array(10, 1000);
 
-    STRICT_EXPECTED_CALL(TARRAY_CREATE(CONSTBUFFER_ARRAY_HANDLE)());
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(constbuffer_array_get_all_buffers_size(buffers, IGNORED_ARG));
-
-    for (uint32_t i = 0; i < 9; i++)
-    {
-        STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i));
-        STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
-    }
-
-    STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 9));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 0, 10, 0, 1000));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(1));
+    STRICT_EXPECTED_CALL(constbuffer_array_inc_ref(IGNORED_ARG));
     STRICT_EXPECTED_CALL(TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, IGNORED_ARG));
 
     /// act
@@ -1260,10 +1209,9 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
     TARRAY_ASSIGN(CONSTBUFFER_ARRAY_HANDLE)(&result, NULL);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_003: [ constbuffer_array_splitter_split_to_array_of_array shall create a TARRAY(CONSTBUFFER_ARRAY_HANDLE) by calling TARRAY_CREATE. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_006: [ constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_ENSURE_CAPACITY to be able to add a CONSTBUFFER_ARRAY_HANDLE entry in the TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [ constbuffer_array_splitter_split_to_array_of_array shall allocate a TARRAY of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_010: [ constbuffer_array_splitter_split_to_array_of_array shall initialize the start buffer index and offset to 0, current buffer count to 0 and end buffer size to 0. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_011: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer currently checking for the size by calling constbuffer_array_get_buffer. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_012: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer content by calling CONSTBUFFER_GetContent. ]*/
@@ -1278,10 +1226,9 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
     // Split into 1500 bytes each (6 x 1500 and 1 x 1000)
     CONSTBUFFER_ARRAY_HANDLE buffers = generate_test_buffer_array(10, 1000);
 
-    STRICT_EXPECTED_CALL(TARRAY_CREATE(CONSTBUFFER_ARRAY_HANDLE)());
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(constbuffer_array_get_all_buffers_size(buffers, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(7));
 
     for (uint32_t i = 0; i < 7; i += 3)
     {
@@ -1293,45 +1240,21 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
         //get 500 in second buffer, i == 1/4/7 ,  =>first max_buffer
         STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 1));
         STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, i, 2, 0, 500));
-        if (i == 0)
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
-        }
-        else if (i == 3)
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 3));
-        }
-        else
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 5));
-        }
+        STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, i, 2, 0, 500));
 
         STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
         //current_buffer_size == 500 + 1000, i == 2/5/8 , => second max_buffer
         STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 2));
         STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, i + 1, 2, 500, 1000));
-        if (i == 0)
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 2));
-        }
-        else if (i == 3)
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 4));
-        }
-        else
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 6));
-        }
+        STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, i + 1, 2, 500, 1000));
+
         STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
     }
     //for the last 1 x 1000 buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 9));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 9, 1, 0, 1000));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 7));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 9, 1, 0, 1000));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
     STRICT_EXPECTED_CALL(TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, IGNORED_ARG));
@@ -1346,7 +1269,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
     uint32_t count;
     uint32_t all_buffer_size;
     uint32_t buffer_count = 0;
-    ASSERT_ARE_EQUAL(uint32_t, 8, result->capacity);
+    ASSERT_ARE_EQUAL(uint32_t, 7, result->capacity);
     for (uint32_t i = 0; i < 7; i++)
     {
         (void)real_constbuffer_array_get_buffer_count(result->arr[i], &count);
@@ -1374,10 +1297,9 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
     TARRAY_ASSIGN(CONSTBUFFER_ARRAY_HANDLE)(&result, NULL);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_003: [ constbuffer_array_splitter_split_to_array_of_array shall create a TARRAY(CONSTBUFFER_ARRAY_HANDLE) by calling TARRAY_CREATE. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_006: [ constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_ENSURE_CAPACITY to be able to add a CONSTBUFFER_ARRAY_HANDLE entry in the TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [ constbuffer_array_splitter_split_to_array_of_array shall allocate a TARRAY of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_010: [ constbuffer_array_splitter_split_to_array_of_array shall initialize the start buffer index and offset to 0, current buffer count to 0 and end buffer size to 0. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_011: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer currently checking for the size by calling constbuffer_array_get_buffer. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_012: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer content by calling CONSTBUFFER_GetContent. ]*/
@@ -1394,45 +1316,38 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_large_buffers_t
     // This simulates the actual size of splits for blob blocks and uses a split > UINT32_MAX
     CONSTBUFFER_ARRAY_HANDLE buffers = generate_test_buffer_array_increasing_size(3, 201 * 1024 * 1024, 1024 * 1024);
 
-    STRICT_EXPECTED_CALL(TARRAY_CREATE(CONSTBUFFER_ARRAY_HANDLE)());
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(constbuffer_array_get_all_buffers_size(buffers, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(7));
 
     //first buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 0));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
     //get first 100MB
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 0, 1, 0, 100 * 1024 * 1024));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 0, 1, 0, 100 * 1024 * 1024));
+
     //get second 100MB, 1MB left in first buffer
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 0, 1, 100 * 1024 * 1024, 100 * 1024 * 1024));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 2));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 0, 1, 100 * 1024 * 1024, 100 * 1024 * 1024));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
     //second buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 1));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
     //get first 100MB => 1MB from first buffer, 99MB from second buffer => 103MB left in second buffer
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 0, 2, 200 * 1024 * 1024, 99 * 1024 * 1024));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 3));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 0, 2, 200 * 1024 * 1024, 99 * 1024 * 1024));
     //get second 100MB => 3 MB left in second buffer
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 1, 1, 99 * 1024 * 1024, 100 * 1024 * 1024));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 4));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 1, 1, 99 * 1024 * 1024, 100 * 1024 * 1024));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
     //third buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 2));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
     //get first 100MB => 3MB from second buffer, 97MB from third buffer => 106MB left in second buffer
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 1, 2, 199 * 1024 * 1024, 97 * 1024 * 1024));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 5));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 1, 2, 199 * 1024 * 1024, 97 * 1024 * 1024));
     //get second 100MB => 6MB left in third buffer
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 2, 1, 97 * 1024 * 1024, 100 * 1024 * 1024));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 6));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 2, 1, 97 * 1024 * 1024, 100 * 1024 * 1024));
     //last array get from third buffer with size 6MB
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 2, 1, 197 * 1024 * 1024, 6 * 1024 * 1024));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 7));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 2, 1, 197 * 1024 * 1024, 6 * 1024 * 1024));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
     STRICT_EXPECTED_CALL(TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, IGNORED_ARG));
@@ -1447,7 +1362,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_large_buffers_t
     uint32_t count;
     uint32_t all_buffer_size;
     uint32_t buffer_count = 0;
-    ASSERT_ARE_EQUAL(uint32_t, 8, result->capacity);
+    ASSERT_ARE_EQUAL(uint32_t, 7, result->capacity);
     for (uint32_t i = 0; i < 7; i++)
     {
         (void)real_constbuffer_array_get_buffer_count(result->arr[i], &count);
@@ -1482,14 +1397,12 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_large_buffers_t
     TARRAY_ASSIGN(CONSTBUFFER_ARRAY_HANDLE)(&result, NULL);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_003: [ constbuffer_array_splitter_split_to_array_of_array shall create a TARRAY(CONSTBUFFER_ARRAY_HANDLE) by calling TARRAY_CREATE. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_006: [ constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_ENSURE_CAPACITY to be able to add a CONSTBUFFER_ARRAY_HANDLE entry in the TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [ constbuffer_array_splitter_split_to_array_of_array shall allocate a TARRAY of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_010: [ constbuffer_array_splitter_split_to_array_of_array shall initialize the start buffer index and offset to 0, current buffer count to 0 and end buffer size to 0. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_011: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer currently checking for the size by calling constbuffer_array_get_buffer. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_012: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer content by calling CONSTBUFFER_GetContent. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_013: [ If current buffer is an empty buffer and is the start of a new sub-tarray, constbuffer_array_splitter_split_to_array_of_array shall increment the start_buffer_index to find the first non - empty buffer for current sub - tarray. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_016: [ If current buffer size added the current sub - tarray size is smaller than max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall include the current buffer to the current sub - tarray. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_018: [ If current buffer size added the current sub - tarray size is greater than max_buffer_size, then constbuffer_array_splitter_split_to_array_of_array shall get part of the current buffer as end buffer and added a new array into the result until the remaining size for the current buffer is smaller than max_buffer_size. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_014: [ If current buffer is the last buffer in the original constbuffer_array, constbuffer_array_splitter_split_to_array_of_array shall store the sub - tarray with size smaller than max_buffer_size to result. ]*/
@@ -1510,10 +1423,9 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     real_constbuffer_array_dec_ref(buffers_temp);
     real_constbuffer_array_dec_ref(empty);
 
-    STRICT_EXPECTED_CALL(TARRAY_CREATE(CONSTBUFFER_ARRAY_HANDLE)());
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(constbuffer_array_get_all_buffers_size(buffers, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(7));
 
     //first three empty buffers
     for (uint32_t i = 0; i < 3; i++)
@@ -1533,45 +1445,29 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
         //get 500 in second buffer, i == 4/7/10 ,  =>first max_buffer
         STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 1));
         STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, i, 2, 0, 500));
         if (i == 3)
         {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
-        }
-        else if (i == 6)
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 3));
+            STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 0, 5, 0, 500));
         }
         else
         {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 5));
+            STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, i, 2, 0, 500));
         }
+
 
         STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
         //current_buffer_size == 500 + 1000, i == 5/8/13 , => second max_buffer
         STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 2));
         STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, i + 1, 2, 500, 1000));
-        if (i == 3)
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 2));
-        }
-        else if (i == 6)
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 4));
-        }
-        else
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 6));
-        }
+        STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, i + 1, 2, 500, 1000));
+
         STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
     }
     //for the last 1 x 1000 buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 12));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 12, 1, 0, 1000));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 7));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 12, 1, 0, 1000));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
     STRICT_EXPECTED_CALL(TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, IGNORED_ARG));
@@ -1586,24 +1482,29 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     uint32_t count;
     uint32_t all_buffer_size;
     uint32_t buffer_count = 0;
-    ASSERT_ARE_EQUAL(uint32_t, 8, result->capacity);
+    ASSERT_ARE_EQUAL(uint32_t, 7, result->capacity);
     for (uint32_t i = 0; i < 7; i++)
     {
         (void)real_constbuffer_array_get_buffer_count(result->arr[i], &count);
         (void)constbuffer_array_get_all_buffers_size(result->arr[i], &all_buffer_size);
-        if (i != 6)
+        if (i == 0)
         {
-            ASSERT_ARE_EQUAL(uint32_t, 2, count);
+            ASSERT_ARE_EQUAL(uint32_t, 5, count);
             ASSERT_ARE_EQUAL(uint32_t, 1500, all_buffer_size);
         }
-        else
+        else if (i == 6)
         {
             ASSERT_ARE_EQUAL(uint32_t, 1, count);
             ASSERT_ARE_EQUAL(uint32_t, 1000, all_buffer_size);
         }
+        else
+        {
+            ASSERT_ARE_EQUAL(uint32_t, 2, count);
+            ASSERT_ARE_EQUAL(uint32_t, 1500, all_buffer_size);
+        }
         buffer_count += count;
     }
-    ASSERT_ARE_EQUAL(uint32_t, 13, buffer_count);
+    ASSERT_ARE_EQUAL(uint32_t, 16, buffer_count);
 
     /// cleanup
     for (uint32_t i = 0; i < 7; i++)
@@ -1614,15 +1515,12 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     TARRAY_ASSIGN(CONSTBUFFER_ARRAY_HANDLE)(&result, NULL);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_003: [ constbuffer_array_splitter_split_to_array_of_array shall create a TARRAY(CONSTBUFFER_ARRAY_HANDLE) by calling TARRAY_CREATE. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_006: [ constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_ENSURE_CAPACITY to be able to add a CONSTBUFFER_ARRAY_HANDLE entry in the TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [ constbuffer_array_splitter_split_to_array_of_array shall allocate a TARRAY of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_010: [ constbuffer_array_splitter_split_to_array_of_array shall initialize the start buffer index and offset to 0, current buffer count to 0 and end buffer size to 0. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_011: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer currently checking for the size by calling constbuffer_array_get_buffer. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_012: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer content by calling CONSTBUFFER_GetContent. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_014: [ If current buffer is the last buffer in the original constbuffer_array, constbuffer_array_splitter_split_to_array_of_array shall store the sub - tarray with size smaller than max_buffer_size to result. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_015: [ Otherwise, constbuffer_array_splitter_split_to_array_of_array shall increment the current_buffer_count for constbuffer_array_create_from_start_and_end to skip the empty buffers in the middle. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_016: [ If current buffer size added the current sub - tarray size is smaller than max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall include the current buffer to the current sub - tarray. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_018: [ If current buffer size added the current sub - tarray size is greater than max_buffer_size, then constbuffer_array_splitter_split_to_array_of_array shall get part of the current buffer as end buffer and added a new array into the result until the remaining size for the current buffer is smaller than max_buffer_size. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_014: [ If current buffer is the last buffer in the original constbuffer_array, constbuffer_array_splitter_split_to_array_of_array shall store the sub - tarray with size smaller than max_buffer_size to result. ]*/
@@ -1647,10 +1545,9 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     real_constbuffer_array_dec_ref(empty);
     real_constbuffer_array_dec_ref(buffers_temp2);
 
-    STRICT_EXPECTED_CALL(TARRAY_CREATE(CONSTBUFFER_ARRAY_HANDLE)());
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(constbuffer_array_get_all_buffers_size(buffers, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(7));
 
     //get first 1000 in index 0
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 0));
@@ -1660,15 +1557,13 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     //get 500 in index 1 => first max_buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 1));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 0, 2, 0, 500));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 0, 2, 0, 500));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
     //current_buffer_size == 500 + 1000, from buffer[1] and [2] , => second max_buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 2));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 1, 2, 500, 1000));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 2));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 1, 2, 500, 1000));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
     //get first 1000 in index 3 for third max_buffer
@@ -1687,15 +1582,13 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     //get 500 from buffer index 7 => 3th max_buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 7));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 3, 5, 0, 500));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 3));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 3, 5, 0, 500));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
     //current_buffer_size == 500 + 1000, from buffer[7] and [8] , => 4th max_buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 8));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 7, 2, 500, 1000));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 4));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 7, 2, 500, 1000));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
     //get 1000 from buffer index 9
@@ -1706,15 +1599,13 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     //current_buffer_size == 1000+500, from buffer[9] and [10] , => 5th max_buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 10));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 9, 2, 0, 500));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 5));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 9, 2, 0, 500));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
     //current_buffer_size == 500+1000, from buffer[10] and [11] , => 5th max_buffer => 6th max_buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 11));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 10, 2, 500, 1000));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 6));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 10, 2, 500, 1000));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
     //index 12 get 1000, index 13/14 is empty buffer
@@ -1728,8 +1619,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     //index 15 is empty and last buffer, need to result a sub-array from index 12
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 15));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 12, 1, 0, 1000));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 7));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 12, 4, 0, 0));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
     STRICT_EXPECTED_CALL(TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, IGNORED_ARG));
 
@@ -1743,24 +1633,30 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     uint32_t count;
     uint32_t all_buffer_size;
     uint32_t buffer_count = 0;
-    ASSERT_ARE_EQUAL(uint32_t, 8, result->capacity);
+    ASSERT_ARE_EQUAL(uint32_t, 7, result->capacity);
     for (uint32_t i = 0; i < 7; i++)
     {
         (void)real_constbuffer_array_get_buffer_count(result->arr[i], &count);
         (void)constbuffer_array_get_all_buffers_size(result->arr[i], &all_buffer_size);
-        if (i != 6)
+        if (i == 2)
         {
-            ASSERT_ARE_EQUAL(uint32_t, 2, count);
+            ASSERT_ARE_EQUAL(uint32_t, 5, count);
             ASSERT_ARE_EQUAL(uint32_t, 1500, all_buffer_size);
+        }
+        else if (i == 6)
+        {
+            ASSERT_ARE_EQUAL(uint32_t, 4, count);
+            ASSERT_ARE_EQUAL(uint32_t, 1000, all_buffer_size);
         }
         else
         {
-            ASSERT_ARE_EQUAL(uint32_t, 1, count);
-            ASSERT_ARE_EQUAL(uint32_t, 1000, all_buffer_size);
+            ASSERT_ARE_EQUAL(uint32_t, 2, count);
+            ASSERT_ARE_EQUAL(uint32_t, 1500, all_buffer_size);
+
         }
         buffer_count += count;
     }
-    ASSERT_ARE_EQUAL(uint32_t, 13, buffer_count);
+    ASSERT_ARE_EQUAL(uint32_t, 19, buffer_count);
 
     /// cleanup
     for (uint32_t i = 0; i < 7; i++)
@@ -1780,11 +1676,10 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
     // Split into 1500 bytes each (6 x 1500 and 1 x 1000)
     CONSTBUFFER_ARRAY_HANDLE buffers = generate_test_buffer_array(10, 1000);
 
-    STRICT_EXPECTED_CALL(TARRAY_CREATE(CONSTBUFFER_ARRAY_HANDLE)());
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG))
         .CallCannotFail();
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
     STRICT_EXPECTED_CALL(constbuffer_array_get_all_buffers_size(buffers, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(7));
 
     for (uint32_t i = 0; i < 7; i += 3)
     {
@@ -1800,19 +1695,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
             .CallCannotFail();
         STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG))
             .CallCannotFail();
-        STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, i, 2, 0, 500));
-        if (i == 0)
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
-        }
-        else if (i == 3)
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 3));
-        }
-        else
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 5));
-        }
+        STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, i, 2, 0, 500));
 
         STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
@@ -1821,19 +1704,8 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
             .CallCannotFail();
         STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG))
             .CallCannotFail();
-        STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, i + 1, 2, 500, 1000));
-        if (i == 0)
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 2));
-        }
-        else if (i == 3)
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 4));
-        }
-        else
-        {
-            STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 6));
-        }
+        STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, i + 1, 2, 500, 1000));
+
         STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
     }
     //for the last 1 x 1000 buffer
@@ -1841,8 +1713,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
         .CallCannotFail();
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG))
         .CallCannotFail();
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_start_and_end(buffers, 9, 1, 0, 1000));
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 7));
+    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 9, 1, 0, 1000));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
     STRICT_EXPECTED_CALL(TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, IGNORED_ARG));
@@ -1875,10 +1746,10 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_arra
     /// arrange
     CONSTBUFFER_ARRAY_HANDLE buffers = real_constbuffer_array_create_empty();
 
-    STRICT_EXPECTED_CALL(TARRAY_CREATE(CONSTBUFFER_ARRAY_HANDLE)());
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG))
         .CallCannotFail();
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
+    STRICT_EXPECTED_CALL(constbuffer_array_get_all_buffers_size(buffers, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(1));
     STRICT_EXPECTED_CALL(constbuffer_array_create_empty());
 
     umock_c_negative_tests_snapshot();
@@ -1909,13 +1780,10 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_all_empty_
     /// arrange
     CONSTBUFFER_ARRAY_HANDLE buffers = generate_test_buffer_array(3, 0);
 
-    STRICT_EXPECTED_CALL(TARRAY_CREATE(CONSTBUFFER_ARRAY_HANDLE)());
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG))
         .CallCannotFail();
-    STRICT_EXPECTED_CALL(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, 1));
-    STRICT_EXPECTED_CALL(constbuffer_array_get_all_buffers_size(buffers, IGNORED_ARG))
-        .CallCannotFail(); // technically this call can fail, but it is only due to overflow of the buffer sizes so not applicable to this case
-
+    STRICT_EXPECTED_CALL(constbuffer_array_get_all_buffers_size(buffers, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(1));
     STRICT_EXPECTED_CALL(constbuffer_array_create_empty());
 
     umock_c_negative_tests_snapshot();
