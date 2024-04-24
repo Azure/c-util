@@ -11,9 +11,7 @@ For example, it is used to upload large payloads to Blob store, split across lar
 
 ```c
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_splitter_split, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size);
-```
 
-```c
 MOCKABLE_FUNCTION(, TARRAY(CONSTBUFFER_ARRAY_HANDLE), constbuffer_array_splitter_split_to_array_of_array, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size);
 ```
 

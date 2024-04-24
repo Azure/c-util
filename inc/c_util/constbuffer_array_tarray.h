@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-#ifndef CONSTBUFFER_ARRAY_SPLITTER_ARRAY_H
-#define CONSTBUFFER_ARRAY_SPLITTER_ARRAY_H
+#ifndef CONSTBUFFER_ARRAY_TARRAY_H
+#define CONSTBUFFER_ARRAY_TARRAY_H
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -27,4 +27,4 @@ extern "C" {
 
 #endif
 
-#endif //CONSTBUFFER_ARRAY_SPLITTER_ARRAY_H
+#endif //CONSTBUFFER_ARRAY_TARRAY_H

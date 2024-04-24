@@ -21,7 +21,7 @@
 
 #include "c_util/constbuffer.h"
 #include "c_util/constbuffer_array.h"
-#include "c_util/constbuffer_array_splitter_array.h"
+#include "c_util/constbuffer_array_tarray.h"
 #undef ENABLE_MOCKS
 
 #include "real_gballoc_hl.h"
@@ -29,7 +29,7 @@
 
 #include "../reals/real_constbuffer.h"
 #include "../reals/real_constbuffer_array.h"
-#include "../reals/real_constbuffer_array_splitter_array.h"
+#include "../reals/real_constbuffer_array_tarray.h"
 
 #include "c_util/constbuffer_array_splitter.h"
 

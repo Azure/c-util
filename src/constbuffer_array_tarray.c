@@ -6,7 +6,7 @@
 #include "c_util/tarray.h"
 #include "c_pal/thandle.h"
 
-#include "c_util/constbuffer_array_splitter_array.h"
+#include "c_util/constbuffer_array_tarray.h"
 
 THANDLE_TYPE_DEFINE(TARRAY_TYPEDEF_NAME(CONSTBUFFER_ARRAY_HANDLE));
 

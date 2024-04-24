@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifndef REAL_CONSTBUFFER_ARRAY_SPLITTER_ARRAY_H
-#define REAL_CONSTBUFFER_ARRAY_SPLITTER_ARRAY_H
+#ifndef REAL_CONSTBUFFER_ARRAY_TARRAY_H
+#define REAL_CONSTBUFFER_ARRAY_TARRAY_H
 
 #include "macro_utils/macro_utils.h"
 
 #include "c_util/tarray_ll.h"
 #include "c_util/tarray.h"
 
-#include "c_util/constbuffer_array_splitter_array.h"
+#include "c_util/constbuffer_array_tarray.h"
 
 #define REGISTER_TARRAY_CONSTBUFFER_ARRAY_HANDLE_GLOBAL_MOCK_HOOK() \
     REGISTER_GLOBAL_MOCK_HOOK(TARRAY_ENSURE_CAPACITY(CONSTBUFFER_ARRAY_HANDLE), TARRAY_LL_ENSURE_CAPACITY(real_CONSTBUFFER_ARRAY_HANDLE)) \
@@ -26,4 +26,4 @@ typedef CONSTBUFFER_ARRAY_HANDLE real_CONSTBUFFER_ARRAY_HANDLE;
 
     TARRAY_LL_TYPE_DECLARE(real_CONSTBUFFER_ARRAY_HANDLE, CONSTBUFFER_ARRAY_HANDLE);
 
-#endif // REAL_CONSTBUFFER_ARRAY_SPLITTER_ARRAY_H
+#endif // REAL_CONSTBUFFER_ARRAY_TARRAY_H

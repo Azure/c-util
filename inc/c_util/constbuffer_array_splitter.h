@@ -11,7 +11,7 @@
 
 #include "macro_utils/macro_utils.h"
 
-#include "c_util/constbuffer_array_splitter_array.h"
+#include "c_util/constbuffer_array_tarray.h"
 
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
