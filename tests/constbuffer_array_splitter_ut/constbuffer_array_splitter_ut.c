@@ -1006,6 +1006,8 @@ TEST_FUNCTION(constbuffer_array_splitter_split_with_all_empty_buffers_fails_if_u
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_001: [ If buffers is NULL then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_null_buffers_fails)
 {
+    ///arrange
+
     /// act
     TARRAY(CONSTBUFFER_ARRAY_HANDLE) result = constbuffer_array_splitter_split_to_array_of_array(NULL, 42);
 
@@ -1032,9 +1034,10 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_0_max_buff
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_007: [ If the buffer_count is 0 then constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_create_empty and return the result. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_021: [ If buffer_count or remaining_buffer_size is 0, constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_CREATE_WITH_CAPACITY with size 1. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers to obtain the total size of all buffers in buffers. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_007: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_create_empty and store the created const buffer array in the first entry of the TARRAY that was created. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_024: [ If the total size for all buffers in buffers is 0 or buffer_count is 0: ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_021: [ constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_CREATE_WITH_CAPACITY with size 1. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_array_succeeds)
 {
@@ -1066,9 +1069,10 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_arra
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_009: [ If the remaining_buffer_size is 0 (all buffers are empty) then constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_create_empty and return the result. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_021: [ If buffer_count or remaining_buffer_size is 0, constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_CREATE_WITH_CAPACITY with size 1. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers to obtain the total size of all buffers in buffers. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_024: [ If the total size for all buffers in buffers is 0 or buffer_count is 0: ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_021: [ constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_CREATE_WITH_CAPACITY with size 1. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_007: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_create_empty and store the created const buffer array in the first entry of the TARRAY that was created. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_split_with_all_empty_buffers_succeeds)
 {
@@ -1099,7 +1103,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_split_with_all_
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers to obtain the total size of all buffers in buffers. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_022: [ If remaining_buffers_size is smaller or equal to max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_CREATE_WITH_CAPACITY with size 1, inc ref the original buffer and return it. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_1_buffer_1_byte_succeeds)
@@ -1134,7 +1138,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_1_buffer_1
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers to obtain the total size of all buffers in buffers. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_022: [ If remaining_buffers_size is smaller or equal to max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_CREATE_WITH_CAPACITY with size 1, inc ref the original buffer and return it. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_buffers_1_byte_each_merge_succeeds)
@@ -1172,7 +1176,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers to obtain the total size of all buffers in buffers. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_022: [ If remaining_buffers_size is smaller or equal to max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_CREATE_WITH_CAPACITY with size 1, inc ref the original buffer and return it. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_buffers_1000_bytes_each_merge_succeeds)
@@ -1210,7 +1214,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers to obtain the total size of all buffers in buffers. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [ constbuffer_array_splitter_split_to_array_of_array shall allocate a TARRAY of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_010: [ constbuffer_array_splitter_split_to_array_of_array shall initialize the start buffer index and offset to 0, current buffer count to 0 and end buffer size to 0. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_011: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer currently checking for the size by calling constbuffer_array_get_buffer. ]*/
@@ -1298,7 +1302,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers to obtain the total size of all buffers in buffers. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [ constbuffer_array_splitter_split_to_array_of_array shall allocate a TARRAY of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_010: [ constbuffer_array_splitter_split_to_array_of_array shall initialize the start buffer index and offset to 0, current buffer count to 0 and end buffer size to 0. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_011: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer currently checking for the size by calling constbuffer_array_get_buffer. ]*/
@@ -1398,7 +1402,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_large_buffers_t
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers to obtain the total size of all buffers in buffers. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [ constbuffer_array_splitter_split_to_array_of_array shall allocate a TARRAY of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_010: [ constbuffer_array_splitter_split_to_array_of_array shall initialize the start buffer index and offset to 0, current buffer count to 0 and end buffer size to 0. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_011: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer currently checking for the size by calling constbuffer_array_get_buffer. ]*/
@@ -1419,6 +1423,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     buffers_to_merge[0] = empty;
     buffers_to_merge[1] = buffers_temp;
     CONSTBUFFER_ARRAY_HANDLE buffers = real_constbuffer_array_create_from_array_array(buffers_to_merge, sizeof(buffers_to_merge) / sizeof(buffers_to_merge[0]));
+    ASSERT_IS_NOT_NULL(buffers);
 
     real_constbuffer_array_dec_ref(buffers_temp);
     real_constbuffer_array_dec_ref(empty);
@@ -1516,7 +1521,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
 }
 
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers and store the result as remaining_buffer_size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers to obtain the total size of all buffers in buffers. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [ constbuffer_array_splitter_split_to_array_of_array shall allocate a TARRAY of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_010: [ constbuffer_array_splitter_split_to_array_of_array shall initialize the start buffer index and offset to 0, current buffer count to 0 and end buffer size to 0. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_011: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer currently checking for the size by calling constbuffer_array_get_buffer. ]*/
@@ -1540,6 +1545,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     buffers_to_merge[2] = buffers_temp2;
     buffers_to_merge[3] = empty;
     CONSTBUFFER_ARRAY_HANDLE buffers = real_constbuffer_array_create_from_array_array(buffers_to_merge, sizeof(buffers_to_merge) / sizeof(buffers_to_merge[0]));
+    ASSERT_IS_NOT_NULL(buffers);
 
     real_constbuffer_array_dec_ref(buffers_temp1);
     real_constbuffer_array_dec_ref(empty);

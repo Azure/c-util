@@ -998,7 +998,7 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_offset_and_count_with_only_bu
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_005: [ constbuffer_array_create_from_buffer_offset_and_count shall get the start buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_buffer_offset_and_count shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_buffer_offset_and_count shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_015: [ If buffer count is equal to original buffer count, start buffer offset is 0 and end buffer offset is equal to the size of the last buffer in original, then constbuffer_array_create_from_buffer_offset_and_count shall increment the reference count of original and return original. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_015: [ If buffer_count is equal to original buffer count, start buffer offset is 0 and end buffer offset is equal to the size of the last buffer in original, then constbuffer_array_create_from_buffer_offset_and_count shall increment the reference count of original and return original. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_buffer_offset_and_count shall return a non - NULL handle. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_buffer_offset_and_count_succeeds_full_array)
 {

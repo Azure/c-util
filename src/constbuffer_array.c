@@ -221,7 +221,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
     }
     else
     {
-        /* Codes_SRS_CONSTBUFFER_ARRAY_07_015: [ If buffer count is equal to original buffer count, start buffer offset is 0 and end buffer offset is equal to the size of the last buffer in original, then constbuffer_array_create_from_buffer_offset_and_count shall increment the reference count of original and return original. ]*/
+        /* Codes_SRS_CONSTBUFFER_ARRAY_07_015: [ If buffer_count is equal to original buffer count, start buffer offset is 0 and end buffer offset is equal to the size of the last buffer in original, then constbuffer_array_create_from_buffer_offset_and_count shall increment the reference count of original and return original. ]*/
         const CONSTBUFFER* last_buffer = CONSTBUFFER_GetContent(original->buffers[original->nBuffers - 1]);
         if (buffer_count == original->nBuffers && start_buffer_offset == 0 && end_buffer_offset == last_buffer->size)
         {

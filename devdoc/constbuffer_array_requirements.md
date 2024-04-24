@@ -113,7 +113,7 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_buff
 
 **SRS_CONSTBUFFER_ARRAY_07_003: [** If `start_buffer_index + buffer_count` is greater than the number of buffers in `original` then `constbuffer_array_create_from_buffer_offset_and_count` shall fail and return `NULL`.  **]**
 
-**SRS_CONSTBUFFER_ARRAY_07_015: [** If buffer count is equal to original buffer count, start buffer offset is `0` and end buffer offset is equal to the size of the last buffer in `original`, then `constbuffer_array_create_from_buffer_offset_and_count` shall increment the reference count of `original` and return `original`.  **]**
+**SRS_CONSTBUFFER_ARRAY_07_015: [** If `buffer_count` is equal to original buffer count, start buffer offset is `0` and end buffer offset is equal to the size of the last buffer in `original`, then `constbuffer_array_create_from_buffer_offset_and_count` shall increment the reference count of `original` and return `original`.  **]**
 
 **SRS_CONSTBUFFER_ARRAY_07_013: [** If `buffer_count` is 1, `constbuffer_array_create_from_buffer_offset_and_count` shall get the only buffer by calling `CONSTBUFFER_CreateFromOffsetAndSize` with paramter `start_buffer_offset` and `end_buffer_size`. **]**
 
