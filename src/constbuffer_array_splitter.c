@@ -208,3 +208,245 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_splitter_split(CONSTBUFFER_ARRAY_HAND
 
     return result;
 }
+
+TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_array(CONSTBUFFER_ARRAY_HANDLE buffers, uint32_t max_buffer_size)
+{
+    TARRAY(CONSTBUFFER_ARRAY_HANDLE) result = NULL;
+
+    if (
+        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_001: [ If buffers is NULL then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
+        buffers == NULL ||
+        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_002: [ If max_buffer_size is 0 then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
+        max_buffer_size == 0)
+    {
+        LogError("Invalid args : CONSTBUFFER_ARRAY_HANDLE buffers = %p, size_t max_buffer_size = %" PRIu32 "",
+            buffers, max_buffer_size);
+    }
+    else
+    {
+        uint32_t buffer_array_count = 0; //used to store total number of constbuffer_array already stored in result -> release when failed
+        uint32_t buffer_count;
+
+        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_buffer_count to get the total number of buffers. ]*/
+        (void)constbuffer_array_get_buffer_count(buffers, &buffer_count);
+
+        uint32_t remaining_buffer_size;
+
+        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_008: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_get_all_buffers_size for buffers to obtain the total size of all buffers in buffers. ]*/
+        int temp_result = constbuffer_array_get_all_buffers_size(buffers, &remaining_buffer_size);
+        if (temp_result != 0)
+        {
+            /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_004: [ If there are any other failures then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
+            LogError("constbuffer_array_get_all_buffers_size failed");
+        }
+        else
+        {
+            /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_024: [ If the total size for all buffers in buffers is 0 or buffer_count is 0: ]*/
+            if (buffer_count == 0 || remaining_buffer_size == 0)
+            {
+                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_021: [ constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_CREATE_WITH_CAPACITY with size 1. ]*/
+                TARRAY(CONSTBUFFER_ARRAY_HANDLE) temp = TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(1);
+
+                if (temp == NULL)
+                {
+                    /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_004: [ If there are any other failures then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
+                    LogError("TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(split_array_count=1) failed");
+                }
+                else
+                {
+                    /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_007: [ constbuffer_array_splitter_split_to_array_of_array shall call constbuffer_array_create_empty and store the created const buffer array in the first entry of the TARRAY that was created. ]*/
+                    temp->arr[0] = constbuffer_array_create_empty();
+                    if (temp->arr[0] == NULL)
+                    {
+                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_004: [ If there are any other failures then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
+                        LogError("constbuffer_array_create_empty failed");
+                        TARRAY_ASSIGN(CONSTBUFFER_ARRAY_HANDLE)(&temp, NULL);
+                    }
+                    else
+                    {
+                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
+                        TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(&result, &temp);
+                    }
+                }
+            }
+            else if (remaining_buffer_size <= max_buffer_size)
+            {
+                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_022: [ If remaining_buffers_size is smaller or equal to max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall call TARRAY_CREATE_WITH_CAPACITY with size 1, inc ref the original buffer and return it. ]*/
+                TARRAY(CONSTBUFFER_ARRAY_HANDLE) temp = TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(1);
+                if (temp == NULL)
+                {
+                    /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_004: [ If there are any other failures then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
+                    LogError("TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(split_array_count=1) failed");
+                }
+                else
+                {
+                    /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
+                    temp->arr[0] = buffers;
+                    constbuffer_array_inc_ref(buffers);
+                    TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(&result, &temp);
+                }
+            }
+            else
+            {
+                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [ constbuffer_array_splitter_split_to_array_of_array shall allocate a TARRAY of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
+                uint32_t split_array_count = (remaining_buffer_size + max_buffer_size - 1) / max_buffer_size;
+                TARRAY(CONSTBUFFER_ARRAY_HANDLE) temp = TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(split_array_count);
+
+                if (temp == NULL)
+                {
+                    /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_004: [ If there are any other failures then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
+                    LogError("TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(split_array_count=%" PRIu32 ") failed", split_array_count);
+                }
+                else
+                {
+                    /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_010: [ constbuffer_array_splitter_split_to_array_of_array shall initialize the start buffer index and offset to 0, current buffer count to 0 and end buffer size to 0. ]*/
+                    uint32_t start_buffer_index = 0;
+                    uint32_t start_buffer_offset = 0;
+                    uint32_t end_buffer_size = 0;
+                    uint32_t current_buffer_count = 0; //buffer count in sub-tarray
+
+                    uint32_t current_buffer_size = 0; //sub-tarray size
+                    uint32_t index = 0; //index in result tarray
+
+                    bool failed = false;
+
+                    for (uint32_t i = 0; i < buffer_count; i++)
+                    {
+                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_011: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer currently checking for the size by calling constbuffer_array_get_buffer. ]*/
+                        CONSTBUFFER_HANDLE curr_buffer = constbuffer_array_get_buffer(buffers, i);
+                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_012: [ constbuffer_array_splitter_split_to_array_of_array shall get the buffer content by calling CONSTBUFFER_GetContent. ]*/
+                        const CONSTBUFFER* buffer = CONSTBUFFER_GetContent(curr_buffer);
+
+                        if(current_buffer_size + buffer->size < max_buffer_size)
+                        {
+                            /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_016: [ If current buffer size added the current sub - tarray size is smaller than max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall include the current buffer to the current sub - tarray. ]*/
+                            current_buffer_count++;
+                            current_buffer_size += buffer->size;
+                            end_buffer_size = buffer->size;
+
+                            if(i == buffer_count - 1)
+                            {
+                                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_014: [ If current buffer is the last buffer in the original constbuffer_array, constbuffer_array_splitter_split_to_array_of_array shall store the sub - tarray with size smaller than max_buffer_size to result. ]*/
+                                CONSTBUFFER_ARRAY_HANDLE arr = constbuffer_array_create_from_buffer_offset_and_count(buffers, start_buffer_index, current_buffer_count, start_buffer_offset, end_buffer_size);
+
+                                if(arr == NULL)
+                                {
+                                    /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_004: [ If there are any other failures then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
+                                    LogError("constbuffer_array_create_from_buffer_offset_and_count failed buffers=%p, uint32_t start_buffer_index=%" PRIu32 ", uint32_t buffer_count=%" PRIu32 ", uint32_t start_buffer_offset=%" PRIu32 ", uint32_t end_buffer_size=%" PRIu32 "",
+                                        buffers, start_buffer_index, current_buffer_count, start_buffer_offset, buffer->size);
+                                    failed = true;
+                                }
+                                else
+                                {
+                                    temp->arr[index] = arr;
+                                    buffer_array_count ++;
+                                }
+                            }
+                        }
+                        else if(current_buffer_size + buffer->size >= max_buffer_size)
+                        {
+                            /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_018: [ If current buffer size added the current sub - tarray size is greater than max_buffer_size, then constbuffer_array_splitter_split_to_array_of_array shall get part of the current buffer as end buffer and added a new array into the result until the remaining size for the current buffer is smaller than max_buffer_size. ]*/
+
+                            current_buffer_count++;
+                            end_buffer_size = max_buffer_size - current_buffer_size;
+
+                            CONSTBUFFER_ARRAY_HANDLE arr = constbuffer_array_create_from_buffer_offset_and_count(buffers, start_buffer_index, current_buffer_count, start_buffer_offset, end_buffer_size);
+                            if(arr == NULL)
+                            {
+                                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_004: [ If there are any other failures then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
+                                LogError("constbuffer_array_create_from_buffer_offset_and_count failed buffers=%p, uint32_t start_buffer_index=%" PRIu32 ", uint32_t buffer_count=%" PRIu32 ", uint32_t start_buffer_offset=%" PRIu32 ", uint32_t end_buffer_size=%" PRIu32 "",
+                                    buffers, start_buffer_index, current_buffer_count, start_buffer_offset, end_buffer_size);
+                                failed = true;
+                            }
+                            else
+                            {
+                                temp->arr[index] = arr;
+                                buffer_array_count ++;
+                                index++;
+                                start_buffer_index = i;
+
+                                //check if can get any sub-array inside current array
+                                uint32_t current_buffer_remaining_size = buffer->size - end_buffer_size;
+                                start_buffer_offset = end_buffer_size;
+                                while (current_buffer_remaining_size > max_buffer_size)
+                                {
+                                    CONSTBUFFER_ARRAY_HANDLE arr1 = constbuffer_array_create_from_buffer_offset_and_count(buffers, start_buffer_index, 1, start_buffer_offset, max_buffer_size);
+                                    if (arr1 == NULL)
+                                    {
+                                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_004: [ If there are any other failures then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
+                                        LogError("constbuffer_array_create_from_buffer_offset_and_count failed buffers=%p, uint32_t start_buffer_index=%" PRIu32 ", uint32_t buffer_count=%" PRIu32 ", uint32_t start_buffer_offset=%" PRIu32 ", uint32_t end_buffer_size=%" PRIu32 "",
+                                            buffers, start_buffer_index, 1, start_buffer_offset, max_buffer_size);
+                                        failed = true;
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        temp->arr[index] = arr1;
+                                        buffer_array_count++;
+                                        index++;
+                                        current_buffer_remaining_size -= max_buffer_size;
+                                        start_buffer_offset += max_buffer_size;
+                                    }
+                                }
+                                //reset for another sub array
+                                if (current_buffer_remaining_size == 0)
+                                {
+                                    start_buffer_index = i + 1;
+                                    start_buffer_offset = 0;
+                                    current_buffer_count = 0;
+                                    current_buffer_size = 0;
+                                }
+                                else
+                                {
+                                    /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_014: [ If current buffer is the last buffer in the original constbuffer_array, constbuffer_array_splitter_split_to_array_of_array shall store the sub - tarray with size smaller than max_buffer_size to result. ]*/
+                                    if (i == buffer_count - 1)
+                                    {
+                                        CONSTBUFFER_ARRAY_HANDLE arr2 = constbuffer_array_create_from_buffer_offset_and_count(buffers, start_buffer_index, 1, start_buffer_offset, current_buffer_remaining_size);
+                                        if (arr2 == NULL)
+                                        {
+                                            /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_004: [ If there are any other failures then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
+                                            LogError("constbuffer_array_create_from_buffer_offset_and_count failed buffers=%p, uint32_t start_buffer_index=%" PRIu32 ", uint32_t buffer_count=%" PRIu32 ", uint32_t start_buffer_offset=%" PRIu32 ", uint32_t end_buffer_size=%" PRIu32 "",
+                                                buffers, start_buffer_index, 1, start_buffer_offset, max_buffer_size);
+                                            failed = true;
+                                        }
+                                        else
+                                        {
+                                            temp->arr[index] = arr2;
+                                            buffer_array_count++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        current_buffer_count = 1;
+                                        current_buffer_size = current_buffer_remaining_size;
+                                    }
+                                }
+                            }
+                        }
+                        CONSTBUFFER_DecRef(curr_buffer);
+                        if (failed)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (failed)
+                    {
+                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_019: [ On any failure, constbuffer_array_splitter_split_to_array_of_array dec ref the sub - tarrays by calling constbuffer_array_dec_ref. ]*/
+                        for (uint32_t i = 0; i < buffer_array_count; i++)
+                        {
+                            constbuffer_array_dec_ref(temp->arr[i]);
+                        }
+                        TARRAY_ASSIGN(CONSTBUFFER_ARRAY_HANDLE)(&temp, NULL);
+                    }
+                    else
+                    {
+                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
+                        TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(&result, &temp);
+                    }
+                }
+            }
+        }
+    }
+    return result;
+}

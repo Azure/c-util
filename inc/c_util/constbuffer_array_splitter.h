@@ -10,7 +10,8 @@
 #endif
 
 #include "macro_utils/macro_utils.h"
-#include "c_util/constbuffer_array.h"
+
+#include "c_util/constbuffer_array_tarray.h"
 
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
@@ -18,7 +19,7 @@ extern "C" {
 #endif
 
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_splitter_split, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size);
-
+MOCKABLE_FUNCTION(, TARRAY(CONSTBUFFER_ARRAY_HANDLE), constbuffer_array_splitter_split_to_array_of_array, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size);
 #ifdef __cplusplus
 }
 #endif

@@ -17,7 +17,7 @@
         constbuffer_array_create, \
         constbuffer_array_create_with_move_buffers, \
         constbuffer_array_create_from_buffer_index_and_count, \
-        constbuffer_array_create_from_start_and_end, \
+        constbuffer_array_create_from_buffer_offset_and_count, \
         constbuffer_array_create_empty, \
         constbuffer_array_create_from_array_array, \
         constbuffer_array_inc_ref, \
@@ -41,7 +41,7 @@ CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_create(const CONSTBUFFER_HANDLE*
 CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_create_empty(void);
 CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_create_with_move_buffers(CONSTBUFFER_HANDLE* buffers, uint32_t buffer_count);
 CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_create_from_buffer_index_and_count(CONSTBUFFER_ARRAY_HANDLE original, uint32_t start_buffer_index, uint32_t buffer_count);
-CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_create_from_start_and_end(CONSTBUFFER_ARRAY_HANDLE original, uint32_t start_buffer_index, uint32_t buffer_count, uint32_t start_buffer_offset, uint32_t end_buffer_size);
+CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_create_from_buffer_offset_and_count(CONSTBUFFER_ARRAY_HANDLE original, uint32_t start_buffer_index, uint32_t buffer_count, uint32_t start_buffer_offset, uint32_t end_buffer_size);
 CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_create_from_array_array(const CONSTBUFFER_ARRAY_HANDLE* buffer_arrays, uint32_t buffer_array_count);
 
 void real_constbuffer_array_inc_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle);
