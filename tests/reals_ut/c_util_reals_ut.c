@@ -20,6 +20,7 @@
 #include "../reals/real_rc_ptr.h"
 #include "../reals/real_rc_string.h"
 #include "../reals/real_rc_string_array.h"
+#include "../reals/real_rc_string_utils.h"
 #include "../reals/real_singlylinkedlist.h"
 #include "../reals/real_tcall_dispatcher_cancellation_token_cancel_call.h"
 #include "../reals/real_cancellation_token.h"
@@ -37,6 +38,7 @@
 #include "c_util/rc_ptr.h"
 #include "c_util/rc_string.h"
 #include "c_util/rc_string_array.h"
+#include "c_util/rc_string_utils.h"
 #include "c_util/singlylinkedlist.h"
 #include "c_util/uuid_string.h"
 #include "c_util/cancellation_token.h"
@@ -74,6 +76,7 @@ TEST_FUNCTION(check_all_c_util_reals)
     REGISTER_MEMORY_DATA_GLOBAL_MOCK_HOOK();
     REGISTER_RC_PTR_GLOBAL_MOCK_HOOKS();
     REGISTER_RC_STRING_GLOBAL_MOCK_HOOKS();
+    REGISTER_RC_STRING_UTILS_GLOBAL_MOCK_HOOKS();
     REGISTER_SINGLYLINKEDLIST_GLOBAL_MOCK_HOOKS();
     REGISTER_UUID_STRING_GLOBAL_MOCK_HOOK();
     REGISTER_HASH_GLOBAL_MOCK_HOOK();

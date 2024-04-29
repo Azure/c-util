@@ -169,6 +169,7 @@ set(c_util_c_files
     ./src/rc_ptr.c
     ./src/rc_string.c
     ./src/rc_string_array.c
+    ./src/rc_string_utils.c
     ./src/singlylinkedlist.c
     ./src/strings.c
     ./src/tarray.c
@@ -210,6 +211,7 @@ set(c_util_h_files
     ./inc/c_util/rc_ptr.h
     ./inc/c_util/rc_string.h
     ./inc/c_util/rc_string_array.h
+    ./inc/c_util/rc_string_utils.h
     ./inc/c_util/singlylinkedlist.h
     ./inc/c_util/strings.h
     ./inc/c_util/strings_types.h
