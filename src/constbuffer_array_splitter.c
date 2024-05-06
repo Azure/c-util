@@ -350,6 +350,28 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
                             current_buffer_count++;
                             end_buffer_size = max_buffer_size - current_buffer_size;
 
+                            if (current_buffer_size + buffer->size == max_buffer_size)
+                            {
+
+                                while (++i < buffer_count)
+                                {
+                                    CONSTBUFFER_HANDLE next = constbuffer_array_get_buffer(buffers, i);
+                                    const CONSTBUFFER* next_buffer = CONSTBUFFER_GetContent(next);
+                                    if (next_buffer->size == 0)
+                                    {
+                                        current_buffer_count++;
+                                        end_buffer_size = 0;
+                                        CONSTBUFFER_DecRef(next);
+                                    }
+                                    else
+                                    {
+                                        CONSTBUFFER_DecRef(next);
+                                        i--;
+                                        break;
+                                    }
+                                }
+                            }
+
                             CONSTBUFFER_ARRAY_HANDLE arr = constbuffer_array_create_from_buffer_offset_and_count(buffers, start_buffer_index, current_buffer_count, start_buffer_offset, end_buffer_size);
                             if(arr == NULL)
                             {

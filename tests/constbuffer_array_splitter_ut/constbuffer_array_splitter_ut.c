@@ -1251,6 +1251,9 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
         //current_buffer_size == 500 + 1000, i == 2/5/8 , => second max_buffer
         STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 2));
         STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 3));
+        STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
         STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, i + 1, 2, 500, 1000));
 
         STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
@@ -1465,6 +1468,9 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
         //current_buffer_size == 500 + 1000, i == 5/8/13 , => second max_buffer
         STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 2));
         STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 3));
+        STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
         STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, i + 1, 2, 500, 1000));
 
         STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
@@ -1569,6 +1575,9 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     //current_buffer_size == 500 + 1000, from buffer[1] and [2] , => second max_buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 2));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 3));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 1, 2, 500, 1000));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
@@ -1576,7 +1585,6 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 3));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
-
     //3 empty buffers in between
     for (uint32_t i = 4; i < 7; i++)
     {
@@ -1594,6 +1602,9 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     //current_buffer_size == 500 + 1000, from buffer[7] and [8] , => 4th max_buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 8));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 9));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 7, 2, 500, 1000));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
@@ -1611,6 +1622,9 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     //current_buffer_size == 500+1000, from buffer[10] and [11] , => 5th max_buffer => 6th max_buffer
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 11));
     STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 12));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 10, 2, 500, 1000));
     STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
@@ -1710,6 +1724,11 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
             .CallCannotFail();
         STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG))
             .CallCannotFail();
+        STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 3))
+            .CallCannotFail();
+        STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG))
+            .CallCannotFail();
+        STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
         STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, i + 1, 2, 500, 1000));
 
         STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
