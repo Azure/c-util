@@ -209,7 +209,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_splitter_split(CONSTBUFFER_ARRAY_HAND
     return result;
 }
 
-TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_array(CONSTBUFFER_ARRAY_HANDLE buffers, uint32_t max_buffer_size)
+TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_array(CONSTBUFFER_ARRAY_HANDLE buffers, uint32_t max_buffer_size, uint32_t* payload_buffer_count)
 {
     TARRAY(CONSTBUFFER_ARRAY_HANDLE) result = NULL;
 
@@ -265,6 +265,7 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
                     else
                     {
                         /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
+                        *payload_buffer_count = 0;
                         TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(&result, &temp);
                     }
                 }
@@ -465,6 +466,7 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
                     else
                     {
                         /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
+                        *payload_buffer_count = buffer_array_count;
                         TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(&result, &temp);
                     }
                 }

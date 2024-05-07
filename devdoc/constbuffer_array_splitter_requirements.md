@@ -12,7 +12,7 @@ For example, it is used to upload large payloads to Blob store, split across lar
 ```c
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_splitter_split, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size);
 
-MOCKABLE_FUNCTION(, TARRAY(CONSTBUFFER_ARRAY_HANDLE), constbuffer_array_splitter_split_to_array_of_array, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size);
+MOCKABLE_FUNCTION(, TARRAY(CONSTBUFFER_ARRAY_HANDLE), constbuffer_array_splitter_split_to_array_of_array, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size, uint32_t*, payload_buffer_count);
 ```
 
 ### constbuffer_array_splitter_split
@@ -64,7 +64,7 @@ This takes the `buffers` from a `CONSTBUFFER_ARRAY_HANDLE` and splits them into 
 ### constbuffer_array_splitter_split_to_array_of_array
 
 ```c
-MOCKABLE_FUNCTION(, TARRAY(CONSTBUFFER_ARRAY_HANDLE), constbuffer_array_splitter_split_to_array_of_array, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size);
+MOCKABLE_FUNCTION(, TARRAY(CONSTBUFFER_ARRAY_HANDLE), constbuffer_array_splitter_split_to_array_of_array, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size, uint32_t*, payload_buffer_count);
 ```
 
 This takes the `buffers` from a `CONSTBUFFER_ARRAY_HANDLE` and splits them into a new `TARRAY(CONSTBUFFER_ARRAY_HANDLE)` where each `CONSTBUFFER_ARRAY_HANDLE` is of size `max_buffer_size` (or smaller for the final remaining buffer). The caller is responsible for cleaning up the returned `TARRAY(CONSTBUFFER_ARRAY_HANDLE)`.
