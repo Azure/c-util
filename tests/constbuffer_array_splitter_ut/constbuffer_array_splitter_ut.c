@@ -1705,7 +1705,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     // Split into 1500 bytes each (2 x 1500 and 4 x 1500 and 1 x 1000)
     CONSTBUFFER_ARRAY_HANDLE buffers_temp1 = generate_test_buffer_array(3, 1000);
     CONSTBUFFER_ARRAY_HANDLE empty = generate_test_buffer_array(3, 0);
-    CONSTBUFFER_ARRAY_HANDLE buffers_temp2 = generate_test_buffer_array(7, 1000);
+    CONSTBUFFER_ARRAY_HANDLE buffers_temp2 = generate_test_buffer_array(6, 1000);
 
     CONSTBUFFER_ARRAY_HANDLE buffers_to_merge[4];
     buffers_to_merge[0] = buffers_temp1;
@@ -1721,7 +1721,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
 
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG));
     STRICT_EXPECTED_CALL(constbuffer_array_get_all_buffers_size(buffers, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(7));
+    STRICT_EXPECTED_CALL(TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(6));
 
     //get first 1000 in index 0
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 0));
@@ -1761,28 +1761,33 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
         STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
 
         //500 in index 7/10 + 1000 in index 8/11 => 4/6th max_buffer
-        STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 2));
+        STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 2));//11
         STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 3));
-        STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, i + 1, 2, 500, 1000));
-        STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
-    }
+        if (i == 9)
+        {
+            STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 3));//12
+            STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+            STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
+            STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 4));//13
+            STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+            STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
+            STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 5));//14
+            STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+            STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
+            STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, i + 1, 5, 500, 0));
+        }
+        else
+        {
+            STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i + 3));//12
+            STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
+            STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
+            STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, i + 1, 2, 500, 1000));
+        }
 
-    //index 12 get 1000, index 13/14 is empty buffer
-    for (uint32_t i = 12; i < 15; i++)
-    {
-        STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, i));
-        STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
         STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
     }
 
     //index 15 is empty and last buffer, need to result a sub-array from index 12
-    STRICT_EXPECTED_CALL(constbuffer_array_get_buffer(buffers, 15));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(constbuffer_array_create_from_buffer_offset_and_count(buffers, 12, 4, 0, 0));
-    STRICT_EXPECTED_CALL(CONSTBUFFER_DecRef(IGNORED_ARG));
     STRICT_EXPECTED_CALL(TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(IGNORED_ARG, IGNORED_ARG));
 
     /// act
@@ -1795,20 +1800,15 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
     uint32_t count;
     uint32_t all_buffer_size;
     uint32_t buffer_count = 0;
-    ASSERT_ARE_EQUAL(uint32_t, 7, result->capacity);
-    for (uint32_t i = 0; i < 7; i++)
+    ASSERT_ARE_EQUAL(uint32_t, 6, result->capacity);
+    for (uint32_t i = 0; i < 6; i++)
     {
         (void)real_constbuffer_array_get_buffer_count(result->arr[i], &count);
         (void)constbuffer_array_get_all_buffers_size(result->arr[i], &all_buffer_size);
-        if (i == 1)
+        if (i == 1 || i == 5)
         {
             ASSERT_ARE_EQUAL(uint32_t, 5, count);
             ASSERT_ARE_EQUAL(uint32_t, 1500, all_buffer_size);
-        }
-        else if (i == 6)
-        {
-            ASSERT_ARE_EQUAL(uint32_t, 4, count);
-            ASSERT_ARE_EQUAL(uint32_t, 1000, all_buffer_size);
         }
         else
         {
@@ -1817,10 +1817,10 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_buff
         }
         buffer_count += count;
     }
-    ASSERT_ARE_EQUAL(uint32_t, 19, buffer_count);
+    ASSERT_ARE_EQUAL(uint32_t, 18, buffer_count);
 
     /// cleanup
-    for (uint32_t i = 0; i < 7; i++)
+    for (uint32_t i = 0; i < 6; i++)
     {
         real_constbuffer_array_dec_ref(result->arr[i]);
     }
