@@ -101,6 +101,8 @@ For every buffer in the original buffer:
 
 - **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_018: [** If current buffer size added the current sub-tarray size is greater than `max_buffer_size`, then `constbuffer_array_splitter_split_to_array_of_array` shall get part of the current buffer as end buffer and added a new array into the result until the remaining size for the current buffer is smaller than `max_buffer_size`. **]**
 
+ - **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_025: [** If current buffer size added the current sub-tarray size is equal to `max_buffers_size`, then `constbuffer_array_splitter_split_to_array_of_array` shall include any consecutive empty buffers right after the current buffer to the new array which will be added to the result. **]**
+
 **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_019: [** On any failure, `constbuffer_array_splitter_split_to_array_of_array` dec ref the sub-tarrays by calling `constbuffer_array_dec_ref`. **]**
 
 **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [** `constbuffer_array_splitter_split_to_array_of_array` shall succeed and return the new `TARRAY(CONSTBUFFER_ARRAY_HANDLE)`.  **]**

@@ -349,16 +349,17 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
 
                             current_buffer_count++;
                             end_buffer_size = max_buffer_size - current_buffer_size;
-
+                            bool has_empty = false;
                             if (current_buffer_size + buffer->size == max_buffer_size)
                             {
-
+                                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_025: [ If current buffer size added the current sub - tarray size is equal to max_buffers_size, then constbuffer_array_splitter_split_to_array_of_array shall include any consecutive empty buffers right after the current buffer to the new array which will be added to the result. ]*/
                                 while (++i < buffer_count)
                                 {
                                     CONSTBUFFER_HANDLE next = constbuffer_array_get_buffer(buffers, i);
                                     const CONSTBUFFER* next_buffer = CONSTBUFFER_GetContent(next);
                                     if (next_buffer->size == 0)
                                     {
+                                        has_empty = true;
                                         current_buffer_count++;
                                         end_buffer_size = 0;
                                         CONSTBUFFER_DecRef(next);
@@ -388,7 +389,7 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
                                 start_buffer_index = i;
 
                                 //check if can get any sub-array inside current array
-                                uint32_t current_buffer_remaining_size = buffer->size - end_buffer_size;
+                                uint32_t current_buffer_remaining_size = has_empty ? 0 : buffer->size - end_buffer_size;
                                 start_buffer_offset = end_buffer_size;
                                 while (current_buffer_remaining_size > max_buffer_size)
                                 {
