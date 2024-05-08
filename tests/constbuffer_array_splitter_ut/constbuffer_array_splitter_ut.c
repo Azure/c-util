@@ -1007,9 +1007,10 @@ TEST_FUNCTION(constbuffer_array_splitter_split_with_all_empty_buffers_fails_if_u
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_null_buffers_fails)
 {
     ///arrange
+    uint32_t split_buffer_arrays_count;
 
     /// act
-    TARRAY(CONSTBUFFER_ARRAY_HANDLE) result = constbuffer_array_splitter_split_to_array_of_array(NULL, 42, IGNORED_ARG);
+    TARRAY(CONSTBUFFER_ARRAY_HANDLE) result = constbuffer_array_splitter_split_to_array_of_array(NULL, 42, &split_buffer_arrays_count);
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1020,10 +1021,11 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_null_buffe
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_0_max_buffer_size_fails)
 {
     /// arrange
+    uint32_t split_buffer_arrays_count;
     CONSTBUFFER_ARRAY_HANDLE buffers = generate_test_buffer_array(2, 2);
 
     /// act
-    TARRAY(CONSTBUFFER_ARRAY_HANDLE) result = constbuffer_array_splitter_split_to_array_of_array(buffers, 0, IGNORED_ARG);
+    TARRAY(CONSTBUFFER_ARRAY_HANDLE) result = constbuffer_array_splitter_split_to_array_of_array(buffers, 0, &split_buffer_arrays_count);
 
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1941,6 +1943,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_multiple_b
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_array_fails_if_underlying_functions_fail)
 {
     /// arrange
+    uint32_t split_buffer_arrays_count;
     CONSTBUFFER_ARRAY_HANDLE buffers = real_constbuffer_array_create_empty();
 
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG))
@@ -1959,7 +1962,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_arra
             umock_c_negative_tests_fail_call(i);
 
             /// act
-            TARRAY(CONSTBUFFER_ARRAY_HANDLE) result = constbuffer_array_splitter_split_to_array_of_array(buffers, 1024, IGNORED_ARG);
+            TARRAY(CONSTBUFFER_ARRAY_HANDLE) result = constbuffer_array_splitter_split_to_array_of_array(buffers, 1024, &split_buffer_arrays_count);
 
             ///assert
             ASSERT_IS_NULL(result, "On failed call %zu", i);
@@ -1975,6 +1978,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_arra
 TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_all_empty_buffers_fails_if_underlying_functions_fail)
 {
     /// arrange
+    uint32_t split_buffer_arrays_count;
     CONSTBUFFER_ARRAY_HANDLE buffers = generate_test_buffer_array(3, 0);
 
     STRICT_EXPECTED_CALL(constbuffer_array_get_buffer_count(buffers, IGNORED_ARG))
@@ -1993,7 +1997,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_all_empty_
             umock_c_negative_tests_fail_call(i);
 
             /// act
-            TARRAY(CONSTBUFFER_ARRAY_HANDLE) result = constbuffer_array_splitter_split_to_array_of_array(buffers, 1500, IGNORED_ARG);
+            TARRAY(CONSTBUFFER_ARRAY_HANDLE) result = constbuffer_array_splitter_split_to_array_of_array(buffers, 1500, &split_buffer_arrays_count);
 
             ///assert
             ASSERT_IS_NULL(result, "On failed call %zu", i);
