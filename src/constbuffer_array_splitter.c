@@ -209,7 +209,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_splitter_split(CONSTBUFFER_ARRAY_HAND
     return result;
 }
 
-TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_array(CONSTBUFFER_ARRAY_HANDLE buffers, uint32_t max_buffer_size)
+TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_array(CONSTBUFFER_ARRAY_HANDLE buffers, uint32_t max_buffer_size, uint32_t* split_buffer_arrays_count)
 {
     TARRAY(CONSTBUFFER_ARRAY_HANDLE) result = NULL;
 
@@ -217,10 +217,12 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
         /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_001: [ If buffers is NULL then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
         buffers == NULL ||
         /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_002: [ If max_buffer_size is 0 then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
-        max_buffer_size == 0)
+        max_buffer_size == 0 ||
+        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_026: [ If split_buffer_arrays_count is NULL then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
+        split_buffer_arrays_count == NULL)
     {
-        LogError("Invalid args : CONSTBUFFER_ARRAY_HANDLE buffers = %p, size_t max_buffer_size = %" PRIu32 "",
-            buffers, max_buffer_size);
+        LogError("Invalid args : CONSTBUFFER_ARRAY_HANDLE buffers = %p, uint32_t* split_buffer_arrays_count = %p, size_t max_buffer_size = %" PRIu32 "",
+            buffers, split_buffer_arrays_count, max_buffer_size);
     }
     else
     {
@@ -264,7 +266,8 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
                     }
                     else
                     {
-                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
+                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE) and write the count of used constbuffer array in split_buffer_arrays_count. ]*/
+                        *split_buffer_arrays_count = 0;
                         TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(&result, &temp);
                     }
                 }
@@ -280,9 +283,10 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
                 }
                 else
                 {
-                    /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
+                    /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE) and write the count of used constbuffer array in split_buffer_arrays_count. ]*/
                     temp->arr[0] = buffers;
                     constbuffer_array_inc_ref(buffers);
+                    *split_buffer_arrays_count = 1;
                     TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(&result, &temp);
                 }
             }
@@ -349,6 +353,29 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
 
                             current_buffer_count++;
                             end_buffer_size = max_buffer_size - current_buffer_size;
+                            bool has_empty = false;
+                            if (current_buffer_size + buffer->size == max_buffer_size)
+                            {
+                                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_025: [ If current buffer size added the current sub - tarray size is equal to max_buffers_size, then constbuffer_array_splitter_split_to_array_of_array shall include any consecutive empty buffers right after the current buffer to the new array which will be added to the result. ]*/
+                                while (++i < buffer_count)
+                                {
+                                    CONSTBUFFER_HANDLE next = constbuffer_array_get_buffer(buffers, i);
+                                    const CONSTBUFFER* next_buffer = CONSTBUFFER_GetContent(next);
+                                    if (next_buffer->size == 0)
+                                    {
+                                        has_empty = true;
+                                        current_buffer_count++;
+                                        end_buffer_size = 0;
+                                        CONSTBUFFER_DecRef(next);
+                                    }
+                                    else
+                                    {
+                                        CONSTBUFFER_DecRef(next);
+                                        i--;
+                                        break;
+                                    }
+                                }
+                            }
 
                             CONSTBUFFER_ARRAY_HANDLE arr = constbuffer_array_create_from_buffer_offset_and_count(buffers, start_buffer_index, current_buffer_count, start_buffer_offset, end_buffer_size);
                             if(arr == NULL)
@@ -366,7 +393,7 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
                                 start_buffer_index = i;
 
                                 //check if can get any sub-array inside current array
-                                uint32_t current_buffer_remaining_size = buffer->size - end_buffer_size;
+                                uint32_t current_buffer_remaining_size = has_empty ? 0 : buffer->size - end_buffer_size;
                                 start_buffer_offset = end_buffer_size;
                                 while (current_buffer_remaining_size > max_buffer_size)
                                 {
@@ -441,7 +468,8 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
                     }
                     else
                     {
-                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
+                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE) and write the count of used constbuffer array in split_buffer_arrays_count. ]*/
+                        *split_buffer_arrays_count = buffer_array_count;
                         TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(&result, &temp);
                     }
                 }

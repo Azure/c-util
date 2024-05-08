@@ -12,7 +12,7 @@ For example, it is used to upload large payloads to Blob store, split across lar
 ```c
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_splitter_split, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size);
 
-MOCKABLE_FUNCTION(, TARRAY(CONSTBUFFER_ARRAY_HANDLE), constbuffer_array_splitter_split_to_array_of_array, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size);
+MOCKABLE_FUNCTION(, TARRAY(CONSTBUFFER_ARRAY_HANDLE), constbuffer_array_splitter_split_to_array_of_array, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size, uint32_t*, split_buffer_arrays_count);
 ```
 
 ### constbuffer_array_splitter_split
@@ -64,7 +64,7 @@ This takes the `buffers` from a `CONSTBUFFER_ARRAY_HANDLE` and splits them into 
 ### constbuffer_array_splitter_split_to_array_of_array
 
 ```c
-MOCKABLE_FUNCTION(, TARRAY(CONSTBUFFER_ARRAY_HANDLE), constbuffer_array_splitter_split_to_array_of_array, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size);
+MOCKABLE_FUNCTION(, TARRAY(CONSTBUFFER_ARRAY_HANDLE), constbuffer_array_splitter_split_to_array_of_array, CONSTBUFFER_ARRAY_HANDLE, buffers, uint32_t, max_buffer_size, uint32_t*, split_buffer_arrays_count);
 ```
 
 This takes the `buffers` from a `CONSTBUFFER_ARRAY_HANDLE` and splits them into a new `TARRAY(CONSTBUFFER_ARRAY_HANDLE)` where each `CONSTBUFFER_ARRAY_HANDLE` is of size `max_buffer_size` (or smaller for the final remaining buffer). The caller is responsible for cleaning up the returned `TARRAY(CONSTBUFFER_ARRAY_HANDLE)`.
@@ -72,6 +72,8 @@ This takes the `buffers` from a `CONSTBUFFER_ARRAY_HANDLE` and splits them into 
 **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_001: [** If `buffers` is `NULL` then `constbuffer_array_splitter_split_to_array_of_array` shall fail and return `NULL`. **]**
 
 **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_002: [** If `max_buffer_size` is `0` then `constbuffer_array_splitter_split_to_array_of_array` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_SPLITTER_07_026: [** If `split_buffer_arrays_count` is `NULL` then `constbuffer_array_splitter_split_to_array_of_array` shall fail and return `NULL`. **]**
 
 **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_005: [** `constbuffer_array_splitter_split_to_array_of_array` shall call `constbuffer_array_get_buffer_count` to get the total number of buffers. **]**
 
@@ -101,8 +103,10 @@ For every buffer in the original buffer:
 
 - **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_018: [** If current buffer size added the current sub-tarray size is greater than `max_buffer_size`, then `constbuffer_array_splitter_split_to_array_of_array` shall get part of the current buffer as end buffer and added a new array into the result until the remaining size for the current buffer is smaller than `max_buffer_size`. **]**
 
+ - **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_025: [** If current buffer size added the current sub-tarray size is equal to `max_buffers_size`, then `constbuffer_array_splitter_split_to_array_of_array` shall include any consecutive empty buffers right after the current buffer to the new array which will be added to the result. **]**
+
 **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_019: [** On any failure, `constbuffer_array_splitter_split_to_array_of_array` dec ref the sub-tarrays by calling `constbuffer_array_dec_ref`. **]**
 
-**SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [** `constbuffer_array_splitter_split_to_array_of_array` shall succeed and return the new `TARRAY(CONSTBUFFER_ARRAY_HANDLE)`.  **]**
+**SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [** `constbuffer_array_splitter_split_to_array_of_array` shall succeed and return the new `TARRAY(CONSTBUFFER_ARRAY_HANDLE)` and write the count of used constbuffer array in `split_buffer_arrays_count`.  **]**
 
 **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_004: [** If there are any other failures then `constbuffer_array_splitter_split_to_array_of_array` shall fail and return `NULL`. **]**
