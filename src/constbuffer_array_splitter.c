@@ -264,7 +264,7 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
                     }
                     else
                     {
-                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
+                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE) and write the count of used constbuffer array in payload_buffer_count. ]*/
                         *payload_buffer_count = 0;
                         TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(&result, &temp);
                     }
@@ -281,9 +281,10 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
                 }
                 else
                 {
-                    /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
+                    /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE) and write the count of used constbuffer array in payload_buffer_count. ]*/
                     temp->arr[0] = buffers;
                     constbuffer_array_inc_ref(buffers);
+                    *payload_buffer_count = 1;
                     TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(&result, &temp);
                 }
             }
@@ -465,7 +466,7 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
                     }
                     else
                     {
-                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE). ]*/
+                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE) and write the count of used constbuffer array in payload_buffer_count. ]*/
                         *payload_buffer_count = buffer_array_count;
                         TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(&result, &temp);
                     }

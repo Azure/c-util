@@ -105,6 +105,6 @@ For every buffer in the original buffer:
 
 **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_019: [** On any failure, `constbuffer_array_splitter_split_to_array_of_array` dec ref the sub-tarrays by calling `constbuffer_array_dec_ref`. **]**
 
-**SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [** `constbuffer_array_splitter_split_to_array_of_array` shall succeed and return the new `TARRAY(CONSTBUFFER_ARRAY_HANDLE)`.  **]**
+**SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [** `constbuffer_array_splitter_split_to_array_of_array` shall succeed and return the new `TARRAY(CONSTBUFFER_ARRAY_HANDLE)` and write the count of used constbuffer array in `payload_buffer_count`.  **]**
 
 **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_004: [** If there are any other failures then `constbuffer_array_splitter_split_to_array_of_array` shall fail and return `NULL`. **]**
