@@ -220,6 +220,8 @@ set(c_util_h_files
     ./inc/c_util/tqueue_ll.h
     ./inc/c_util/two_d_array.h
     ./inc/c_util/two_d_array_ll.h
+    ./inc/c_util/trc_ptr.h
+    ./inc/c_util/trc_ptr_ll.h
     ./inc/c_util/thandle_tuple_array.h
     ./inc/c_util/uuid_string.h
     ./inc/c_util/watchdog.h
