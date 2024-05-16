@@ -267,7 +267,7 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
                     else
                     {
                         /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_020: [ constbuffer_array_splitter_split_to_array_of_array shall succeed and return the new TARRAY(CONSTBUFFER_ARRAY_HANDLE) and write the count of used constbuffer array in split_buffer_arrays_count. ]*/
-                        *split_buffer_arrays_count = 0;
+                        *split_buffer_arrays_count = 1;
                         TARRAY_INITIALIZE_MOVE(CONSTBUFFER_ARRAY_HANDLE)(&result, &temp);
                     }
                 }

@@ -1076,7 +1076,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_with_empty_arra
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(uint32_t, 0, split_buffer_arrays_count);
+    ASSERT_ARE_EQUAL(uint32_t, 1, split_buffer_arrays_count);
     //check buffer count in index 0
     uint32_t buffer_count;
     (void)real_constbuffer_array_get_buffer_count(result->arr[0], &buffer_count);
@@ -1112,7 +1112,7 @@ TEST_FUNCTION(constbuffer_array_splitter_split_to_array_of_array_split_with_all_
     /// assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(uint32_t, 0, split_buffer_arrays_count);
+    ASSERT_ARE_EQUAL(uint32_t, 1, split_buffer_arrays_count);
 
     uint32_t buffer_count;
     (void)real_constbuffer_array_get_buffer_count(result->arr[0], &buffer_count);
