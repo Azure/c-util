@@ -221,8 +221,8 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
         /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_026: [ If split_buffer_arrays_count is NULL then constbuffer_array_splitter_split_to_array_of_array shall fail and return NULL. ]*/
         split_buffer_arrays_count == NULL)
     {
-        LogError("Invalid args : CONSTBUFFER_ARRAY_HANDLE buffers = %p, uint32_t* split_buffer_arrays_count = %p, size_t max_buffer_size = %" PRIu32 "",
-            buffers, split_buffer_arrays_count, max_buffer_size);
+        LogError("Invalid args : CONSTBUFFER_ARRAY_HANDLE buffers = %p, uint32_t max_buffer_size = %" PRIu32 ", uint32_t * split_buffer_arrays_count = %p ",
+            buffers, max_buffer_size, split_buffer_arrays_count);
     }
     else
     {
