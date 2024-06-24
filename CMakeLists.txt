@@ -180,6 +180,7 @@ set(c_util_c_files
     ./src/watchdog.c
     ./src/watchdog_threadpool.c
     ./src/worker_thread.c
+    ./src/thread_safe_set.c
 )
 
 set(c_util_cpp_files
@@ -229,6 +230,7 @@ set(c_util_h_files
     ./inc/c_util/watchdog.h
     ./inc/c_util/watchdog_threadpool.h
     ./inc/c_util/worker_thread.h
+    ./inc/c_util/thread_safe_set.h
 )
 
 if (WIN32)
