@@ -538,6 +538,127 @@ allOk:;
     return result;
 }
 
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_add_back, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, CONSTBUFFER_HANDLE, constbuffer_handle)
+{
+    CONSTBUFFER_ARRAY_HANDLE result;
+    if (
+        /*Codes_SRS_CONSTBUFFER_ARRAY_05_001: [ If constbuffer_array_handle is NULL then constbuffer_array_add_back shall fail and return NULL ]*/
+        (constbuffer_array_handle == NULL) ||
+        /*Codes_SRS_CONSTBUFFER_ARRAY_05_002: [ If constbuffer_handle is NULL then constbuffer_array_add_back shall fail and return NULL ]*/
+        (constbuffer_handle == NULL)
+        )
+    {
+        LogError("invalid arguments CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle=%p, CONSTBUFFER_HANDLE constbuffer_handle=%p", constbuffer_array_handle, constbuffer_handle);
+    }
+    else
+    {
+        if (constbuffer_array_handle->nBuffers == UINT32_MAX)
+        {
+            /*Codes_SRS_CONSTBUFFER_ARRAY_05_007: [ If there any failures constbuffer_array_add_back shall fail and return NULL. ]*/
+            LogError("cannot add when capacity is at UINT32_MAX=%" PRIu32 ", would overflow", UINT32_MAX);
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_ARRAY_05_003: [ constbuffer_array_add_back shall allocate enough memory to hold all of constbuffer_array_handle existing CONSTBUFFER_HANDLE and constbuffer_handle. ]*/
+            result = REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle->nBuffers + 1, sizeof(CONSTBUFFER_HANDLE));
+            if (result == NULL)
+            {
+                /*Codes_SRS_CONSTBUFFER_ARRAY_05_007: [ If there any failures constbuffer_array_add_back shall fail and return NULL. ]*/
+                LogError("failure in REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle->nBuffers=%" PRIu32 " + 1, sizeof(CONSTBUFFER_HANDLE)=%zu);",
+                    constbuffer_array_handle->nBuffers, sizeof(CONSTBUFFER_HANDLE));
+                /*return as is*/
+            }
+            else
+            {
+                uint32_t i;
+
+                /*Codes_SRS_CONSTBUFFER_ARRAY_05_004: [ constbuffer_array_add_back shall copy constbuffer_handle and all of constbuffer_array_handle existing CONSTBUFFER_HANDLE. ]*/
+                /*Codes_SRS_CONSTBUFFER_ARRAY_05_005: [ constbuffer_array_add_back shall inc_ref all the CONSTBUFFER_HANDLE it had copied. ]*/
+                result->nBuffers = constbuffer_array_handle->nBuffers + 1;
+                result->custom_free = NULL;
+                result->buffers = result->buffers_memory;
+                for (i = 0; i < result->nBuffers - 1; i++)
+                {
+                    CONSTBUFFER_IncRef(constbuffer_array_handle->buffers[i]);
+                    result->buffers[i] = constbuffer_array_handle->buffers[i];
+                }
+                CONSTBUFFER_IncRef(constbuffer_handle);
+                result->buffers_memory[result->nBuffers - 1] = constbuffer_handle;
+
+                /*Codes_SRS_CONSTBUFFER_ARRAY_05_006: [ constbuffer_array_add_back shall succeed and return a non-NULL value. ]*/
+                goto allOk;
+            }
+        }
+    }
+    /*Codes_SRS_CONSTBUFFER_ARRAY_05_007: [ If there any failures constbuffer_array_add_back shall fail and return NULL. ]*/
+    result = NULL;
+allOk:;
+    return result;
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_back, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, CONSTBUFFER_HANDLE*, constbuffer_handle)
+{
+    CONSTBUFFER_ARRAY_HANDLE result;
+    if (
+        /*Codes_SRS_CONSTBUFFER_ARRAY_05_008: [ If constbuffer_array_handle is NULL then constbuffer_array_remove_back shall fail and return NULL. ]*/
+        (constbuffer_array_handle == NULL) ||
+        /*Codes_SRS_CONSTBUFFER_ARRAY_05_009: [ If constbuffer_handle is NULL then constbuffer_array_remove_back shall fail and return NULL. ]*/
+        (constbuffer_handle == NULL)
+        )
+    {
+        /*Codes_SRS_CONSTBUFFER_ARRAY_05_018: [ If there are any failures then constbuffer_array_remove_back shall fail and return NULL. ]*/
+        LogError("invalid arguments CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle=%p, CONSTBUFFER_HANDLE* constbuffer_handle=%p", constbuffer_array_handle, constbuffer_handle);
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_ARRAY_05_010: [ constbuffer_array_remove_back shall fail when called on a newly constructed CONSTBUFFER_ARRAY_HANDLE. ]*/
+        /*Codes_SRS_CONSTBUFFER_ARRAY_05_011: [ If there is no back CONSTBUFFER_HANDLE then constbuffer_array_remove_back shall fail and return NULL. ]*/
+        if (constbuffer_array_handle->nBuffers == 0)
+        {
+            /*Codes_SRS_CONSTBUFFER_ARRAY_05_018: [ If there are any failures then constbuffer_array_remove_back shall fail and return NULL. ]*/
+            LogError("cannot remove from that which does not have");
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_ARRAY_05_012: [ constbuffer_array_remove_back shall allocate memory to hold all of constbuffer_array_handle CONSTBUFFER_HANDLEs except the back one. ]*/
+            result = REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle->nBuffers - 1, sizeof(CONSTBUFFER_HANDLE));
+            if (result == NULL)
+            {
+                /*Codes_SRS_CONSTBUFFER_ARRAY_05_018: [ If there are any failures then constbuffer_array_remove_back shall fail and return NULL. ]*/
+                LogError("failure in REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle->nBuffers=%" PRIu32 " - 1, sizeof(CONSTBUFFER_HANDLE)=%zu);",
+                    constbuffer_array_handle->nBuffers, sizeof(CONSTBUFFER_HANDLE));
+                /*return as is*/
+            }
+            else
+            {
+                uint32_t i;
+
+                /*Codes_SRS_CONSTBUFFER_ARRAY_05_013: [ constbuffer_array_remove_back shall inc_ref the removed buffer. ]*/
+                CONSTBUFFER_IncRef(constbuffer_array_handle->buffers[constbuffer_array_handle->nBuffers - 1]);
+                /*Codes_SRS_CONSTBUFFER_ARRAY_05_014: [ constbuffer_array_remove_back shall write in constbuffer_handle the back handle. ]*/
+                *constbuffer_handle = constbuffer_array_handle->buffers[constbuffer_array_handle->nBuffers - 1];
+                result->nBuffers = constbuffer_array_handle->nBuffers - 1;
+                result->custom_free = NULL;
+                result->buffers = result->buffers_memory;
+
+                /*Codes_SRS_CONSTBUFFER_ARRAY_05_015: [ constbuffer_array_remove_back shall copy all of constbuffer_array_handle CONSTBUFFER_HANDLEs except the back one. ]*/
+                /*Codes_SRS_CONSTBUFFER_ARRAY_05_016: [ constbuffer_array_remove_back shall inc_ref all the copied CONSTBUFFER_HANDLEs. ]*/
+                for (i = 0; i < constbuffer_array_handle->nBuffers - 1; i++)
+                {
+                    CONSTBUFFER_IncRef(constbuffer_array_handle->buffers[i]);
+                    result->buffers[i] = constbuffer_array_handle->buffers[i];
+                }
+                /*Codes_SRS_CONSTBUFFER_ARRAY_05_017: [ constbuffer_array_remove_back shall succeed and return a non-NULL value. ]*/
+                goto allOk;
+            }
+        }
+    }
+    /*Codes_SRS_CONSTBUFFER_ARRAY_05_018: [ If there are any failures then constbuffer_array_remove_back shall fail and return NULL. ]*/
+    result = NULL;
+allOk:;
+    return result;
+}
+
 IMPLEMENT_MOCKABLE_FUNCTION(, int, constbuffer_array_get_buffer_count, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t*, buffer_count)
 {
     int result;
