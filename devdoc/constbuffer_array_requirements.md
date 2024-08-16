@@ -229,7 +229,7 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_front, CO
 
 **SRS_CONSTBUFFER_ARRAY_02_013: [** If there is no front `CONSTBUFFER_HANDLE` then `constbuffer_array_remove_front` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_ARRAY_02_002: [** `constbuffer_array_remove_front` shall fail when called on a newly constructed `CONSTBUFFER_ARRAY_HANDLE`. **]**
+**SRS_CONSTBUFFER_ARRAY_02_002: [** `constbuffer_array_remove_front` shall fail when called on an empty `CONSTBUFFER_ARRAY_HANDLE`. **]**
 
 **SRS_CONSTBUFFER_ARRAY_02_046: [** `constbuffer_array_remove_front` shall allocate memory to hold all of `constbuffer_array_handle` `CONSTBUFFER_HANDLE`s except the front one. **]**
 
@@ -261,7 +261,7 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_add_back, CONSTB
 
 **SRS_CONSTBUFFER_ARRAY_05_005: [** `constbuffer_array_add_back` shall inc_ref all the `CONSTBUFFER_HANDLE` it had copied. **]**
 
-**SRS_CONSTBUFFER_ARRAY_05_006: [** `constbuffer_array_add_back shall` succeed and return a non-`NULL` value. ]**
+**SRS_CONSTBUFFER_ARRAY_05_006: [** `constbuffer_array_add_back` shall succeed and return a non-`NULL` value. ]**
 
 **SRS_CONSTBUFFER_ARRAY_05_007: [** If there any failures `constbuffer_array_add_back` shall fail and return `NULL`. **]**
 
@@ -277,7 +277,7 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_back, CON
 
 **SRS_CONSTBUFFER_ARRAY_05_009: [** If `constbuffer_handle` is NULL then `constbuffer_array_remove_back` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_ARRAY_05_010: [** `constbuffer_array_remove_back` shall fail when called on a newly constructed `CONSTBUFFER_ARRAY_HANDLE`. **]**
+**SRS_CONSTBUFFER_ARRAY_05_010: [** `constbuffer_array_remove_back` shall fail when called on an empty `CONSTBUFFER_ARRAY_HANDLE`. **]**
 
 **SRS_CONSTBUFFER_ARRAY_05_011: [** If there is no back `CONSTBUFFER_HANDLE` then `constbuffer_array_remove_back` shall fail and return `NULL`. **]**
 

@@ -2170,7 +2170,7 @@ TEST_FUNCTION(constbuffer_array_remove_back_with_constbuffer_handle_NULL_fails)
     constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
 }
 
-/*Tests_SRS_CONSTBUFFER_ARRAY_02_002: [ constbuffer_array_remove_front shall fail when called on a newly constructed CONSTBUFFER_ARRAY_HANDLE. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_02_002: [ constbuffer_array_remove_front shall fail when called on an empty CONSTBUFFER_ARRAY_HANDLE. ]*/
 TEST_FUNCTION(constbuffer_array_remove_front_with_constbuffer_array_handle_empty_fails)
 {
     ///arrange
@@ -2188,7 +2188,7 @@ TEST_FUNCTION(constbuffer_array_remove_front_with_constbuffer_array_handle_empty
     constbuffer_array_dec_ref(TEST_CONSTBUFFER_ARRAY_HANDLE);
 }
 
-/*Tests_SRS_CONSTBUFFER_ARRAY_05_010: [ constbuffer_array_remove_back shall fail when called on a newly constructed CONSTBUFFER_ARRAY_HANDLE. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_05_010: [ constbuffer_array_remove_back shall fail when called on an empty CONSTBUFFER_ARRAY_HANDLE. ]*/
 TEST_FUNCTION(constbuffer_array_remove_back_with_constbuffer_array_handle_empty_fails)
 {
     ///arrange

@@ -490,12 +490,12 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove
     }
     else
     {
-        /*Codes_SRS_CONSTBUFFER_ARRAY_02_002: [ constbuffer_array_remove_front shall fail when called on a newly constructed CONSTBUFFER_ARRAY_HANDLE. ]*/
+        /*Codes_SRS_CONSTBUFFER_ARRAY_02_002: [ constbuffer_array_remove_front shall fail when called on an empty CONSTBUFFER_ARRAY_HANDLE. ]*/
         /*Codes_SRS_CONSTBUFFER_ARRAY_02_013: [ If there is no front CONSTBUFFER_HANDLE then constbuffer_array_remove_front shall fail and return NULL. ]*/
         if (constbuffer_array_handle->nBuffers == 0)
         {
             /*Codes_SRS_CONSTBUFFER_ARRAY_02_036: [ If there are any failures then constbuffer_array_remove_front shall fail and return NULL. ]*/
-            LogError("cannot remove from that which does not have");
+            LogError("Cannot remove from an empty CONSTBUFFER_ARRAY_HANDLE");
         }
         else
         {
@@ -611,12 +611,12 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove
     }
     else
     {
-        /*Codes_SRS_CONSTBUFFER_ARRAY_05_010: [ constbuffer_array_remove_back shall fail when called on a newly constructed CONSTBUFFER_ARRAY_HANDLE. ]*/
+        /*Codes_SRS_CONSTBUFFER_ARRAY_05_010: [ constbuffer_array_remove_back shall fail when called on an empty CONSTBUFFER_ARRAY_HANDLE. ]*/
         /*Codes_SRS_CONSTBUFFER_ARRAY_05_011: [ If there is no back CONSTBUFFER_HANDLE then constbuffer_array_remove_back shall fail and return NULL. ]*/
         if (constbuffer_array_handle->nBuffers == 0)
         {
             /*Codes_SRS_CONSTBUFFER_ARRAY_05_018: [ If there are any failures then constbuffer_array_remove_back shall fail and return NULL. ]*/
-            LogError("cannot remove from that which does not have");
+            LogError("Cannot remove from an empty CONSTBUFFER_ARRAY_HANDLE");
         }
         else
         {
