@@ -229,7 +229,7 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_front, CO
 
 **SRS_CONSTBUFFER_ARRAY_02_013: [** If there is no front `CONSTBUFFER_HANDLE` then `constbuffer_array_remove_front` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_ARRAY_02_002: [** `constbuffer_array_remove_front` shall fail when called on a newly constructed `CONSTBUFFER_ARRAY_HANDLE`. **]**
+**SRS_CONSTBUFFER_ARRAY_02_002: [** `constbuffer_array_remove_front` shall fail when called on an empty `CONSTBUFFER_ARRAY_HANDLE`. **]**
 
 **SRS_CONSTBUFFER_ARRAY_02_046: [** `constbuffer_array_remove_front` shall allocate memory to hold all of `constbuffer_array_handle` `CONSTBUFFER_HANDLE`s except the front one. **]**
 
@@ -242,6 +242,58 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_front, CO
 **SRS_CONSTBUFFER_ARRAY_02_049: [** `constbuffer_array_remove_front` shall succeed and return a non-`NULL` value. **]**
 
 **SRS_CONSTBUFFER_ARRAY_02_036: [** If there are any failures then `constbuffer_array_remove_front` shall fail and return `NULL`. **]**
+
+### constbuffer_array_add_back
+
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_add_back, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, CONSTBUFFER_HANDLE, constbuffer_handle);
+```
+
+`constbuffer_array_add_back` adds a new `CONSTBUFFER_HANDLE` at the back of the already stored `CONSTBUFFER_HANDLE`s.
+
+**SRS_CONSTBUFFER_ARRAY_05_001: [** If `constbuffer_array_handle` is `NULL` then `constbuffer_array_add_back` shall fail and return `NULL`.**]**
+
+**SRS_CONSTBUFFER_ARRAY_05_002: [** If `constbuffer_handle` is `NULL` then `constbuffer_array_add_back` shall fail and return `NULL`.**]**
+
+**SRS_CONSTBUFFER_ARRAY_05_003: [** `constbuffer_array_add_back` shall allocate enough memory to hold all of `constbuffer_array_handle` existing `CONSTBUFFER_HANDLE` and `constbuffer_handle`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_05_004: [** `constbuffer_array_add_back` shall copy `constbuffer_handle` and all of `constbuffer_array_handle` existing `CONSTBUFFER_HANDLE`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_05_005: [** `constbuffer_array_add_back` shall inc_ref all the `CONSTBUFFER_HANDLE` it had copied. **]**
+
+**SRS_CONSTBUFFER_ARRAY_05_006: [** `constbuffer_array_add_back` shall succeed and return a non-`NULL` value. ]**
+
+**SRS_CONSTBUFFER_ARRAY_05_007: [** If there any failures `constbuffer_array_add_back` shall fail and return `NULL`. **]**
+
+### constbuffer_array_remove_back
+
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_back, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, CONSTBUFFER_HANDLE* const_buffer_handle);
+```
+
+`constbuffer_array_remove_back` removes the back `CONSTBUFFER_HANDLE` and hands it over to the caller.
+
+**SRS_CONSTBUFFER_ARRAY_05_008: [** If `constbuffer_array_handle` is NULL then `constbuffer_array_remove_back` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_05_009: [** If `constbuffer_handle` is NULL then `constbuffer_array_remove_back` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_05_010: [** `constbuffer_array_remove_back` shall fail when called on an empty `CONSTBUFFER_ARRAY_HANDLE`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_05_011: [** If there is no back `CONSTBUFFER_HANDLE` then `constbuffer_array_remove_back` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_05_012: [** `constbuffer_array_remove_back` shall allocate memory to hold all of `constbuffer_array_handle` `CONSTBUFFER_HANDLE`s except the back one. **]**
+
+**SRS_CONSTBUFFER_ARRAY_05_013: [** `constbuffer_array_remove_back` shall inc_ref the removed buffer. **]**
+
+**SRS_CONSTBUFFER_ARRAY_05_014: [** `constbuffer_array_remove_back` shall write in `constbuffer_handle` the back handle. **]**
+
+**SRS_CONSTBUFFER_ARRAY_05_015: [** `constbuffer_array_remove_back` shall copy all of `constbuffer_array_handle` `CONSTBUFFER_HANDLE`s except the back one. **]**
+
+**SRS_CONSTBUFFER_ARRAY_05_016: [** `constbuffer_array_remove_back` shall inc_ref all the copied `CONSTBUFFER_HANDLE`s. **]**
+
+**SRS_CONSTBUFFER_ARRAY_05_017: [** `constbuffer_array_remove_back` shall succeed and return a non-`NULL` value. **]**
+
+**SRS_CONSTBUFFER_ARRAY_05_018: [** If there are any failures then `constbuffer_array_remove_back` shall fail and return `NULL`. **]**
 
 ### constbuffer_array_get_buffer_count
 

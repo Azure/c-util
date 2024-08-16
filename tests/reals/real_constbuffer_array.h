@@ -24,6 +24,8 @@
         constbuffer_array_dec_ref, \
         constbuffer_array_add_front, \
         constbuffer_array_remove_front, \
+        constbuffer_array_add_back, \
+        constbuffer_array_remove_back, \
         constbuffer_array_get_buffer_count, \
         constbuffer_array_get_buffer, \
         constbuffer_array_get_buffer_content, \
@@ -52,6 +54,12 @@ CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_add_front(CONSTBUFFER_ARRAY_HAND
 
 /*remove front*/
 CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_remove_front(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, CONSTBUFFER_HANDLE* constbuffer_handle);
+
+/*add in back*/
+CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_add_back(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, CONSTBUFFER_HANDLE constbuffer_handle);
+
+/*remove back*/
+CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_remove_back(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, CONSTBUFFER_HANDLE* constbuffer_handle);
 
 /* getters */
 int real_constbuffer_array_get_buffer_count(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, uint32_t* buffer_count);
