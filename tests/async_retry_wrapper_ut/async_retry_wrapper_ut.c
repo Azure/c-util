@@ -1312,7 +1312,7 @@ TEST_FUNCTION(test_async_do_something_with_multiple_enum_return_async_retries_sy
 TEST_FUNCTION(async_retry_wrapper_retries_synchronously_with_timeout)
 {
     /// arrange
-    TEST_ASYNC_API_SYNC_RESULT function_call_result;
+    TEST_ASYNC_API_SYNC_MULTIPLE_RESULT function_call_result;
     ON_DO_SOMETHING_NO_RETRY_ASYNC_COMPLETE saved_callback;
     void* saved_context;
 
@@ -1349,7 +1349,7 @@ TEST_FUNCTION(async_retry_wrapper_retries_synchronously_with_timeout)
 TEST_FUNCTION(async_retry_wrapper_retries_synchronously_with_timeout_fails_when_function_times_out)
 {
     /// arrange
-    TEST_ASYNC_API_SYNC_RESULT function_call_result;
+    TEST_ASYNC_API_SYNC_MULTIPLE_RESULT function_call_result;
 
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(timer_global_get_elapsed_ms())
