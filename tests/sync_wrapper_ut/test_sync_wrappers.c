@@ -6,8 +6,8 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
-#include "async_type_helper.h"
-#include "sync_wrapper.h"
+#include "c_util/async_type_helper.h"
+#include "c_util/sync_wrapper.h"
 #include "test_async.h"
 #include "test_ref_counted.h"
 

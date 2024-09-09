@@ -24,10 +24,10 @@
 #include "real_gballoc_hl.h"
 
 
-#include "async_type_helper.h"
+#include "c_util/async_type_helper.h"
 #include "test_ref_counted_async_type_helper_handler.h"
 
-#include "async_type_helper_ref_counted_handler.h"
+#include "c_util/async_type_helper_ref_counted_handler.h"
 
 static TEST_REFCOUNTED_HANDLE test_ref_counted;
 

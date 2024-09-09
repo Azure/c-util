@@ -4,8 +4,9 @@
 add_subdirectory(reals)
 
 
-if(${run_unittests})
+if(${run_unittests})    
     build_test_folder(async_op_ut)
+    build_test_folder(async_retry_wrapper_ut)
     build_test_folder(async_type_helper_copy_value_handler_ut)
     build_test_folder(async_type_helper_ref_counted_handler_ut)
     build_test_folder(async_type_helper_thandle_handler_ut)

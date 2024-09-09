@@ -3,7 +3,7 @@
 #ifndef CONSTBUFFER_ARRAY_SYNC_WRAPPER_H
 #define CONSTBUFFER_ARRAY_SYNC_WRAPPER_H
 
-#include "async_type_helper_ref_counted_handler.h"
+#include "c_util/async_type_helper_ref_counted_handler.h"
 #include "c_util/constbuffer_array.h"
 
 #ifdef __cplusplus

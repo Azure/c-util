@@ -7,7 +7,7 @@
 
 #include "c_logging/logger.h"
 
-#include "async_type_helper.h"
+#include "c_util/async_type_helper.h"
 
 #ifdef __cplusplus
 extern "C" {

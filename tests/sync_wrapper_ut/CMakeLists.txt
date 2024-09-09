@@ -13,7 +13,7 @@ set(${theseTestsName}_c_files
 )
 
 set(${theseTestsName}_h_files
-    ../../inc/sync_wrapper.h
+    ../../inc/c_util/sync_wrapper.h
     test_async.h
     test_sync_wrappers.h
     test_ref_counted.h

@@ -21,9 +21,9 @@
 
 #include "real_gballoc_hl.h"
 
-#include "async_type_helper.h"
+#include "c_util/async_type_helper.h"
 
-#include "async_type_helper_copy_value_handler.h"
+#include "c_util/async_type_helper_copy_value_handler.h"
 
 typedef struct MY_STRUCT_TAG
 {

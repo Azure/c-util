@@ -20,10 +20,10 @@
 
 #include "real_gballoc_hl.h"
 
-#include "async_type_helper.h"
+#include "c_util/async_type_helper.h"
 #include "test_thandle_async_type_helper_handler.h"
 
-#include "async_type_helper_thandle_handler.h"
+#include "c_util/async_type_helper_thandle_handler.h"
 
 // This is a hack. If test_thandle would be simply at global scope they'd be const and noone could write to them in the test functions
 static struct G_TAG /*g comes from "global*/

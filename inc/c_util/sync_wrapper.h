@@ -25,7 +25,7 @@
 #include "c_pal/interlocked_hl.h"
 #include "c_pal/log_critical_and_terminate.h"
 
-#include "async_type_helper.h"
+#include "c_util/async_type_helper.h"
 
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus

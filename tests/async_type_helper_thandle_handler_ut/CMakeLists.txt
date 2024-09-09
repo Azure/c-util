@@ -11,7 +11,7 @@ set(${theseTestsName}_c_files
 )
 
 set(${theseTestsName}_h_files
-    ../../inc/async_type_helper_thandle_handler.h
+    ../../inc/c_util/async_type_helper_thandle_handler.h
     test_thandle.h
     test_thandle_async_type_helper_handler.h
 )

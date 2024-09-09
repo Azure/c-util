@@ -149,6 +149,7 @@ include_directories(${UMOCK_C_INC_FOLDER})
 
 set(c_util_c_files
     ./src/async_op.c
+    ./src/async_retry_wrapper.c
     ./src/async_type_helper.c
     ./src/azure_base64.c
     ./src/filename_helper.c
@@ -194,6 +195,7 @@ set(c_util_cpp_files
 
 set(c_util_h_files
     ./inc/c_util/async_op.h
+    ./inc/c_util/async_retry_wrapper.h
     ./inc/c_util/async_type_helper_copy_value_handler.h
     ./inc/c_util/async_type_helper_ref_counted_handler.h
     ./inc/c_util/async_type_helper_thandle_handler.h

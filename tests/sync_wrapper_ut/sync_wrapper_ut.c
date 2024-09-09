@@ -37,7 +37,7 @@
 
 #include "test_sync_wrappers.h"
 
-#include "sync_wrapper.h"
+#include "c_util/sync_wrapper.h"
 
 TEST_DEFINE_ENUM_TYPE(SYNC_WRAPPER_RESULT, SYNC_WRAPPER_RESULT_VALUES)
 

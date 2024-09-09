@@ -28,7 +28,7 @@
 #include "real_constbuffer_array.h"
 
 
-#include "async_type_helper.h"
+#include "c_util/async_type_helper.h"
 
 #define TEST_PAYLOAD_SIZE 128
 

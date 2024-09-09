@@ -6,7 +6,7 @@
 #include <stddef.h>
 
 
-#include "sync_wrapper.h"
+#include "c_util/sync_wrapper.h"
 #include "test_async.h"
 #include "test_ref_counted.h"
 #include "umock_c/umock_c_prod.h"

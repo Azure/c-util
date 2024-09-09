@@ -11,7 +11,7 @@ set(${theseTestsName}_c_files
 )
 
 set(${theseTestsName}_h_files
-    ../../inc/async_type_helper.h
+    ../../inc/c_util/async_type_helper.h
 )
 
 include_directories(../../../deps/azure-zrpc/pal/interfaces/inc)

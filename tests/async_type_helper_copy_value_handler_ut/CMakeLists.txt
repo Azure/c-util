@@ -10,7 +10,7 @@ set(${theseTestsName}_c_files
 )
 
 set(${theseTestsName}_h_files
-    ../../inc/async_type_helper_copy_value_handler.h
+    ../../inc/c_util/async_type_helper_copy_value_handler.h
 )
 
 build_test_artifacts(${theseTestsName} "tests/block_storage_2" ADDITIONAL_LIBS c_util c_pal_reals)

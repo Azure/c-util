@@ -6,7 +6,7 @@
 #include "macro_utils/macro_utils.h"
 #include "c_logging/logger.h"
 #include "c_pal/thandle.h"
-#include "async_type_helper.h"
+#include "c_util/async_type_helper.h"
 
 #define DECLARE_ASYNC_TYPE_HELPER_THANDLE_HANDLER(THANDLE_TYPE) \
     /* Codes_SRS_ASYNC_TYPE_HELPER_THANDLE_HANDLER_01_001: [ DECLARE_ASYNC_TYPE_HELPER_THANDLE_HANDLER shall declare the copy handler by expanding to: ]*/ \
