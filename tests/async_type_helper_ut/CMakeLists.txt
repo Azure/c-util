@@ -16,4 +16,4 @@ set(${theseTestsName}_h_files
 
 include_directories(../../../deps/azure-zrpc/pal/interfaces/inc)
 
-build_test_artifacts(${theseTestsName} "tests/block_storage_2" ADDITIONAL_LIBS c_util synchronization c_pal_reals c_util_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util  c_pal_reals c_util_reals)

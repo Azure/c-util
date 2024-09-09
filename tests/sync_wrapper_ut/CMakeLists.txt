@@ -19,4 +19,4 @@ set(${theseTestsName}_h_files
     test_ref_counted.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/block_storage_2" ADDITIONAL_LIBS c_util synchronization c_pal_reals c_util_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util  c_pal_reals c_util_reals)

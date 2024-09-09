@@ -16,4 +16,4 @@ set(${theseTestsName}_h_files
     test_thandle_async_type_helper_handler.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/block_storage_2" ADDITIONAL_LIBS c_util c_pal_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util c_pal_reals)
