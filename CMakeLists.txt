@@ -149,6 +149,8 @@ include_directories(${UMOCK_C_INC_FOLDER})
 
 set(c_util_c_files
     ./src/async_op.c
+    ./src/async_retry_wrapper.c
+    ./src/async_type_helper.c
     ./src/azure_base64.c
     ./src/filename_helper.c
     ./src/buffer.c
@@ -160,6 +162,7 @@ set(c_util_c_files
     ./src/constbuffer_array.c
     ./src/constbuffer_array_batcher_nv.c
     ./src/constbuffer_array_splitter.c
+    ./src/constbuffer_array_sync_wrapper.c
     ./src/constbuffer_array_tarray.c
     ./src/doublylinkedlist.c
     ./src/external_command_helper.c
@@ -173,6 +176,7 @@ set(c_util_c_files
     ./src/sliding_window_average_by_count.c
     ./src/singlylinkedlist.c
     ./src/strings.c
+    ./src/sync_wrapper.c
     ./src/tarray.c
     ./src/tcall_dispatcher.c
     ./src/tcall_dispatcher_cancellation_token_cancel_call.c
@@ -181,6 +185,8 @@ set(c_util_c_files
     ./src/watchdog.c
     ./src/watchdog_threadpool.c
     ./src/worker_thread.c
+    ./src/sync_wrapper.c
+    ./src/async_type_helper.c
 )
 
 set(c_util_cpp_files
@@ -189,6 +195,11 @@ set(c_util_cpp_files
 
 set(c_util_h_files
     ./inc/c_util/async_op.h
+    ./inc/c_util/async_retry_wrapper.h
+    ./inc/c_util/async_type_helper_copy_value_handler.h
+    ./inc/c_util/async_type_helper_ref_counted_handler.h
+    ./inc/c_util/async_type_helper_thandle_handler.h
+    ./inc/c_util/async_type_helper.h
     ./inc/c_util/azure_base64.h
     ./inc/c_util/filename_helper.h
     ./inc/c_util/buffer_.h
@@ -201,6 +212,7 @@ set(c_util_h_files
     ./inc/c_util/constbuffer_array.h
     ./inc/c_util/constbuffer_array_batcher_nv.h
     ./inc/c_util/constbuffer_array_splitter.h
+    ./inc/c_util/constbuffer_array_sync_wrapper.h
     ./inc/c_util/constbuffer_array_tarray.h
     ./inc/c_util/doublylinkedlist.h
     ./inc/c_util/external_command_helper.h
@@ -215,8 +227,9 @@ set(c_util_h_files
     ./inc/c_util/rc_string_utils.h
     ./inc/c_util/sliding_window_average_by_count.h
     ./inc/c_util/singlylinkedlist.h
-    ./inc/c_util/strings.h
     ./inc/c_util/strings_types.h
+    ./inc/c_util/strings.h
+    ./inc/c_util/sync_wrapper.h
     ./inc/c_util/tarray_ll.h
     ./inc/c_util/tarray.h
     ./inc/c_util/tcall_dispatcher.h
