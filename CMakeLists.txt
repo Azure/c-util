@@ -253,6 +253,7 @@ if (WIN32)
         ./inc/c_util/for_each_in_sub_folder.h
         ./inc/c_util/thread_notifications_dispatcher.h
         ./inc/c_util/tcall_dispatcher_thread_notification_call.h
+        ./inc/c_util/job_object_helper.h
     )
 endif()
 
@@ -263,6 +264,7 @@ if (WIN32)
         ./src/for_each_in_sub_folder.c
         ./src/thread_notifications_dispatcher.c
         ./src/tcall_dispatcher_thread_notification_call.c
+        ./src/job_object_helper.c
     )
 endif()
 
