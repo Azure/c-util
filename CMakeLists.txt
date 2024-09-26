@@ -341,22 +341,3 @@ include(CMakePackageConfigHelpers)
 
 #Insert vld in all executables if so required
 add_vld_if_defined(${CMAKE_CURRENT_SOURCE_DIR})
-
-function(remove_vld_from_targets_if_defined MyTarget)
-    if(TARGET ${MyTarget})
-        get_target_property(current_sources ${MyTarget} SOURCES)
-
-        set(filtered_sources "")
-        foreach(source ${current_sources})
-            get_filename_component(filename ${source} NAME)
-            if(NOT filename STREQUAL "use_vld.c")
-                list(APPEND filtered_sources ${source})
-            endif()
-        endforeach()
-    
-    set_property(TARGET ${MyTarget} PROPERTY SOURCES ${filtered_sources})
-    
-    endif()
-endfunction()
-
-remove_vld_from_targets_if_defined(external_command_sample)
