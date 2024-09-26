@@ -30,7 +30,7 @@ TEST_DEFINE_ENUM_TYPE(EXTERNAL_COMMAND_RESULT, EXTERNAL_COMMAND_RESULT_VALUES);
 //   Visual Leak Detector read settings from: PATH_TO_CMAKE_BUILD\external_command_helper_int_exe\ext\vld.ini
 //   Visual Leak Detector is turned off.
 // Just ignore those lines
-#if defined _DEBUG && defined VLD_OPT_REPORT_TO_STDOUT
+#if defined _DEBUG && defined USE_VLD
 #define ADDITIONAL_LINE_COUNT 2
 #else
 #define ADDITIONAL_LINE_COUNT 0
