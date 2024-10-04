@@ -109,6 +109,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_ARE_EQUAL(int, 0, umocktypes_bool_register_types(), "umocktypes_bool_register_types");
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
+    REGISTER_STRING_UTILS_GLOBAL_MOCK_HOOK();
 
     REGISTER_GLOBAL_MOCK_HOOK(mocked_FindFirstFileA, hook_FindFirstFileA);
     REGISTER_GLOBAL_MOCK_HOOK(mocked_FindClose, hook_FindClose);
@@ -121,6 +122,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(PULARGE_INTEGER, void*);
     REGISTER_UMOCK_ALIAS_TYPE(LPWIN32_FIND_DATAA, void*);
     REGISTER_UMOCK_ALIAS_TYPE(BOOL, int);
+    REGISTER_UMOCK_ALIAS_TYPE(va_list, void*);
 
     REGISTER_GLOBAL_MOCK_RETURNS(mocked_GetLastError, ERROR_SUCCESS, ERROR_ACCESS_DENIED);
 }
@@ -181,7 +183,7 @@ TEST_FUNCTION(for_each_in_folder_with_with_FindFirstFileA_returning_ERROR_FILE_N
     ///arrange
     int result;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(vsprintf_char(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(mocked_FindFirstFileA(TEST_FOLDER_DEFINE "\\*", IGNORED_ARG))
         .SetReturn(INVALID_HANDLE_VALUE);
     STRICT_EXPECTED_CALL(mocked_GetLastError())
@@ -206,7 +208,7 @@ TEST_FUNCTION(for_each_in_folder_with_with_FindFirstFileA_returning_ERROR_PATH_N
     ///arrange
     int result;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(vsprintf_char(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(mocked_FindFirstFileA(TEST_FOLDER_DEFINE "\\*", IGNORED_ARG))
         .SetReturn(INVALID_HANDLE_VALUE);
     STRICT_EXPECTED_CALL(mocked_GetLastError())
@@ -229,7 +231,7 @@ TEST_FUNCTION(for_each_in_folder_when_malloc_fails_it_fails)
     ///arrange
     int result;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(vsprintf_char(IGNORED_ARG, IGNORED_ARG))
         .SetReturn(NULL);
 
     ///act
@@ -248,7 +250,7 @@ TEST_FUNCTION(for_each_in_folder_with_with_FindFirstFileA_returning_ERROR_ACCESS
     ///arrange
     int result;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(vsprintf_char(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(mocked_FindFirstFileA(TEST_FOLDER_DEFINE "\\*", IGNORED_ARG))
         .SetReturn(INVALID_HANDLE_VALUE);
     STRICT_EXPECTED_CALL(mocked_GetLastError())
@@ -276,7 +278,7 @@ TEST_FUNCTION(for_each_in_folder_with_with_1_file_succeeds)
     ///arrange
     int result;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(vsprintf_char(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(mocked_FindFirstFileA(TEST_FOLDER_DEFINE "\\*", IGNORED_ARG));
     STRICT_EXPECTED_CALL(TEST_ON_EACH_IN_FOLDER(TEST_FOLDER, IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG))
         .CopyOutArgumentBuffer_enumerationShouldContinue(&realTrue, sizeof(realTrue))
@@ -309,7 +311,7 @@ TEST_FUNCTION(for_each_in_folder_with_with_2_files_succeeds)
     ///arrange
     int result;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(vsprintf_char(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(mocked_FindFirstFileA(TEST_FOLDER_DEFINE "\\*", IGNORED_ARG));
     STRICT_EXPECTED_CALL(TEST_ON_EACH_IN_FOLDER(TEST_FOLDER, IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG))
         .CopyOutArgumentBuffer_enumerationShouldContinue(&realTrue, sizeof(realTrue))
@@ -342,7 +344,7 @@ TEST_FUNCTION(for_each_in_folder_when_on_each_in_folder_fails_for_second_file_it
     ///arrange
     int result;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(vsprintf_char(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(mocked_FindFirstFileA(TEST_FOLDER_DEFINE "\\*", IGNORED_ARG));
     STRICT_EXPECTED_CALL(TEST_ON_EACH_IN_FOLDER(TEST_FOLDER, IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG))
         .CopyOutArgumentBuffer_enumerationShouldContinue(&realTrue, sizeof(realTrue))
@@ -371,7 +373,7 @@ TEST_FUNCTION(for_each_in_folder_when_on_each_in_folder_fails_for_first_file_it_
     ///arrange
     int result;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(vsprintf_char(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(mocked_FindFirstFileA(TEST_FOLDER_DEFINE "\\*", IGNORED_ARG));
     STRICT_EXPECTED_CALL(TEST_ON_EACH_IN_FOLDER(TEST_FOLDER, IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG))
         .CopyOutArgumentBuffer_enumerationShouldContinue(&realTrue, sizeof(realTrue))
@@ -395,7 +397,7 @@ TEST_FUNCTION(for_each_in_folder_when_first_on_each_in_folder_returns_enumeratio
     ///arrange
     int result;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(vsprintf_char(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(mocked_FindFirstFileA(TEST_FOLDER_DEFINE "\\*", IGNORED_ARG));
     STRICT_EXPECTED_CALL(TEST_ON_EACH_IN_FOLDER(TEST_FOLDER, IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG))
         .CopyOutArgumentBuffer_enumerationShouldContinue(&realFalse, sizeof(realFalse))
@@ -419,7 +421,7 @@ TEST_FUNCTION(for_each_in_folder_when_second_on_each_in_folder_returns_enumerati
     ///arrange
     int result;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(vsprintf_char(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(mocked_FindFirstFileA(TEST_FOLDER_DEFINE "\\*", IGNORED_ARG));
     STRICT_EXPECTED_CALL(TEST_ON_EACH_IN_FOLDER(TEST_FOLDER, IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG))
         .CopyOutArgumentBuffer_enumerationShouldContinue(&realTrue, sizeof(realTrue))
@@ -448,7 +450,7 @@ TEST_FUNCTION(for_each_in_folder_with_with_2_when_FindNextFileA_fails_it_fails)
     ///arrange
     int result;
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(vsprintf_char(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(mocked_FindFirstFileA(TEST_FOLDER_DEFINE "\\*", IGNORED_ARG));
     STRICT_EXPECTED_CALL(TEST_ON_EACH_IN_FOLDER(TEST_FOLDER, IGNORED_ARG, TEST_CONTEXT, IGNORED_ARG))
         .CopyOutArgumentBuffer_enumerationShouldContinue(&realTrue, sizeof(realTrue))
