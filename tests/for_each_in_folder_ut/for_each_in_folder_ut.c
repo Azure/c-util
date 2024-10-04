@@ -21,6 +21,7 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
+#include "c_pal/string_utils.h"
 
     MOCKABLE_FUNCTION(, DWORD, mocked_GetLastError);
 
@@ -38,13 +39,12 @@
         HANDLE, hFindFile
     );
 
-
-
     MOCKABLE_FUNCTION(, int, TEST_ON_EACH_IN_FOLDER, const char*, folder, const WIN32_FIND_DATAA*, findData, void*, context, bool*, enumerationShouldContinue)
 
 #undef ENABLE_MOCKS
 
 #include "real_gballoc_hl.h"
+#include "real_string_utils.h"
 
 #include "c_util/for_each_in_folder.h"
 
@@ -75,6 +75,17 @@ static void* TEST_CONTEXT = TEST_CONTEXT_DEFINE;
 
 static const bool realTrue = true;
 static const bool realFalse = false;
+
+/*following function cannot be mocked because of variable number of arguments:( so it is copy&pasted here*/
+char* sprintf_char_function(const char* format, ...)
+{
+    char* result;
+    va_list va;
+    va_start(va, format);
+    result = vsprintf_char(format, va);
+    va_end(va);
+    return result;
+}
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 

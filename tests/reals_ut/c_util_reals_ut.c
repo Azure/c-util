@@ -48,6 +48,7 @@
 #include "../reals/real_worker_thread.h"
 #include "../reals/real_tcall_dispatcher_thread_notification_call.h"
 #include "../reals/real_thread_notifications_dispatcher.h"
+#include "../reals/real_thread_notifications_lackey_dll.h"
 
 #include "c_util/object_lifetime_tracker.h"
 #include "c_util/worker_thread.h"
@@ -88,6 +89,7 @@ TEST_FUNCTION(check_all_c_util_reals)
     REGISTER_WORKER_THREAD_GLOBAL_MOCK_HOOK();
     REGISTER_TCALL_DISPATCHER_THREAD_NOTIFICATION_CALL_GLOBAL_MOCK_HOOK();
     REGISTER_THREAD_NOTIFICATIONS_DISPATCHER_GLOBAL_MOCK_HOOK();
+    REGISTER_THREAD_NOTIFICATIONS_LACKEY_DLL_GLOBAL_MOCK_HOOK();
 #endif
 
     // assert
