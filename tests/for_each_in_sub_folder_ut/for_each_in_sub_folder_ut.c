@@ -22,6 +22,8 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
+#include "c_pal/string_utils.h"
+
 #include "c_util/for_each_in_folder.h"
 
 MOCKABLE_FUNCTION(, int, TEST_ON_EACH_IN_FOLDER, const char*, folder, const WIN32_FIND_DATAA*, findData, void*, context, bool*, enumerationShouldContinue)
@@ -29,8 +31,7 @@ MOCKABLE_FUNCTION(, int, TEST_ON_EACH_IN_FOLDER, const char*, folder, const WIN3
 #undef ENABLE_MOCKS
 
 #include "real_gballoc_hl.h"
-
-
+#include "real_string_utils.h"
 
 #include "c_util/for_each_in_sub_folder.h"
 
@@ -152,9 +153,6 @@ static const WIN32_FIND_DATAA findFolder1 =
     /*cAlternateFileName*/"131962~1"
 };
 
-
-
-
 #define MAX_PRETEND_FIND 5
 
 typedef struct PRETEND_FIND_TAG /*essentially a wrapper around an array of WIN32_FIND_DATAA*/ /*each for_each_in_folder pretends to find what is in "finds"*/
@@ -183,7 +181,6 @@ static const PRETEND_FIND findJustFolder1 = { sizeof(findJustFolder1Addresses) /
 
 static const PRETEND_FINDS findsDot = 
 {
-
     1,
     {&findJustDot}
 };
@@ -246,6 +243,17 @@ static int hook_for_each_in_folder(const char* folder, ON_EACH_IN_FOLDER on_each
     return result;
 }
 
+/*following function cannot be mocked because of variable number of arguments:( so it is copy&pasted here*/
+char* sprintf_char_function(const char* format, ...)
+{
+    char* result;
+    va_list va;
+    va_start(va, format);
+    result = vsprintf_char(format, va);
+    va_end(va);
+    return result;
+}
+
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
@@ -270,6 +278,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_HOOK(for_each_in_folder, hook_for_each_in_folder);
     
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
+    REGISTER_STRING_UTILS_GLOBAL_MOCK_HOOK();
 
     REGISTER_UMOCK_ALIAS_TYPE(LPCSTR, const char*);
     REGISTER_UMOCK_ALIAS_TYPE(DWORD, uint32_t);
@@ -280,6 +289,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(LPWIN32_FIND_DATAA, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_EACH_IN_FOLDER, void*);
     REGISTER_UMOCK_ALIAS_TYPE(BOOL, int);
+    REGISTER_UMOCK_ALIAS_TYPE(va_list, void*);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -409,7 +419,7 @@ TEST_FUNCTION(for_each_in_sub_folder_with_1_subfolder_succeeds)
 
     STRICT_EXPECTED_CALL(for_each_in_folder(TEST_FOLDER, IGNORED_ARG, IGNORED_ARG));
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(vsprintf_char(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(for_each_in_folder(TEST_FOLDER_DEFINE "\\" TEST_FOLDER_1_DEFINE, TEST_ON_EACH_IN_FOLDER, TEST_CONTEXT));
     STRICT_EXPECTED_CALL(TEST_ON_EACH_IN_FOLDER(TEST_FOLDER_DEFINE "\\" TEST_FOLDER_1_DEFINE, &findFile1, TEST_CONTEXT, IGNORED_ARG));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
@@ -449,7 +459,7 @@ TEST_FUNCTION(for_each_in_sub_folder_with_1_subfolder_fails_when_for_each_in_fol
 
     STRICT_EXPECTED_CALL(for_each_in_folder(TEST_FOLDER, IGNORED_ARG, IGNORED_ARG));
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(vsprintf_char(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(for_each_in_folder(TEST_FOLDER_DEFINE "\\" TEST_FOLDER_1_DEFINE, TEST_ON_EACH_IN_FOLDER, TEST_CONTEXT))
         .SetReturn(MU_FAILURE);
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
@@ -471,7 +481,7 @@ TEST_FUNCTION(for_each_in_sub_folder_with_1_subfolder_fails_when_malloc_fails)
 
     STRICT_EXPECTED_CALL(for_each_in_folder(TEST_FOLDER, IGNORED_ARG, IGNORED_ARG));
 
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(vsprintf_char(IGNORED_ARG, IGNORED_ARG))
         .SetReturn(NULL);
 
     ///act
