@@ -148,7 +148,7 @@ static int pull_data(void* context)
         int32_t* pull_id = malloc(sizeof(int32_t));
         *pull_id = i;
         THANDLE(ASYNC_OP) async_op = NULL;
-        CHANNEL_RESULT pull_result = channel_pull(channel, pull_callback_order_checker, pull_id, &async_op);
+        CHANNEL_RESULT pull_result = channel_pull(channel, NULL, pull_callback_order_checker, pull_id, &async_op);
         ASSERT_IS_NOT_NULL(async_op);
 
         ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
@@ -179,7 +179,7 @@ static int push_data(void* context)
     {
         THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer((void*)(intptr_t)i, dummy_free_func);
         THANDLE(ASYNC_OP) async_op = NULL;
-        CHANNEL_RESULT push_result = channel_push(channel, data, push_callback_order_checker, (void*)(int64_t)i, &async_op);
+        CHANNEL_RESULT push_result = channel_push(channel, NULL, data, push_callback_order_checker, (void*)(int64_t)i, &async_op);
         ASSERT_IS_NOT_NULL(async_op);
 
         ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result);
@@ -233,7 +233,7 @@ TEST_FUNCTION(test_channel_create_and_destroy)
     /// arrange
 
     /// act
-    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
 
     /// assert
     ASSERT_IS_NOT_NULL(channel);
@@ -245,13 +245,13 @@ TEST_FUNCTION(test_channel_create_and_destroy)
 TEST_FUNCTION(test_pull_and_cancel)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
     volatile_atomic int32_t context;
     (void)interlocked_exchange(&context, TEST_ORIGINAL_VALUE);
 
     /// act
     THANDLE(ASYNC_OP) async_op = NULL;
-    CHANNEL_RESULT result = channel_pull(channel, test_on_pull_callback_cancelled, (void*)&context, &async_op);
+    CHANNEL_RESULT result = channel_pull(channel, NULL, test_on_pull_callback_cancelled, (void*)&context, &async_op);
     ASSERT_IS_NOT_NULL(async_op);
     async_op_cancel(async_op);
 
@@ -271,13 +271,13 @@ TEST_FUNCTION(test_pull_and_cancel)
 TEST_FUNCTION(test_push_and_cancel)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
     volatile_atomic int32_t context;
     (void)interlocked_exchange(&context, TEST_ORIGINAL_VALUE);
 
     /// act
     THANDLE(ASYNC_OP) async_op = NULL;
-    CHANNEL_RESULT result = channel_push(channel, g.g_data, test_on_push_callback_cancelled, (void*)&context,  &async_op);
+    CHANNEL_RESULT result = channel_push(channel, NULL, g.g_data, test_on_push_callback_cancelled, (void*)&context,  &async_op);
     ASSERT_IS_NOT_NULL(async_op);
     async_op_cancel(async_op);
 
@@ -296,13 +296,13 @@ TEST_FUNCTION(test_push_and_cancel)
 TEST_FUNCTION(test_pull_and_abandon)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
     volatile_atomic int32_t context;
     (void)interlocked_exchange(&context, TEST_ORIGINAL_VALUE);
 
     /// act
     THANDLE(ASYNC_OP) async_op = NULL;
-    CHANNEL_RESULT result = channel_pull(channel, test_on_pull_callback_abandoned, (void*)&context, &async_op);
+    CHANNEL_RESULT result = channel_pull(channel, NULL, test_on_pull_callback_abandoned, (void*)&context, &async_op);
     ASSERT_IS_NOT_NULL(async_op);
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
@@ -320,13 +320,13 @@ TEST_FUNCTION(test_pull_and_abandon)
 TEST_FUNCTION(test_push_and_abandon)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
     volatile_atomic int32_t context;
     (void)interlocked_exchange(&context, TEST_ORIGINAL_VALUE);
 
     /// act
     THANDLE(ASYNC_OP) async_op = NULL;
-    CHANNEL_RESULT result = channel_push(channel, g.g_data, test_on_push_callback_abandoned, (void*)&context, &async_op);
+    CHANNEL_RESULT result = channel_push(channel, NULL, g.g_data, test_on_push_callback_abandoned, (void*)&context, &async_op);
     ASSERT_IS_NOT_NULL(async_op);
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
@@ -342,7 +342,7 @@ TEST_FUNCTION(test_push_and_abandon)
 TEST_FUNCTION(test_pull_and_then_push)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
     volatile_atomic int32_t pull_context;
     (void)interlocked_exchange(&pull_context, TEST_ORIGINAL_VALUE);
     volatile_atomic int32_t push_context;
@@ -351,9 +351,9 @@ TEST_FUNCTION(test_pull_and_then_push)
     /// act
     THANDLE(ASYNC_OP) pull_op = NULL;
     THANDLE(ASYNC_OP) push_op = NULL;
-    CHANNEL_RESULT pull_result = channel_pull(channel, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
+    CHANNEL_RESULT pull_result = channel_pull(channel, NULL, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
     ASSERT_IS_NOT_NULL(pull_op);
-    CHANNEL_RESULT push_result = channel_push(channel, g.g_data, test_on_push_callback_success, (void*)&push_context, &push_op);
+    CHANNEL_RESULT push_result = channel_push(channel, NULL, g.g_data, test_on_push_callback_success, (void*)&push_context, &push_op);
     ASSERT_IS_NOT_NULL(push_op);
 
     //wait for callback to execute
@@ -375,7 +375,7 @@ TEST_FUNCTION(test_pull_and_then_push)
 TEST_FUNCTION(test_push_and_then_pull)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
     volatile_atomic int32_t pull_context;
     (void)interlocked_exchange(&pull_context, TEST_ORIGINAL_VALUE);
     volatile_atomic int32_t push_context;
@@ -384,9 +384,9 @@ TEST_FUNCTION(test_push_and_then_pull)
     /// act
     THANDLE(ASYNC_OP) push_op = NULL;
     THANDLE(ASYNC_OP) pull_op = NULL;
-    CHANNEL_RESULT push_result = channel_push(channel, g.g_data, test_on_push_callback_success, (void*)&push_context, &push_op);
+    CHANNEL_RESULT push_result = channel_push(channel, NULL, g.g_data, test_on_push_callback_success, (void*)&push_context, &push_op);
     ASSERT_IS_NOT_NULL(push_op);
-    CHANNEL_RESULT pull_result = channel_pull(channel, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
+    CHANNEL_RESULT pull_result = channel_pull(channel, NULL, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
     ASSERT_IS_NOT_NULL(pull_op);
 
     //wait for callback to execute
@@ -408,7 +408,7 @@ TEST_FUNCTION(test_push_and_then_pull)
 TEST_FUNCTION(test_pull_after_pull)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
     volatile_atomic int32_t pull_context_1;
     (void)interlocked_exchange(&pull_context_1, TEST_ORIGINAL_VALUE);
     volatile_atomic int32_t pull_context_2;
@@ -420,11 +420,11 @@ TEST_FUNCTION(test_pull_after_pull)
     THANDLE(ASYNC_OP) pull_op1 = NULL;
     THANDLE(ASYNC_OP) pull_op2 = NULL;
     THANDLE(ASYNC_OP) push_op = NULL;
-    CHANNEL_RESULT pull_result1 = channel_pull(channel, test_on_pull_callback_success, (void*)&pull_context_1, &pull_op1);
+    CHANNEL_RESULT pull_result1 = channel_pull(channel, NULL, test_on_pull_callback_success, (void*)&pull_context_1, &pull_op1);
     ASSERT_IS_NOT_NULL(pull_op1);
-    CHANNEL_RESULT pull_result2 = channel_pull(channel, test_on_pull_callback_abandoned, (void*)&pull_context_2, &pull_op2);
+    CHANNEL_RESULT pull_result2 = channel_pull(channel, NULL, test_on_pull_callback_abandoned, (void*)&pull_context_2, &pull_op2);
     ASSERT_IS_NOT_NULL(pull_op2);
-    CHANNEL_RESULT push_result = channel_push(channel, g.g_data, test_on_push_callback_success, (void*)&push_context, &push_op);
+    CHANNEL_RESULT push_result = channel_push(channel, NULL, g.g_data, test_on_push_callback_success, (void*)&push_context, &push_op);
     ASSERT_IS_NOT_NULL(push_op);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 
@@ -450,7 +450,7 @@ TEST_FUNCTION(test_pull_after_pull)
 TEST_FUNCTION(test_push_after_push)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
 
     volatile_atomic int32_t push_context_1;
     (void)interlocked_exchange(&push_context_1, TEST_ORIGINAL_VALUE);
@@ -465,11 +465,11 @@ TEST_FUNCTION(test_push_after_push)
     THANDLE(ASYNC_OP) push_op1 = NULL;
     THANDLE(ASYNC_OP) push_op2 = NULL;
     THANDLE(ASYNC_OP) pull_op = NULL;
-    CHANNEL_RESULT push_result1 = channel_push(channel, g.g_data, test_on_push_callback_success, (void*)&push_context_1, &push_op1);
+    CHANNEL_RESULT push_result1 = channel_push(channel, NULL, g.g_data, test_on_push_callback_success, (void*)&push_context_1, &push_op1);
     ASSERT_IS_NOT_NULL(push_op1);
-    CHANNEL_RESULT push_result2 = channel_push(channel, g.g_data2, test_on_push_callback_abandoned, (void*)&push_context_2, &push_op2);
+    CHANNEL_RESULT push_result2 = channel_push(channel, NULL, g.g_data2, test_on_push_callback_abandoned, (void*)&push_context_2, &push_op2);
     ASSERT_IS_NOT_NULL(push_op2);
-    CHANNEL_RESULT pull_result = channel_pull(channel, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
+    CHANNEL_RESULT pull_result = channel_pull(channel, NULL, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
     ASSERT_IS_NOT_NULL(pull_op);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 
@@ -495,7 +495,7 @@ TEST_FUNCTION(test_push_after_push)
 TEST_FUNCTION(test_channel_maintains_data_order)
 {
     //arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
     (void)interlocked_exchange(&g_push_callback_count, 0);
 
     THREAD_HANDLE pull_thread;

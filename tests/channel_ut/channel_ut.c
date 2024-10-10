@@ -28,6 +28,10 @@
 
 #include "umock_c/umock_c_prod.h"
 
+#include "c_pal/thandle_log_context_handle.h"
+
+#include "c_util/rc_string.h"
+
 #include "real_gballoc_hl.h"
 #include "real_channel_internal.h"
 
@@ -37,6 +41,8 @@ static EXECUTION_ENGINE_HANDLE g_execution_engine = NULL;
 static struct G_TAG /*g comes from "global*/
 {
     THANDLE(THREADPOOL) g_threadpool;
+    THANDLE(PTR(LOG_CONTEXT_HANDLE)) g_log_context;
+    THANDLE(RC_STRING) g_correlation_id;
 } g = { NULL };
 
 TEST_DEFINE_ENUM_TYPE(CHANNEL_RESULT, CHANNEL_RESULT_VALUES);
@@ -88,7 +94,7 @@ static void test_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT 
 
 static void setup_channel_create_expectations(void)
 {
-    STRICT_EXPECTED_CALL(channel_internal_create_and_open(g.g_threadpool));
+    STRICT_EXPECTED_CALL(channel_internal_create_and_open(NULL, g.g_threadpool));
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(CHANNEL_INTERNAL)(IGNORED_ARG, IGNORED_ARG));
 }
@@ -127,10 +133,27 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_IS_NOT_NULL(g.g_threadpool);
     ASSERT_ARE_EQUAL(int, 0, threadpool_open(g.g_threadpool));
 
+    LOG_CONTEXT_HANDLE raw_log_context;
+    LOG_CONTEXT_CREATE(
+        raw_log_context,
+        NULL,
+        LOG_CONTEXT_NAME(test_context),
+        LOG_CONTEXT_STRING_PROPERTY(test_property, "test_property_value")
+    );
+    ASSERT_IS_NOT_NULL(raw_log_context);
+    THANDLE(PTR(LOG_CONTEXT_HANDLE)) log_context = THANDLE_PTR_CREATE_WITH_MOVE_LOG_CONTEXT_HANDLE(&raw_log_context, log_context_destroy);
+    THANDLE_INITIALIZE_MOVE(PTR(LOG_CONTEXT_HANDLE))(&g.g_log_context, &log_context);
+
+    THANDLE(RC_STRING) correlation_id = rc_string_create("correlation_id");
+    ASSERT_IS_NOT_NULL(correlation_id);
+
+    THANDLE_INITIALIZE_MOVE(RC_STRING)(&g.g_correlation_id, &correlation_id);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
+    THANDLE_ASSIGN(RC_STRING)(&g.g_correlation_id, NULL);
+    THANDLE_ASSIGN(PTR(LOG_CONTEXT_HANDLE))(&g.g_log_context, NULL);
     threadpool_close(g.g_threadpool);
     THANDLE_ASSIGN(THREADPOOL)(&g.g_threadpool, NULL);
     execution_engine_dec_ref(g_execution_engine);
@@ -156,7 +179,7 @@ TEST_FUNCTION(channel_create_fails_with_null_threadpool)
     //arrange
 
     //act
-    THANDLE(CHANNEL) channel = channel_create(NULL);
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, NULL);
 
     //assert
     ASSERT_IS_NULL(channel);
@@ -173,7 +196,7 @@ TEST_FUNCTION(channel_create_succeeds)
     setup_channel_create_expectations();
 
     //act
-    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
 
     //assert
     ASSERT_IS_NOT_NULL(channel);
@@ -197,7 +220,7 @@ TEST_FUNCTION(channel_create_fails_when_underlying_functions_fail)
             umock_c_negative_tests_fail_call(i);
 
             // act
-            THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+            THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
 
             // assert
             ASSERT_IS_NULL(channel, "On failed call %zu", i);
@@ -212,7 +235,7 @@ TEST_FUNCTION(channel_create_fails_when_underlying_functions_fail)
 TEST_FUNCTION(channel_dispose_succeeds)
 {
     //arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(channel_internal_close(IGNORED_ARG));
@@ -236,7 +259,7 @@ TEST_FUNCTION(channel_pull_fails_with_null_channel)
     //arrange
 
     //act
-    CHANNEL_RESULT result = channel_pull(NULL, test_pull_callback, test_pull_context, &test_out_op.out_op_pull);
+    CHANNEL_RESULT result = channel_pull(NULL, g.g_correlation_id, test_pull_callback, test_pull_context, &test_out_op.out_op_pull);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
@@ -249,7 +272,7 @@ TEST_FUNCTION(channel_pull_fails_with_null_pull_callback)
     //arrange
 
     //act
-    CHANNEL_RESULT result = channel_pull(test_channel, NULL, test_pull_context, &test_out_op.out_op_pull);
+    CHANNEL_RESULT result = channel_pull(test_channel, g.g_correlation_id, NULL, test_pull_context, &test_out_op.out_op_pull);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
@@ -262,7 +285,7 @@ TEST_FUNCTION(channel_pull_fails_with_null_out_op_pull)
     //arrange
 
     //act
-    CHANNEL_RESULT result = channel_pull(test_channel, test_pull_callback, test_pull_context, NULL);
+    CHANNEL_RESULT result = channel_pull(test_channel, g.g_correlation_id, test_pull_callback, test_pull_context, NULL);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
@@ -273,14 +296,14 @@ TEST_FUNCTION(channel_pull_fails_with_null_out_op_pull)
 TEST_FUNCTION(channel_pull_calls_channel_internal_pull)
 {
     //arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
     THANDLE(ASYNC_OP) pull_op = NULL;
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(channel_internal_pull(IGNORED_ARG, test_pull_callback_abandoned, test_pull_context, &pull_op));
+    STRICT_EXPECTED_CALL(channel_internal_pull(IGNORED_ARG, g.g_correlation_id, test_pull_callback_abandoned, test_pull_context, &pull_op));
 
     //act
-    CHANNEL_RESULT result = channel_pull(channel, test_pull_callback_abandoned, test_pull_context, &pull_op);
+    CHANNEL_RESULT result = channel_pull(channel, g.g_correlation_id, test_pull_callback_abandoned, test_pull_context, &pull_op);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
@@ -300,7 +323,7 @@ TEST_FUNCTION(channel_push_fails_with_null_channel)
     //arrange
 
     //act
-    CHANNEL_RESULT result = channel_push(NULL, test_data_rc_ptr, test_push_callback, test_push_context, &test_out_op.out_op_push);
+    CHANNEL_RESULT result = channel_push(NULL, g.g_correlation_id, test_data_rc_ptr, test_push_callback, test_push_context, &test_out_op.out_op_push);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
@@ -313,7 +336,7 @@ TEST_FUNCTION(channel_push_fails_with_null_push_callback)
     //arrange
 
     //act
-    CHANNEL_RESULT result = channel_push(test_channel, test_data_rc_ptr, NULL, test_push_context, &test_out_op.out_op_push);
+    CHANNEL_RESULT result = channel_push(test_channel, g.g_correlation_id, test_data_rc_ptr, NULL, test_push_context, &test_out_op.out_op_push);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
@@ -326,7 +349,7 @@ TEST_FUNCTION(channel_push_fails_with_null_out_op_push)
     //arrange
 
     //act
-    CHANNEL_RESULT result = channel_push(test_channel, test_data_rc_ptr, test_push_callback, test_push_context, NULL);
+    CHANNEL_RESULT result = channel_push(test_channel, g.g_correlation_id, test_data_rc_ptr, test_push_callback, test_push_context, NULL);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
@@ -337,15 +360,15 @@ TEST_FUNCTION(channel_push_fails_with_null_out_op_push)
 TEST_FUNCTION(channel_push_calls_channel_internal_push)
 {
     //arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
     THANDLE(ASYNC_OP) push_op = NULL;
     THANDLE(RC_PTR) data_rc_ptr = rc_ptr_create_with_move_pointer(test_data, do_nothing);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(channel_internal_push(IGNORED_ARG, data_rc_ptr, test_push_callback_abandoned, test_push_context, &push_op));
+    STRICT_EXPECTED_CALL(channel_internal_push(IGNORED_ARG, g.g_correlation_id, data_rc_ptr, test_push_callback_abandoned, test_push_context, &push_op));
 
     //act
-    CHANNEL_RESULT result = channel_push(channel, data_rc_ptr, test_push_callback_abandoned, test_push_context, &push_op);
+    CHANNEL_RESULT result = channel_push(channel, g.g_correlation_id, data_rc_ptr, test_push_callback_abandoned, test_push_context, &push_op);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
