@@ -299,6 +299,8 @@ if(WIN32)
     target_link_libraries(c_util thread_notifications_lackey_dll)
 endif()
 
+include_directories(${CMAKE_CURRENT_LIST_DIR}/inc)
+
 if((CMAKE_GENERATOR MATCHES "Visual Studio") AND (${run_traceability}))
     #add traceability custom target
     add_custom_target(c_util_traceability ALL
