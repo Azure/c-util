@@ -28,9 +28,9 @@ THANDLE_TYPE_DECLARE(CHANNEL);
 typedef struct CHANNEL_TAG real_CHANNEL;
 THANDLE_TYPE_DECLARE(real_CHANNEL);
 
-    MOCKABLE_FUNCTION(, THANDLE(CHANNEL), real_channel_create, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool);
-    MOCKABLE_FUNCTION(, CHANNEL_RESULT, real_channel_pull, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
-    MOCKABLE_FUNCTION(, CHANNEL_RESULT, real_channel_push, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
+    THANDLE(CHANNEL) real_channel_create(THANDLE(PTR(LOG_CONTEXT_HANDLE)) log_context, THANDLE(THREADPOOL) threadpool);
+    CHANNEL_RESULT real_channel_pull(THANDLE(CHANNEL) channel, THANDLE(RC_STRING) correlation_id, PULL_CALLBACK pull_callback, void* pull_context, THANDLE(ASYNC_OP)* out_op_pull);
+    CHANNEL_RESULT real_channel_push(THANDLE(CHANNEL) channel, THANDLE(RC_STRING) correlation_id, THANDLE(RC_PTR) data, PUSH_CALLBACK push_callback, void* push_context, THANDLE(ASYNC_OP)* out_op_push);
 
 #ifdef __cplusplus
 }
