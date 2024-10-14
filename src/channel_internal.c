@@ -151,7 +151,7 @@ static void execute_callbacks(void* context)
         CHANNEL_OP* channel_op = (CHANNEL_OP*)context;
         CHANNEL_CALLBACK_RESULT result = channel_op->result; // local copy to make sure both callbacks are called with the same result
 
-        /*LOGGER_LOG(LOG_LEVEL_VERBOSE, T_PTR_VALUE_OR_NULL(channel_op->channel_internal->log_context),
+        LOGGER_LOG(LOG_LEVEL_VERBOSE, T_PTR_VALUE_OR_NULL(channel_op->channel_internal->log_context),
             "Executing callbacks for"
             " pull_correlation_id = %" PRI_RC_STRING ""
             ", push_correlation_id = %" PRI_RC_STRING ""
@@ -159,7 +159,7 @@ static void execute_callbacks(void* context)
             RC_STRING_VALUE_OR_NULL(channel_op->pull_correlation_id),
             RC_STRING_VALUE_OR_NULL(channel_op->push_correlation_id),
             MU_ENUM_VALUE(CHANNEL_CALLBACK_RESULT, result)
-        );*/
+        );
 
         /*Codes_SRS_CHANNEL_INTERNAL_43_145: [ execute_callbacks shall call the stored callback(s) with the result of the operation. ]*/
         if (channel_op->pull_callback)
