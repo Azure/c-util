@@ -35,6 +35,7 @@ static struct
     THANDLE(THREADPOOL) g_threadpool;
     THANDLE(RC_PTR) g_data;
     THANDLE(RC_PTR) g_data2;
+    THANDLE(RC_STRING) g_correlation_id;
 }g;
 
 static EXECUTION_ENGINE_HANDLE g_execution_engine = NULL;
@@ -50,62 +51,80 @@ static int32_t pull_abandoned = 0x0006;
 static int32_t push_abandoned = 0x0007;
 static void* test_data2 = (void*)0x0008;
 
-static void test_on_pull_callback_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data)
+static void test_on_pull_callback_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
 {
     ASSERT_IS_NOT_NULL(context);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_CANCELLED, result);
+    ASSERT_IS_NOT_NULL(pull_correlation_id);
+    (void)push_correlation_id; // Cannot make any assertions about push_correlation_id. May or may not be valid.
+    ASSERT_IS_NULL(data);
+
     int32_t original_value = interlocked_exchange(context, pull_cancelled);
     wake_by_address_single(context);
     ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
-    ASSERT_IS_NULL(data);
-    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_CANCELLED, result);
 }
 
-static void test_on_push_callback_cancelled(void* context, CHANNEL_CALLBACK_RESULT result)
+static void test_on_push_callback_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
 {
     ASSERT_IS_NOT_NULL(context);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_CANCELLED, result);
+    (void)pull_correlation_id; // Cannot make any assertions about pull_correlation_id. May or may not be valid.
+    ASSERT_IS_NOT_NULL(push_correlation_id);
+
     int32_t original_value = interlocked_exchange(context, push_cancelled);
     wake_by_address_single(context);
     ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
-    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_CANCELLED, result);
 }
 
-static void test_on_pull_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data)
+static void test_on_pull_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
 {
     ASSERT_IS_NOT_NULL(context);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
+    ASSERT_IS_NOT_NULL(pull_correlation_id);
+    ASSERT_IS_NULL(push_correlation_id);
+    ASSERT_IS_NULL(data);
+
     int32_t original_value = interlocked_exchange(context, pull_abandoned);
     wake_by_address_single(context);
     ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
-    ASSERT_IS_NULL(data);
-    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
 }
 
-static void test_on_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result)
+static void test_on_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
 {
     ASSERT_IS_NOT_NULL(context);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
+    ASSERT_IS_NULL(pull_correlation_id);
+    ASSERT_IS_NOT_NULL(push_correlation_id);
+
     int32_t original_value = interlocked_exchange(context, push_abandoned);
     wake_by_address_single(context);
     ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
-    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
 }
 
-static void test_on_pull_callback_success(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data)
+static void test_on_pull_callback_success(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
 {
     ASSERT_IS_NOT_NULL(context);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_OK, result);
+    ASSERT_IS_NOT_NULL(pull_correlation_id);
+    ASSERT_IS_NOT_NULL(push_correlation_id);
+    ASSERT_IS_NOT_NULL(data);
+    ASSERT_ARE_EQUAL(void_ptr, test_data, data->ptr);
+
     int32_t original_value = interlocked_exchange(context, pull_success);
     wake_by_address_single(context);
     ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
-    ASSERT_IS_NOT_NULL(data);
-    ASSERT_ARE_EQUAL(void_ptr, test_data, RC_PTR_VALUE(data));
-    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_OK, result);
 }
 
-static void test_on_push_callback_success(void* context, CHANNEL_CALLBACK_RESULT result)
+static void test_on_push_callback_success(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
 {
     ASSERT_IS_NOT_NULL(context);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_OK, result);
+    ASSERT_IS_NOT_NULL(pull_correlation_id);
+    ASSERT_IS_NOT_NULL(push_correlation_id);
+
     int32_t original_value = interlocked_exchange(context, push_success);
     wake_by_address_single(context);
     ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
-    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_OK, result);
 }
 
 static void test_free_channel_data(void* data)
@@ -128,11 +147,20 @@ static THANDLE(THREADPOOL) setup_threadpool()
     return threadpool;
 }
 
-static void pull_callback_order_checker(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data)
+static void pull_callback_order_checker(
+    void* context,
+    CHANNEL_CALLBACK_RESULT result,
+    THANDLE(RC_STRING) pull_correlation_id,
+    THANDLE(RC_STRING) push_correlation_id,
+    THANDLE(RC_PTR) data
+)
 {
     ASSERT_IS_NOT_NULL(context);
     ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_OK, result);
+    ASSERT_IS_NOT_NULL(pull_correlation_id);
+    ASSERT_IS_NOT_NULL(push_correlation_id);
     ASSERT_IS_NOT_NULL(data);
+
 
     //assert that n-th pull is matched with n-th push
      ASSERT_ARE_EQUAL(int32_t, *((int32_t*)context), (intptr_t)((void*)data->ptr)); //casts needed to suppress pointer truncation warning
@@ -147,13 +175,18 @@ static int pull_data(void* context)
     {
         int32_t* pull_id = malloc(sizeof(int32_t));
         *pull_id = i;
+
+        THANDLE(RC_STRING) correlation_id = rc_string_create_with_format("pull_correlation_id_%" PRId32 "", i);
+        ASSERT_IS_NOT_NULL(correlation_id);
+
         THANDLE(ASYNC_OP) async_op = NULL;
-        CHANNEL_RESULT pull_result = channel_pull(channel, NULL, pull_callback_order_checker, pull_id, &async_op);
+        CHANNEL_RESULT pull_result = channel_pull(channel, correlation_id, pull_callback_order_checker, pull_id, &async_op);
         ASSERT_IS_NOT_NULL(async_op);
 
         ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
 
         THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        THANDLE_ASSIGN(RC_STRING)(&correlation_id, NULL);
     }
     return 0;
 }
@@ -163,10 +196,17 @@ static void dummy_free_func(void* ptr)
     (void)ptr;
 }
 
-static void push_callback_order_checker(void* context, CHANNEL_CALLBACK_RESULT result)
+static void push_callback_order_checker(
+    void* context,
+    CHANNEL_CALLBACK_RESULT result,
+    THANDLE(RC_STRING) pull_correlation_id,
+    THANDLE(RC_STRING) push_correlation_id
+)
 {
     ASSERT_IS_NOT_NULL(context);
     ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_OK, result);
+    ASSERT_IS_NOT_NULL(pull_correlation_id);
+    ASSERT_IS_NOT_NULL(push_correlation_id);
 
     interlocked_increment(&g_push_callback_count);
     wake_by_address_single(&g_push_callback_count);
@@ -177,15 +217,19 @@ static int push_data(void* context)
     THANDLE(CHANNEL) channel = context;
     for (int32_t i = 1; i <= CHANNEL_ORDER_TEST_COUNT; i++)
     {
+        THANDLE(RC_STRING) correlation_id = rc_string_create_with_format("push_correlation_id_%" PRId32 "", i);
         THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer((void*)(intptr_t)i, dummy_free_func);
+        ASSERT_IS_NOT_NULL(data);
+
         THANDLE(ASYNC_OP) async_op = NULL;
-        CHANNEL_RESULT push_result = channel_push(channel, NULL, data, push_callback_order_checker, (void*)(int64_t)i, &async_op);
+        CHANNEL_RESULT push_result = channel_push(channel, correlation_id, data, push_callback_order_checker, (void*)(int64_t)i, &async_op);
         ASSERT_IS_NOT_NULL(async_op);
 
         ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result);
 
-        THANDLE_ASSIGN(RC_PTR)(&data, NULL);
         THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        THANDLE_ASSIGN(RC_PTR)(&data, NULL);
+        THANDLE_ASSIGN(RC_STRING)(&correlation_id, NULL);
     }
     return 0;
 }
@@ -205,12 +249,18 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_IS_NOT_NULL(g.g_threadpool);
 
     THANDLE_INITIALIZE_MOVE(RC_PTR)(&g.g_data, &(THANDLE(RC_PTR)){ rc_ptr_create_with_move_pointer(test_data, test_free_channel_data) });
+    ASSERT_IS_NOT_NULL(g.g_data);
     THANDLE_INITIALIZE_MOVE(RC_PTR)(&g.g_data2, &(THANDLE(RC_PTR)){ rc_ptr_create_with_move_pointer(test_data2, test_free_channel_data2) });
+    ASSERT_IS_NOT_NULL(g.g_data2);
+
+    THANDLE_INITIALIZE_MOVE(RC_STRING)(&g.g_correlation_id, &(THANDLE(RC_STRING)){ rc_string_create("correlation_id")});
+    ASSERT_IS_NOT_NULL(g.g_correlation_id);
 
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
+    THANDLE_ASSIGN(RC_STRING)(&g.g_correlation_id, NULL);
     THANDLE_ASSIGN(RC_PTR)(&g.g_data2, NULL);
     THANDLE_ASSIGN(RC_PTR)(&g.g_data, NULL);
     THANDLE_ASSIGN(THREADPOOL)(&g.g_threadpool, NULL);
@@ -251,7 +301,7 @@ TEST_FUNCTION(test_pull_and_cancel)
 
     /// act
     THANDLE(ASYNC_OP) async_op = NULL;
-    CHANNEL_RESULT result = channel_pull(channel, NULL, test_on_pull_callback_cancelled, (void*)&context, &async_op);
+    CHANNEL_RESULT result = channel_pull(channel, g.g_correlation_id, test_on_pull_callback_cancelled, (void*)&context, &async_op);
     ASSERT_IS_NOT_NULL(async_op);
     async_op_cancel(async_op);
 
@@ -277,7 +327,7 @@ TEST_FUNCTION(test_push_and_cancel)
 
     /// act
     THANDLE(ASYNC_OP) async_op = NULL;
-    CHANNEL_RESULT result = channel_push(channel, NULL, g.g_data, test_on_push_callback_cancelled, (void*)&context,  &async_op);
+    CHANNEL_RESULT result = channel_push(channel, g.g_correlation_id, g.g_data, test_on_push_callback_cancelled, (void*)&context,  &async_op);
     ASSERT_IS_NOT_NULL(async_op);
     async_op_cancel(async_op);
 
@@ -302,7 +352,7 @@ TEST_FUNCTION(test_pull_and_abandon)
 
     /// act
     THANDLE(ASYNC_OP) async_op = NULL;
-    CHANNEL_RESULT result = channel_pull(channel, NULL, test_on_pull_callback_abandoned, (void*)&context, &async_op);
+    CHANNEL_RESULT result = channel_pull(channel, g.g_correlation_id, test_on_pull_callback_abandoned, (void*)&context, &async_op);
     ASSERT_IS_NOT_NULL(async_op);
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
@@ -326,7 +376,7 @@ TEST_FUNCTION(test_push_and_abandon)
 
     /// act
     THANDLE(ASYNC_OP) async_op = NULL;
-    CHANNEL_RESULT result = channel_push(channel, NULL, g.g_data, test_on_push_callback_abandoned, (void*)&context, &async_op);
+    CHANNEL_RESULT result = channel_push(channel, g.g_correlation_id, g.g_data, test_on_push_callback_abandoned, (void*)&context, &async_op);
     ASSERT_IS_NOT_NULL(async_op);
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
@@ -351,9 +401,9 @@ TEST_FUNCTION(test_pull_and_then_push)
     /// act
     THANDLE(ASYNC_OP) pull_op = NULL;
     THANDLE(ASYNC_OP) push_op = NULL;
-    CHANNEL_RESULT pull_result = channel_pull(channel, NULL, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
+    CHANNEL_RESULT pull_result = channel_pull(channel, g.g_correlation_id, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
     ASSERT_IS_NOT_NULL(pull_op);
-    CHANNEL_RESULT push_result = channel_push(channel, NULL, g.g_data, test_on_push_callback_success, (void*)&push_context, &push_op);
+    CHANNEL_RESULT push_result = channel_push(channel, g.g_correlation_id, g.g_data, test_on_push_callback_success, (void*)&push_context, &push_op);
     ASSERT_IS_NOT_NULL(push_op);
 
     //wait for callback to execute
@@ -384,9 +434,9 @@ TEST_FUNCTION(test_push_and_then_pull)
     /// act
     THANDLE(ASYNC_OP) push_op = NULL;
     THANDLE(ASYNC_OP) pull_op = NULL;
-    CHANNEL_RESULT push_result = channel_push(channel, NULL, g.g_data, test_on_push_callback_success, (void*)&push_context, &push_op);
+    CHANNEL_RESULT push_result = channel_push(channel, g.g_correlation_id, g.g_data, test_on_push_callback_success, (void*)&push_context, &push_op);
     ASSERT_IS_NOT_NULL(push_op);
-    CHANNEL_RESULT pull_result = channel_pull(channel, NULL, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
+    CHANNEL_RESULT pull_result = channel_pull(channel, g.g_correlation_id, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
     ASSERT_IS_NOT_NULL(pull_op);
 
     //wait for callback to execute
@@ -420,11 +470,11 @@ TEST_FUNCTION(test_pull_after_pull)
     THANDLE(ASYNC_OP) pull_op1 = NULL;
     THANDLE(ASYNC_OP) pull_op2 = NULL;
     THANDLE(ASYNC_OP) push_op = NULL;
-    CHANNEL_RESULT pull_result1 = channel_pull(channel, NULL, test_on_pull_callback_success, (void*)&pull_context_1, &pull_op1);
+    CHANNEL_RESULT pull_result1 = channel_pull(channel, g.g_correlation_id, test_on_pull_callback_success, (void*)&pull_context_1, &pull_op1);
     ASSERT_IS_NOT_NULL(pull_op1);
-    CHANNEL_RESULT pull_result2 = channel_pull(channel, NULL, test_on_pull_callback_abandoned, (void*)&pull_context_2, &pull_op2);
+    CHANNEL_RESULT pull_result2 = channel_pull(channel, g.g_correlation_id, test_on_pull_callback_abandoned, (void*)&pull_context_2, &pull_op2);
     ASSERT_IS_NOT_NULL(pull_op2);
-    CHANNEL_RESULT push_result = channel_push(channel, NULL, g.g_data, test_on_push_callback_success, (void*)&push_context, &push_op);
+    CHANNEL_RESULT push_result = channel_push(channel, g.g_correlation_id, g.g_data, test_on_push_callback_success, (void*)&push_context, &push_op);
     ASSERT_IS_NOT_NULL(push_op);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 
@@ -465,11 +515,11 @@ TEST_FUNCTION(test_push_after_push)
     THANDLE(ASYNC_OP) push_op1 = NULL;
     THANDLE(ASYNC_OP) push_op2 = NULL;
     THANDLE(ASYNC_OP) pull_op = NULL;
-    CHANNEL_RESULT push_result1 = channel_push(channel, NULL, g.g_data, test_on_push_callback_success, (void*)&push_context_1, &push_op1);
+    CHANNEL_RESULT push_result1 = channel_push(channel, g.g_correlation_id, g.g_data, test_on_push_callback_success, (void*)&push_context_1, &push_op1);
     ASSERT_IS_NOT_NULL(push_op1);
-    CHANNEL_RESULT push_result2 = channel_push(channel, NULL, g.g_data2, test_on_push_callback_abandoned, (void*)&push_context_2, &push_op2);
+    CHANNEL_RESULT push_result2 = channel_push(channel, g.g_correlation_id, g.g_data2, test_on_push_callback_abandoned, (void*)&push_context_2, &push_op2);
     ASSERT_IS_NOT_NULL(push_op2);
-    CHANNEL_RESULT pull_result = channel_pull(channel, NULL, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
+    CHANNEL_RESULT pull_result = channel_pull(channel, g.g_correlation_id, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
     ASSERT_IS_NOT_NULL(pull_op);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 

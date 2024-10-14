@@ -17,8 +17,10 @@
 #include "c_pal/execution_engine.h"
 #include "c_pal/thandle.h"
 #include "c_pal/threadpool.h"
+#include "c_pal/thandle_log_context_handle.h"
 
 #include "c_util/async_op.h"
+#include "c_util/rc_string.h"
 
 #define ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
@@ -28,9 +30,6 @@
 
 #include "umock_c/umock_c_prod.h"
 
-#include "c_pal/thandle_log_context_handle.h"
-
-#include "c_util/rc_string.h"
 
 #include "real_gballoc_hl.h"
 #include "real_channel_internal.h"
@@ -79,22 +78,32 @@ static void do_nothing(void* data)
     (void)data;
 }
 
-static void test_pull_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data)
+static void test_pull_callback_abandoned(
+    void* context,
+    CHANNEL_CALLBACK_RESULT result,
+    THANDLE(RC_STRING) pull_correlation_id,
+    THANDLE(RC_STRING) push_correlation_id,
+    THANDLE(RC_PTR) data
+)
 {
     ASSERT_ARE_EQUAL(void_ptr, test_pull_context, context);
+    ASSERT_IS_NOT_NULL(pull_correlation_id);
+    ASSERT_IS_NULL(push_correlation_id);
     ASSERT_IS_NULL(data);
     ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
 }
 
-static void test_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result)
+static void test_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
 {
     ASSERT_ARE_EQUAL(void_ptr, test_push_context, context);
+    ASSERT_IS_NULL(pull_correlation_id);
+    ASSERT_IS_NOT_NULL(push_correlation_id);
     ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
 }
 
 static void setup_channel_create_expectations(void)
 {
-    STRICT_EXPECTED_CALL(channel_internal_create_and_open(NULL, g.g_threadpool));
+    STRICT_EXPECTED_CALL(channel_internal_create_and_open(g.g_log_context, g.g_threadpool));
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(CHANNEL_INTERNAL)(IGNORED_ARG, IGNORED_ARG));
 }
@@ -122,6 +131,9 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(RC_PTR_FREE_FUNC, void*);
     REGISTER_UMOCK_ALIAS_TYPE(PULL_CALLBACK, void*);
     REGISTER_UMOCK_ALIAS_TYPE(PUSH_CALLBACK, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(THANDLE(PTR(LOG_CONTEXT_HANDLE)), void*);
+    REGISTER_UMOCK_ALIAS_TYPE(THANDLE(RC_STRING), void*);
+
     REGISTER_TYPE(CHANNEL_RESULT, CHANNEL_RESULT);
     REGISTER_TYPE(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT);
 
