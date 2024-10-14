@@ -7,7 +7,7 @@
 
 #include "c_pal/thandle_ll.h"
 #include "c_util/tcall_dispatcher_ll.h"
-#include "thread_notifications_lackey_dll/thread_notifications_lackey_dll.h"
+#include "real_thread_notifications_lackey_dll_rename.h"
 
 #include "real_thread_notifications_dispatcher_renames.h"
 
