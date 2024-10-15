@@ -276,7 +276,7 @@ TQUEUE_POP_RESULT TQUEUE_POP(T)(TQUEUE(T) tqueue, T* item, void* pop_function_co
   - **SRS_TQUEUE_01_034: [** `TQUEUE_POP(T)` shall set the state to `NOT_USED` by using `interlocked_exchange`, succeed and return `TQUEUE_POP_OK`. **]**
 
 
-### TQUEUE_POP(T)
+### TQUEUE_GET_COUNT(T)
 ```c
 int64_t TQUEUE_GET_COUNT(T)(TQUEUE(T) tqueue);
 ```
