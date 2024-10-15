@@ -1079,6 +1079,9 @@ TEST_FUNCTION(TQUEUE_GET_COUNT_with_empty_tqueue_returns_zero)
     // assert
     ASSERT_ARE_EQUAL(int64_t, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // clean
+    TQUEUE_ASSIGN(int32_t)(&queue, NULL);
 }
 
 /* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
@@ -1099,6 +1102,9 @@ TEST_FUNCTION(TQUEUE_GET_COUNT_with_push_1_returns_1)
     // assert
     ASSERT_ARE_EQUAL(int64_t, 1, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // clean
+    TQUEUE_ASSIGN(int32_t)(&queue, NULL);
 }
 
 /* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
@@ -1121,6 +1127,9 @@ TEST_FUNCTION(TQUEUE_GET_COUNT_with_push_2_pop_1_returns_1)
     // assert
     ASSERT_ARE_EQUAL(int64_t, 1, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // clean
+    TQUEUE_ASSIGN(int32_t)(&queue, NULL);
 }
 
 /* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
@@ -1149,6 +1158,9 @@ TEST_FUNCTION(TQUEUE_GET_COUNT_with_full_queue_returns_queue_size)
     // assert
     ASSERT_ARE_EQUAL(int64_t, queue_size, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // clean
+    TQUEUE_ASSIGN(int32_t)(&queue, NULL);
 }
 
 /* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
@@ -1183,7 +1195,9 @@ TEST_FUNCTION(TQUEUE_GET_COUNT_with_full_queue_pop_all_push_1_returns_1)
     // assert
     ASSERT_ARE_EQUAL(int64_t, 1, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
 
+    // clean
+    TQUEUE_ASSIGN(int32_t)(&queue, NULL);
+}
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
