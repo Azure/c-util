@@ -113,6 +113,24 @@ TEST_FUNCTION(TQUEUE_POP_succeeds)
     TQUEUE_ASSIGN(FOO)(&queue, NULL);
 }
 
+TEST_FUNCTION(TQUEUE_GET_COUNT_succeeds)
+{
+    // arrange
+    TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, NULL, NULL, NULL);
+    ASSERT_IS_NOT_NULL(queue);
+    FOO foo_1 = { 42 };
+    ASSERT_ARE_EQUAL(TQUEUE_PUSH_RESULT, TQUEUE_PUSH_OK, TQUEUE_PUSH(FOO)(queue, &foo_1, NULL));
+
+    // act
+    int64_t result = TQUEUE_GET_COUNT(FOO)(queue);
+
+    // assert
+    ASSERT_ARE_EQUAL(int64_t, 1, result);
+
+    // clean
+    TQUEUE_ASSIGN(FOO)(&queue, NULL);
+}
+
 static bool pop_condition_function_42(void* context, FOO* foo)
 {
     (void)context;
@@ -138,8 +156,10 @@ TEST_FUNCTION(TQUEUE_POP_IF_succeeds)
     // assert
     ASSERT_ARE_EQUAL(TQUEUE_POP_RESULT, TQUEUE_POP_REJECTED, TQUEUE_POP(FOO)(queue, &foo_1_popped, NULL, pop_condition_function_43, NULL));
     ASSERT_ARE_NOT_EQUAL(int32_t, foo_1.x, foo_1_popped.x);
+    ASSERT_ARE_EQUAL(int64_t, 1, TQUEUE_GET_COUNT(FOO)(queue));
     ASSERT_ARE_EQUAL(TQUEUE_POP_RESULT, TQUEUE_POP_OK, TQUEUE_POP(FOO)(queue, &foo_1_popped, NULL, pop_condition_function_42, NULL));
     ASSERT_ARE_EQUAL(int32_t, foo_1.x, foo_1_popped.x);
+    ASSERT_ARE_EQUAL(int64_t, 0, TQUEUE_GET_COUNT(FOO)(queue));
 
     // clean
     TQUEUE_ASSIGN(FOO)(&queue, NULL);
