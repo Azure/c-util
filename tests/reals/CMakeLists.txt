@@ -7,6 +7,7 @@ set(c_util_reals_c_files
     real_filename_helper.c
     real_channel.c
     real_channel_internal.c
+    ../../src/channel_common.c
     real_constbuffer.c
     real_constbuffer_array.c
     real_constbuffer_array_tarray.c
@@ -34,7 +35,6 @@ set(c_util_reals_h_files
     real_async_op_renames.h
     real_filename_helper.h
     real_filename_helper_renames.h
-    real_channel_common_renames.h
     real_channel.h
     real_channel_renames.h
     real_channel_internal.h

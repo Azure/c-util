@@ -15,10 +15,12 @@
 #include "c_pal/thandle.h"
 #include "c_pal/srw_lock.h"
 #include "c_pal/threadpool.h"
+#include "c_pal/thandle_log_context_handle.h"
 
 #include "c_util/doublylinkedlist.h"
 #include "c_util/async_op.h"
 #include "c_util/rc_ptr.h"
+#include "c_util/rc_string.h"
 
 #include "../inc/c_util/channel_internal.h"
 
@@ -27,6 +29,7 @@ typedef struct CHANNEL_INTERNAL_TAG
     THANDLE(THREADPOOL) threadpool;
     SRW_LOCK_HANDLE lock;
     DLIST_ENTRY op_list;
+    THANDLE(PTR(LOG_CONTEXT_HANDLE)) log_context;
 }CHANNEL_INTERNAL;
 
 THANDLE_TYPE_DEFINE(CHANNEL_INTERNAL);
@@ -40,6 +43,9 @@ typedef struct CHANNEL_OP_TAG
     THANDLE(RC_PTR) data;
     DLIST_ENTRY anchor;
 
+    THANDLE(RC_STRING) push_correlation_id;
+    THANDLE(RC_STRING) pull_correlation_id;
+
     THANDLE(CHANNEL_INTERNAL) channel_internal;
     THANDLE(ASYNC_OP) async_op; // self reference to keep op alive even after user disposes
 
@@ -51,11 +57,14 @@ static void execute_callbacks(void* context);
 
 static void channel_internal_dispose(CHANNEL_INTERNAL* channel_internal)
 {
-    /*Codes_SRS_CHANNEL_INTERNAL_43_099: [ channel_internal_dispose shall call srw_lock_destroy. ]*/
-    srw_lock_destroy(channel_internal->lock);
+    /*Codes_SRS_CHANNEL_INTERNAL_43_150: [ channel_internal_dispose shall release the reference to the log_context ]*/
+    THANDLE_ASSIGN(PTR(LOG_CONTEXT_HANDLE))(&channel_internal->log_context, NULL);
 
     /*Codes_SRS_CHANNEL_INTERNAL_43_091: [ channel_internal_dispose shall release the reference to THANDLE(THREADPOOL). ]*/
     THANDLE_ASSIGN(THREADPOOL)(&channel_internal->threadpool, NULL);
+
+    /*Codes_SRS_CHANNEL_INTERNAL_43_099: [ channel_internal_dispose shall call srw_lock_destroy. ]*/
+    srw_lock_destroy(channel_internal->lock);
 }
 
 
@@ -85,11 +94,11 @@ void channel_internal_close(THANDLE(CHANNEL_INTERNAL) channel_internal)
     srw_lock_release_exclusive(channel_internal_ptr->lock);
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create_and_open, THANDLE(THREADPOOL), threadpool)
+IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create_and_open, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool)
 {
     THANDLE(CHANNEL_INTERNAL) result = NULL;
 
-    /*Codes_SRS_CHANNEL_INTERNAL_43_098: [ channel_create shall call srw_lock_create. ]*/
+    /*Codes_SRS_CHANNEL_INTERNAL_43_098: [ channel_internal_create_and_open shall call srw_lock_create. ]*/
     SRW_LOCK_HANDLE lock = srw_lock_create(false, "channel");
     if (lock == NULL)
     {
@@ -98,7 +107,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create
     }
     else
     {
-        /*Codes_SRS_CHANNEL_INTERNAL_43_078: [ channel_create shall create a CHANNEL_INTERNAL object by calling THANDLE_MALLOC with channel_internal_dispose as dispose.]*/
+        /*Codes_SRS_CHANNEL_INTERNAL_43_078: [ channel_internal_create_and_open shall create a CHANNEL_INTERNAL object by calling THANDLE_MALLOC with channel_internal_dispose as dispose.]*/
         THANDLE(CHANNEL_INTERNAL) channel_internal = THANDLE_MALLOC(CHANNEL_INTERNAL)(channel_internal_dispose);
         if (channel_internal == NULL)
         {
@@ -111,13 +120,16 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create
 
             channel_internal_ptr->lock = lock;
 
-            /*Codes_SRS_CHANNEL_INTERNAL_43_080: [ channel_create shall store given threadpool in the created CHANNEL_INTERNAL. ]*/
+            /*Codes_SRS_CHANNEL_INTERNAL_43_080: [ channel_internal_create_and_open shall store given threadpool in the created CHANNEL_INTERNAL. ]*/
             THANDLE_INITIALIZE(THREADPOOL)(&channel_internal_ptr->threadpool, threadpool);
 
-            /*Codes_SRS_CHANNEL_INTERNAL_43_084: [ channel_create shall call DList_InitializeListHead. ]*/
+            /*Codes_SRS_CHANNEL_INTERNAL_43_149: [ channel_internal_create_and_open shall store the given log_context in the created CHANNEL_INTERNAL. ]*/
+            THANDLE_INITIALIZE(PTR(LOG_CONTEXT_HANDLE))(&channel_internal_ptr->log_context, log_context);
+
+            /*Codes_SRS_CHANNEL_INTERNAL_43_084: [ channel_internal_create_and_open shall call DList_InitializeListHead. ]*/
             DList_InitializeListHead(&channel_internal_ptr->op_list);
 
-            /*Codes_SRS_CHANNEL_INTERNAL_43_086: [ channel_create shall succeed and return the created THANDLE(CHANNEL). ]*/
+            /*Codes_SRS_CHANNEL_INTERNAL_43_086: [ channel_internal_create_and_open shall succeed and return the created THANDLE(CHANNEL). ]*/
             THANDLE_INITIALIZE_MOVE(CHANNEL_INTERNAL)(&result, &channel_internal);
             goto all_ok;
         }
@@ -139,17 +151,21 @@ static void execute_callbacks(void* context)
         CHANNEL_OP* channel_op = (CHANNEL_OP*)context;
         CHANNEL_CALLBACK_RESULT result = channel_op->result; // local copy to make sure both callbacks are called with the same result
 
+        LOGGER_LOG(LOG_LEVEL_VERBOSE, T_PTR_VALUE_OR_NULL(channel_op->channel_internal->log_context), "Executing callbacks for pull_correlation_id = %" PRI_RC_STRING ", push_correlation_id = %" PRI_RC_STRING ", callback_result = %" PRI_MU_ENUM "", RC_STRING_VALUE_OR_NULL(channel_op->pull_correlation_id), RC_STRING_VALUE_OR_NULL(channel_op->push_correlation_id), MU_ENUM_VALUE(CHANNEL_CALLBACK_RESULT, result));
+
         /*Codes_SRS_CHANNEL_INTERNAL_43_145: [ execute_callbacks shall call the stored callback(s) with the result of the operation. ]*/
         if (channel_op->pull_callback)
         {
-            channel_op->pull_callback(channel_op->pull_context, result, channel_op->data);
+            channel_op->pull_callback(channel_op->pull_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id, channel_op->data);
         }
         if (channel_op->push_callback)
         {
-            channel_op->push_callback(channel_op->push_context, result);
+            channel_op->push_callback(channel_op->push_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id);
         }
 
         /*Codes_SRS_CHANNEL_INTERNAL_43_147: [ execute_callbacks shall perform cleanup of the operation. ]*/
+        THANDLE_ASSIGN(RC_STRING)(&channel_op->pull_correlation_id, NULL);
+        THANDLE_ASSIGN(RC_STRING)(&channel_op->push_correlation_id, NULL);
         THANDLE_ASSIGN(RC_PTR)(&channel_op->data, NULL);
         THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_op->channel_internal, NULL);
 
@@ -171,7 +187,10 @@ static void cancel_op(void* context)
     srw_lock_acquire_exclusive(channel_internal_ptr->lock);
     {
         /*Codes_SRS_CHANNEL_INTERNAL_43_135: [ If the operation is in the list of pending operations, cancel_op shall call DList_RemoveEntryList to remove it. ]*/
-        if (channel_op->anchor.Flink != &channel_op->anchor && &channel_op->anchor == channel_op->anchor.Flink->Blink)
+        if (
+            (channel_op->anchor.Flink != &channel_op->anchor) &&
+            (&channel_op->anchor == channel_op->anchor.Flink->Blink)
+            )
         {
             (void)DList_RemoveEntryList(&channel_op->anchor);
             was_in_list = true;
@@ -203,11 +222,20 @@ static void dispose_channel_op(void* context)
     (void)context;
 }
 
-static int enqueue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE(ASYNC_OP)* out_op, PULL_CALLBACK pull_callback, void* pull_context, PUSH_CALLBACK push_callback, void* push_context, THANDLE(RC_PTR) data)
+static int enqueue_operation(
+    THANDLE(CHANNEL_INTERNAL) channel_internal,
+    THANDLE(ASYNC_OP)* out_op,
+    THANDLE(RC_STRING) pull_correlation_id,
+    PULL_CALLBACK pull_callback,
+    void* pull_context,
+    THANDLE(RC_STRING) push_correlation_id,
+    PUSH_CALLBACK push_callback,
+    void* push_context,
+    THANDLE(RC_PTR) data
+)
 {
     int result;
 
-    CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_internal);
 
     /*Codes_SRS_CHANNEL_INTERNAL_43_103: [ channel_internal_pull shall create a THANDLE(ASYNC_OP) by calling async_op_create with cancel_op as cancel. ]*/
     /*Codes_SRS_CHANNEL_INTERNAL_43_119: [ channel_internal_push shall create a THANDLE(ASYNC_OP) by calling async_op_create with cancel_op as cancel. ]*/
@@ -221,23 +249,25 @@ static int enqueue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE
     {
         CHANNEL_OP* channel_op = async_op->context;
 
-        /*Codes_SRS_CHANNEL_INTERNAL_43_104: [ channel_internal_pull shall store the pull_callback and pull_context in the THANDLE(ASYNC_OP). ]*/
+        /*Codes_SRS_CHANNEL_INTERNAL_43_104: [ channel_internal_pull shall store the correlation_id, pull_callback and pull_context in the THANDLE(ASYNC_OP). ]*/
+        THANDLE_INITIALIZE(RC_STRING)(&channel_op->pull_correlation_id, pull_correlation_id);
         channel_op->pull_callback = pull_callback;
         channel_op->pull_context = pull_context;
 
-
-        /*Codes_SRS_CHANNEL_INTERNAL_43_120: [ channel_internal_push shall store the push_callback, push_context and data in the THANDLE(ASYNC_OP). ]*/
+        /*Codes_SRS_CHANNEL_INTERNAL_43_120: [ channel_internal_push shall store the correlation_id, push_callback, push_context and data in the THANDLE(ASYNC_OP). ]*/
+        THANDLE_INITIALIZE(RC_STRING)(&channel_op->push_correlation_id, push_correlation_id);
         channel_op->push_callback = push_callback;
         channel_op->push_context = push_context;
+        THANDLE_INITIALIZE(RC_PTR)(&channel_op->data, data);
 
         THANDLE_INITIALIZE(ASYNC_OP)(&channel_op->async_op, async_op);
         THANDLE_INITIALIZE(CHANNEL_INTERNAL)(&channel_op->channel_internal, channel_internal);
-        THANDLE_INITIALIZE(RC_PTR)(&channel_op->data, data);
 
         /*Codes_SRS_CHANNEL_INTERNAL_43_111: [ channel_internal_pull shall set the result of the created operation to CHANNEL_CALLBACK_RESULT_OK. ]*/
         /*Codes_SRS_CHANNEL_INTERNAL_43_127: [ channel_internal_push shall set the result of the created operation to CHANNEL_CALLBACK_RESULT_OK. ]*/
         channel_op->result = CHANNEL_CALLBACK_RESULT_OK;
 
+        CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_internal);
         /*Codes_SRS_CHANNEL_INTERNAL_43_105: [ channel_internal_pull shall insert the created THANDLE(ASYNC_OP) in the list of pending operations by calling DList_InsertTailList. ]*/
         /*Codes_SRS_CHANNEL_INTERNAL_43_121: [ channel_internal_push shall insert the created THANDLE(ASYNC_OP) in the list of pending operations by calling DList_InsertTailList. ]*/
         DList_InsertTailList(&channel_internal_ptr->op_list, &channel_op->anchor);
@@ -250,7 +280,17 @@ static int enqueue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE
     return result;
 }
 
-static int dequeue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE(ASYNC_OP)* out_op, PULL_CALLBACK pull_callback, void* pull_context, PUSH_CALLBACK push_callback, void* push_context, THANDLE(RC_PTR) data)
+static int dequeue_operation(
+    THANDLE(CHANNEL_INTERNAL) channel_internal,
+    THANDLE(ASYNC_OP)* out_op,
+    THANDLE(RC_STRING) pull_correlation_id,
+    PULL_CALLBACK pull_callback,
+    void* pull_context,
+    THANDLE(RC_STRING) push_correlation_id,
+    PUSH_CALLBACK push_callback,
+    void* push_context,
+    THANDLE(RC_PTR) data
+)
 {
     int result;
 
@@ -261,15 +301,17 @@ static int dequeue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE
     PDLIST_ENTRY op_entry = DList_RemoveHeadList(&channel_internal_ptr->op_list);
 
     CHANNEL_OP* channel_op = CONTAINING_RECORD(op_entry, CHANNEL_OP, anchor);
-    if (pull_callback)
+    if (pull_callback != NULL)
     {
-        /*Codes_SRS_CHANNEL_INTERNAL_43_112: [ channel_internal_pull shall store the pull_callback and pull_context in the obtained operation. ]*/
+        /*Codes_SRS_CHANNEL_INTERNAL_43_112: [ channel_internal_pull shall store the correlation_id, pull_callback and pull_context in the obtained operation. ]*/
+        THANDLE_INITIALIZE(RC_STRING)(&channel_op->pull_correlation_id, pull_correlation_id);
         channel_op->pull_callback = pull_callback;
         channel_op->pull_context = pull_context;
     }
-    else if (push_callback)
+    else if (push_callback != NULL)
     {
-        /*Codes_SRS_CHANNEL_INTERNAL_43_128: [ channel_internal_push shall store the push_callback, push_context and data in the obtained operation. ]*/
+        /*Codes_SRS_CHANNEL_INTERNAL_43_128: [ channel_internal_push shall store the correlation_id, push_callback, push_context and data in the obtained operation. ]*/
+        THANDLE_INITIALIZE(RC_STRING)(&channel_op->push_correlation_id, push_correlation_id);
         channel_op->push_callback = push_callback;
         channel_op->push_context = push_context;
         THANDLE_ASSIGN(RC_PTR)(&channel_op->data, data);
@@ -308,7 +350,7 @@ static int dequeue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE
 }
 
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull)
+IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_STRING), correlation_id, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull)
 {
     CHANNEL_RESULT result;
     CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_internal);
@@ -322,10 +364,20 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHA
             CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->pull_callback != NULL
             )
         {
-            if (enqueue_operation(channel_internal, out_op_pull, pull_callback, pull_context, NULL, NULL, NULL) != 0)
+            if (enqueue_operation(
+                channel_internal,
+                out_op_pull,
+                correlation_id,
+                pull_callback,
+                pull_context,
+                NULL,
+                NULL,
+                NULL,
+                NULL) != 0
+            )
             {
                 /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                LogError("Failure in enqueue_operation(channel_internal_ptr, out_op_pull, pull_callback, pull_context, NULL, NULL, NULL)");
+                LogError("Failure in enqueue_operation(channel_internal = %p, out_op_pull = %p, correlation_id = %" PRI_RC_STRING ", pull_callback = %p, pull_context = %p, NULL, NULL, NULL, NULL)", channel_internal, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), pull_callback, pull_context);
                 result = CHANNEL_RESULT_ERROR;
             }
             else
@@ -337,10 +389,10 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHA
         /*Codes_SRS_CHANNEL_INTERNAL_43_108: [ If the first operation in the list of pending operations contains a non-NULL push_callback: ]*/
         else if (CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->push_callback != NULL)
         {
-            if (dequeue_operation(channel_internal, out_op_pull, pull_callback, pull_context, NULL, NULL, NULL) != 0)
+            if (dequeue_operation(channel_internal, out_op_pull, correlation_id, pull_callback, pull_context, NULL, NULL, NULL, NULL) != 0)
             {
                 /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                LogError("Failure in dequeue_operation(channel_internal_ptr, out_op_pull, pull_callback, pull_context, NULL, NULL, NULL)");
+                LogError("Failure in dequeue_operation(channel_internal_ptr, out_op_pull, correlation_id, pull_callback, pull_context, NULL, NULL, NULL, NULL)");
                 result = CHANNEL_RESULT_ERROR;
             }
             else
@@ -362,10 +414,9 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHA
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push)
+IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push)
 {
     CHANNEL_RESULT result;
-
     CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_internal);
 
     /*Codes_SRS_CHANNEL_INTERNAL_43_116: [ channel_internal_push shall call srw_lock_acquire_exclusive. ]*/
@@ -377,10 +428,27 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHA
             CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->push_callback != NULL
             )
         {
-            if (enqueue_operation(channel_internal, out_op_push, NULL, NULL, push_callback, push_context, data) != 0)
+            if (enqueue_operation(channel_internal, out_op_push, NULL, NULL, NULL, correlation_id, push_callback, push_context, data) != 0)
             {
                 /*Codes_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                LogError("Failure in enqueue_operation(channel_internal_ptr, out_op_push, NULL, NULL, push_callback, push_context, data)");
+                LogError("Failure in enqueue_operation("
+                    " channel_internal = %p"
+                    ", out_op_push = %p"
+                    ", NULL"
+                    ", NULL"
+                    ", NULL"
+                    ", correlation_id = %" PRI_RC_STRING ""
+                    ", push_callback = %p"
+                    ", push_context = %p"
+                    ", data = %p"
+                    ")",
+                    channel_internal,
+                    out_op_push,
+                    RC_STRING_VALUE_OR_NULL(correlation_id),
+                    push_callback,
+                    push_context,
+                    data
+                );
                 result = CHANNEL_RESULT_ERROR;
             }
             else
@@ -392,10 +460,10 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHA
         /*Codes_SRS_CHANNEL_INTERNAL_43_124: [ If the first operation in the list of pending operations contains a non-NULL pull_callback: ]*/
         else if (CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->pull_callback != NULL)
         {
-            if (dequeue_operation(channel_internal, out_op_push, NULL, NULL, push_callback, push_context, data) != 0)
+            if (dequeue_operation(channel_internal, out_op_push, NULL, NULL, NULL, correlation_id, push_callback, push_context, data) != 0)
             {
                 /*Codes_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                LogError("Failure in dequeue_operation(channel_internal_ptr, out_op_push, NULL, NULL, push_callback, push_context, data)");
+                LogError("Failure in dequeue_operation(channel_internal_ptr, out_op_push, NULL, NULL, NULL, correlation_id, push_callback, push_context, data)");
                 result = CHANNEL_RESULT_ERROR;
             }
             else
