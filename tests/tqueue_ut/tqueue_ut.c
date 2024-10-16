@@ -1048,33 +1048,35 @@ TEST_FUNCTION(when_switching_the_tail_does_not_succeed_TQUEUE_POP_retries)
     TQUEUE_ASSIGN(int32_t)(&queue, NULL);
 }
 
-/* TQUEUE_GET_COUNT(T) */
+/* TQUEUE_GET_VOLATILE_COUNT(T) */
 
-/* Tests_SRS_TQUEUE_22_001: [ If tqueue is NULL then TQUEUE_GET_COUNT(T) shall return zero. ]*/TEST_FUNCTION(TQUEUE_GET_COUNT_with_NULL_tqueue_fails)
+/* Tests_SRS_TQUEUE_22_001: [ If tqueue is NULL then TQUEUE_GET_VOLATILE_COUNT(T) shall return zero. ]*/TEST_FUNCTION(TQUEUE_GET_COUNT_with_NULL_tqueue_fails)
 {
     // arrange
 
     // act
-    int64_t result = TQUEUE_GET_COUNT(int32_t)(NULL);
+    int64_t result = TQUEUE_GET_VOLATILE_COUNT(int32_t)(NULL);
 
     // assert
     ASSERT_ARE_EQUAL(int64_t, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
-/* Tests_SRS_TQUEUE_22_003: [ TQUEUE_GET_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/
-/* Tests_SRS_TQUEUE_22_004: [ If the queue is empty (current tail >= current head), TQUEUE_GET_COUNT(T) shall return zero. ]*/
-TEST_FUNCTION(TQUEUE_GET_COUNT_with_empty_tqueue_returns_zero)
+/* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
+/* Tests_SRS_TQUEUE_22_003: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/
+/* Tests_SRS_TQUEUE_22_006: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue again by calling interlocked_add_64 and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. ]*/
+/* Tests_SRS_TQUEUE_22_004: [ If the queue is empty (current tail >= current head), TQUEUE_GET_VOLATILE_COUNT(T) shall return zero. ]*/
+TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_empty_tqueue_returns_zero)
 {
     // arrange
     TQUEUE(int32_t) queue = test_queue_create(1024, test_copy_item, test_dispose_item, (void*)0x4242);
 
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
 
     // act
-    int64_t result = TQUEUE_GET_COUNT(int32_t)(queue);
+    int64_t result = TQUEUE_GET_VOLATILE_COUNT(int32_t)(queue);
 
     // assert
     ASSERT_ARE_EQUAL(int64_t, 0, result);
@@ -1086,18 +1088,20 @@ TEST_FUNCTION(TQUEUE_GET_COUNT_with_empty_tqueue_returns_zero)
 
 /* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
 /* Tests_SRS_TQUEUE_22_003: [ TQUEUE_GET_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/
-/* Tests_SRS_TQUEUE_22_005: [ TQUEUE_GET_COUNT(T) shall return the item count of the queue. ]*/
-TEST_FUNCTION(TQUEUE_GET_COUNT_with_push_1_returns_1)
+/* Tests_SRS_TQUEUE_22_006: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue again by calling interlocked_add_64 and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. ]*/
+/* Tests_SRS_TQUEUE_22_005: [ TQUEUE_GET_VOLATILE_COUNT(T) shall return the item count of the queue. ]*/
+TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_push_1_returns_1)
 {
     // arrange
     TQUEUE(int32_t) queue = test_queue_create(1024, test_copy_item, test_dispose_item, (void*)0x4242);
     test_queue_push(queue, 42);
 
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
 
     // act
-    int64_t result = TQUEUE_GET_COUNT(int32_t)(queue);
+    int64_t result = TQUEUE_GET_VOLATILE_COUNT(int32_t)(queue);
 
     // assert
     ASSERT_ARE_EQUAL(int64_t, 1, result);
@@ -1107,10 +1111,11 @@ TEST_FUNCTION(TQUEUE_GET_COUNT_with_push_1_returns_1)
     TQUEUE_ASSIGN(int32_t)(&queue, NULL);
 }
 
-/* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
-/* Tests_SRS_TQUEUE_22_003: [ TQUEUE_GET_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/
-/* Tests_SRS_TQUEUE_22_005: [ TQUEUE_GET_COUNT(T) shall return the item count of the queue. ]*/
-TEST_FUNCTION(TQUEUE_GET_COUNT_with_push_2_pop_1_returns_1)
+/* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
+/* Tests_SRS_TQUEUE_22_003: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/
+/* Tests_SRS_TQUEUE_22_006: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue again by calling interlocked_add_64 and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. ]*/
+/* Tests_SRS_TQUEUE_22_005: [ TQUEUE_GET_VOLATILE_COUNT(T) shall return the item count of the queue. ]*/
+TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_push_2_pop_1_returns_1)
 {
     // arrange
     TQUEUE(int32_t) queue = test_queue_create(1024, test_copy_item, test_dispose_item, (void*)0x4242);
@@ -1118,11 +1123,12 @@ TEST_FUNCTION(TQUEUE_GET_COUNT_with_push_2_pop_1_returns_1)
     test_queue_push(queue, 43);
     test_queue_pop(queue);
 
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
 
     // act
-    int64_t result = TQUEUE_GET_COUNT(int32_t)(queue);
+    int64_t result = TQUEUE_GET_VOLATILE_COUNT(int32_t)(queue);
 
     // assert
     ASSERT_ARE_EQUAL(int64_t, 1, result);
@@ -1132,10 +1138,11 @@ TEST_FUNCTION(TQUEUE_GET_COUNT_with_push_2_pop_1_returns_1)
     TQUEUE_ASSIGN(int32_t)(&queue, NULL);
 }
 
-/* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
-/* Tests_SRS_TQUEUE_22_003: [ TQUEUE_GET_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/
-/* Tests_SRS_TQUEUE_22_005: [ TQUEUE_GET_COUNT(T) shall return the item count of the queue. ]*/
-TEST_FUNCTION(TQUEUE_GET_COUNT_with_full_queue_returns_queue_size)
+/* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
+/* Tests_SRS_TQUEUE_22_003: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/
+/* Tests_SRS_TQUEUE_22_006: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue again by calling interlocked_add_64 and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. ]*/
+/* Tests_SRS_TQUEUE_22_005: [ TQUEUE_GET_VOLATILE_COUNT(T) shall return the item count of the queue. ]*/
+TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_full_queue_returns_queue_size)
 {
     uint32_t queue_size = 512;
 
@@ -1149,11 +1156,12 @@ TEST_FUNCTION(TQUEUE_GET_COUNT_with_full_queue_returns_queue_size)
     ASSERT_ARE_EQUAL(TQUEUE_PUSH_RESULT, TQUEUE_PUSH_QUEUE_FULL, TQUEUE_PUSH(int32_t)(queue, &item, NULL));
     umock_c_reset_all_calls();
 
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
 
     // act
-    int64_t result = TQUEUE_GET_COUNT(int32_t)(queue);
+    int64_t result = TQUEUE_GET_VOLATILE_COUNT(int32_t)(queue);
 
     // assert
     ASSERT_ARE_EQUAL(int64_t, queue_size, result);
@@ -1165,8 +1173,9 @@ TEST_FUNCTION(TQUEUE_GET_COUNT_with_full_queue_returns_queue_size)
 
 /* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
 /* Tests_SRS_TQUEUE_22_003: [ TQUEUE_GET_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/
+/* Tests_SRS_TQUEUE_22_006: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue again by calling interlocked_add_64 and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. ]*/
 /* Tests_SRS_TQUEUE_22_005: [ TQUEUE_GET_COUNT(T) shall return the item count of the queue. ]*/
-TEST_FUNCTION(TQUEUE_GET_COUNT_with_full_queue_pop_all_push_1_returns_1)
+TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_full_queue_pop_all_push_1_returns_1)
 {
     uint32_t queue_size = 512;
 
@@ -1186,11 +1195,12 @@ TEST_FUNCTION(TQUEUE_GET_COUNT_with_full_queue_pop_all_push_1_returns_1)
     }
     test_queue_push(queue, item);
 
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
 
     // act
-    int64_t result = TQUEUE_GET_COUNT(int32_t)(queue);
+    int64_t result = TQUEUE_GET_VOLATILE_COUNT(int32_t)(queue);
 
     // assert
     ASSERT_ARE_EQUAL(int64_t, 1, result);

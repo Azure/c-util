@@ -107,9 +107,9 @@ typedef struct TQUEUE_STRUCT_TYPE_NAME_TAG(T)                                   
 #define TQUEUE_LL_POP_NAME(C) MU_C2(TQUEUE_LL_POP_, C)
 #define TQUEUE_LL_POP(C) TQUEUE_LL_POP_NAME(C)
 
-/*introduces a new name for the get_count function */
-#define TQUEUE_LL_GET_COUNT_NAME(C) MU_C2(TQUEUE_LL_GET_COUNT_, C)
-#define TQUEUE_LL_GET_COUNT(C) TQUEUE_LL_GET_COUNT_NAME(C)
+/*introduces a new name for the get_volatile_count function */
+#define TQUEUE_LL_GET_VOLATILE_COUNT_NAME(C) MU_C2(TQUEUE_LL_GET_VOLATILE_COUNT_, C)
+#define TQUEUE_LL_GET_VOLATILE_COUNT(C) TQUEUE_LL_GET_VOLATILE_COUNT_NAME(C)
 
 /*introduces a function declaration for tqueue_create*/
 #define TQUEUE_LL_CREATE_DECLARE(C, T) MOCKABLE_FUNCTION(, TQUEUE_LL(T), TQUEUE_LL_CREATE(C), uint32_t, queue_size, TQUEUE_COPY_ITEM_FUNC(T), copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T), dispose_item_function, void*, dispose_item_function_context);
@@ -120,8 +120,8 @@ typedef struct TQUEUE_STRUCT_TYPE_NAME_TAG(T)                                   
 /*introduces a function declaration for tqueue_pop*/
 #define TQUEUE_LL_POP_DECLARE(C, T) MOCKABLE_FUNCTION(, TQUEUE_POP_RESULT, TQUEUE_LL_POP(C), TQUEUE_LL(T), tqueue, T*, item, void*, copy_item_function_context, TQUEUE_CONDITION_FUNC(T), condition_function, void*, condition_function_context);
 
-/*introduces a function declaration for tqueue_get_count*/
-#define TQUEUE_LL_GET_COUNT_DECLARE(C, T) MOCKABLE_FUNCTION(, int64_t, TQUEUE_LL_GET_COUNT(C), TQUEUE_LL(T), tqueue);
+/*introduces a function declaration for tqueue_get_volatile_count*/
+#define TQUEUE_LL_GET_VOLATILE_COUNT_DECLARE(C, T) MOCKABLE_FUNCTION(, int64_t, TQUEUE_LL_GET_VOLATILE_COUNT(C), TQUEUE_LL(T), tqueue);
 
 /*introduces a name for the function that free's a TQUEUE when it's ref count got to 0*/
 #define TQUEUE_LL_FREE_NAME(C) MU_C2(TQUEUE_LL_FREE_, C)
@@ -386,11 +386,11 @@ TQUEUE_POP_RESULT TQUEUE_LL_POP(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_item
 }                                                                                                                                                                   \
 
 /*introduces a function definition for tqueue_pop*/
-#define TQUEUE_LL_GET_COUNT_DEFINE(C, T)                                                                                                                            \
-int64_t TQUEUE_LL_GET_COUNT(C)(TQUEUE_LL(T) tqueue)                                                                                                                 \
+#define TQUEUE_LL_GET_VOLATILE_COUNT_DEFINE(C, T)                                                                                                                   \
+int64_t TQUEUE_LL_GET_VOLATILE_COUNT(C)(TQUEUE_LL(T) tqueue)                                                                                                        \
 {                                                                                                                                                                   \
     int64_t result;                                                                                                                                                 \
-    /* Codes_SRS_TQUEUE_22_001: [ If tqueue is NULL then TQUEUE_GET_COUNT(T) shall return zero. ]*/                                                                 \
+    /* Codes_SRS_TQUEUE_22_001: [ If tqueue is NULL then TQUEUE_GET_VOLATILE_COUNT(T) shall return zero. ]*/                                                        \
     if (tqueue == NULL)                                                                                                                                             \
     {                                                                                                                                                               \
         LogError("Invalid arguments: TQUEUE_LL(" MU_TOSTRING(T) ") tqueue=%p.", tqueue);                                                                            \
@@ -398,18 +398,24 @@ int64_t TQUEUE_LL_GET_COUNT(C)(TQUEUE_LL(T) tqueue)                             
     }                                                                                                                                                               \
     else                                                                                                                                                            \
     {                                                                                                                                                               \
-        /* Codes_SRS_TQUEUE_22_002: [ TQUEUE_GET_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/                                    \
-        int64_t current_head = interlocked_add_64((volatile_atomic int64_t*)&tqueue->head, 0);                                                                      \
-        /* Codes_SRS_TQUEUE_22_003: [ TQUEUE_GET_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/                                    \
-        int64_t current_tail = interlocked_add_64((volatile_atomic int64_t*)&tqueue->tail, 0);                                                                      \
+        int64_t current_tail = 0;                                                                                                                                   \
+        int64_t current_head = 0;                                                                                                                                   \
+        do                                                                                                                                                          \
+        {                                                                                                                                                           \
+            /* Codes_SRS_TQUEUE_22_003: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/                       \
+            current_tail = interlocked_add_64((volatile_atomic int64_t*)&tqueue->tail, 0);                                                                          \
+            /* Codes_SRS_TQUEUE_22_002: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/                       \
+            current_head = interlocked_add_64((volatile_atomic int64_t*)&tqueue->head, 0);                                                                          \
+        } while (current_tail != interlocked_add_64((volatile_atomic int64_t*) & tqueue->tail, 0));                                                                 \
+                                                                                                                                                                    \
         if (current_tail >= current_head)                                                                                                                           \
         {                                                                                                                                                           \
-            /* Codes_SRS_TQUEUE_22_004: [ If the queue is empty (current tail >= current head), TQUEUE_GET_COUNT(T) shall return zero. ]*/                          \
+            /* Codes_SRS_TQUEUE_22_004: [ If the queue is empty (current tail >= current head), TQUEUE_GET_VOLATILE_COUNT(T) shall return zero. ]*/                 \
             result = 0;                                                                                                                                             \
         }                                                                                                                                                           \
         else                                                                                                                                                        \
         {                                                                                                                                                           \
-            /* Codes_SRS_TQUEUE_22_005: [ TQUEUE_GET_COUNT(T) shall return the item count of the queue. ]*/                                                         \
+            /* Codes_SRS_TQUEUE_22_005: [ TQUEUE_GET_VOLATILE_COUNT(T) shall return the item count of the queue. ]*/                                                \
             result = current_head - current_tail;                                                                                                                   \
         }                                                                                                                                                           \
     }                                                                                                                                                               \
@@ -423,7 +429,7 @@ int64_t TQUEUE_LL_GET_COUNT(C)(TQUEUE_LL(T) tqueue)                             
     TQUEUE_LL_CREATE_DECLARE(C, T)                                                                                                  \
     TQUEUE_LL_PUSH_DECLARE(C, T)                                                                                                    \
     TQUEUE_LL_POP_DECLARE(C, T)                                                                                                     \
-    TQUEUE_LL_GET_COUNT_DECLARE(C, T)                                                                                               \
+    TQUEUE_LL_GET_VOLATILE_COUNT_DECLARE(C, T)                                                                                      \
 
 /*macro to be used in .c*/                                                                                                          \
 #define TQUEUE_LL_TYPE_DEFINE(C, T, ...)                                                                                            \
@@ -432,6 +438,6 @@ int64_t TQUEUE_LL_GET_COUNT(C)(TQUEUE_LL(T) tqueue)                             
     TQUEUE_LL_CREATE_DEFINE(C, T)                                                                                                   \
     TQUEUE_LL_PUSH_DEFINE(C, T)                                                                                                     \
     TQUEUE_LL_POP_DEFINE(C, T)                                                                                                      \
-    TQUEUE_LL_GET_COUNT_DEFINE(C, T)                                                                                                \
+    TQUEUE_LL_GET_VOLATILE_COUNT_DEFINE(C, T)                                                                                       \
 
 #endif  /*TQUEUE_LL_H*/
