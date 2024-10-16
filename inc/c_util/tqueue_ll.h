@@ -406,6 +406,7 @@ int64_t TQUEUE_LL_GET_VOLATILE_COUNT(C)(TQUEUE_LL(T) tqueue)                    
             current_tail = interlocked_add_64((volatile_atomic int64_t*)&tqueue->tail, 0);                                                                          \
             /* Codes_SRS_TQUEUE_22_002: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/                       \
             current_head = interlocked_add_64((volatile_atomic int64_t*)&tqueue->head, 0);                                                                          \
+            /* Codes_SRS_TQUEUE_22_006: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue again by calling interlocked_add_64 and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. ]*/   \
         } while (current_tail != interlocked_add_64((volatile_atomic int64_t*) & tqueue->tail, 0));                                                                 \
                                                                                                                                                                     \
         if (current_tail >= current_head)                                                                                                                           \
