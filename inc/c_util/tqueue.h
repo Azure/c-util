@@ -17,10 +17,12 @@
 #define TQUEUE_CREATE_DECLARE(T) TQUEUE_LL_CREATE_DECLARE(T, T)
 #define TQUEUE_PUSH_DECLARE(T) TQUEUE_LL_PUSH_DECLARE(T, T)
 #define TQUEUE_POP_DECLARE(T) TQUEUE_LL_POP_DECLARE(T, T)
+#define TQUEUE_GET_VOLATILE_COUNT_DECLARE(T) TQUEUE_LL_GET_VOLATILE_COUNT_DECLARE(T, T)
 
 #define TQUEUE_CREATE_DEFINE(T) TQUEUE_LL_CREATE_DEFINE(T, T)
 #define TQUEUE_PUSH_DEFINE(T) TQUEUE_LL_PUSH_DEFINE(T, T)
 #define TQUEUE_POP_DEFINE(T) TQUEUE_LL_POP_DEFINE(T, T)
+#define TQUEUE_GET_VOLATILE_COUNT_DEFINE(T) TQUEUE_LL_GET_VOLATILE_COUNT_DEFINE(T, T)
 
 #define TQUEUE_FREE_DEFINE(T) TQUEUE_LL_FREE_DEFINE(T, T)
 
@@ -28,6 +30,7 @@
 
 #define TQUEUE_PUSH(C) TQUEUE_LL_PUSH(C)
 #define TQUEUE_POP(C) TQUEUE_LL_POP(C)
+#define TQUEUE_GET_VOLATILE_COUNT(C) TQUEUE_LL_GET_VOLATILE_COUNT(C)
 
 #define TQUEUE_INITIALIZE(T) TQUEUE_LL_INITIALIZE(T)
 #define TQUEUE_ASSIGN(T) TQUEUE_LL_ASSIGN(T)
@@ -44,6 +47,7 @@
     TQUEUE_CREATE_DECLARE(T)                                                                                        \
     TQUEUE_PUSH_DECLARE(T)                                                                                          \
     TQUEUE_POP_DECLARE(T)                                                                                           \
+    TQUEUE_GET_VOLATILE_COUNT_DECLARE(T)                                                                                     \
 
 #define TQUEUE_TYPE_DEFINE(T, ...)                                                                                  \
     /*hint: have THANDLE_TYPE_DEFINE(TQUEUE_TYPEDEF_NAME(T)) before  TQUEUE_TYPE_DEFINE                */           \
@@ -51,5 +55,6 @@
     TQUEUE_CREATE_DEFINE(T)                                                                                         \
     TQUEUE_PUSH_DEFINE(T)                                                                                           \
     TQUEUE_POP_DEFINE(T)                                                                                            \
+    TQUEUE_GET_VOLATILE_COUNT_DEFINE(T)                                                                                      \
 
 #endif // TQUEUE_H
