@@ -281,7 +281,7 @@ TQUEUE_POP_RESULT TQUEUE_POP(T)(TQUEUE(T) tqueue, T* item, void* pop_function_co
 int64_t TQUEUE_GET_VOLATILE_COUNT(T)(TQUEUE(T) tqueue);
 ```
 
-`TQUEUE_GET_VOLATILE_COUNT(T)` returns the item count of the queue if available.
+`TQUEUE_GET_VOLATILE_COUNT(T)` returns the item count of the queue. Note that the returned value is a point in time value. If the caller needs any synchronization related to the count obtained, lock/use other means of synchronization is required.
 
 **SRS_TQUEUE_22_001: [** If `tqueue` is `NULL` then `TQUEUE_GET_VOLATILE_COUNT(T)` shall return zero. **]**
 
