@@ -113,6 +113,24 @@ TEST_FUNCTION(TQUEUE_POP_succeeds)
     TQUEUE_ASSIGN(FOO)(&queue, NULL);
 }
 
+TEST_FUNCTION(TQUEUE_GET_COUNT_succeeds)
+{
+    // arrange
+    TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, NULL, NULL, NULL);
+    ASSERT_IS_NOT_NULL(queue);
+    FOO foo_1 = { 42 };
+    ASSERT_ARE_EQUAL(TQUEUE_PUSH_RESULT, TQUEUE_PUSH_OK, TQUEUE_PUSH(FOO)(queue, &foo_1, NULL));
+
+    // act
+    int64_t result = TQUEUE_GET_VOLATILE_COUNT(FOO)(queue);
+
+    // assert
+    ASSERT_ARE_EQUAL(int64_t, 1, result);
+
+    // clean
+    TQUEUE_ASSIGN(FOO)(&queue, NULL);
+}
+
 static bool pop_condition_function_42(void* context, FOO* foo)
 {
     (void)context;
@@ -138,8 +156,10 @@ TEST_FUNCTION(TQUEUE_POP_IF_succeeds)
     // assert
     ASSERT_ARE_EQUAL(TQUEUE_POP_RESULT, TQUEUE_POP_REJECTED, TQUEUE_POP(FOO)(queue, &foo_1_popped, NULL, pop_condition_function_43, NULL));
     ASSERT_ARE_NOT_EQUAL(int32_t, foo_1.x, foo_1_popped.x);
+    ASSERT_ARE_EQUAL(int64_t, 1, TQUEUE_GET_VOLATILE_COUNT(FOO)(queue));
     ASSERT_ARE_EQUAL(TQUEUE_POP_RESULT, TQUEUE_POP_OK, TQUEUE_POP(FOO)(queue, &foo_1_popped, NULL, pop_condition_function_42, NULL));
     ASSERT_ARE_EQUAL(int32_t, foo_1.x, foo_1_popped.x);
+    ASSERT_ARE_EQUAL(int64_t, 0, TQUEUE_GET_VOLATILE_COUNT(FOO)(queue));
 
     // clean
     TQUEUE_ASSIGN(FOO)(&queue, NULL);
@@ -416,7 +436,9 @@ typedef struct TQUEUE_CHAOS_TEST_THANDLE_CONTEXT_TAG
     volatile_atomic int64_t next_push_number;
     volatile_atomic int64_t succesful_push_count;
     volatile_atomic int64_t succesful_pop_count;
+    volatile_atomic int64_t succesful_get_volatile_count;
     volatile_atomic int32_t terminate_test;
+    uint32_t queue_size;
 } TQUEUE_CHAOS_TEST_THANDLE_CONTEXT;
 
 static bool TEST_THANDLE_should_pop(void* context, THANDLE(TEST_THANDLE)* item)
@@ -430,7 +452,8 @@ static bool TEST_THANDLE_should_pop(void* context, THANDLE(TEST_THANDLE)* item)
 #define TQUEUE_ACTION_TYPE_THANDLE_TEST_VALUES \
     TQUEUE_ACTION_TYPE_THANDLE_TEST_PUSH, \
     TQUEUE_ACTION_TYPE_THANDLE_TEST_POP, \
-    TQUEUE_ACTION_TYPE_THANDLE_TEST_POP_WITH_CONDITION_FUNCTION
+    TQUEUE_ACTION_TYPE_THANDLE_TEST_POP_WITH_CONDITION_FUNCTION, \
+    TQUEUE_ACTION_TYPE_THANDLE_TEST_GET_VOLATILE_COUNT
 
 MU_DEFINE_ENUM_WITHOUT_INVALID(TQUEUE_ACTION_TYPE_THANDLE_TEST, TQUEUE_ACTION_TYPE_THANDLE_TEST_VALUES);
 MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(TQUEUE_ACTION_TYPE_THANDLE_TEST, TQUEUE_ACTION_TYPE_THANDLE_TEST_VALUES);
@@ -489,6 +512,12 @@ static int tqueue_chaos_thread_THANDLE_func(void* arg)
             }
             break;
         }
+        case TQUEUE_ACTION_TYPE_THANDLE_TEST_GET_VOLATILE_COUNT:
+        {
+            int64_t current_count = TQUEUE_GET_VOLATILE_COUNT(THANDLE(TEST_THANDLE))(test_context->queue);
+            ASSERT_IS_TRUE(((current_count >= 0) && (current_count <= test_context->queue_size)));
+            (void)interlocked_increment_64(&test_context->succesful_get_volatile_count);
+        }
         }
 
 #ifdef USE_VALGRIND
@@ -521,11 +550,14 @@ static void TQUEUE_chaos_knight_test_with_THANDLE_template(uint32_t queue_size, 
     TQUEUE_CHAOS_TEST_THANDLE_CONTEXT test_context = { .queue = TQUEUE_CREATE(THANDLE(TEST_THANDLE))(16, TEST_THANDLE_copy_item, TEST_THANDLE_dispose, NULL) };
     ASSERT_IS_NOT_NULL(test_context.queue);
 
+    test_context.queue_size = queue_size;
+
     (void)interlocked_exchange_64(&test_context.next_push_number, 1);
 
     // count how many successful pushes and pops we have
     (void)interlocked_exchange_64(&test_context.succesful_push_count, 0);
     (void)interlocked_exchange_64(&test_context.succesful_pop_count, 0);
+    (void)interlocked_exchange_64(&test_context.succesful_get_volatile_count, 0);
     (void)interlocked_exchange(&test_context.terminate_test, 0);
 
     // act
@@ -549,6 +581,7 @@ static void TQUEUE_chaos_knight_test_with_THANDLE_template(uint32_t queue_size, 
         // get how many pushes and pops at the end of the time slice
         int64_t current_succesful_push_count = interlocked_add_64(&test_context.succesful_push_count, 0);
         int64_t current_succesful_pop_count = interlocked_add_64(&test_context.succesful_pop_count, 0);
+        int64_t current_succesful_get_volatile_count = interlocked_add_64(&test_context.succesful_get_volatile_count, 0);
 
         // make sure we had at least one succesful push and one pop (not stuck)
         ASSERT_IS_TRUE(current_succesful_push_count > last_succesful_push_count);
@@ -556,8 +589,8 @@ static void TQUEUE_chaos_knight_test_with_THANDLE_template(uint32_t queue_size, 
 
         current_time = timer_global_get_elapsed_ms();
 
-        LogInfo("%.02f seconds elapsed, successful push count=%" PRId64 ", successful pop count=%" PRId64 "",
-            (current_time - start_time) / 1000, current_succesful_push_count, current_succesful_pop_count);
+        LogInfo("%.02f seconds elapsed, successful push count=%" PRId64 ", successful pop count=%" PRId64 ", successful get_count count=%" PRId64 "",
+            (current_time - start_time) / 1000, current_succesful_push_count, current_succesful_pop_count, current_succesful_get_volatile_count);
     } while (current_time - start_time < CHAOS_TEST_RUNTIME);
 
     // terminate test
