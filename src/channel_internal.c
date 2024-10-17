@@ -356,7 +356,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHA
             }
         }
         /*Codes_SRS_CHANNEL_INTERNAL_43_108: [ If the first operation in the list of pending operations contains a non-NULL push_callback: ]*/
-        else if (CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->push_callback != NULL)
+        else
         {
             if (dequeue_operation(channel_internal, out_op_pull, correlation_id, pull_callback, pull_context, NULL, NULL, NULL, NULL) != 0)
             {
@@ -370,6 +370,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHA
                 result = CHANNEL_RESULT_OK;
             }
         }
+
     }
     /*Codes_SRS_CHANNEL_INTERNAL_43_115: [ channel_internal_pull shall call srw_lock_release_exclusive. ]*/
     srw_lock_release_exclusive(channel_internal_ptr->lock);
@@ -403,8 +404,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHA
                 result = CHANNEL_RESULT_OK;
             }
         }
-        /*Codes_SRS_CHANNEL_INTERNAL_43_124: [ If the first operation in the list of pending operations contains a non-NULL pull_callback: ]*/
-        else if (CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->pull_callback != NULL)
+        /*Codes_SRS_CHANNEL_INTERNAL_43_124: [ Otherwise (the first operation in the list of pending operations contains a non-NULL pull_callback): ]*/
+        else
         {
             if (dequeue_operation(channel_internal, out_op_push, NULL, NULL, NULL, correlation_id, push_callback, push_context, data) != 0)
             {
