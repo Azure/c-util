@@ -93,6 +93,7 @@ The macros expand to these useful somewhat more useful APIs:
 TQUEUE(T) TQUEUE_CREATE(T)(uint32_t queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T) dispose_item_function, void* dispose_item_function_context);
 int TQUEUE_PUSH(T)(TQUEUE(T) tqueue, T* item, void* copy_function_context)
 TQUEUE_POP_RESULT TQUEUE_POP(T)(TQUEUE(T) tqueue, T* item, void* copy_function_context, TQUEUE_DEFINE_CONDITION_FUNCTION_TYPE_NAME(T), condition_function, void*, condition_function_context);
+int64_t TQUEUE_GET_VOLATILE_COUNT(T)(TQUEUE(T) tqueue)
 ```
 
 The signature of the push callback function `TQUEUE_COPY_ITEM_FUNC(T)` is:
@@ -273,3 +274,23 @@ TQUEUE_POP_RESULT TQUEUE_POP(T)(TQUEUE(T) tqueue, T* item, void* pop_function_co
     - **SRS_TQUEUE_01_045: [** `TQUEUE_POP(T)` shall call `dispose_item_function` with `dispose_item_function_context` as `context` and the array entry value whose state was changed to `POPPING` as `item`. **]**
 
   - **SRS_TQUEUE_01_034: [** `TQUEUE_POP(T)` shall set the state to `NOT_USED` by using `interlocked_exchange`, succeed and return `TQUEUE_POP_OK`. **]**
+
+
+### TQUEUE_GET_VOLATILE_COUNT(T)
+```c
+int64_t TQUEUE_GET_VOLATILE_COUNT(T)(TQUEUE(T) tqueue);
+```
+
+`TQUEUE_GET_VOLATILE_COUNT(T)` returns the item count of the queue. Note that the returned value is a point in time value. If the caller needs any synchronization related to the count obtained, lock/use other means of synchronization is required.
+
+**SRS_TQUEUE_22_001: [** If `tqueue` is `NULL` then `TQUEUE_GET_VOLATILE_COUNT(T)` shall return zero. **]**
+
+**SRS_TQUEUE_22_002: [** `TQUEUE_GET_VOLATILE_COUNT(T)` shall obtain the current head queue by calling `interlocked_add_64`. **]**
+
+**SRS_TQUEUE_22_003: [** `TQUEUE_GET_VOLATILE_COUNT(T)` shall obtain the current tail queue by calling `interlocked_add_64`. **]**
+
+**SRS_TQUEUE_22_006: [** `TQUEUE_GET_VOLATILE_COUNT(T)` shall obtain the current tail queue again by calling `interlocked_add_64` and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. **]**
+
+**SRS_TQUEUE_22_004: [** If the queue is empty (current tail >= current head), `TQUEUE_GET_VOLATILE_COUNT(T)` shall return zero. **]**
+
+**SRS_TQUEUE_22_005: [** `TQUEUE_GET_VOLATILE_COUNT(T)` shall return the item count of the queue. **]**
