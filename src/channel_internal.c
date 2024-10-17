@@ -361,7 +361,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHA
             if (dequeue_operation(channel_internal, out_op_pull, correlation_id, pull_callback, pull_context, NULL, NULL, NULL, NULL) != 0)
             {
                 /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                LogError("Failure in dequeue_operation(channel_internal = %p, out_op_pull = %p, correlation_id = %" PRI_RC_STRING ", pull_callback = %p, pull_context = %p, NULL, NULL, NULL, NULL)", channel_internal, RC_STRING_VALUE_OR_NULL(correlation_id), pull_callback, pull_context);
+                LogError("Failure in dequeue_operation(channel_internal = %p, out_op_pull = %p, correlation_id = %" PRI_RC_STRING ", pull_callback = %p, pull_context = %p, NULL, NULL, NULL, NULL)", channel_internal, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), pull_callback, pull_context);
                 result = CHANNEL_RESULT_ERROR;
             }
             else
@@ -409,7 +409,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHA
             if (dequeue_operation(channel_internal, out_op_push, NULL, NULL, NULL, correlation_id, push_callback, push_context, data) != 0)
             {
                 /*Codes_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                LogError("Failure in dequeue_operation(channel_internal = %p, out_op_push = %p, NULL, NULL, NULL, correlation_id = %" PRI_RC_STRING ", push_callback = %p, push_context = %p, data = %p)", channel_internal, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), push_callback, push_context);
+                LogError("Failure in dequeue_operation(channel_internal = %p, out_op_push = %p, NULL, NULL, NULL, correlation_id = %" PRI_RC_STRING ", push_callback = %p, push_context = %p, data = %p)", channel_internal, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), push_callback, push_context, data);
                 result = CHANNEL_RESULT_ERROR;
             }
             else
