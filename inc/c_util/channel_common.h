@@ -7,7 +7,9 @@
 #include "macro_utils/macro_utils.h"
 
 #include "c_pal/thandle.h"
+
 #include "c_util/rc_ptr.h"
+#include "c_util/rc_string.h"
 
 #define CHANNEL_RESULT_VALUES \
     CHANNEL_RESULT_OK, \
@@ -23,7 +25,7 @@ MU_DEFINE_ENUM(CHANNEL_RESULT, CHANNEL_RESULT_VALUES);
 
 MU_DEFINE_ENUM(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_VALUES);
 
-typedef void(*PULL_CALLBACK)(void* pull_context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data);
-typedef void(*PUSH_CALLBACK)(void* push_context, CHANNEL_CALLBACK_RESULT result);
+typedef void(*PULL_CALLBACK)(void* pull_context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data);
+typedef void(*PUSH_CALLBACK)(void* push_context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id);
 
 #endif /* CHANNEL_COMMON_H */

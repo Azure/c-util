@@ -30,15 +30,15 @@ typedef void(*PUSH_CALLBACK)(void* push_context, CHANNEL_CALLBACK_RESULT result)
 ```
 THANDLE_TYPE_DECLARE(CHANNEL_INTERNAL);
 
-MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create_and_open, THANDLE(THREADPOOL), threadpool);
+MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create_and_open, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool);
 MOCKABLE_FUNCTION(, void, channel_internal_close, THANDLE(CHANNEL_INTERNAL), channel_internal);
-MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
-MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
+MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_STRING), correlation_id, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
+MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
 ```
 
 ### channel_internal_create_and_open
 ```c
-    MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create_and_open, THANDLE(THREADPOOL), threadpool);
+    MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create_and_open, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool);
 ```
 
 `channel_internal_create_and_open` creates the channel_internal and returns it.
@@ -48,6 +48,8 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 **SRS_CHANNEL_INTERNAL_43_078: [** `channel_internal_create_and_open` shall create a `CHANNEL_INTERNAL` object by calling `THANDLE_MALLOC` with `channel_internal_dispose` as `dispose`.**]**
 
 **SRS_CHANNEL_INTERNAL_43_080: [** `channel_internal_create_and_open` shall store given `threadpool` in the created `CHANNEL_INTERNAL`. **]**
+
+**SRS_CHANNEL_INTERNAL_43_149: [** `channel_internal_create_and_open` shall store the given `log_context` in the created `CHANNEL_INTERNAL`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_084: [** `channel_internal_create_and_open` shall call `DList_InitializeListHead`. **]**
 
@@ -81,13 +83,16 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 `channel_internal_dispose` disposes the given `channel_internal`.
 
-**SRS_CHANNEL_INTERNAL_43_099: [** `channel_internal_dispose` shall call `srw_lock_destroy`. **]**
+
+**SRS_CHANNEL_INTERNAL_43_150: [** `channel_internal_dispose` shall release the reference to the `log_context` **]**
 
 **SRS_CHANNEL_INTERNAL_43_091: [** `channel_internal_dispose` shall release the reference to `THANDLE(THREADPOOL)`. **]**
 
+**SRS_CHANNEL_INTERNAL_43_099: [** `channel_internal_dispose` shall call `srw_lock_destroy`. **]**
+
 ### channel_internal_pull
 ```c
-    MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
+    MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_STRING), correlation_id, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
 ```
 
 `channel_internal_pull` registers the given `pull_callback` to be called when there is data to be consumed.
@@ -98,7 +103,7 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
  - **SRS_CHANNEL_INTERNAL_43_103: [** `channel_internal_pull` shall create a `THANDLE(ASYNC_OP)` by calling `async_op_create` with `cancel_op` as `cancel`. **]**
 
- - **SRS_CHANNEL_INTERNAL_43_104: [** `channel_internal_pull` shall store the `pull_callback` and `pull_context` in the `THANDLE(ASYNC_OP)`. **]**
+ - **SRS_CHANNEL_INTERNAL_43_104: [** `channel_internal_pull` shall store the `correlation_id`, `pull_callback` and `pull_context` in the `THANDLE(ASYNC_OP)`. **]**
 
  - **SRS_CHANNEL_INTERNAL_43_111: [** `channel_internal_pull` shall set the `result` of the created `operation` to `CHANNEL_CALLBACK_RESULT_OK`. **]**
 
@@ -110,7 +115,7 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
  - **SRS_CHANNEL_INTERNAL_43_109: [** `channel_internal_pull` shall call `DList_RemoveHeadList` on the list of pending operations to obtain the `operation`. **]**
 
- - **SRS_CHANNEL_INTERNAL_43_112: [** `channel_internal_pull` shall store the `pull_callback` and `pull_context` in the obtained `operation`. **]**
+ - **SRS_CHANNEL_INTERNAL_43_112: [** `channel_internal_pull` shall store the `correlation_id`, `pull_callback` and `pull_context` in the obtained `operation`. **]**
 
  - **SRS_CHANNEL_INTERNAL_43_113: [** `channel_internal_pull` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the obtained `operation` as `work_function_context`. **]**
 
@@ -125,7 +130,7 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 ### channel_internal_push
 ```c
-    MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
+    MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
 ```
 
 `channel_internal_push` notifies the channel_internal that there is data available and registers the given `push_callback` to be called when the given `data` has been consumed.
@@ -136,7 +141,7 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
  - **SRS_CHANNEL_INTERNAL_43_119: [** `channel_internal_push` shall create a `THANDLE(ASYNC_OP)` by calling `async_op_create` with `cancel_op` as `cancel`. **]**
 
- - **SRS_CHANNEL_INTERNAL_43_120: [** `channel_internal_push` shall store the `push_callback`, `push_context` and `data` in the `THANDLE(ASYNC_OP)`. **]**
+ - **SRS_CHANNEL_INTERNAL_43_120: [** `channel_internal_push` shall store the `correlation_id`, `push_callback`, `push_context` and `data` in the `THANDLE(ASYNC_OP)`. **]**
 
  - **SRS_CHANNEL_INTERNAL_43_127: [** `channel_internal_push` shall set the `result` of the created `operation` to `CHANNEL_CALLBACK_RESULT_OK`. **]**
 
@@ -148,7 +153,7 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
  - **SRS_CHANNEL_INTERNAL_43_125: [** `channel_internal_push` shall call `DList_RemoveHeadList` on the list of pending operations to obtain the `operation`. **]**
 
- - **SRS_CHANNEL_INTERNAL_43_128: [** `channel_internal_push` shall store the `push_callback`, `push_context` and `data` in the obtained `operation`. **]**
+ - **SRS_CHANNEL_INTERNAL_43_128: [** `channel_internal_push` shall store the `correlation_id`, `push_callback`, `push_context` and `data` in the obtained `operation`. **]**
 
  - **SRS_CHANNEL_INTERNAL_43_129: [** `channel_internal_push` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the obtained `operation` as `work_function_context`. **]**
 
