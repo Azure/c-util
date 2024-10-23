@@ -19,11 +19,3 @@
    fun:logger_deinit
    ...
 }
-{
-   <logger_log gets flagged for "Conditional jump or move depends on uninitialised value(s)">
-   Memcheck:Cond
-   fun:__vfprintf_internal
-   fun:__vsnprintf_internal
-   fun:log_sink_console_log
-   fun:logger_log
-}
