@@ -230,7 +230,7 @@ static int enqueue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE
     THANDLE(ASYNC_OP) async_op = async_op_create(cancel_op, sizeof(CHANNEL_OP), alignof(CHANNEL_OP), dispose_channel_op);
     if (async_op == NULL)
     {
-        LogError("Failure in async_op_create(cancel_op = %p, sizeof(CHANNEL_OP) = %" PRIu32 ", alignof(CHANNEL_OP) = %" PRIu32 ", dispose_channel_op = %p)", cancel_op, (uint32_t)sizeof(CHANNEL_OP), (uint32_t)alignof(CHANNEL_OP), dispose_channel_op);
+        LogError("Failure in async_op_create(cancel_op = %p, sizeof(CHANNEL_OP) = %zu, alignof(CHANNEL_OP) = %zu, dispose_channel_op = %p)", cancel_op, sizeof(CHANNEL_OP), alignof(CHANNEL_OP), dispose_channel_op);
         result = MU_FAILURE;
     }
     else

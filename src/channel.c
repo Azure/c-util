@@ -80,7 +80,7 @@ all_ok:
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(,CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel,THANDLE(RC_STRING), correlation_id,PULL_CALLBACK, pull_callback, void*, pull_context,THANDLE(ASYNC_OP)*, out_op_pull)
+IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id,PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull)
 {
     CHANNEL_RESULT result;
 
