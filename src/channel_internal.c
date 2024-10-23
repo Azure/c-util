@@ -210,7 +210,6 @@ static void cancel_op(void* context)
     {
         if (threadpool_schedule_work(channel_internal_ptr->threadpool, execute_callbacks, channel_op) != 0)
         {
-            //LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool = %%p, execute_callbacks = %p, channel_op = %p)", /*channel_internal_ptr->threadpool,*/ execute_callbacks, channel_op);
             LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool = %p, execute_callbacks = %p, channel_op = %p)", channel_internal_ptr->threadpool, execute_callbacks, channel_op);
         }
     }
@@ -304,7 +303,7 @@ static int dequeue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE
     /*Codes_SRS_CHANNEL_INTERNAL_43_129: [ channel_internal_push shall call threadpool_schedule_work with execute_callbacks as work_function and the obtained operation as work_function_context. ]*/
     if (threadpool_schedule_work(channel_internal_ptr->threadpool, execute_callbacks, channel_op) != 0)
     {
-        LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool = %%p, execute_callbacks = %p, channel_op = %p)", /*channel_internal_ptr->threadpool,*/ execute_callbacks, channel_op);
+        LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool = %p, execute_callbacks = %p, channel_op = %p)", channel_internal_ptr->threadpool, execute_callbacks, channel_op);
         // undo the dequeue
         THANDLE_ASSIGN(ASYNC_OP)(out_op, NULL);
         if (pull_callback != NULL)
