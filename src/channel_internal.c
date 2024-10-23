@@ -86,7 +86,7 @@ void channel_internal_close(THANDLE(CHANNEL_INTERNAL) channel_internal)
         /*Codes_SRS_CHANNEL_INTERNAL_43_097: [ call threadpool_schedule_work with execute_callbacks as work_function. ]*/
         if (threadpool_schedule_work(channel_internal_ptr->threadpool, execute_callbacks, channel_op) != 0)
         {
-            LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool = %p, execute_callbacks = %p, channel_op = %p)", channel_internal_ptr->threadpool, execute_callbacks, channel_op);
+            LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool=%p, execute_callbacks=%p, channel_op=%p)", channel_internal_ptr->threadpool, execute_callbacks, channel_op);
         }
     }
 
@@ -112,7 +112,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create
         if (channel_internal == NULL)
         {
             /*Codes_SRS_CHANNEL_INTERNAL_43_002: [ If there are any failures, channel_internal_create_and_open shall fail and return NULL. ]*/
-            LogError("Failure in THANDLE_MALLOC(CHANNEL_INTERNAL)(channel_internal_dispose = %p)", channel_internal_dispose);
+            LogError("Failure in THANDLE_MALLOC(CHANNEL_INTERNAL)(channel_internal_dispose=%p)", channel_internal_dispose);
         }
         else
         {
@@ -151,7 +151,7 @@ static void execute_callbacks(void* context)
         CHANNEL_OP* channel_op = (CHANNEL_OP*)context;
         CHANNEL_CALLBACK_RESULT result = channel_op->result; // local copy to make sure both callbacks are called with the same result
 
-        LOGGER_LOG(LOG_LEVEL_VERBOSE, T_PTR_VALUE_OR_NULL(channel_op->channel_internal->log_context), "Executing callbacks for pull_correlation_id = %" PRI_RC_STRING ", push_correlation_id = %" PRI_RC_STRING ", callback_result = %" PRI_MU_ENUM "", RC_STRING_VALUE_OR_NULL(channel_op->pull_correlation_id), RC_STRING_VALUE_OR_NULL(channel_op->push_correlation_id), MU_ENUM_VALUE(CHANNEL_CALLBACK_RESULT, result));
+        LOGGER_LOG(LOG_LEVEL_VERBOSE, T_PTR_VALUE_OR_NULL(channel_op->channel_internal->log_context), "Executing callbacks for pull_correlation_id=%" PRI_RC_STRING ", push_correlation_id=%" PRI_RC_STRING ", callback_result=%" PRI_MU_ENUM "", RC_STRING_VALUE_OR_NULL(channel_op->pull_correlation_id), RC_STRING_VALUE_OR_NULL(channel_op->push_correlation_id), MU_ENUM_VALUE(CHANNEL_CALLBACK_RESULT, result));
 
         /*Codes_SRS_CHANNEL_INTERNAL_43_145: [ execute_callbacks shall call the stored callback(s) with the result of the operation. ]*/
         if (channel_op->pull_callback != NULL)
@@ -210,7 +210,7 @@ static void cancel_op(void* context)
     {
         if (threadpool_schedule_work(channel_internal_ptr->threadpool, execute_callbacks, channel_op) != 0)
         {
-            LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool = %p, execute_callbacks = %p, channel_op = %p)", channel_internal_ptr->threadpool, execute_callbacks, channel_op);
+            LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool=%p, execute_callbacks=%p, channel_op=%p)", channel_internal_ptr->threadpool, execute_callbacks, channel_op);
         }
     }
 }
@@ -230,7 +230,7 @@ static int enqueue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE
     THANDLE(ASYNC_OP) async_op = async_op_create(cancel_op, sizeof(CHANNEL_OP), alignof(CHANNEL_OP), dispose_channel_op);
     if (async_op == NULL)
     {
-        LogError("Failure in async_op_create(cancel_op = %p, sizeof(CHANNEL_OP) = %zu, alignof(CHANNEL_OP) = %zu, dispose_channel_op = %p)", cancel_op, sizeof(CHANNEL_OP), alignof(CHANNEL_OP), dispose_channel_op);
+        LogError("Failure in async_op_create(cancel_op=%p, sizeof(CHANNEL_OP)=%zu, alignof(CHANNEL_OP)=%zu, dispose_channel_op=%p)", cancel_op, sizeof(CHANNEL_OP), alignof(CHANNEL_OP), dispose_channel_op);
         result = MU_FAILURE;
     }
     else
@@ -303,7 +303,7 @@ static int dequeue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE
     /*Codes_SRS_CHANNEL_INTERNAL_43_129: [ channel_internal_push shall call threadpool_schedule_work with execute_callbacks as work_function and the obtained operation as work_function_context. ]*/
     if (threadpool_schedule_work(channel_internal_ptr->threadpool, execute_callbacks, channel_op) != 0)
     {
-        LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool = %p, execute_callbacks = %p, channel_op = %p)", channel_internal_ptr->threadpool, execute_callbacks, channel_op);
+        LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool=%p, execute_callbacks=%p, channel_op=%p)", channel_internal_ptr->threadpool, execute_callbacks, channel_op);
         // undo the dequeue
         THANDLE_ASSIGN(ASYNC_OP)(out_op, NULL);
         if (pull_callback != NULL)
@@ -345,7 +345,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHA
             if (enqueue_operation(channel_internal, out_op_pull, correlation_id, pull_callback, pull_context, NULL, NULL, NULL, NULL) != 0)
             {
                 /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                LogError("Failure in enqueue_operation(channel_internal = %p, out_op_pull = %p, correlation_id = %" PRI_RC_STRING ", pull_callback = %p, pull_context = %p, NULL, NULL, NULL, NULL)", channel_internal, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), pull_callback, pull_context);
+                LogError("Failure in enqueue_operation(channel_internal=%p, out_op_pull=%p, correlation_id=%" PRI_RC_STRING ", pull_callback=%p, pull_context=%p, NULL, NULL, NULL, NULL)", channel_internal, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), pull_callback, pull_context);
                 result = CHANNEL_RESULT_ERROR;
             }
             else
@@ -360,7 +360,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHA
             if (dequeue_operation(channel_internal, out_op_pull, correlation_id, pull_callback, pull_context, NULL, NULL, NULL, NULL) != 0)
             {
                 /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                LogError("Failure in dequeue_operation(channel_internal = %p, out_op_pull = %p, correlation_id = %" PRI_RC_STRING ", pull_callback = %p, pull_context = %p, NULL, NULL, NULL, NULL)", channel_internal, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), pull_callback, pull_context);
+                LogError("Failure in dequeue_operation(channel_internal=%p, out_op_pull=%p, correlation_id=%" PRI_RC_STRING ", pull_callback=%p, pull_context=%p, NULL, NULL, NULL, NULL)", channel_internal, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), pull_callback, pull_context);
                 result = CHANNEL_RESULT_ERROR;
             }
             else
@@ -394,7 +394,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHA
             if (enqueue_operation(channel_internal, out_op_push, NULL, NULL, NULL, correlation_id, push_callback, push_context, data) != 0)
             {
                 /*Codes_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                LogError("Failure in enqueue_operation(channel_internal = %p, out_op_push = %p, NULL, NULL, NULL, correlation_id = %" PRI_RC_STRING ", push_callback = %p, push_context = %p, data = %p)", channel_internal, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), push_callback, push_context, data);
+                LogError("Failure in enqueue_operation(channel_internal=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", push_callback=%p, push_context=%p, data=%p)", channel_internal, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), push_callback, push_context, data);
                 result = CHANNEL_RESULT_ERROR;
             }
             else
@@ -409,7 +409,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHA
             if (dequeue_operation(channel_internal, out_op_push, NULL, NULL, NULL, correlation_id, push_callback, push_context, data) != 0)
             {
                 /*Codes_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                LogError("Failure in dequeue_operation(channel_internal = %p, out_op_push = %p, NULL, NULL, NULL, correlation_id = %" PRI_RC_STRING ", push_callback = %p, push_context = %p, data = %p)", channel_internal, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), push_callback, push_context, data);
+                LogError("Failure in dequeue_operation(channel_internal=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", push_callback=%p, push_context=%p, data=%p)", channel_internal, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), push_callback, push_context, data);
                 result = CHANNEL_RESULT_ERROR;
             }
             else

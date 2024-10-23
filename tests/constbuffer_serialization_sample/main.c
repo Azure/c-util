@@ -67,7 +67,7 @@ static void* awesome_alloc(size_t size, void* context)
 {
     /*here context contains a buffer that *might* grow*/
     AWESOME_ALLOC_CONTEXT* awesome_alloc_context = context;
-    (void)printf("requesting %zu size where buffer = %p, capacity = %zu, size = %zu\n",
+    (void)printf("requesting %zu size where buffer=%p, capacity=%zu, size=%zu\n",
         size, awesome_alloc_context->buffer, awesome_alloc_context->capacity, awesome_alloc_context->size);
     if (awesome_alloc_context->size + size <= awesome_alloc_context->capacity)
     {

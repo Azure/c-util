@@ -42,7 +42,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_
     /* Codes_SRS_CHANNEL_43_077: [ If threadpool is NULL, channel_create shall fail and return NULL. ] */
     if (threadpool == NULL)
     {
-        LogError("Invalid arguments: THANDLE(PTR(LOG_CONTEXT_HANDLE)) log_context = %p, THANDLE(THREADPOOL) threadpool = %p", log_context, threadpool);
+        LogError("Invalid arguments: THANDLE(PTR(LOG_CONTEXT_HANDLE)) log_context=%p, THANDLE(THREADPOOL) threadpool=%p", log_context, threadpool);
     }
     else
     {
@@ -51,7 +51,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_
         if (channel_internal == NULL)
         {
             /*Codes_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
-            LogError("Failure in channel_internal_create_and_open(log_context = %p, threadpool = %p)", log_context, threadpool);
+            LogError("Failure in channel_internal_create_and_open(log_context=%p, threadpool=%p)", log_context, threadpool);
         }
         else
         {
@@ -60,7 +60,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_
             if (channel == NULL)
             {
                 /*Codes_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
-                LogError("Failure in THANDLE_MALLOC(CHANNEL)(channel_dispose = %p)", channel_dispose);
+                LogError("Failure in THANDLE_MALLOC(CHANNEL)(channel_dispose=%p)", channel_dispose);
             }
             else
             {
@@ -92,7 +92,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), ch
         out_op_pull == NULL
         )
     {
-        LogError("Invalid arguments: THANDLE(CHANNEL) channel = %p, THANDLE(RC_STRING) correlation_id = %" PRI_RC_STRING ", PULL_CALLBACK pull_callback = %p, void* pull_context = %p, THANDLE(ASYNC_OP)* out_op_pull = %p", channel, RC_STRING_VALUE_OR_NULL(correlation_id),  pull_callback, pull_context, out_op_pull);
+        LogError("Invalid arguments: THANDLE(CHANNEL) channel=%p, THANDLE(RC_STRING) correlation_id=%" PRI_RC_STRING ", PULL_CALLBACK pull_callback=%p, void* pull_context=%p, THANDLE(ASYNC_OP)* out_op_pull=%p", channel, RC_STRING_VALUE_OR_NULL(correlation_id),  pull_callback, pull_context, out_op_pull);
         result = CHANNEL_RESULT_INVALID_ARGS;
     }
     else
@@ -117,7 +117,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), ch
         out_op_push == NULL
         )
     {
-        LogError("Invalid arguments: THANDLE(CHANNEL) channel = %p, THANDLE(RC_STRING) correlation_id = %" PRI_RC_STRING ", THANDLE(RC_PTR) data = %p, PUSH_CALLBACK push_callback = %p, void* push_context = %p, THANDLE(ASYNC_OP)* out_op_push = %p", channel, RC_STRING_VALUE_OR_NULL(correlation_id), data, push_callback, push_context, out_op_push);
+        LogError("Invalid arguments: THANDLE(CHANNEL) channel=%p, THANDLE(RC_STRING) correlation_id=%" PRI_RC_STRING ", THANDLE(RC_PTR) data=%p, PUSH_CALLBACK push_callback=%p, void* push_context=%p, THANDLE(ASYNC_OP)* out_op_push=%p", channel, RC_STRING_VALUE_OR_NULL(correlation_id), data, push_callback, push_context, out_op_push);
         result = CHANNEL_RESULT_INVALID_ARGS;
     }
     else

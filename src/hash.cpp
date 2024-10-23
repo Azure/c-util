@@ -22,7 +22,7 @@ int hash_compute_hash(const void* buffer, size_t length, uint32_t* hash)
         /* Codes_SRS_HASH_01_002: [ If length is greater than or equal to INT_MAX, hash_compute_hash shall fail and return a non-zero value. ]*/
         (length >= INT_MAX))
     {
-        LogError("Invalid arguments: buffer = %p, length = %zu, hash = %p",
+        LogError("Invalid arguments: buffer=%p, length=%zu, hash=%p",
             buffer, length, hash);
         result = MU_FAILURE;
     }

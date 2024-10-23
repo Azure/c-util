@@ -37,7 +37,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, EXTERNAL_COMMAND_RESULT, external_command_helper_e
         return_code == NULL
         )
     {
-        LogError("Invalid args: const char* command = %s, RC_STRING_ARRAY** lines = %p, int* return_code = %p",
+        LogError("Invalid args: const char* command=%s, RC_STRING_ARRAY** lines=%p, int* return_code=%p",
             command, lines, return_code);
         result = EXTERNAL_COMMAND_INVALID_ARGS;
     }

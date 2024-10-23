@@ -42,7 +42,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 TEST_SUITE_INITIALIZE(suite_init)
 {
     time_t seed = time(NULL);
-    LogInfo("Test using random seed = %u", (unsigned int)seed);
+    LogInfo("Test using random seed=%u", (unsigned int)seed);
     srand((unsigned int)seed);
 }
 

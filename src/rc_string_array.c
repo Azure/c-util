@@ -77,7 +77,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, rc_string_array_destroy, RC_STRING_ARRAY*, r
     if (rc_string_array == NULL)
     {
         /*Codes_SRS_RC_STRING_ARRAY_42_004: [ If rc_string_array is NULL then rc_string_array_destroy shall fail and return. ]*/
-        LogError("Invalid args: RC_STRING_ARRAY* rc_string_array = %p",
+        LogError("Invalid args: RC_STRING_ARRAY* rc_string_array=%p",
             rc_string_array);
     }
     else

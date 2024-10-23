@@ -115,7 +115,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, bool, cancellation_token_is_canceled, THANDLE(CANC
     if (cancellation_token == NULL)
     {
         /*Codes_SRS_CANCELLATION_TOKEN_04_006: [ cancellation_token_is_canceled shall return false if cancellation_token is NULL. ]*/
-        LogError("Invalid args: THANDLE(CANCELLATION_TOKEN) cancellation_token = %p", cancellation_token);
+        LogError("Invalid args: THANDLE(CANCELLATION_TOKEN) cancellation_token=%p", cancellation_token);
         result = false;
     }
     else
@@ -145,7 +145,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CANCELLATION_TOKEN_REGISTRATION), cancella
     {
         /*Codes_SRS_CANCELLATION_TOKEN_04_010: [ cancellation_token_register_notify shall fail and return NULL when cancellation_token is NULL. ]*/
         /*Codes_SRS_CANCELLATION_TOKEN_04_011: [ cancellation_token_register_notify shall fail and return NULL when on_cancel is NULL. ]*/
-        LogError("Invalid args: THANDLE(CANCELLATION_TOKEN) cancellation_token = %p, TCALL_DISPATCHER_TARGET_FUNC_TYPE_NAME(CANCELLATION_TOKEN_CANCEL_CALL) on_cancel = %p, void* context = %p", cancellation_token, on_cancel, context);
+        LogError("Invalid args: THANDLE(CANCELLATION_TOKEN) cancellation_token=%p, TCALL_DISPATCHER_TARGET_FUNC_TYPE_NAME(CANCELLATION_TOKEN_CANCEL_CALL) on_cancel=%p, void* context=%p", cancellation_token, on_cancel, context);
     }
     else
     {
@@ -173,7 +173,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CANCELLATION_TOKEN_REGISTRATION), cancella
                 if (cancel_notification_target_handle == NULL)
                 {
                     /*Codes_SRS_CANCELLATION_TOKEN_04_012: [ cancellation_token_register_notify shall fail and return NULL when any underlying call fails. ]*/
-                    LogError("TCALL_DISPATCHER_REGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL)(token_ptr->cancel_notification_call_dispatcher = %p, on_cancel = %p, context = %p) failed.", token_ptr->cancel_notification_call_dispatcher, on_cancel, context);
+                    LogError("TCALL_DISPATCHER_REGISTER_TARGET(CANCELLATION_TOKEN_CANCEL_CALL)(token_ptr->cancel_notification_call_dispatcher=%p, on_cancel=%p, context=%p) failed.", token_ptr->cancel_notification_call_dispatcher, on_cancel, context);
                 }
                 else
                 {
@@ -202,7 +202,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, cancellation_token_cancel, THANDLE(CANCELLATI
     if (cancellation_token == NULL)
     {
         /*Codes_SRS_CANCELLATION_TOKEN_04_017: [ cancellation_token_cancel shall fail and return a non-zero value if cancellation_token is NULL. ]*/
-        LogError("Invalid args: THANDLE(CANCELLATION_TOKEN) cancellation_token = %p", cancellation_token);
+        LogError("Invalid args: THANDLE(CANCELLATION_TOKEN) cancellation_token=%p", cancellation_token);
         result = MU_FAILURE;
     }
     else

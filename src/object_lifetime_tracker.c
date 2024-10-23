@@ -206,7 +206,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, ob
         (destroy_object == NULL)
         )
     {
-        LogError("Invalid arguments: OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker=%p, const void* key=%p, void* object=%p, DESTROY_OBJECT destroy_object=%p, void* destroy_context = %p", object_lifetime_tracker, key, object, destroy_object, destroy_context);
+        LogError("Invalid arguments: OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker=%p, const void* key=%p, void* object=%p, DESTROY_OBJECT destroy_object=%p, void* destroy_context=%p", object_lifetime_tracker, key, object, destroy_object, destroy_context);
         result = MU_FAILURE;
     }
     else
