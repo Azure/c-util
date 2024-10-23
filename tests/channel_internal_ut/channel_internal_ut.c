@@ -67,7 +67,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 typedef struct THREADPOOL_TAG
 {
     uint8_t dummy;
-} THREADPOOL ;
+} THREADPOOL;
 
 #include "real_interlocked_renames.h" // IWYU pragma: keep
 REAL_THANDLE_DECLARE(THREADPOOL);
