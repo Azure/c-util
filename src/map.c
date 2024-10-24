@@ -25,7 +25,7 @@ typedef struct MAP_HANDLE_DATA_TAG
     MAP_FILTER_CALLBACK mapFilterCallback;
 }MAP_HANDLE_DATA;
 
-#define LOG_MAP_ERROR LogError("result = %" PRI_MU_ENUM "", MU_ENUM_VALUE(MAP_RESULT, result));
+#define LOG_MAP_ERROR LogError("result=%" PRI_MU_ENUM "", MU_ENUM_VALUE(MAP_RESULT, result));
 
 MAP_HANDLE Map_Create(MAP_FILTER_CALLBACK mapFilterFunc)
 {

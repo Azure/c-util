@@ -27,7 +27,7 @@ extern "C" {
         if (dst == NULL) \
         { \
             /* Codes_SRS_ASYNC_TYPE_HELPER_COPY_VALUE_HANDLER_01_004: [ If dst is NULL, the copy handler shall fail and return a non-zero value. ]*/ \
-            LogError("Invalid arguments: dst = %p", dst); \
+            LogError("Invalid arguments: dst=%p", dst); \
             result = MU_FAILURE; \
         } \
         else \

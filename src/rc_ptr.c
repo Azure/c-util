@@ -31,7 +31,7 @@ THANDLE(RC_PTR) rc_ptr_create_with_move_pointer(void* ptr, RC_PTR_FREE_FUNC free
     /*Codes_SRS_RC_PTR_43_001: [ If ptr is NULL, rc_ptr_create_with_move_pointer shall fail and return NULL. ]*/
     if (ptr == NULL)
     {
-        LogError("Invalid arguments: void* ptr=%p, RC_PTR_FREE_FUNC free_func = %p", ptr, free_func);
+        LogError("Invalid arguments: void* ptr=%p, RC_PTR_FREE_FUNC free_func=%p", ptr, free_func);
     }
     else
     {

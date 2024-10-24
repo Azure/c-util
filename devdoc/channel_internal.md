@@ -149,7 +149,7 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
  - **SRS_CHANNEL_INTERNAL_43_123: [** `channel_internal_push` shall set `*out_op_push` to the created `THANDLE(ASYNC_OP)`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_124: [** If the first operation in the list of pending operations contains a `non-NULL` `pull_callback`: **]**
+**SRS_CHANNEL_INTERNAL_43_124: [** Otherwise (the first operation in the list of pending operations contains a `non-NULL` `pull_callback`): **]**
 
  - **SRS_CHANNEL_INTERNAL_43_125: [** `channel_internal_push` shall call `DList_RemoveHeadList` on the list of pending operations to obtain the `operation`. **]**
 

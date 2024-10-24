@@ -33,7 +33,7 @@ static void watchdog_expired_callback(void* context)
     if (context == NULL)
     {
         /*Codes_SRS_WATCHDOG_42_027: [ If context is NULL then watchdog_expired_callback shall terminate the process. ]*/
-        LogCriticalAndTerminate("Invalid args: void* context = %p",
+        LogCriticalAndTerminate("Invalid args: void* context=%p",
             context);
     }
     else
@@ -68,7 +68,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, WATCHDOG_HANDLE, watchdog_start, THANDLE(THREADPOO
         callback == NULL
         )
     {
-        LogError("Invalid args: THANDLE(THREADPOOL) threadpool = %p, uint32_t timeout_ms = %" PRIu32 ", THANDLE(RC_STRING) message = %" PRI_RC_STRING ", WATCHDOG_EXPIRED_CALLBACK callback = %p, void* context = %p",
+        LogError("Invalid args: THANDLE(THREADPOOL) threadpool=%p, uint32_t timeout_ms=%" PRIu32 ", THANDLE(RC_STRING) message=%" PRI_RC_STRING ", WATCHDOG_EXPIRED_CALLBACK callback=%p, void* context=%p",
             threadpool, timeout_ms, RC_STRING_VALUE_OR_NULL(message), callback, context);
         result = NULL;
     }
@@ -141,7 +141,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_reset, WATCHDOG_HANDLE, watchdog)
     if (watchdog == NULL)
     {
         /*Codes_SRS_WATCHDOG_42_031: [ If watchdog is NULL then watchdog_reset shall return. ]*/
-        LogError("Invalid args: WATCHDOG_HANDLE watchdog = %p", watchdog);
+        LogError("Invalid args: WATCHDOG_HANDLE watchdog=%p", watchdog);
     }
     else
     {
@@ -182,7 +182,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_stop, WATCHDOG_HANDLE, watchdog)
     if (watchdog == NULL)
     {
         /*Codes_SRS_WATCHDOG_42_022: [ If watchdog is NULL then watchdog_stop shall return. ]*/
-        LogError("Invalid args: WATCHDOG_HANDLE watchdog = %p", watchdog);
+        LogError("Invalid args: WATCHDOG_HANDLE watchdog=%p", watchdog);
     }
     else
     {

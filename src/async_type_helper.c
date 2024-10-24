@@ -21,7 +21,7 @@ DEFINE_ASYNC_TYPE_HELPER_COPY_HANDLER(UUID_T, dest, source)
     /*Codes_SRS_ASYNC_TYPE_HELPER_04_001: [ If dest is NULL then the copy handler will fail and return a non-zero value. ]*/
     if (dest == NULL)
     {
-        LogError("Invalid args: UUID_T* dest = %p, const UUID_T source = %" PRI_UUID_T "",
+        LogError("Invalid args: UUID_T* dest=%p, const UUID_T source=%" PRI_UUID_T "",
             dest, UUID_T_VALUES_OR_NULL(source));
         result = MU_FAILURE;
     }
@@ -60,7 +60,7 @@ int ASYNC_TYPE_HELPER_COPY_HANDLER(const_UUID_T)(const_UUID_T* dest, const_UUID_
     /* Codes_SRS_ASYNC_TYPE_HELPER_01_001: [ If dest is NULL then the copy handler will fail and return a non-zero value. ]*/
     if (dest == NULL)
     {
-        LogError("Invalid args: const_UUID_T* dest = %p, const const_UUID_T source = %" PRI_UUID_T "",
+        LogError("Invalid args: const_UUID_T* dest=%p, const const_UUID_T source=%" PRI_UUID_T "",
             dest, UUID_T_VALUES_OR_NULL(source));
         result = MU_FAILURE;
     }
@@ -101,7 +101,7 @@ DEFINE_ASYNC_TYPE_HELPER_COPY_HANDLER(const_charptr_t, dest, source)
         dest == NULL
         )
     {
-        LogError("Invalid argument: char** dest = %p, const char* source = %p",
+        LogError("Invalid argument: char** dest=%p, const char* source=%p",
             dest, source);
         result = MU_FAILURE;
     }
@@ -141,7 +141,7 @@ DEFINE_ASYNC_TYPE_HELPER_FREE_HANDLER(const_charptr_t, value)
     if (value == NULL)
     {
         /*Codes_SRS_ASYNC_TYPE_HELPER_42_012: [ If value is NULL then the free handler shall return. ]*/
-        LogError("Invalid arg: char* value = %p", value);
+        LogError("Invalid arg: char* value=%p", value);
     }
     else
     {
@@ -160,7 +160,7 @@ int constbuffer_array_ptr_copy(constbuffer_array_ptr* dest, const constbuffer_ar
         /*Codes_SRS_ASYNC_TYPE_HELPER_28_011: [ If item_count is 0, the copy handler will fail and return a non-zero value. ]*/
         item_count == 0)
     {
-        LogError("Invalid argument: CONSTBUFFER_ARRAY_HANDLE** dest = %p, const CONSTBUFFER_ARRAY_HANDLE* src = %p, uin32_t item_count = %" PRIu32 "",
+        LogError("Invalid argument: CONSTBUFFER_ARRAY_HANDLE** dest=%p, const CONSTBUFFER_ARRAY_HANDLE* src=%p, uin32_t item_count=%" PRIu32 "",
             dest, src, item_count);
         result = MU_FAILURE;
     }
@@ -206,7 +206,7 @@ void constbuffer_array_ptr_free(const constbuffer_array_ptr value, uint32_t item
         /*Codes_SRS_ASYNC_TYPE_HELPER_28_012: [ If item_count is 0, the free handler shall return. ]*/
         item_count == 0)
     {
-        LogError("Invalid arg: CONSTBUFFER_ARRAY_HANDLE* value = %p, uin32_t item_count = %" PRIu32 "", value, item_count);
+        LogError("Invalid arg: CONSTBUFFER_ARRAY_HANDLE* value=%p, uin32_t item_count=%" PRIu32 "", value, item_count);
     }
     else
     {

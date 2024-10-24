@@ -23,7 +23,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, RC_STRING_ARRAY*, rc_string_utils_split_by_char, T
     if (str == NULL)
     {
         /*Codes_SRS_RC_STRING_UTILS_42_001: [ If str is NULL then rc_string_utils_split_by_char shall fail and return NULL. ]*/
-        LogError("Invalid argument: THANDLE(RC_STRING) str = %" PRI_RC_STRING ", char = %c",
+        LogError("Invalid argument: THANDLE(RC_STRING) str=%" PRI_RC_STRING ", char=%c",
             RC_STRING_VALUE_OR_NULL(str), delimiter);
         result = NULL;
     }

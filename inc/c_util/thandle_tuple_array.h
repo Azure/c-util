@@ -92,7 +92,7 @@ extern "C" {
         if (tuple_array == NULL) \
         { \
             /*Codes_SRS_THANDLE_TUPLE_ARRAY_42_006: [ If tuple_array is NULL then THANDLE_TUPLE_ARRAY_DESTROY(name) shall fail and return. ]*/ \
-            LogError("Invalid args: " MU_TOSTRING(THANDLE_TUPLE_ARRAY_TYPE(name)) "* tuple_array = %p", \
+            LogError("Invalid args: " MU_TOSTRING(THANDLE_TUPLE_ARRAY_TYPE(name)) "* tuple_array=%p", \
                 tuple_array); \
         } \
         else \

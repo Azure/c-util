@@ -93,7 +93,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, sliding_window_average_by_count_add, THANDLE(
     if (handle == NULL)
     {
         // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_008: [ sliding_window_average_by_count_add shall return a non-zero value if handle is NULL. ]
-        LogError("Invalid arguments: THANDLE(SLIDING_WINDOW_AVERAGE) handle = %p, int64_t next_count = %" PRId64 "", handle, next_count);
+        LogError("Invalid arguments: THANDLE(SLIDING_WINDOW_AVERAGE) handle=%p, int64_t next_count=%" PRId64 "", handle, next_count);
         result = MU_FAILURE;
     }
     else
@@ -145,7 +145,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int,  sliding_window_average_by_count_get, THANDLE
         // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_022: [ sliding_window_average_by_count_get shall return a non-zero value if average is NULL. ]
         average == NULL)
     {
-        LogError("Invalid arguments: THANDLE(SLIDING_WINDOW_AVERAGE) handle = %p, double* average = %p", handle, average);
+        LogError("Invalid arguments: THANDLE(SLIDING_WINDOW_AVERAGE) handle=%p, double* average=%p", handle, average);
         result = MU_FAILURE;
     }
     else

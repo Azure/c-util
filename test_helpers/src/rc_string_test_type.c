@@ -115,7 +115,7 @@ int umocktypes_are_equal_THANDLE_RC_STRING(THANDLE(RC_STRING)* left, THANDLE(RC_
 
     if ((left == NULL) || (right == NULL))
     {
-        UMOCK_LOG("umocktypes_are_equal_THANDLE_RC_STRING: Bad arguments:left = %p, right = %p.", left, right);
+        UMOCK_LOG("umocktypes_are_equal_THANDLE_RC_STRING: Bad arguments:left=%p, right=%p.", left, right);
         result = -1;
     }
     else if ((*left == NULL) || (*right == NULL))
@@ -147,7 +147,7 @@ int umocktypes_copy_THANDLE_RC_STRING(THANDLE(RC_STRING)* destination, THANDLE(R
 
     if ((destination == NULL) || (source == NULL))
     {
-        UMOCK_LOG("umocktypes_copy_THANDLE_RC_STRING: Bad arguments: destination = %p, source = %p.",
+        UMOCK_LOG("umocktypes_copy_THANDLE_RC_STRING: Bad arguments: destination=%p, source=%p.",
             destination, source);
         result = MU_FAILURE;
     }

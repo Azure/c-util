@@ -20,6 +20,9 @@
 #define ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
+#include "c_pal/execution_engine.h"
+#include "c_pal/interlocked.h"
+#include "c_pal/interlocked_hl.h"
 #include "c_pal/srw_lock.h"
 #include "c_pal/threadpool.h"
 #include "c_pal/thandle_log_context_handle.h"
@@ -33,8 +36,9 @@
 #include "umock_c/umock_c_prod.h"
 
 #include "real_gballoc_hl.h"
+#include "real_interlocked.h"
 #include "real_srw_lock.h"
-#include "real_threadpool.h"
+#include "real_thandle_helper.h"
 #include "real_thandle_log_context_handle.h"
 
 #include "real_doublylinkedlist.h"
@@ -60,17 +64,29 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
+typedef struct THREADPOOL_TAG
+{
+    uint8_t dummy;
+} THREADPOOL;
+
+#include "real_interlocked_renames.h" // IWYU pragma: keep
+REAL_THANDLE_DECLARE(THREADPOOL);
+REAL_THANDLE_DEFINE(THREADPOOL);
+#include "real_interlocked_undo_rename.h" // IWYU pragma: keep
+
+static void dispose_REAL_THREADPOOL_do_nothing(REAL_THREADPOOL* nothing)
+{
+    (void)nothing;
+}
+
 static struct G_TAG /*g comes from "global*/
 {
     THANDLE(PTR(LOG_CONTEXT_HANDLE)) g_log_context;
     THANDLE(RC_STRING) g_pull_correlation_id;
     THANDLE(RC_STRING) g_push_correlation_id;
+    THANDLE(THREADPOOL) g_threadpool;
 } g = { NULL };
 
-static struct TEST_THREADPOOL_TAG
-{
-    THANDLE(THREADPOOL) test_threadpool;
-} test_threadpool = {(void*)0x1000};
 static void* test_data = (void*)0x1001;
 static void* test_data_2 = (void*)0x1002;
 
@@ -177,12 +193,12 @@ static void setup_second_op_expectations(bool is_pull, bool expected_fail, THREA
     STRICT_EXPECTED_CALL(DList_IsListEmpty(IGNORED_ARG));
     STRICT_EXPECTED_CALL(DList_RemoveHeadList(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, IGNORED_ARG));
-    is_pull? (void)0 : (void)STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_PTR)(IGNORED_ARG, IGNORED_ARG));
+    is_pull ? (void)0 : (void)STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_PTR)(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(threadpool_schedule_work(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CaptureArgumentValue_work_function(captured_work_function)
         .CaptureArgumentValue_work_function_context(captured_work_context)
-        .SetReturn(expected_fail? 1 : 0);
+        .SetReturn(expected_fail ? 1 : 0);
     if (expected_fail)
     {
         STRICT_EXPECTED_CALL(THANDLE_ASSIGN(ASYNC_OP)(IGNORED_ARG, NULL));
@@ -268,6 +284,8 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(srw_lock_create, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(threadpool_schedule_work, 1);
 
+    REGISTER_REAL_THANDLE_MOCK_HOOK(THREADPOOL);
+
     REGISTER_UMOCK_ALIAS_TYPE(EXECUTION_ENGINE_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(THREADPOOL), void*);
     REGISTER_UMOCK_ALIAS_TYPE(THREADPOOL_WORK_FUNCTION, void*);
@@ -311,13 +329,19 @@ TEST_SUITE_INITIALIZE(suite_init)
         ASSERT_IS_NOT_NULL(push_correlation_id);
         THANDLE_INITIALIZE_MOVE(real_RC_STRING)((THANDLE(RC_STRING)*) & g.g_push_correlation_id, &push_correlation_id);
     }
+    {
+        THANDLE(THREADPOOL) temp = THANDLE_MALLOC(REAL_THREADPOOL)(dispose_REAL_THREADPOOL_do_nothing);
+        ASSERT_IS_NOT_NULL(temp);
+        THANDLE_MOVE(REAL_THREADPOOL)(&g.g_threadpool, &temp);
+    }
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
+    THANDLE_ASSIGN(REAL_THREADPOOL)(&g.g_threadpool, NULL);
     THANDLE_ASSIGN(real_RC_STRING)((THANDLE(RC_STRING)*) & g.g_push_correlation_id, NULL);
-    THANDLE_ASSIGN(real_RC_STRING)((THANDLE(RC_STRING)*)&g.g_pull_correlation_id, NULL);
-    THANDLE_ASSIGN(PTR(real_LOG_CONTEXT_HANDLE))((THANDLE(PTR(real_LOG_CONTEXT_HANDLE))*)&g.g_log_context, NULL);
+    THANDLE_ASSIGN(real_RC_STRING)((THANDLE(RC_STRING)*) & g.g_pull_correlation_id, NULL);
+    THANDLE_ASSIGN(PTR(real_LOG_CONTEXT_HANDLE))((THANDLE(PTR(real_LOG_CONTEXT_HANDLE))*) & g.g_log_context, NULL);
     umock_c_deinit();
 }
 
@@ -346,7 +370,7 @@ TEST_FUNCTION(channel_internal_create_and_open_succeeds)
     setup_channel_internal_create_and_open_expectations();
 
     //act
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
 
     //assert
     ASSERT_IS_NOT_NULL(channel_internal);
@@ -370,7 +394,7 @@ TEST_FUNCTION(channel_internal_create_and_open_fails_when_underlying_functions_f
             umock_c_negative_tests_fail_call(i);
 
             // act
-            THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+            THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
 
             // assert
             ASSERT_IS_NULL(channel_internal, "On failed call %zu", i);
@@ -390,7 +414,7 @@ TEST_FUNCTION(channel_internal_create_and_open_fails_when_underlying_functions_f
 TEST_FUNCTION(channel_internal_close_calls_underlying_functions)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     THANDLE(ASYNC_OP) pull_op = NULL;
     int32_t pull_context = 0;
     CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_abandoned, &pull_context, &pull_op);
@@ -429,7 +453,7 @@ TEST_FUNCTION(channel_internal_close_calls_underlying_functions)
 TEST_FUNCTION(channel_internal_dispose_calls_underlying_functions)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(PTR(LOG_CONTEXT_HANDLE))(IGNORED_ARG, NULL));
@@ -458,7 +482,7 @@ TEST_FUNCTION(channel_internal_dispose_calls_underlying_functions)
 TEST_FUNCTION(channel_internal_pull_on_empty_succeeds)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     THANDLE(ASYNC_OP) pull_op = NULL;
     umock_c_reset_all_calls();
 
@@ -474,7 +498,7 @@ TEST_FUNCTION(channel_internal_pull_on_empty_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //cleanup
-    cleanup_pending_ops(channel_internal, (int32_t*[]) { &pull_context }, 1);
+    cleanup_pending_ops(channel_internal, (int32_t * []) { &pull_context }, 1);
     ASSERT_ARE_EQUAL(int, 1, pull_context);
     THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
     THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
@@ -492,7 +516,7 @@ TEST_FUNCTION(channel_internal_pull_on_empty_succeeds)
 TEST_FUNCTION(channel_internal_pull_after_pull_succeeds)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     int32_t pull_context_1 = 0;
     THANDLE(ASYNC_OP) pull_op_1 = NULL;
     CHANNEL_RESULT pull_result_1 = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_abandoned, &pull_context_1, &pull_op_1);
@@ -513,7 +537,7 @@ TEST_FUNCTION(channel_internal_pull_after_pull_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //cleanup
-    cleanup_pending_ops(channel_internal, (int32_t*[]) { &pull_context_1, &pull_context_2 }, 2);
+    cleanup_pending_ops(channel_internal, (int32_t * []) { &pull_context_1, & pull_context_2 }, 2);
     THANDLE_ASSIGN(ASYNC_OP)(&pull_op_2, NULL);
     THANDLE_ASSIGN(ASYNC_OP)(&pull_op_1, NULL);
 
@@ -531,7 +555,7 @@ TEST_FUNCTION(channel_internal_pull_after_pull_succeeds)
 TEST_FUNCTION(channel_internal_pull_after_push_succeeds)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     int32_t push_context = 0;
     THANDLE(ASYNC_OP) push_op = NULL;
     THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
@@ -570,7 +594,7 @@ TEST_FUNCTION(channel_internal_pull_after_push_succeeds)
 TEST_FUNCTION(channel_internal_pull_fails_when_underlying_functions_fail)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     THANDLE(ASYNC_OP) pull_op = NULL;
     umock_c_reset_all_calls();
 
@@ -603,7 +627,7 @@ TEST_FUNCTION(channel_internal_pull_fails_when_underlying_functions_fail)
 TEST_FUNCTION(channel_internal_pull_after_push_fails_when_underlying_functions_fail)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
     int32_t push_context = 0;
     THANDLE(ASYNC_OP) push_op = NULL;
@@ -665,7 +689,7 @@ TEST_FUNCTION(channel_internal_pull_after_push_fails_when_underlying_functions_f
 TEST_FUNCTION(channel_internal_push_on_empty_succeeds)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
     THANDLE(ASYNC_OP) push_op = NULL;
     umock_c_reset_all_calls();
@@ -701,7 +725,7 @@ TEST_FUNCTION(channel_internal_push_on_empty_succeeds)
 TEST_FUNCTION(channel_internal_push_after_push_succeeds)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     int32_t push_context_1 = 0;
     THANDLE(RC_PTR) data_1 = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
     THANDLE(ASYNC_OP) push_op_1 = NULL;
@@ -724,7 +748,7 @@ TEST_FUNCTION(channel_internal_push_after_push_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //cleanup
-    cleanup_pending_ops(channel_internal, (int32_t * []) { &push_context_1, &push_context_2 }, 2);
+    cleanup_pending_ops(channel_internal, (int32_t * []) { &push_context_1, & push_context_2 }, 2);
     THANDLE_ASSIGN(ASYNC_OP)(&push_op_2, NULL);
     THANDLE_ASSIGN(RC_PTR)(&data_2, NULL);
     THANDLE_ASSIGN(ASYNC_OP)(&push_op_1, NULL);
@@ -734,7 +758,7 @@ TEST_FUNCTION(channel_internal_push_after_push_succeeds)
 }
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_116: [ channel_internal_push shall call srw_lock_acquire_exclusive. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_124: [ If the first operation in the list of pending operations contains a non-NULL pull_callback: ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_124: [ Otherwise (the first operation in the list of pending operations contains a non-NULL pull_callback): ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_125: [ channel_internal_push shall call DList_RemoveHeadList on the list of pending operations to obtain the operation. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_128: [ channel_internal_push shall store the correlation_id, push_callback, push_context and data in the obtained operation. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_129: [ channel_internal_push shall call threadpool_schedule_work with execute_callbacks as work_function and the obtained operation as work_function_context. ]*/
@@ -744,7 +768,7 @@ TEST_FUNCTION(channel_internal_push_after_push_succeeds)
 TEST_FUNCTION(channel_internal_push_after_pull_succeeds)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     int32_t pull_context = 0;
     THANDLE(ASYNC_OP) pull_op = NULL;
     CHANNEL_RESULT pull_result_1 = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_ok, &pull_context, &pull_op);
@@ -785,7 +809,7 @@ TEST_FUNCTION(channel_internal_push_after_pull_succeeds)
 TEST_FUNCTION(channel_internal_push_fails_when_underlying_functions_fail)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     THANDLE(ASYNC_OP) push_op = NULL;
     THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
     umock_c_reset_all_calls();
@@ -820,7 +844,7 @@ TEST_FUNCTION(channel_internal_push_fails_when_underlying_functions_fail)
 TEST_FUNCTION(channel_internal_push_after_pull_fails_when_underlying_functions_fail)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     THANDLE(ASYNC_OP) pull_op = NULL;
     int32_t pull_context = 0;
     CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_cancelled, &pull_context, &pull_op);
@@ -878,7 +902,7 @@ TEST_FUNCTION(channel_internal_push_after_pull_fails_when_underlying_functions_f
 TEST_FUNCTION(channel_internal_cancel_op_cancels_pull)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     int32_t pull_context = 0;
     THANDLE(ASYNC_OP) pull_op = NULL;
     CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_cancelled, &pull_context, &pull_op);
@@ -910,7 +934,7 @@ TEST_FUNCTION(channel_internal_cancel_op_cancels_pull)
 TEST_FUNCTION(channel_internal_cancel_op_cancels_matched_op)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
     umock_c_reset_all_calls();
 
@@ -958,7 +982,7 @@ TEST_FUNCTION(channel_internal_cancel_op_cancels_matched_op)
 TEST_FUNCTION(channel_internal_cancel_fails_when_underlying_functions_fail)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     int32_t pull_context = 0;
     THANDLE(ASYNC_OP) pull_op = NULL;
     CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_cancelled, &pull_context, &pull_op);
@@ -1004,7 +1028,7 @@ TEST_FUNCTION(channel_internal_cancel_fails_when_underlying_functions_fail)
 TEST_FUNCTION(channel_internal_execute_callback_fails_with_NULL_context)
 {
     //arrange
-    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, test_threadpool.test_threadpool);
+    THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(g.g_log_context, g.g_threadpool);
     THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
     umock_c_reset_all_calls();
 
