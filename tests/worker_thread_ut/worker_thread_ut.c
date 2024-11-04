@@ -17,6 +17,7 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/interlocked.h"
+#include "c_pal/interlocked_hl.h"
 #include "c_pal/sm.h"
 #include "c_pal/sync.h"
 #include "c_pal/threadapi.h"
