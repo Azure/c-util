@@ -8,13 +8,14 @@ set(${theseTestsName}_test_files
 )
 
 set(${theseTestsName}_c_files
+    ../../src/worker_thread.c
 )
 
 set(${theseTestsName}_h_files
     ../../inc/c_util/worker_thread.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util pal_interfaces c_pal_reals c_pal_reals c_util_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS pal_interfaces c_pal_reals c_pal_reals c_util_reals)
 
 if (WIN32)
     if("${building}" STREQUAL "exe")
