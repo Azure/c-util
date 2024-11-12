@@ -182,12 +182,12 @@ TQUEUE(T) TQUEUE_CREATE(T)(uint32_t queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_it
 
 ### TQUEUE_CREATE_GROWABLE(T)
 ```c
-TQUEUE(T) TQUEUE_CREATE(T)(uint32_t queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T) dispose_item_function, void* dispose_item_function_context);
+TQUEUE(T) TQUEUE_CREATE_GROWABLE(T)(uint32_t initial_queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T) dispose_item_function, void* dispose_item_function_context);
 ```
 
 `TQUEUE_CREATE_GROWABLE(T)` creates a new `TQUEUE(T)` which doubles in size when it reaches capacity.
 
-If `queue_size` is 0, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`.
+If `initial_queue_size` is 0, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`.
 
 If any of `copy_item_function` and `dispose_item_function` is `NULL` and at least one of them is not `NULL`, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`.
 
@@ -199,7 +199,7 @@ If `TQUEUE_CREATE_GROWABLE(T)` shall call `THANDLE_MALLOC` with `TQUEUE_DISPOSE_
 
 `TQUEUE_CREATE_GROWABLE(T)` shall initialize the state for each entry in the array used for the queue with `NOT_USED` by using `interlocked_exchange`.
 
-`TQUEUE_CREATE_GROWABLE(T)` shall initialize an `SRW_LOCK_LL` to be used for locking the queue when it needs to grow in size.
+`TQUEUE_CREATE_GROWABLE(T)` shall initialize a `SRW_LOCK_LL` to be used for locking the queue when it needs to grow in size.
 
 `TQUEUE_CREATE_GROWABLE(T)` shall succeed and return a non-`NULL` value.
 
@@ -237,7 +237,7 @@ TQUEUE_PUSH_RESULT TQUEUE_PUSH(T)(TQUEUE(T) tqueue, T* item, void* copy_item_fun
 
 **SRS_TQUEUE_01_013: [** If `item` is `NULL` then `TQUEUE_PUSH(T)` shall fail and return `TQUEUE_PUSH_INVALID_ARG`. **]**
 
-If `growable` was `true` in `TQUEUE_CREATE(T)`, `TQUEUE_PUSH(T)` shall acquire the lock used to guard the growing of the queue in shared mode.
+If the queue is growable, `TQUEUE_PUSH(T)` shall acquire in shared mode the lock used to guard the growing of the queue.
 
 **SRS_TQUEUE_01_014: [** `TQUEUE_PUSH(T)` shall execute the following actions until it is either able to push the item in the queue or the queue is full: **]**
 
@@ -253,9 +253,9 @@ If `growable` was `true` in `TQUEUE_CREATE(T)`, `TQUEUE_PUSH(T)` shall acquire t
 
   - If the queue is growable:
 
-    - `TQUEUE_PUSH(T)` shall release the lock used to guard the growing of the queue in shared mode.
+    - `TQUEUE_PUSH(T)` shall release in shared mode the lock used to guard the growing of the queue.
 
-    - `TQUEUE_PUSH(T)` shall acquire the lock used to guard the growing of the queue in exclusive mode.
+    - `TQUEUE_PUSH(T)` shall acquire in exclusive mode the lock used to guard the growing of the queue.
 
     - `TQUEUE_PUSH(T)` shall double the size of the queue.
 
@@ -263,9 +263,9 @@ If `growable` was `true` in `TQUEUE_CREATE(T)`, `TQUEUE_PUSH(T)` shall acquire t
 
     - If reallocation fails, `TQUEUE_PUSH(T)` shall return `TQUEUE_PUSH_QUEUE_FULL`.
 
-    - Otherwise, `TQUEUE_PUSH(T)` shall release the lock used to guard the growing of the queue in exclusive mode.
+    - Otherwise, `TQUEUE_PUSH(T)` shall release in exclusive mode the lock used to guard the growing of the queue.
 
-    - `TQUEUE_PUSH(T)` shall acquire the lock used to guard the growing of the queue in shared mode and retry the `TQUEUE_PUSH(T)`.
+    - `TQUEUE_PUSH(T)` shall acquire in shared mode the lock used to guard the growing of the queue and retry the `TQUEUE_PUSH(T)`.
 
 - **SRS_TQUEUE_01_017: [** Using `interlocked_compare_exchange`, `TQUEUE_PUSH(T)` shall change the head array entry state to `PUSHING` (from `NOT_USED`). **]**
 
@@ -281,7 +281,7 @@ If `growable` was `true` in `TQUEUE_CREATE(T)`, `TQUEUE_PUSH(T)` shall acquire t
 
 - **SRS_TQUEUE_01_020: [** `TQUEUE_PUSH(T)` shall set the state to `USED` by using `interlocked_exchange`. **]**
 
-`TQUEUE_PUSH(T)` shall release the lock used to guard the growing of the queue in shared mode.
+`TQUEUE_PUSH(T)` shall release in shared mode the lock used to guard the growing of the queue.
 
 - **SRS_TQUEUE_01_021: [** `TQUEUE_PUSH(T)` shall succeed and return `TQUEUE_PUSH_OK`. **]**
 
@@ -296,7 +296,7 @@ TQUEUE_POP_RESULT TQUEUE_POP(T)(TQUEUE(T) tqueue, T* item, void* pop_function_co
 
 **SRS_TQUEUE_01_027: [** If `item` is `NULL` then `TQUEUE_POP(T)` shall fail and return `TQUEUE_POP_INVALID_ARG`. **]**
 
-If `growable` was `true` in `TQUEUE_CREATE(T)`, `TQUEUE_POP(T)` shall acquire the lock used to guard the growing of the queue.
+If the queue is growable, `TQUEUE_POP(T)` shall acquire in shared mode the lock used to guard the growing of the queue.
 
 **SRS_TQUEUE_01_026: [** `TQUEUE_POP(T)` shall execute the following actions until it is either able to pop the item from the queue or the queue is empty: **]**
 
@@ -334,7 +334,7 @@ If `growable` was `true` in `TQUEUE_CREATE(T)`, `TQUEUE_POP(T)` shall acquire th
 
   - **SRS_TQUEUE_01_034: [** `TQUEUE_POP(T)` shall set the state to `NOT_USED` by using `interlocked_exchange`, succeed and return `TQUEUE_POP_OK`. **]**
 
-`TQUEUE_POP(T)` shall release the lock used to guard the growing of the queue.
+`TQUEUE_POP(T)` shall release in shared mode the lock used to guard the growing of the queue.
 
 ### TQUEUE_GET_VOLATILE_COUNT(T)
 ```c
