@@ -7,8 +7,6 @@
 
 #include "c_pal/thandle.h"
 
-#include "c_util/async_op.h"
-
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 
 #define REGISTER_ASYNC_OP_GLOBAL_MOCK_HOOKS() \
@@ -25,11 +23,14 @@
 extern "C" {
 #endif
 
+#include "c_util/async_op.h"
+#include "umock_c/umock_c_prod.h"
+
     typedef struct ASYNC_OP_TAG real_ASYNC_OP;
     THANDLE_TYPE_DECLARE(real_ASYNC_OP);
 
-    THANDLE(real_ASYNC_OP) real_async_op_create(ASYNC_OP_CANCEL_IMPL cancel, uint32_t context_size, uint32_t context_align, ASYNC_OP_DISPOSE dispose);
-    ASYNC_OP_STATE real_async_op_cancel(THANDLE(real_ASYNC_OP) async_op);
+    THANDLE(ASYNC_OP) real_async_op_create(ASYNC_OP_CANCEL_IMPL cancel, uint32_t context_size, uint32_t context_align, ASYNC_OP_DISPOSE dispose);
+    ASYNC_OP_STATE real_async_op_cancel(THANDLE(ASYNC_OP) async_op);
 
 #ifdef __cplusplus
 }
