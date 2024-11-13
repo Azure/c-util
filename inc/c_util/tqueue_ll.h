@@ -332,11 +332,44 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
             int64_t current_head = interlocked_add_64(&tqueue_ptr->head, 0);                                                                                        \
             /* Codes_SRS_TQUEUE_01_016: [ TQUEUE_PUSH(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/                                     \
             int64_t current_tail = interlocked_add_64(&tqueue_ptr->tail, 0);                                                                                        \
+            /* Codes_SRS_TQUEUE_01_060: [ If the queue is full (current head >= current tail + queue size): ]*/                                                     \
             if (current_head >= current_tail + tqueue_ptr->queue_size)                                                                                              \
             {                                                                                                                                                       \
-                /* Codes_SRS_TQUEUE_01_022: [ If the queue is full (current head >= current tail + queue size), TQUEUE_PUSH(T) shall return TQUEUE_PUSH_QUEUE_FULL. ]*/ \
-                result = TQUEUE_PUSH_QUEUE_FULL;                                                                                                                    \
-                break;                                                                                                                                              \
+                /* Codes_SRS_TQUEUE_01_062: [ If the queue is growable: ] */                                                                                        \
+                if (tqueue_ptr->queue_type == TQUEUE_TYPE_GROWABLE)                                                                                                 \
+                {                                                                                                                                                   \
+                    /* Codes_SRS_TQUEUE_01_063: [ TQUEUE_PUSH(T) shall release in shared mode the lock used to guard the growing of the queue. ] */                 \
+                    srw_lock_ll_release_shared(&tqueue_ptr->resize_lock);                                                                                           \
+                    /* Codes_SRS_TQUEUE_01_064: [ TQUEUE_PUSH(T) shall acquire in exclusive mode the lock used to guard the growing of the queue. ] */              \
+                    srw_lock_ll_acquire_exclusive(&tqueue_ptr->resize_lock);                                                                                        \
+                    uint32_t new_queue_size = tqueue_ptr->queue_size * 2;                                                                                           \
+                    TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)* temp_queue = realloc_2(tqueue_ptr->queue, new_queue_size, sizeof(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)));          \
+                    if (temp_queue == NULL)                                                                                                                         \
+                    {                                                                                                                                               \
+                        LogError("realloc_2(tqueue_ptr->queue=%p, new_queue_size=%" PRIu32 ", sizeof(" MU_TOSTRING(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)) ")=%zu) failed", \
+                            tqueue_ptr->queue, new_queue_size, sizeof(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)));                                                           \
+                    }                                                                                                                                               \
+                    else                                                                                                                                            \
+                    {                                                                                                                                               \
+                        tqueue_ptr->queue = temp_queue;                                                                                                             \
+                        for (uint32_t i = tqueue_ptr->queue_size; i < new_queue_size; i++)                                                                          \
+                        {                                                                                                                                           \
+                            (void)interlocked_exchange(&tqueue_ptr->queue[i].state, QUEUE_ENTRY_STATE_NOT_USED);                                                    \
+                        }                                                                                                                                           \
+                        tqueue_ptr->queue_size = new_queue_size;                                                                                                    \
+                    }                                                                                                                                               \
+                    /* Codes_SRS_TQUEUE_01_065: [ TQUEUE_PUSH(T) shall release in exclusive mode the lock used to guard the growing of the queue. ] */              \
+                    srw_lock_ll_release_exclusive(&tqueue_ptr->resize_lock);                                                                                        \
+                    /* Codes_SRS_TQUEUE_01_066: [ TQUEUE_PUSH(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */                 \
+                    srw_lock_ll_acquire_shared(&tqueue_ptr->resize_lock);                                                                                           \
+                    continue;                                                                                                                                       \
+                }                                                                                                                                                   \
+                else                                                                                                                                                \
+                {                                                                                                                                                   \
+                    /* Codes_SRS_TQUEUE_01_061: [ If the queue is not growable, TQUEUE_PUSH(T) shall return TQUEUE_PUSH_QUEUE_FULL. ]*/                             \
+                    result = TQUEUE_PUSH_QUEUE_FULL;                                                                                                                \
+                    break;                                                                                                                                          \
+                }                                                                                                                                                   \
             }                                                                                                                                                       \
             else                                                                                                                                                    \
             {                                                                                                                                                       \

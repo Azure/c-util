@@ -249,17 +249,15 @@ TQUEUE_PUSH_RESULT TQUEUE_PUSH(T)(TQUEUE(T) tqueue, T* item, void* copy_item_fun
 
 - **SRS_TQUEUE_01_016: [** `TQUEUE_PUSH(T)` shall obtain the current tail queue by calling `interlocked_add_64`. **]**
 
-- **SRS_TQUEUE_01_022: [** If the queue is full (current head >= current tail + queue size), `TQUEUE_PUSH(T)` shall return `TQUEUE_PUSH_QUEUE_FULL`. **]**
+- **SRS_TQUEUE_01_060: [** If the queue is full (current head >= current tail + queue size): **]**
 
-- If the queue is full (current head >= current tail + queue size):
+  - **SRS_TQUEUE_01_061: [** If the queue is not growable, `TQUEUE_PUSH(T)` shall return `TQUEUE_PUSH_QUEUE_FULL`. **]**
 
-  - If the queue is not growable, `TQUEUE_PUSH(T)` shall return `TQUEUE_PUSH_QUEUE_FULL`.
+  - **SRS_TQUEUE_01_062: [** If the queue is growable: **]**
 
-  - If the queue is growable:
+    - **SRS_TQUEUE_01_063: [** `TQUEUE_PUSH(T)` shall release in shared mode the lock used to guard the growing of the queue. **]**
 
-    - `TQUEUE_PUSH(T)` shall release in shared mode the lock used to guard the growing of the queue.
-
-    - `TQUEUE_PUSH(T)` shall acquire in exclusive mode the lock used to guard the growing of the queue.
+    - **SRS_TQUEUE_01_064: [** `TQUEUE_PUSH(T)` shall acquire in exclusive mode the lock used to guard the growing of the queue. **]**
 
     - If the size of the queue did not change after acquiring the lock in shared mode:
     
@@ -269,11 +267,11 @@ TQUEUE_PUSH_RESULT TQUEUE_PUSH(T)(TQUEUE(T) tqueue, T* item, void* copy_item_fun
 
       - `TQUEUE_PUSH(T)` shall reallocate the array used to store the queue items based on the newly computed size.
 
+      - **SRS_TQUEUE_01_065: [** `TQUEUE_PUSH(T)` shall release in exclusive mode the lock used to guard the growing of the queue. **]**
+
       - If reallocation fails, `TQUEUE_PUSH(T)` shall return `TQUEUE_PUSH_ERROR`.
 
-    - Otherwise, `TQUEUE_PUSH(T)` shall release in exclusive mode the lock used to guard the growing of the queue.
-
-    - `TQUEUE_PUSH(T)` shall acquire in shared mode the lock used to guard the growing of the queue and retry the `TQUEUE_PUSH(T)`.
+    - **SRS_TQUEUE_01_066: [** `TQUEUE_PUSH(T)` shall acquire in shared mode the lock used to guard the growing of the queue and retry the `TQUEUE_PUSH(T)`. **]**
 
 - **SRS_TQUEUE_01_017: [** Using `interlocked_compare_exchange`, `TQUEUE_PUSH(T)` shall change the head array entry state to `PUSHING` (from `NOT_USED`). **]**
 

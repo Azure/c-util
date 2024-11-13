@@ -619,7 +619,8 @@ TEST_FUNCTION(TQUEUE_PUSH_twice_copies_the_data_in)
     TQUEUE_ASSIGN(int32_t)(&queue, NULL);
 }
 
-/* Tests_SRS_TQUEUE_01_022: [ If the queue is full (current head >= current tail + queue size), TQUEUE_PUSH(T) shall return TQUEUE_PUSH_QUEUE_FULL. ]*/
+/* Tests_SRS_TQUEUE_01_060: [ If the queue is full (current head >= current tail + queue size): ]*/
+    /* Tests_SRS_TQUEUE_01_061: [ If the queue is not growable, TQUEUE_PUSH(T) shall return TQUEUE_PUSH_QUEUE_FULL. ]*/
 TEST_FUNCTION(TQUEUE_PUSH_twice_for_queue_size_1_returns_QUEUE_FULL)
 {
     // arrange
@@ -806,6 +807,63 @@ TEST_FUNCTION(TQUEUE_PUSH_for_a_growable_queue_locks_and_unlocks)
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_PUSHING, QUEUE_ENTRY_STATE_NOT_USED)); // entry state
     STRICT_EXPECTED_CALL(interlocked_compare_exchange_64(IGNORED_ARG, 1, 0)); // head change
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_USED)); // entry state
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
+
+    // act
+    TQUEUE_PUSH_RESULT result = TQUEUE_PUSH(int32_t)(queue, &item, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(TQUEUE_PUSH_RESULT, TQUEUE_PUSH_OK, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // clean
+    TQUEUE_ASSIGN(int32_t)(&queue, NULL);
+}
+
+/* Tests_SRS_TQUEUE_01_058: [ If the queue is growable, TQUEUE_PUSH(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */
+/* Tests_SRS_TQUEUE_01_014: [ TQUEUE_PUSH(T) shall execute the following actions until it is either able to push the item in the queue or the queue is full: ]*/
+    /* Tests_SRS_TQUEUE_01_015: [ TQUEUE_PUSH(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
+    /* Tests_SRS_TQUEUE_01_016: [ TQUEUE_PUSH(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/
+    /* Tests_SRS_TQUEUE_01_060: [ If the queue is full (current head >= current tail + queue size): ]*/
+        /* Tests_SRS_TQUEUE_01_062: [ If the queue is growable: ] */
+            /* Tests_SRS_TQUEUE_01_063: [ TQUEUE_PUSH(T) shall release in shared mode the lock used to guard the growing of the queue. ] */
+            /* Tests_SRS_TQUEUE_01_064: [ TQUEUE_PUSH(T) shall acquire in exclusive mode the lock used to guard the growing of the queue. ] */
+            /* Tests_SRS_TQUEUE_01_065: [ TQUEUE_PUSH(T) shall release in exclusive mode the lock used to guard the growing of the queue. ] */
+            /* Tests_SRS_TQUEUE_01_066: [ TQUEUE_PUSH(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */
+    /* Tests_SRS_TQUEUE_01_017: [ Using interlocked_compare_exchange, TQUEUE_PUSH(T) shall change the head array entry state to PUSHING (from NOT_USED). ]*/
+    /* Tests_SRS_TQUEUE_01_018: [ Using interlocked_compare_exchange_64, TQUEUE_PUSH(T) shall replace the head value with the head value obtained earlier + 1. ]*/
+    /* Tests_SRS_TQUEUE_01_019: [ If no copy_item_function was specified in TQUEUE_CREATE(T), TQUEUE_PUSH(T) shall copy the value of item into the array entry value whose state was changed to PUSHING. ]*/
+    /* Tests_SRS_TQUEUE_01_020: [ TQUEUE_PUSH(T) shall set the state to USED by using interlocked_exchange. ]*/
+    /* Tests_SRS_TQUEUE_01_021: [ TQUEUE_PUSH(T) shall succeed and return TQUEUE_PUSH_OK. ]*/
+/* Tests_SRS_TQUEUE_01_059: [ TQUEUE_PUSH(T) shall release in shared mode the lock used to guard the growing of the queue. ] */
+TEST_FUNCTION(TQUEUE_PUSH_twice_for_queue_size_1_resizes_the_queue)
+{
+    // arrange
+    int32_t item = 42;
+    TQUEUE(int32_t) queue = test_queue_create_growable(1, 2, NULL, NULL, NULL);
+    test_queue_push(queue, 42);
+
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
+
+    // resize
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 2, IGNORED_ARG));
+    for (uint32_t i = 1; i < 2; i++)
+    {
+        STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_NOT_USED)); // entry state
+    }
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
+
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
+
+    STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_PUSHING, QUEUE_ENTRY_STATE_NOT_USED)); // entry state
+    STRICT_EXPECTED_CALL(interlocked_compare_exchange_64(IGNORED_ARG, 2, 1)); // head change
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_USED)); // entry state
     STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
 
