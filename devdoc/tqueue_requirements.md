@@ -38,6 +38,7 @@ Because `TQUEUE` is a kind of `THANDLE`, all of `THANDLE`'s APIs apply to `TQUEU
 `TQUEUE_INITIALIZE_MOVE(T)`
 
 `TQUEUE` supports growable queues, which can be created by using a separate constructor `TQUEUE_CREATE_GROWABLE`. Growable queues double in size when they reach capacity.
+A max queue size is used to bound how much a growable queue can grow.
 
 ## Design
 
@@ -92,7 +93,7 @@ The macros expand to these useful somewhat more useful APIs:
 ```c
 TQUEUE(T) TQUEUE_CREATE(T)(uint32_t queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T) dispose_item_function, void* dispose_item_function_context);
 int TQUEUE_PUSH(T)(TQUEUE(T) tqueue, T* item, void* copy_function_context)
-TQUEUE(T) TQUEUE_CREATE_GROWABLE(T)(uint32_t queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T) dispose_item_function, void* dispose_item_function_context);
+TQUEUE(T) TQUEUE_CREATE_GROWABLE(T)(uint32_t initial_queue_size, uint32_t max_queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T) dispose_item_function, void* dispose_item_function_context);
 int TQUEUE_PUSH(T)(TQUEUE(T) tqueue, T* item, void* copy_function_context)
 TQUEUE_POP_RESULT TQUEUE_POP(T)(TQUEUE(T) tqueue, T* item, void* copy_function_context, TQUEUE_DEFINE_CONDITION_FUNCTION_TYPE_NAME(T), condition_function, void*, condition_function_context);
 int64_t TQUEUE_GET_VOLATILE_COUNT(T)(TQUEUE(T) tqueue)
@@ -182,12 +183,14 @@ TQUEUE(T) TQUEUE_CREATE(T)(uint32_t queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_it
 
 ### TQUEUE_CREATE_GROWABLE(T)
 ```c
-TQUEUE(T) TQUEUE_CREATE_GROWABLE(T)(uint32_t initial_queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T) dispose_item_function, void* dispose_item_function_context);
+TQUEUE(T) TQUEUE_CREATE_GROWABLE(T)(uint32_t initial_queue_size, uint32_t max_queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T) dispose_item_function, void* dispose_item_function_context);
 ```
 
 `TQUEUE_CREATE_GROWABLE(T)` creates a new `TQUEUE(T)` which doubles in size when it reaches capacity.
 
 If `initial_queue_size` is 0, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`.
+
+If `initial_queue_size` is greater than `max_queue_size`, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`.
 
 If any of `copy_item_function` and `dispose_item_function` is `NULL` and at least one of them is not `NULL`, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`.
 
@@ -258,6 +261,8 @@ If the queue is growable, `TQUEUE_PUSH(T)` shall acquire in shared mode the lock
     - `TQUEUE_PUSH(T)` shall acquire in exclusive mode the lock used to guard the growing of the queue.
 
     - `TQUEUE_PUSH(T)` shall double the size of the queue.
+
+    - If the newly computed queue size is higher than the `max_queue_size` value passed to `TQUEUE_CREATE_GROWABLE(T)`, `TQUEUE_PUSH(T)` shall use `max_queue_size` as the new queue size.
 
     - `TQUEUE_PUSH(T)` shall reallocate the array used to store the queue items based on the newly computed size.
 
