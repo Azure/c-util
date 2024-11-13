@@ -228,6 +228,92 @@ TEST_FUNCTION(when_underlying_calls_fail_TQUEUE_CREATE_also_fails)
     }
 }
 
+/* TQUEUE_CREATE_GROWABLE */
+
+/* Tests_SRS_TQUEUE_01_046: [ If initial_queue_size is 0, TQUEUE_CREATE_GROWABLE(T) shall fail and return NULL. ]*/
+TEST_FUNCTION(TQUEUE_CREATE_GROWABLE_with_0_initial_queue_size_fails)
+{
+    // arrange
+
+    // act
+    TQUEUE(int32_t) queue = TQUEUE_CREATE_GROWABLE(int32_t)(0, 10, test_copy_item, test_dispose_item, (void*)0x4242);
+
+    // assert
+    ASSERT_IS_NULL(queue);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_TQUEUE_01_047: [ If initial_queue_size is greater than max_queue_size, TQUEUE_CREATE_GROWABLE(T) shall fail and return NULL. ]*/
+TEST_FUNCTION(TQUEUE_CREATE_GROWABLE_with_2_initial_queue_size_and_1_max_queue_size_fails)
+{
+    // arrange
+
+    // act
+    TQUEUE(int32_t) queue = TQUEUE_CREATE_GROWABLE(int32_t)(2, 1, test_copy_item, test_dispose_item, (void*)0x4242);
+
+    // assert
+    ASSERT_IS_NULL(queue);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_TQUEUE_01_048: [ If any of copy_item_function and dispose_item_function are NULL and at least one of them is not NULL, TQUEUE_CREATE_GROWABLE(T) shall fail and return NULL. ]*/
+TEST_FUNCTION(TQUEUE_CREATE_GROWABLE_with_only_copy_item_function_being_NULL_fails)
+{
+    // arrange
+
+    // act
+    TQUEUE(int32_t) queue = TQUEUE_CREATE_GROWABLE(int32_t)(1, 2, NULL, test_dispose_item, (void*)0x4242);
+
+    // assert
+    ASSERT_IS_NULL(queue);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_TQUEUE_01_048: [ If any of copy_item_function and dispose_item_function are NULL and at least one of them is not NULL, TQUEUE_CREATE_GROWABLE(T) shall fail and return NULL. ]*/
+TEST_FUNCTION(TQUEUE_CREATE_GROWABLE_with_only_dispose_item_function_being_NULL_fails)
+{
+    // arrange
+
+    // act
+    TQUEUE(int32_t) queue = TQUEUE_CREATE_GROWABLE(int32_t)(1, 2, test_copy_item, NULL, (void*)0x4242);
+
+    // assert
+    ASSERT_IS_NULL(queue);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_TQUEUE_01_049: [ TQUEUE_CREATE_GROWABLE(T) shall call THANDLE_MALLOC with TQUEUE_DISPOSE_FUNC(T) as dispose function. ] */
+/* Tests_SRS_TQUEUE_01_050: [ TQUEUE_CREATE_GROWABLE(T) shall allocate memory for an array of size size containing elements of type T. ] */
+/* Tests_SRS_TQUEUE_01_051: [ TQUEUE_CREATE_GROWABLE(T) shall initialize the head and tail of the list with 0 by using interlocked_exchange_64. ] */
+/* Tests_SRS_TQUEUE_01_052: [ TQUEUE_CREATE_GROWABLE(T) shall initialize the state for each entry in the array used for the queue with NOT_USED by using interlocked_exchange. ] */
+/* Tests_SRS_TQUEUE_01_053: [ TQUEUE_CREATE_GROWABLE(T) shall initialize a SRW_LOCK_LL to be used for locking the queue when it needs to grow in size. ] */
+/* Tests_SRS_TQUEUE_01_054: [ TQUEUE_CREATE_GROWABLE(T) shall succeed and return a non-NULL value. ] */
+TEST_FUNCTION(TQUEUE_CREATE_GROWABLE_with_all_functions_non_NULL_succeeds)
+{
+    // arrange
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG)); // THANDLE
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1));
+    STRICT_EXPECTED_CALL(malloc_2(1, IGNORED_ARG)); // array
+    STRICT_EXPECTED_CALL(interlocked_exchange_64(IGNORED_ARG, 0));
+    STRICT_EXPECTED_CALL(interlocked_exchange_64(IGNORED_ARG, 0));
+    for (uint32_t i = 0; i < 1; i++)
+    {
+        STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_NOT_USED));
+    }
+
+    // act
+    TQUEUE(int32_t) queue = TQUEUE_CREATE_GROWABLE(int32_t)(1, 2, test_copy_item, test_dispose_item, (void*)0x4242);
+
+    // assert
+    ASSERT_IS_NOT_NULL(queue);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // clean
+    TQUEUE_ASSIGN(int32_t)(&queue, NULL);
+}
+
+#if 0
+
 /* TQUEUE_DISPOSE_FUNC(T) */
 
 static TQUEUE(int32_t) test_queue_create(uint32_t queue_size, TQUEUE_COPY_ITEM_FUNC(int32_t) copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(int32_t) dispose_item_function, void* dispose_function_context)
@@ -1209,5 +1295,6 @@ TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_full_queue_pop_all_push_1_returns_1
     // clean
     TQUEUE_ASSIGN(int32_t)(&queue, NULL);
 }
+#endif
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

@@ -40,6 +40,12 @@ MU_DEFINE_ENUM(TQUEUE_POP_RESULT, TQUEUE_POP_RESULT_VALUES);
 
 MU_DEFINE_ENUM(QUEUE_ENTRY_STATE, QUEUE_ENTRY_STATE_VALUES);
 
+#define TQUEUE_TYPE_VALUES \
+    TQUEUE_TYPE_FIXED_SIZE, \
+    TQUEUE_TYPE_GROWABLE
+
+MU_DEFINE_ENUM(TQUEUE_TYPE, TQUEUE_TYPE_VALUES);
+
 /*TQUEUE is backed by a THANDLE build on the structure below*/
 #define TQUEUE_STRUCT_TYPE_NAME_TAG(T) MU_C2(TQUEUE_TYPEDEF_NAME(T), _TAG)
 #define TQUEUE_TYPEDEF_NAME(T) MU_C2(TQUEUE_STRUCT_, T)
@@ -81,7 +87,9 @@ typedef struct TQUEUE_STRUCT_TYPE_NAME_TAG(T)                                   
     TQUEUE_DISPOSE_ITEM_FUNC(T) dispose_item_function;                                                          \
     void* dispose_item_function_context;                                                                        \
     uint32_t queue_size;                                                                                        \
-    TQUEUE_ENTRY_STRUCT_TYPE_NAME(T) queue[];                                                                   \
+    TQUEUE_TYPE queue_type;                                                                                     \
+    TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)* queue;                                                                    \
+    TQUEUE_ENTRY_STRUCT_TYPE_NAME(T) queue_flex[];                                                              \
 } TQUEUE_TYPEDEF_NAME(T);                                                                                       \
 
 /*TQUEUE is-a THANDLE*/
@@ -99,6 +107,9 @@ typedef struct TQUEUE_STRUCT_TYPE_NAME_TAG(T)                                   
 #define TQUEUE_LL_CREATE_NAME(C) MU_C2(TQUEUE_LL_CREATE_, C)
 #define TQUEUE_LL_CREATE(C) TQUEUE_LL_CREATE_NAME(C)
 
+#define TQUEUE_LL_CREATE_GROWABLE_NAME(C) MU_C2(TQUEUE_LL_CREATE_GROWABLE_, C)
+#define TQUEUE_LL_CREATE_GROWABLE(C) TQUEUE_LL_CREATE_GROWABLE_NAME(C)
+
 /*introduces a new name for the push function */
 #define TQUEUE_LL_PUSH_NAME(C) MU_C2(TQUEUE_LL_PUSH_, C)
 #define TQUEUE_LL_PUSH(C) TQUEUE_LL_PUSH_NAME(C)
@@ -113,6 +124,9 @@ typedef struct TQUEUE_STRUCT_TYPE_NAME_TAG(T)                                   
 
 /*introduces a function declaration for tqueue_create*/
 #define TQUEUE_LL_CREATE_DECLARE(C, T) MOCKABLE_FUNCTION(, TQUEUE_LL(T), TQUEUE_LL_CREATE(C), uint32_t, queue_size, TQUEUE_COPY_ITEM_FUNC(T), copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T), dispose_item_function, void*, dispose_item_function_context);
+
+/*introduces a function declaration for tqueue_create_growable*/
+#define TQUEUE_LL_CREATE_GROWABLE_DECLARE(C, T) MOCKABLE_FUNCTION(, TQUEUE_LL(T), TQUEUE_LL_CREATE_GROWABLE(C), uint32_t, initial_queue_size, uint32_t, max_queue_size, TQUEUE_COPY_ITEM_FUNC(T), copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T), dispose_item_function, void*, dispose_item_function_context);
 
 /*introduces a function declaration for tqueue_push*/
 #define TQUEUE_LL_PUSH_DECLARE(C, T) MOCKABLE_FUNCTION(, TQUEUE_PUSH_RESULT, TQUEUE_LL_PUSH(C), TQUEUE_LL(T), tqueue, T*, item, void*, copy_item_function_context);
@@ -153,6 +167,10 @@ static void TQUEUE_LL_FREE_NAME(C)(TQUEUE_TYPEDEF_NAME(T)* tqueue)              
                 /* Codes_SRS_TQUEUE_01_011: [ For each item in the queue, dispose_item_function shall be called with dispose_function_context and a pointer to the array entry value (T*). ]*/ \
                 tqueue->dispose_item_function(tqueue->dispose_item_function_context, &tqueue->queue[index].value);                                                  \
             }                                                                                                                                                       \
+            if (tqueue->queue_type == TQUEUE_TYPE_GROWABLE)                                                                                                         \
+            {                                                                                                                                                       \
+                free(tqueue->queue);                                                                                                                                \
+            }                                                                                                                                                       \
         }                                                                                                                                                           \
     }                                                                                                                                                               \
 }                                                                                                                                                                   \
@@ -190,6 +208,8 @@ TQUEUE_LL(T) TQUEUE_LL_CREATE(C)(uint32_t queue_size, TQUEUE_COPY_ITEM_FUNC(T) c
         else                                                                                                                                                        \
         {                                                                                                                                                           \
             result->queue_size = queue_size;                                                                                                                        \
+            result->queue = result->queue_flex;                                                                                                                     \
+            result->queue_type = TQUEUE_TYPE_FIXED_SIZE;                                                                                                            \
             result->copy_item_function = copy_item_function;                                                                                                        \
             result->dispose_item_function = dispose_item_function;                                                                                                  \
             result->dispose_item_function_context = dispose_item_function_context;                                                                                  \
@@ -205,6 +225,69 @@ TQUEUE_LL(T) TQUEUE_LL_CREATE(C)(uint32_t queue_size, TQUEUE_COPY_ITEM_FUNC(T) c
             /*return as is*/                                                                                                                                        \
         }                                                                                                                                                           \
     }                                                                                                                                                               \
+    return result;                                                                                                                                                  \
+}
+
+/*introduces a function definition for tqueue_create_growable*/
+#define TQUEUE_LL_CREATE_GROWABLE_DEFINE(C, T)                                                                                                                      \
+TQUEUE_LL(T) TQUEUE_LL_CREATE_GROWABLE(C)(uint32_t initial_queue_size, uint32_t max_queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T) dispose_item_function, void* dispose_item_function_context) \
+{                                                                                                                                                                   \
+    TQUEUE_TYPEDEF_NAME(T)* result;                                                                                                                                 \
+    bool is_copy_item_function_NULL = (copy_item_function == NULL);                                                                                                 \
+    bool is_dispose_item_function_NULL = (dispose_item_function == NULL);                                                                                           \
+    if (                                                                                                                                                            \
+        /* Codes_SRS_TQUEUE_01_046: [ If initial_queue_size is 0, TQUEUE_CREATE_GROWABLE(T) shall fail and return NULL. ]*/                                         \
+        (initial_queue_size == 0) ||                                                                                                                                \
+        /* Codes_SRS_TQUEUE_01_047: [ If initial_queue_size is greater than max_queue_size, TQUEUE_CREATE_GROWABLE(T) shall fail and return NULL. ]*/               \
+        (initial_queue_size > max_queue_size) ||                                                                                                                    \
+        /* Codes_SRS_TQUEUE_01_048: [ If any of copy_item_function and dispose_item_function are NULL and at least one of them is not NULL, TQUEUE_CREATE_GROWABLE(T) shall fail and return NULL. ]*/ \
+        ((is_copy_item_function_NULL || is_dispose_item_function_NULL) &&                                                                                           \
+         !(is_copy_item_function_NULL && is_dispose_item_function_NULL))                                                                                            \
+       )                                                                                                                                                            \
+    {                                                                                                                                                               \
+        LogError("Invalid arguments: uint32_t initial_queue_size=%" PRIu32 ", uint32_t max_queue_size=%" PRIu32 ", " MU_TOSTRING(TQUEUE_COPY_ITEM_FUNC(T)) " copy_item_function=%p, " MU_TOSTRING(TQUEUE_DISPOSE_ITEM_FUNC(T)) " dispose_item_function=%p, void* dispose_item_function_context=%p", \
+            initial_queue_size, max_queue_size, copy_item_function, dispose_item_function, dispose_item_function_context);                                          \
+        result = NULL;                                                                                                                                              \
+    }                                                                                                                                                               \
+    else                                                                                                                                                            \
+    {                                                                                                                                                               \
+        /* Tests_SRS_TQUEUE_01_049: [ TQUEUE_CREATE_GROWABLE(T) shall call THANDLE_MALLOC with TQUEUE_DISPOSE_FUNC(T) as dispose function. ] */                     \
+        result = THANDLE_MALLOC(TQUEUE_TYPEDEF_NAME(C))(TQUEUE_LL_FREE_NAME(C));                                                                                    \
+        if (result == NULL)                                                                                                                                         \
+        {                                                                                                                                                           \
+            LogError("failure in " MU_TOSTRING(THANDLE_MALLOC(TQUEUE_TYPEDEF_NAME(C))) "");                                                                         \
+            /*return as is*/                                                                                                                                        \
+        }                                                                                                                                                           \
+        else                                                                                                                                                        \
+        {                                                                                                                                                           \
+            /* Codes_SRS_TQUEUE_01_050: [ TQUEUE_CREATE_GROWABLE(T) shall allocate memory for an array of size size containing elements of type T. ] */             \
+            result->queue = malloc_2(initial_queue_size, sizeof(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)));                                                                 \
+            if (result->queue == NULL)                                                                                                                              \
+            {                                                                                                                                                       \
+                LogError("failure in malloc_2(%" PRIu32 ", sizeof(" MU_TOSTRING(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)) "))", initial_queue_size);                        \
+                THANDLE_FREE(TQUEUE_TYPEDEF_NAME(C))(result);                                                                                                       \
+            }                                                                                                                                                       \
+            else                                                                                                                                                    \
+            {                                                                                                                                                       \
+                result->queue_size = initial_queue_size;                                                                                                            \
+                result->queue_type = TQUEUE_TYPE_GROWABLE;                                                                                                          \
+                result->copy_item_function = copy_item_function;                                                                                                    \
+                result->dispose_item_function = dispose_item_function;                                                                                              \
+                result->dispose_item_function_context = dispose_item_function_context;                                                                              \
+                (void)interlocked_exchange_64(&result->head, 0);                                                                                                    \
+                (void)interlocked_exchange_64(&result->tail, 0);                                                                                                    \
+                for (uint32_t i = 0; i < initial_queue_size; i++)                                                                                                   \
+                {                                                                                                                                                   \
+                    (void)interlocked_exchange(&result->queue[i].state, QUEUE_ENTRY_STATE_NOT_USED);                                                                \
+                }                                                                                                                                                   \
+                /*return as is*/                                                                                                                                    \
+                goto all_ok;                                                                                                                                        \
+            }                                                                                                                                                       \
+            THANDLE_FREE(TQUEUE_TYPEDEF_NAME(C))(result);                                                                                                           \
+            result = NULL;                                                                                                                                          \
+        }                                                                                                                                                           \
+    }                                                                                                                                                               \
+all_ok:                                                                                                                                                             \
     return result;                                                                                                                                                  \
 }
 
@@ -428,6 +511,7 @@ int64_t TQUEUE_LL_GET_VOLATILE_COUNT(C)(TQUEUE_LL(T) tqueue)                    
     /*hint: have TQUEUE_DEFINE_STRUCT_TYPE(T) before TQUEUE_LL_TYPE_DECLARE*/                                                       \
     THANDLE_LL_TYPE_DECLARE(TQUEUE_TYPEDEF_NAME(C), TQUEUE_TYPEDEF_NAME(T))                                                         \
     TQUEUE_LL_CREATE_DECLARE(C, T)                                                                                                  \
+    TQUEUE_LL_CREATE_GROWABLE_DECLARE(C, T)                                                                                         \
     TQUEUE_LL_PUSH_DECLARE(C, T)                                                                                                    \
     TQUEUE_LL_POP_DECLARE(C, T)                                                                                                     \
     TQUEUE_LL_GET_VOLATILE_COUNT_DECLARE(C, T)                                                                                      \
@@ -437,6 +521,7 @@ int64_t TQUEUE_LL_GET_VOLATILE_COUNT(C)(TQUEUE_LL(T) tqueue)                    
     /*hint: have THANDLE_TYPE_DEFINE(TQUEUE_TYPEDEF_NAME(T)) before TQUEUE_LL_TYPE_DEFINE*/                                         \
     TQUEUE_LL_FREE_DEFINE(C, T)                                                                                                     \
     TQUEUE_LL_CREATE_DEFINE(C, T)                                                                                                   \
+    TQUEUE_LL_CREATE_GROWABLE_DEFINE(C, T)                                                                                          \
     TQUEUE_LL_PUSH_DEFINE(C, T)                                                                                                     \
     TQUEUE_LL_POP_DEFINE(C, T)                                                                                                      \
     TQUEUE_LL_GET_VOLATILE_COUNT_DEFINE(C, T)                                                                                       \

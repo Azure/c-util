@@ -15,11 +15,13 @@
 #define TQUEUE(T) TQUEUE_LL(T)
 
 #define TQUEUE_CREATE_DECLARE(T) TQUEUE_LL_CREATE_DECLARE(T, T)
+#define TQUEUE_CREATE_GROWABLE_DECLARE(T) TQUEUE_LL_CREATE_GROWABLE_DECLARE(T, T)
 #define TQUEUE_PUSH_DECLARE(T) TQUEUE_LL_PUSH_DECLARE(T, T)
 #define TQUEUE_POP_DECLARE(T) TQUEUE_LL_POP_DECLARE(T, T)
 #define TQUEUE_GET_VOLATILE_COUNT_DECLARE(T) TQUEUE_LL_GET_VOLATILE_COUNT_DECLARE(T, T)
 
 #define TQUEUE_CREATE_DEFINE(T) TQUEUE_LL_CREATE_DEFINE(T, T)
+#define TQUEUE_CREATE_GROWABLE_DEFINE(T) TQUEUE_LL_CREATE_GROWABLE_DEFINE(T, T)
 #define TQUEUE_PUSH_DEFINE(T) TQUEUE_LL_PUSH_DEFINE(T, T)
 #define TQUEUE_POP_DEFINE(T) TQUEUE_LL_POP_DEFINE(T, T)
 #define TQUEUE_GET_VOLATILE_COUNT_DEFINE(T) TQUEUE_LL_GET_VOLATILE_COUNT_DEFINE(T, T)
@@ -27,6 +29,7 @@
 #define TQUEUE_FREE_DEFINE(T) TQUEUE_LL_FREE_DEFINE(T, T)
 
 #define TQUEUE_CREATE(C) TQUEUE_LL_CREATE(C)
+#define TQUEUE_CREATE_GROWABLE(C) TQUEUE_LL_CREATE_GROWABLE(C)
 
 #define TQUEUE_PUSH(C) TQUEUE_LL_PUSH(C)
 #define TQUEUE_POP(C) TQUEUE_LL_POP(C)
@@ -45,16 +48,18 @@
     /*hint: have TQUEUE_DEFINE_TYPE(T) before TQUEUE_TYPE_DECLARE                               */                  \
     /*hint: have THANDLE_TYPE_DECLARE(TQUEUE_TYPEDEF_NAME(T)) before TQUEUE_TYPE_DECLARE               */           \
     TQUEUE_CREATE_DECLARE(T)                                                                                        \
+    TQUEUE_CREATE_GROWABLE_DECLARE(T)                                                                               \
     TQUEUE_PUSH_DECLARE(T)                                                                                          \
     TQUEUE_POP_DECLARE(T)                                                                                           \
-    TQUEUE_GET_VOLATILE_COUNT_DECLARE(T)                                                                                     \
+    TQUEUE_GET_VOLATILE_COUNT_DECLARE(T)                                                                            \
 
 #define TQUEUE_TYPE_DEFINE(T, ...)                                                                                  \
     /*hint: have THANDLE_TYPE_DEFINE(TQUEUE_TYPEDEF_NAME(T)) before  TQUEUE_TYPE_DEFINE                */           \
     TQUEUE_FREE_DEFINE(T)                                                                                           \
     TQUEUE_CREATE_DEFINE(T)                                                                                         \
+    TQUEUE_CREATE_GROWABLE_DEFINE(T)                                                                                \
     TQUEUE_PUSH_DEFINE(T)                                                                                           \
     TQUEUE_POP_DEFINE(T)                                                                                            \
-    TQUEUE_GET_VOLATILE_COUNT_DEFINE(T)                                                                                      \
+    TQUEUE_GET_VOLATILE_COUNT_DEFINE(T)                                                                             \
 
 #endif // TQUEUE_H

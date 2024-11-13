@@ -189,19 +189,19 @@ TQUEUE(T) TQUEUE_CREATE_GROWABLE(T)(uint32_t initial_queue_size, uint32_t max_qu
 
 `TQUEUE_CREATE_GROWABLE(T)` creates a new `TQUEUE(T)` which doubles in size when it reaches capacity.
 
-If `initial_queue_size` is 0, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`.
+**SRS_TQUEUE_01_046: [** If `initial_queue_size` is 0, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`. **]**
 
-If `initial_queue_size` is greater than `max_queue_size`, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`.
+**SRS_TQUEUE_01_047: [** If `initial_queue_size` is greater than `max_queue_size`, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`. **]**
 
-If any of `copy_item_function` and `dispose_item_function` are `NULL` and at least one of them is not `NULL`, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`.
+**SRS_TQUEUE_01_048: [** If any of `copy_item_function` and `dispose_item_function` are `NULL` and at least one of them is not `NULL`, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`. **]**
 
-If `TQUEUE_CREATE_GROWABLE(T)` shall call `THANDLE_MALLOC` with `TQUEUE_DISPOSE_FUNC(T)` as dispose function.
+**SRS_TQUEUE_01_049: [** `TQUEUE_CREATE_GROWABLE(T)` shall call `THANDLE_MALLOC` with `TQUEUE_DISPOSE_FUNC(T)` as dispose function. **]**
 
-`TQUEUE_CREATE_GROWABLE(T)` shall allocate memory for an array of size `size` containing elements of type `T`.
+**SRS_TQUEUE_01_050: [** `TQUEUE_CREATE_GROWABLE(T)` shall allocate memory for an array of size `size` containing elements of type `T`. **]**
 
-`TQUEUE_CREATE_GROWABLE(T)` shall initialize the head and tail of the list with 0 by using `interlocked_exchange_64`.
+**SRS_TQUEUE_01_051: [** `TQUEUE_CREATE_GROWABLE(T)` shall initialize the head and tail of the list with 0 by using `interlocked_exchange_64`. **]**
 
-`TQUEUE_CREATE_GROWABLE(T)` shall initialize the state for each entry in the array used for the queue with `NOT_USED` by using `interlocked_exchange`.
+**SRS_TQUEUE_01_052: [** `TQUEUE_CREATE_GROWABLE(T)` shall initialize the state for each entry in the array used for the queue with `NOT_USED` by using `interlocked_exchange`. **]**
 
 `TQUEUE_CREATE_GROWABLE(T)` shall initialize a `SRW_LOCK_LL` to be used for locking the queue when it needs to grow in size.
 
