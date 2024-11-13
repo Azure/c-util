@@ -113,7 +113,7 @@ TEST_FUNCTION(TQUEUE_CREATE_with_0_queue_size_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_TQUEUE_01_002: [ If any of copy_item_function and dispose_item_function is NULL and at least one of them is not NULL, TQUEUE_CREATE(T) shall fail and return NULL. ]*/
+/* Tests_SRS_TQUEUE_01_002: [ If any of copy_item_function and dispose_item_function are NULL and at least one of them is not NULL, TQUEUE_CREATE(T) shall fail and return NULL. ]*/
 TEST_FUNCTION(TQUEUE_CREATE_with_only_copy_item_function_being_NULL_fails)
 {
     // arrange
@@ -126,7 +126,7 @@ TEST_FUNCTION(TQUEUE_CREATE_with_only_copy_item_function_being_NULL_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_TQUEUE_01_002: [ If any of copy_item_function and dispose_item_function is NULL and at least one of them is not NULL, TQUEUE_CREATE(T) shall fail and return NULL. ]*/
+/* Tests_SRS_TQUEUE_01_002: [ If any of copy_item_function and dispose_item_function are NULL and at least one of them is not NULL, TQUEUE_CREATE(T) shall fail and return NULL. ]*/
 TEST_FUNCTION(TQUEUE_CREATE_with_only_dispose_item_being_NULL_fails)
 {
     // arrange

@@ -66,7 +66,8 @@ The possible states for an array entry are:
 #define TQUEUE_PUSH_RESULT_VALUES \
     TQUEUE_PUSH_OK, \
     TQUEUE_PUSH_INVALID_ARG, \
-    TQUEUE_PUSH_QUEUE_FULL \
+    TQUEUE_PUSH_QUEUE_FULL, \
+    TQUEUE_PUSH_ERROR \
 
 MU_DEFINE_ENUM(TQUEUE_PUSH_RESULT, TQUEUE_PUSH_RESULT_VALUES);
 
@@ -169,7 +170,7 @@ TQUEUE(T) TQUEUE_CREATE(T)(uint32_t queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_it
 
 **SRS_TQUEUE_01_001: [** If `queue_size` is 0, `TQUEUE_CREATE(T)` shall fail and return `NULL`. **]**
 
-**SRS_TQUEUE_01_002: [** If any of `copy_item_function` and `dispose_item_function` is `NULL` and at least one of them is not `NULL`, `TQUEUE_CREATE(T)` shall fail and return `NULL`. **]**
+**SRS_TQUEUE_01_002: [** If any of `copy_item_function` and `dispose_item_function` are `NULL` and at least one of them is not `NULL`, `TQUEUE_CREATE(T)` shall fail and return `NULL`. **]**
 
 **SRS_TQUEUE_01_003: [** `TQUEUE_CREATE(T)` shall call `THANDLE_MALLOC_FLEX` with `TQUEUE_DISPOSE_FUNC(T)` as dispose function, `nmemb` set to `queue_size` and `size` set to `sizeof(T)`. **]**
 
@@ -192,7 +193,7 @@ If `initial_queue_size` is 0, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return 
 
 If `initial_queue_size` is greater than `max_queue_size`, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`.
 
-If any of `copy_item_function` and `dispose_item_function` is `NULL` and at least one of them is not `NULL`, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`.
+If any of `copy_item_function` and `dispose_item_function` are `NULL` and at least one of them is not `NULL`, `TQUEUE_CREATE_GROWABLE(T)` shall fail and return `NULL`.
 
 If `TQUEUE_CREATE_GROWABLE(T)` shall call `THANDLE_MALLOC` with `TQUEUE_DISPOSE_FUNC(T)` as dispose function.
 
@@ -260,13 +261,15 @@ If the queue is growable, `TQUEUE_PUSH(T)` shall acquire in shared mode the lock
 
     - `TQUEUE_PUSH(T)` shall acquire in exclusive mode the lock used to guard the growing of the queue.
 
-    - `TQUEUE_PUSH(T)` shall double the size of the queue.
+    - If the size of the queue did not change after acquiring the lock in shared mode:
+    
+      - `TQUEUE_PUSH(T)` shall double the size of the queue.
 
-    - If the newly computed queue size is higher than the `max_queue_size` value passed to `TQUEUE_CREATE_GROWABLE(T)`, `TQUEUE_PUSH(T)` shall use `max_queue_size` as the new queue size.
+      - If the newly computed queue size is higher than the `max_queue_size` value passed to `TQUEUE_CREATE_GROWABLE(T)`, `TQUEUE_PUSH(T)` shall use `max_queue_size` as the new queue size.
 
-    - `TQUEUE_PUSH(T)` shall reallocate the array used to store the queue items based on the newly computed size.
+      - `TQUEUE_PUSH(T)` shall reallocate the array used to store the queue items based on the newly computed size.
 
-    - If reallocation fails, `TQUEUE_PUSH(T)` shall return `TQUEUE_PUSH_QUEUE_FULL`.
+      - If reallocation fails, `TQUEUE_PUSH(T)` shall return `TQUEUE_PUSH_ERROR`.
 
     - Otherwise, `TQUEUE_PUSH(T)` shall release in exclusive mode the lock used to guard the growing of the queue.
 
