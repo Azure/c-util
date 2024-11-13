@@ -829,6 +829,8 @@ TEST_FUNCTION(TQUEUE_PUSH_for_a_growable_queue_locks_and_unlocks)
         /* Tests_SRS_TQUEUE_01_062: [ If the queue is growable: ] */
             /* Tests_SRS_TQUEUE_01_063: [ TQUEUE_PUSH(T) shall release in shared mode the lock used to guard the growing of the queue. ] */
             /* Tests_SRS_TQUEUE_01_064: [ TQUEUE_PUSH(T) shall acquire in exclusive mode the lock used to guard the growing of the queue. ] */
+            /* Tests_SRS_TQUEUE_01_067: [ TQUEUE_PUSH(T) shall double the size of the queue. ]*/
+            /* Tests_SRS_TQUEUE_01_068: [ If the newly computed queue size is higher than the existing queue size TQUEUE_PUSH(T) shall reallocate the array used to store the queue items based on the newly computed size. ]*/
             /* Tests_SRS_TQUEUE_01_065: [ TQUEUE_PUSH(T) shall release in exclusive mode the lock used to guard the growing of the queue. ] */
             /* Tests_SRS_TQUEUE_01_066: [ TQUEUE_PUSH(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */
     /* Tests_SRS_TQUEUE_01_017: [ Using interlocked_compare_exchange, TQUEUE_PUSH(T) shall change the head array entry state to PUSHING (from NOT_USED). ]*/
@@ -864,6 +866,113 @@ TEST_FUNCTION(TQUEUE_PUSH_twice_for_queue_size_1_resizes_the_queue)
 
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_PUSHING, QUEUE_ENTRY_STATE_NOT_USED)); // entry state
     STRICT_EXPECTED_CALL(interlocked_compare_exchange_64(IGNORED_ARG, 2, 1)); // head change
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_USED)); // entry state
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
+
+    // act
+    TQUEUE_PUSH_RESULT result = TQUEUE_PUSH(int32_t)(queue, &item, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(TQUEUE_PUSH_RESULT, TQUEUE_PUSH_OK, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // clean
+    TQUEUE_ASSIGN(int32_t)(&queue, NULL);
+}
+
+/* Tests_SRS_TQUEUE_01_068: [ If the newly computed queue size is higher than the existing queue size TQUEUE_PUSH(T) shall reallocate the array used to store the queue items based on the newly computed size. ]*/
+TEST_FUNCTION(TQUEUE_PUSH_when_queue_is_at_max_size_does_not_reallocate_and_returns_QUEUE_FULL)
+{
+    // arrange
+    int32_t item = 42;
+    TQUEUE(int32_t) queue = test_queue_create_growable(1, 1, NULL, NULL, NULL);
+    test_queue_push(queue, 42);
+
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
+
+    // resize
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
+
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
+
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
+
+    // act
+    TQUEUE_PUSH_RESULT result = TQUEUE_PUSH(int32_t)(queue, &item, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(TQUEUE_PUSH_RESULT, TQUEUE_PUSH_QUEUE_FULL, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // clean
+    TQUEUE_ASSIGN(int32_t)(&queue, NULL);
+}
+
+/* Tests_SRS_TQUEUE_01_069: [ If reallocation fails, TQUEUE_PUSH(T) shall return TQUEUE_PUSH_ERROR. ]*/
+TEST_FUNCTION(when_realloc_for_resize_fails_TQUEUE_PUSH_returns_ERROR)
+{
+    // arrange
+    int32_t item = 42;
+    TQUEUE(int32_t) queue = test_queue_create_growable(1, 2, NULL, NULL, NULL);
+    test_queue_push(queue, 42);
+
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
+
+    // resize
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 2, IGNORED_ARG))
+        .SetReturn(NULL);
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(IGNORED_ARG));
+
+    // act
+    TQUEUE_PUSH_RESULT result = TQUEUE_PUSH(int32_t)(queue, &item, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(TQUEUE_PUSH_RESULT, TQUEUE_PUSH_ERROR, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // clean
+    TQUEUE_ASSIGN(int32_t)(&queue, NULL);
+}
+
+/* Tests_SRS_TQUEUE_01_070: [ If the newly computed queue size is higher than the max_queue_size value passed to TQUEUE_CREATE_GROWABLE(T), TQUEUE_PUSH(T) shall use max_queue_size as the new queue size. ]*/
+TEST_FUNCTION(TQUEUE_PUSH_resizes_but_obeys_max_size)
+{
+    // arrange
+    int32_t item = 42;
+    TQUEUE(int32_t) queue = test_queue_create_growable(1, 3, NULL, NULL, NULL);
+    test_queue_push(queue, 42); // 1st item
+    test_queue_push(queue, 42); // 2ndst item => triggers a resize to size 2
+
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
+
+    // resize (to 3)
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(realloc_2(IGNORED_ARG, 3, IGNORED_ARG));
+    for (uint32_t i = 2; i < 3; i++)
+    {
+        STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_NOT_USED)); // entry state
+    }
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
+
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
+    STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
+
+    STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_PUSHING, QUEUE_ENTRY_STATE_NOT_USED)); // entry state
+    STRICT_EXPECTED_CALL(interlocked_compare_exchange_64(IGNORED_ARG, 3, 2)); // head change
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_USED)); // entry state
     STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
 

@@ -261,15 +261,15 @@ TQUEUE_PUSH_RESULT TQUEUE_PUSH(T)(TQUEUE(T) tqueue, T* item, void* copy_item_fun
 
     - If the size of the queue did not change after acquiring the lock in shared mode:
     
-      - `TQUEUE_PUSH(T)` shall double the size of the queue.
+      - **SRS_TQUEUE_01_067: [** `TQUEUE_PUSH(T)` shall double the size of the queue. **]**
 
-      - If the newly computed queue size is higher than the `max_queue_size` value passed to `TQUEUE_CREATE_GROWABLE(T)`, `TQUEUE_PUSH(T)` shall use `max_queue_size` as the new queue size.
+      - **SRS_TQUEUE_01_070: [** If the newly computed queue size is higher than the `max_queue_size` value passed to `TQUEUE_CREATE_GROWABLE(T)`, `TQUEUE_PUSH(T)` shall use `max_queue_size` as the new queue size. **]**
 
-      - `TQUEUE_PUSH(T)` shall reallocate the array used to store the queue items based on the newly computed size.
+      - **SRS_TQUEUE_01_068: [** If the newly computed queue size is higher than the existing queue size `TQUEUE_PUSH(T)` shall reallocate the array used to store the queue items based on the newly computed size. **]**
 
       - **SRS_TQUEUE_01_065: [** `TQUEUE_PUSH(T)` shall release in exclusive mode the lock used to guard the growing of the queue. **]**
 
-      - If reallocation fails, `TQUEUE_PUSH(T)` shall return `TQUEUE_PUSH_ERROR`.
+      - **SRS_TQUEUE_01_069: [** If reallocation fails, `TQUEUE_PUSH(T)` shall return `TQUEUE_PUSH_ERROR`. **]**
 
     - **SRS_TQUEUE_01_066: [** `TQUEUE_PUSH(T)` shall acquire in shared mode the lock used to guard the growing of the queue and retry the `TQUEUE_PUSH(T)`. **]**
 
