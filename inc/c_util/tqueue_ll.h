@@ -167,7 +167,7 @@ TQUEUE_LL(T) TQUEUE_LL_CREATE(C)(uint32_t queue_size, TQUEUE_COPY_ITEM_FUNC(T) c
     if (                                                                                                                                                            \
         /* Codes_SRS_TQUEUE_01_001: [ If queue_size is 0, TQUEUE_CREATE(T) shall fail and return NULL. ]*/                                                          \
         (queue_size == 0) ||                                                                                                                                        \
-        /* Codes_SRS_TQUEUE_01_002: [ If any of copy_item_function and dispose_item_function is NULL and at least one of them is not NULL, TQUEUE_CREATE(T) shall fail and return NULL. ]*/ \
+        /* Codes_SRS_TQUEUE_01_002: [ If any of copy_item_function and dispose_item_function are NULL and at least one of them is not NULL, TQUEUE_CREATE(T) shall fail and return NULL. ]*/ \
         ((is_copy_item_function_NULL || is_dispose_item_function_NULL) &&                                                                                           \
          !(is_copy_item_function_NULL && is_dispose_item_function_NULL))                                                                                            \
        )                                                                                                                                                            \
