@@ -88,6 +88,7 @@ typedef struct TQUEUE_STRUCT_TYPE_NAME_TAG(T)                                   
     void* dispose_item_function_context;                                                                        \
     uint32_t queue_size;                                                                                        \
     TQUEUE_TYPE queue_type;                                                                                     \
+    SRW_LOCK_LL resize_lock;                                                                                    \
     TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)* queue;                                                                    \
     TQUEUE_ENTRY_STRUCT_TYPE_NAME(T) queue_flex[];                                                              \
 } TQUEUE_TYPEDEF_NAME(T);                                                                                       \
@@ -167,10 +168,14 @@ static void TQUEUE_LL_FREE_NAME(C)(TQUEUE_TYPEDEF_NAME(T)* tqueue)              
                 /* Codes_SRS_TQUEUE_01_011: [ For each item in the queue, dispose_item_function shall be called with dispose_function_context and a pointer to the array entry value (T*). ]*/ \
                 tqueue->dispose_item_function(tqueue->dispose_item_function_context, &tqueue->queue[index].value);                                                  \
             }                                                                                                                                                       \
-            if (tqueue->queue_type == TQUEUE_TYPE_GROWABLE)                                                                                                         \
-            {                                                                                                                                                       \
-                free(tqueue->queue);                                                                                                                                \
-            }                                                                                                                                                       \
+        }                                                                                                                                                           \
+        /* Codes_SRS_TQUEUE_01_055: [ If the queue is growable: ] */                                                                                                \
+        if (tqueue->queue_type == TQUEUE_TYPE_GROWABLE)                                                                                                             \
+        {                                                                                                                                                           \
+            /* Codes_SRS_TQUEUE_01_056: [ The lock initialized in TQUEUE_CREATE_GROWABLE(T) shall be de-initialized. ] */                                           \
+            srw_lock_ll_deinit(&tqueue->resize_lock);                                                                                                               \
+            /* Codes_SRS_TQUEUE_01_057: [ The array backing the queue shall be freed. ] */                                                                          \
+            free(tqueue->queue);                                                                                                                                    \
         }                                                                                                                                                           \
     }                                                                                                                                                               \
 }                                                                                                                                                                   \
@@ -274,12 +279,17 @@ TQUEUE_LL(T) TQUEUE_LL_CREATE_GROWABLE(C)(uint32_t initial_queue_size, uint32_t 
                 result->copy_item_function = copy_item_function;                                                                                                    \
                 result->dispose_item_function = dispose_item_function;                                                                                              \
                 result->dispose_item_function_context = dispose_item_function_context;                                                                              \
+                /* Codes_SRS_TQUEUE_01_051: [ TQUEUE_CREATE_GROWABLE(T) shall initialize the head and tail of the list with 0 by using interlocked_exchange_64. ] */\
                 (void)interlocked_exchange_64(&result->head, 0);                                                                                                    \
                 (void)interlocked_exchange_64(&result->tail, 0);                                                                                                    \
                 for (uint32_t i = 0; i < initial_queue_size; i++)                                                                                                   \
                 {                                                                                                                                                   \
+                    /* Codes_SRS_TQUEUE_01_052: [ TQUEUE_CREATE_GROWABLE(T) shall initialize the state for each entry in the array used for the queue with NOT_USED by using interlocked_exchange. ] */ \
                     (void)interlocked_exchange(&result->queue[i].state, QUEUE_ENTRY_STATE_NOT_USED);                                                                \
                 }                                                                                                                                                   \
+                /* Codes_SRS_TQUEUE_01_053: [ TQUEUE_CREATE_GROWABLE(T) shall initialize a SRW_LOCK_LL to be used for locking the queue when it needs to grow in size. ] */ \
+                srw_lock_ll_init(&result->resize_lock);                                                                                                             \
+                /* Codes_SRS_TQUEUE_01_054: [ TQUEUE_CREATE_GROWABLE(T) shall succeed and return a non-NULL value. ] */                                             \
                 /*return as is*/                                                                                                                                    \
                 goto all_ok;                                                                                                                                        \
             }                                                                                                                                                       \
@@ -309,14 +319,20 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
     }                                                                                                                                                               \
     else                                                                                                                                                            \
     {                                                                                                                                                               \
+        TQUEUE_TYPEDEF_NAME(T)* tqueue_ptr = THANDLE_GET_T(TQUEUE_TYPEDEF_NAME(T))(tqueue);                                                                         \
+        if (tqueue_ptr->queue_type == TQUEUE_TYPE_GROWABLE)                                                                                                         \
+        {                                                                                                                                                           \
+            /* Codes_SRS_TQUEUE_01_058: [ If the queue is growable, TQUEUE_PUSH(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */ \
+            srw_lock_ll_acquire_shared(&tqueue_ptr->resize_lock);                                                                                                   \
+        }                                                                                                                                                           \
         /* Codes_SRS_TQUEUE_01_014: [ TQUEUE_PUSH(T) shall execute the following actions until it is either able to push the item in the queue or the queue is full: ]*/ \
         do                                                                                                                                                          \
         {                                                                                                                                                           \
             /* Codes_SRS_TQUEUE_01_015: [ TQUEUE_PUSH(T) shall obtain the current head queue by calling interlocked_add_64. ]*/                                     \
-            int64_t current_head = interlocked_add_64((volatile_atomic int64_t*)&tqueue->head, 0);                                                                  \
+            int64_t current_head = interlocked_add_64(&tqueue_ptr->head, 0);                                                                                        \
             /* Codes_SRS_TQUEUE_01_016: [ TQUEUE_PUSH(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/                                     \
-            int64_t current_tail = interlocked_add_64((volatile_atomic int64_t*)&tqueue->tail, 0);                                                                  \
-            if (current_head >= current_tail + tqueue->queue_size)                                                                                                  \
+            int64_t current_tail = interlocked_add_64(&tqueue_ptr->tail, 0);                                                                                        \
+            if (current_head >= current_tail + tqueue_ptr->queue_size)                                                                                              \
             {                                                                                                                                                       \
                 /* Codes_SRS_TQUEUE_01_022: [ If the queue is full (current head >= current tail + queue size), TQUEUE_PUSH(T) shall return TQUEUE_PUSH_QUEUE_FULL. ]*/ \
                 result = TQUEUE_PUSH_QUEUE_FULL;                                                                                                                    \
@@ -324,9 +340,9 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
             }                                                                                                                                                       \
             else                                                                                                                                                    \
             {                                                                                                                                                       \
-                uint32_t index = (uint32_t)(current_head % tqueue->queue_size);                                                                                     \
+                uint32_t index = (uint32_t)(current_head % tqueue_ptr->queue_size);                                                                                 \
                 /* Codes_SRS_TQUEUE_01_017: [ Using interlocked_compare_exchange, TQUEUE_PUSH(T) shall change the head array entry state to PUSHING (from NOT_USED). ]*/ \
-                if (interlocked_compare_exchange((volatile_atomic int32_t*)&tqueue->queue[index].state, QUEUE_ENTRY_STATE_PUSHING, QUEUE_ENTRY_STATE_NOT_USED) != QUEUE_ENTRY_STATE_NOT_USED) \
+                if (interlocked_compare_exchange(&tqueue_ptr->queue[index].state, QUEUE_ENTRY_STATE_PUSHING, QUEUE_ENTRY_STATE_NOT_USED) != QUEUE_ENTRY_STATE_NOT_USED) \
                 {                                                                                                                                                   \
                     /* Codes_SRS_TQUEUE_01_023: [ If the state of the array entry corresponding to the head is not NOT_USED, TQUEUE_PUSH(T) shall retry the whole push. ]*/ \
                     /* likely queue full */                                                                                                                         \
@@ -335,10 +351,10 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
                 else                                                                                                                                                \
                 {                                                                                                                                                   \
                     /* Codes_SRS_TQUEUE_01_018: [ Using interlocked_compare_exchange_64, TQUEUE_PUSH(T) shall replace the head value with the head value obtained earlier + 1. ]*/ \
-                    if (interlocked_compare_exchange_64((volatile_atomic int64_t*)&tqueue->head, current_head + 1, current_head) != current_head)                   \
+                    if (interlocked_compare_exchange_64(&tqueue_ptr->head, current_head + 1, current_head) != current_head)                                         \
                     {                                                                                                                                               \
                         /* Codes_SRS_TQUEUE_01_043: [ If the queue head has changed, TQUEUE_PUSH(T) shall set the state back to NOT_USED and retry the push. ]*/    \
-                        (void)interlocked_exchange((volatile_atomic int32_t*)&tqueue->queue[index].state, QUEUE_ENTRY_STATE_NOT_USED);                              \
+                        (void)interlocked_exchange(&tqueue_ptr->queue[index].state, QUEUE_ENTRY_STATE_NOT_USED);                                                    \
                         continue;                                                                                                                                   \
                     }                                                                                                                                               \
                     else                                                                                                                                            \
@@ -346,15 +362,15 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
                         if (tqueue->copy_item_function == NULL)                                                                                                     \
                         {                                                                                                                                           \
                             /* Codes_SRS_TQUEUE_01_019: [ If no copy_item_function was specified in TQUEUE_CREATE(T), TQUEUE_PUSH(T) shall copy the value of item into the array entry value whose state was changed to PUSHING. ]*/ \
-                            (void)memcpy((void*)&tqueue->queue[index].value, (void*)item, sizeof(T));                                                               \
+                            (void)memcpy(&tqueue_ptr->queue[index].value, (void*)item, sizeof(T));                                                                  \
                         }                                                                                                                                           \
                         else                                                                                                                                        \
                         {                                                                                                                                           \
                             /* Codes_SRS_TQUEUE_01_024: [ If a copy_item_function was specified in TQUEUE_CREATE(T), TQUEUE_PUSH(T) shall call the copy_item_function with copy_item_function_context as context, a pointer to the array entry value whose state was changed to PUSHING as push_dst and item as push_src. ] */ \
-                            tqueue->copy_item_function(copy_item_function_context, (T*)&tqueue->queue[index].value, item);                                          \
+                            tqueue->copy_item_function(copy_item_function_context, &tqueue_ptr->queue[index].value, item);                                          \
                         }                                                                                                                                           \
                         /* Codes_SRS_TQUEUE_01_020: [ TQUEUE_PUSH(T) shall set the state to USED by using interlocked_exchange. ]*/                                 \
-                        (void)interlocked_exchange((volatile_atomic int32_t*)&tqueue->queue[index].state, QUEUE_ENTRY_STATE_USED);                                  \
+                        (void)interlocked_exchange(&tqueue_ptr->queue[index].state, QUEUE_ENTRY_STATE_USED);                                                        \
                         /* Codes_SRS_TQUEUE_01_021: [ TQUEUE_PUSH(T) shall succeed and return TQUEUE_PUSH_OK. ]*/                                                   \
                         result = TQUEUE_PUSH_OK;                                                                                                                    \
                         break;                                                                                                                                      \
@@ -362,6 +378,12 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
                 }                                                                                                                                                   \
             }                                                                                                                                                       \
         } while (1);                                                                                                                                                \
+                                                                                                                                                                    \
+        if (tqueue_ptr->queue_type == TQUEUE_TYPE_GROWABLE)                                                                                                         \
+        {                                                                                                                                                           \
+            /* Codes_SRS_TQUEUE_01_059: [ TQUEUE_PUSH(T) shall release in shared mode the lock used to guard the growing of the queue. ] */                         \
+            srw_lock_ll_release_shared(&tqueue_ptr->resize_lock);                                                                                                   \
+        }                                                                                                                                                           \
     }                                                                                                                                                               \
     return result;                                                                                                                                                  \
 }                                                                                                                                                                   \
