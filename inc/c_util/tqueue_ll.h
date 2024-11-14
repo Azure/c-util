@@ -42,12 +42,6 @@ MU_DEFINE_ENUM(TQUEUE_POP_RESULT, TQUEUE_POP_RESULT_VALUES);
 
 MU_DEFINE_ENUM(QUEUE_ENTRY_STATE, QUEUE_ENTRY_STATE_VALUES);
 
-#define TQUEUE_TYPE_VALUES \
-    TQUEUE_TYPE_FIXED_SIZE, \
-    TQUEUE_TYPE_GROWABLE
-
-MU_DEFINE_ENUM(TQUEUE_TYPE, TQUEUE_TYPE_VALUES);
-
 /*TQUEUE is backed by a THANDLE build on the structure below*/
 #define TQUEUE_STRUCT_TYPE_NAME_TAG(T) MU_C2(TQUEUE_TYPEDEF_NAME(T), _TAG)
 #define TQUEUE_TYPEDEF_NAME(T) MU_C2(TQUEUE_STRUCT_, T)
@@ -90,10 +84,8 @@ typedef struct TQUEUE_STRUCT_TYPE_NAME_TAG(T)                                   
     void* dispose_item_function_context;                                                                        \
     uint32_t queue_size;                                                                                        \
     uint32_t max_size;                                                                                          \
-    TQUEUE_TYPE queue_type;                                                                                     \
     SRW_LOCK_LL resize_lock;                                                                                    \
     TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)* queue;                                                                    \
-    TQUEUE_ENTRY_STRUCT_TYPE_NAME(T) queue_flex[];                                                              \
 } TQUEUE_TYPEDEF_NAME(T);                                                                                       \
 
 /*TQUEUE is-a THANDLE*/
@@ -111,9 +103,6 @@ typedef struct TQUEUE_STRUCT_TYPE_NAME_TAG(T)                                   
 #define TQUEUE_LL_CREATE_NAME(C) MU_C2(TQUEUE_LL_CREATE_, C)
 #define TQUEUE_LL_CREATE(C) TQUEUE_LL_CREATE_NAME(C)
 
-#define TQUEUE_LL_CREATE_GROWABLE_NAME(C) MU_C2(TQUEUE_LL_CREATE_GROWABLE_, C)
-#define TQUEUE_LL_CREATE_GROWABLE(C) TQUEUE_LL_CREATE_GROWABLE_NAME(C)
-
 /*introduces a new name for the push function */
 #define TQUEUE_LL_PUSH_NAME(C) MU_C2(TQUEUE_LL_PUSH_, C)
 #define TQUEUE_LL_PUSH(C) TQUEUE_LL_PUSH_NAME(C)
@@ -127,10 +116,7 @@ typedef struct TQUEUE_STRUCT_TYPE_NAME_TAG(T)                                   
 #define TQUEUE_LL_GET_VOLATILE_COUNT(C) TQUEUE_LL_GET_VOLATILE_COUNT_NAME(C)
 
 /*introduces a function declaration for tqueue_create*/
-#define TQUEUE_LL_CREATE_DECLARE(C, T) MOCKABLE_FUNCTION(, TQUEUE_LL(T), TQUEUE_LL_CREATE(C), uint32_t, queue_size, TQUEUE_COPY_ITEM_FUNC(T), copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T), dispose_item_function, void*, dispose_item_function_context);
-
-/*introduces a function declaration for tqueue_create_growable*/
-#define TQUEUE_LL_CREATE_GROWABLE_DECLARE(C, T) MOCKABLE_FUNCTION(, TQUEUE_LL(T), TQUEUE_LL_CREATE_GROWABLE(C), uint32_t, initial_queue_size, uint32_t, max_queue_size, TQUEUE_COPY_ITEM_FUNC(T), copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T), dispose_item_function, void*, dispose_item_function_context);
+#define TQUEUE_LL_CREATE_DECLARE(C, T) MOCKABLE_FUNCTION(, TQUEUE_LL(T), TQUEUE_LL_CREATE(C), uint32_t, initial_queue_size, uint32_t, max_queue_size, TQUEUE_COPY_ITEM_FUNC(T), copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T), dispose_item_function, void*, dispose_item_function_context);
 
 /*introduces a function declaration for tqueue_push*/
 #define TQUEUE_LL_PUSH_DECLARE(C, T) MOCKABLE_FUNCTION(, TQUEUE_PUSH_RESULT, TQUEUE_LL_PUSH(C), TQUEUE_LL(T), tqueue, T*, item, void*, copy_item_function_context);
@@ -153,8 +139,8 @@ static void TQUEUE_LL_FREE_NAME(C)(TQUEUE_TYPEDEF_NAME(T)* tqueue)              
         LogError("invalid arguments " MU_TOSTRING(TQUEUE_TYPEDEF_NAME(T)) "* tqueue=%p",                                                                            \
             tqueue);                                                                                                                                                \
     }                                                                                                                                                               \
-    else                                                                                                                                                                                          \
-    {                                                                                                                                 \
+    else                                                                                                                                                            \
+    {                                                                                                                                                               \
         if (tqueue->dispose_item_function == NULL)                                                                                                                  \
         {                                                                                                                                                           \
             /* Codes_SRS_TQUEUE_01_008: [ If dispose_item_function passed to TQUEUE_CREATE(T) is NULL, TQUEUE_DISPOSE_FUNC(T) shall return. ]*/                     \
@@ -172,83 +158,26 @@ static void TQUEUE_LL_FREE_NAME(C)(TQUEUE_TYPEDEF_NAME(T)* tqueue)              
                 tqueue->dispose_item_function(tqueue->dispose_item_function_context, &tqueue->queue[index].value);                                                  \
             }                                                                                                                                                       \
         }                                                                                                                                                           \
-        /* Codes_SRS_TQUEUE_01_055: [ If the queue is growable: ] */                                                                                                \
-        if (tqueue->queue_type == TQUEUE_TYPE_GROWABLE)                                                                                                             \
-        {                                                                                                                                                           \
-            /* Codes_SRS_TQUEUE_01_056: [ The lock initialized in TQUEUE_CREATE_GROWABLE(T) shall be de-initialized. ] */                                           \
-            srw_lock_ll_deinit(&tqueue->resize_lock);                                                                                                               \
-            /* Codes_SRS_TQUEUE_01_057: [ The array backing the queue shall be freed. ] */                                                                          \
-            free(tqueue->queue);                                                                                                                                    \
-        }                                                                                                                                                           \
+        /* Codes_SRS_TQUEUE_01_056: [ The lock initialized in TQUEUE_CREATE(T) shall be de-initialized. ] */                                                        \
+        srw_lock_ll_deinit(&tqueue->resize_lock);                                                                                                                   \
+        /* Codes_SRS_TQUEUE_01_057: [ The array backing the queue shall be freed. ] */                                                                              \
+        free(tqueue->queue);                                                                                                                                        \
     }                                                                                                                                                               \
 }                                                                                                                                                                   \
 
 /*introduces a function definition for tqueue_create*/
-#define TQUEUE_LL_CREATE_DEFINE(C, T)                                                                                                                               \
-TQUEUE_LL(T) TQUEUE_LL_CREATE(C)(uint32_t queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T) dispose_item_function, void* dispose_item_function_context) \
+#define TQUEUE_LL_CREATE_DEFINE(C, T)                                                                                                                      \
+TQUEUE_LL(T) TQUEUE_LL_CREATE(C)(uint32_t initial_queue_size, uint32_t max_queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T) dispose_item_function, void* dispose_item_function_context) \
 {                                                                                                                                                                   \
     TQUEUE_TYPEDEF_NAME(T)* result;                                                                                                                                 \
     bool is_copy_item_function_NULL = (copy_item_function == NULL);                                                                                                 \
     bool is_dispose_item_function_NULL = (dispose_item_function == NULL);                                                                                           \
     if (                                                                                                                                                            \
-        /* Codes_SRS_TQUEUE_01_001: [ If queue_size is 0, TQUEUE_CREATE(T) shall fail and return NULL. ]*/                                                          \
-        (queue_size == 0) ||                                                                                                                                        \
-        /* Codes_SRS_TQUEUE_01_002: [ If any of copy_item_function and dispose_item_function are NULL and at least one of them is not NULL, TQUEUE_CREATE(T) shall fail and return NULL. ]*/ \
-        ((is_copy_item_function_NULL || is_dispose_item_function_NULL) &&                                                                                           \
-         !(is_copy_item_function_NULL && is_dispose_item_function_NULL))                                                                                            \
-       )                                                                                                                                                            \
-    {                                                                                                                                                               \
-        LogError("Invalid arguments: uint32_t queue_size=%" PRIu32 ", " MU_TOSTRING(TQUEUE_COPY_ITEM_FUNC(T)) " copy_item_function=%p, " MU_TOSTRING(TQUEUE_DISPOSE_ITEM_FUNC(T)) " dispose_item_function=%p, void* dispose_item_function_context=%p", \
-            queue_size, copy_item_function, dispose_item_function, dispose_item_function_context);                                                        \
-        result = NULL;                                                                                                                                              \
-    }                                                                                                                                                               \
-    else                                                                                                                                                            \
-    {                                                                                                                                                               \
-        /* Codes_SRS_TQUEUE_01_003: [ TQUEUE_CREATE(T) shall call THANDLE_MALLOC_FLEX with TQUEUE_DISPOSE_FUNC(T) as dispose function, nmemb set to queue_size and size set to sizeof(T). ]*/ \
-        result = THANDLE_MALLOC_FLEX(TQUEUE_TYPEDEF_NAME(C))(TQUEUE_LL_FREE_NAME(C), queue_size, sizeof(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)));                         \
-        if(result == NULL)                                                                                                                                          \
-        {                                                                                                                                                           \
-            /* Codes_SRS_TQUEUE_01_007: [ If there are any failures then TQUEUE_CREATE(T) shall fail and return NULL. ]*/                                           \
-            LogError("failure in " MU_TOSTRING(THANDLE_MALLOC_FLEX) "(sizeof(" MU_TOSTRING(TQUEUE_TYPEDEF_NAME(C)) ")=%zu, queue_size=%" PRIu32 ", sizeof(" MU_TOSTRING(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)) ")=%zu)", \
-                sizeof(TQUEUE_TYPEDEF_NAME(C)), queue_size, sizeof(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)));                                                              \
-            /*return as is*/                                                                                                                                        \
-        }                                                                                                                                                           \
-        else                                                                                                                                                        \
-        {                                                                                                                                                           \
-            result->queue_size = queue_size;                                                                                                                        \
-            result->queue = result->queue_flex;                                                                                                                     \
-            result->queue_type = TQUEUE_TYPE_FIXED_SIZE;                                                                                                            \
-            result->copy_item_function = copy_item_function;                                                                                                        \
-            result->dispose_item_function = dispose_item_function;                                                                                                  \
-            result->dispose_item_function_context = dispose_item_function_context;                                                                                  \
-            /* Codes_SRS_TQUEUE_01_004: [ TQUEUE_CREATE(T) shall initialize the head and tail of the list with 0 by using interlocked_exchange_64. ]*/              \
-            (void)interlocked_exchange_64(&result->head, 0);                                                                                                        \
-            (void)interlocked_exchange_64(&result->tail, 0);                                                                                                        \
-            for (uint32_t i = 0; i < queue_size; i++)                                                                                                               \
-            {                                                                                                                                                       \
-                /* Codes_SRS_TQUEUE_01_005: [ TQUEUE_CREATE(T) shall initialize the state for each entry in the array used for the queue with NOT_USED by using interlocked_exchange. ]*/ \
-                (void)interlocked_exchange(&result->queue[i].state, QUEUE_ENTRY_STATE_NOT_USED);                                                                    \
-            }                                                                                                                                                       \
-            /* Codes_SRS_TQUEUE_01_006: [ TQUEUE_CREATE(T) shall succeed and return a non-NULL value. ]*/                                                           \
-            /*return as is*/                                                                                                                                        \
-        }                                                                                                                                                           \
-    }                                                                                                                                                               \
-    return result;                                                                                                                                                  \
-}
-
-/*introduces a function definition for tqueue_create_growable*/
-#define TQUEUE_LL_CREATE_GROWABLE_DEFINE(C, T)                                                                                                                      \
-TQUEUE_LL(T) TQUEUE_LL_CREATE_GROWABLE(C)(uint32_t initial_queue_size, uint32_t max_queue_size, TQUEUE_COPY_ITEM_FUNC(T) copy_item_function, TQUEUE_DISPOSE_ITEM_FUNC(T) dispose_item_function, void* dispose_item_function_context) \
-{                                                                                                                                                                   \
-    TQUEUE_TYPEDEF_NAME(T)* result;                                                                                                                                 \
-    bool is_copy_item_function_NULL = (copy_item_function == NULL);                                                                                                 \
-    bool is_dispose_item_function_NULL = (dispose_item_function == NULL);                                                                                           \
-    if (                                                                                                                                                            \
-        /* Codes_SRS_TQUEUE_01_046: [ If initial_queue_size is 0, TQUEUE_CREATE_GROWABLE(T) shall fail and return NULL. ]*/                                         \
+        /* Codes_SRS_TQUEUE_01_046: [ If initial_queue_size is 0, TQUEUE_CREATE(T) shall fail and return NULL. ]*/                                                  \
         (initial_queue_size == 0) ||                                                                                                                                \
-        /* Codes_SRS_TQUEUE_01_047: [ If initial_queue_size is greater than max_queue_size, TQUEUE_CREATE_GROWABLE(T) shall fail and return NULL. ]*/               \
+        /* Codes_SRS_TQUEUE_01_047: [ If initial_queue_size is greater than max_queue_size, TQUEUE_CREATE(T) shall fail and return NULL. ]*/                        \
         (initial_queue_size > max_queue_size) ||                                                                                                                    \
-        /* Codes_SRS_TQUEUE_01_048: [ If any of copy_item_function and dispose_item_function are NULL and at least one of them is not NULL, TQUEUE_CREATE_GROWABLE(T) shall fail and return NULL. ]*/ \
+        /* Codes_SRS_TQUEUE_01_048: [ If any of copy_item_function and dispose_item_function are NULL and at least one of them is not NULL, TQUEUE_CREATE(T) shall fail and return NULL. ]*/ \
         ((is_copy_item_function_NULL || is_dispose_item_function_NULL) &&                                                                                           \
          !(is_copy_item_function_NULL && is_dispose_item_function_NULL))                                                                                            \
        )                                                                                                                                                            \
@@ -259,41 +188,42 @@ TQUEUE_LL(T) TQUEUE_LL_CREATE_GROWABLE(C)(uint32_t initial_queue_size, uint32_t 
     }                                                                                                                                                               \
     else                                                                                                                                                            \
     {                                                                                                                                                               \
-        /* Codes_SRS_TQUEUE_01_049: [ TQUEUE_CREATE_GROWABLE(T) shall call THANDLE_MALLOC with TQUEUE_DISPOSE_FUNC(T) as dispose function. ] */                     \
+        /* Codes_SRS_TQUEUE_01_049: [ TQUEUE_CREATE(T) shall call THANDLE_MALLOC with TQUEUE_DISPOSE_FUNC(T) as dispose function. ] */                              \
         result = THANDLE_MALLOC(TQUEUE_TYPEDEF_NAME(C))(TQUEUE_LL_FREE_NAME(C));                                                                                    \
         if (result == NULL)                                                                                                                                         \
         {                                                                                                                                                           \
+            /* Codes_SRS_TQUEUE_01_071: [ If there are any failures then TQUEUE_CREATE(T) shall fail and return NULL. ]*/                                           \
             LogError("failure in " MU_TOSTRING(THANDLE_MALLOC(TQUEUE_TYPEDEF_NAME(C))) "");                                                                         \
             /*return as is*/                                                                                                                                        \
         }                                                                                                                                                           \
         else                                                                                                                                                        \
         {                                                                                                                                                           \
-            /* Codes_SRS_TQUEUE_01_050: [ TQUEUE_CREATE_GROWABLE(T) shall allocate memory for an array of size size containing elements of type T. ] */             \
+            /* Codes_SRS_TQUEUE_01_050: [ TQUEUE_CREATE(T) shall allocate memory for an array of size size containing elements of type T. ] */                      \
             result->queue = malloc_2(initial_queue_size, sizeof(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)));                                                                 \
             if (result->queue == NULL)                                                                                                                              \
             {                                                                                                                                                       \
-                LogError("failure in malloc_2(%" PRIu32 ", sizeof(" MU_TOSTRING(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)) "))", initial_queue_size);                        \
-                THANDLE_FREE(TQUEUE_TYPEDEF_NAME(C))(result);                                                                                                       \
+                /* Codes_SRS_TQUEUE_01_071: [ If there are any failures then TQUEUE_CREATE(T) shall fail and return NULL. ]*/                                       \
+                LogError("failure in malloc_2(%" PRIu32 ", sizeof(" MU_TOSTRING(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)) ")=%zu)",                                         \
+                    initial_queue_size, sizeof(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)));                                                                                  \
             }                                                                                                                                                       \
             else                                                                                                                                                    \
             {                                                                                                                                                       \
                 result->queue_size = initial_queue_size;                                                                                                            \
                 result->max_size = max_queue_size;                                                                                                                  \
-                result->queue_type = TQUEUE_TYPE_GROWABLE;                                                                                                          \
                 result->copy_item_function = copy_item_function;                                                                                                    \
                 result->dispose_item_function = dispose_item_function;                                                                                              \
                 result->dispose_item_function_context = dispose_item_function_context;                                                                              \
-                /* Codes_SRS_TQUEUE_01_051: [ TQUEUE_CREATE_GROWABLE(T) shall initialize the head and tail of the list with 0 by using interlocked_exchange_64. ] */\
+                /* Codes_SRS_TQUEUE_01_051: [ TQUEUE_CREATE(T) shall initialize the head and tail of the list with 0 by using interlocked_exchange_64. ] */         \
                 (void)interlocked_exchange_64(&result->head, 0);                                                                                                    \
                 (void)interlocked_exchange_64(&result->tail, 0);                                                                                                    \
                 for (uint32_t i = 0; i < initial_queue_size; i++)                                                                                                   \
                 {                                                                                                                                                   \
-                    /* Codes_SRS_TQUEUE_01_052: [ TQUEUE_CREATE_GROWABLE(T) shall initialize the state for each entry in the array used for the queue with NOT_USED by using interlocked_exchange. ] */ \
+                    /* Codes_SRS_TQUEUE_01_052: [ TQUEUE_CREATE(T) shall initialize the state for each entry in the array used for the queue with NOT_USED by using interlocked_exchange. ] */ \
                     (void)interlocked_exchange(&result->queue[i].state, QUEUE_ENTRY_STATE_NOT_USED);                                                                \
                 }                                                                                                                                                   \
-                /* Codes_SRS_TQUEUE_01_053: [ TQUEUE_CREATE_GROWABLE(T) shall initialize a SRW_LOCK_LL to be used for locking the queue when it needs to grow in size. ] */ \
-                srw_lock_ll_init(&result->resize_lock);                                                                                                             \
-                /* Codes_SRS_TQUEUE_01_054: [ TQUEUE_CREATE_GROWABLE(T) shall succeed and return a non-NULL value. ] */                                             \
+                /* Codes_SRS_TQUEUE_01_053: [ TQUEUE_CREATE(T) shall initialize a SRW_LOCK_LL to be used for locking the queue when it needs to grow in size. ] */  \
+                (void)srw_lock_ll_init(&result->resize_lock);                                                                                                       \
+                /* Codes_SRS_TQUEUE_01_054: [ TQUEUE_CREATE(T) shall succeed and return a non-NULL value. ] */                                                      \
                 /*return as is*/                                                                                                                                    \
                 goto all_ok;                                                                                                                                        \
             }                                                                                                                                                       \
@@ -325,11 +255,8 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
     {                                                                                                                                                               \
         TQUEUE_TYPEDEF_NAME(T)* tqueue_ptr = THANDLE_GET_T(TQUEUE_TYPEDEF_NAME(T))(tqueue);                                                                         \
         bool unlock_needed = true;                                                                                                                                  \
-        if (tqueue_ptr->queue_type == TQUEUE_TYPE_GROWABLE)                                                                                                         \
-        {                                                                                                                                                           \
-            /* Codes_SRS_TQUEUE_01_058: [ If the queue is growable, TQUEUE_PUSH(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */ \
-            srw_lock_ll_acquire_shared(&tqueue_ptr->resize_lock);                                                                                                   \
-        }                                                                                                                                                           \
+        /* Codes_SRS_TQUEUE_01_058: [ TQUEUE_PUSH(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */                             \
+        srw_lock_ll_acquire_shared(&tqueue_ptr->resize_lock);                                                                                                       \
         /* Codes_SRS_TQUEUE_01_014: [ TQUEUE_PUSH(T) shall execute the following actions until it is either able to push the item in the queue or the queue is full: ]*/ \
         do                                                                                                                                                          \
         {                                                                                                                                                           \
@@ -340,9 +267,16 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
             /* Codes_SRS_TQUEUE_01_060: [ If the queue is full (current head >= current tail + queue size): ]*/                                                     \
             if (current_head >= current_tail + tqueue_ptr->queue_size)                                                                                              \
             {                                                                                                                                                       \
-                /* Codes_SRS_TQUEUE_01_062: [ If the queue is growable: ] */                                                                                        \
-                if (tqueue_ptr->queue_type == TQUEUE_TYPE_GROWABLE)                                                                                                 \
+                /* greater cannot really happen */                                                                                                                  \
+                if (tqueue_ptr->queue_size >= tqueue_ptr->max_size)                                                                                                 \
                 {                                                                                                                                                   \
+                    /* Codes_SRS_TQUEUE_01_061: [ If the current queue size is equal to the max queue size, TQUEUE_PUSH(T) shall return TQUEUE_PUSH_QUEUE_FULL. ]*/ \
+                    result = TQUEUE_PUSH_QUEUE_FULL;                                                                                                                \
+                    break;                                                                                                                                          \
+                }                                                                                                                                                   \
+                else                                                                                                                                                \
+                {                                                                                                                                                   \
+                    /* Codes_SRS_TQUEUE_01_062: [ If the current queue size is less than the max queue size: ] */                                                   \
                     /* Codes_SRS_TQUEUE_01_063: [ TQUEUE_PUSH(T) shall release in shared mode the lock used to guard the growing of the queue. ] */                 \
                     srw_lock_ll_release_shared(&tqueue_ptr->resize_lock);                                                                                           \
                     /* Codes_SRS_TQUEUE_01_064: [ TQUEUE_PUSH(T) shall acquire in exclusive mode the lock used to guard the growing of the queue. ] */              \
@@ -352,12 +286,16 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
                     uint32_t new_queue_size = tqueue_ptr->queue_size * 2;                                                                                           \
                     if (new_queue_size > tqueue_ptr->max_size)                                                                                                      \
                     {                                                                                                                                               \
-                        /* Codes_SRS_TQUEUE_01_070: [ If the newly computed queue size is higher than the max_queue_size value passed to TQUEUE_CREATE_GROWABLE(T), TQUEUE_PUSH(T) shall use max_queue_size as the new queue size. ]*/ \
+                        /* Codes_SRS_TQUEUE_01_070: [ If the newly computed queue size is higher than the max_queue_size value passed to TQUEUE_CREATE(T), TQUEUE_PUSH(T) shall use max_queue_size as the new queue size. ]*/ \
                         new_queue_size = tqueue_ptr->max_size;                                                                                                      \
                     }                                                                                                                                               \
                     if (new_queue_size == tqueue_ptr->queue_size)                                                                                                   \
                     {                                                                                                                                               \
                         LogWarning("Queue is at its max size: tqueue=%p, tqueue_ptr->queue_size=%" PRIu32 "", tqueue, tqueue_ptr->queue_size);                      \
+                        result = TQUEUE_PUSH_QUEUE_FULL;                                                                                                            \
+                        srw_lock_ll_release_exclusive(&tqueue_ptr->resize_lock);                                                                                    \
+                        unlock_needed = false;                                                                                                                      \
+                        break;                                                                                                                                      \
                     }                                                                                                                                               \
                     else                                                                                                                                            \
                     {                                                                                                                                               \
@@ -391,12 +329,6 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
                     /* Codes_SRS_TQUEUE_01_066: [ TQUEUE_PUSH(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */                 \
                     srw_lock_ll_acquire_shared(&tqueue_ptr->resize_lock);                                                                                           \
                     continue;                                                                                                                                       \
-                }                                                                                                                                                   \
-                else                                                                                                                                                \
-                {                                                                                                                                                   \
-                    /* Codes_SRS_TQUEUE_01_061: [ If the queue is not growable, TQUEUE_PUSH(T) shall return TQUEUE_PUSH_QUEUE_FULL. ]*/                             \
-                    result = TQUEUE_PUSH_QUEUE_FULL;                                                                                                                \
-                    break;                                                                                                                                          \
                 }                                                                                                                                                   \
             }                                                                                                                                                       \
             else                                                                                                                                                    \
@@ -440,13 +372,10 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
             }                                                                                                                                                       \
         } while (1);                                                                                                                                                \
                                                                                                                                                                     \
-        if (tqueue_ptr->queue_type == TQUEUE_TYPE_GROWABLE)                                                                                                         \
+        /* Codes_SRS_TQUEUE_01_059: [ TQUEUE_PUSH(T) shall release in shared mode the lock used to guard the growing of the queue. ] */                             \
+        if (unlock_needed)                                                                                                                                          \
         {                                                                                                                                                           \
-            /* Codes_SRS_TQUEUE_01_059: [ TQUEUE_PUSH(T) shall release in shared mode the lock used to guard the growing of the queue. ] */                         \
-            if (unlock_needed)                                                                                                                                      \
-            {                                                                                                                                                       \
-                srw_lock_ll_release_shared(&tqueue_ptr->resize_lock);                                                                                               \
-            }                                                                                                                                                       \
+            srw_lock_ll_release_shared(&tqueue_ptr->resize_lock);                                                                                                   \
         }                                                                                                                                                           \
     }                                                                                                                                                               \
     return result;                                                                                                                                                  \
@@ -470,86 +399,93 @@ TQUEUE_POP_RESULT TQUEUE_LL_POP(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_item
     }                                                                                                                                                               \
     else                                                                                                                                                            \
     {                                                                                                                                                               \
-        /* Codes_SRS_TQUEUE_01_026: [ TQUEUE_POP(T) shall execute the following actions until it is either able to pop the item from the queue or the queue is empty: ] */ \
-        do                                                                                                                                                          \
+        /* Codes_SRS_TQUEUE_01_072: [ TQUEUE_POP(T) shall acquire in shared mode the lock used to guard the growing of the queue. ]*/                               \
+        TQUEUE_TYPEDEF_NAME(T)* tqueue_ptr = THANDLE_GET_T(TQUEUE_TYPEDEF_NAME(T))(tqueue);                                                                         \
+        srw_lock_ll_acquire_shared(&tqueue_ptr->resize_lock);                                                                                                       \
         {                                                                                                                                                           \
-            /* Codes_SRS_TQUEUE_01_028: [ TQUEUE_POP(T) shall obtain the current head queue by calling interlocked_add_64. ]*/                                      \
-            int64_t current_head = interlocked_add_64((volatile_atomic int64_t*)&tqueue->head, 0);                                                                  \
-            /* Codes_SRS_TQUEUE_01_029: [ TQUEUE_POP(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/                                      \
-            int64_t current_tail = interlocked_add_64((volatile_atomic int64_t*)&tqueue->tail, 0);                                                                  \
-            if (current_tail >= current_head)                                                                                                                       \
+            /* Codes_SRS_TQUEUE_01_026: [ TQUEUE_POP(T) shall execute the following actions until it is either able to pop the item from the queue or the queue is empty: ] */ \
+            do                                                                                                                                                      \
             {                                                                                                                                                       \
-                /* Codes_SRS_TQUEUE_01_035: [ If the queue is empty (current tail >= current head), TQUEUE_POP(T) shall return TQUEUE_POP_QUEUE_EMPTY. ]*/          \
-                result = TQUEUE_POP_QUEUE_EMPTY;                                                                                                                    \
-                break;                                                                                                                                              \
-            }                                                                                                                                                       \
-            else                                                                                                                                                    \
-            {                                                                                                                                                       \
-                /* LogInfo("Popping from %" PRId64 "", current_tail); */ \
-                /* Codes_SRS_TQUEUE_01_030: [ Using interlocked_compare_exchange, TQUEUE_PUSH(T) shall set the tail array entry state to POPPING (from USED). ]*/   \
-                uint32_t index = (uint32_t)(current_tail % tqueue->queue_size);                                                                                     \
-                if (interlocked_compare_exchange((volatile_atomic int32_t*)&tqueue->queue[index].state, QUEUE_ENTRY_STATE_POPPING, QUEUE_ENTRY_STATE_USED) != QUEUE_ENTRY_STATE_USED) \
+                /* Codes_SRS_TQUEUE_01_028: [ TQUEUE_POP(T) shall obtain the current head queue by calling interlocked_add_64. ]*/                                  \
+                int64_t current_head = interlocked_add_64(&tqueue_ptr->head, 0);                                                              \
+                /* Codes_SRS_TQUEUE_01_029: [ TQUEUE_POP(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/                                  \
+                int64_t current_tail = interlocked_add_64(&tqueue_ptr->tail, 0);                                                              \
+                if (current_tail >= current_head)                                                                                                                   \
                 {                                                                                                                                                   \
-                    /* Codes_SRS_TQUEUE_01_036: [ If the state of the array entry corresponding to the tail is not USED, TQUEUE_POP(T) shall try again. ]*/         \
-                    continue;                                                                                                                                       \
+                    /* Codes_SRS_TQUEUE_01_035: [ If the queue is empty (current tail >= current head), TQUEUE_POP(T) shall return TQUEUE_POP_QUEUE_EMPTY. ]*/      \
+                    result = TQUEUE_POP_QUEUE_EMPTY;                                                                                                                \
+                    break;                                                                                                                                          \
                 }                                                                                                                                                   \
                 else                                                                                                                                                \
                 {                                                                                                                                                   \
-                    bool should_pop;                                                                                                                                \
-                    /* Codes_SRS_TQUEUE_01_039: [ If condition_function is not NULL: ]*/                                                                            \
-                    if (condition_function != NULL)                                                                                                                 \
+                    /* LogInfo("Popping from %" PRId64 "", current_tail); */                                                                                        \
+                    /* Codes_SRS_TQUEUE_01_030: [ Using interlocked_compare_exchange, TQUEUE_PUSH(T) shall set the tail array entry state to POPPING (from USED). ]*/ \
+                    uint32_t index = (uint32_t)(current_tail % tqueue_ptr->queue_size);                                                                                 \
+                    if (interlocked_compare_exchange(&tqueue_ptr->queue[index].state, QUEUE_ENTRY_STATE_POPPING, QUEUE_ENTRY_STATE_USED) != QUEUE_ENTRY_STATE_USED) \
                     {                                                                                                                                               \
-                        /* Codes_SRS_TQUEUE_01_040: [ TQUEUE_POP(T) shall call condition_function with condition_function_context and a pointer to the array entry value whose state was changed to POPPING. ] */ \
-                        should_pop = condition_function(condition_function_context, (T*)&tqueue->queue[index].value);                                               \
+                        /* Codes_SRS_TQUEUE_01_036: [ If the state of the array entry corresponding to the tail is not USED, TQUEUE_POP(T) shall try again. ]*/     \
+                        continue;                                                                                                                                   \
                     }                                                                                                                                               \
                     else                                                                                                                                            \
                     {                                                                                                                                               \
-                        /* Codes_SRS_TQUEUE_01_042: [ Otherwise, shall proceed with the pop. ]*/                                                                    \
-                        should_pop = true;                                                                                                                          \
-                    }                                                                                                                                               \
-                    if (!should_pop)                                                                                                                                \
-                    {                                                                                                                                               \
-                        /* Codes_SRS_TQUEUE_01_041: [ If condition_function returns false, TQUEUE_POP(T) shall set the state to USED by using interlocked_exchange and return TQUEUE_POP_REJECTED. ]*/ \
-                        (void)interlocked_exchange((volatile_atomic int32_t*)&tqueue->queue[index].state, QUEUE_ENTRY_STATE_USED);                                  \
-                        result = TQUEUE_POP_REJECTED;                                                                                                               \
-                    }                                                                                                                                               \
-                    else                                                                                                                                            \
-                    {                                                                                                                                               \
-                        /* Codes_SRS_TQUEUE_01_031: [ TQUEUE_POP(T) shall replace the tail value with the tail value obtained earlier + 1 by using interlocked_exchange_64. ]*/ \
-                        if (interlocked_compare_exchange_64((volatile_atomic int64_t*)&tqueue->tail, current_tail + 1, current_tail) != current_tail)               \
+                        bool should_pop;                                                                                                                            \
+                        /* Codes_SRS_TQUEUE_01_039: [ If condition_function is not NULL: ]*/                                                                        \
+                        if (condition_function != NULL)                                                                                                             \
                         {                                                                                                                                           \
-                            /* Codes_SRS_TQUEUE_01_044: [ If incrementing the tail by using interlocked_compare_exchange_64 does not succeed, TQUEUE_POP(T) shall revert the state of the array entry to USED and retry. ]*/ \
-                            (void)interlocked_exchange((volatile_atomic int32_t*)&tqueue->queue[index].state, QUEUE_ENTRY_STATE_USED);                              \
-                            continue;                                                                                                                               \
+                            /* Codes_SRS_TQUEUE_01_040: [ TQUEUE_POP(T) shall call condition_function with condition_function_context and a pointer to the array entry value whose state was changed to POPPING. ] */ \
+                            should_pop = condition_function(condition_function_context, (T*)&tqueue_ptr->queue[index].value);                                           \
                         }                                                                                                                                           \
                         else                                                                                                                                        \
                         {                                                                                                                                           \
-                            if (tqueue->copy_item_function == NULL)                                                                                                 \
+                            /* Codes_SRS_TQUEUE_01_042: [ Otherwise, shall proceed with the pop. ]*/                                                                \
+                            should_pop = true;                                                                                                                      \
+                        }                                                                                                                                           \
+                        if (!should_pop)                                                                                                                            \
+                        {                                                                                                                                           \
+                            /* Codes_SRS_TQUEUE_01_041: [ If condition_function returns false, TQUEUE_POP(T) shall set the state to USED by using interlocked_exchange and return TQUEUE_POP_REJECTED. ]*/ \
+                            (void)interlocked_exchange(&tqueue_ptr->queue[index].state, QUEUE_ENTRY_STATE_USED);                              \
+                            result = TQUEUE_POP_REJECTED;                                                                                                           \
+                        }                                                                                                                                           \
+                        else                                                                                                                                        \
+                        {                                                                                                                                           \
+                            /* Codes_SRS_TQUEUE_01_031: [ TQUEUE_POP(T) shall replace the tail value with the tail value obtained earlier + 1 by using interlocked_exchange_64. ]*/ \
+                            if (interlocked_compare_exchange_64(&tqueue_ptr->tail, current_tail + 1, current_tail) != current_tail)           \
                             {                                                                                                                                       \
-                                /* Codes_SRS_TQUEUE_01_032: [ If a copy_item_function was not specified in TQUEUE_CREATE(T): ]*/                                    \
-                                /* Codes_SRS_TQUEUE_01_033: [ TQUEUE_POP(T) shall copy array entry value whose state was changed to POPPING to item. ]*/            \
-                                (void)memcpy((void*)item, (void*)&tqueue->queue[index].value, sizeof(T));                                                       \
+                                /* Codes_SRS_TQUEUE_01_044: [ If incrementing the tail by using interlocked_compare_exchange_64 does not succeed, TQUEUE_POP(T) shall revert the state of the array entry to USED and retry. ]*/ \
+                                (void)interlocked_exchange(&tqueue_ptr->queue[index].state, QUEUE_ENTRY_STATE_USED);                          \
+                                continue;                                                                                                                           \
                             }                                                                                                                                       \
                             else                                                                                                                                    \
                             {                                                                                                                                       \
-                                /* Codes_SRS_TQUEUE_01_037: [ If copy_item_function and sispose_item_function were specified in TQUEUE_CREATE(T): ]*/               \
-                                /* Codes_SRS_TQUEUE_01_038: [ TQUEUE_POP(T) shall call copy_item_function with copy_item_function_context as context, the array entry value whose state was changed to POPPING to item as pop_src and item as pop_dst. ]*/ \
-                                tqueue->copy_item_function(copy_item_function_context, item, (T*)&tqueue->queue[index].value);                                      \
+                                if (tqueue_ptr->copy_item_function == NULL)                                                                                             \
+                                {                                                                                                                                   \
+                                    /* Codes_SRS_TQUEUE_01_032: [ If a copy_item_function was not specified in TQUEUE_CREATE(T): ]*/                                \
+                                    /* Codes_SRS_TQUEUE_01_033: [ TQUEUE_POP(T) shall copy array entry value whose state was changed to POPPING to item. ]*/        \
+                                    (void)memcpy((void*)item, (void*)&tqueue_ptr->queue[index].value, sizeof(T));                                                       \
+                                }                                                                                                                                   \
+                                else                                                                                                                                \
+                                {                                                                                                                                   \
+                                    /* Codes_SRS_TQUEUE_01_037: [ If copy_item_function and sispose_item_function were specified in TQUEUE_CREATE(T): ]*/           \
+                                    /* Codes_SRS_TQUEUE_01_038: [ TQUEUE_POP(T) shall call copy_item_function with copy_item_function_context as context, the array entry value whose state was changed to POPPING to item as pop_src and item as pop_dst. ]*/ \
+                                    tqueue_ptr->copy_item_function(copy_item_function_context, item, (T*)&tqueue_ptr->queue[index].value);                                  \
+                                }                                                                                                                                   \
+                                if (tqueue_ptr->dispose_item_function != NULL)                                                                                          \
+                                {                                                                                                                                   \
+                                    /* Codes_SRS_TQUEUE_01_045: [ TQUEUE_POP(T) shall call dispose_item_function with dispose_item_function_context as context and the array entry value whose state was changed to POPPING as item. ]*/ \
+                                    tqueue_ptr->dispose_item_function(tqueue_ptr->dispose_item_function_context, (T*)&tqueue_ptr->queue[index].value);                          \
+                                }                                                                                                                                   \
+                                /* Codes_SRS_TQUEUE_01_034: [ TQUEUE_POP(T) shall set the state to NOT_USED by using interlocked_exchange, succeed and return TQUEUE_POP_OK. ]*/ \
+                                (void)interlocked_exchange(&tqueue_ptr->queue[index].state, QUEUE_ENTRY_STATE_NOT_USED);                      \
+                                result = TQUEUE_POP_OK;                                                                                                             \
                             }                                                                                                                                       \
-                            if (tqueue->dispose_item_function != NULL)                                                                                              \
-                            {                                                                                                                                       \
-                                /* Codes_SRS_TQUEUE_01_045: [ TQUEUE_POP(T) shall call dispose_item_function with dispose_item_function_context as context and the array entry value whose state was changed to POPPING as item. ]*/ \
-                                tqueue->dispose_item_function(tqueue->dispose_item_function_context, (T*)&tqueue->queue[index].value);                              \
-                            }                                                                                                                                       \
-                            /* Codes_SRS_TQUEUE_01_034: [ TQUEUE_POP(T) shall set the state to NOT_USED by using interlocked_exchange, succeed and return TQUEUE_POP_OK. ]*/ \
-                            (void)interlocked_exchange((volatile_atomic int32_t*)&tqueue->queue[index].state, QUEUE_ENTRY_STATE_NOT_USED);                          \
-                            result = TQUEUE_POP_OK;                                                                                                                 \
                         }                                                                                                                                           \
+                        break;                                                                                                                                      \
                     }                                                                                                                                               \
-                    break;                                                                                                                                          \
                 }                                                                                                                                                   \
-            }                                                                                                                                                       \
-        } while (1);                                                                                                                                                \
+            } while (1);                                                                                                                                            \
+            /* Codes_SRS_TQUEUE_01_073: [ TQUEUE_POP(T) shall release in shared mode the lock used to guard the growing of the queue. ] */                          \
+            srw_lock_ll_release_shared(&tqueue_ptr->resize_lock);                                                                                                   \
+        }                                                                                                                                                           \
     }                                                                                                                                                               \
     return result;                                                                                                                                                  \
 }                                                                                                                                                                   \
@@ -597,7 +533,6 @@ int64_t TQUEUE_LL_GET_VOLATILE_COUNT(C)(TQUEUE_LL(T) tqueue)                    
     /*hint: have TQUEUE_DEFINE_STRUCT_TYPE(T) before TQUEUE_LL_TYPE_DECLARE*/                                                       \
     THANDLE_LL_TYPE_DECLARE(TQUEUE_TYPEDEF_NAME(C), TQUEUE_TYPEDEF_NAME(T))                                                         \
     TQUEUE_LL_CREATE_DECLARE(C, T)                                                                                                  \
-    TQUEUE_LL_CREATE_GROWABLE_DECLARE(C, T)                                                                                         \
     TQUEUE_LL_PUSH_DECLARE(C, T)                                                                                                    \
     TQUEUE_LL_POP_DECLARE(C, T)                                                                                                     \
     TQUEUE_LL_GET_VOLATILE_COUNT_DECLARE(C, T)                                                                                      \
@@ -607,7 +542,6 @@ int64_t TQUEUE_LL_GET_VOLATILE_COUNT(C)(TQUEUE_LL(T) tqueue)                    
     /*hint: have THANDLE_TYPE_DEFINE(TQUEUE_TYPEDEF_NAME(T)) before TQUEUE_LL_TYPE_DEFINE*/                                         \
     TQUEUE_LL_FREE_DEFINE(C, T)                                                                                                     \
     TQUEUE_LL_CREATE_DEFINE(C, T)                                                                                                   \
-    TQUEUE_LL_CREATE_GROWABLE_DEFINE(C, T)                                                                                          \
     TQUEUE_LL_PUSH_DEFINE(C, T)                                                                                                     \
     TQUEUE_LL_POP_DEFINE(C, T)                                                                                                      \
     TQUEUE_LL_GET_VOLATILE_COUNT_DEFINE(C, T)                                                                                       \
