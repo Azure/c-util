@@ -289,39 +289,28 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
                         /* Codes_SRS_TQUEUE_01_070: [ If the newly computed queue size is higher than the max_queue_size value passed to TQUEUE_CREATE(T), TQUEUE_PUSH(T) shall use max_queue_size as the new queue size. ]*/ \
                         new_queue_size = tqueue_ptr->max_size;                                                                                                      \
                     }                                                                                                                                               \
-                    if (new_queue_size == tqueue_ptr->queue_size)                                                                                                   \
+                    /* Codes_SRS_TQUEUE_01_068: [ TQUEUE_PUSH(T) shall reallocate the array used to store the queue items based on the newly computed size. ]*/     \
+                    TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)* temp_queue = realloc_2(tqueue_ptr->queue, new_queue_size, sizeof(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)));          \
+                    if (temp_queue == NULL)                                                                                                                         \
                     {                                                                                                                                               \
-                        LogWarning("Queue is at its max size: tqueue=%p, tqueue_ptr->queue_size=%" PRIu32 "", tqueue, tqueue_ptr->queue_size);                      \
-                        result = TQUEUE_PUSH_QUEUE_FULL;                                                                                                            \
+                        /* Codes_SRS_TQUEUE_01_069: [ If reallocation fails, TQUEUE_PUSH(T) shall return TQUEUE_PUSH_ERROR. ]*/                                     \
+                        LogError("realloc_2(tqueue_ptr->queue=%p, new_queue_size=%" PRIu32 ", sizeof(" MU_TOSTRING(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)) ")=%zu) failed", \
+                            tqueue_ptr->queue, new_queue_size, sizeof(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)));                                                           \
+                        result = TQUEUE_PUSH_ERROR;                                                                                                                 \
+                        /* Codes_SRS_TQUEUE_01_065: [ TQUEUE_PUSH(T) shall release in exclusive mode the lock used to guard the growing of the queue. ] */          \
                         srw_lock_ll_release_exclusive(&tqueue_ptr->resize_lock);                                                                                    \
+                        /* No need to take the lock again, we are going to return anyway */                                                                         \
                         unlock_needed = false;                                                                                                                      \
                         break;                                                                                                                                      \
                     }                                                                                                                                               \
                     else                                                                                                                                            \
                     {                                                                                                                                               \
-                        /* Codes_SRS_TQUEUE_01_068: [ If the newly computed queue size is higher than the existing queue size TQUEUE_PUSH(T) shall reallocate the array used to store the queue items based on the newly computed size. ]*/ \
-                        TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)* temp_queue = realloc_2(tqueue_ptr->queue, new_queue_size, sizeof(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)));      \
-                        if (temp_queue == NULL)                                                                                                                     \
+                        tqueue_ptr->queue = temp_queue;                                                                                                             \
+                        for (uint32_t i = tqueue_ptr->queue_size; i < new_queue_size; i++)                                                                          \
                         {                                                                                                                                           \
-                            /* Codes_SRS_TQUEUE_01_069: [ If reallocation fails, TQUEUE_PUSH(T) shall return TQUEUE_PUSH_ERROR. ]*/                                 \
-                            LogError("realloc_2(tqueue_ptr->queue=%p, new_queue_size=%" PRIu32 ", sizeof(" MU_TOSTRING(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)) ")=%zu) failed", \
-                                tqueue_ptr->queue, new_queue_size, sizeof(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)));                                                       \
-                            result = TQUEUE_PUSH_ERROR;                                                                                                             \
-                            /* Codes_SRS_TQUEUE_01_065: [ TQUEUE_PUSH(T) shall release in exclusive mode the lock used to guard the growing of the queue. ] */      \
-                            srw_lock_ll_release_exclusive(&tqueue_ptr->resize_lock);                                                                                \
-                            /* No need to take the lock again, we are going to return anyway */                                                                     \
-                            unlock_needed = false;                                                                                                                  \
-                            break;                                                                                                                                  \
+                            (void)interlocked_exchange(&tqueue_ptr->queue[i].state, QUEUE_ENTRY_STATE_NOT_USED);                                                    \
                         }                                                                                                                                           \
-                        else                                                                                                                                        \
-                        {                                                                                                                                           \
-                            tqueue_ptr->queue = temp_queue;                                                                                                         \
-                            for (uint32_t i = tqueue_ptr->queue_size; i < new_queue_size; i++)                                                                      \
-                            {                                                                                                                                       \
-                                (void)interlocked_exchange(&tqueue_ptr->queue[i].state, QUEUE_ENTRY_STATE_NOT_USED);                                                \
-                            }                                                                                                                                       \
-                            tqueue_ptr->queue_size = new_queue_size;                                                                                                \
-                        }                                                                                                                                           \
+                        tqueue_ptr->queue_size = new_queue_size;                                                                                                    \
                     }                                                                                                                                               \
                                                                                                                                                                     \
                     /* Codes_SRS_TQUEUE_01_065: [ TQUEUE_PUSH(T) shall release in exclusive mode the lock used to guard the growing of the queue. ] */              \

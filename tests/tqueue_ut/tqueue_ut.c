@@ -837,7 +837,7 @@ TEST_FUNCTION(TQUEUE_PUSH_for_a_queue_with_max_higher_than_initial_size_succeeds
             /* Tests_SRS_TQUEUE_01_063: [ TQUEUE_PUSH(T) shall release in shared mode the lock used to guard the growing of the queue. ] */
             /* Tests_SRS_TQUEUE_01_064: [ TQUEUE_PUSH(T) shall acquire in exclusive mode the lock used to guard the growing of the queue. ] */
             /* Tests_SRS_TQUEUE_01_067: [ TQUEUE_PUSH(T) shall double the size of the queue. ]*/
-            /* Tests_SRS_TQUEUE_01_068: [ If the newly computed queue size is higher than the existing queue size TQUEUE_PUSH(T) shall reallocate the array used to store the queue items based on the newly computed size. ]*/
+            /* Tests_SRS_TQUEUE_01_068: [ TQUEUE_PUSH(T) shall reallocate the array used to store the queue items based on the newly computed size. ]*/
             /* Tests_SRS_TQUEUE_01_065: [ TQUEUE_PUSH(T) shall release in exclusive mode the lock used to guard the growing of the queue. ] */
             /* Tests_SRS_TQUEUE_01_066: [ TQUEUE_PUSH(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */
     /* Tests_SRS_TQUEUE_01_017: [ Using interlocked_compare_exchange, TQUEUE_PUSH(T) shall change the head array entry state to PUSHING (from NOT_USED). ]*/
