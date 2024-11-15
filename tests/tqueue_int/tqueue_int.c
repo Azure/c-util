@@ -67,7 +67,7 @@ TEST_FUNCTION(TQUEUE_CREATE_with_NULL_callbacks_succeds)
     // arrange
 
     // act
-    TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, NULL, NULL, NULL);
+    TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, 1024, NULL, NULL, NULL);
 
     // assert
     ASSERT_IS_NOT_NULL(queue);
@@ -79,7 +79,7 @@ TEST_FUNCTION(TQUEUE_CREATE_with_NULL_callbacks_succeds)
 TEST_FUNCTION(TQUEUE_PUSH_succeeds)
 {
     // arrange
-    TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, NULL, NULL, NULL);
+    TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, 1024, NULL, NULL, NULL);
     ASSERT_IS_NOT_NULL(queue);
     FOO foo_1 = { 42 };
 
@@ -96,7 +96,7 @@ TEST_FUNCTION(TQUEUE_PUSH_succeeds)
 TEST_FUNCTION(TQUEUE_POP_succeeds)
 {
     // arrange
-    TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, NULL, NULL, NULL);
+    TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, 1024, NULL, NULL, NULL);
     ASSERT_IS_NOT_NULL(queue);
     FOO foo_1 = { 42 };
     FOO foo_1_popped;
@@ -116,7 +116,7 @@ TEST_FUNCTION(TQUEUE_POP_succeeds)
 TEST_FUNCTION(TQUEUE_GET_COUNT_succeeds)
 {
     // arrange
-    TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, NULL, NULL, NULL);
+    TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, 1024, NULL, NULL, NULL);
     ASSERT_IS_NOT_NULL(queue);
     FOO foo_1 = { 42 };
     ASSERT_ARE_EQUAL(TQUEUE_PUSH_RESULT, TQUEUE_PUSH_OK, TQUEUE_PUSH(FOO)(queue, &foo_1, NULL));
@@ -146,7 +146,7 @@ static bool pop_condition_function_43(void* context, FOO* foo)
 TEST_FUNCTION(TQUEUE_POP_IF_succeeds)
 {
     // arrange
-    TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, NULL, NULL, NULL);
+    TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, 1024, NULL, NULL, NULL);
     ASSERT_IS_NOT_NULL(queue);
     FOO foo_1 = { .x = 42 };
     FOO foo_1_popped = { .x = 45 };
@@ -244,7 +244,7 @@ static int tqueue_chaos_thread_func(void* arg)
 TEST_FUNCTION(TQUEUE_chaos_knight_test)
 {
     // arrange
-    TQUEUE_CHAOS_TEST_CONTEXT test_context = { .queue = TQUEUE_CREATE(FOO)(16, NULL, NULL, NULL) };
+    TQUEUE_CHAOS_TEST_CONTEXT test_context = { .queue = TQUEUE_CREATE(FOO)(16, 1024, NULL, NULL, NULL) };
     ASSERT_IS_NOT_NULL(test_context.queue);
 
     (void)interlocked_exchange_64(&test_context.next_push_number, 1);
@@ -361,10 +361,10 @@ static int popper_thread_func(void* arg)
     return 0;
 }
 
-static void TQUEUE_test_with_1_pusher_and_1_popper_with_queue_size(uint32_t queue_size)
+static void TQUEUE_test_with_1_pusher_and_1_popper_with_queue_size(uint32_t initial_queue_size, uint32_t max_queue_size)
 {
     // arrange
-    ONE_PUSHER_ONE_POPPER_TEST_CONTEXT test_context = { .queue = TQUEUE_CREATE(FOO)(queue_size, NULL, NULL, NULL) };
+    ONE_PUSHER_ONE_POPPER_TEST_CONTEXT test_context = { .queue = TQUEUE_CREATE(FOO)(initial_queue_size, max_queue_size, NULL, NULL, NULL) };
     ASSERT_IS_NOT_NULL(test_context.queue);
 
     (void)interlocked_exchange_64(&test_context.next_push_number, 1);
@@ -418,14 +418,14 @@ static void TQUEUE_test_with_1_pusher_and_1_popper_with_queue_size(uint32_t queu
 // queue size used is 16
 TEST_FUNCTION(TQUEUE_test_with_1_pusher_and_1_popper_queue_size_16)
 {
-    TQUEUE_test_with_1_pusher_and_1_popper_with_queue_size(16);
+    TQUEUE_test_with_1_pusher_and_1_popper_with_queue_size(16, 16);
 }
 
 // This test has one pusher and one popper and validates the fact that order is preserved in this case
 // queue size used is 1 for maximum torture
 TEST_FUNCTION(TQUEUE_test_with_1_pusher_and_1_popper_queue_size_1)
 {
-    TQUEUE_test_with_1_pusher_and_1_popper_with_queue_size(1);
+    TQUEUE_test_with_1_pusher_and_1_popper_with_queue_size(1, 1);
 }
 
 // This test is very similar to the one without the THANDLE
@@ -438,7 +438,7 @@ typedef struct TQUEUE_CHAOS_TEST_THANDLE_CONTEXT_TAG
     volatile_atomic int64_t succesful_pop_count;
     volatile_atomic int64_t succesful_get_volatile_count;
     volatile_atomic int32_t terminate_test;
-    uint32_t queue_size;
+    uint32_t max_queue_size;
 } TQUEUE_CHAOS_TEST_THANDLE_CONTEXT;
 
 static bool TEST_THANDLE_should_pop(void* context, THANDLE(TEST_THANDLE)* item)
@@ -457,6 +457,8 @@ static bool TEST_THANDLE_should_pop(void* context, THANDLE(TEST_THANDLE)* item)
 
 MU_DEFINE_ENUM_WITHOUT_INVALID(TQUEUE_ACTION_TYPE_THANDLE_TEST, TQUEUE_ACTION_TYPE_THANDLE_TEST_VALUES);
 MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(TQUEUE_ACTION_TYPE_THANDLE_TEST, TQUEUE_ACTION_TYPE_THANDLE_TEST_VALUES);
+
+MU_DEFINE_ENUM_STRINGS(QUEUE_ENTRY_STATE, QUEUE_ENTRY_STATE_VALUES);
 
 static int tqueue_chaos_thread_THANDLE_func(void* arg)
 {
@@ -515,7 +517,7 @@ static int tqueue_chaos_thread_THANDLE_func(void* arg)
         case TQUEUE_ACTION_TYPE_THANDLE_TEST_GET_VOLATILE_COUNT:
         {
             int64_t current_count = TQUEUE_GET_VOLATILE_COUNT(THANDLE(TEST_THANDLE))(test_context->queue);
-            ASSERT_IS_TRUE(((current_count >= 0) && (current_count <= test_context->queue_size)));
+            ASSERT_IS_TRUE(((current_count >= 0) && (current_count <= test_context->max_queue_size)));
             (void)interlocked_increment_64(&test_context->succesful_get_volatile_count);
         }
         }
@@ -541,16 +543,16 @@ static void TEST_THANDLE_dispose(void* context, THANDLE(TEST_THANDLE)* item)
     THANDLE_ASSIGN(TEST_THANDLE)(item, NULL);
 }
 
-static void TQUEUE_chaos_knight_test_with_THANDLE_template(uint32_t queue_size, uint32_t pusher_count, uint32_t popper_count, bool reject_pops_randomly)
+static void TQUEUE_chaos_knight_test_with_THANDLE_template(uint32_t initial_queue_size, uint32_t max_queue_size, uint32_t pusher_count, uint32_t popper_count, bool reject_pops_randomly)
 {
     // arrange
-    LogInfo("Running chaos test with uint32_t queue_size=%" PRIu32 ", uint32_t pusher_count=%" PRIu32 ", uint32_t popper_count=%" PRIu32 ", bool reject_pops_randomly=%" PRI_BOOL "",
-        queue_size, pusher_count, popper_count, MU_BOOL_VALUE(reject_pops_randomly));
+    LogInfo("Running chaos test with uint32_t initial_queue_size=%" PRIu32 ", uint32_t max_queue_size=%" PRIu32 ", uint32_t pusher_count=%" PRIu32 ", uint32_t popper_count=%" PRIu32 ", bool reject_pops_randomly=%" PRI_BOOL "",
+        initial_queue_size, max_queue_size, pusher_count, popper_count, MU_BOOL_VALUE(reject_pops_randomly));
 
-    TQUEUE_CHAOS_TEST_THANDLE_CONTEXT test_context = { .queue = TQUEUE_CREATE(THANDLE(TEST_THANDLE))(16, TEST_THANDLE_copy_item, TEST_THANDLE_dispose, NULL) };
+    TQUEUE_CHAOS_TEST_THANDLE_CONTEXT test_context = { .queue = TQUEUE_CREATE(THANDLE(TEST_THANDLE))(initial_queue_size, max_queue_size, TEST_THANDLE_copy_item, TEST_THANDLE_dispose, NULL) };
     ASSERT_IS_NOT_NULL(test_context.queue);
 
-    test_context.queue_size = queue_size;
+    test_context.max_queue_size = max_queue_size;
 
     (void)interlocked_exchange_64(&test_context.next_push_number, 1);
 
@@ -611,17 +613,33 @@ static void TQUEUE_chaos_knight_test_with_THANDLE_template(uint32_t queue_size, 
 // It also uses a condition function for popping which randomly rejects pops
 TEST_FUNCTION(TQUEUE_chaos_knight_test_with_THANDLE)
 {
-    TQUEUE_chaos_knight_test_with_THANDLE_template(16, N_THREADS, N_THREADS, true);
+    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 16, N_THREADS, N_THREADS, true);
 }
 
 TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_1_pusher_and_, N_THREADS, _poppers))
 {
-    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 1, N_THREADS, true);
+    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 16, 1, N_THREADS, true);
 }
 
 TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_and_1_popper))
 {
-    TQUEUE_chaos_knight_test_with_THANDLE_template(16, N_THREADS, 1, true);
+    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 16, N_THREADS, 1, true);
+}
+
+// And now the same with queues that grow
+TEST_FUNCTION(TQUEUE_chaos_knight_test_with_THANDLE_grow_queue)
+{
+    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 1024 * 1024, N_THREADS, N_THREADS, true);
+}
+
+TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_1_pusher_and_, N_THREADS, _poppers_grow_queue))
+{
+    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 1024 * 1024, 1, N_THREADS, true);
+}
+
+TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_and_1_popper_grow_queue))
+{
+    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 1024 * 1024, N_THREADS, 1, true);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

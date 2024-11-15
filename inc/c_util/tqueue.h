@@ -47,7 +47,7 @@
     TQUEUE_CREATE_DECLARE(T)                                                                                        \
     TQUEUE_PUSH_DECLARE(T)                                                                                          \
     TQUEUE_POP_DECLARE(T)                                                                                           \
-    TQUEUE_GET_VOLATILE_COUNT_DECLARE(T)                                                                                     \
+    TQUEUE_GET_VOLATILE_COUNT_DECLARE(T)                                                                            \
 
 #define TQUEUE_TYPE_DEFINE(T, ...)                                                                                  \
     /*hint: have THANDLE_TYPE_DEFINE(TQUEUE_TYPEDEF_NAME(T)) before  TQUEUE_TYPE_DEFINE                */           \
@@ -55,6 +55,6 @@
     TQUEUE_CREATE_DEFINE(T)                                                                                         \
     TQUEUE_PUSH_DEFINE(T)                                                                                           \
     TQUEUE_POP_DEFINE(T)                                                                                            \
-    TQUEUE_GET_VOLATILE_COUNT_DEFINE(T)                                                                                      \
+    TQUEUE_GET_VOLATILE_COUNT_DEFINE(T)                                                                             \
 
 #endif // TQUEUE_H
