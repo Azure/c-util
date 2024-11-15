@@ -267,7 +267,6 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
             /* Codes_SRS_TQUEUE_01_060: [ If the queue is full (current head >= current tail + queue size): ]*/                                                     \
             if (current_head >= current_tail + tqueue_ptr->queue_size)                                                                                              \
             {                                                                                                                                                       \
-                uint32_t queue_size_before_exclusive_lock = tqueue_ptr->queue_size;                                                                                 \
                 /* greater cannot really happen */                                                                                                                  \
                 if (tqueue_ptr->queue_size >= tqueue_ptr->max_size)                                                                                                 \
                 {                                                                                                                                                   \
@@ -282,18 +281,17 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
                     srw_lock_ll_release_shared(&tqueue_ptr->resize_lock);                                                                                           \
                     /* Codes_SRS_TQUEUE_01_064: [ TQUEUE_PUSH(T) shall acquire in exclusive mode the lock used to guard the growing of the queue. ] */              \
                     srw_lock_ll_acquire_exclusive(&tqueue_ptr->resize_lock);                                                                                        \
+                    /* Codes_SRS_TQUEUE_01_075: [ TQUEUE_PUSH(T) shall obtain again the current head or the queue. ]*/                                              \
+                    current_head = interlocked_add_64(&tqueue_ptr->head, 0);                                                                                        \
+                    /* Codes_SRS_TQUEUE_01_076: [ TQUEUE_PUSH(T) shall obtain again the current tail or the queue. ]*/                                              \
+                    current_tail = interlocked_add_64(&tqueue_ptr->tail, 0);                                                                                        \
                     /* Codes_SRS_TQUEUE_01_074: [ If the size of the queue did not change after acquiring the lock in shared mode: ]*/                              \
-                    if (queue_size_before_exclusive_lock != tqueue_ptr->queue_size)                                                                                 \
+                    if (current_head < current_tail + tqueue_ptr->queue_size)                                                                                       \
                     {                                                                                                                                               \
-                        /* queue was resized by another thread, do nothing */                                                                                       \
+                        /* queue was resized by another thread or now there's space, do nothing */                                                                  \
                     }                                                                                                                                               \
                     else                                                                                                                                            \
                     {                                                                                                                                               \
-                        /* Codes_SRS_TQUEUE_01_075: [ TQUEUE_PUSH(T) shall obtain again the current head or the queue. ]*/                                          \
-                        current_head = interlocked_add_64(&tqueue_ptr->head, 0);                                                                                    \
-                        /* Codes_SRS_TQUEUE_01_076: [ TQUEUE_PUSH(T) shall obtain again the current tail or the queue. ]*/                                          \
-                        current_tail = interlocked_add_64(&tqueue_ptr->tail, 0);                                                                                    \
-                                                                                                                                                                    \
                         /* Codes_SRS_TQUEUE_01_067: [ TQUEUE_PUSH(T) shall double the size of the queue. ]*/                                                        \
                         uint32_t new_queue_size = tqueue_ptr->queue_size * 2;                                                                                       \
                         if (new_queue_size > tqueue_ptr->max_size)                                                                                                  \
@@ -320,34 +318,20 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
                             tqueue_ptr->queue = temp_queue;                                                                                                         \
                             /* Codes_SRS_TQUEUE_01_077: [ TQUEUE_PUSH(T) shall move the entries between the tail index and the array end like below: ]*/            \
                             uint32_t elements_in_queue = (uint32_t)(current_head - current_tail);                                                                   \
-                            uint32_t head_index = (uint32_t)(current_head % tqueue_ptr->queue_size);                                                                \
-                            uint32_t tail_index = (uint32_t)(current_tail % tqueue_ptr->queue_size);                                                                \
-                            if (tail_index > head_index)                                                                                                            \
+                            uint32_t tail_index = current_tail % tqueue_ptr->queue_size;                                                                            \
+                            uint32_t copy_item_count = tqueue_ptr->queue_size - tail_index;                                                                         \
+                            uint32_t new_tail_index = new_queue_size - copy_item_count;                                                                             \
+                            /* Codes_SRS_TQUEUE_01_078: [ Entries at the tail shall be moved to the end of the resized array ]*/                                    \
+                            if (copy_item_count > 0)                                                                                                                \
                             {                                                                                                                                       \
-                                uint32_t copy_item_count = tqueue_ptr->queue_size - tail_index;                                                                     \
-                                uint32_t new_tail_index = new_queue_size - copy_item_count;                                                                             \
-                                /* Codes_SRS_TQUEUE_01_078: [ Case 1 (tail index greater or equal than head index): ... ]*/                                                                                       \
-                                if (copy_item_count > 0)                                                                                                            \
-                                {                                                                                                                                   \
-                                    (void)memmove(&tqueue_ptr->queue[new_tail_index], &tqueue_ptr->queue[tail_index], sizeof(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)) * copy_item_count); \
-                                }                                                                                                                                   \
-                                for (uint32_t i = tail_index; i < new_tail_index; i++)                                                                          \
-                                {                                                                                                                                   \
-                                    (void)interlocked_exchange(&tqueue_ptr->queue[i].state, QUEUE_ENTRY_STATE_NOT_USED);                                            \
-                                }                                                                                                                                   \
-                                (void)interlocked_exchange_64(&tqueue_ptr->tail, new_tail_index);                                                                       \
-                                (void)interlocked_exchange_64(&tqueue_ptr->head, new_tail_index + elements_in_queue);                                                   \
+                                (void)memmove(&tqueue_ptr->queue[new_tail_index], &tqueue_ptr->queue[tail_index], sizeof(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)) * copy_item_count); \
                             }                                                                                                                                       \
-                            else \
-                            { \
-                                /* Codes_SRS_TQUEUE_01_078: [ Case 2 (tail index less than head index): ... ]*/                                                                                       \
-                                for (uint32_t i = tqueue_ptr->queue_size; i < new_queue_size; i++)                                                                          \
-                                {                                                                                                                                   \
-                                    (void)interlocked_exchange(&tqueue_ptr->queue[i].state, QUEUE_ENTRY_STATE_NOT_USED);                                            \
-                                }                                                                                                                                   \
-                                (void)interlocked_exchange_64(&tqueue_ptr->tail, tail_index);                                                                       \
-                                (void)interlocked_exchange_64(&tqueue_ptr->head, tail_index + elements_in_queue);                                                   \
+                            for (uint32_t i = tail_index; i < new_tail_index; i++)                                                                                  \
+                            {                                                                                                                                       \
+                                (void)interlocked_exchange(&tqueue_ptr->queue[i].state, QUEUE_ENTRY_STATE_NOT_USED);                                                \
                             }                                                                                                                                       \
+                            (void)interlocked_exchange_64(&tqueue_ptr->tail, new_tail_index);                                                                       \
+                            (void)interlocked_exchange_64(&tqueue_ptr->head, new_tail_index + elements_in_queue);                                                   \
                             tqueue_ptr->queue_size = new_queue_size;                                                                                                \
                         }                                                                                                                                           \
                     }                                                                                                                                               \
@@ -435,9 +419,9 @@ TQUEUE_POP_RESULT TQUEUE_LL_POP(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_item
             do                                                                                                                                                      \
             {                                                                                                                                                       \
                 /* Codes_SRS_TQUEUE_01_028: [ TQUEUE_POP(T) shall obtain the current head queue by calling interlocked_add_64. ]*/                                  \
-                int64_t current_head = interlocked_add_64(&tqueue_ptr->head, 0);                                                              \
+                int64_t current_head = interlocked_add_64(&tqueue_ptr->head, 0);                                                                                    \
                 /* Codes_SRS_TQUEUE_01_029: [ TQUEUE_POP(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/                                  \
-                int64_t current_tail = interlocked_add_64(&tqueue_ptr->tail, 0);                                                              \
+                int64_t current_tail = interlocked_add_64(&tqueue_ptr->tail, 0);                                                                                    \
                 if (current_tail >= current_head)                                                                                                                   \
                 {                                                                                                                                                   \
                     /* Codes_SRS_TQUEUE_01_035: [ If the queue is empty (current tail >= current head), TQUEUE_POP(T) shall return TQUEUE_POP_QUEUE_EMPTY. ]*/      \
@@ -448,7 +432,7 @@ TQUEUE_POP_RESULT TQUEUE_LL_POP(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_item
                 {                                                                                                                                                   \
                     /* LogInfo("Popping from %" PRId64 "", current_tail); */                                                                                        \
                     /* Codes_SRS_TQUEUE_01_030: [ Using interlocked_compare_exchange, TQUEUE_PUSH(T) shall set the tail array entry state to POPPING (from USED). ]*/ \
-                    uint32_t index = (uint32_t)(current_tail % tqueue_ptr->queue_size);                                                                                 \
+                    uint32_t index = (uint32_t)(current_tail % tqueue_ptr->queue_size);                                                                             \
                     if (interlocked_compare_exchange(&tqueue_ptr->queue[index].state, QUEUE_ENTRY_STATE_POPPING, QUEUE_ENTRY_STATE_USED) != QUEUE_ENTRY_STATE_USED) \
                     {                                                                                                                                               \
                         /* Codes_SRS_TQUEUE_01_036: [ If the state of the array entry corresponding to the tail is not USED, TQUEUE_POP(T) shall try again. ]*/     \
@@ -461,7 +445,7 @@ TQUEUE_POP_RESULT TQUEUE_LL_POP(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_item
                         if (condition_function != NULL)                                                                                                             \
                         {                                                                                                                                           \
                             /* Codes_SRS_TQUEUE_01_040: [ TQUEUE_POP(T) shall call condition_function with condition_function_context and a pointer to the array entry value whose state was changed to POPPING. ] */ \
-                            should_pop = condition_function(condition_function_context, (T*)&tqueue_ptr->queue[index].value);                                           \
+                            should_pop = condition_function(condition_function_context, (T*)&tqueue_ptr->queue[index].value);                                       \
                         }                                                                                                                                           \
                         else                                                                                                                                        \
                         {                                                                                                                                           \
@@ -471,36 +455,36 @@ TQUEUE_POP_RESULT TQUEUE_LL_POP(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_item
                         if (!should_pop)                                                                                                                            \
                         {                                                                                                                                           \
                             /* Codes_SRS_TQUEUE_01_041: [ If condition_function returns false, TQUEUE_POP(T) shall set the state to USED by using interlocked_exchange and return TQUEUE_POP_REJECTED. ]*/ \
-                            (void)interlocked_exchange(&tqueue_ptr->queue[index].state, QUEUE_ENTRY_STATE_USED);                              \
+                            (void)interlocked_exchange(&tqueue_ptr->queue[index].state, QUEUE_ENTRY_STATE_USED);                                                    \
                             result = TQUEUE_POP_REJECTED;                                                                                                           \
                         }                                                                                                                                           \
                         else                                                                                                                                        \
                         {                                                                                                                                           \
                             /* Codes_SRS_TQUEUE_01_031: [ TQUEUE_POP(T) shall replace the tail value with the tail value obtained earlier + 1 by using interlocked_exchange_64. ]*/ \
-                            if (interlocked_compare_exchange_64(&tqueue_ptr->tail, current_tail + 1, current_tail) != current_tail)           \
+                            if (interlocked_compare_exchange_64(&tqueue_ptr->tail, current_tail + 1, current_tail) != current_tail)                                 \
                             {                                                                                                                                       \
                                 /* Codes_SRS_TQUEUE_01_044: [ If incrementing the tail by using interlocked_compare_exchange_64 does not succeed, TQUEUE_POP(T) shall revert the state of the array entry to USED and retry. ]*/ \
-                                (void)interlocked_exchange(&tqueue_ptr->queue[index].state, QUEUE_ENTRY_STATE_USED);                          \
+                                (void)interlocked_exchange(&tqueue_ptr->queue[index].state, QUEUE_ENTRY_STATE_USED);                                                \
                                 continue;                                                                                                                           \
                             }                                                                                                                                       \
                             else                                                                                                                                    \
                             {                                                                                                                                       \
-                                if (tqueue_ptr->copy_item_function == NULL)                                                                                             \
+                                if (tqueue_ptr->copy_item_function == NULL)                                                                                         \
                                 {                                                                                                                                   \
                                     /* Codes_SRS_TQUEUE_01_032: [ If a copy_item_function was not specified in TQUEUE_CREATE(T): ]*/                                \
                                     /* Codes_SRS_TQUEUE_01_033: [ TQUEUE_POP(T) shall copy array entry value whose state was changed to POPPING to item. ]*/        \
-                                    (void)memcpy((void*)item, (void*)&tqueue_ptr->queue[index].value, sizeof(T));                                                       \
+                                    (void)memcpy((void*)item, (void*)&tqueue_ptr->queue[index].value, sizeof(T));                                                   \
                                 }                                                                                                                                   \
                                 else                                                                                                                                \
                                 {                                                                                                                                   \
                                     /* Codes_SRS_TQUEUE_01_037: [ If copy_item_function and sispose_item_function were specified in TQUEUE_CREATE(T): ]*/           \
                                     /* Codes_SRS_TQUEUE_01_038: [ TQUEUE_POP(T) shall call copy_item_function with copy_item_function_context as context, the array entry value whose state was changed to POPPING to item as pop_src and item as pop_dst. ]*/ \
-                                    tqueue_ptr->copy_item_function(copy_item_function_context, item, (T*)&tqueue_ptr->queue[index].value);                                  \
+                                    tqueue_ptr->copy_item_function(copy_item_function_context, item, (T*)&tqueue_ptr->queue[index].value);                          \
                                 }                                                                                                                                   \
-                                if (tqueue_ptr->dispose_item_function != NULL)                                                                                          \
+                                if (tqueue_ptr->dispose_item_function != NULL)                                                                                      \
                                 {                                                                                                                                   \
                                     /* Codes_SRS_TQUEUE_01_045: [ TQUEUE_POP(T) shall call dispose_item_function with dispose_item_function_context as context and the array entry value whose state was changed to POPPING as item. ]*/ \
-                                    tqueue_ptr->dispose_item_function(tqueue_ptr->dispose_item_function_context, (T*)&tqueue_ptr->queue[index].value);                          \
+                                    tqueue_ptr->dispose_item_function(tqueue_ptr->dispose_item_function_context, (T*)&tqueue_ptr->queue[index].value);              \
                                 }                                                                                                                                   \
                                 /* Codes_SRS_TQUEUE_01_034: [ TQUEUE_POP(T) shall set the state to NOT_USED by using interlocked_exchange, succeed and return TQUEUE_POP_OK. ]*/ \
                                 (void)interlocked_exchange(&tqueue_ptr->queue[index].state, QUEUE_ENTRY_STATE_NOT_USED);                      \
@@ -531,26 +515,33 @@ int64_t TQUEUE_LL_GET_VOLATILE_COUNT(C)(TQUEUE_LL(T) tqueue)                    
     }                                                                                                                                                               \
     else                                                                                                                                                            \
     {                                                                                                                                                               \
-        int64_t current_tail = 0;                                                                                                                                   \
-        int64_t current_head = 0;                                                                                                                                   \
-        do                                                                                                                                                          \
+        TQUEUE_TYPEDEF_NAME(T)* tqueue_ptr = THANDLE_GET_T(TQUEUE_TYPEDEF_NAME(T))(tqueue);                                                                         \
+        /* Codes_SRS_TQUEUE_01_080: [ TQUEUE_GET_VOLATILE_COUNT(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */               \
+        srw_lock_ll_acquire_shared(&tqueue_ptr->resize_lock);                                                                                                       \
         {                                                                                                                                                           \
-            /* Codes_SRS_TQUEUE_22_003: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/                       \
-            current_tail = interlocked_add_64((volatile_atomic int64_t*)&tqueue->tail, 0);                                                                          \
-            /* Codes_SRS_TQUEUE_22_002: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/                       \
-            current_head = interlocked_add_64((volatile_atomic int64_t*)&tqueue->head, 0);                                                                          \
-            /* Codes_SRS_TQUEUE_22_006: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue again by calling interlocked_add_64 and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. ]*/   \
-        } while (current_tail != interlocked_add_64((volatile_atomic int64_t*) & tqueue->tail, 0));                                                                 \
+            int64_t current_tail = 0;                                                                                                                               \
+            int64_t current_head = 0;                                                                                                                               \
+            do                                                                                                                                                      \
+            {                                                                                                                                                       \
+                /* Codes_SRS_TQUEUE_22_003: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/                   \
+                current_tail = interlocked_add_64(&tqueue_ptr->tail, 0);                                                                                            \
+                /* Codes_SRS_TQUEUE_22_002: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/                   \
+                current_head = interlocked_add_64(&tqueue_ptr->head, 0);                                                                                            \
+                /* Codes_SRS_TQUEUE_22_006: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue again by calling interlocked_add_64 and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. ]*/   \
+            } while (current_tail != interlocked_add_64(&tqueue_ptr->tail, 0));                                                                                     \
                                                                                                                                                                     \
-        if (current_tail >= current_head)                                                                                                                           \
-        {                                                                                                                                                           \
-            /* Codes_SRS_TQUEUE_22_004: [ If the queue is empty (current tail >= current head), TQUEUE_GET_VOLATILE_COUNT(T) shall return zero. ]*/                 \
-            result = 0;                                                                                                                                             \
-        }                                                                                                                                                           \
-        else                                                                                                                                                        \
-        {                                                                                                                                                           \
-            /* Codes_SRS_TQUEUE_22_005: [ TQUEUE_GET_VOLATILE_COUNT(T) shall return the item count of the queue. ]*/                                                \
-            result = current_head - current_tail;                                                                                                                   \
+            if (current_tail >= current_head)                                                                                                                       \
+            {                                                                                                                                                       \
+                /* Codes_SRS_TQUEUE_22_004: [ If the queue is empty (current tail >= current head), TQUEUE_GET_VOLATILE_COUNT(T) shall return zero. ]*/             \
+                result = 0;                                                                                                                                         \
+            }                                                                                                                                                       \
+            else                                                                                                                                                    \
+            {                                                                                                                                                       \
+                /* Codes_SRS_TQUEUE_22_005: [ TQUEUE_GET_VOLATILE_COUNT(T) shall return the item count of the queue. ]*/                                            \
+                result = current_head - current_tail;                                                                                                               \
+            }                                                                                                                                                       \
+            /* Codes_SRS_TQUEUE_01_081: [ TQUEUE_GET_VOLATILE_COUNT(T) shall release in shared mode the lock used to guard the growing of the queue. ] */           \
+            srw_lock_ll_release_shared(&tqueue_ptr->resize_lock);                                                                                                   \
         }                                                                                                                                                           \
     }                                                                                                                                                               \
     return result;                                                                                                                                                  \

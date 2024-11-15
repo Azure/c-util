@@ -842,14 +842,14 @@ TEST_FUNCTION(TQUEUE_PUSH_for_a_queue_with_max_higher_than_initial_size_succeeds
                 /* Tests_SRS_TQUEUE_01_067: [ TQUEUE_PUSH(T) shall double the size of the queue. ]*/
                 /* Tests_SRS_TQUEUE_01_068: [ TQUEUE_PUSH(T) shall reallocate the array used to store the queue items based on the newly computed size. ]*/
                 /* Tests_SRS_TQUEUE_01_077: [ TQUEUE_PUSH(T) shall move the entries between the tail index and the array end like below: ]*/            \
-                /* Tests_SRS_TQUEUE_01_079: [ Case 2 (tail index greater or equal to head index): ...
+                /* Tests_SRS_TQUEUE_01_078: [ Entries at the tail shall be moved to the end of the resized array
                 Before resize:
 
                 T = 2 H = 5
 
                 [X HO TX X]
 
-                After resize (foubling from 4 to 8): ]
+                After resize (doubling from 4 to 8): ]
 
                 T = 6 H = 9
 
@@ -883,8 +883,8 @@ TEST_FUNCTION(TQUEUE_PUSH_twice_for_queue_size_1_resizes_the_queue_case_1)
     {
         STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_NOT_USED)); // entry state
     }
-    STRICT_EXPECTED_CALL(interlocked_exchange_64(IGNORED_ARG, 0)); // set tail
-    STRICT_EXPECTED_CALL(interlocked_exchange_64(IGNORED_ARG, 1)); // set head
+    STRICT_EXPECTED_CALL(interlocked_exchange_64(IGNORED_ARG, 1)); // set tail
+    STRICT_EXPECTED_CALL(interlocked_exchange_64(IGNORED_ARG, 2)); // set head
     STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(IGNORED_ARG));
     STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
 
@@ -892,7 +892,7 @@ TEST_FUNCTION(TQUEUE_PUSH_twice_for_queue_size_1_resizes_the_queue_case_1)
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
 
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_PUSHING, QUEUE_ENTRY_STATE_NOT_USED)); // entry state
-    STRICT_EXPECTED_CALL(interlocked_compare_exchange_64(IGNORED_ARG, 2, 1)); // head change
+    STRICT_EXPECTED_CALL(interlocked_compare_exchange_64(IGNORED_ARG, 3, 2)); // head change
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_USED)); // entry state
     STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
 
@@ -921,14 +921,14 @@ TEST_FUNCTION(TQUEUE_PUSH_twice_for_queue_size_1_resizes_the_queue_case_1)
                 /* Tests_SRS_TQUEUE_01_067: [ TQUEUE_PUSH(T) shall double the size of the queue. ]*/
                 /* Tests_SRS_TQUEUE_01_068: [ TQUEUE_PUSH(T) shall reallocate the array used to store the queue items based on the newly computed size. ]*/
                 /* Tests_SRS_TQUEUE_01_077: [ TQUEUE_PUSH(T) shall move the entries between the tail index and the array end like below: ]*/            \
-                /* Tests_SRS_TQUEUE_01_078: [ Case 1 (tail index greater or equal than head index): ...
+                /* Tests_SRS_TQUEUE_01_078: [ Entries at the tail shall be moved to the end of the resized array
                 Before resize:
 
                 T = 2 H = 5
 
                 [X HO TX X]
 
-                After resize (foubling from 4 to 8): ]
+                After resize (doubling from 4 to 8): ]
 
                 T = 6 H = 9
 
@@ -970,8 +970,8 @@ TEST_FUNCTION(TQUEUE_PUSH_twice_for_queue_size_4_resizes_the_queue_case_1)
     {
         STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_NOT_USED)); // entry state
     }
-    STRICT_EXPECTED_CALL(interlocked_exchange_64(IGNORED_ARG, 2)); // set tail
-    STRICT_EXPECTED_CALL(interlocked_exchange_64(IGNORED_ARG, 6)); // set head
+    STRICT_EXPECTED_CALL(interlocked_exchange_64(IGNORED_ARG, 6)); // set tail
+    STRICT_EXPECTED_CALL(interlocked_exchange_64(IGNORED_ARG, 10)); // set head
     STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(IGNORED_ARG));
     STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
 
@@ -979,7 +979,7 @@ TEST_FUNCTION(TQUEUE_PUSH_twice_for_queue_size_4_resizes_the_queue_case_1)
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
 
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_PUSHING, QUEUE_ENTRY_STATE_NOT_USED)); // entry state
-    STRICT_EXPECTED_CALL(interlocked_compare_exchange_64(IGNORED_ARG, 7, 6)); // head change
+    STRICT_EXPECTED_CALL(interlocked_compare_exchange_64(IGNORED_ARG, 11, 10)); // head change
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_USED)); // entry state
     STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
 
@@ -1050,8 +1050,8 @@ TEST_FUNCTION(TQUEUE_PUSH_resizes_but_obeys_max_size)
     {
         STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_NOT_USED)); // entry state
     }
-    STRICT_EXPECTED_CALL(interlocked_exchange_64(IGNORED_ARG, 0)); // set tail
-    STRICT_EXPECTED_CALL(interlocked_exchange_64(IGNORED_ARG, 2)); // set head
+    STRICT_EXPECTED_CALL(interlocked_exchange_64(IGNORED_ARG, 2)); // set tail
+    STRICT_EXPECTED_CALL(interlocked_exchange_64(IGNORED_ARG, 4)); // set head
     STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(IGNORED_ARG));
     STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
     
@@ -1059,7 +1059,7 @@ TEST_FUNCTION(TQUEUE_PUSH_resizes_but_obeys_max_size)
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
     
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_PUSHING, QUEUE_ENTRY_STATE_NOT_USED)); // entry state
-    STRICT_EXPECTED_CALL(interlocked_compare_exchange_64(IGNORED_ARG, 3, 2)); // head change
+    STRICT_EXPECTED_CALL(interlocked_compare_exchange_64(IGNORED_ARG, 5, 4)); // head change
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, QUEUE_ENTRY_STATE_USED)); // entry state
     STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
 
@@ -1540,18 +1540,22 @@ TEST_FUNCTION(TQUEUE_GET_COUNT_with_NULL_tqueue_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
+/* Tests_SRS_TQUEUE_01_080: [ TQUEUE_GET_VOLATILE_COUNT(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */
 /* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
 /* Tests_SRS_TQUEUE_22_003: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/
 /* Tests_SRS_TQUEUE_22_006: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue again by calling interlocked_add_64 and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. ]*/
 /* Tests_SRS_TQUEUE_22_004: [ If the queue is empty (current tail >= current head), TQUEUE_GET_VOLATILE_COUNT(T) shall return zero. ]*/
+/* Tests_SRS_TQUEUE_01_081: [ TQUEUE_GET_VOLATILE_COUNT(T) shall release in shared mode the lock used to guard the growing of the queue. ] */
 TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_empty_tqueue_returns_zero)
 {
     // arrange
     TQUEUE(int32_t) queue = test_queue_create(1024, 1024, test_copy_item, test_dispose_item, (void*)0x4242);
 
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
 
     // act
     int64_t result = TQUEUE_GET_VOLATILE_COUNT(int32_t)(queue);
@@ -1564,19 +1568,23 @@ TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_empty_tqueue_returns_zero)
     TQUEUE_ASSIGN(int32_t)(&queue, NULL);
 }
 
+/* Tests_SRS_TQUEUE_01_080: [ TQUEUE_GET_VOLATILE_COUNT(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */
 /* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
 /* Tests_SRS_TQUEUE_22_003: [ TQUEUE_GET_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/
 /* Tests_SRS_TQUEUE_22_006: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue again by calling interlocked_add_64 and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. ]*/
 /* Tests_SRS_TQUEUE_22_005: [ TQUEUE_GET_VOLATILE_COUNT(T) shall return the item count of the queue. ]*/
+/* Tests_SRS_TQUEUE_01_081: [ TQUEUE_GET_VOLATILE_COUNT(T) shall release in shared mode the lock used to guard the growing of the queue. ] */
 TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_push_1_returns_1)
 {
     // arrange
     TQUEUE(int32_t) queue = test_queue_create(1024, 1024, test_copy_item, test_dispose_item, (void*)0x4242);
     test_queue_push(queue, 42);
 
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
 
     // act
     int64_t result = TQUEUE_GET_VOLATILE_COUNT(int32_t)(queue);
@@ -1589,10 +1597,12 @@ TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_push_1_returns_1)
     TQUEUE_ASSIGN(int32_t)(&queue, NULL);
 }
 
+/* Tests_SRS_TQUEUE_01_080: [ TQUEUE_GET_VOLATILE_COUNT(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */
 /* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
 /* Tests_SRS_TQUEUE_22_003: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/
 /* Tests_SRS_TQUEUE_22_006: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue again by calling interlocked_add_64 and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. ]*/
 /* Tests_SRS_TQUEUE_22_005: [ TQUEUE_GET_VOLATILE_COUNT(T) shall return the item count of the queue. ]*/
+/* Tests_SRS_TQUEUE_01_081: [ TQUEUE_GET_VOLATILE_COUNT(T) shall release in shared mode the lock used to guard the growing of the queue. ] */
 TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_push_2_pop_1_returns_1)
 {
     // arrange
@@ -1601,9 +1611,11 @@ TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_push_2_pop_1_returns_1)
     test_queue_push(queue, 43);
     test_queue_pop(queue);
 
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
 
     // act
     int64_t result = TQUEUE_GET_VOLATILE_COUNT(int32_t)(queue);
@@ -1616,10 +1628,12 @@ TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_push_2_pop_1_returns_1)
     TQUEUE_ASSIGN(int32_t)(&queue, NULL);
 }
 
+/* Tests_SRS_TQUEUE_01_080: [ TQUEUE_GET_VOLATILE_COUNT(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */
 /* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
 /* Tests_SRS_TQUEUE_22_003: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/
 /* Tests_SRS_TQUEUE_22_006: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue again by calling interlocked_add_64 and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. ]*/
 /* Tests_SRS_TQUEUE_22_005: [ TQUEUE_GET_VOLATILE_COUNT(T) shall return the item count of the queue. ]*/
+/* Tests_SRS_TQUEUE_01_081: [ TQUEUE_GET_VOLATILE_COUNT(T) shall release in shared mode the lock used to guard the growing of the queue. ] */
 TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_full_queue_returns_queue_size)
 {
     uint32_t queue_size = 512;
@@ -1634,9 +1648,11 @@ TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_full_queue_returns_queue_size)
     ASSERT_ARE_EQUAL(TQUEUE_PUSH_RESULT, TQUEUE_PUSH_QUEUE_FULL, TQUEUE_PUSH(int32_t)(queue, &item, NULL));
     umock_c_reset_all_calls();
 
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
 
     // act
     int64_t result = TQUEUE_GET_VOLATILE_COUNT(int32_t)(queue);
@@ -1649,10 +1665,12 @@ TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_full_queue_returns_queue_size)
     TQUEUE_ASSIGN(int32_t)(&queue, NULL);
 }
 
+/* Tests_SRS_TQUEUE_01_080: [ TQUEUE_GET_VOLATILE_COUNT(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */
 /* Tests_SRS_TQUEUE_22_002: [ TQUEUE_GET_COUNT(T) shall obtain the current head queue by calling interlocked_add_64. ]*/
 /* Tests_SRS_TQUEUE_22_003: [ TQUEUE_GET_COUNT(T) shall obtain the current tail queue by calling interlocked_add_64. ]*/
 /* Tests_SRS_TQUEUE_22_006: [ TQUEUE_GET_VOLATILE_COUNT(T) shall obtain the current tail queue again by calling interlocked_add_64 and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. ]*/
 /* Tests_SRS_TQUEUE_22_005: [ TQUEUE_GET_COUNT(T) shall return the item count of the queue. ]*/
+/* Tests_SRS_TQUEUE_01_081: [ TQUEUE_GET_VOLATILE_COUNT(T) shall release in shared mode the lock used to guard the growing of the queue. ] */
 TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_full_queue_pop_all_push_1_returns_1)
 {
     uint32_t queue_size = 512;
@@ -1673,9 +1691,11 @@ TEST_FUNCTION(TQUEUE_GET_VOLATILE_COUNT_with_full_queue_pop_all_push_1_returns_1
     }
     test_queue_push(queue, item);
 
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // head
     STRICT_EXPECTED_CALL(interlocked_add_64(IGNORED_ARG, 0)); // tail
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(IGNORED_ARG));
 
     // act
     int64_t result = TQUEUE_GET_VOLATILE_COUNT(int32_t)(queue);

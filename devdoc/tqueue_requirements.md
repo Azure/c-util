@@ -247,7 +247,7 @@ TQUEUE_PUSH_RESULT TQUEUE_PUSH(T)(TQUEUE(T) tqueue, T* item, void* copy_item_fun
 
       - **SRS_TQUEUE_01_077: [** `TQUEUE_PUSH(T)` shall move the entries between the tail index and the array end like below: **]**
 
-        - **SRS_TQUEUE_01_078: [** Case 1 (tail index greater or equal than head index):
+        - **SRS_TQUEUE_01_078: [** Entries at the tail shall be moved to the end of the resized array
 
       Before resize:
 
@@ -256,28 +256,12 @@ TQUEUE_PUSH_RESULT TQUEUE_PUSH(T)(TQUEUE(T) tqueue, T* item, void* copy_item_fun
 
       [X HO TX X]
 
-      After resize (foubling from 4 to 8): **]**
+      After resize (doubling from 4 to 8):
 
       T = 6
       H = 9
 
-      [X HO O O O O TX X]
-
-        - **SRS_TQUEUE_01_079: [** Case 2 (tail index less than head index):
-
-      Before resize:
-
-      T = 1
-      H = 3
-
-      [O TX X HO]
-
-      After resize (foubling from 4 to 8):
-
-      T = 1
-      H = 3
-
-      [O TX X HO O O O O] **]**
+      [X HO O O O O TX X] **]**
 
       Legend:
       O - unused
@@ -367,7 +351,11 @@ int64_t TQUEUE_GET_VOLATILE_COUNT(T)(TQUEUE(T) tqueue);
 
 `TQUEUE_GET_VOLATILE_COUNT(T)` returns the item count of the queue. Note that the returned value is a point in time value. If the caller needs any synchronization related to the count obtained, lock/use other means of synchronization is required.
 
+Note that the resize lock is acquired in shared mode since it is possible that `TQUEUE_PUSH` alters head and tail in such a way that they can go to smaller numbers.
+
 **SRS_TQUEUE_22_001: [** If `tqueue` is `NULL` then `TQUEUE_GET_VOLATILE_COUNT(T)` shall return zero. **]**
+
+**SRS_TQUEUE_01_080: [** `TQUEUE_GET_VOLATILE_COUNT(T)` shall acquire in shared mode the lock used to guard the growing of the queue. **]**
 
 **SRS_TQUEUE_22_002: [** `TQUEUE_GET_VOLATILE_COUNT(T)` shall obtain the current head queue by calling `interlocked_add_64`. **]**
 
@@ -376,5 +364,7 @@ int64_t TQUEUE_GET_VOLATILE_COUNT(T)(TQUEUE(T) tqueue);
 **SRS_TQUEUE_22_006: [** `TQUEUE_GET_VOLATILE_COUNT(T)` shall obtain the current tail queue again by calling `interlocked_add_64` and compare with the previosuly obtained tail value.  The tail value is valid only if it has not changed. **]**
 
 **SRS_TQUEUE_22_004: [** If the queue is empty (current tail >= current head), `TQUEUE_GET_VOLATILE_COUNT(T)` shall return zero. **]**
+
+**SRS_TQUEUE_01_081: [** `TQUEUE_GET_VOLATILE_COUNT(T)` shall release in shared mode the lock used to guard the growing of the queue. **]**
 
 **SRS_TQUEUE_22_005: [** `TQUEUE_GET_VOLATILE_COUNT(T)` shall return the item count of the queue. **]**
