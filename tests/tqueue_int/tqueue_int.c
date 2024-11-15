@@ -458,6 +458,8 @@ static bool TEST_THANDLE_should_pop(void* context, THANDLE(TEST_THANDLE)* item)
 MU_DEFINE_ENUM_WITHOUT_INVALID(TQUEUE_ACTION_TYPE_THANDLE_TEST, TQUEUE_ACTION_TYPE_THANDLE_TEST_VALUES);
 MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(TQUEUE_ACTION_TYPE_THANDLE_TEST, TQUEUE_ACTION_TYPE_THANDLE_TEST_VALUES);
 
+MU_DEFINE_ENUM_STRINGS(QUEUE_ENTRY_STATE, QUEUE_ENTRY_STATE_VALUES);
+
 static int tqueue_chaos_thread_THANDLE_func(void* arg)
 {
     TQUEUE_CHAOS_TEST_THANDLE_CONTEXT* test_context = arg;
@@ -550,7 +552,7 @@ static void TQUEUE_chaos_knight_test_with_THANDLE_template(uint32_t initial_queu
     TQUEUE_CHAOS_TEST_THANDLE_CONTEXT test_context = { .queue = TQUEUE_CREATE(THANDLE(TEST_THANDLE))(initial_queue_size, max_queue_size, TEST_THANDLE_copy_item, TEST_THANDLE_dispose, NULL) };
     ASSERT_IS_NOT_NULL(test_context.queue);
 
-    test_context.max_queue_size = initial_queue_size;
+    test_context.max_queue_size = max_queue_size;
 
     (void)interlocked_exchange_64(&test_context.next_push_number, 1);
 

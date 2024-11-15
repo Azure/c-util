@@ -233,13 +233,57 @@ TQUEUE_PUSH_RESULT TQUEUE_PUSH(T)(TQUEUE(T) tqueue, T* item, void* copy_item_fun
 
     - **SRS_TQUEUE_01_064: [** `TQUEUE_PUSH(T)` shall acquire in exclusive mode the lock used to guard the growing of the queue. **]**
 
-    - If the size of the queue did not change after acquiring the lock in shared mode:
+    - **SRS_TQUEUE_01_074: [** If the size of the queue did not change after acquiring the lock in shared mode: **]**
+
+      - **SRS_TQUEUE_01_075: [** `TQUEUE_PUSH(T)` shall obtain again the current head or the queue. **]**
+
+      - **SRS_TQUEUE_01_076: [** `TQUEUE_PUSH(T)` shall obtain again the current tail or the queue. **]**
     
       - **SRS_TQUEUE_01_067: [** `TQUEUE_PUSH(T)` shall double the size of the queue. **]**
 
       - **SRS_TQUEUE_01_070: [** If the newly computed queue size is higher than the `max_queue_size` value passed to `TQUEUE_CREATE(T)`, `TQUEUE_PUSH(T)` shall use `max_queue_size` as the new queue size. **]**
 
       - **SRS_TQUEUE_01_068: [** `TQUEUE_PUSH(T)` shall reallocate the array used to store the queue items based on the newly computed size. **]**
+
+      - **SRS_TQUEUE_01_077: [** `TQUEUE_PUSH(T)` shall move the entries between the tail index and the array end like below: **]**
+
+        - **SRS_TQUEUE_01_078: [** Case 1 (tail index greater or equal than head index):
+
+      Before resize:
+
+      T = 2
+      H = 5
+
+      [X HO TX X]
+
+      After resize (foubling from 4 to 8): **]**
+
+      T = 6
+      H = 9
+
+      [X HO O O O O TX X]
+
+        - **SRS_TQUEUE_01_079: [** Case 2 (tail index less than head index):
+
+      Before resize:
+
+      T = 1
+      H = 3
+
+      [O TX X HO]
+
+      After resize (foubling from 4 to 8):
+
+      T = 1
+      H = 3
+
+      [O TX X HO O O O O] **]**
+
+      Legend:
+      O - unused
+      X - used
+      H - head
+      T - tail
 
       - **SRS_TQUEUE_01_065: [** `TQUEUE_PUSH(T)` shall release in exclusive mode the lock used to guard the growing of the queue. **]**
 
