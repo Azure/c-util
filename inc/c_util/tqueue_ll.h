@@ -322,6 +322,7 @@ TQUEUE_PUSH_RESULT TQUEUE_LL_PUSH(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_it
                             uint32_t copy_item_count = tqueue_ptr->queue_size - tail_index;                                                                         \
                             uint32_t new_tail_index = new_queue_size - copy_item_count;                                                                             \
                             /* Codes_SRS_TQUEUE_01_078: [ Entries at the tail shall be moved to the end of the resized array ]*/                                    \
+                            /* Please see diagram in the spec */                                                                                                    \
                             if (copy_item_count > 0)                                                                                                                \
                             {                                                                                                                                       \
                                 (void)memmove(&tqueue_ptr->queue[new_tail_index], &tqueue_ptr->queue[tail_index], sizeof(TQUEUE_ENTRY_STRUCT_TYPE_NAME(T)) * copy_item_count); \
@@ -430,7 +431,6 @@ TQUEUE_POP_RESULT TQUEUE_LL_POP(C)(TQUEUE_LL(T) tqueue, T* item, void* copy_item
                 }                                                                                                                                                   \
                 else                                                                                                                                                \
                 {                                                                                                                                                   \
-                    /* LogInfo("Popping from %" PRId64 "", current_tail); */                                                                                        \
                     /* Codes_SRS_TQUEUE_01_030: [ Using interlocked_compare_exchange, TQUEUE_PUSH(T) shall set the tail array entry state to POPPING (from USED). ]*/ \
                     uint32_t index = (uint32_t)(current_tail % tqueue_ptr->queue_size);                                                                             \
                     if (interlocked_compare_exchange(&tqueue_ptr->queue[index].state, QUEUE_ENTRY_STATE_POPPING, QUEUE_ENTRY_STATE_USED) != QUEUE_ENTRY_STATE_USED) \

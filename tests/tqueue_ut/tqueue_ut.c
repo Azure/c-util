@@ -842,18 +842,7 @@ TEST_FUNCTION(TQUEUE_PUSH_for_a_queue_with_max_higher_than_initial_size_succeeds
                 /* Tests_SRS_TQUEUE_01_067: [ TQUEUE_PUSH(T) shall double the size of the queue. ]*/
                 /* Tests_SRS_TQUEUE_01_068: [ TQUEUE_PUSH(T) shall reallocate the array used to store the queue items based on the newly computed size. ]*/
                 /* Tests_SRS_TQUEUE_01_077: [ TQUEUE_PUSH(T) shall move the entries between the tail index and the array end like below: ]*/            \
-                /* Tests_SRS_TQUEUE_01_078: [ Entries at the tail shall be moved to the end of the resized array
-                Before resize:
-
-                T = 2 H = 5
-
-                [X HO TX X]
-
-                After resize (doubling from 4 to 8): ]
-
-                T = 6 H = 9
-
-                [X HO O O O O TX X]*/
+                /* Tests_SRS_TQUEUE_01_078: [ Entries at the tail shall be moved to the end of the resized array ] */
             /* Tests_SRS_TQUEUE_01_065: [ TQUEUE_PUSH(T) shall release in exclusive mode the lock used to guard the growing of the queue. ] */
             /* Tests_SRS_TQUEUE_01_066: [ TQUEUE_PUSH(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */
     /* Tests_SRS_TQUEUE_01_017: [ Using interlocked_compare_exchange, TQUEUE_PUSH(T) shall change the head array entry state to PUSHING (from NOT_USED). ]*/
@@ -921,18 +910,7 @@ TEST_FUNCTION(TQUEUE_PUSH_twice_for_queue_size_1_resizes_the_queue_case_1)
                 /* Tests_SRS_TQUEUE_01_067: [ TQUEUE_PUSH(T) shall double the size of the queue. ]*/
                 /* Tests_SRS_TQUEUE_01_068: [ TQUEUE_PUSH(T) shall reallocate the array used to store the queue items based on the newly computed size. ]*/
                 /* Tests_SRS_TQUEUE_01_077: [ TQUEUE_PUSH(T) shall move the entries between the tail index and the array end like below: ]*/            \
-                /* Tests_SRS_TQUEUE_01_078: [ Entries at the tail shall be moved to the end of the resized array
-                Before resize:
-
-                T = 2 H = 5
-
-                [X HO TX X]
-
-                After resize (doubling from 4 to 8): ]
-
-                T = 6 H = 9
-
-                [X HO O O O O TX X]*/
+                /* Tests_SRS_TQUEUE_01_078: [ Entries at the tail shall be moved to the end of the resized array ] */
             /* Tests_SRS_TQUEUE_01_065: [ TQUEUE_PUSH(T) shall release in exclusive mode the lock used to guard the growing of the queue. ] */
             /* Tests_SRS_TQUEUE_01_066: [ TQUEUE_PUSH(T) shall acquire in shared mode the lock used to guard the growing of the queue. ] */
     /* Tests_SRS_TQUEUE_01_017: [ Using interlocked_compare_exchange, TQUEUE_PUSH(T) shall change the head array entry state to PUSHING (from NOT_USED). ]*/

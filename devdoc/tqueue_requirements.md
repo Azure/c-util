@@ -247,7 +247,7 @@ TQUEUE_PUSH_RESULT TQUEUE_PUSH(T)(TQUEUE(T) tqueue, T* item, void* copy_item_fun
 
       - **SRS_TQUEUE_01_077: [** `TQUEUE_PUSH(T)` shall move the entries between the tail index and the array end like below: **]**
 
-        - **SRS_TQUEUE_01_078: [** Entries at the tail shall be moved to the end of the resized array
+        - **SRS_TQUEUE_01_078: [** Entries at the tail shall be moved to the end of the resized array **]**
 
       Before resize:
 
@@ -261,7 +261,7 @@ TQUEUE_PUSH_RESULT TQUEUE_PUSH(T)(TQUEUE(T) tqueue, T* item, void* copy_item_fun
       T = 6
       H = 9
 
-      [X HO O O O O TX X] **]**
+      [X HO O O O O TX X]
 
       Legend:
       O - unused
