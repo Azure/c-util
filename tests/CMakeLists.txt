@@ -4,7 +4,7 @@
 add_subdirectory(reals)
 
 
-if(${run_unittests})    
+if(${run_unittests})
     build_test_folder(async_op_ut)
     build_test_folder(async_retry_wrapper_ut)
     build_test_folder(async_type_helper_copy_value_handler_ut)
@@ -61,6 +61,7 @@ endif()
 if(${run_int_tests})
     add_subdirectory(external_command_sample)
     add_subdirectory(constbuffer_serialization_sample)
+    build_test_folder(async_op_int)
     build_test_folder(flags_to_string_int)
     build_test_folder(external_command_helper_int)
     build_test_folder(tarray_2_int)
