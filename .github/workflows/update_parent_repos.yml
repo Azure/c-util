@@ -1,18 +1,29 @@
 name: Update Submodules in Parent Repos
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [closed]
 
 jobs:
   update-submodules:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        parent-repo: [repo-a, repo-b] # Placeholder, will be replaced dynamically
+        parent-repo: []
 
     steps:
+    - name: Set Parent Repos
+      id: set-parent-repos
+      run: |
+        echo "PARENT_REPOS=$(echo ${{ secrets.PARENT_REPOS }} | tr ',' '\n')" >> $GITHUB_ENV
+
+    - name: Set Matrix
+      id: set-matrix
+      run: |
+        echo "::set-output name=matrix::$(echo $PARENT_REPOS | jq -R -s -c 'split("\n") | map(select(length > 0))')"
+
     - name: Checkout Repo
       uses: actions/checkout@v2
       with:
@@ -26,11 +37,6 @@ jobs:
     - name: Extract Repo Name
       id: extract-repo-name
       run: echo "::set-output name=repo_name::$(basename $GITHUB_REPOSITORY)"
-
-    - name: Set Parent Repos
-      id: set-parent-repos
-      run: |
-        echo "PARENT_REPOS=$(echo ${{ secrets.PARENT_REPOS }} | tr ',' '\n')" >> $GITHUB_ENV
 
     - name: Clone Parent Repo
       run: |
