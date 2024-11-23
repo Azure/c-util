@@ -1,0 +1,52 @@
+name: Update Submodules in Parent Repos
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  update-submodules:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        parent-repo: [${{ secrets.PARENT_REPOS }}]
+
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v2
+      with:
+        ref: master
+
+    - name: Configure Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Extract Repo Name
+      id: extract-repo-name
+      run: echo "::set-output name=repo_name::$(basename $GITHUB_REPOSITORY)"
+
+    - name: Clone Parent Repo
+      run: |
+        git clone ${{ matrix.parent-repo }} parent-repo
+        cd parent-repo
+        git submodule update --init --recursive
+
+    - name: Update Submodule
+      run: |
+        cd parent-repo
+        git submodule update --remote path/to/submodule
+        git add path/to/submodule
+        git commit -m "Update submodule to latest commit from ${{ steps.extract-repo-name.outputs.repo_name }}"
+        git push origin master
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v3
+      with:
+        token: ${{ secrets.GH_PAT }}
+        commit-message: Update submodule to latest commit from ${{ steps.extract-repo-name.outputs.repo_name }}
+        branch: update-submodule
+        title: Update submodule to latest commit from ${{ steps.extract-repo-name.outputs.repo_name }}
+        body: This PR updates the submodule to the latest commit from ${{ steps.extract-repo-name.outputs.repo_name }}.
+        base: master
