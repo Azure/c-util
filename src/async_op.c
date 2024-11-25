@@ -112,3 +112,19 @@ ASYNC_OP_STATE async_op_cancel(THANDLE(ASYNC_OP) async_op)
     /*Codes_SRS_ASYNC_OP_02_008: [ async_op_cancel shall return the state of the operation. ]*/
     return result;
 }
+
+/*given a "context" (void*) returned to the user embedded into the THANDLE(ASYNC_OP) this function computes the ASYNC_OP's address*/
+ASYNC_OP* async_op_from_context( void* context)
+{
+    ASYNC_OP* result;
+    if (context == NULL)
+    {
+        LogError("invalid arguments void* context=%p", context);
+        result = NULL;
+    }
+    else
+    {
+        result = NULL;
+    }
+    return result;
+}
