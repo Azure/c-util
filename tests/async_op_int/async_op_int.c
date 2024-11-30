@@ -19,18 +19,20 @@
 
 static const uint32_t context_aligns[] =
 {
-    /*powers of 2... */
-    1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 8192,
-    /*then some random numbers*/
-    2343, 93473, 282, 3, 77, 47437, 272, 888, 892, 451, 80004
+    /*only powers of 2 are allowed */
+    1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 8192
 };
 
 static const uint32_t context_sizes[] =
 {
     /*powers of 2... */
     1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 8192,
+
+    /*non power of 2*/
+    3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 17,
+
     /*then some random numbers*/
-    345, 56, 1, 3, 11, 487, 2829, 930, 881, 9230, 87309, 2173
+    345, 56, 487, 2829, 930, 881, 9230, 87309, 2173
 };
 
 /*this function exists only to have a real address somewhere, which is different from any other address*/

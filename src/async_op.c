@@ -52,6 +52,8 @@ THANDLE(ASYNC_OP) async_op_create(ASYNC_OP_CANCEL_IMPL cancel, uint32_t context_
     }
     else
     {
+        size_t prefix_size = sizeof(void*); 
+
         /*Codes_SRS_ASYNC_OP_02_002: [ async_op_create shall call THANDLE_MALLOC_FLEX with the extra size set as (context_size > 0) * (context_size + context_align - 1).]*/
         THANDLE(ASYNC_OP) async_op = THANDLE_MALLOC_FLEX(ASYNC_OP)(async_op_dispose, (context_size > 0) * (context_size + context_align - 1), 1);
         if (async_op == NULL)
