@@ -320,7 +320,7 @@ TEST_FUNCTION(async_op_from_context_with_context_NULL_returns_NULL)
     ///clean
 }
 
-/*Tests_SRS_ASYNC_OP_02_009: [ If context is NULL then async_op_from_context shall fail and return NULL. ]*/
+/*Tests_SRS_ASYNC_OP_02_010: [ async_op_from_context shall return a non-NULL return. ]*/
 TEST_FUNCTION(async_op_from_context_with_context_NOT_NULL)
 {
     ///arrange
