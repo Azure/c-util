@@ -179,7 +179,7 @@ THANDLE(ASYNC_OP) async_op_from_context(void* context) /*note this does NOT inc_
     }
     else
     {
-        void* start = context;
+        uintptr_t start = (uintptr_t)context;
 
         /*find the biggest address before "context" that is at least sizeof(CONTEXT_TO_ASYNC_OP) bytes away from context and has alignof(CONTEXT_TO_ASYNC_OP)*/
 
@@ -188,8 +188,8 @@ THANDLE(ASYNC_OP) async_op_from_context(void* context) /*note this does NOT inc_
         /*and then the result of this function will be decref'd by THANDLE_ASSIGN NULL to it*/
 
         /*Codes_SRS_ASYNC_OP_02_010: [ async_op_from_context shall return a non-NULL return. ]*/
-        void* prev = (unsigned char*)start - sizeof(CONTEXT_TO_ASYNC_OP);
-        prev = (unsigned char*)prev - ((size_t)prev % alignof(CONTEXT_TO_ASYNC_OP));
+        uintptr_t prev = (uintptr_t)start - sizeof(CONTEXT_TO_ASYNC_OP);
+        prev = (uintptr_t)prev - ((uintptr_t)prev % alignof(CONTEXT_TO_ASYNC_OP));
         result = ((CONTEXT_TO_ASYNC_OP*)prev)->async_op;
 
     }

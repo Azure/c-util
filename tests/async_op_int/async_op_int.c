@@ -122,6 +122,7 @@ TEST_FUNCTION(async_op_from_context_with_alignment_1)
 
                     ///assert
                     ASSERT_IS_NOT_NULL(result);
+                    ASSERT_ARE_EQUAL(void_ptr, async_op, result);
 
                     /*did we return some ASYNC_OP which matches even remotely the context?*/
                     /*check that the context stored in the returned ASYNC_OP matches the context which was given to the user*/
