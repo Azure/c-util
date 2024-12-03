@@ -118,7 +118,7 @@ TEST_FUNCTION(async_op_from_context_with_alignment_1)
                     void* context = async_op->context;
 
                     ///act
-                    ASYNC_OP* result = async_op_from_context(context);
+                    THANDLE(ASYNC_OP) result = async_op_from_context(context); /*note: this THANDLE(ASYNC_OP) does not need to be THANDLE_ASSIGN(ASYNC_OP)(&result, NULL) by convention*/
 
                     ///assert
                     ASSERT_IS_NOT_NULL(result);

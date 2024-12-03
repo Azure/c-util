@@ -32,7 +32,7 @@ extern "C" {
 
     THANDLE(ASYNC_OP) real_async_op_create(ASYNC_OP_CANCEL_IMPL cancel, uint32_t context_size, uint32_t context_align, ASYNC_OP_DISPOSE dispose);
     ASYNC_OP_STATE real_async_op_cancel(THANDLE(ASYNC_OP) async_op);
-    ASYNC_OP* real_async_op_from_context(void* context);
+    THANDLE(ASYNC_OP) real_async_op_from_context(void* context);
 
 #ifdef __cplusplus
 }

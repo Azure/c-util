@@ -47,7 +47,7 @@ typedef struct ASYNC_OP_TAG
 THANDLE_TYPE_DECLARE(ASYNC_OP);
 
 MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), async_op_create, ASYNC_OP_CANCEL_IMPL, cancel, uint32_t, context_size, uint32_t, context_align, ASYNC_OP_DISPOSE, dispose);
-MOCKABLE_FUNCTION(, ASYNC_OP*, async_op_from_context, void*, context);
+MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), async_op_from_context, void*, context);
 MOCKABLE_FUNCTION(, ASYNC_OP_STATE, async_op_cancel, THANDLE(ASYNC_OP), async_op);
 ```
 
@@ -77,7 +77,7 @@ One ASYNC_OP has the following memory layout (not including the THANDLE's specif
 
 Justification: only knowing `context` which points inside the `private_context` is impossible to find the initial `ASYNC_OP` as was allocated. This is because the original `context_align` is lost. For example, `context_align` of 1 and 64 will all produce some address inside `private_context` which (likely) looks the same in both cases: it is a 32 byte aligned address. Note: all 64 byte `context_align` are also 32 byte aligned.
 
-Therefore it follow that additional things need to be stored in order to find the original `ASYNC_OP` address. The simplest proposal: "additional things" will contain a pointer to `ASYNC_OP`.
+Therefore it follows that additional things need to be stored in order to find the `THANDLE(ASYNC_OP)` value. The simplest proposal: "additional things" will contain the value of `THANDLE(ASYNC_OP)`.
 
 The place to store the "additional things" can only be before (lower address) than `context`. Effectively this turns the memory map of `ASYNC_OP` into the following by splitting the `private_context` into several areas:
 
@@ -91,7 +91,8 @@ The place to store the "additional things" can only be before (lower address) th
 |offset:+0  | offset: +8                        | offset: +32                             |
 |`context`  | cancel, dispose, cancel_state_e   | private_context[]                       |
    |                                            | [...] additional things [...] context   |
-   |          `additional_things`                       ^                       ^
+   |           `THANDLE(ASYNC_OP)`                      |                       ^
+   |                ^                                   |                       |
    |                |                                   |                       |
    |                +-----------------------------------+                       |
    +----------------------------------------------------------------------------+
@@ -139,7 +140,7 @@ MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), async_op_create, ASYNC_OP_CANCEL_IMPL, ca
 
 **SRS_ASYNC_OP_02_001: [** If `context_align` is not a power of 2 then `async_op_create` shall fail and return `NULL`. **]**
 
-**SRS_ASYNC_OP_02_002: [** `async_op_create` shall call `THANDLE_MALLOC_FLEX` with the extra size set as (`context_size` > 0) * (`context_size` + `context_align` - 1).**]**
+**SRS_ASYNC_OP_02_002: [** `async_op_create` shall call `THANDLE_MALLOC_FLEX` with the extra size set to at least (`context_size` + `context_align` - 1).**]**
 
 Note: the above formula will always store an address with `context_align` alignment in `private_context`.
 
@@ -161,3 +162,16 @@ ASYNC_OP_STATE, async_op_cancel, THANDLE(ASYNC_OP), async_op);
   **SRS_ASYNC_OP_02_007: [** If `async_op`'s `cancel` is non-`NULL` then `async_op_cancel` shall call it with `async_op->context` as parameter. **]**
 
 **SRS_ASYNC_OP_02_008: [** `async_op_cancel` shall return the state of the operation. **]**
+
+### async_op_from_context
+```
+MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), async_op_from_context, void*, context);
+```
+
+`async_op_from_context` produces a THANDLE(ASYNC_OP) **without** incref'ing it from a previously returned to the user `context`.
+
+The convention states that the THANDLE(ASYNC_OP) should have been incref'd previously by other means.
+
+**SRS_ASYNC_OP_02_009: [** If `context` is `NULL` then `async_op_from_context` shall fail and return `NULL`. **]**
+
+**SRS_ASYNC_OP_02_010: [** `async_op_from_context` shall return a non-`NULL` return. **]**
