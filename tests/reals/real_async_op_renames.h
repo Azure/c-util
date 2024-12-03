@@ -4,5 +4,6 @@
 
 #define async_op_create     real_async_op_create
 #define async_op_cancel     real_async_op_cancel
+#define async_op_from_context     real_async_op_from_context
 
 #define ASYNC_OP_STATE      real_ASYNC_OP_STATE

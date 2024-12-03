@@ -171,7 +171,7 @@ ASYNC_OP_STATE async_op_cancel(THANDLE(ASYNC_OP) async_op)
 }
 
 /*given a "context" (void*) returned to the user embedded into the THANDLE(ASYNC_OP) this function computes the ASYNC_OP's address*/
-ASYNC_OP* async_op_from_context( void* context)
+ASYNC_OP* async_op_from_context(void* context)
 {
     ASYNC_OP* result;
     if (context == NULL)
