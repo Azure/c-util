@@ -12,7 +12,8 @@
 #define REGISTER_ASYNC_OP_GLOBAL_MOCK_HOOKS() \
     MU_FOR_EACH_1(R2, \
         async_op_create, \
-        async_op_cancel \
+        async_op_cancel, \
+        async_op_from_context \
     ) \
     REGISTER_GLOBAL_MOCK_HOOK(THANDLE_MOVE(ASYNC_OP), THANDLE_MOVE(real_ASYNC_OP)) \
     REGISTER_GLOBAL_MOCK_HOOK(THANDLE_INITIALIZE(ASYNC_OP), THANDLE_INITIALIZE(real_ASYNC_OP)) \
@@ -31,6 +32,7 @@ extern "C" {
 
     THANDLE(ASYNC_OP) real_async_op_create(ASYNC_OP_CANCEL_IMPL cancel, uint32_t context_size, uint32_t context_align, ASYNC_OP_DISPOSE dispose);
     ASYNC_OP_STATE real_async_op_cancel(THANDLE(ASYNC_OP) async_op);
+    THANDLE(ASYNC_OP) real_async_op_from_context(void* context);
 
 #ifdef __cplusplus
 }

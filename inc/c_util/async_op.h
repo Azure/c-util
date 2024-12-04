@@ -56,6 +56,7 @@ typedef struct ASYNC_OP_TAG
 THANDLE_TYPE_DECLARE(ASYNC_OP);
 
 MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), async_op_create, ASYNC_OP_CANCEL_IMPL, cancel, uint32_t, context_size, uint32_t, context_align, ASYNC_OP_DISPOSE, dispose);
+MOCKABLE_FUNCTION(, THANDLE(ASYNC_OP), async_op_from_context, void*, context); /*returns a NON incref'd THANDLE!!!*/
 MOCKABLE_FUNCTION(, ASYNC_OP_STATE, async_op_cancel, THANDLE(ASYNC_OP), async_op);
 
 #ifdef __cplusplus
