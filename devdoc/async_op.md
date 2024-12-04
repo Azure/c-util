@@ -12,7 +12,7 @@
 
 3) be used just like any `THANDLE`. When the reference count of the `THANDLE` reaches 0, the `dispose` function is called to allow the user to clear its context.
 
-4) given a context pointer `void* context` previously produced by `async_op_create` (the value of `THANDLE(ASYNC_OP)->context`) async_op can produce the THANDLE(ASYNC_OP) to which this context belongs to.
+4) given a context pointer `void* context` previously produced by `async_op_create` (the value of `THANDLE(ASYNC_OP)->context`) async_op can produce the THANDLE(ASYNC_OP) to which this context belongs.
 
 ## Exposed API
 

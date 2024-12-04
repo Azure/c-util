@@ -117,7 +117,10 @@ TEST_FUNCTION(async_op_from_context_with_alignment_1)
                     ASSERT_IS_NOT_NULL(async_op);
                     void* context = async_op->context;
 
-                    ///act
+                    ///act(1) - check that context is writable for at least context_size[i_size] bytes
+                    (void)memset(context, '3', context_sizes[i_size]); /*asserts that the memory is USABLE by setting all bytes to '3'. for valgrind/fsanitize*/
+
+                    ///act(2) - get the THANDLE(ASYNC_OP) from the context
                     THANDLE(ASYNC_OP) result = async_op_from_context(context); /*note: this THANDLE(ASYNC_OP) does not need to be THANDLE_ASSIGN(ASYNC_OP)(&result, NULL) by convention*/
 
                     ///assert
@@ -139,4 +142,10 @@ TEST_FUNCTION(async_op_from_context_with_alignment_1)
         }
     }
 }
+
+TEST_FUNCTION(async_op_create_macro)
+{
+    THANDLE(ASYNC_OP) async_op = ASYNC_OP_CREATE(int)(ASYNC_OP_CANCEL_IMPL_1, ASYNC_OP_DISPOSE_1);
+}
+
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

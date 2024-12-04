@@ -41,35 +41,35 @@ static void async_op_dispose(ASYNC_OP* async_op)
 #define IS_POWER_OF_2(x) \
     (((x) & ((x) - 1)) == 0)
 
-/*tiny function that returns the next multiple of "align" starting from "start" (included). Does 1 mod and 1 branch*/
+/*tiny function that returns the next multiple of "align" starting from "start" (included). Does 1 mod and 1 multiplication*/
 static void* get_next_aligned_address(void* start, uint32_t align)
 {
     void* result;
+
+    /*compute the misalignment of the address*/
     uint32_t m = (uintptr_t)start % align;
-    if (m == 0)
-    {
-        result = start;
-    }
-    else
-    {
-        result = (void*)((uintptr_t)start - m + align);
-    }
+    
+    /*if it is aligned then m!=0 evaluates to 0. Anything multiplied by 0 is 0. Otherwise m!=0 evaluates to "1" and then the next address is start - m + align*/
+    result = (void*)((uintptr_t)start + (m!=0) * (align-m));
+    
     return result;
 }
 
 
 static void* get_prev_aligned_with_size_address(void* start, uint32_t size, uint32_t align)
 {
+    void* result;
+
+    /*the earliest/smallest address before "start" that has a size of "size" is start-size*/
     uintptr_t first_prev_address = (uintptr_t)start - size;
-    uint32_t m = first_prev_address % align;
-    if (m == 0)
-    {
-        return (void*)first_prev_address;
-    }
-    else
-    {
-        return (void*)((uintptr_t)first_prev_address - align);
-    }
+
+    /*... but that address miiiight not have the right alignment... */
+    uint32_t m = first_prev_address % align; /*compute if it is aligned/or by how much it is misaligned*/
+
+    /*substract the misalignment (if any)*/
+    result = (void*)((uintptr_t)first_prev_address - m);
+
+    return result;
 }
 
 MU_STATIC_ASSERT(UINT32_MAX - 1 - 1 > sizeof(CONTEXT_TO_ASYNC_OP));
@@ -174,7 +174,7 @@ THANDLE(ASYNC_OP) async_op_from_context(void* context) /*note this does NOT inc_
     if (context == NULL)
     {
         /*Codes_SRS_ASYNC_OP_02_009: [ If context is NULL then async_op_from_context shall fail and return NULL. ]*/
-        LogError("invalid arguments void* context=%p", context);
+        LogError("Invalid argument void* context=%p", context);
         result = NULL;
     }
     else
