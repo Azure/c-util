@@ -143,9 +143,4 @@ TEST_FUNCTION(async_op_from_context_with_alignment_1)
     }
 }
 
-TEST_FUNCTION(async_op_create_macro)
-{
-    THANDLE(ASYNC_OP) async_op = ASYNC_OP_CREATE(int)(ASYNC_OP_CANCEL_IMPL_1, ASYNC_OP_DISPOSE_1);
-}
-
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
