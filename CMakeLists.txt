@@ -141,6 +141,8 @@ set(c_util_c_files
     ./src/async_retry_wrapper.c
     ./src/async_type_helper.c
     ./src/azure_base64.c
+    ./src/batch_queue.c
+    ./src/batch_queue_tarray_types.c
     ./src/filename_helper.c
     ./src/buffer.c
     ./src/cancellation_token.c
@@ -190,6 +192,8 @@ set(c_util_h_files
     ./inc/c_util/async_type_helper_thandle_handler.h
     ./inc/c_util/async_type_helper.h
     ./inc/c_util/azure_base64.h
+    ./inc/c_util/batch_queue.h
+    ./inc/c_util/batch_queue_tarray_types.h
     ./inc/c_util/filename_helper.h
     ./inc/c_util/buffer_.h
     ./inc/c_util/cancellation_token.h
