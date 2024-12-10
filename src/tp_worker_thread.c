@@ -30,7 +30,7 @@ typedef struct TP_WORKER_THREAD_TAG
     INTERLOCKED_DEFINE_VOLATILE_STATE_ENUM(WORKER_THREAD_STATE, processing_state);
     EXECUTION_ENGINE_HANDLE execution_engine;
     THANDLE(THREADPOOL) threadpool;
-    THREADPOOL_WORK_ITEM_HANDLE threadpool_work_item;
+    THANDLE(THREADPOOL_WORK_ITEM) threadpool_work_item;
     SM_HANDLE sm;
     TP_WORKER_THREAD_FUNC worker_func;
     void* worker_func_context;
@@ -78,7 +78,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, TP_WORKER_THREAD_HANDLE, tp_worker_thread_create, 
                 temp->worker_func = worker_func;
                 temp->worker_func_context = worker_func_context;
                 THANDLE_INITIALIZE(THREADPOOL)(&temp->threadpool, NULL);
-                temp->threadpool_work_item = NULL;
+                THANDLE_INITIALIZE(THREADPOOL_WORK_ITEM)(&temp->threadpool_work_item, NULL);
                 /*Codes_SRS_TP_WORKER_THREAD_45_001: [ tp_worker_thread_create shall save the execution_engine and call execution_engine_inc_ref. ]*/
                 execution_engine_inc_ref(execution_engine);
                 temp->execution_engine = execution_engine;
@@ -100,9 +100,8 @@ static void tp_worker_thread_close_internal(TP_WORKER_THREAD_HANDLE worker_threa
     /*Codes_SRS_TP_WORKER_THREAD_42_022: [ tp_worker_thread_close shall call sm_close_begin. ]*/
     if (sm_close_begin(worker_thread->sm) == SM_EXEC_GRANTED)
     {
-        /*Codes_SRS_TP_WORKER_THREAD_42_042: [ tp_worker_thread_close shall call threadpool_destroy_work_item. ]*/
-        threadpool_destroy_work_item(worker_thread->threadpool, worker_thread->threadpool_work_item);
-        worker_thread->threadpool_work_item = NULL;
+        /*Codes_SRS_TP_WORKER_THREAD_01_002: [ tp_worker_thread_close shall call THANDLE_ASSIGN(THREADPOOL_WORK_ITEM) with NULL. ]*/
+        THANDLE_ASSIGN(THREADPOOL_WORK_ITEM)(&worker_thread->threadpool_work_item, NULL);
 
         /*Codes_SRS_TP_WORKER_THREAD_45_005: [ tp_worker_thread_close shall call THANDLE_ASSIGN(THREADPOOL) with NULL. ]*/
         THANDLE_ASSIGN(THREADPOOL)(&worker_thread->threadpool, NULL);
@@ -208,8 +207,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, tp_worker_thread_open, TP_WORKER_THREAD_HANDL
             else
             {
                 /*Codes_SRS_TP_WORKER_THREAD_42_041: [ tp_worker_thread_open shall call threadpool_create_work_item with the threadpool, tp_worker_on_threadpool_work and worker_thread. ]*/
-                worker_thread->threadpool_work_item = threadpool_create_work_item(worker_thread->threadpool, tp_worker_on_threadpool_work, worker_thread);
-                if (worker_thread->threadpool_work_item == NULL)
+                THANDLE(THREADPOOL_WORK_ITEM) threadpool_work_item = threadpool_create_work_item(worker_thread->threadpool, tp_worker_on_threadpool_work, worker_thread);
+                if (threadpool_work_item == NULL)
                 {
                     LogError("threadpool_create_work_item failed");
                     /*Codes_SRS_TP_WORKER_THREAD_42_020: [ If there are any errors then tp_worker_thread_open shall fail and return a non-zero value. ]*/
@@ -217,6 +216,9 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, tp_worker_thread_open, TP_WORKER_THREAD_HANDL
                 }
                 else
                 {
+                    /*Codes_SRS_TP_WORKER_THREAD_01_001: [ tp_worker_thread_open shall save the THANDLE(THREADPOOL_WORK_ITEM) for later use by using THANDLE_INITIALIZE_MOVE(THREADPOOL_WORK_ITEM). ]*/
+                    THANDLE_INITIALIZE_MOVE(THREADPOOL_WORK_ITEM)(&worker_thread->threadpool_work_item, &threadpool_work_item);
+
                     /*Codes_SRS_TP_WORKER_THREAD_42_019: [ tp_worker_thread_open shall succeed and return 0. ]*/
                     result = 0;
 
