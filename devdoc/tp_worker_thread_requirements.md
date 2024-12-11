@@ -51,10 +51,6 @@ stateDiagram
     SCHEDULE_REQUESTED --> EXECUTING: User callback returns
 ```
 
-## Future Work
-
-At this time, the module is incubating in Elastic Log where it is needed, but should be moved to c-util and can likely replace `worker_thread` in other places (if not everywhere).
-
 ## Exposed API
 
 ```c
@@ -144,6 +140,8 @@ MOCKABLE_FUNCTION(, int, tp_worker_thread_open, TP_WORKER_THREAD_HANDLE, worker_
 
 **SRS_TP_WORKER_THREAD_42_041: [** `tp_worker_thread_open` shall call `threadpool_create_work_item` with the threadpool, `tp_worker_on_threadpool_work` and `worker_thread`. **]**
 
+**SRS_TP_WORKER_THREAD_01_001: [** `tp_worker_thread_open` shall save the `THANDLE(THREADPOOL_WORK_ITEM)` for later use by using `THANDLE_INITIALIZE_MOVE(THREADPOOL_WORK_ITEM)`. **]**
+
 **SRS_TP_WORKER_THREAD_42_043: [** If `threadpool_create_work_item` fails then `tp_worker_thread_open` shall call `sm_open_end` with `false`. **]**
 
 **SRS_TP_WORKER_THREAD_42_018: [** `tp_worker_thread_open` shall call `sm_open_end` with `true`. **]**
@@ -164,7 +162,7 @@ MOCKABLE_FUNCTION(, void, tp_worker_thread_close, TP_WORKER_THREAD_HANDLE, worke
 
 **SRS_TP_WORKER_THREAD_42_022: [** `tp_worker_thread_close` shall call `sm_close_begin`. **]**
 
-**SRS_TP_WORKER_THREAD_42_042: [** `tp_worker_thread_close` shall call `threadpool_destroy_work_item`. **]**
+**SRS_TP_WORKER_THREAD_01_002: [** `tp_worker_thread_close` shall call `THANDLE_ASSIGN(THREADPOOL_WORK_ITEM)` with `NULL`. **]**
 
 **SRS_TP_WORKER_THREAD_45_005: [** `tp_worker_thread_close` shall call `THANDLE_ASSIGN(THREADPOOL)` with `NULL`. **]**
 

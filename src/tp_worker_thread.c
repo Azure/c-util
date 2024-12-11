@@ -11,6 +11,8 @@
 
 #include "c_pal/execution_engine.h"
 #include "c_pal/interlocked.h"
+#include "c_pal/interlocked_hl.h"
+#include "c_pal/sync.h"
 #include "c_pal/log_critical_and_terminate.h"
 #include "c_pal/sm.h"
 #include "c_pal/thandle.h"
@@ -30,7 +32,7 @@ typedef struct TP_WORKER_THREAD_TAG
     INTERLOCKED_DEFINE_VOLATILE_STATE_ENUM(WORKER_THREAD_STATE, processing_state);
     EXECUTION_ENGINE_HANDLE execution_engine;
     THANDLE(THREADPOOL) threadpool;
-    THREADPOOL_WORK_ITEM_HANDLE threadpool_work_item;
+    THANDLE(THREADPOOL_WORK_ITEM) threadpool_work_item;
     SM_HANDLE sm;
     TP_WORKER_THREAD_FUNC worker_func;
     void* worker_func_context;
@@ -78,7 +80,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, TP_WORKER_THREAD_HANDLE, tp_worker_thread_create, 
                 temp->worker_func = worker_func;
                 temp->worker_func_context = worker_func_context;
                 THANDLE_INITIALIZE(THREADPOOL)(&temp->threadpool, NULL);
-                temp->threadpool_work_item = NULL;
+                THANDLE_INITIALIZE(THREADPOOL_WORK_ITEM)(&temp->threadpool_work_item, NULL);
                 /*Codes_SRS_TP_WORKER_THREAD_45_001: [ tp_worker_thread_create shall save the execution_engine and call execution_engine_inc_ref. ]*/
                 execution_engine_inc_ref(execution_engine);
                 temp->execution_engine = execution_engine;
@@ -100,9 +102,8 @@ static void tp_worker_thread_close_internal(TP_WORKER_THREAD_HANDLE worker_threa
     /*Codes_SRS_TP_WORKER_THREAD_42_022: [ tp_worker_thread_close shall call sm_close_begin. ]*/
     if (sm_close_begin(worker_thread->sm) == SM_EXEC_GRANTED)
     {
-        /*Codes_SRS_TP_WORKER_THREAD_42_042: [ tp_worker_thread_close shall call threadpool_destroy_work_item. ]*/
-        threadpool_destroy_work_item(worker_thread->threadpool, worker_thread->threadpool_work_item);
-        worker_thread->threadpool_work_item = NULL;
+        /*Codes_SRS_TP_WORKER_THREAD_01_002: [ tp_worker_thread_close shall call THANDLE_ASSIGN(THREADPOOL_WORK_ITEM) with NULL. ]*/
+        THANDLE_ASSIGN(THREADPOOL_WORK_ITEM)(&worker_thread->threadpool_work_item, NULL);
 
         /*Codes_SRS_TP_WORKER_THREAD_45_005: [ tp_worker_thread_close shall call THANDLE_ASSIGN(THREADPOOL) with NULL. ]*/
         THANDLE_ASSIGN(THREADPOOL)(&worker_thread->threadpool, NULL);
@@ -156,13 +157,16 @@ static void tp_worker_on_threadpool_work(void* context)
             if (interlocked_compare_exchange(&worker_thread->processing_state, WORKER_THREAD_STATE_IDLE, WORKER_THREAD_STATE_EXECUTING) == WORKER_THREAD_STATE_EXECUTING)
             {
                 // IDLE now, just break, next schedule process call will start a new threadpool work thread
+                wake_by_address_all(&worker_thread->processing_state);
                 break;
             }
 
             /*Codes_SRS_TP_WORKER_THREAD_42_040: [ If the state is SCHEDULE_REQUESTED then tp_worker_on_threadpool_work shall change the state to EXECUTING and repeat. ]*/
-            if (interlocked_compare_exchange(&worker_thread->processing_state, WORKER_THREAD_STATE_EXECUTING, WORKER_THREAD_STATE_SCHEDULE_REQUESTED) == WORKER_THREAD_STATE_SCHEDULE_REQUESTED)
+            int32_t current_processing_state = interlocked_compare_exchange(&worker_thread->processing_state, WORKER_THREAD_STATE_EXECUTING, WORKER_THREAD_STATE_SCHEDULE_REQUESTED);
+            if (current_processing_state == WORKER_THREAD_STATE_SCHEDULE_REQUESTED)
             {
                 // have to keep executing
+                wake_by_address_all(&worker_thread->processing_state);
                 continue;
             }
         } while (true);
@@ -208,8 +212,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, tp_worker_thread_open, TP_WORKER_THREAD_HANDL
             else
             {
                 /*Codes_SRS_TP_WORKER_THREAD_42_041: [ tp_worker_thread_open shall call threadpool_create_work_item with the threadpool, tp_worker_on_threadpool_work and worker_thread. ]*/
-                worker_thread->threadpool_work_item = threadpool_create_work_item(worker_thread->threadpool, tp_worker_on_threadpool_work, worker_thread);
-                if (worker_thread->threadpool_work_item == NULL)
+                THANDLE(THREADPOOL_WORK_ITEM) threadpool_work_item = threadpool_create_work_item(worker_thread->threadpool, tp_worker_on_threadpool_work, worker_thread);
+                if (threadpool_work_item == NULL)
                 {
                     LogError("threadpool_create_work_item failed");
                     /*Codes_SRS_TP_WORKER_THREAD_42_020: [ If there are any errors then tp_worker_thread_open shall fail and return a non-zero value. ]*/
@@ -217,6 +221,9 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, tp_worker_thread_open, TP_WORKER_THREAD_HANDL
                 }
                 else
                 {
+                    /*Codes_SRS_TP_WORKER_THREAD_01_001: [ tp_worker_thread_open shall save the THANDLE(THREADPOOL_WORK_ITEM) for later use by using THANDLE_INITIALIZE_MOVE(THREADPOOL_WORK_ITEM). ]*/
+                    THANDLE_INITIALIZE_MOVE(THREADPOOL_WORK_ITEM)(&worker_thread->threadpool_work_item, &threadpool_work_item);
+
                     /*Codes_SRS_TP_WORKER_THREAD_42_019: [ tp_worker_thread_open shall succeed and return 0. ]*/
                     result = 0;
 
@@ -282,21 +289,25 @@ IMPLEMENT_MOCKABLE_FUNCTION(, TP_WORKER_THREAD_SCHEDULE_PROCESS_RESULT, tp_worke
                 if ((current_processing_state == WORKER_THREAD_STATE_EXECUTING) ||
                     (current_processing_state == WORKER_THREAD_STATE_SCHEDULE_REQUESTED))
                 {
+                    wake_by_address_all(&worker_thread->processing_state);
                     break;
                 }
                 else
                 {
-                    if (interlocked_compare_exchange(&worker_thread->processing_state, WORKER_THREAD_STATE_EXECUTING, WORKER_THREAD_STATE_IDLE) == WORKER_THREAD_STATE_IDLE)
+                    current_processing_state = interlocked_compare_exchange(&worker_thread->processing_state, WORKER_THREAD_STATE_EXECUTING, WORKER_THREAD_STATE_IDLE);
+                    if (current_processing_state == WORKER_THREAD_STATE_IDLE)
                     {
                         /*Codes_SRS_TP_WORKER_THREAD_42_029: [ If the state is IDLE then: ]*/
                         /*Codes_SRS_TP_WORKER_THREAD_42_030: [ tp_worker_thread_schedule_process shall set the state to EXECUTING. ]*/
                         /*Codes_SRS_TP_WORKER_THREAD_42_031: [ tp_worker_thread_schedule_process shall call threadpool_schedule_work_item on the work item created in the module open. ]*/
+                        wake_by_address_all(&worker_thread->processing_state);
                         threadpool_schedule_work_item(worker_thread->threadpool, worker_thread->threadpool_work_item);
                         break;
                     }
                     else
                     {
                         // need to retry
+                        (void)InterlockedHL_WaitForNotValue(&worker_thread->processing_state, current_processing_state, UINT32_MAX);
                     }
                 }
             } while (1);

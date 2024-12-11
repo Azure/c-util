@@ -34,6 +34,7 @@
 #include "real_interlocked.h"
 #include "real_sm.h"
 #include "real_threadpool_thandle.h"
+#include "real_threadpool_work_item_thandle.h"
 
 MU_DEFINE_ENUM_STRINGS(SM_RESULT, SM_RESULT_VALUES)
 
@@ -82,22 +83,20 @@ static THANDLE(THREADPOOL) hook_threadpool_create(EXECUTION_ENGINE_HANDLE execut
     return result;
 }
 
-static THREADPOOL_WORK_ITEM_HANDLE last_created_work_item = NULL;
-static THREADPOOL_WORK_ITEM_HANDLE hook_threadpool_create_work_item(THANDLE(THREADPOOL) threadpool, THREADPOOL_WORK_FUNCTION work_function, void* work_function_context)
+static struct G_TAG
+{
+    THANDLE(THREADPOOL_WORK_ITEM) last_created_work_item;
+} g = { NULL };
+
+static THANDLE(THREADPOOL_WORK_ITEM) hook_threadpool_create_work_item(THANDLE(THREADPOOL) threadpool, THREADPOOL_WORK_FUNCTION work_function, void* work_function_context)
 {
     (void)threadpool;
     (void)work_function;
     (void)work_function_context;
-    THREADPOOL_WORK_ITEM_HANDLE result = real_gballoc_hl_malloc(1);
+    THANDLE(THREADPOOL_WORK_ITEM) result = real_threadpool_work_item_thandle_create();
     ASSERT_IS_NOT_NULL(result);
-    last_created_work_item = result;
+    THANDLE_ASSIGN(REAL_THREADPOOL_WORK_ITEM)(&g.last_created_work_item, result);
     return result;
-}
-
-static void hook_threadpool_destroy_work_item(THANDLE(THREADPOOL) threadpool, THREADPOOL_WORK_ITEM_HANDLE work_item_context)
-{
-    (void)threadpool;
-    real_gballoc_hl_free(work_item_context);
 }
 
 static void expect_create(void)
@@ -105,6 +104,7 @@ static void expect_create(void)
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(sm_create(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(THREADPOOL)(IGNORED_ARG, NULL));
+    STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(THREADPOOL_WORK_ITEM)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(execution_engine_inc_ref(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG))
         .CallCannotFail();
@@ -131,6 +131,7 @@ static void expect_open(THREADPOOL_WORK_FUNCTION* captured_work_func, void** cap
     STRICT_EXPECTED_CALL(threadpool_create_work_item(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CaptureArgumentValue_work_function(captured_work_func)
         .CaptureArgumentValue_work_function_context(captured_work_context);
+    STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(THREADPOOL_WORK_ITEM)(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(sm_open_end(IGNORED_ARG, true));
 }
 
@@ -154,9 +155,8 @@ static void expect_schedule_first_time(void)
         .CallCannotFail();
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CallCannotFail();
-    STRICT_EXPECTED_CALL(threadpool_schedule_work_item(IGNORED_ARG, last_created_work_item));
+    STRICT_EXPECTED_CALL(threadpool_schedule_work_item(IGNORED_ARG, g.last_created_work_item));
     STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
-
 }
 
 static void expect_schedule_already_running(void)
@@ -187,7 +187,7 @@ static void test_schedule_work_already_running(TP_WORKER_THREAD_HANDLE worker_th
 static void expect_close(void)
 {
     STRICT_EXPECTED_CALL(sm_close_begin(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(threadpool_destroy_work_item(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(THREADPOOL_WORK_ITEM)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(THREADPOOL)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(sm_close_end(IGNORED_ARG));
 }
@@ -224,6 +224,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_INTERLOCKED_GLOBAL_MOCK_HOOK();
     REGISTER_SM_GLOBAL_MOCK_HOOK();
     REGISTER_REAL_THANDLE_MOCK_HOOK(THREADPOOL);
+    REGISTER_REAL_THANDLE_MOCK_HOOK(THREADPOOL_WORK_ITEM);
 
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
 
@@ -231,7 +232,6 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(threadpool_create, NULL);
     REGISTER_GLOBAL_MOCK_HOOK(threadpool_create_work_item, hook_threadpool_create_work_item);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(threadpool_create_work_item, NULL);
-    REGISTER_GLOBAL_MOCK_HOOK(threadpool_destroy_work_item, hook_threadpool_destroy_work_item);
 
     REGISTER_GLOBAL_MOCK_HOOK(test_worker_function, hook_test_worker_function);
 
@@ -239,7 +239,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(SM_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(THREADPOOL), void*);
     REGISTER_UMOCK_ALIAS_TYPE(THREADPOOL_WORK_FUNCTION, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(THREADPOOL_WORK_ITEM_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(THANDLE(THREADPOOL_WORK_ITEM), void*);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -251,7 +251,7 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-    last_created_work_item = NULL;
+    THANDLE_ASSIGN(REAL_THREADPOOL_WORK_ITEM)(&g.last_created_work_item, NULL);
 
     test_worker_context.schedule_again_count = 0;
     test_worker_context.schedule_again_count_per_call = 1;
@@ -415,6 +415,7 @@ TEST_FUNCTION(tp_worker_thread_open_with_NULL_worker_thread_fails)
 /*Tests_SRS_TP_WORKER_THREAD_42_015: [ tp_worker_thread_open shall initialize the state to IDLE. ]*/
 /*Tests_SRS_TP_WORKER_THREAD_45_003: [ tp_worker_thread_open shall call threadpool_create with the saved execution_engine. ]*/
 /*Tests_SRS_TP_WORKER_THREAD_42_041: [ tp_worker_thread_open shall call threadpool_create_work_item with the threadpool, tp_worker_on_threadpool_work and worker_thread. ]*/
+/*Tests_SRS_TP_WORKER_THREAD_01_001: [ tp_worker_thread_open shall save the THANDLE(THREADPOOL_WORK_ITEM) for later use by using THANDLE_INITIALIZE_MOVE(THREADPOOL_WORK_ITEM). ]*/
 /*Tests_SRS_TP_WORKER_THREAD_42_018: [ tp_worker_thread_open shall call sm_open_end with true. ]*/
 /*Tests_SRS_TP_WORKER_THREAD_42_019: [ tp_worker_thread_open shall succeed and return 0. ]*/
 TEST_FUNCTION(tp_worker_thread_open_succeeds)
@@ -562,7 +563,7 @@ TEST_FUNCTION(tp_worker_thread_close_with_NULL_worker_thread_returns)
 }
 
 /*Tests_SRS_TP_WORKER_THREAD_42_022: [ tp_worker_thread_close shall call sm_close_begin. ]*/
-/*Tests_SRS_TP_WORKER_THREAD_42_042: [ tp_worker_thread_close shall call threadpool_destroy_work_item. ]*/
+/*Tests_SRS_TP_WORKER_THREAD_01_002: [ tp_worker_thread_close shall call THANDLE_ASSIGN(THREADPOOL_WORK_ITEM) with NULL. ]*/
 /*Tests_SRS_TP_WORKER_THREAD_45_005: [ tp_worker_thread_close shall call THANDLE_ASSIGN(THREADPOOL) with NULL. ]*/
 /*Tests_SRS_TP_WORKER_THREAD_42_024: [ tp_worker_thread_close shall call sm_close_end. ]*/
 TEST_FUNCTION(tp_worker_thread_close_succeeds)
@@ -699,7 +700,7 @@ TEST_FUNCTION(tp_worker_thread_schedule_process_from_idle_succeeds)
     STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(threadpool_schedule_work_item(IGNORED_ARG, last_created_work_item));
+    STRICT_EXPECTED_CALL(threadpool_schedule_work_item(IGNORED_ARG, g.last_created_work_item));
     STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
 
     // act
@@ -737,7 +738,7 @@ TEST_FUNCTION(tp_worker_thread_schedule_process_from_idle_succeeds_after_thread_
     STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(threadpool_schedule_work_item(IGNORED_ARG, last_created_work_item));
+    STRICT_EXPECTED_CALL(threadpool_schedule_work_item(IGNORED_ARG, g.last_created_work_item));
     STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
 
     // act
