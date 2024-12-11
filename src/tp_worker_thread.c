@@ -11,6 +11,8 @@
 
 #include "c_pal/execution_engine.h"
 #include "c_pal/interlocked.h"
+#include "c_pal/interlocked_hl.h"
+#include "c_pal/sync.h"
 #include "c_pal/log_critical_and_terminate.h"
 #include "c_pal/sm.h"
 #include "c_pal/thandle.h"
@@ -155,13 +157,16 @@ static void tp_worker_on_threadpool_work(void* context)
             if (interlocked_compare_exchange(&worker_thread->processing_state, WORKER_THREAD_STATE_IDLE, WORKER_THREAD_STATE_EXECUTING) == WORKER_THREAD_STATE_EXECUTING)
             {
                 // IDLE now, just break, next schedule process call will start a new threadpool work thread
+                wake_by_address_all(&worker_thread->processing_state);
                 break;
             }
 
             /*Codes_SRS_TP_WORKER_THREAD_42_040: [ If the state is SCHEDULE_REQUESTED then tp_worker_on_threadpool_work shall change the state to EXECUTING and repeat. ]*/
-            if (interlocked_compare_exchange(&worker_thread->processing_state, WORKER_THREAD_STATE_EXECUTING, WORKER_THREAD_STATE_SCHEDULE_REQUESTED) == WORKER_THREAD_STATE_SCHEDULE_REQUESTED)
+            int32_t current_processing_state = interlocked_compare_exchange(&worker_thread->processing_state, WORKER_THREAD_STATE_EXECUTING, WORKER_THREAD_STATE_SCHEDULE_REQUESTED);
+            if (current_processing_state == WORKER_THREAD_STATE_SCHEDULE_REQUESTED)
             {
                 // have to keep executing
+                wake_by_address_all(&worker_thread->processing_state);
                 continue;
             }
         } while (true);
@@ -284,21 +289,25 @@ IMPLEMENT_MOCKABLE_FUNCTION(, TP_WORKER_THREAD_SCHEDULE_PROCESS_RESULT, tp_worke
                 if ((current_processing_state == WORKER_THREAD_STATE_EXECUTING) ||
                     (current_processing_state == WORKER_THREAD_STATE_SCHEDULE_REQUESTED))
                 {
+                    wake_by_address_all(&worker_thread->processing_state);
                     break;
                 }
                 else
                 {
-                    if (interlocked_compare_exchange(&worker_thread->processing_state, WORKER_THREAD_STATE_EXECUTING, WORKER_THREAD_STATE_IDLE) == WORKER_THREAD_STATE_IDLE)
+                    current_processing_state = interlocked_compare_exchange(&worker_thread->processing_state, WORKER_THREAD_STATE_EXECUTING, WORKER_THREAD_STATE_IDLE);
+                    if (current_processing_state == WORKER_THREAD_STATE_IDLE)
                     {
                         /*Codes_SRS_TP_WORKER_THREAD_42_029: [ If the state is IDLE then: ]*/
                         /*Codes_SRS_TP_WORKER_THREAD_42_030: [ tp_worker_thread_schedule_process shall set the state to EXECUTING. ]*/
                         /*Codes_SRS_TP_WORKER_THREAD_42_031: [ tp_worker_thread_schedule_process shall call threadpool_schedule_work_item on the work item created in the module open. ]*/
+                        wake_by_address_all(&worker_thread->processing_state);
                         threadpool_schedule_work_item(worker_thread->threadpool, worker_thread->threadpool_work_item);
                         break;
                     }
                     else
                     {
                         // need to retry
+                        (void)InterlockedHL_WaitForNotValue(&worker_thread->processing_state, current_processing_state, UINT32_MAX);
                     }
                 }
             } while (1);
