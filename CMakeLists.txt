@@ -137,6 +137,7 @@ include(CTest)
 enable_testing()
 
 set(c_util_c_files
+    ./src/adaptive_batcher.c
     ./src/async_op.c
     ./src/async_retry_wrapper.c
     ./src/async_type_helper.c
@@ -184,6 +185,7 @@ set(c_util_cpp_files
 )
 
 set(c_util_h_files
+    ./inc/c_util/adaptive_batcher.h
     ./inc/c_util/async_op.h
     ./inc/c_util/async_retry_wrapper.h
     ./inc/c_util/async_type_helper_copy_value_handler.h
