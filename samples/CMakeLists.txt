@@ -1,2 +1,3 @@
 #Copyright (C) Microsoft Corporation. All rights reserved.
-add_subdirectory(async_op_samples)
+
+build_test_folder(async_op_samples_int)
