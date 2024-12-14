@@ -314,10 +314,6 @@ if((CMAKE_GENERATOR MATCHES "Visual Studio") AND (${run_traceability}))
     add_dependencies(c_util_traceability traceabilitytool)
 endif()
 
-if (NOT ${skip_samples})
-    add_subdirectory(samples)
-endif()
-
 # make an install target so we can produce a Linux native client package.
 install_library_with_prefix(c_util c_util  ${c_util_h_files} )
 
@@ -329,6 +325,10 @@ set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER
 
 add_subdirectory(test_helpers)
 add_subdirectory(tests)
+
+if (NOT ${skip_samples})
+    add_subdirectory(samples)
+endif()
 
 if(${run_reals_check})
     add_reals_check_target()
