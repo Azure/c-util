@@ -14,13 +14,45 @@
 
 #include "macro_utils/macro_utils.h"
 
+#include "c_pal/execution_engine.h"
 #include "c_pal/thandle.h"
+
 #include "c_util/async_op.h"
+
+#include "ml_async_op_module.h"
+#include "ml_async_op_module_with_async_chain.h"
+#include "ml_async_op_module_with_retries.h"
 
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct HL_ASYNC_OP_MODULE_CANCEL_ALL_TAG* HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE;
+
+#define HL_ASYNC_OP_MODULE_CANCEL_ALL_RESULT_VALUES \
+    HL_ASYNC_OP_MODULE_CANCEL_ALL_OK, \
+    HL_ASYNC_OP_MODULE_CANCEL_ALL_CANCELED, \
+    HL_ASYNC_OP_MODULE_CANCEL_ALL_ERROR \
+
+MU_DEFINE_ENUM(HL_ASYNC_OP_MODULE_CANCEL_ALL_RESULT, HL_ASYNC_OP_MODULE_CANCEL_ALL_RESULT_VALUES);
+
+typedef void(*HL_ASYNC_OP_MODULE_CANCEL_ALL_EXECUTE_CALLBACK)(void* context, HL_ASYNC_OP_MODULE_CANCEL_ALL_RESULT result);
+
+MOCKABLE_FUNCTION(, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, hl_async_op_module_cancel_all_create, EXECUTION_ENGINE_HANDLE, execution_engine, ML_ASYNC_OP_MODULE_HANDLE, ml_handle, ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE, ml_chain_handle, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, ml_retries_handle);
+MOCKABLE_FUNCTION(, void, hl_async_op_module_cancel_all_destroy, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, handle);
+
+MOCKABLE_FUNCTION(, int, hl_async_op_module_cancel_all_open, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, handle);
+MOCKABLE_FUNCTION(, void, hl_async_op_module_cancel_all_close, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, handle);
+
+// Sample functions which use ASYNC_OP
+
+MOCKABLE_FUNCTION(, int, hl_async_op_module_cancel_all_execute_underlying_fake_cancel_async, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, handle, uint32_t, complete_in_ms, HL_ASYNC_OP_MODULE_CANCEL_ALL_EXECUTE_CALLBACK, callback, void*, context);
+MOCKABLE_FUNCTION(, int, hl_async_op_module_cancel_all_execute_underlying_real_cancel_async, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, handle, uint32_t, complete_in_ms, HL_ASYNC_OP_MODULE_CANCEL_ALL_EXECUTE_CALLBACK, callback, void*, context);
+
+MOCKABLE_FUNCTION(, int, hl_async_op_module_cancel_all_execute_underlying_fake_cancel_and_retries_async, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, handle, uint32_t, complete_in_ms, HL_ASYNC_OP_MODULE_CANCEL_ALL_EXECUTE_CALLBACK, callback, void*, context);
+MOCKABLE_FUNCTION(, int, hl_async_op_module_cancel_all_execute_underlying_real_cancel_and_retries_async, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, handle, uint32_t, complete_in_ms, HL_ASYNC_OP_MODULE_CANCEL_ALL_EXECUTE_CALLBACK, callback, void*, context);
+
 
 #ifdef __cplusplus
 }

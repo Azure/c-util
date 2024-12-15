@@ -6,7 +6,7 @@ The files in this directory are meant to show samples for how to use [`async_op`
 `async_op` is a flexible module meant to aid in cancellation of async operations, but it carries many complexities
 in real-world usage.
 
-Specifically, there are many ways to use `async_op` which have bugs due to races, re-entrancy of callbacks, and other synchronization issues. These samples are meant to show "correct" ways to use `async_op` in various scenarios. The samples themselves have tests and should demonstrate the `async_op` functionality with minimal additional code.
+Specifically, as soon as there is more than one layer of modules involved, there are many ways to use `async_op` which have bugs due to races, re-entrancy of callbacks, and other synchronization issues. These samples are meant to show "correct" ways to use `async_op` in various scenarios. The samples themselves have tests and should demonstrate the `async_op` functionality with minimal additional code.
 
 ## Samples
 
@@ -34,7 +34,7 @@ Within each of those, key steps are outlined in comments starting with numbers t
 
 ### Individual Cases
 
-#### ll_async_module_real_cancel
+#### ll_async_op_module_real_cancel
 
 This sample is similar to the previous one, except that it can cancel the underlying operation. This is the ideal scenario, but it is not always possible.
 
@@ -42,7 +42,7 @@ This sample is similar to the previous one, except that it can cancel the underl
 
 This is a simple case but relies on the underlying operation to support cancellation in its own way (but not using `async_op`).
 
-#### ll_async_module_fake_cancel
+#### ll_async_op_module_fake_cancel
 
 This is a sample for cases where the async operation itself does not use `async_op` and there is no way to cancel it directly. The cancellation is faked by just calling the callback and handling the cleanup when the real callback eventually does come. This simplifies the calling code so that it no longer needs to wait for the underlying operation to complete, but it does not truly cancel the operation (which may take until the process exits or the underlying IO is closed for example).
 
@@ -52,15 +52,15 @@ This case is also simple, but since it calls the callback directly on cancel, it
 
 This is a "fake" cancel because the underlying operation still must complete on its own eventually and the memory related to it is not reclaimed until that point, however it means that the upper layer does not need to wait for the operation to complete.
 
-#### ml_async_module
+#### ml_async_op_module
 
 This sample simply shows how `async_op` can be passed through to another layer.
 
 ##### Notes
 
-This is also a simple example and is almost the same as `ll_async_module_real_cancel`.
+This is also a simple example and is almost the same as `ll_async_op_module_real_cancel`.
 
-#### ml_async_module_with_async_chain
+#### ml_async_op_module_with_async_chain
 
 This sample makes calls to LL modules and does additional calls to LL modules in response to the async calls completing. For example, it calls function A, and in the callback for A, it calls function B, and so on until the last call in the chain which calls the upper layer callback. Cancellation must handle canceling regardless of which step has completed.
 
@@ -68,7 +68,7 @@ This sample makes calls to LL modules and does additional calls to LL modules in
 
 This sample must handle synchronizing based on which step is complete. There are some complexities in the timing of when the callbacks are called and care must be taken that the lower layer `async_op` to be cancelled is tracked as the latest call. It also must avoid starting the next async step after cancellation.
 
-#### ml_async_module_with_retries
+#### ml_async_op_module_with_retries
 
 This is similar to the previous sample, but it calls the same underlying operation in the callback until it succeeds. It should work as the previous example except that it has a (possibly unlimited) variable number of calls until the upper layer callback is called.
 
@@ -76,13 +76,13 @@ This is similar to the previous sample, but it calls the same underlying operati
 
 This is more of a general case of the previous sample.
 
-#### hl_async_module
+#### hl_async_op_module
 
 This is similar to the ML sample, but it is meant to be the top-level operation which will be passed to the "user".
 
-#### hl_async_module_cancel_all
+#### hl_async_op_module_cancel_all
 
-This is similar to the previous sample, but instead of letting the "user" cancel an individual operation, it tracks all pending calls and provides a method to cancel everything. That means this module must keep track of all the pending operations.
+This is similar to the previous sample, but instead of letting the "user" cancel an individual operation, it tracks all pending calls and provides a method to cancel everything (in this case, the "close" of the module). That means this module must keep track of all the pending operations and does not have an `async_op` as an out argument.
 
 ##### Notes
 
