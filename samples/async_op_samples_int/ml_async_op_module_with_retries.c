@@ -432,6 +432,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_async
                     result = 0;
                     goto all_ok;
                 }
+                THANDLE_ASSIGN(ASYNC_OP)(&async_op_ref_for_callback, NULL);
+                THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
             }
             sm_exec_end(handle->sm);
         }

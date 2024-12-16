@@ -12,6 +12,7 @@
 
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
+#include "c_pal/containing_record.h"
 #include "c_pal/execution_engine.h"
 #include "c_pal/interlocked.h"
 #include "c_pal/interlocked_hl.h"
@@ -41,11 +42,15 @@ typedef struct HL_ASYNC_OP_MODULE_CANCEL_ALL_TAG
     // List of pending operations to cancel at close
     DLIST_ENTRY pending_operations;
     SRW_LOCK_LL pending_operations_list_lock;
+    // Synchronize with closing and new operations started
+    bool is_closing;
 } HL_ASYNC_OP_MODULE_CANCEL_ALL;
 
 typedef struct HL_ASYNC_OP_MODULE_CANCEL_ALL_EXECUTE_CONTEXT_TAG
 {
     DLIST_ENTRY dlist_entry;
+    // Synchronize with cancel which is removing from the list
+    volatile_atomic int32_t is_in_pending_operations_list;
     COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback;
     void* context;
 
@@ -84,14 +89,23 @@ IMPLEMENT_MOCKABLE_FUNCTION(, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, hl_async_op_
             }
             else
             {
-                execution_engine_inc_ref(execution_engine);
-                result->execution_engine = execution_engine;
-                THANDLE_INITIALIZE(THREADPOOL)(&result->threadpool, NULL);
+                if (srw_lock_ll_init(&result->pending_operations_list_lock) != 0)
+                {
+                    LogError("srw_lock_ll_init failed");
+                }
+                else
+                {
+                    DList_InitializeListHead(&result->pending_operations);
+                    execution_engine_inc_ref(execution_engine);
+                    result->execution_engine = execution_engine;
+                    THANDLE_INITIALIZE(THREADPOOL)(&result->threadpool, NULL);
 
-                result->ll_handle = ll_handle;
-                result->ll_execute_async = ll_execute_async;
+                    result->ll_handle = ll_handle;
+                    result->ll_execute_async = ll_execute_async;
 
-                goto all_ok;
+                    goto all_ok;
+                }
+                sm_destroy(result->sm);
             }
             free(result);
             result = NULL;
@@ -101,9 +115,47 @@ all_ok:
     return result;
 }
 
+static void hl_async_op_module_cancel_all_on_closing_cancel_all(void* context)
+{
+    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE handle = context;
+
+    // 1. Get a temporary list to copy all operations under the lock so we can call cancel outside of the lock
+    DLIST_ENTRY pending_operations_to_cancel;
+    DList_InitializeListHead(&pending_operations_to_cancel);
+
+    srw_lock_ll_acquire_exclusive(&handle->pending_operations_list_lock);
+    {
+        // 2. Mark the module as closing to prevent new operations from being added
+        handle->is_closing = true;
+
+        // 3. Remove each operation from the list
+        DLIST_ENTRY* current_entry;
+        while ((current_entry = DList_RemoveHeadList(&handle->pending_operations)) != &handle->pending_operations)
+        {
+            HL_ASYNC_OP_MODULE_CANCEL_ALL_EXECUTE_CONTEXT* current_context = CONTAINING_RECORD(current_entry, HL_ASYNC_OP_MODULE_CANCEL_ALL_EXECUTE_CONTEXT, dlist_entry);
+            // 4. ...and add it to the temporary list
+            DList_InsertTailList(&pending_operations_to_cancel, &current_context->dlist_entry);
+
+            // 5. Marking it as not in the list
+            (void)interlocked_exchange(&current_context->is_in_pending_operations_list, 0);
+        }
+        srw_lock_ll_release_exclusive(&handle->pending_operations_list_lock);
+    }
+
+    // 6. Outside of the lock, call cancel on each operation, and release the reference on the async_op
+    DLIST_ENTRY* current_entry;
+    while ((current_entry = DList_RemoveHeadList(&pending_operations_to_cancel)) != &pending_operations_to_cancel)
+    {
+        HL_ASYNC_OP_MODULE_CANCEL_ALL_EXECUTE_CONTEXT* current_context = CONTAINING_RECORD(current_entry, HL_ASYNC_OP_MODULE_CANCEL_ALL_EXECUTE_CONTEXT, dlist_entry);
+        (void)async_op_cancel(current_context->ll_async_op);
+        THANDLE(ASYNC_OP) async_op_ref_for_list = async_op_from_context(current_context);
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op_ref_for_list, NULL);
+    }
+}
+
 static void hl_async_op_module_cancel_all_close_internal(HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE handle)
 {
-    if (sm_close_begin(handle->sm) == SM_EXEC_GRANTED)
+    if (sm_close_begin_with_cb(handle->sm, hl_async_op_module_cancel_all_on_closing_cancel_all, handle, NULL, NULL) == SM_EXEC_GRANTED)
     {
         THANDLE_ASSIGN(THREADPOOL)(&handle->threadpool, NULL);
         sm_close_end(handle->sm);
@@ -151,6 +203,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, hl_async_op_module_cancel_all_open, HL_ASYNC_
             }
             else
             {
+                handle->is_closing = false;
                 result = 0;
             }
             sm_open_end(handle->sm, result == 0);
@@ -199,10 +252,26 @@ static void hl_async_op_module_cancel_all_on_ml_complete(void* context, COMMON_A
         THANDLE(ASYNC_OP) async_op = context;
         HL_ASYNC_OP_MODULE_CANCEL_ALL_EXECUTE_CONTEXT* async_op_context = async_op->context;
 
+        // 1. Remove this item from the list of pending operations under the lock and release the list reference on the async op
+        srw_lock_ll_acquire_exclusive(&async_op_context->handle->pending_operations_list_lock);
+        {
+            if (interlocked_compare_exchange(&async_op_context->is_in_pending_operations_list, 0, 1) != 0)
+            {
+                (void)DList_RemoveEntryList(&async_op_context->dlist_entry);
+                THANDLE(ASYNC_OP) async_op_ref_for_list = async_op_from_context(async_op_context);
+                THANDLE_ASSIGN(ASYNC_OP)(&async_op_ref_for_list, NULL);
+            }
+            else
+            {
+                // 2. ...unless it was already removed during the start of a cancel
+            }
+            srw_lock_ll_release_exclusive(&async_op_context->handle->pending_operations_list_lock);
+        }
+
         // Note that sm_exec_end is called here so that the callback could call close on the module without a deadlock
         sm_exec_end(async_op_context->handle->sm);
 
-        // 1. Do any processing and call the callback based on the result
+        // 3. Do any processing and call the callback based on the result
         switch (result)
         {
             default:
@@ -226,7 +295,7 @@ static void hl_async_op_module_cancel_all_on_ml_complete(void* context, COMMON_A
             }
         }
 
-        // 2. Clean up the async_op
+        // 4. Clean up the async_op
         THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
     }
 }
@@ -270,11 +339,12 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, hl_async_op_module_cancel_all_execute_async, 
 
                 // 3. Initialize the ll_async_op to NULL
                 THANDLE_INITIALIZE(ASYNC_OP)(&async_op_context->ll_async_op, NULL);
+                (void)interlocked_exchange(&async_op_context->is_in_pending_operations_list, 0);
 
                 // 4. Store the async_op from the LL in a temporary variable
                 THANDLE(ASYNC_OP) ll_async_op = NULL;
 
-                // 5. Take an additional reference on the async_op, we have 1 reference for returning to the caller (async_op), and 1 reference for the async work callback (async_op_ref_for_callback)
+                // 5. Take an additional reference on the async_op, we have 1 reference for storing in the list (async_op), and 1 reference for the async work callback (async_op_ref_for_callback)
                 //    Need to take the reference before starting the operation below because its callback may come immediately
                 THANDLE(ASYNC_OP) async_op_ref_for_callback = NULL;
                 THANDLE_ASSIGN(ASYNC_OP)(&async_op_ref_for_callback, async_op);
@@ -291,12 +361,45 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, hl_async_op_module_cancel_all_execute_async, 
                     //    This must happen before the next line so that the ll_async_op is set before cancel is called
                     THANDLE_MOVE(ASYNC_OP)(&async_op_context->ll_async_op, &ll_async_op);
 
-                    // 8. Provide the async_op to the caller
-                    //    After this (but before returning) it is possible that the caller may call cancel because they may have access to the async_op_out pointer in another thread
-                    //THANDLE_MOVE(ASYNC_OP)(async_op_out, &async_op);
+                    bool is_closing;
+
+                    // 8. Take a lock to synchronize with close accessing the list of pending operations
+                    srw_lock_ll_acquire_exclusive(&handle->pending_operations_list_lock);
+                    {
+                        if (handle->is_closing)
+                        {
+                            is_closing = true;
+                        }
+                        else
+                        {
+                            is_closing = false;
+                            // 9. If the module is not closing, add this operation to the list of pending operations
+                            DList_InsertTailList(&handle->pending_operations, &async_op_context->dlist_entry);
+
+                            // 10. Mark this operation as in the list
+                            (void)interlocked_exchange(&async_op_context->is_in_pending_operations_list, 1);
+                        }
+                        srw_lock_ll_release_exclusive(&handle->pending_operations_list_lock);
+                    }
+
+                    if (is_closing)
+                    {
+                        // 11. If the module is closing, we need to cancel this operation
+                        (void)async_op_cancel(async_op);
+
+                        // 12. And release the reference on the async_op
+                        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+                    }
+                    else
+                    {
+                        // ok
+                    }
+
                     result = 0;
                     goto all_ok;
                 }
+                THANDLE_ASSIGN(ASYNC_OP)(&async_op_ref_for_callback, NULL);
+                THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
             }
             sm_exec_end(handle->sm);
         }
