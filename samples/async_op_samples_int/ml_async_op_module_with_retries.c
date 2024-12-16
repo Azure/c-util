@@ -25,8 +25,6 @@
 #include "c_util/async_op.h"
 
 #include "common_async_op_module_interface.h"
-#include "ll_async_op_module_fake_cancel.h"
-#include "ll_async_op_module_real_cancel.h"
 
 #include "ml_async_op_module_with_retries.h"
 
@@ -36,8 +34,8 @@ typedef struct ML_ASYNC_OP_MODULE_WITH_RETRIES_TAG
     EXECUTION_ENGINE_HANDLE execution_engine;
     THANDLE(THREADPOOL) threadpool;
 
-    LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE ll_fake_cancel;
-    LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE ll_real_cancel;
+    void* ll_handle;
+    COMMON_ASYNC_OP_MODULE_EXECUTE_ASYNC ll_execute_async;
 } ML_ASYNC_OP_MODULE_WITH_RETRIES;
 
 typedef struct ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_TAG
@@ -60,16 +58,16 @@ typedef struct ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_TAG
     ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE handle;
 } ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT;
 
-IMPLEMENT_MOCKABLE_FUNCTION(, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, ml_async_op_module_with_retries_create, EXECUTION_ENGINE_HANDLE, execution_engine, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, ll_fake_cancel, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, ll_real_cancel)
+IMPLEMENT_MOCKABLE_FUNCTION(, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, ml_async_op_module_with_retries_create, EXECUTION_ENGINE_HANDLE, execution_engine, void*, ll_handle, COMMON_ASYNC_OP_MODULE_EXECUTE_ASYNC, ll_execute_async)
 {
     ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE result;
 
     if (execution_engine == NULL ||
-        ll_fake_cancel == NULL ||
-        ll_real_cancel == NULL)
+        ll_handle == NULL ||
+        ll_execute_async == NULL)
     {
-        LogError("Invalid arguments EXECUTION_ENGINE_HANDLE execution_engine=%p, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE ll_fake_cancel=%p, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE ll_real_cancel=%p",
-            execution_engine, ll_fake_cancel, ll_real_cancel);
+        LogError("Invalid arguments EXECUTION_ENGINE_HANDLE execution_engine=%p, void* ll_handle=%p, void* ll_execute_async=%p",
+            execution_engine, ll_handle, ll_execute_async);
         result = NULL;
     }
     else
@@ -92,8 +90,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, ml_async_o
                 result->execution_engine = execution_engine;
                 THANDLE_INITIALIZE(THREADPOOL)(&result->threadpool, NULL);
 
-                result->ll_fake_cancel = ll_fake_cancel;
-                result->ll_real_cancel = ll_real_cancel;
+                result->ll_handle = ll_handle;
+                result->ll_execute_async = ll_execute_async;
 
                 goto all_ok;
             }
@@ -212,7 +210,7 @@ static void on_async_op_ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_dispose(void* context
     srw_lock_ll_deinit(&call_context->ll_async_op_lock);
 }
 
-static void ml_async_op_module_with_retries_on_ll_complete_with_fake_cancel_do_retry(void* context, COMMON_ASYNC_OP_MODULE_RESULT result)
+static void ml_async_op_module_with_retries_on_ll_complete_do_retry(void* context, COMMON_ASYNC_OP_MODULE_RESULT result)
 {
     if (context == NULL)
     {
@@ -255,16 +253,16 @@ static void ml_async_op_module_with_retries_on_ll_complete_with_fake_cancel_do_r
                 // 5. Store the async_op from the LL in a temporary variable
                 THANDLE(ASYNC_OP) ll_async_op = NULL;
 
-                // 6. Call the next step in the chain
-                if (ll_async_op_module_fake_cancel_execute_async(async_op_context->handle->ll_fake_cancel, async_op_context->complete_in_ms, &ll_async_op, ml_async_op_module_with_retries_on_ll_complete_with_fake_cancel_do_retry, context) != 0)
+                // 6. Call the operation again for a retry
+                if (async_op_context->handle->ll_execute_async(async_op_context->handle->ll_handle, async_op_context->complete_in_ms, &ll_async_op, ml_async_op_module_with_retries_on_ll_complete_do_retry, context) != 0)
                 {
-                    LogError("ll_async_op_module_fake_cancel_execute_async failed");
+                    LogError("ll_execute_async for lower module failed on retry");
                     failed = true;
                     must_call_callback = true;
                 }
                 else
                 {
-                    // 7. Take a lock to synchronize with calls in the chain completing and the async_op_ll changing
+                    // 7. Take a lock to synchronize with other retry calls completing and the async_op_ll changing
                     srw_lock_ll_acquire_exclusive(&async_op_context->ll_async_op_lock);
                     {
                         // 8. Check if cancel has already been called, if so, we should cancel the new ll_async_op which wasn't stored in the context yet
@@ -347,7 +345,7 @@ static void ml_async_op_module_with_retries_on_ll_complete_with_fake_cancel_do_r
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_underlying_fake_cancel_async, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context)
+IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_async, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context)
 {
     int result;
     if (
@@ -386,31 +384,31 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_under
                 async_op_context->handle = handle;
                 async_op_context->complete_in_ms = complete_in_ms;
 
-                // 3. Synchronization of ll_async_op between chained async calls
+                // 3. Synchronization of ll_async_op between chained async calls requires a lock, a cancelation flag, and a counter (ll_async_op_step)
                 (void)srw_lock_ll_init(&async_op_context->ll_async_op_lock);
                 (void)interlocked_exchange(&async_op_context->ll_async_op_epoch, 0);
                 (void)interlocked_exchange(&async_op_context->is_canceled, 0);
 
-                // 4. Initialize the ll_async_op
+                // 4. Initialize the ll_async_op to NULL
                 THANDLE_INITIALIZE(ASYNC_OP)(&async_op_context->ll_async_op, NULL);
 
                 // 5. Store the async_op from the LL in a temporary variable
                 THANDLE(ASYNC_OP) ll_async_op = NULL;
 
-                // 6. Take an additional reference on the async_op, we have 1 reference for returning to the caller, and 1 reference for the async work callback
+                // 6. Take an additional reference on the async_op, we have 1 reference for returning to the caller (async_op), and 1 reference for the async work callback (async_op_ref_for_callback)
                 //    Need to take the reference before starting the operation below because its callback may come immediately
                 THANDLE(ASYNC_OP) async_op_ref_for_callback = NULL;
                 THANDLE_ASSIGN(ASYNC_OP)(&async_op_ref_for_callback, async_op);
 
                 // 7. Start the first step of the async work, passing the async_op_ref_for_callback as the context
-                if (ll_async_op_module_fake_cancel_execute_async(handle->ll_fake_cancel, complete_in_ms, &ll_async_op, ml_async_op_module_with_retries_on_ll_complete_with_fake_cancel_do_retry, (void*)async_op_ref_for_callback) != 0)
+                if (handle->ll_execute_async(handle->ll_handle, complete_in_ms, &ll_async_op, ml_async_op_module_with_retries_on_ll_complete_do_retry, (void*)async_op_ref_for_callback) != 0)
                 {
-                    LogError("ll_async_op_module_fake_cancel_execute_async failed");
+                    LogError("ll_execute_async for lower module failed");
                     result = MU_FAILURE;
                 }
                 else
                 {
-                    // 8. Take a lock to synchronize with the possibility of the step 1 callback already being called (or any subsequent steps)
+                    // 8. Take a lock to synchronize with the possibility of the callback already being called (or any subsequent retries)
                     srw_lock_ll_acquire_exclusive(&async_op_context->ll_async_op_lock);
                     {
                         // 9. Make sure we only store the latest ll_async_op by synchronizing on ll_async_op_epoch
@@ -442,231 +440,17 @@ all_ok:
     return result;
 }
 
-static void ml_async_op_module_with_retries_on_ll_complete_with_real_cancel_do_retry(void* context, COMMON_ASYNC_OP_MODULE_RESULT result)
+
+IMPLEMENT_MOCKABLE_FUNCTION(, COMMON_ASYNC_OP_MODULE_INTERFACE, ml_async_op_module_with_retries_get_interface, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle)
 {
-    if (context == NULL)
+    COMMON_ASYNC_OP_MODULE_INTERFACE result = (COMMON_ASYNC_OP_MODULE_INTERFACE)
     {
-        LogCriticalAndTerminate("Invalid arguments: void* context=%p, COMMON_ASYNC_OP_MODULE_RESULT result=%" PRI_MU_ENUM "",
-            context, MU_ENUM_VALUE(COMMON_ASYNC_OP_MODULE_RESULT, result));
-    }
-    else
-    {
-        THANDLE(ASYNC_OP) async_op = context;
-        ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT* async_op_context = async_op->context;
-
-        bool is_canceled = false;
-        bool failed = false;
-        bool must_call_callback = false;
-
-        if (result == enum_value_typedef_COMMON_ASYNC_OP_MODULE_ERROR_CAN_RETRY)
-        {
-            // In case retry is required...
-
-            int32_t ll_async_op_epoch;
-
-            // 1. Take a lock to synchronize with calls in the chain completing and the async_op_ll changing
-            srw_lock_ll_acquire_exclusive(&async_op_context->ll_async_op_lock);
-            {
-                // 2. Increment the epoch so that we do not try to store the old async_op from before this call
-                ll_async_op_epoch = interlocked_increment(&async_op_context->ll_async_op_epoch);
-                // 3. Reset the ll_async_op, it is complete and we don't need it anymore. Note that this is an optimization and not strictly necessary
-                THANDLE_ASSIGN(ASYNC_OP)(&async_op_context->ll_async_op, NULL);
-                // 4. Check if cancel has already been called, if so, we should call the callback instead of calling the chained async operation
-                if (interlocked_add(&async_op_context->is_canceled, 0) != 0)
-                {
-                    is_canceled = true;
-                    must_call_callback = true;
-                }
-                srw_lock_ll_release_exclusive(&async_op_context->ll_async_op_lock);
-            }
-
-            if (!is_canceled)
-            {
-                // 5. Store the async_op from the LL in a temporary variable
-                THANDLE(ASYNC_OP) ll_async_op = NULL;
-
-                // 6. Call the next step in the chain
-                if (ll_async_op_module_real_cancel_execute_async(async_op_context->handle->ll_real_cancel, async_op_context->complete_in_ms, &ll_async_op, ml_async_op_module_with_retries_on_ll_complete_with_real_cancel_do_retry, context) != 0)
-                {
-                    LogError("ll_async_op_module_real_cancel_execute_async failed");
-                    failed = true;
-                    must_call_callback = true;
-                }
-                else
-                {
-                    // 7. Take a lock to synchronize with calls in the chain completing and the async_op_ll changing
-                    srw_lock_ll_acquire_exclusive(&async_op_context->ll_async_op_lock);
-                    {
-                        // 8. Check if cancel has already been called, if so, we should cancel the new ll_async_op which wasn't stored in the context yet
-                        if (interlocked_add(&async_op_context->is_canceled, 0) != 0)
-                        {
-                            is_canceled = true;
-                            // Note that we do not set must_call_callback because the lower layer call has started and its callback will come
-                        }
-                        else
-                        {
-                            // 9. Make sure we only store the latest ll_async_op by synchronizing on ll_async_op_epoch
-                            if (interlocked_compare_exchange(&async_op_context->ll_async_op_epoch, ll_async_op_epoch + 1, ll_async_op_epoch) == ll_async_op_epoch)
-                            {
-                                // 10. Store the ll_async_op in the context on success so that it can be canceled
-                                THANDLE_ASSIGN(ASYNC_OP)(&async_op_context->ll_async_op, ll_async_op);
-                            }
-                        }
-                        srw_lock_ll_release_exclusive(&async_op_context->ll_async_op_lock);
-                    }
-
-                    if (is_canceled)
-                    {
-                        // 11. If we are canceled, we need to cancel the lower layer async_op which was just started in this call
-                        (void)async_op_cancel(ll_async_op);
-                    }
-                    THANDLE_ASSIGN(ASYNC_OP)(&ll_async_op, NULL);
-                }
-            }
-        }
-        else
-        {
-            // normal case, just call the callback
-            must_call_callback = true;
-        }
-
-        if (must_call_callback)
-        {
-            // Note that sm_exec_end is called here so that the callback could call close on the module without a deadlock
-            sm_exec_end(async_op_context->handle->sm);
-
-            // 12. In case of no retry needed, failure, or cancellation, call the callback now
-            //     All other cases indicate a retry was started and this callback will come again
-            if (is_canceled)
-            {
-                async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_CANCELED);
-            }
-            else if (failed)
-            {
-                async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_ERROR);
-            }
-            else
-            {
-                switch (result)
-                {
-                    default:
-                    {
-                        LogInfo("LL Call completed with an error: %" PRI_MU_ENUM "",
-                            MU_ENUM_VALUE(COMMON_ASYNC_OP_MODULE_RESULT, result));
-                        async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_ERROR);
-                        break;
-                    }
-                    case COMMON_ASYNC_OP_MODULE_OK:
-                    {
-                        LogInfo("LL Call completed normally");
-                        async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_OK);
-                        break;
-                    }
-                    case COMMON_ASYNC_OP_MODULE_CANCELED:
-                    {
-                        LogInfo("LL Call was canceled");
-                        async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_CANCELED);
-                        break;
-                    }
-                }
-            }
-
-            // 13. ...and clean up the async_op
-            THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-        }
-    }
-}
-IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_underlying_real_cancel_async, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context)
-{
-    int result;
-    if (
-        handle == NULL ||
-        async_op_out == NULL ||
-        callback == NULL
-        )
-    {
-        LogError("Invalid arguments ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE handle=%p, uint32_t complete_in_ms=%" PRIu32 ", THANDLE(ASYNC_OP)* async_op_out=%p, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback=%p, void* context=%p",
-            handle, complete_in_ms, async_op_out, callback, context);
-        result = MU_FAILURE;
-    }
-    else
-    {
-        if (sm_exec_begin(handle->sm) != SM_EXEC_GRANTED)
-        {
-            LogError("sm_exec_begin failed");
-            result = MU_FAILURE;
-        }
-        else
-        {
-            // 1. Create an ASYNC_OP for the operation context
-            THANDLE(ASYNC_OP) async_op = async_op_create(on_async_op_ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_cancel, sizeof(ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT), alignof(ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT), on_async_op_ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_dispose);
-            if (async_op == NULL)
-            {
-                LogError("async_op_create failed");
-                result = MU_FAILURE;
-            }
-            else
-            {
-                // 2. Any context needed is stored in async_op->context
-                ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT* async_op_context = async_op->context;
-
-                async_op_context->callback = callback;
-                async_op_context->context = context;
-                async_op_context->handle = handle;
-                async_op_context->complete_in_ms = complete_in_ms;
-
-                // 3. Synchronization of ll_async_op between chained async calls
-                (void)srw_lock_ll_init(&async_op_context->ll_async_op_lock);
-                (void)interlocked_exchange(&async_op_context->ll_async_op_epoch, 0);
-                (void)interlocked_exchange(&async_op_context->is_canceled, 0);
-
-                // 4. Initialize the ll_async_op
-                THANDLE_INITIALIZE(ASYNC_OP)(&async_op_context->ll_async_op, NULL);
-
-                // 5. Store the async_op from the LL in a temporary variable
-                THANDLE(ASYNC_OP) ll_async_op = NULL;
-
-                // 6. Take an additional reference on the async_op, we have 1 reference for returning to the caller, and 1 reference for the async work callback
-                //    Need to take the reference before starting the operation below because its callback may come immediately
-                THANDLE(ASYNC_OP) async_op_ref_for_callback = NULL;
-                THANDLE_ASSIGN(ASYNC_OP)(&async_op_ref_for_callback, async_op);
-
-                // 7. Start the first step of the async work, passing the async_op_ref_for_callback as the context
-                if (ll_async_op_module_real_cancel_execute_async(handle->ll_real_cancel, complete_in_ms, &ll_async_op, ml_async_op_module_with_retries_on_ll_complete_with_real_cancel_do_retry, (void*)async_op_ref_for_callback) != 0)
-                {
-                    LogError("ll_async_op_module_real_cancel_execute_async failed");
-                    result = MU_FAILURE;
-                }
-                else
-                {
-                    // 8. Take a lock to synchronize with the possibility of the step 1 callback already being called (or any subsequent steps)
-                    srw_lock_ll_acquire_exclusive(&async_op_context->ll_async_op_lock);
-                    {
-                        // 9. Make sure we only store the latest ll_async_op by synchronizing on ll_async_op_epoch
-                        //    This handles the case where the callback for step 1 has already been called and now the ll_async_op in this scope is complete and we don't need it
-                        if (interlocked_compare_exchange(&async_op_context->ll_async_op_epoch, 1, 0) == 0)
-                        {
-                            // 10. Store the ll_async_op in the context on success so that it can be canceled
-                            //     This must happen before the next line so that the ll_async_op is set before cancel is called
-                            THANDLE_MOVE(ASYNC_OP)(&async_op_context->ll_async_op, &ll_async_op);
-                        }
-                        else
-                        {
-                            THANDLE_ASSIGN(ASYNC_OP)(&ll_async_op, NULL);
-                        }
-                        srw_lock_ll_release_exclusive(&async_op_context->ll_async_op_lock);
-                    }
-
-                    // 11. Provide the async_op to the caller
-                    //    After this (but before returning) it is possible that the caller may call cancel because they may have access to the async_op_out pointer in another thread
-                    THANDLE_MOVE(ASYNC_OP)(async_op_out, &async_op);
-                    result = 0;
-                    goto all_ok;
-                }
-            }
-            sm_exec_end(handle->sm);
-        }
-    }
-all_ok:
+        .handle = handle,
+        .open = ml_async_op_module_with_retries_open,
+        .close = ml_async_op_module_with_retries_close,
+        .destroy = ml_async_op_module_with_retries_destroy,
+        .execute_async = ml_async_op_module_with_retries_execute_async,
+        .execute_async_no_async_op_out = NULL
+    };
     return result;
 }
