@@ -35,88 +35,208 @@ TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
 TEST_DEFINE_ENUM_TYPE(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_RESULT_VALUES)
 
-typedef struct TEST_MODULES_TAG
+typedef struct TEST_MODULE_TAG
 {
-    LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE ll_async_module_real_cancel;
-    LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE ll_async_module_fake_cancel;
-    ML_ASYNC_OP_MODULE_HANDLE ml_async_module;
-    ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE ml_async_module_with_async_chain;
-    ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE ml_async_module_with_retries;
-    HL_ASYNC_OP_MODULE_HANDLE hl_async_module;
-    //HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all;
-} TEST_MODULES;
+    COMMON_ASYNC_OP_MODULE_INTERFACE module_interface;
+    bool has_retry_support;
+    bool exposes_async_op;
+} TEST_MODULE;
 
-static TEST_MODULES test_modules;
-
-static void create_modules(void)
+static void create_all_modules_with_fake_cancel(EXECUTION_ENGINE_HANDLE execution_engine, uint32_t* module_count, TEST_MODULE** modules, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE* ll_async_module_fake_cancel)
 {
-    EXECUTION_ENGINE_HANDLE execution_engine = execution_engine_create(NULL);
+    *module_count = 9;
+    *modules = malloc_2(*module_count, sizeof(TEST_MODULE));
+    ASSERT_IS_NOT_NULL(*modules);
 
-    test_modules.ll_async_module_fake_cancel = ll_async_op_module_fake_cancel_create(execution_engine);
-    ASSERT_IS_NOT_NULL(test_modules.ll_async_module_fake_cancel);
+    uint32_t i = 0;
 
-    test_modules.ll_async_module_real_cancel = ll_async_op_module_real_cancel_create(execution_engine);
-    ASSERT_IS_NOT_NULL(test_modules.ll_async_module_real_cancel);
+    *ll_async_module_fake_cancel = ll_async_op_module_fake_cancel_create(execution_engine);
+    ASSERT_IS_NOT_NULL(*ll_async_module_fake_cancel);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = ll_async_op_module_fake_cancel_get_interface(*ll_async_module_fake_cancel);
+    (*modules)[i].has_retry_support = false;
+    (*modules)[i].exposes_async_op = true;
+    i++;
 
-    test_modules.ml_async_module = ml_async_op_module_create(execution_engine, test_modules.ll_async_module_fake_cancel, test_modules.ll_async_module_real_cancel);
-    ASSERT_IS_NOT_NULL(test_modules.ml_async_module);
+    ML_ASYNC_OP_MODULE_HANDLE ml_async_module = ml_async_op_module_create(execution_engine, *ll_async_module_fake_cancel, ll_async_op_module_fake_cancel_execute_async);
+    ASSERT_IS_NOT_NULL(ml_async_module);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = ml_async_op_module_get_interface(ml_async_module);
+    (*modules)[i].has_retry_support = false;
+    (*modules)[i].exposes_async_op = true;
+    i++;
 
-    test_modules.ml_async_module_with_async_chain = ml_async_op_module_with_async_chain_create(execution_engine, test_modules.ll_async_module_fake_cancel, test_modules.ll_async_module_real_cancel);
-    ASSERT_IS_NOT_NULL(test_modules.ml_async_module_with_async_chain);
+    ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE ml_async_module_with_async_chain = ml_async_op_module_with_async_chain_create(execution_engine, *ll_async_module_fake_cancel, ll_async_op_module_fake_cancel_execute_async);
+    ASSERT_IS_NOT_NULL(ml_async_module_with_async_chain);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = ml_async_op_module_with_async_chain_get_interface(ml_async_module_with_async_chain);
+    (*modules)[i].has_retry_support = false;
+    (*modules)[i].exposes_async_op = true;
+    i++;
 
-    test_modules.ml_async_module_with_retries = ml_async_op_module_with_retries_create(execution_engine, test_modules.ll_async_module_fake_cancel, test_modules.ll_async_module_real_cancel);
-    ASSERT_IS_NOT_NULL(test_modules.ml_async_module_with_retries);
+    ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE ml_async_module_with_retries = ml_async_op_module_with_retries_create(execution_engine, *ll_async_module_fake_cancel, ll_async_op_module_fake_cancel_execute_async);
+    ASSERT_IS_NOT_NULL(ml_async_module_with_retries);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = ml_async_op_module_with_retries_get_interface(ml_async_module_with_retries);
+    (*modules)[i].has_retry_support = true;
+    (*modules)[i].exposes_async_op = true;
+    i++;
 
-    test_modules.hl_async_module = hl_async_op_module_create(execution_engine, test_modules.ml_async_module, test_modules.ml_async_module_with_async_chain, test_modules.ml_async_module_with_retries);
-    ASSERT_IS_NOT_NULL(test_modules.hl_async_module);
+    ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE ml_async_module_with_async_chain_over_retries = ml_async_op_module_with_async_chain_create(execution_engine, ml_async_module_with_retries, ml_async_op_module_with_retries_execute_async);
+    ASSERT_IS_NOT_NULL(ml_async_module_with_async_chain_over_retries);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = ml_async_op_module_with_async_chain_get_interface(ml_async_module_with_async_chain_over_retries);
+    (*modules)[i].has_retry_support = true;
+    (*modules)[i].exposes_async_op = true;
+    i++;
 
-    execution_engine_dec_ref(execution_engine);
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module1 = hl_async_op_module_create(execution_engine, ml_async_module, ml_async_op_module_execute_async);
+    ASSERT_IS_NOT_NULL(hl_async_module1);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module1);
+    (*modules)[i].has_retry_support = false;
+    (*modules)[i].exposes_async_op = true;
+    i++;
+
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module2 = hl_async_op_module_create(execution_engine, ml_async_module_with_async_chain, ml_async_op_module_with_async_chain_execute_async);
+    ASSERT_IS_NOT_NULL(hl_async_module2);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module2);
+    (*modules)[i].has_retry_support = false;
+    (*modules)[i].exposes_async_op = true;
+    i++;
+
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module3 = hl_async_op_module_create(execution_engine, ml_async_module_with_retries, ml_async_op_module_with_retries_execute_async);
+    ASSERT_IS_NOT_NULL(hl_async_module3);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module3);
+    (*modules)[i].has_retry_support = true;
+    (*modules)[i].exposes_async_op = true;
+    i++;
+
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module4 = hl_async_op_module_create(execution_engine, ml_async_module_with_async_chain_over_retries, ml_async_op_module_with_async_chain_execute_async);
+    ASSERT_IS_NOT_NULL(hl_async_module4);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module4);
+    (*modules)[i].has_retry_support = true;
+    (*modules)[i].exposes_async_op = true;
+    i++;
 }
 
-static void open_modules(void)
+static void create_all_modules_with_real_cancel(EXECUTION_ENGINE_HANDLE execution_engine, uint32_t* module_count, TEST_MODULE** modules, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE* ll_async_module_real_cancel)
 {
-    ASSERT_ARE_EQUAL(int, 0, ll_async_op_module_fake_cancel_open(test_modules.ll_async_module_fake_cancel));
-    ASSERT_ARE_EQUAL(int, 0, ll_async_op_module_real_cancel_open(test_modules.ll_async_module_real_cancel));
+    *module_count = 9;
+    *modules = malloc_2(*module_count, sizeof(TEST_MODULE));
+    ASSERT_IS_NOT_NULL(*modules);
 
-    ASSERT_ARE_EQUAL(int, 0, ml_async_op_module_open(test_modules.ml_async_module));
-    ASSERT_ARE_EQUAL(int, 0, ml_async_op_module_with_async_chain_open(test_modules.ml_async_module_with_async_chain));
-    ASSERT_ARE_EQUAL(int, 0, ml_async_op_module_with_retries_open(test_modules.ml_async_module_with_retries));
+    uint32_t i = 0;
 
-    ASSERT_ARE_EQUAL(int, 0, hl_async_op_module_open(test_modules.hl_async_module));
+    *ll_async_module_real_cancel = ll_async_op_module_real_cancel_create(execution_engine);
+    ASSERT_IS_NOT_NULL(*ll_async_module_real_cancel);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = ll_async_op_module_real_cancel_get_interface(*ll_async_module_real_cancel);
+    (*modules)[i].has_retry_support = false;
+    (*modules)[i].exposes_async_op = true;
+    i++;
+
+    ML_ASYNC_OP_MODULE_HANDLE ml_async_module = ml_async_op_module_create(execution_engine, *ll_async_module_real_cancel, ll_async_op_module_real_cancel_execute_async);
+    ASSERT_IS_NOT_NULL(ml_async_module);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = ml_async_op_module_get_interface(ml_async_module);
+    (*modules)[i].has_retry_support = false;
+    (*modules)[i].exposes_async_op = true;
+    i++;
+
+    ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE ml_async_module_with_async_chain = ml_async_op_module_with_async_chain_create(execution_engine, *ll_async_module_real_cancel, ll_async_op_module_real_cancel_execute_async);
+    ASSERT_IS_NOT_NULL(ml_async_module_with_async_chain);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = ml_async_op_module_with_async_chain_get_interface(ml_async_module_with_async_chain);
+    (*modules)[i].has_retry_support = false;
+    (*modules)[i].exposes_async_op = true;
+    i++;
+
+    ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE ml_async_module_with_retries = ml_async_op_module_with_retries_create(execution_engine, *ll_async_module_real_cancel, ll_async_op_module_real_cancel_execute_async);
+    ASSERT_IS_NOT_NULL(ml_async_module_with_retries);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = ml_async_op_module_with_retries_get_interface(ml_async_module_with_retries);
+    (*modules)[i].has_retry_support = true;
+    (*modules)[i].exposes_async_op = true;
+    i++;
+
+    ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE ml_async_module_with_async_chain_over_retries = ml_async_op_module_with_async_chain_create(execution_engine, ml_async_module_with_retries, ml_async_op_module_with_retries_execute_async);
+    ASSERT_IS_NOT_NULL(ml_async_module_with_async_chain_over_retries);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = ml_async_op_module_with_async_chain_get_interface(ml_async_module_with_async_chain_over_retries);
+    (*modules)[i].has_retry_support = true;
+    (*modules)[i].exposes_async_op = true;
+    i++;
+
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module1 = hl_async_op_module_create(execution_engine, ml_async_module, ml_async_op_module_execute_async);
+    ASSERT_IS_NOT_NULL(hl_async_module1);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module1);
+    (*modules)[i].has_retry_support = false;
+    (*modules)[i].exposes_async_op = true;
+    i++;
+
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module2 = hl_async_op_module_create(execution_engine, ml_async_module_with_async_chain, ml_async_op_module_with_async_chain_execute_async);
+    ASSERT_IS_NOT_NULL(hl_async_module2);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module2);
+    (*modules)[i].has_retry_support = false;
+    (*modules)[i].exposes_async_op = true;
+    i++;
+
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module3 = hl_async_op_module_create(execution_engine, ml_async_module_with_retries, ml_async_op_module_with_retries_execute_async);
+    ASSERT_IS_NOT_NULL(hl_async_module3);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module3);
+    (*modules)[i].has_retry_support = true;
+    (*modules)[i].exposes_async_op = true;
+    i++;
+
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module4 = hl_async_op_module_create(execution_engine, ml_async_module_with_async_chain_over_retries, ml_async_op_module_with_async_chain_execute_async);
+    ASSERT_IS_NOT_NULL(hl_async_module4);
+    ASSERT_IS_TRUE(i < *module_count);
+    (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module4);
+    (*modules)[i].has_retry_support = true;
+    (*modules)[i].exposes_async_op = true;
+    i++;
 }
 
-static void close_modules(void)
+
+static void open_modules(uint32_t module_count, TEST_MODULE* modules)
 {
-    hl_async_op_module_close(test_modules.hl_async_module);
-
-    ml_async_op_module_with_retries_close(test_modules.ml_async_module_with_retries);
-    ml_async_op_module_with_async_chain_close(test_modules.ml_async_module_with_async_chain);
-    ml_async_op_module_close(test_modules.ml_async_module);
-
-    ll_async_op_module_real_cancel_close(test_modules.ll_async_module_real_cancel);
-    ll_async_op_module_fake_cancel_close(test_modules.ll_async_module_fake_cancel);
+    for (uint32_t i = 0; i < module_count; i++)
+    {
+        ASSERT_ARE_EQUAL(int, 0, modules[i].module_interface.open(modules[i].module_interface.handle));
+    }
 }
 
-static void destroy_modules(void)
+static void close_modules(uint32_t module_count, TEST_MODULE* modules)
 {
-    hl_async_op_module_destroy(test_modules.hl_async_module);
-    test_modules.hl_async_module = NULL;
-
-    ml_async_op_module_with_retries_destroy(test_modules.ml_async_module_with_retries);
-    test_modules.ml_async_module_with_retries = NULL;
-
-    ml_async_op_module_with_async_chain_destroy(test_modules.ml_async_module_with_async_chain);
-    test_modules.ml_async_module_with_async_chain = NULL;
-
-    ml_async_op_module_destroy(test_modules.ml_async_module);
-    test_modules.ml_async_module = NULL;
-
-    ll_async_op_module_real_cancel_destroy(test_modules.ll_async_module_real_cancel);
-    test_modules.ll_async_module_real_cancel = NULL;
-
-    ll_async_op_module_fake_cancel_destroy(test_modules.ll_async_module_fake_cancel);
-    test_modules.ll_async_module_fake_cancel = NULL;
+    for (uint32_t i = 0; i < module_count; i++)
+    {
+        modules[i].module_interface.close(modules[i].module_interface.handle);
+    }
 }
+
+static void destroy_modules(uint32_t module_count, TEST_MODULE* modules)
+{
+    for (uint32_t i = 0; i < module_count; i++)
+    {
+        modules[i].module_interface.destroy(modules[i].module_interface.handle);
+    }
+}
+
+static LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE ll_async_module_fake_cancel = NULL;
+static LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE ll_async_module_real_cancel = NULL;
+
+static TEST_MODULE* g_test_modules_with_fake_cancel = NULL;
+static uint32_t g_test_module_count_with_fake_cancel = 0;
+
+static TEST_MODULE* g_test_modules_with_real_cancel = NULL;
+static uint32_t g_test_module_count_with_real_cancel = 0;
 
 typedef struct OPERATION_RESULT_CONTEXT_TAG
 {
@@ -146,943 +266,478 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
 
 TEST_FUNCTION_INITIALIZE(function_init)
 {
-    create_modules();
-    open_modules();
+    EXECUTION_ENGINE_HANDLE execution_engine = execution_engine_create(NULL);
+    ASSERT_IS_NOT_NULL(execution_engine);
+
+    create_all_modules_with_fake_cancel(execution_engine, &g_test_module_count_with_fake_cancel, &g_test_modules_with_fake_cancel, &ll_async_module_fake_cancel);
+    create_all_modules_with_real_cancel(execution_engine, &g_test_module_count_with_real_cancel, &g_test_modules_with_real_cancel, &ll_async_module_real_cancel);
+
+    open_modules(g_test_module_count_with_fake_cancel, g_test_modules_with_fake_cancel);
+    open_modules(g_test_module_count_with_real_cancel, g_test_modules_with_real_cancel);
+
+    execution_engine_dec_ref(execution_engine);
 }
 
 TEST_FUNCTION_CLEANUP(cleans)
 {
-    close_modules();
-    destroy_modules();
+    close_modules(g_test_module_count_with_fake_cancel, g_test_modules_with_fake_cancel);
+    close_modules(g_test_module_count_with_real_cancel, g_test_modules_with_real_cancel);
+
+    destroy_modules(g_test_module_count_with_fake_cancel, g_test_modules_with_fake_cancel);
+    destroy_modules(g_test_module_count_with_real_cancel, g_test_modules_with_real_cancel);
+
+    free(g_test_modules_with_fake_cancel);
+    free(g_test_modules_with_real_cancel);
 }
 
-// ll_async_op_module_fake_cancel
-
-TEST_FUNCTION(ll_async_op_module_fake_cancel_execute_async_succeeds)
+TEST_FUNCTION(all_modules_can_execute_async_successfully_with_fake_cancel)
 {
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+    for (uint32_t i = 0; i < g_test_module_count_with_fake_cancel; i++)
+    {
+        // arrange
+        THANDLE(ASYNC_OP) async_op = NULL;
+        OPERATION_RESULT_CONTEXT result_context;
+        result_context.result = 0;
+        (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    // act
-    int result = ll_async_op_module_fake_cancel_execute_async(test_modules.ll_async_module_fake_cancel, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+        // act
+        int result = g_test_modules_with_fake_cancel[i].module_interface.execute_async(g_test_modules_with_fake_cancel[i].module_interface.handle, 1 /* Short timeout */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
 
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
+        // assert
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_IS_NOT_NULL(async_op);
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
 
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        // cleanup
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
 }
 
-TEST_FUNCTION(ll_async_op_module_fake_cancel_execute_async_can_be_canceled)
+TEST_FUNCTION(all_modules_can_execute_async_successfully_with_real_cancel)
 {
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+    for (uint32_t i = 0; i < g_test_module_count_with_real_cancel; i++)
+    {
+        // arrange
+        THANDLE(ASYNC_OP) async_op = NULL;
+        OPERATION_RESULT_CONTEXT result_context;
+        result_context.result = 0;
+        (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    int result = ll_async_op_module_fake_cancel_execute_async(test_modules.ll_async_module_fake_cancel, 2000, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
+        // act
+        int result = g_test_modules_with_real_cancel[i].module_interface.execute_async(g_test_modules_with_real_cancel[i].module_interface.handle, 1 /* Short timeout */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
 
-    // act
-    (void)async_op_cancel(async_op);
+        // assert
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_IS_NOT_NULL(async_op);
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
 
-    // assert
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 0 /* Callback should have come immediately */));
-    // Note that the cleanup will block for 2 seconds because the real operation must still complete
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        // cleanup
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
 }
 
-TEST_FUNCTION(ll_async_op_module_fake_cancel_execute_async_succeeds_synchronously)
+TEST_FUNCTION(all_modules_can_execute_async_successfully_on_sync_path_with_fake_cancel)
 {
-    // arrange
-    ll_async_op_module_fake_cancel_next_call_completes_synchronously(test_modules.ll_async_module_fake_cancel, true);
+    for (uint32_t i = 0; i < g_test_module_count_with_fake_cancel; i++)
+    {
+        // arrange
+        ll_async_op_module_fake_cancel_next_call_completes_synchronously(ll_async_module_fake_cancel, true);
+        THANDLE(ASYNC_OP) async_op = NULL;
+        OPERATION_RESULT_CONTEXT result_context;
+        result_context.result = 0;
+        (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+        // act
+        int result = g_test_modules_with_fake_cancel[i].module_interface.execute_async(g_test_modules_with_fake_cancel[i].module_interface.handle, 1, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
 
-    // act
-    int result = ll_async_op_module_fake_cancel_execute_async(test_modules.ll_async_module_fake_cancel, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+        // assert
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_IS_NOT_NULL(async_op);
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
 
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        // cleanup
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
 }
 
-TEST_FUNCTION(ll_async_op_module_fake_cancel_execute_async_succeeds_then_cancel_is_noop)
+TEST_FUNCTION(all_modules_can_execute_async_successfully_on_sync_path_with_real_cancel)
 {
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+    for (uint32_t i = 0; i < g_test_module_count_with_real_cancel; i++)
+    {
+        // arrange
+        ll_async_op_module_real_cancel_next_call_completes_synchronously(ll_async_module_real_cancel, true);
+        THANDLE(ASYNC_OP) async_op = NULL;
+        OPERATION_RESULT_CONTEXT result_context;
+        result_context.result = 0;
+        (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    int result = ll_async_op_module_fake_cancel_execute_async(test_modules.ll_async_module_fake_cancel, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+        // act
+        int result = g_test_modules_with_real_cancel[i].module_interface.execute_async(g_test_modules_with_real_cancel[i].module_interface.handle, 1, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
 
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
+        // assert
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_IS_NOT_NULL(async_op);
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
 
-    // act
-    (void)async_op_cancel(async_op);
-
-    // assert
-    // Nothing crashes
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        // cleanup
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
 }
 
-// ll_async_op_module_real_cancel
-
-TEST_FUNCTION(ll_async_op_module_real_cancel_execute_async_succeeds)
+TEST_FUNCTION(all_modules_can_execute_async_successfully_then_cancel_is_noop_with_fake_cancel)
 {
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+    for (uint32_t i = 0; i < g_test_module_count_with_fake_cancel; i++)
+    {
+        // arrange
+        THANDLE(ASYNC_OP) async_op = NULL;
+        OPERATION_RESULT_CONTEXT result_context;
+        result_context.result = 0;
+        (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    // act
-    int result = ll_async_op_module_real_cancel_execute_async(test_modules.ll_async_module_real_cancel, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+        int result = g_test_modules_with_fake_cancel[i].module_interface.execute_async(g_test_modules_with_fake_cancel[i].module_interface.handle, 1, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_IS_NOT_NULL(async_op);
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
 
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
+        // act
+        (void)async_op_cancel(async_op);
 
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        // assert
+        // Nothing crashes
+
+        // cleanup
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
 }
 
-TEST_FUNCTION(ll_async_op_module_real_cancel_execute_async_can_be_canceled)
+TEST_FUNCTION(all_modules_can_execute_async_successfully_then_cancel_is_noop_with_real_cancel)
 {
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+    for (uint32_t i = 0; i < g_test_module_count_with_real_cancel; i++)
+    {
+        // arrange
+        THANDLE(ASYNC_OP) async_op = NULL;
+        OPERATION_RESULT_CONTEXT result_context;
+        result_context.result = 0;
+        (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    int result = ll_async_op_module_real_cancel_execute_async(test_modules.ll_async_module_real_cancel, 60000 /* would block for a very long time */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
+        int result = g_test_modules_with_real_cancel[i].module_interface.execute_async(g_test_modules_with_real_cancel[i].module_interface.handle, 1, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_IS_NOT_NULL(async_op);
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
 
-    // act
-    (void)async_op_cancel(async_op);
+        // act
+        (void)async_op_cancel(async_op);
 
-    // assert
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context.result);
+        // assert
+        // Nothing crashes
 
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        // cleanup
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
 }
 
-TEST_FUNCTION(ll_async_op_module_real_cancel_execute_async_succeeds_synchronously)
+TEST_FUNCTION(all_modules_can_be_canceled_successfully_with_fake_cancel)
 {
-    // arrange
-    ll_async_op_module_real_cancel_next_call_completes_synchronously(test_modules.ll_async_module_real_cancel, true);
+    for (uint32_t i = 0; i < g_test_module_count_with_fake_cancel; i++)
+    {
+        // arrange
+        THANDLE(ASYNC_OP) async_op = NULL;
+        OPERATION_RESULT_CONTEXT result_context;
+        result_context.result = 0;
+        (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+        int result = g_test_modules_with_fake_cancel[i].module_interface.execute_async(g_test_modules_with_fake_cancel[i].module_interface.handle, 2000 /* long enough to not complete, but don't make test wait too long */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_IS_NOT_NULL(async_op);
 
-    // act
-    int result = ll_async_op_module_real_cancel_execute_async(test_modules.ll_async_module_real_cancel, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+        // act
+        (void)async_op_cancel(async_op);
 
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
+        // assert
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 0 /* Callback should have come immediately */));
+        // Note that the cleanup will block for 2 seconds because the real operation must still complete
+        ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context.result);
 
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        // cleanup
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
 }
 
-TEST_FUNCTION(ll_async_op_module_real_cancel_execute_async_succeeds_then_cancel_is_noop)
+TEST_FUNCTION(all_modules_can_be_canceled_successfully_with_real_cancel)
 {
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+    for (uint32_t i = 0; i < g_test_module_count_with_real_cancel; i++)
+    {
+        // arrange
+        THANDLE(ASYNC_OP) async_op = NULL;
+        OPERATION_RESULT_CONTEXT result_context;
+        result_context.result = 0;
+        (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    int result = ll_async_op_module_real_cancel_execute_async(test_modules.ll_async_module_real_cancel, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+        int result = g_test_modules_with_real_cancel[i].module_interface.execute_async(g_test_modules_with_real_cancel[i].module_interface.handle, UINT32_MAX /* will never complete */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_IS_NOT_NULL(async_op);
 
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
+        // act
+        (void)async_op_cancel(async_op);
 
-    // act
-    (void)async_op_cancel(async_op);
+        // assert
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context.result);
 
-    // assert
-    // Nothing crashes
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        // cleanup
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
 }
 
-// ml_async_op_module
-
-TEST_FUNCTION(ml_async_op_module_execute_underlying_fake_cancel_async_succeeds)
+TEST_FUNCTION(all_modules_can_execute_async_successfully_with_fake_cancel_and_3_retries)
 {
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+    for (uint32_t i = 0; i < g_test_module_count_with_fake_cancel; i++)
+    {
+        if (g_test_modules_with_fake_cancel[i].has_retry_support)
+        {
+            // arrange
+            ll_async_op_module_fake_cancel_set_report_retry_result_count(ll_async_module_fake_cancel, 3);
+            THANDLE(ASYNC_OP) async_op = NULL;
+            OPERATION_RESULT_CONTEXT result_context;
+            result_context.result = 0;
+            (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    // act
-    int result = ml_async_op_module_execute_underlying_fake_cancel_async(test_modules.ml_async_module, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+            // act
+            int result = g_test_modules_with_fake_cancel[i].module_interface.execute_async(g_test_modules_with_fake_cancel[i].module_interface.handle, 1 /* Short timeout */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
 
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
+            // assert
+            ASSERT_ARE_EQUAL(int, 0, result);
+            ASSERT_IS_NOT_NULL(async_op);
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
 
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+            // cleanup
+            THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        }
+    }
 }
 
-TEST_FUNCTION(ml_async_op_module_execute_underlying_fake_cancel_async_can_be_canceled)
+TEST_FUNCTION(all_modules_can_execute_async_successfully_with_real_cancel_and_3_retries)
 {
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+    for (uint32_t i = 0; i < g_test_module_count_with_real_cancel; i++)
+    {
+        if (g_test_modules_with_real_cancel[i].has_retry_support)
+        {
+            // arrange
+            ll_async_op_module_real_cancel_set_report_retry_result_count(ll_async_module_real_cancel, 3);
+            THANDLE(ASYNC_OP) async_op = NULL;
+            OPERATION_RESULT_CONTEXT result_context;
+            result_context.result = 0;
+            (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    int result = ml_async_op_module_execute_underlying_fake_cancel_async(test_modules.ml_async_module, 2000, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
+            // act
+            int result = g_test_modules_with_real_cancel[i].module_interface.execute_async(g_test_modules_with_real_cancel[i].module_interface.handle, 1 /* Short timeout */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
 
-    // act
-    (void)async_op_cancel(async_op);
+            // assert
+            ASSERT_ARE_EQUAL(int, 0, result);
+            ASSERT_IS_NOT_NULL(async_op);
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
 
-    // assert
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 0 /* Callback should have come immediately */));
-    // Note that the cleanup will block for 2 seconds because the real operation must still complete
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+            // cleanup
+            THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        }
+    }
 }
 
-TEST_FUNCTION(ml_async_op_module_execute_underlying_fake_cancel_async_succeeds_synchronously)
+TEST_FUNCTION(all_modules_can_execute_async_successfully_then_cancel_is_noop_with_fake_cancel_and_3_retries)
 {
-    // arrange
-    ll_async_op_module_fake_cancel_next_call_completes_synchronously(test_modules.ll_async_module_fake_cancel, true);
+    for (uint32_t i = 0; i < g_test_module_count_with_fake_cancel; i++)
+    {
+        if (g_test_modules_with_fake_cancel[i].has_retry_support)
+        {
+            // arrange
+            ll_async_op_module_fake_cancel_set_report_retry_result_count(ll_async_module_fake_cancel, 3);
+            THANDLE(ASYNC_OP) async_op = NULL;
+            OPERATION_RESULT_CONTEXT result_context;
+            result_context.result = 0;
+            (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+            int result = g_test_modules_with_fake_cancel[i].module_interface.execute_async(g_test_modules_with_fake_cancel[i].module_interface.handle, 1 /* Short timeout */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
 
-    // act
-    int result = ml_async_op_module_execute_underlying_fake_cancel_async(test_modules.ml_async_module, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+            ASSERT_ARE_EQUAL(int, 0, result);
+            ASSERT_IS_NOT_NULL(async_op);
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
 
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
+            // act
+            (void)async_op_cancel(async_op);
 
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+            // assert
+            // Nothing crashes
+
+            // cleanup
+            THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        }
+    }
 }
 
-TEST_FUNCTION(ml_async_op_module_execute_underlying_fake_cancel_async_succeeds_then_cancel_is_noop)
+TEST_FUNCTION(all_modules_can_execute_async_successfully_then_cancel_is_noop_with_real_cancel_and_3_retries)
 {
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+    for (uint32_t i = 0; i < g_test_module_count_with_real_cancel; i++)
+    {
+        if (g_test_modules_with_real_cancel[i].has_retry_support)
+        {
+            // arrange
+            ll_async_op_module_real_cancel_set_report_retry_result_count(ll_async_module_real_cancel, 3);
+            THANDLE(ASYNC_OP) async_op = NULL;
+            OPERATION_RESULT_CONTEXT result_context;
+            result_context.result = 0;
+            (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    int result = ml_async_op_module_execute_underlying_fake_cancel_async(test_modules.ml_async_module, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+            // act
+            int result = g_test_modules_with_real_cancel[i].module_interface.execute_async(g_test_modules_with_real_cancel[i].module_interface.handle, 1 /* Short timeout */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
 
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
+            ASSERT_ARE_EQUAL(int, 0, result);
+            ASSERT_IS_NOT_NULL(async_op);
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
 
-    // act
-    (void)async_op_cancel(async_op);
+            // act
+            (void)async_op_cancel(async_op);
 
-    // assert
-    // Nothing crashes
+            // assert
+            // Nothing crashes
 
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+            // cleanup
+            THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        }
+    }
 }
 
-TEST_FUNCTION(ml_async_op_module_execute_underlying_real_cancel_async_succeeds)
+TEST_FUNCTION(all_modules_can_execute_async_successfully_on_sync_path_with_fake_cancel_and_3_retries)
 {
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+    for (uint32_t i = 0; i < g_test_module_count_with_fake_cancel; i++)
+    {
+        if (g_test_modules_with_fake_cancel[i].has_retry_support)
+        {
+            // arrange
+            ll_async_op_module_fake_cancel_set_report_retry_result_count(ll_async_module_fake_cancel, 3);
+            ll_async_op_module_fake_cancel_next_call_completes_synchronously(ll_async_module_fake_cancel, true);
+            THANDLE(ASYNC_OP) async_op = NULL;
+            OPERATION_RESULT_CONTEXT result_context;
+            result_context.result = 0;
+            (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    // act
-    int result = ml_async_op_module_execute_underlying_real_cancel_async(test_modules.ml_async_module, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+            // act
+            int result = g_test_modules_with_fake_cancel[i].module_interface.execute_async(g_test_modules_with_fake_cancel[i].module_interface.handle, 1 /* Short timeout */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
 
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
+            // assert
+            ASSERT_ARE_EQUAL(int, 0, result);
+            ASSERT_IS_NOT_NULL(async_op);
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
 
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+            // cleanup
+            THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        }
+    }
 }
 
-TEST_FUNCTION(ml_async_op_module_execute_underlying_real_cancel_async_can_be_canceled)
+TEST_FUNCTION(all_modules_can_execute_async_successfully_on_sync_path_with_real_cancel_and_3_retries)
 {
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+    for (uint32_t i = 0; i < g_test_module_count_with_real_cancel; i++)
+    {
+        if (g_test_modules_with_real_cancel[i].has_retry_support)
+        {
+            // arrange
+            ll_async_op_module_real_cancel_set_report_retry_result_count(ll_async_module_real_cancel, 3);
+            ll_async_op_module_real_cancel_next_call_completes_synchronously(ll_async_module_real_cancel, true);
+            THANDLE(ASYNC_OP) async_op = NULL;
+            OPERATION_RESULT_CONTEXT result_context;
+            result_context.result = 0;
+            (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    int result = ml_async_op_module_execute_underlying_real_cancel_async(test_modules.ml_async_module, 60000 /* would block for a very long time */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
+            // act
+            int result = g_test_modules_with_real_cancel[i].module_interface.execute_async(g_test_modules_with_real_cancel[i].module_interface.handle, 1 /* Short timeout */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
 
-    // act
-    (void)async_op_cancel(async_op);
+            // assert
+            ASSERT_ARE_EQUAL(int, 0, result);
+            ASSERT_IS_NOT_NULL(async_op);
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
 
-    // assert
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+            // cleanup
+            THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        }
+    }
 }
 
-TEST_FUNCTION(ml_async_op_module_execute_underlying_real_cancel_async_succeeds_synchronously)
+TEST_FUNCTION(all_modules_can_be_canceled_successfully_with_fake_cancel_after_many_retries)
 {
-    // arrange
-    ll_async_op_module_real_cancel_next_call_completes_synchronously(test_modules.ll_async_module_real_cancel, true);
+    for (uint32_t i = 0; i < g_test_module_count_with_fake_cancel; i++)
+    {
+        if (g_test_modules_with_fake_cancel[i].has_retry_support)
+        {
+            // arrange
+            ll_async_op_module_fake_cancel_set_report_retry_result_count(ll_async_module_fake_cancel, INT32_MAX); // more or less infinitely retry, but cancel will happen
+            THANDLE(ASYNC_OP) async_op = NULL;
+            OPERATION_RESULT_CONTEXT result_context;
+            result_context.result = 0;
+            (void)interlocked_exchange(&result_context.callback_called, 0);
 
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
+            int result = g_test_modules_with_fake_cancel[i].module_interface.execute_async(g_test_modules_with_fake_cancel[i].module_interface.handle, 1 /* each call completes quickly */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+            ASSERT_ARE_EQUAL(int, 0, result);
+            ASSERT_IS_NOT_NULL(async_op);
 
-    // act
-    int result = ml_async_op_module_execute_underlying_real_cancel_async(test_modules.ml_async_module, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+            ThreadAPI_Sleep(10); // give it a chance to retry
 
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
+            // act
+            (void)async_op_cancel(async_op);
 
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+            // assert
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 0 /* Callback should have come immediately */));
+            // Note that the cleanup will block for 2 seconds because the real operation must still complete
+            ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context.result);
+
+            // cleanup
+            THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        }
+    }
 }
 
-TEST_FUNCTION(ml_async_op_module_execute_underlying_real_cancel_async_succeeds_then_cancel_is_noop)
+TEST_FUNCTION(all_modules_can_be_canceled_successfully_with_real_cancel_after_many_retries)
 {
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    int result = ml_async_op_module_execute_underlying_real_cancel_async(test_modules.ml_async_module, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // act
-    (void)async_op_cancel(async_op);
-
-    // assert
-    // Nothing crashes
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-// ml_async_op_module_with_async_chain
-
-TEST_FUNCTION(ml_async_op_module_with_async_chain_execute_underlying_fake_cancel_async_succeeds)
-{
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    // act
-    int result = ml_async_op_module_with_async_chain_execute_underlying_fake_cancel_async(test_modules.ml_async_module_with_async_chain, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_async_chain_execute_underlying_fake_cancel_async_can_be_canceled)
-{
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    int result = ml_async_op_module_with_async_chain_execute_underlying_fake_cancel_async(test_modules.ml_async_module_with_async_chain, 2000, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-
-    // act
-    (void)async_op_cancel(async_op);
-
-    // assert
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 0 /* Callback should have come immediately */));
-    // Note that the cleanup will block for 2 seconds because the real operation must still complete
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_async_chain_execute_underlying_fake_cancel_async_succeeds_synchronously)
-{
-    // arrange
-    ll_async_op_module_fake_cancel_next_call_completes_synchronously(test_modules.ll_async_module_fake_cancel, true);
-
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    // act
-    int result = ml_async_op_module_with_async_chain_execute_underlying_fake_cancel_async(test_modules.ml_async_module_with_async_chain, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_async_chain_execute_underlying_fake_cancel_async_succeeds_then_cancel_is_noop)
-{
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    int result = ml_async_op_module_with_async_chain_execute_underlying_fake_cancel_async(test_modules.ml_async_module_with_async_chain, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // act
-    (void)async_op_cancel(async_op);
-
-    // assert
-    // Nothing crashes
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_async_chain_execute_underlying_real_cancel_async_succeeds)
-{
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    // act
-    int result = ml_async_op_module_with_async_chain_execute_underlying_real_cancel_async(test_modules.ml_async_module_with_async_chain, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_async_chain_execute_underlying_real_cancel_async_can_be_canceled)
-{
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    int result = ml_async_op_module_with_async_chain_execute_underlying_real_cancel_async(test_modules.ml_async_module_with_async_chain, 60000 /* would block for a very long time */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-
-    // act
-    (void)async_op_cancel(async_op);
-
-    // assert
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_async_chain_execute_underlying_real_cancel_async_succeeds_synchronously)
-{
-    // arrange
-    ll_async_op_module_real_cancel_next_call_completes_synchronously(test_modules.ll_async_module_real_cancel, true);
-
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    // act
-    int result = ml_async_op_module_with_async_chain_execute_underlying_real_cancel_async(test_modules.ml_async_module_with_async_chain, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_async_chain_execute_underlying_real_cancel_async_succeeds_then_cancel_is_noop)
-{
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    int result = ml_async_op_module_with_async_chain_execute_underlying_real_cancel_async(test_modules.ml_async_module_with_async_chain, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // act
-    (void)async_op_cancel(async_op);
-
-    // assert
-    // Nothing crashes
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-// ml_async_op_module_with_retries
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_fake_cancel_async_succeeds)
-{
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    // act
-    int result = ml_async_op_module_with_retries_execute_underlying_fake_cancel_async(test_modules.ml_async_module_with_retries, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_fake_cancel_async_with_3_retries_succeeds)
-{
-    // arrange
-    ll_async_op_module_fake_cancel_set_report_retry_result_count(test_modules.ll_async_module_fake_cancel, 3);
-
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    // act
-    int result = ml_async_op_module_with_retries_execute_underlying_fake_cancel_async(test_modules.ml_async_module_with_retries, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_fake_cancel_async_can_be_canceled)
-{
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    int result = ml_async_op_module_with_retries_execute_underlying_fake_cancel_async(test_modules.ml_async_module_with_retries, 2000, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-
-    // act
-    (void)async_op_cancel(async_op);
-
-    // assert
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 0 /* Callback should have come immediately */));
-    // Note that the cleanup will block for 2 seconds because the real operation must still complete
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_fake_cancel_async_with_many_retries_can_be_canceled)
-{
-    // arrange
-    ll_async_op_module_fake_cancel_set_report_retry_result_count(test_modules.ll_async_module_fake_cancel, INT32_MAX); // more or less infinitely retry, but cancel will happen
-
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    int result = ml_async_op_module_with_retries_execute_underlying_fake_cancel_async(test_modules.ml_async_module_with_retries, 1, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-
-    ThreadAPI_Sleep(10); // give it a chance to retry
-
-    // act
-    (void)async_op_cancel(async_op);
-
-    // assert
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 0 /* Callback should have come immediately */));
-    // Note that the cleanup will block for 2 seconds because the real operation must still complete
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_fake_cancel_async_succeeds_synchronously)
-{
-    // arrange
-    ll_async_op_module_fake_cancel_next_call_completes_synchronously(test_modules.ll_async_module_fake_cancel, true);
-
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    // act
-    int result = ml_async_op_module_with_retries_execute_underlying_fake_cancel_async(test_modules.ml_async_module_with_retries, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_fake_cancel_async_succeeds_synchronously_with_3_retries)
-{
-    // arrange
-    ll_async_op_module_fake_cancel_set_report_retry_result_count(test_modules.ll_async_module_fake_cancel, 3);
-    ll_async_op_module_fake_cancel_next_call_completes_synchronously(test_modules.ll_async_module_fake_cancel, true);
-
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    // act
-    int result = ml_async_op_module_with_retries_execute_underlying_fake_cancel_async(test_modules.ml_async_module_with_retries, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_fake_cancel_async_succeeds_then_cancel_is_noop)
-{
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    int result = ml_async_op_module_with_retries_execute_underlying_fake_cancel_async(test_modules.ml_async_module_with_retries, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // act
-    (void)async_op_cancel(async_op);
-
-    // assert
-    // Nothing crashes
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_fake_cancel_async_succeeds_after_3_retries_then_cancel_is_noop)
-{
-    // arrange
-    ll_async_op_module_fake_cancel_set_report_retry_result_count(test_modules.ll_async_module_fake_cancel, 3);
-
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    int result = ml_async_op_module_with_retries_execute_underlying_fake_cancel_async(test_modules.ml_async_module_with_retries, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // act
-    (void)async_op_cancel(async_op);
-
-    // assert
-    // Nothing crashes
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_real_cancel_async_succeeds)
-{
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    // act
-    int result = ml_async_op_module_with_retries_execute_underlying_real_cancel_async(test_modules.ml_async_module_with_retries, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_real_cancel_async_with_3_retries_succeeds)
-{
-    // arrange
-    ll_async_op_module_real_cancel_set_report_retry_result_count(test_modules.ll_async_module_real_cancel, 3);
-
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    // act
-    int result = ml_async_op_module_with_retries_execute_underlying_real_cancel_async(test_modules.ml_async_module_with_retries, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_real_cancel_async_can_be_canceled)
-{
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    int result = ml_async_op_module_with_retries_execute_underlying_real_cancel_async(test_modules.ml_async_module_with_retries, 60000 /* would block for a very long time */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-
-    // act
-    (void)async_op_cancel(async_op);
-
-    // assert
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_real_cancel_async_with_many_retries_can_be_canceled)
-{
-    // arrange
-    ll_async_op_module_real_cancel_set_report_retry_result_count(test_modules.ll_async_module_real_cancel, INT32_MAX); // more or less infinitely retry, but cancel will happen
-
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    int result = ml_async_op_module_with_retries_execute_underlying_real_cancel_async(test_modules.ml_async_module_with_retries, 1, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-
-    ThreadAPI_Sleep(10); // give it a chance to retry
-
-    // act
-    (void)async_op_cancel(async_op);
-
-    // assert
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_real_cancel_async_succeeds_synchronously)
-{
-    // arrange
-    ll_async_op_module_real_cancel_next_call_completes_synchronously(test_modules.ll_async_module_real_cancel, true);
-
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    // act
-    int result = ml_async_op_module_with_retries_execute_underlying_real_cancel_async(test_modules.ml_async_module_with_retries, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_real_cancel_async_succeeds_then_cancel_is_noop)
-{
-    // arrange
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    int result = ml_async_op_module_with_retries_execute_underlying_real_cancel_async(test_modules.ml_async_module_with_retries, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // act
-    (void)async_op_cancel(async_op);
-
-    // assert
-    // Nothing crashes
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-}
-
-TEST_FUNCTION(ml_async_op_module_with_retries_execute_underlying_real_cancel_async_succeeds_after_3_retries_then_cancel_is_noop)
-{
-    // arrange
-    ll_async_op_module_real_cancel_set_report_retry_result_count(test_modules.ll_async_module_real_cancel, 3);
-
-    THANDLE(ASYNC_OP) async_op = NULL;
-    OPERATION_RESULT_CONTEXT result_context;
-    result_context.result = 0;
-    (void)interlocked_exchange(&result_context.callback_called, 0);
-
-    int result = ml_async_op_module_with_retries_execute_underlying_real_cancel_async(test_modules.ml_async_module_with_retries, 10, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
-
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(async_op);
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
-    ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context.result);
-
-    // act
-    (void)async_op_cancel(async_op);
-
-    // assert
-    // Nothing crashes
-
-    // cleanup
-    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    for (uint32_t i = 0; i < g_test_module_count_with_real_cancel; i++)
+    {
+        if (g_test_modules_with_real_cancel[i].has_retry_support)
+        {
+            // arrange
+            ll_async_op_module_real_cancel_set_report_retry_result_count(ll_async_module_real_cancel, INT32_MAX); // more or less infinitely retry, but cancel will happen
+            THANDLE(ASYNC_OP) async_op = NULL;
+            OPERATION_RESULT_CONTEXT result_context;
+            result_context.result = 0;
+            (void)interlocked_exchange(&result_context.callback_called, 0);
+
+            int result = g_test_modules_with_real_cancel[i].module_interface.execute_async(g_test_modules_with_real_cancel[i].module_interface.handle, 1 /* each call completes quickly */, &async_op, test_ASYNC_OP_MODULE_CALLBACK, &result_context);
+            ASSERT_ARE_EQUAL(int, 0, result);
+            ASSERT_IS_NOT_NULL(async_op);
+
+            ThreadAPI_Sleep(10); // give it a chance to retry
+
+            // act
+            (void)async_op_cancel(async_op);
+
+            // assert
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context.callback_called, 1, 1000));
+            // Note that the cleanup will block for 2 seconds because the real operation must still complete
+            ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context.result);
+
+            // cleanup
+            THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        }
+    }
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

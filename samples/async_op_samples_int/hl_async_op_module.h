@@ -20,9 +20,6 @@
 #include "c_util/async_op.h"
 
 #include "common_async_op_module_interface.h"
-#include "ml_async_op_module.h"
-#include "ml_async_op_module_with_async_chain.h"
-#include "ml_async_op_module_with_retries.h"
 
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
@@ -31,7 +28,7 @@ extern "C" {
 
 typedef struct HL_ASYNC_OP_MODULE_TAG* HL_ASYNC_OP_MODULE_HANDLE;
 
-MOCKABLE_FUNCTION(, HL_ASYNC_OP_MODULE_HANDLE, hl_async_op_module_create, EXECUTION_ENGINE_HANDLE, execution_engine, ML_ASYNC_OP_MODULE_HANDLE, ml_handle, ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE, ml_chain_handle, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, ml_retries_handle);
+MOCKABLE_FUNCTION(, HL_ASYNC_OP_MODULE_HANDLE, hl_async_op_module_create, EXECUTION_ENGINE_HANDLE, execution_engine, void*, ll_handle, COMMON_ASYNC_OP_MODULE_EXECUTE_ASYNC, ll_execute_async);
 MOCKABLE_FUNCTION(, void, hl_async_op_module_destroy, HL_ASYNC_OP_MODULE_HANDLE, handle);
 
 MOCKABLE_FUNCTION(, int, hl_async_op_module_open, HL_ASYNC_OP_MODULE_HANDLE, handle);
@@ -39,11 +36,10 @@ MOCKABLE_FUNCTION(, void, hl_async_op_module_close, HL_ASYNC_OP_MODULE_HANDLE, h
 
 // Sample functions which use ASYNC_OP
 
-MOCKABLE_FUNCTION(, int, hl_async_op_module_execute_underlying_fake_cancel_async, HL_ASYNC_OP_MODULE_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context);
-MOCKABLE_FUNCTION(, int, hl_async_op_module_execute_underlying_real_cancel_async, HL_ASYNC_OP_MODULE_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context);
+MOCKABLE_FUNCTION(, int, hl_async_op_module_execute_async, HL_ASYNC_OP_MODULE_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context);
 
-MOCKABLE_FUNCTION(, int, hl_async_op_module_execute_underlying_fake_cancel_and_retries_async, HL_ASYNC_OP_MODULE_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context);
-MOCKABLE_FUNCTION(, int, hl_async_op_module_execute_underlying_real_cancel_and_retries_async, HL_ASYNC_OP_MODULE_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context);
+// Helper to provide a common interface for testing
+MOCKABLE_FUNCTION(, COMMON_ASYNC_OP_MODULE_INTERFACE, hl_async_op_module_get_interface, HL_ASYNC_OP_MODULE_HANDLE, handle);
 
 #ifdef __cplusplus
 }

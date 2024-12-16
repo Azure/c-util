@@ -252,7 +252,7 @@ static void ll_async_op_module_real_cancel_execute_the_async_worker_thread(void*
             async_op_context->callback(async_op_context->context, get_underlying_result(async_op_context->handle));
         }
 
-        // 3. Can clean up the async_op now
+        // 3. Clean up the async_op
         THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
     }
 }
@@ -315,7 +315,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ll_async_op_module_real_cancel_execute_async,
                 // The interlocked below would not be needed in a real program, assume there is some "thing" in the layer below we call to tell the operation to complete
                 (void)interlocked_exchange(&async_op_context->underlying_cancel_happened, 0);
 
-                // 3. Take an additional reference on the async_op, we have 1 reference for returning to the caller, and 1 reference for the async work callback
+                // 3. Take an additional reference on the async_op, we have 1 reference for returning to the caller (async_op), and 1 reference for the async work callback (async_op_ref_for_callback)
                 //    Need to take the reference before starting the operation below because its callback may come immediately
                 THANDLE(ASYNC_OP) async_op_ref_for_callback = NULL;
                 THANDLE_ASSIGN(ASYNC_OP)(&async_op_ref_for_callback, async_op);
@@ -379,4 +379,18 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_real_cancel_set_next_asyn
     {
         handle->next_result = next_result;
     }
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, COMMON_ASYNC_OP_MODULE_INTERFACE, ll_async_op_module_real_cancel_get_interface, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle)
+{
+    COMMON_ASYNC_OP_MODULE_INTERFACE result = (COMMON_ASYNC_OP_MODULE_INTERFACE)
+    {
+        .handle = handle,
+        .open = ll_async_op_module_real_cancel_open,
+        .close = ll_async_op_module_real_cancel_close,
+        .destroy = ll_async_op_module_real_cancel_destroy,
+        .execute_async = ll_async_op_module_real_cancel_execute_async,
+        .execute_async_no_async_op_out = NULL
+    };
+    return result;
 }

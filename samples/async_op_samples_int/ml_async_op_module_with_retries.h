@@ -20,8 +20,6 @@
 #include "c_util/async_op.h"
 
 #include "common_async_op_module_interface.h"
-#include "ll_async_op_module_fake_cancel.h"
-#include "ll_async_op_module_real_cancel.h"
 
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
@@ -30,7 +28,7 @@ extern "C" {
 
 typedef struct ML_ASYNC_OP_MODULE_WITH_RETRIES_TAG* ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE;
 
-MOCKABLE_FUNCTION(, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, ml_async_op_module_with_retries_create, EXECUTION_ENGINE_HANDLE, execution_engine, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, ll_fake_cancel, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, ll_real_cancel);
+MOCKABLE_FUNCTION(, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, ml_async_op_module_with_retries_create, EXECUTION_ENGINE_HANDLE, execution_engine, void*, ll_handle, COMMON_ASYNC_OP_MODULE_EXECUTE_ASYNC, ll_execute_async);
 MOCKABLE_FUNCTION(, void, ml_async_op_module_with_retries_destroy, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle);
 
 MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_open, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle);
@@ -38,9 +36,10 @@ MOCKABLE_FUNCTION(, void, ml_async_op_module_with_retries_close, ML_ASYNC_OP_MOD
 
 // Sample functions which use ASYNC_OP
 
-MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_underlying_fake_cancel_async, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context);
-MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_underlying_real_cancel_async, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context);
+MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_async, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context);
 
+// Helper to provide a common interface for testing
+MOCKABLE_FUNCTION(, COMMON_ASYNC_OP_MODULE_INTERFACE, ml_async_op_module_with_retries_get_interface, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle);
 
 #ifdef __cplusplus
 }
