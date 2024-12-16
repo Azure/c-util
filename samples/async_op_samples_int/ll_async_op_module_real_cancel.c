@@ -23,6 +23,7 @@
 
 #include "c_util/async_op.h"
 
+#include "common_async_op_module_interface.h"
 #include "ll_async_op_module_real_cancel.h"
 
 typedef struct LL_ASYNC_OP_MODULE_REAL_CANCEL_TAG
@@ -33,13 +34,13 @@ typedef struct LL_ASYNC_OP_MODULE_REAL_CANCEL_TAG
 
     // Test hook settings
     bool next_call_completes_synchronously;
-    LL_ASYNC_OP_MODULE_REAL_CANCEL_RESULT next_result;
+    COMMON_ASYNC_OP_MODULE_RESULT next_result;
     volatile_atomic int32_t retry_result_remaining;
 } LL_ASYNC_OP_MODULE_REAL_CANCEL;
 
 typedef struct LL_ASYNC_OP_MODULE_REAL_CANCEL_EXECUTE_CONTEXT_TAG
 {
-    LL_ASYNC_OP_MODULE_REAL_CANCEL_EXECUTE_CALLBACK callback;
+    COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback;
     void* context;
 
     // control the real execution
@@ -49,8 +50,6 @@ typedef struct LL_ASYNC_OP_MODULE_REAL_CANCEL_EXECUTE_CONTEXT_TAG
     // Pointer back for sm_exec_end
     LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle;
 } LL_ASYNC_OP_MODULE_REAL_CANCEL_EXECUTE_CONTEXT;
-
-MU_DEFINE_ENUM_STRINGS(LL_ASYNC_OP_MODULE_REAL_CANCEL_RESULT, LL_ASYNC_OP_MODULE_REAL_CANCEL_RESULT_VALUES)
 
 IMPLEMENT_MOCKABLE_FUNCTION(, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, ll_async_op_module_real_cancel_create, EXECUTION_ENGINE_HANDLE, execution_engine)
 {
@@ -82,7 +81,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, ll_async_op
                 THANDLE_INITIALIZE(THREADPOOL)(&result->threadpool, NULL);
 
                 result->next_call_completes_synchronously = false;
-                result->next_result = LL_ASYNC_OP_MODULE_REAL_CANCEL_OK;
+                result->next_result = COMMON_ASYNC_OP_MODULE_OK;
                 (void)interlocked_exchange(&result->retry_result_remaining, 0);
 
                 goto all_ok;
@@ -188,9 +187,9 @@ static void on_async_op_LL_ASYNC_OP_MODULE_REAL_CANCEL_EXECUTE_CONTEXT_dispose(v
     (void)context;
 }
 
-static LL_ASYNC_OP_MODULE_REAL_CANCEL_RESULT get_underlying_result(LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle)
+static COMMON_ASYNC_OP_MODULE_RESULT get_underlying_result(LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle)
 {
-    LL_ASYNC_OP_MODULE_REAL_CANCEL_RESULT result;
+    COMMON_ASYNC_OP_MODULE_RESULT result;
 
     bool do_retry = false;
     do
@@ -213,7 +212,7 @@ static LL_ASYNC_OP_MODULE_REAL_CANCEL_RESULT get_underlying_result(LL_ASYNC_OP_M
     if (do_retry)
     {
         LogError("Retry still required");
-        result = LL_ASYNC_OP_MODULE_REAL_CANCEL_ERROR_CAN_RETRY;
+        result = COMMON_ASYNC_OP_MODULE_ERROR_CAN_RETRY;
     }
     else
     {
@@ -244,7 +243,7 @@ static void ll_async_op_module_real_cancel_execute_the_async_worker_thread(void*
         {
             // 1. If the underlayer reported the reason was cancel, then report the result as canceled
             LogInfo("Call was canceled");
-            async_op_context->callback(async_op_context->context, LL_ASYNC_OP_MODULE_REAL_CANCEL_CANCELED);
+            async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_CANCELED);
         }
         else
         {
@@ -275,7 +274,7 @@ static int call_underlying_async(LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle, T
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, ll_async_op_module_real_cancel_execute_async, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, LL_ASYNC_OP_MODULE_REAL_CANCEL_EXECUTE_CALLBACK, callback, void*, context)
+IMPLEMENT_MOCKABLE_FUNCTION(, int, ll_async_op_module_real_cancel_execute_async, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context)
 {
     int result;
     if (
@@ -284,7 +283,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ll_async_op_module_real_cancel_execute_async,
         callback == NULL
         )
     {
-        LogError("Invalid arguments LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle=%p, uint32_t complete_in_ms=%" PRIu32 ", THANDLE(ASYNC_OP)* async_op_out=%p, LL_ASYNC_OP_MODULE_REAL_CANCEL_EXECUTE_CALLBACK callback=%p, void* context=%p",
+        LogError("Invalid arguments LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle=%p, uint32_t complete_in_ms=%" PRIu32 ", THANDLE(ASYNC_OP)* async_op_out=%p, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback=%p, void* context=%p",
             handle, complete_in_ms, async_op_out, callback, context);
         result = MU_FAILURE;
     }
@@ -369,12 +368,12 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_real_cancel_set_report_re
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_real_cancel_set_next_async_result, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle, LL_ASYNC_OP_MODULE_REAL_CANCEL_RESULT, next_result)
+IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_real_cancel_set_next_async_result, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle, COMMON_ASYNC_OP_MODULE_RESULT, next_result)
 {
     if (handle == NULL)
     {
-        LogError("Invalid arguments: LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle=%p, LL_ASYNC_OP_MODULE_REAL_CANCEL_RESULT next_result=%s",
-            handle, MU_ENUM_TO_STRING(LL_ASYNC_OP_MODULE_REAL_CANCEL_RESULT, next_result));
+        LogError("Invalid arguments: LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle=%p, COMMON_ASYNC_OP_MODULE_RESULT next_result=%" PRI_MU_ENUM "",
+            handle, MU_ENUM_VALUE(COMMON_ASYNC_OP_MODULE_RESULT, next_result));
     }
     else
     {

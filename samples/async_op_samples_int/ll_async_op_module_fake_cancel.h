@@ -20,22 +20,14 @@
 
 #include "c_util/async_op.h"
 
+#include "common_async_op_module_interface.h"
+
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct LL_ASYNC_OP_MODULE_FAKE_CANCEL_TAG* LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE;
-
-#define LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT_VALUES \
-    LL_ASYNC_OP_MODULE_FAKE_CANCEL_OK, \
-    LL_ASYNC_OP_MODULE_FAKE_CANCEL_CANCELED, \
-    LL_ASYNC_OP_MODULE_FAKE_CANCEL_ERROR_CAN_RETRY, \
-    LL_ASYNC_OP_MODULE_FAKE_CANCEL_ERROR \
-
-MU_DEFINE_ENUM(LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT, LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT_VALUES);
-
-typedef void(*LL_ASYNC_OP_MODULE_FAKE_CANCEL_EXECUTE_CALLBACK)(void* context, LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT result);
 
 MOCKABLE_FUNCTION(, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, ll_async_op_module_fake_cancel_create, EXECUTION_ENGINE_HANDLE, execution_engine);
 MOCKABLE_FUNCTION(, void, ll_async_op_module_fake_cancel_destroy, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, handle);
@@ -45,13 +37,13 @@ MOCKABLE_FUNCTION(, void, ll_async_op_module_fake_cancel_close, LL_ASYNC_OP_MODU
 
 // Sample functions which use ASYNC_OP
 
-MOCKABLE_FUNCTION(, int, ll_async_op_module_fake_cancel_execute_async, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, LL_ASYNC_OP_MODULE_FAKE_CANCEL_EXECUTE_CALLBACK, callback, void*, context);
+MOCKABLE_FUNCTION(, int, ll_async_op_module_fake_cancel_execute_async, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context);
 
 // Helpers for test
 
 MOCKABLE_FUNCTION(, void, ll_async_op_module_fake_cancel_next_call_completes_synchronously, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, handle, bool, is_synchronous);
 MOCKABLE_FUNCTION(, void, ll_async_op_module_fake_cancel_set_report_retry_result_count, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, handle, uint32_t, retry_result_count);
-MOCKABLE_FUNCTION(, void, ll_async_op_module_fake_cancel_set_next_async_result, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, handle, LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT, next_result);
+MOCKABLE_FUNCTION(, void, ll_async_op_module_fake_cancel_set_next_async_result, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, handle, COMMON_ASYNC_OP_MODULE_RESULT, next_result);
 
 #ifdef __cplusplus
 }
