@@ -241,4 +241,37 @@ This is similar to the previous sample, but instead of letting the "user" cancel
 
 ##### Notes
 
-The complexity here comes in how to track a list of pending `async_op`s which need to be cancelled at some time, but also need to be cleaned up if they complete on their own.
+The complexity here comes in how to track a list of pending `async_op`s which need to be cancelled at some time, but also need to be cleaned up if they complete on their own. Note that there are multiple ways to handle this list tracking and this is just one way.
+
+##### Steps
+
+API:
+
+1. Create an ASYNC_OP for the operation context
+2. Any context needed is stored in `async_op->context`
+3. Initialize the ll_async_op to `NULL`
+4. Store the async_op from the LL in a temporary variable
+5. Take an additional reference on the async_op, we have 1 reference for storing in the list (`async_op`), and 1 reference for the async work callback (`async_op_ref_for_callback`)
+6. Start the async work, passing the `async_op_ref_for_callback` as the context
+7. Store the ll_async_op in the context on success so that it can be canceled
+8. Take a lock to synchronize with close accessing the list of pending operations
+9. If the module is not closing, add this operation to the list of pending operations
+10. Mark this operation as in the list
+11. If the module is closing, we need to cancel this operation
+12. And release the reference on the `async_op`
+
+Callback:
+
+1. Remove this item from the list of pending operations under the lock and release the list reference on the async op
+2. ...unless it was already removed during the start of a cancel
+3. Do any processing and call the callback based on the result
+4. Clean up the `async_op`
+
+Close (in the "closing" callback of `sm_close_begin_with_cb`):
+
+1. Get a temporary list to copy all operations under the lock so we can call cancel outside of the lock
+2. Mark the module as closing to prevent new operations from being added
+3. Remove each operation from the list
+4. ...and add it to the temporary list
+5. Marking it as not in the list
+6. Outside of the lock, call cancel on each operation in the temporary list, and release the reference on the `async_op`

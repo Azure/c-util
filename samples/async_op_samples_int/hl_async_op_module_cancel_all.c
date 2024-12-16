@@ -142,7 +142,7 @@ static void hl_async_op_module_cancel_all_on_closing_cancel_all(void* context)
         srw_lock_ll_release_exclusive(&handle->pending_operations_list_lock);
     }
 
-    // 6. Outside of the lock, call cancel on each operation, and release the reference on the async_op
+    // 6. Outside of the lock, call cancel on each operation in the temporary list, and release the reference on the async_op
     DLIST_ENTRY* current_entry;
     while ((current_entry = DList_RemoveHeadList(&pending_operations_to_cancel)) != &pending_operations_to_cancel)
     {
