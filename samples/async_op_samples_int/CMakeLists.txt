@@ -7,6 +7,7 @@ set(${theseTestsName}_test_files
 )
 
 set(${theseTestsName}_c_files
+    common_async_op_module_interface.c
     hl_async_op_module.c
     hl_async_op_module_cancel_all.c
     ll_async_op_module_fake_cancel.c
@@ -17,6 +18,7 @@ set(${theseTestsName}_c_files
 )
 
 set(${theseTestsName}_h_files
+    common_async_op_module_interface.h
     hl_async_op_module.h
     hl_async_op_module_cancel_all.h
     ll_async_op_module_fake_cancel.h

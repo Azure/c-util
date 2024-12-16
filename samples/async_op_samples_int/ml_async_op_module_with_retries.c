@@ -24,6 +24,7 @@
 
 #include "c_util/async_op.h"
 
+#include "common_async_op_module_interface.h"
 #include "ll_async_op_module_fake_cancel.h"
 #include "ll_async_op_module_real_cancel.h"
 
@@ -39,9 +40,9 @@ typedef struct ML_ASYNC_OP_MODULE_WITH_RETRIES_TAG
     LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE ll_real_cancel;
 } ML_ASYNC_OP_MODULE_WITH_RETRIES;
 
-typedef struct ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT_TAG
+typedef struct ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_TAG
 {
-    ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CALLBACK callback;
+    COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback;
     void* context;
 
     // ll call context
@@ -57,9 +58,7 @@ typedef struct ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT_TAG
     // Anything needed for retries
     uint32_t complete_in_ms;
     ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE handle;
-} ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT;
-
-MU_DEFINE_ENUM_STRINGS(ML_ASYNC_OP_MODULE_WITH_RETRIES_RESULT, ML_ASYNC_OP_MODULE_WITH_RETRIES_RESULT_VALUES)
+} ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT;
 
 IMPLEMENT_MOCKABLE_FUNCTION(, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, ml_async_op_module_with_retries_create, EXECUTION_ENGINE_HANDLE, execution_engine, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, ll_fake_cancel, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, ll_real_cancel)
 {
@@ -176,9 +175,9 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, ml_async_op_module_with_retries_close, ML_AS
     }
 }
 
-static void on_async_op_ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT_cancel(void* context)
+static void on_async_op_ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_cancel(void* context)
 {
-    ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT* call_context = context;
+    ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT* call_context = context;
 
     THANDLE(ASYNC_OP) async_op_ll_temp = NULL;
 
@@ -205,31 +204,31 @@ static void on_async_op_ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT_cancel(v
     }
 }
 
-static void on_async_op_ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT_dispose(void* context)
+static void on_async_op_ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_dispose(void* context)
 {
-    ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT* call_context = context;
+    ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT* call_context = context;
     // Clean up the underlying ll_async_op
     THANDLE_ASSIGN(ASYNC_OP)(&call_context->ll_async_op, NULL);
     srw_lock_ll_deinit(&call_context->ll_async_op_lock);
 }
 
-static void ml_async_op_module_with_retries_on_ll_complete_with_fake_cancel_do_retry(void* context, LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT result)
+static void ml_async_op_module_with_retries_on_ll_complete_with_fake_cancel_do_retry(void* context, COMMON_ASYNC_OP_MODULE_RESULT result)
 {
     if (context == NULL)
     {
-        LogCriticalAndTerminate("Invalid arguments: void* context=%p, LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT result=%" PRI_MU_ENUM "",
-            context, MU_ENUM_VALUE(LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT, result));
+        LogCriticalAndTerminate("Invalid arguments: void* context=%p, COMMON_ASYNC_OP_MODULE_RESULT result=%" PRI_MU_ENUM "",
+            context, MU_ENUM_VALUE(COMMON_ASYNC_OP_MODULE_RESULT, result));
     }
     else
     {
         THANDLE(ASYNC_OP) async_op = context;
-        ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT* async_op_context = async_op->context;
+        ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT* async_op_context = async_op->context;
 
         bool is_canceled = false;
         bool failed = false;
         bool must_call_callback = false;
 
-        if (result == enum_value_typedef_LL_ASYNC_OP_MODULE_FAKE_CANCEL_ERROR_CAN_RETRY)
+        if (result == enum_value_typedef_COMMON_ASYNC_OP_MODULE_ERROR_CAN_RETRY)
         {
             // In case retry is required...
 
@@ -310,11 +309,11 @@ static void ml_async_op_module_with_retries_on_ll_complete_with_fake_cancel_do_r
             //     All other cases indicate a retry was started and this callback will come again
             if (is_canceled)
             {
-                async_op_context->callback(async_op_context->context, ML_ASYNC_OP_MODULE_WITH_RETRIES_CANCELED);
+                async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_CANCELED);
             }
             else if (failed)
             {
-                async_op_context->callback(async_op_context->context, ML_ASYNC_OP_MODULE_WITH_RETRIES_ERROR);
+                async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_ERROR);
             }
             else
             {
@@ -323,20 +322,20 @@ static void ml_async_op_module_with_retries_on_ll_complete_with_fake_cancel_do_r
                     default:
                     {
                         LogInfo("LL Call completed with an error: %" PRI_MU_ENUM "",
-                            MU_ENUM_VALUE(LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT, result));
-                        async_op_context->callback(async_op_context->context, ML_ASYNC_OP_MODULE_WITH_RETRIES_ERROR);
+                            MU_ENUM_VALUE(COMMON_ASYNC_OP_MODULE_RESULT, result));
+                        async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_ERROR);
                         break;
                     }
-                    case LL_ASYNC_OP_MODULE_FAKE_CANCEL_OK:
+                    case COMMON_ASYNC_OP_MODULE_OK:
                     {
                         LogInfo("LL Call completed normally");
-                        async_op_context->callback(async_op_context->context, ML_ASYNC_OP_MODULE_WITH_RETRIES_OK);
+                        async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_OK);
                         break;
                     }
-                    case LL_ASYNC_OP_MODULE_FAKE_CANCEL_CANCELED:
+                    case COMMON_ASYNC_OP_MODULE_CANCELED:
                     {
                         LogInfo("LL Call was canceled");
-                        async_op_context->callback(async_op_context->context, ML_ASYNC_OP_MODULE_WITH_RETRIES_CANCELED);
+                        async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_CANCELED);
                         break;
                     }
                 }
@@ -348,7 +347,7 @@ static void ml_async_op_module_with_retries_on_ll_complete_with_fake_cancel_do_r
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_underlying_fake_cancel_async, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CALLBACK, callback, void*, context)
+IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_underlying_fake_cancel_async, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context)
 {
     int result;
     if (
@@ -357,7 +356,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_under
         callback == NULL
         )
     {
-        LogError("Invalid arguments ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE handle=%p, uint32_t complete_in_ms=%" PRIu32 ", THANDLE(ASYNC_OP)* async_op_out=%p, ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CALLBACK callback=%p, void* context=%p",
+        LogError("Invalid arguments ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE handle=%p, uint32_t complete_in_ms=%" PRIu32 ", THANDLE(ASYNC_OP)* async_op_out=%p, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback=%p, void* context=%p",
             handle, complete_in_ms, async_op_out, callback, context);
         result = MU_FAILURE;
     }
@@ -371,7 +370,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_under
         else
         {
             // 1. Create an ASYNC_OP for the operation context
-            THANDLE(ASYNC_OP) async_op = async_op_create(on_async_op_ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT_cancel, sizeof(ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT), alignof(ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT), on_async_op_ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT_dispose);
+            THANDLE(ASYNC_OP) async_op = async_op_create(on_async_op_ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_cancel, sizeof(ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT), alignof(ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT), on_async_op_ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_dispose);
             if (async_op == NULL)
             {
                 LogError("async_op_create failed");
@@ -380,7 +379,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_under
             else
             {
                 // 2. Any context needed is stored in async_op->context
-                ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT* async_op_context = async_op->context;
+                ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT* async_op_context = async_op->context;
 
                 async_op_context->callback = callback;
                 async_op_context->context = context;
@@ -422,6 +421,10 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_under
                             //     This must happen before the next line so that the ll_async_op is set before cancel is called
                             THANDLE_MOVE(ASYNC_OP)(&async_op_context->ll_async_op, &ll_async_op);
                         }
+                        else
+                        {
+                            THANDLE_ASSIGN(ASYNC_OP)(&ll_async_op, NULL);
+                        }
                         srw_lock_ll_release_exclusive(&async_op_context->ll_async_op_lock);
                     }
 
@@ -439,23 +442,23 @@ all_ok:
     return result;
 }
 
-static void ml_async_op_module_with_retries_on_ll_complete_with_real_cancel_do_retry(void* context, LL_ASYNC_OP_MODULE_REAL_CANCEL_RESULT result)
+static void ml_async_op_module_with_retries_on_ll_complete_with_real_cancel_do_retry(void* context, COMMON_ASYNC_OP_MODULE_RESULT result)
 {
     if (context == NULL)
     {
-        LogCriticalAndTerminate("Invalid arguments: void* context=%p, LL_ASYNC_OP_MODULE_REAL_CANCEL_RESULT result=%" PRI_MU_ENUM "",
-            context, MU_ENUM_VALUE(LL_ASYNC_OP_MODULE_REAL_CANCEL_RESULT, result));
+        LogCriticalAndTerminate("Invalid arguments: void* context=%p, COMMON_ASYNC_OP_MODULE_RESULT result=%" PRI_MU_ENUM "",
+            context, MU_ENUM_VALUE(COMMON_ASYNC_OP_MODULE_RESULT, result));
     }
     else
     {
         THANDLE(ASYNC_OP) async_op = context;
-        ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT* async_op_context = async_op->context;
+        ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT* async_op_context = async_op->context;
 
         bool is_canceled = false;
         bool failed = false;
         bool must_call_callback = false;
 
-        if (result == enum_value_typedef_LL_ASYNC_OP_MODULE_REAL_CANCEL_ERROR_CAN_RETRY)
+        if (result == enum_value_typedef_COMMON_ASYNC_OP_MODULE_ERROR_CAN_RETRY)
         {
             // In case retry is required...
 
@@ -536,11 +539,11 @@ static void ml_async_op_module_with_retries_on_ll_complete_with_real_cancel_do_r
             //     All other cases indicate a retry was started and this callback will come again
             if (is_canceled)
             {
-                async_op_context->callback(async_op_context->context, ML_ASYNC_OP_MODULE_WITH_RETRIES_CANCELED);
+                async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_CANCELED);
             }
             else if (failed)
             {
-                async_op_context->callback(async_op_context->context, ML_ASYNC_OP_MODULE_WITH_RETRIES_ERROR);
+                async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_ERROR);
             }
             else
             {
@@ -549,20 +552,20 @@ static void ml_async_op_module_with_retries_on_ll_complete_with_real_cancel_do_r
                     default:
                     {
                         LogInfo("LL Call completed with an error: %" PRI_MU_ENUM "",
-                            MU_ENUM_VALUE(LL_ASYNC_OP_MODULE_REAL_CANCEL_RESULT, result));
-                        async_op_context->callback(async_op_context->context, ML_ASYNC_OP_MODULE_WITH_RETRIES_ERROR);
+                            MU_ENUM_VALUE(COMMON_ASYNC_OP_MODULE_RESULT, result));
+                        async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_ERROR);
                         break;
                     }
-                    case LL_ASYNC_OP_MODULE_REAL_CANCEL_OK:
+                    case COMMON_ASYNC_OP_MODULE_OK:
                     {
                         LogInfo("LL Call completed normally");
-                        async_op_context->callback(async_op_context->context, ML_ASYNC_OP_MODULE_WITH_RETRIES_OK);
+                        async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_OK);
                         break;
                     }
-                    case LL_ASYNC_OP_MODULE_REAL_CANCEL_CANCELED:
+                    case COMMON_ASYNC_OP_MODULE_CANCELED:
                     {
                         LogInfo("LL Call was canceled");
-                        async_op_context->callback(async_op_context->context, ML_ASYNC_OP_MODULE_WITH_RETRIES_CANCELED);
+                        async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_CANCELED);
                         break;
                     }
                 }
@@ -573,7 +576,7 @@ static void ml_async_op_module_with_retries_on_ll_complete_with_real_cancel_do_r
         }
     }
 }
-IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_underlying_real_cancel_async, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CALLBACK, callback, void*, context)
+IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_underlying_real_cancel_async, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context)
 {
     int result;
     if (
@@ -582,7 +585,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_under
         callback == NULL
         )
     {
-        LogError("Invalid arguments ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE handle=%p, uint32_t complete_in_ms=%" PRIu32 ", THANDLE(ASYNC_OP)* async_op_out=%p, ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CALLBACK callback=%p, void* context=%p",
+        LogError("Invalid arguments ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE handle=%p, uint32_t complete_in_ms=%" PRIu32 ", THANDLE(ASYNC_OP)* async_op_out=%p, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback=%p, void* context=%p",
             handle, complete_in_ms, async_op_out, callback, context);
         result = MU_FAILURE;
     }
@@ -596,7 +599,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_under
         else
         {
             // 1. Create an ASYNC_OP for the operation context
-            THANDLE(ASYNC_OP) async_op = async_op_create(on_async_op_ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT_cancel, sizeof(ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT), alignof(ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT), on_async_op_ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT_dispose);
+            THANDLE(ASYNC_OP) async_op = async_op_create(on_async_op_ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_cancel, sizeof(ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT), alignof(ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT), on_async_op_ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_dispose);
             if (async_op == NULL)
             {
                 LogError("async_op_create failed");
@@ -605,7 +608,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_under
             else
             {
                 // 2. Any context needed is stored in async_op->context
-                ML_ASYNC_OP_MODULE_WITH_RETRIES_EXECUTE_CONTEXT* async_op_context = async_op->context;
+                ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT* async_op_context = async_op->context;
 
                 async_op_context->callback = callback;
                 async_op_context->context = context;
@@ -646,6 +649,10 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_under
                             // 10. Store the ll_async_op in the context on success so that it can be canceled
                             //     This must happen before the next line so that the ll_async_op is set before cancel is called
                             THANDLE_MOVE(ASYNC_OP)(&async_op_context->ll_async_op, &ll_async_op);
+                        }
+                        else
+                        {
+                            THANDLE_ASSIGN(ASYNC_OP)(&ll_async_op, NULL);
                         }
                         srw_lock_ll_release_exclusive(&async_op_context->ll_async_op_lock);
                     }
