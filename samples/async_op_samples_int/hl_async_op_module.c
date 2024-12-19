@@ -33,8 +33,7 @@ typedef struct HL_ASYNC_OP_MODULE_TAG
     EXECUTION_ENGINE_HANDLE execution_engine;
     THANDLE(THREADPOOL) threadpool;
 
-    void* ll_handle;
-    COMMON_ASYNC_OP_MODULE_EXECUTE_ASYNC ll_execute_async;
+    COMMON_OP_MODULE_INTERFACE_HANDLE ll_async_op_module;
 } HL_ASYNC_OP_MODULE;
 
 typedef struct HL_ASYNC_OP_MODULE_EXECUTE_CONTEXT_TAG
@@ -49,16 +48,15 @@ typedef struct HL_ASYNC_OP_MODULE_EXECUTE_CONTEXT_TAG
     HL_ASYNC_OP_MODULE_HANDLE handle;
 } HL_ASYNC_OP_MODULE_EXECUTE_CONTEXT;
 
-IMPLEMENT_MOCKABLE_FUNCTION(, HL_ASYNC_OP_MODULE_HANDLE, hl_async_op_module_create, EXECUTION_ENGINE_HANDLE, execution_engine, void*, ll_handle, COMMON_ASYNC_OP_MODULE_EXECUTE_ASYNC, ll_execute_async)
+IMPLEMENT_MOCKABLE_FUNCTION(, HL_ASYNC_OP_MODULE_HANDLE, hl_async_op_module_create, EXECUTION_ENGINE_HANDLE, execution_engine, COMMON_OP_MODULE_INTERFACE_HANDLE, ll_async_op_module)
 {
     HL_ASYNC_OP_MODULE_HANDLE result;
 
     if (execution_engine == NULL ||
-        ll_handle == NULL ||
-        ll_execute_async == NULL)
+        ll_async_op_module == NULL)
     {
-        LogError("Invalid arguments EXECUTION_ENGINE_HANDLE execution_engine=%p, void* ll_handle=%p, void* ll_execute_async=%p",
-            execution_engine, ll_handle, ll_execute_async);
+        LogError("Invalid arguments EXECUTION_ENGINE_HANDLE execution_engine=%p, COMMON_OP_MODULE_INTERFACE_HANDLE ll_async_op_module=%p",
+            execution_engine, ll_async_op_module);
         result = NULL;
     }
     else
@@ -81,8 +79,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, HL_ASYNC_OP_MODULE_HANDLE, hl_async_op_module_crea
                 result->execution_engine = execution_engine;
                 THANDLE_INITIALIZE(THREADPOOL)(&result->threadpool, NULL);
 
-                result->ll_handle = ll_handle;
-                result->ll_execute_async = ll_execute_async;
+                result->ll_async_op_module = ll_async_op_module;
 
                 goto all_ok;
             }
@@ -274,7 +271,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, hl_async_op_module_execute_async, HL_ASYNC_OP
                 THANDLE_ASSIGN(ASYNC_OP)(&async_op_ref_for_callback, async_op);
 
                 // 6. Start the async work, passing the async_op_ref_for_callback as the context
-                if (handle->ll_execute_async(handle->ll_handle, complete_in_ms, &ll_async_op, hl_async_op_module_on_ml_complete, (void*)async_op_ref_for_callback) != 0)
+                if (handle->ll_async_op_module->execute_async(handle->ll_async_op_module->handle, complete_in_ms, &ll_async_op, hl_async_op_module_on_ml_complete, (void*)async_op_ref_for_callback) != 0)
                 {
                     LogError("ll_execute_async for lower module failed");
                     result = MU_FAILURE;

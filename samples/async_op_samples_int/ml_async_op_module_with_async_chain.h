@@ -28,7 +28,7 @@ extern "C" {
 
 typedef struct ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_TAG* ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE;
 
-MOCKABLE_FUNCTION(, ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE, ml_async_op_module_with_async_chain_create, EXECUTION_ENGINE_HANDLE, execution_engine, void*, ll_handle, COMMON_ASYNC_OP_MODULE_EXECUTE_ASYNC, ll_execute_async);
+MOCKABLE_FUNCTION(, ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE, ml_async_op_module_with_async_chain_create, EXECUTION_ENGINE_HANDLE, execution_engine, COMMON_OP_MODULE_INTERFACE_HANDLE, ll_async_op_module);
 MOCKABLE_FUNCTION(, void, ml_async_op_module_with_async_chain_destroy, ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE, handle);
 
 MOCKABLE_FUNCTION(, int, ml_async_op_module_with_async_chain_open, ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE, handle);

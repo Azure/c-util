@@ -34,8 +34,7 @@ typedef struct ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_TAG
     EXECUTION_ENGINE_HANDLE execution_engine;
     THANDLE(THREADPOOL) threadpool;
 
-    void* ll_handle;
-    COMMON_ASYNC_OP_MODULE_EXECUTE_ASYNC ll_execute_async;
+    COMMON_OP_MODULE_INTERFACE_HANDLE ll_async_op_module;
 } ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN;
 
 typedef struct ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_EXECUTE_CONTEXT_TAG
@@ -58,16 +57,15 @@ typedef struct ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_EXECUTE_CONTEXT_TAG
     ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE handle;
 } ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_EXECUTE_CONTEXT;
 
-IMPLEMENT_MOCKABLE_FUNCTION(, ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE, ml_async_op_module_with_async_chain_create, EXECUTION_ENGINE_HANDLE, execution_engine, void*, ll_handle, COMMON_ASYNC_OP_MODULE_EXECUTE_ASYNC, ll_execute_async)
+IMPLEMENT_MOCKABLE_FUNCTION(, ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE, ml_async_op_module_with_async_chain_create, EXECUTION_ENGINE_HANDLE, execution_engine, COMMON_OP_MODULE_INTERFACE_HANDLE, ll_async_op_module)
 {
     ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE result;
 
     if (execution_engine == NULL ||
-        ll_handle == NULL ||
-        ll_execute_async == NULL)
+        ll_async_op_module == NULL)
     {
-        LogError("Invalid arguments EXECUTION_ENGINE_HANDLE execution_engine=%p, void* ll_handle=%p, void* ll_execute_async=%p",
-            execution_engine, ll_handle, ll_execute_async);
+        LogError("Invalid arguments EXECUTION_ENGINE_HANDLE execution_engine=%p, COMMON_OP_MODULE_INTERFACE_HANDLE ll_async_op_module=%p",
+            execution_engine, ll_async_op_module);
         result = NULL;
     }
     else
@@ -90,8 +88,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE, ml_asy
                 result->execution_engine = execution_engine;
                 THANDLE_INITIALIZE(THREADPOOL)(&result->threadpool, NULL);
 
-                result->ll_handle = ll_handle;
-                result->ll_execute_async = ll_execute_async;
+                result->ll_async_op_module = ll_async_op_module;
 
                 goto all_ok;
             }
@@ -289,7 +286,7 @@ static void ml_async_op_module_with_async_chain_on_ll_complete_step_1(void* cont
             THANDLE(ASYNC_OP) ll_async_op = NULL;
 
             // 5. Call the next step in the chain
-            if (async_op_context->handle->ll_execute_async(async_op_context->handle->ll_handle, async_op_context->complete_in_ms, &ll_async_op, ml_async_op_module_with_async_chain_on_ll_complete_step_2, context) != 0)
+            if (async_op_context->handle->ll_async_op_module->execute_async(async_op_context->handle->ll_async_op_module->handle, async_op_context->complete_in_ms, &ll_async_op, ml_async_op_module_with_async_chain_on_ll_complete_step_2, context) != 0)
             {
                 LogError("ll_execute_async for lower module failed");
                 must_call_callback = true;
@@ -404,7 +401,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_async_chain_execute_a
                 THANDLE_ASSIGN(ASYNC_OP)(&async_op_ref_for_callback, async_op);
 
                 // 7. Start the first step of the async work, passing the async_op_ref_for_callback as the context
-                if (handle->ll_execute_async(handle->ll_handle, complete_in_ms, &ll_async_op, ml_async_op_module_with_async_chain_on_ll_complete_step_1, (void*)async_op_ref_for_callback) != 0)
+                if (handle->ll_async_op_module->execute_async(handle->ll_async_op_module->handle, complete_in_ms, &ll_async_op, ml_async_op_module_with_async_chain_on_ll_complete_step_1, (void*)async_op_ref_for_callback) != 0)
                 {
                     LogError("ll_execute_async for lower module failed");
                     result = MU_FAILURE;
