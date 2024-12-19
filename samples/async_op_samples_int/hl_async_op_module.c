@@ -286,7 +286,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, hl_async_op_module_execute_async, HL_ASYNC_OP
                     THANDLE_MOVE(ASYNC_OP)(&async_op_context->ll_async_op, &ll_async_op);
 
                     // 8. Provide the async_op to the caller
-                    //    After this (but before returning) it is possible that the caller may call cancel because they may have access to the async_op_out pointer in another thread
+                    //    Note that another option is to return the ASYNC_OP rather than using an out argument
                     THANDLE_MOVE(ASYNC_OP)(async_op_out, &async_op);
                     result = 0;
                     goto all_ok;
