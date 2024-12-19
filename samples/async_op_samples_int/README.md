@@ -193,7 +193,7 @@ API:
 
 1. Create an ASYNC_OP for the operation context
 2. Any context needed is stored in `async_op->context`
-3. Synchronization of ll_async_op between chained async calls requires a lock, a cancelation flag, and a counter (`ll_async_op_step`)
+3. Synchronization of ll_async_op between async retries requires a lock, a cancelation flag, and a counter (`ll_async_op_epoch`)
 4. Initialize the `ll_async_op` to `NULL`
 5. Store the async_op from the LL in a temporary variable
 6. Take an additional reference on the async_op, we have 1 reference for returning to the caller (`async_op`), and 1 reference for the async work callback (`async_op_ref_for_callback`)
@@ -275,3 +275,42 @@ Close (in the "closing" callback of `sm_close_begin_with_cb`):
 4. ...and add it to the temporary list
 5. Marking it as not in the list
 6. Outside of the lock, call cancel on each operation in the temporary list, and release the reference on the `async_op`
+
+## Notes for Callers
+
+When calling a function that returns a `THANDLE(ASYNC_OP)` as an out argument, care should be taken to only use the async op after the function returns.
+
+For example, the following code may not be safe:
+
+```c
+typedef struct MY_CONTEXT_TAG
+{
+    THANDLE(ASYNC_OP) async_op;
+} MY_CONTEXT;
+
+static void my_callback(void* context, int result)
+{
+    MY_CONTEXT* my_context = context;
+    do_something_with_async_op(my_context->async_op); // ERROR, may not have been set yet!
+    free(my_context);
+}
+
+int my_function_async(void)
+{
+    int result;
+    MY_CONTEXT* my_context = malloc(sizeof(MY_CONTEXT));
+    THANDLE_INITIATE(ASYNC_OP)(&my_context->async_op, NULL);
+
+    // ERROR: We pass the async_op from the context directly so that it may be updated before this returns
+    if (other_call_async(&my_context->async_op, my_callback, my_context) != 0)
+    {
+        result = MU_FAILURE;
+    }
+    else
+    {
+        result = 0;
+    }
+}
+```
+
+Instead, a temporary should be used and then assigned to the context after the function returns, as is done in the samples.
