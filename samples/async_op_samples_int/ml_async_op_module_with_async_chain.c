@@ -285,18 +285,22 @@ static void ml_async_op_module_with_async_chain_on_ll_complete_step_1(void* cont
             // 4. Store the async_op from the LL in a temporary variable
             THANDLE(ASYNC_OP) ll_async_op = NULL;
 
-            // 5. Call the next step in the chain
-            if (async_op_context->handle->ll_async_op_module->execute_async(async_op_context->handle->ll_async_op_module->handle, async_op_context->complete_in_ms, &ll_async_op, ml_async_op_module_with_async_chain_on_ll_complete_step_2, context) != 0)
+            // 5. Before calling the next step, add a reference on the async_op (which may be released in the callback)
+            THANDLE(ASYNC_OP) async_op_ref_for_callback = NULL;
+            THANDLE_ASSIGN(ASYNC_OP)(&async_op_ref_for_callback, async_op);
+
+            // 6. Call the next step in the chain
+            if (async_op_context->handle->ll_async_op_module->execute_async(async_op_context->handle->ll_async_op_module->handle, async_op_context->complete_in_ms, &ll_async_op, ml_async_op_module_with_async_chain_on_ll_complete_step_2, (void*)async_op_ref_for_callback) != 0)
             {
                 LogError("ll_execute_async for lower module failed");
                 must_call_callback = true;
             }
             else
             {
-                // 6. Take a lock to synchronize with calls in the chain completing and the async_op_ll changing
+                // 7. Take a lock to synchronize with calls in the chain completing and the async_op_ll changing
                 srw_lock_ll_acquire_exclusive(&async_op_context->ll_async_op_lock);
                 {
-                    // 7. Check if cancel has already been called, if so, we should cancel the new ll_async_op which wasn't stored in the context yet
+                    // 8. Check if cancel has already been called, if so, we should cancel the new ll_async_op which wasn't stored in the context yet
                     if (interlocked_add(&async_op_context->is_canceled, 0) != 0)
                     {
                         is_canceled = true;
@@ -304,11 +308,11 @@ static void ml_async_op_module_with_async_chain_on_ll_complete_step_1(void* cont
                     }
                     else
                     {
-                        // 8. Make sure we only store the latest ll_async_op by synchronizing on ll_async_op_step
+                        // 9. Make sure we only store the latest ll_async_op by synchronizing on ll_async_op_step
                         //    Note that with only 2 steps, interlocked_exchange may be safe instead, but this sample is generalized for N steps
                         if (interlocked_compare_exchange(&async_op_context->ll_async_op_step, 2, 1) == 1)
                         {
-                            // 9. Store the ll_async_op in the context on success so that it can be canceled
+                            // 10. Store the ll_async_op in the context on success so that it can be canceled
                             THANDLE_ASSIGN(ASYNC_OP)(&async_op_context->ll_async_op, ll_async_op);
                         }
                     }
@@ -317,7 +321,7 @@ static void ml_async_op_module_with_async_chain_on_ll_complete_step_1(void* cont
 
                 if (is_canceled)
                 {
-                    // 10. If we are canceled, we need to cancel the lower layer async_op which was just started in this call
+                    // 11. If we are canceled, we need to cancel the lower layer async_op which was just started in this call
                     (void)async_op_cancel(ll_async_op);
                 }
                 THANDLE_ASSIGN(ASYNC_OP)(&ll_async_op, NULL);
@@ -329,7 +333,7 @@ static void ml_async_op_module_with_async_chain_on_ll_complete_step_1(void* cont
             // Note that sm_exec_end is called here so that the callback could call close on the module without a deadlock
             sm_exec_end(async_op_context->handle->sm);
 
-            // 11. In case of failure or cancellation, call the callback now
+            // 12. In case of failure or cancellation, call the callback now
             if (is_canceled)
             {
                 async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_CANCELED);
@@ -338,10 +342,10 @@ static void ml_async_op_module_with_async_chain_on_ll_complete_step_1(void* cont
             {
                 async_op_context->callback(async_op_context->context, COMMON_ASYNC_OP_MODULE_ERROR);
             }
-
-            // 12. ...and clean up the async_op
-            THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
         }
+
+        // 13. Clean up the async_op
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
     }
 }
 

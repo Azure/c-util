@@ -45,6 +45,9 @@ MOCKABLE_FUNCTION(, void, ll_async_op_module_fake_cancel_next_call_completes_syn
 MOCKABLE_FUNCTION(, void, ll_async_op_module_fake_cancel_set_report_retry_result_count, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, handle, uint32_t, retry_result_count);
 MOCKABLE_FUNCTION(, void, ll_async_op_module_fake_cancel_set_next_async_result, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, handle, COMMON_ASYNC_OP_MODULE_RESULT, next_result);
 
+// Each call will push some settings on the queue which affect the result of execute_async (which pops from this queue)
+MOCKABLE_FUNCTION(, int, ll_async_op_module_fake_cancel_add_result_settings_to_queue, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, handle, bool, is_synchronous, COMMON_ASYNC_OP_MODULE_RESULT, next_result);
+
 // Helper to provide a common interface for testing
 MOCKABLE_FUNCTION(, COMMON_ASYNC_OP_MODULE_INTERFACE, ll_async_op_module_fake_cancel_get_interface, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, handle);
 

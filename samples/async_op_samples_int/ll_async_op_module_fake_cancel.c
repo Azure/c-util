@@ -17,11 +17,13 @@
 #include "c_pal/interlocked_hl.h"
 #include "c_pal/log_critical_and_terminate.h"
 #include "c_pal/sm.h"
+#include "c_pal/srw_lock_ll.h"
 #include "c_pal/thandle.h"
 #include "c_pal/threadapi.h"
 #include "c_pal/threadpool.h"
 
 #include "c_util/async_op.h"
+#include "c_util/doublylinkedlist.h"
 
 #include "common_async_op_module_interface.h"
 #include "ll_async_op_module_fake_cancel.h"
@@ -36,7 +38,17 @@ typedef struct LL_ASYNC_OP_MODULE_FAKE_CANCEL_TAG
     bool next_call_completes_synchronously;
     COMMON_ASYNC_OP_MODULE_RESULT next_result;
     volatile_atomic int32_t retry_result_remaining;
+
+    SRW_LOCK_LL result_settings_queue_lock;
+    DLIST_ENTRY result_settings_queue;
 } LL_ASYNC_OP_MODULE_FAKE_CANCEL;
+
+typedef struct LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT_SETTINGS_TAG
+{
+    DLIST_ENTRY dlist_entry;
+    bool completes_synchronously;
+    COMMON_ASYNC_OP_MODULE_RESULT result;
+} LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT_SETTINGS;
 
 typedef struct LL_ASYNC_OP_MODULE_FAKE_CANCEL_EXECUTE_CONTEXT_TAG
 {
@@ -76,15 +88,25 @@ IMPLEMENT_MOCKABLE_FUNCTION(, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, ll_async_op
             }
             else
             {
-                execution_engine_inc_ref(execution_engine);
-                result->execution_engine = execution_engine;
-                THANDLE_INITIALIZE(THREADPOOL)(&result->threadpool, NULL);
+                if (srw_lock_ll_init(&result->result_settings_queue_lock) != 0)
+                {
+                    LogError("srw_lock_ll_init failed");
+                }
+                else
+                {
+                    DList_InitializeListHead(&result->result_settings_queue);
 
-                result->next_call_completes_synchronously = false;
-                result->next_result = COMMON_ASYNC_OP_MODULE_OK;
-                (void)interlocked_exchange(&result->retry_result_remaining, 0);
+                    execution_engine_inc_ref(execution_engine);
+                    result->execution_engine = execution_engine;
+                    THANDLE_INITIALIZE(THREADPOOL)(&result->threadpool, NULL);
 
-                goto all_ok;
+                    result->next_call_completes_synchronously = false;
+                    result->next_result = COMMON_ASYNC_OP_MODULE_OK;
+                    (void)interlocked_exchange(&result->retry_result_remaining, 0);
+
+                    goto all_ok;
+                }
+                sm_destroy(result->sm);
             }
             free(result);
             result = NULL;
@@ -113,6 +135,15 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_fake_cancel_destroy, LL_A
     {
         ll_async_op_module_fake_cancel_close_internal(handle);
         execution_engine_dec_ref(handle->execution_engine);
+
+        PDLIST_ENTRY entry;
+        while ((entry = DList_RemoveTailList(&handle->result_settings_queue)) != &handle->result_settings_queue)
+        {
+            LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT_SETTINGS* settings = CONTAINING_RECORD(entry, LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT_SETTINGS, dlist_entry);
+            free(settings);
+        }
+
+        srw_lock_ll_deinit(&handle->result_settings_queue_lock);
         sm_destroy(handle->sm);
         free(handle);
     }
@@ -264,6 +295,21 @@ static void ll_async_op_module_fake_cancel_execute_the_async_worker_thread(void*
 static int call_underlying_async(LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE handle, THREADPOOL_WORK_FUNCTION callback, void* context)
 {
     int result;
+
+    // Check queue which controls an ordered set of results. Note if the queue is used, the last entry will be used repeatedly
+    srw_lock_ll_acquire_exclusive(&handle->result_settings_queue_lock);
+    {
+        PDLIST_ENTRY entry;
+        if ((entry = DList_RemoveTailList(&handle->result_settings_queue)) != &handle->result_settings_queue)
+        {
+            LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT_SETTINGS* settings = CONTAINING_RECORD(entry, LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT_SETTINGS, dlist_entry);
+            handle->next_result = settings->result;
+            handle->next_call_completes_synchronously = settings->completes_synchronously;
+            free(settings);
+        }
+        srw_lock_ll_release_exclusive(&handle->result_settings_queue_lock);
+    }
+
     if (handle->next_call_completes_synchronously)
     {
         callback(context);
@@ -383,6 +429,41 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_fake_cancel_set_next_asyn
     {
         handle->next_result = next_result;
     }
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, int, ll_async_op_module_fake_cancel_add_result_settings_to_queue, LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE, handle, bool, is_synchronous, COMMON_ASYNC_OP_MODULE_RESULT, next_result)
+{
+    int result;
+
+    if (handle == NULL)
+    {
+        LogError("Invalid arguments: LL_ASYNC_OP_MODULE_FAKE_CANCEL_HANDLE handle=%p, bool is_synchronous=%" PRI_BOOL ", COMMON_ASYNC_OP_MODULE_RESULT next_result=%" PRI_MU_ENUM "",
+            handle, MU_BOOL_VALUE(is_synchronous), MU_ENUM_VALUE(COMMON_ASYNC_OP_MODULE_RESULT, next_result));
+        result = MU_FAILURE;
+    }
+    else
+    {
+        LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT_SETTINGS* settings = malloc(sizeof(LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT_SETTINGS));
+        if (settings == NULL)
+        {
+            LogError("malloc LL_ASYNC_OP_MODULE_FAKE_CANCEL_RESULT_SETTINGS failed");
+            result = MU_FAILURE;
+        }
+        else
+        {
+            settings->completes_synchronously = is_synchronous;
+            settings->result = next_result;
+
+            srw_lock_ll_acquire_exclusive(&handle->result_settings_queue_lock);
+            {
+                DList_InsertHeadList(&handle->result_settings_queue, &settings->dlist_entry);
+                srw_lock_ll_release_exclusive(&handle->result_settings_queue_lock);
+            }
+
+            result = 0;
+        }
+    }
+    return result;
 }
 
 static int ll_async_op_module_fake_cancel_open_interface_adapter(void* context)

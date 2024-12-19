@@ -158,14 +158,15 @@ Part 1 through N-1:
 2. Reset the ll_async_op, it is complete and we don't need it anymore. Note that this is an optimization and not strictly necessary
 3. Check if cancel has already been called, if so, we should call the callback instead of calling the chained async operation
 4. Store the `async_op` from the LL in a temporary variable
-5. Call the next step in the chain
-6. Take a lock to synchronize with calls in the chain completing and the async_op_ll changing
-7. Check if cancel has already been called, if so, we should cancel the new ll_async_op which wasn't stored in the context yet
-8. Make sure we only store the latest `ll_async_op` by synchronizing on `ll_async_op_step`
-9. Store the `ll_async_op` in the context on success so that it can be canceled
-10. If we are canceled, we need to cancel the lower layer async_op which was just started in this call
-11. In case of failure or cancellation, call the callback now
-12. ...and clean up the `async_op`
+5. Before calling the next step, add a reference on the async_op (which may be released in the callback)
+6. Call the next step in the chain
+7. Take a lock to synchronize with calls in the chain completing and the async_op_ll changing
+8. Check if cancel has already been called, if so, we should cancel the new ll_async_op which wasn't stored in the context yet
+9. Make sure we only store the latest `ll_async_op` by synchronizing on `ll_async_op_step`
+10. Store the `ll_async_op` in the context on success so that it can be canceled
+11. If we are canceled, we need to cancel the lower layer async_op which was just started in this call
+12. In case of failure or cancellation, call the callback now
+13. Clean up the `async_op`
 
 Part N:
 
@@ -205,24 +206,20 @@ API:
 
 Callback:
 
-When retry is required:
-
 1. Take a lock to synchronize with calls in the chain completing and the async_op_ll changing
 2. Increment the epoch so that we do not try to store the old async_op from before this call
 3. Reset the ll_async_op, it is complete and we don't need it anymore. Note that this is an optimization and not strictly necessary
 4. Check if cancel has already been called, if so, we should call the callback instead of calling the chained async operation
 5. Store the `async_op` from the LL in a temporary variable
-6. Call the operation again for a retry
-7. Take a lock to synchronize with other retry calls completing and the async_op_ll changing
-8. Check if cancel has already been called, if so, we should cancel the new ll_async_op which wasn't stored in the context yet
-9. Make sure we only store the latest `ll_async_op` by synchronizing on `ll_async_op_epoch`
-10. Store the `ll_async_op` in the context on success so that it can be canceled
-11. If we are canceled, we need to cancel the lower layer async_op which was just started in this call
-
-When retry is not required:
-
-12. In case of no retry needed, failure, or cancellation, call the callback now
-13. ...and clean up the `async_op`
+6. Before retrying, add a reference on the async_op (which may be released in the callback)
+7. Call the operation again for a retry
+8. Take a lock to synchronize with other retry calls completing and the async_op_ll changing
+9. Check if cancel has already been called, if so, we should cancel the new ll_async_op which wasn't stored in the context yet
+10. Make sure we only store the latest `ll_async_op` by synchronizing on `ll_async_op_epoch`
+11. Store the `ll_async_op` in the context on success so that it can be canceled
+12. If we are canceled, we need to cancel the lower layer async_op which was just started in this call
+13. In case of no retry needed, failure, or cancellation, call the callback now
+14. Clean up the `async_op`
 
 Cancel:
 

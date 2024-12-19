@@ -176,7 +176,7 @@ static void on_async_op_ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_cancel(void* context)
 
     THANDLE(ASYNC_OP) async_op_ll_temp = NULL;
 
-    // 1. Take a lock to synchronize with calls in the chain completing and the async_op_ll changing
+    // 1. Take a lock to synchronize with retries completing and the async_op_ll changing
     srw_lock_ll_acquire_exclusive(&call_context->ll_async_op_lock);
     {
         LogInfo("Call was canceled, set the state to canceled");
@@ -229,7 +229,7 @@ static void ml_async_op_module_with_retries_on_ll_complete_do_retry(void* contex
 
             int32_t ll_async_op_epoch;
 
-            // 1. Take a lock to synchronize with calls in the chain completing and the async_op_ll changing
+            // 1. Take a lock to synchronize with retries completing and the async_op_ll changing
             srw_lock_ll_acquire_exclusive(&async_op_context->ll_async_op_lock);
             {
                 // 2. Increment the epoch so that we do not try to store the old async_op from before this call
@@ -250,7 +250,11 @@ static void ml_async_op_module_with_retries_on_ll_complete_do_retry(void* contex
                 // 5. Store the async_op from the LL in a temporary variable
                 THANDLE(ASYNC_OP) ll_async_op = NULL;
 
-                // 6. Call the operation again for a retry
+                // 6. Before retrying, add a reference on the async_op (which may be released in the callback)
+                THANDLE(ASYNC_OP) async_op_ref_for_callback = NULL;
+                THANDLE_ASSIGN(ASYNC_OP)(&async_op_ref_for_callback, async_op);
+
+                // 7. Call the operation again for a retry
                 if (async_op_context->handle->ll_async_op_module->execute_async(async_op_context->handle->ll_async_op_module->handle, async_op_context->complete_in_ms, &ll_async_op, ml_async_op_module_with_retries_on_ll_complete_do_retry, context) != 0)
                 {
                     LogError("ll_execute_async for lower module failed on retry");
@@ -259,10 +263,10 @@ static void ml_async_op_module_with_retries_on_ll_complete_do_retry(void* contex
                 }
                 else
                 {
-                    // 7. Take a lock to synchronize with other retry calls completing and the async_op_ll changing
+                    // 8. Take a lock to synchronize with other retry calls completing and the async_op_ll changing
                     srw_lock_ll_acquire_exclusive(&async_op_context->ll_async_op_lock);
                     {
-                        // 8. Check if cancel has already been called, if so, we should cancel the new ll_async_op which wasn't stored in the context yet
+                        // 9. Check if cancel has already been called, if so, we should cancel the new ll_async_op which wasn't stored in the context yet
                         if (interlocked_add(&async_op_context->is_canceled, 0) != 0)
                         {
                             is_canceled = true;
@@ -270,10 +274,10 @@ static void ml_async_op_module_with_retries_on_ll_complete_do_retry(void* contex
                         }
                         else
                         {
-                            // 9. Make sure we only store the latest ll_async_op by synchronizing on ll_async_op_epoch
+                            // 10. Make sure we only store the latest ll_async_op by synchronizing on ll_async_op_epoch
                             if (interlocked_compare_exchange(&async_op_context->ll_async_op_epoch, ll_async_op_epoch + 1, ll_async_op_epoch) == ll_async_op_epoch)
                             {
-                                // 10. Store the ll_async_op in the context on success so that it can be canceled
+                                // 11. Store the ll_async_op in the context on success so that it can be canceled
                                 THANDLE_ASSIGN(ASYNC_OP)(&async_op_context->ll_async_op, ll_async_op);
                             }
                         }
@@ -282,7 +286,7 @@ static void ml_async_op_module_with_retries_on_ll_complete_do_retry(void* contex
 
                     if (is_canceled)
                     {
-                        // 11. If we are canceled, we need to cancel the lower layer async_op which was just started in this call
+                        // 12. If we are canceled, we need to cancel the lower layer async_op which was just started in this call
                         (void)async_op_cancel(ll_async_op);
                     }
                     THANDLE_ASSIGN(ASYNC_OP)(&ll_async_op, NULL);
@@ -300,7 +304,7 @@ static void ml_async_op_module_with_retries_on_ll_complete_do_retry(void* contex
             // Note that sm_exec_end is called here so that the callback could call close on the module without a deadlock
             sm_exec_end(async_op_context->handle->sm);
 
-            // 12. In case of no retry needed, failure, or cancellation, call the callback now
+            // 13. In case of no retry needed, failure, or cancellation, call the callback now
             //     All other cases indicate a retry was started and this callback will come again
             if (is_canceled)
             {
@@ -335,10 +339,10 @@ static void ml_async_op_module_with_retries_on_ll_complete_do_retry(void* contex
                     }
                 }
             }
-
-            // 13. ...and clean up the async_op
-            THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
         }
+
+        // 14. Clean up the async_op
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
     }
 }
 
