@@ -383,15 +383,35 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_real_cancel_set_next_asyn
     }
 }
 
+static int ll_async_op_module_real_cancel_open_interface_adapter(void* context)
+{
+    return ll_async_op_module_real_cancel_open(context);
+}
+
+static void ll_async_op_module_real_cancel_close_interface_adapter(void* context)
+{
+    ll_async_op_module_real_cancel_close(context);
+}
+
+static void ll_async_op_module_real_cancel_destroy_interface_adapter(void* context)
+{
+    ll_async_op_module_real_cancel_destroy(context);
+}
+
+static int ll_async_op_module_real_cancel_execute_async_interface_adapter(void* context, uint32_t complete_in_ms, THANDLE(ASYNC_OP)* async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback, void* context_callback)
+{
+    return ll_async_op_module_real_cancel_execute_async(context, complete_in_ms, async_op_out, callback, context_callback);
+}
+
 IMPLEMENT_MOCKABLE_FUNCTION(, COMMON_ASYNC_OP_MODULE_INTERFACE, ll_async_op_module_real_cancel_get_interface, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle)
 {
     COMMON_ASYNC_OP_MODULE_INTERFACE result = (COMMON_ASYNC_OP_MODULE_INTERFACE)
     {
         .handle = handle,
-        .open = ll_async_op_module_real_cancel_open,
-        .close = ll_async_op_module_real_cancel_close,
-        .destroy = ll_async_op_module_real_cancel_destroy,
-        .execute_async = ll_async_op_module_real_cancel_execute_async,
+        .open = ll_async_op_module_real_cancel_open_interface_adapter,
+        .close = ll_async_op_module_real_cancel_close_interface_adapter,
+        .destroy = ll_async_op_module_real_cancel_destroy_interface_adapter,
+        .execute_async = ll_async_op_module_real_cancel_execute_async_interface_adapter,
         .execute_async_no_async_op_out = NULL
     };
     return result;

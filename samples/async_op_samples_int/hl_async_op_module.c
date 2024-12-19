@@ -301,15 +301,35 @@ all_ok:
     return result;
 }
 
+static int hl_async_op_module_open_interface_adapter(void* context)
+{
+    return hl_async_op_module_open(context);
+}
+
+static void hl_async_op_module_close_interface_adapter(void* context)
+{
+    hl_async_op_module_close(context);
+}
+
+static void hl_async_op_module_destroy_interface_adapter(void* context)
+{
+    hl_async_op_module_destroy(context);
+}
+
+static int hl_async_op_module_execute_async_interface_adapter(void* context, uint32_t complete_in_ms, THANDLE(ASYNC_OP)* async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback, void* context_callback)
+{
+    return hl_async_op_module_execute_async(context, complete_in_ms, async_op_out, callback, context_callback);
+}
+
 IMPLEMENT_MOCKABLE_FUNCTION(, COMMON_ASYNC_OP_MODULE_INTERFACE, hl_async_op_module_get_interface, HL_ASYNC_OP_MODULE_HANDLE, handle)
 {
     COMMON_ASYNC_OP_MODULE_INTERFACE result = (COMMON_ASYNC_OP_MODULE_INTERFACE)
     {
         .handle = handle,
-        .open = hl_async_op_module_open,
-        .close = hl_async_op_module_close,
-        .destroy = hl_async_op_module_destroy,
-        .execute_async = hl_async_op_module_execute_async,
+        .open = hl_async_op_module_open_interface_adapter,
+        .close = hl_async_op_module_close_interface_adapter,
+        .destroy = hl_async_op_module_destroy_interface_adapter,
+        .execute_async = hl_async_op_module_execute_async_interface_adapter,
         .execute_async_no_async_op_out = NULL
     };
     return result;

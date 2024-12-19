@@ -447,15 +447,35 @@ all_ok:
     return result;
 }
 
+static int ml_async_op_module_with_async_chain_open_interface_adapter(void* context)
+{
+    return ml_async_op_module_with_async_chain_open(context);
+}
+
+static void ml_async_op_module_with_async_chain_close_interface_adapter(void* context)
+{
+    ml_async_op_module_with_async_chain_close(context);
+}
+
+static void ml_async_op_module_with_async_chain_destroy_interface_adapter(void* context)
+{
+    ml_async_op_module_with_async_chain_destroy(context);
+}
+
+static int ml_async_op_module_with_async_chain_execute_async_interface_adapter(void* context, uint32_t complete_in_ms, THANDLE(ASYNC_OP)* async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback, void* context_callback)
+{
+    return ml_async_op_module_with_async_chain_execute_async(context, complete_in_ms, async_op_out, callback, context_callback);
+}
+
 IMPLEMENT_MOCKABLE_FUNCTION(, COMMON_ASYNC_OP_MODULE_INTERFACE, ml_async_op_module_with_async_chain_get_interface, ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE, handle)
 {
     COMMON_ASYNC_OP_MODULE_INTERFACE result = (COMMON_ASYNC_OP_MODULE_INTERFACE)
     {
         .handle = handle,
-        .open = ml_async_op_module_with_async_chain_open,
-        .close = ml_async_op_module_with_async_chain_close,
-        .destroy = ml_async_op_module_with_async_chain_destroy,
-        .execute_async = ml_async_op_module_with_async_chain_execute_async,
+        .open = ml_async_op_module_with_async_chain_open_interface_adapter,
+        .close = ml_async_op_module_with_async_chain_close_interface_adapter,
+        .destroy = ml_async_op_module_with_async_chain_destroy_interface_adapter,
+        .execute_async = ml_async_op_module_with_async_chain_execute_async_interface_adapter,
         .execute_async_no_async_op_out = NULL
     };
     return result;
