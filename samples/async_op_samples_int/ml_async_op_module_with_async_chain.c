@@ -267,7 +267,6 @@ static void ml_async_op_module_with_async_chain_on_ll_complete_step_1(void* cont
         ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_EXECUTE_CONTEXT* async_op_context = async_op->context;
 
         bool is_canceled = false;
-        bool failed = false;
         bool must_call_callback = false;
 
         // 1. Take a lock to synchronize with calls in the chain completing and the async_op_ll changing
@@ -293,7 +292,6 @@ static void ml_async_op_module_with_async_chain_on_ll_complete_step_1(void* cont
             if (async_op_context->handle->ll_execute_async(async_op_context->handle->ll_handle, async_op_context->complete_in_ms, &ll_async_op, ml_async_op_module_with_async_chain_on_ll_complete_step_2, context) != 0)
             {
                 LogError("ll_execute_async for lower module failed");
-                failed = true;
                 must_call_callback = true;
             }
             else
