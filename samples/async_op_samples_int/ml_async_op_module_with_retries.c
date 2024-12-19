@@ -226,7 +226,7 @@ static void ml_async_op_module_with_retries_on_ll_complete_do_retry(void* contex
         bool failed = false;
         bool must_call_callback = false;
 
-        if (result == enum_value_typedef_COMMON_ASYNC_OP_MODULE_ERROR_CAN_RETRY)
+        if (result == COMMON_ASYNC_OP_MODULE_ERROR_CAN_RETRY)
         {
             // In case retry is required...
 
