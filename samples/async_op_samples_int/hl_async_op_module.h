@@ -28,7 +28,7 @@ extern "C" {
 
 typedef struct HL_ASYNC_OP_MODULE_TAG* HL_ASYNC_OP_MODULE_HANDLE;
 
-MOCKABLE_FUNCTION(, HL_ASYNC_OP_MODULE_HANDLE, hl_async_op_module_create, EXECUTION_ENGINE_HANDLE, execution_engine, void*, ll_handle, COMMON_ASYNC_OP_MODULE_EXECUTE_ASYNC, ll_execute_async);
+MOCKABLE_FUNCTION(, HL_ASYNC_OP_MODULE_HANDLE, hl_async_op_module_create, EXECUTION_ENGINE_HANDLE, execution_engine, COMMON_OP_MODULE_INTERFACE_HANDLE, ll_async_op_module);
 MOCKABLE_FUNCTION(, void, hl_async_op_module_destroy, HL_ASYNC_OP_MODULE_HANDLE, handle);
 
 MOCKABLE_FUNCTION(, int, hl_async_op_module_open, HL_ASYNC_OP_MODULE_HANDLE, handle);

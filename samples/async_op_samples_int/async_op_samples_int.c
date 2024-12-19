@@ -54,43 +54,48 @@ static void create_all_modules_with_fake_cancel(EXECUTION_ENGINE_HANDLE executio
     ASSERT_IS_NOT_NULL(*ll_async_module_fake_cancel);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = ll_async_op_module_fake_cancel_get_interface(*ll_async_module_fake_cancel);
+    COMMON_OP_MODULE_INTERFACE_HANDLE ll_async_op_module_fake_cancel_interface = &(*modules)[i].module_interface;
     (*modules)[i].has_retry_support = false;
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    ML_ASYNC_OP_MODULE_HANDLE ml_async_module = ml_async_op_module_create(execution_engine, *ll_async_module_fake_cancel, ll_async_op_module_fake_cancel_execute_async);
+    ML_ASYNC_OP_MODULE_HANDLE ml_async_module = ml_async_op_module_create(execution_engine, ll_async_op_module_fake_cancel_interface);
     ASSERT_IS_NOT_NULL(ml_async_module);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = ml_async_op_module_get_interface(ml_async_module);
+    COMMON_OP_MODULE_INTERFACE_HANDLE ml_async_op_module_interface = &(*modules)[i].module_interface;
     (*modules)[i].has_retry_support = false;
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE ml_async_module_with_async_chain = ml_async_op_module_with_async_chain_create(execution_engine, *ll_async_module_fake_cancel, ll_async_op_module_fake_cancel_execute_async);
+    ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE ml_async_module_with_async_chain = ml_async_op_module_with_async_chain_create(execution_engine, ll_async_op_module_fake_cancel_interface);
     ASSERT_IS_NOT_NULL(ml_async_module_with_async_chain);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = ml_async_op_module_with_async_chain_get_interface(ml_async_module_with_async_chain);
+    COMMON_OP_MODULE_INTERFACE_HANDLE ml_async_module_with_async_chain_interface = &(*modules)[i].module_interface;
     (*modules)[i].has_retry_support = false;
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE ml_async_module_with_retries = ml_async_op_module_with_retries_create(execution_engine, *ll_async_module_fake_cancel, ll_async_op_module_fake_cancel_execute_async);
+    ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE ml_async_module_with_retries = ml_async_op_module_with_retries_create(execution_engine, ll_async_op_module_fake_cancel_interface);
     ASSERT_IS_NOT_NULL(ml_async_module_with_retries);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = ml_async_op_module_with_retries_get_interface(ml_async_module_with_retries);
+    COMMON_OP_MODULE_INTERFACE_HANDLE ml_async_op_module_with_retries_interface = &(*modules)[i].module_interface;
     (*modules)[i].has_retry_support = true;
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE ml_async_module_with_async_chain_over_retries = ml_async_op_module_with_async_chain_create(execution_engine, ml_async_module_with_retries, ml_async_op_module_with_retries_execute_async);
+    ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE ml_async_module_with_async_chain_over_retries = ml_async_op_module_with_async_chain_create(execution_engine, ml_async_op_module_with_retries_interface);
     ASSERT_IS_NOT_NULL(ml_async_module_with_async_chain_over_retries);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = ml_async_op_module_with_async_chain_get_interface(ml_async_module_with_async_chain_over_retries);
+    COMMON_OP_MODULE_INTERFACE_HANDLE ml_async_module_with_async_chain_over_retries_interface = &(*modules)[i].module_interface;
     (*modules)[i].has_retry_support = true;
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    HL_ASYNC_OP_MODULE_HANDLE hl_async_module1 = hl_async_op_module_create(execution_engine, ml_async_module, ml_async_op_module_execute_async);
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module1 = hl_async_op_module_create(execution_engine, ml_async_op_module_interface);
     ASSERT_IS_NOT_NULL(hl_async_module1);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module1);
@@ -98,7 +103,7 @@ static void create_all_modules_with_fake_cancel(EXECUTION_ENGINE_HANDLE executio
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    HL_ASYNC_OP_MODULE_HANDLE hl_async_module2 = hl_async_op_module_create(execution_engine, ml_async_module_with_async_chain, ml_async_op_module_with_async_chain_execute_async);
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module2 = hl_async_op_module_create(execution_engine, ml_async_module_with_async_chain_interface);
     ASSERT_IS_NOT_NULL(hl_async_module2);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module2);
@@ -106,7 +111,7 @@ static void create_all_modules_with_fake_cancel(EXECUTION_ENGINE_HANDLE executio
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    HL_ASYNC_OP_MODULE_HANDLE hl_async_module3 = hl_async_op_module_create(execution_engine, ml_async_module_with_retries, ml_async_op_module_with_retries_execute_async);
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module3 = hl_async_op_module_create(execution_engine, ml_async_op_module_with_retries_interface);
     ASSERT_IS_NOT_NULL(hl_async_module3);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module3);
@@ -114,7 +119,7 @@ static void create_all_modules_with_fake_cancel(EXECUTION_ENGINE_HANDLE executio
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    HL_ASYNC_OP_MODULE_HANDLE hl_async_module4 = hl_async_op_module_create(execution_engine, ml_async_module_with_async_chain_over_retries, ml_async_op_module_with_async_chain_execute_async);
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module4 = hl_async_op_module_create(execution_engine, ml_async_module_with_async_chain_over_retries_interface);
     ASSERT_IS_NOT_NULL(hl_async_module4);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module4);
@@ -122,7 +127,7 @@ static void create_all_modules_with_fake_cancel(EXECUTION_ENGINE_HANDLE executio
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_1 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_module, ml_async_op_module_execute_async);
+    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_1 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_op_module_interface);
     ASSERT_IS_NOT_NULL(hl_async_module_cancel_all_1);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_cancel_all_get_interface(hl_async_module_cancel_all_1);
@@ -130,7 +135,7 @@ static void create_all_modules_with_fake_cancel(EXECUTION_ENGINE_HANDLE executio
     (*modules)[i].exposes_async_op = false;
     i++;
 
-    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_2 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_module_with_async_chain, ml_async_op_module_with_async_chain_execute_async);
+    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_2 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_module_with_async_chain_interface);
     ASSERT_IS_NOT_NULL(hl_async_module_cancel_all_2);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_cancel_all_get_interface(hl_async_module_cancel_all_2);
@@ -138,7 +143,7 @@ static void create_all_modules_with_fake_cancel(EXECUTION_ENGINE_HANDLE executio
     (*modules)[i].exposes_async_op = false;
     i++;
 
-    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_3 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_module_with_retries, ml_async_op_module_with_retries_execute_async);
+    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_3 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_op_module_with_retries_interface);
     ASSERT_IS_NOT_NULL(hl_async_module_cancel_all_3);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_cancel_all_get_interface(hl_async_module_cancel_all_3);
@@ -146,7 +151,7 @@ static void create_all_modules_with_fake_cancel(EXECUTION_ENGINE_HANDLE executio
     (*modules)[i].exposes_async_op = false;
     i++;
 
-    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_4 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_module_with_async_chain_over_retries, ml_async_op_module_with_async_chain_execute_async);
+    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_4 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_module_with_async_chain_over_retries_interface);
     ASSERT_IS_NOT_NULL(hl_async_module_cancel_all_4);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_cancel_all_get_interface(hl_async_module_cancel_all_4);
@@ -169,43 +174,48 @@ static void create_all_modules_with_real_cancel(EXECUTION_ENGINE_HANDLE executio
     ASSERT_IS_NOT_NULL(*ll_async_module_real_cancel);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = ll_async_op_module_real_cancel_get_interface(*ll_async_module_real_cancel);
+    COMMON_OP_MODULE_INTERFACE_HANDLE ll_async_op_module_real_cancel_interface = &(*modules)[i].module_interface;
     (*modules)[i].has_retry_support = false;
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    ML_ASYNC_OP_MODULE_HANDLE ml_async_module = ml_async_op_module_create(execution_engine, *ll_async_module_real_cancel, ll_async_op_module_real_cancel_execute_async);
+    ML_ASYNC_OP_MODULE_HANDLE ml_async_module = ml_async_op_module_create(execution_engine, ll_async_op_module_real_cancel_interface);
     ASSERT_IS_NOT_NULL(ml_async_module);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = ml_async_op_module_get_interface(ml_async_module);
+    COMMON_OP_MODULE_INTERFACE_HANDLE ml_async_op_module_interface = &(*modules)[i].module_interface;
     (*modules)[i].has_retry_support = false;
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE ml_async_module_with_async_chain = ml_async_op_module_with_async_chain_create(execution_engine, *ll_async_module_real_cancel, ll_async_op_module_real_cancel_execute_async);
+    ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE ml_async_module_with_async_chain = ml_async_op_module_with_async_chain_create(execution_engine, ll_async_op_module_real_cancel_interface);
     ASSERT_IS_NOT_NULL(ml_async_module_with_async_chain);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = ml_async_op_module_with_async_chain_get_interface(ml_async_module_with_async_chain);
+    COMMON_OP_MODULE_INTERFACE_HANDLE ml_async_module_with_async_chain_interface = &(*modules)[i].module_interface;
     (*modules)[i].has_retry_support = false;
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE ml_async_module_with_retries = ml_async_op_module_with_retries_create(execution_engine, *ll_async_module_real_cancel, ll_async_op_module_real_cancel_execute_async);
+    ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE ml_async_module_with_retries = ml_async_op_module_with_retries_create(execution_engine, ll_async_op_module_real_cancel_interface);
     ASSERT_IS_NOT_NULL(ml_async_module_with_retries);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = ml_async_op_module_with_retries_get_interface(ml_async_module_with_retries);
+    COMMON_OP_MODULE_INTERFACE_HANDLE ml_async_op_module_with_retries_interface = &(*modules)[i].module_interface;
     (*modules)[i].has_retry_support = true;
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE ml_async_module_with_async_chain_over_retries = ml_async_op_module_with_async_chain_create(execution_engine, ml_async_module_with_retries, ml_async_op_module_with_retries_execute_async);
+    ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE ml_async_module_with_async_chain_over_retries = ml_async_op_module_with_async_chain_create(execution_engine, ml_async_op_module_with_retries_interface);
     ASSERT_IS_NOT_NULL(ml_async_module_with_async_chain_over_retries);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = ml_async_op_module_with_async_chain_get_interface(ml_async_module_with_async_chain_over_retries);
+    COMMON_OP_MODULE_INTERFACE_HANDLE ml_async_module_with_async_chain_over_retries_interface = &(*modules)[i].module_interface;
     (*modules)[i].has_retry_support = true;
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    HL_ASYNC_OP_MODULE_HANDLE hl_async_module1 = hl_async_op_module_create(execution_engine, ml_async_module, ml_async_op_module_execute_async);
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module1 = hl_async_op_module_create(execution_engine, ml_async_op_module_interface);
     ASSERT_IS_NOT_NULL(hl_async_module1);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module1);
@@ -213,7 +223,7 @@ static void create_all_modules_with_real_cancel(EXECUTION_ENGINE_HANDLE executio
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    HL_ASYNC_OP_MODULE_HANDLE hl_async_module2 = hl_async_op_module_create(execution_engine, ml_async_module_with_async_chain, ml_async_op_module_with_async_chain_execute_async);
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module2 = hl_async_op_module_create(execution_engine, ml_async_module_with_async_chain_interface);
     ASSERT_IS_NOT_NULL(hl_async_module2);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module2);
@@ -221,7 +231,7 @@ static void create_all_modules_with_real_cancel(EXECUTION_ENGINE_HANDLE executio
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    HL_ASYNC_OP_MODULE_HANDLE hl_async_module3 = hl_async_op_module_create(execution_engine, ml_async_module_with_retries, ml_async_op_module_with_retries_execute_async);
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module3 = hl_async_op_module_create(execution_engine, ml_async_op_module_with_retries_interface);
     ASSERT_IS_NOT_NULL(hl_async_module3);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module3);
@@ -229,7 +239,7 @@ static void create_all_modules_with_real_cancel(EXECUTION_ENGINE_HANDLE executio
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    HL_ASYNC_OP_MODULE_HANDLE hl_async_module4 = hl_async_op_module_create(execution_engine, ml_async_module_with_async_chain_over_retries, ml_async_op_module_with_async_chain_execute_async);
+    HL_ASYNC_OP_MODULE_HANDLE hl_async_module4 = hl_async_op_module_create(execution_engine, ml_async_module_with_async_chain_over_retries_interface);
     ASSERT_IS_NOT_NULL(hl_async_module4);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_get_interface(hl_async_module4);
@@ -237,7 +247,7 @@ static void create_all_modules_with_real_cancel(EXECUTION_ENGINE_HANDLE executio
     (*modules)[i].exposes_async_op = true;
     i++;
 
-    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_1 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_module, ml_async_op_module_execute_async);
+    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_1 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_op_module_interface);
     ASSERT_IS_NOT_NULL(hl_async_module_cancel_all_1);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_cancel_all_get_interface(hl_async_module_cancel_all_1);
@@ -245,7 +255,7 @@ static void create_all_modules_with_real_cancel(EXECUTION_ENGINE_HANDLE executio
     (*modules)[i].exposes_async_op = false;
     i++;
 
-    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_2 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_module_with_async_chain, ml_async_op_module_with_async_chain_execute_async);
+    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_2 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_module_with_async_chain_interface);
     ASSERT_IS_NOT_NULL(hl_async_module_cancel_all_2);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_cancel_all_get_interface(hl_async_module_cancel_all_2);
@@ -253,7 +263,7 @@ static void create_all_modules_with_real_cancel(EXECUTION_ENGINE_HANDLE executio
     (*modules)[i].exposes_async_op = false;
     i++;
 
-    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_3 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_module_with_retries, ml_async_op_module_with_retries_execute_async);
+    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_3 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_op_module_with_retries_interface);
     ASSERT_IS_NOT_NULL(hl_async_module_cancel_all_3);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_cancel_all_get_interface(hl_async_module_cancel_all_3);
@@ -261,7 +271,7 @@ static void create_all_modules_with_real_cancel(EXECUTION_ENGINE_HANDLE executio
     (*modules)[i].exposes_async_op = false;
     i++;
 
-    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_4 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_module_with_async_chain_over_retries, ml_async_op_module_with_async_chain_execute_async);
+    HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_module_cancel_all_4 = hl_async_op_module_cancel_all_create(execution_engine, ml_async_module_with_async_chain_over_retries_interface);
     ASSERT_IS_NOT_NULL(hl_async_module_cancel_all_4);
     ASSERT_IS_TRUE(i < *module_count);
     (*modules)[i].module_interface = hl_async_op_module_cancel_all_get_interface(hl_async_module_cancel_all_4);
