@@ -442,16 +442,35 @@ all_ok:
     return result;
 }
 
+static int ml_async_op_module_with_retries_open_interface_adapter(void* context)
+{
+    return ml_async_op_module_with_retries_open(context);
+}
+
+static void ml_async_op_module_with_retries_close_interface_adapter(void* context)
+{
+    ml_async_op_module_with_retries_close(context);
+}
+
+static void ml_async_op_module_with_retries_destroy_interface_adapter(void* context)
+{
+    ml_async_op_module_with_retries_destroy(context);
+}
+
+static int ml_async_op_module_with_retries_execute_async_interface_adapter(void* context, uint32_t complete_in_ms, THANDLE(ASYNC_OP)* async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback, void* context_callback)
+{
+    return ml_async_op_module_with_retries_execute_async(context, complete_in_ms, async_op_out, callback, context_callback);
+}
 
 IMPLEMENT_MOCKABLE_FUNCTION(, COMMON_ASYNC_OP_MODULE_INTERFACE, ml_async_op_module_with_retries_get_interface, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle)
 {
     COMMON_ASYNC_OP_MODULE_INTERFACE result = (COMMON_ASYNC_OP_MODULE_INTERFACE)
     {
         .handle = handle,
-        .open = ml_async_op_module_with_retries_open,
-        .close = ml_async_op_module_with_retries_close,
-        .destroy = ml_async_op_module_with_retries_destroy,
-        .execute_async = ml_async_op_module_with_retries_execute_async,
+        .open = ml_async_op_module_with_retries_open_interface_adapter,
+        .close = ml_async_op_module_with_retries_close_interface_adapter,
+        .destroy = ml_async_op_module_with_retries_destroy_interface_adapter,
+        .execute_async = ml_async_op_module_with_retries_execute_async_interface_adapter,
         .execute_async_no_async_op_out = NULL
     };
     return result;
