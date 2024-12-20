@@ -25,6 +25,7 @@ option(run_perf_tests "set run_perf_tests to ON to build performance tests (defa
 option(run_reals_check "set run_reals_check to ON to run reals check (default is OFF)." OFF)
 option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is OFF)" OFF)
 option(run_traceability "run traceability tool (default is ON)" ON)
+option(skip_samples "set skip_samples to ON to skip building samples (default is OFF)[if possible, they are always built]" OFF)
 
 set(original_run_e2e_tests ${run_e2e_tests})
 set(original_run_unittests ${run_unittests})
@@ -32,6 +33,7 @@ set(original_run_int_tests ${run_int_tests})
 set(original_run_traceability ${run_traceability})
 set(original_run_perf_tests ${run_perf_tests})
 set(original_run_reals_check ${run_reals_check})
+set(original_skip_samples ${skip_samples})
 
 set(run_e2e_tests OFF)
 set(run_unittests OFF)
@@ -39,6 +41,7 @@ set(run_int_tests OFF)
 set(run_traceability OFF)
 set(run_perf_tests OFF)
 set(run_reals_check OFF)
+set(skip_samples ON)
 
 if ((NOT TARGET c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-build-tools/CMakeLists.txt))
     add_subdirectory(deps/c-build-tools)
@@ -132,6 +135,7 @@ set(run_int_tests ${original_run_int_tests})
 set(run_traceability ${original_run_traceability})
 set(run_perf_tests ${original_run_perf_tests})
 set(run_reals_check ${original_run_reals_check})
+set(skip_samples ${original_skip_samples})
 
 include(CTest)
 enable_testing()
@@ -321,6 +325,10 @@ set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER
 
 add_subdirectory(test_helpers)
 add_subdirectory(tests)
+
+if (NOT ${skip_samples})
+    add_subdirectory(samples)
+endif()
 
 if(${run_reals_check})
     add_reals_check_target()
