@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifndef CHANNEL_H
-#define CHANNEL_H
+#ifndef CHANNEL_2_H
+#define CHANNEL_2_H
 
 #include "macro_utils/macro_utils.h"
 
@@ -50,6 +50,4 @@ THANDLE_TYPE_DECLARE(CHANNEL_2);
 }
 #endif /* __cplusplus */
 
-
-
-#endif /* CHANNEL_H */
+#endif /* CHANNEL_2_H */

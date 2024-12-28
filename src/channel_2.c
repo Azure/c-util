@@ -53,7 +53,7 @@ CHANNEL_2_RESULT channel_2_pull(THANDLE(CHANNEL_2) channel_2, THANDLE(RC_STRING)
     (void)correlation_id;
     (void)pull_callback;
     (void)pull_context;
-    return CHANNEL_2_RESULT_OK;
+    return CHANNEL_2_RESULT_ERROR;
 }
 
 CHANNEL_2_RESULT channel_2_push(THANDLE(CHANNEL_2) channel_2, THANDLE(RC_STRING) correlation_id, THANDLE(RC_PTR) data, CHANNEL_2_PUSH_CALLBACK push_callback, void* push_context)
@@ -63,5 +63,5 @@ CHANNEL_2_RESULT channel_2_push(THANDLE(CHANNEL_2) channel_2, THANDLE(RC_STRING)
     (void)data;
     (void)push_callback;
     (void)push_context;
-    return CHANNEL_2_RESULT_OK;
+    return CHANNEL_2_RESULT_ERROR;
 }
