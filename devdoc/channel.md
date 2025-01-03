@@ -12,15 +12,18 @@ Producers of data call `channel_push` to notify the channel that data is availab
 
 ```mermaid
 stateDiagram-v2
-    B: OP_QUEUE=[]
-    N: OP_QUEUE=[push_op,...]
-    R: OP_QUEUE=[pull_op,...]
-    E: OP_QUEUE=[]
+    B: CREATED
+    O: OPEN, OP_QUEUE=[]
+    N: OPEN,OP_QUEUE=[push_op,...]
+    R: OPEN,OP_QUEUE=[pull_op,...]
+    E: OPEN,OP_QUEUE=[]
+    C: CLOSED, OP_QUEUE=[]
 
     [*] --> B: channel_create
+    B --> O: channel_open
 
-    B --> N: channel_push
-    B --> R: channel_pull
+    O --> N: channel_push
+    O --> R: channel_pull
 
     N --> E: channel_pull
 
@@ -32,7 +35,14 @@ stateDiagram-v2
     R --> R: channel_pull
     N --> N: channel_push
 
-    E --> [*]: channel_destroy
+    O --> C: channel_close
+    E --> C: channel_close
+    R --> C: channel_close
+    N --> C: channel_close
+    
+
+    C --> [*]: channel_destroy
+
 ```
 
 ## Operations
@@ -133,6 +143,28 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THA
 **SRS_CHANNEL_43_094: [** `channel_dispose` shall call `channel_internal_close`. **]**
 
 **SRS_CHANNEL_43_092: [** `channel_dispose` shall release the reference to `THANDLE(CHANNEL_INTERNAL)`. **]**
+
+### channel_open
+```c
+    MOCKABLE_FUNCTION(, int, channel_open, THANDLE(CHANNEL), channel);
+```
+
+`channel_open` opens the given `channel`.
+
+If `channel` is `NULL`, `channel_open` shall fail and return a non-zero value.
+
+`channel_open` shall call `channel_internal_open` and return as it returns.
+
+### channel_close
+```c
+    MOCKABLE_FUNCTION(, void, channel_close, THANDLE(CHANNEL), channel);
+```
+
+`channel_close` closes the given `channel`.
+
+If `channel` is `NULL`, `channel_close` shall return immediately.
+
+`channel_close` shall call `channel_internal_close`.
 
 
 ### channel_pull

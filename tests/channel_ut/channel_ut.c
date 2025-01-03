@@ -104,7 +104,7 @@ static void test_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT 
 
 static void setup_channel_create_expectations(void)
 {
-    STRICT_EXPECTED_CALL(channel_internal_create_and_open(g.g_log_context, g.g_threadpool));
+    STRICT_EXPECTED_CALL(channel_internal_create(g.g_log_context, g.g_threadpool));
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(CHANNEL_INTERNAL)(IGNORED_ARG, IGNORED_ARG));
 }
@@ -121,7 +121,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
 
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(channel_internal_create_and_open, NULL);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(channel_internal_create, NULL);
 
     REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
 

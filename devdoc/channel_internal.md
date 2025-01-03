@@ -30,32 +30,51 @@ typedef void(*PUSH_CALLBACK)(void* push_context, CHANNEL_CALLBACK_RESULT result)
 ```
 THANDLE_TYPE_DECLARE(CHANNEL_INTERNAL);
 
-MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create_and_open, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool);
+MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool);
+MOCKABLE_FUNCTION(, int, channel_internal_open, THANDLE(CHANNEL_INTERNAL), channel_internal);
 MOCKABLE_FUNCTION(, void, channel_internal_close, THANDLE(CHANNEL_INTERNAL), channel_internal);
 MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_STRING), correlation_id, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
 MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
 ```
 
-### channel_internal_create_and_open
+### channel_internal_create
 ```c
-    MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create_and_open, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool);
+    MOCKABLE_FUNCTION(, THANDLE(CHANNEL_INTERNAL), channel_internal_create, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool);
 ```
 
-`channel_internal_create_and_open` creates the channel_internal and returns it.
+`channel_internal_create` creates the channel_internal and returns it.
 
-**SRS_CHANNEL_INTERNAL_43_098: [** `channel_internal_create_and_open` shall call `srw_lock_create`. **]**
+**SRS_CHANNEL_INTERNAL_43_151: [** `channel_internal_create` shall call `sm_create`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_078: [** `channel_internal_create_and_open` shall create a `CHANNEL_INTERNAL` object by calling `THANDLE_MALLOC` with `channel_internal_dispose` as `dispose`.**]**
+**SRS_CHANNEL_INTERNAL_43_098: [** `channel_internal_create` shall call `srw_lock_create`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_080: [** `channel_internal_create_and_open` shall store given `threadpool` in the created `CHANNEL_INTERNAL`. **]**
+**SRS_CHANNEL_INTERNAL_43_078: [** `channel_internal_create` shall create a `CHANNEL_INTERNAL` object by calling `THANDLE_MALLOC` with `channel_internal_dispose` as `dispose`.**]**
 
-**SRS_CHANNEL_INTERNAL_43_149: [** `channel_internal_create_and_open` shall store the given `log_context` in the created `CHANNEL_INTERNAL`. **]**
+**SRS_CHANNEL_INTERNAL_43_080: [** `channel_internal_create` shall store given `threadpool` in the created `CHANNEL_INTERNAL`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_084: [** `channel_internal_create_and_open` shall call `DList_InitializeListHead`. **]**
+**SRS_CHANNEL_INTERNAL_43_149: [** `channel_internal_create` shall store the given `log_context` in the created `CHANNEL_INTERNAL`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_086: [** `channel_internal_create_and_open` shall succeed and return the created `THANDLE(CHANNEL_INTERNAL)`. **]**
+**SRS_CHANNEL_INTERNAL_43_084: [** `channel_internal_create` shall call `DList_InitializeListHead`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_002: [** If there are any failures, `channel_internal_create_and_open` shall fail and return `NULL`. **]**
+**SRS_CHANNEL_INTERNAL_43_086: [** `channel_internal_create` shall succeed and return the created `THANDLE(CHANNEL_INTERNAL)`. **]**
+
+**SRS_CHANNEL_INTERNAL_43_002: [** If there are any failures, `channel_internal_create` shall fail and return `NULL`. **]**
+
+
+### channel_internal_open
+```c
+    MOCKABLE_FUNCTION(, int, channel_internal_open, THANDLE(CHANNEL_INTERNAL), channel_internal);
+```
+
+channel_internal_open` opens the given `channel_internal`.
+
+**SRS_CHANNEL_INTERNAL_43_159: [** `channel_internal_open` shall call `sm_open_begin`. **]**
+
+**SRS_CHANNEL_INTERNAL_43_160: [** `channel_internal_open` shall call `sm_open_end`. **]**
+
+**SRS_CHANNEL_INTERNAL_43_161: [** If there are any failures, `channel_internal_open` shall fail and return a non-zero value. **]**
+
+**SRS_CHANNEL_INTERNAL_43_162: [** `channel_internal_open` shall succeed and return 0. **]**
 
 
 ### channel_internal_close
@@ -65,15 +84,15 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 `channel_internal_close` schedules all pending operations to be abandoned.
 
-**SRS_CHANNEL_INTERNAL_43_094: [** `channel_internal_close` shall call `srw_lock_acquire_exclusive`. **]**
+**SRS_CHANNEL_INTERNAL_43_094: [** `channel_internal_close` shall call `sm_close_begin_with_cb` with `abandon_pending_operations` as the callback. **]**
 
-**SRS_CHANNEL_INTERNAL_43_095: [** `channel_internal_close` shall iterate over the list of pending operations and do the following: **]**
+**SRS_CHANNEL_INTERNAL_43_095: [** `abandon_pending_operations` shall iterate over the list of pending operations and do the following: **]**
 
  - **SRS_CHANNEL_INTERNAL_43_096: [** set the `result` of the `operation` to `CHANNEL_CALLBACK_RESULT_ABANDONED`. **]**
 
  - **SRS_CHANNEL_INTERNAL_43_097: [** call `threadpool_schedule_work` with `execute_callbacks` as `work_function`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_100: [** `channel_internal_close` shall call `srw_lock_release_exclusive`. **]**
+**SRS_CHANNEL_INTERNAL_43_100: [** `channel_internal_close` shall call `sm_close_end`. **]**
 
 
 ### channel_internal_dispose
@@ -90,12 +109,16 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 **SRS_CHANNEL_INTERNAL_43_099: [** `channel_internal_dispose` shall call `srw_lock_destroy`. **]**
 
+**SRS_CHANNEL_INTERNAL_43_165: [** `channel_internal_dispose` shall call `sm_destroy`. **]**
+
 ### channel_internal_pull
 ```c
     MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_STRING), correlation_id, PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
 ```
 
 `channel_internal_pull` registers the given `pull_callback` to be called when there is data to be consumed.
+
+**SRS_CHANNEL_INTERNAL_43_152: [** `channel_internal_pull` shall call `sm_exec_begin`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_010: [** `channel_internal_pull` shall call `srw_lock_acquire_exclusive`. **]**
 
@@ -119,6 +142,8 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
  - **SRS_CHANNEL_INTERNAL_43_113: [** `channel_internal_pull` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the obtained `operation` as `work_function_context`. **]**
 
+ - **SRS_CHANNEL_INTERNAL_43_163: [** If `threadpool_schedule_work` fails, `channel_internal_pull` shall terminate the process. **]**
+
  - **SRS_CHANNEL_INTERNAL_43_114: [** `channel_internal_pull` shall set `*out_op_pull` to the `THANDLE(ASYNC_OP)` of the obtained `operation`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_115: [** `channel_internal_pull` shall call `srw_lock_release_exclusive`. **]**
@@ -134,6 +159,8 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 ```
 
 `channel_internal_push` notifies the channel_internal that there is data available and registers the given `push_callback` to be called when the given `data` has been consumed.
+
+**SRS_CHANNEL_INTERNAL_43_153: [** `channel_internal_push` shall call `sm_exec_begin`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_116: [** `channel_internal_push` shall call `srw_lock_acquire_exclusive`. **]**
 
@@ -157,6 +184,8 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
  - **SRS_CHANNEL_INTERNAL_43_129: [** `channel_internal_push` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the obtained `operation` as `work_function_context`. **]**
 
+ - **SRS_CHANNEL_INTERNAL_43_164: [** If `threadpool_schedule_work` fails, `channel_internal_push` shall terminate the process. **]**
+
  - **SRS_CHANNEL_INTERNAL_43_130: [** `channel_internal_push` shall set `*out_op_push` to the `THANDLE(ASYNC_OP)` of the obtained `operation`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_131: [** `channel_internal_push` shall call `srw_lock_release_exclusive`. **]**
@@ -173,6 +202,8 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 `cancel_op` is the cancel callback that is passed to `async_op_create` when creating a `THANDLE(ASYNC_OP)` for a `channel_internal_push` or `channel_internal_pull` operation.
 
+**SRS_CHANNEL_INTERNAL_43_154: [** `cancel_op` shall call `sm_exec_begin`. **]**
+
 **SRS_CHANNEL_INTERNAL_43_134: [** `cancel_op` shall call `srw_lock_acquire_exclusive`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_135: [** If the `operation` is in the list of pending `operations`, `cancel_op` shall call `DList_RemoveEntryList` to remove it. **]**
@@ -183,6 +214,10 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 **SRS_CHANNEL_INTERNAL_43_138: [** If the `operation` had been found in the list of pending `operations`, `cancel_op` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the `operation` as `work_function_context`. **]**
 
+**SRS_CHANNEL_INTERNAL_43_156: [** `cancel_op` shall call `sm_exec_end`. **]**
+
+**SRS_CHANNEL_INTERNAL_43_155: [** If there are any failures, `cancel_op` shall fail. **]**
+
 
 ### execute_callbacks
 ```c
@@ -191,8 +226,10 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTER
 
 `execute_callbacks` is the work function that is passed to `threadpool_schedule_work` when scheduling the execution of the callbacks for an operation.
 
-**SRS_CHANNEL_INTERNAL_43_148: [** If `channel_internal_op_context` is `NULL`, `execute_callbacks` shall fail. **]**
+**SRS_CHANNEL_INTERNAL_43_148: [** If `channel_internal_op_context` is `NULL`, `execute_callbacks` shall terminate the process. **]**
 
 **SRS_CHANNEL_INTERNAL_43_145: [** `execute_callbacks` shall call the stored callback(s) with the `result` of the `operation`.  **]**
+
+**SRS_CHANNEL_INTERNAL_43_157: [** `execute_callbacks` shall call `sm_exec_end` for each call callback. **]**
 
 **SRS_CHANNEL_INTERNAL_43_147: [** `execute_callbacks` shall perform cleanup of the `operation`. **]**

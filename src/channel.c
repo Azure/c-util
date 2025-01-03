@@ -47,11 +47,11 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_
     else
     {
         /*Codes_SRS_CHANNEL_43_078: [ channel_create shall create a CHANNEL_INTERNAL object by calling THANDLE_MALLOC with channel_internal_dispose as dispose.]*/
-        THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(log_context, threadpool);
+        THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create(log_context, threadpool);
         if (channel_internal == NULL)
         {
             /*Codes_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
-            LogError("Failure in channel_internal_create_and_open(log_context=%p, threadpool=%p)", log_context, threadpool);
+            LogError("Failure in channel_internal_create(log_context=%p, threadpool=%p)", log_context, threadpool);
         }
         else
         {
