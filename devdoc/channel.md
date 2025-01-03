@@ -151,9 +151,11 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THA
 
 `channel_open` opens the given `channel`.
 
-If `channel` is `NULL`, `channel_open` shall fail and return a non-zero value.
+**SRS_CHANNEL_43_095: [** If `channel` is `NULL`, `channel_open` shall fail and return a non-zero value. **]**
 
-`channel_open` shall call `channel_internal_open` and return as it returns.
+**SRS_CHANNEL_43_096: [** `channel_open` shall call `channel_internal_open`. **]**
+
+**SRS_CHANNEL_43_099: [** If there are any failures, `channel_open` shall fail and return a non-zero value. **]**
 
 ### channel_close
 ```c
@@ -162,9 +164,9 @@ If `channel` is `NULL`, `channel_open` shall fail and return a non-zero value.
 
 `channel_close` closes the given `channel`.
 
-If `channel` is `NULL`, `channel_close` shall return immediately.
+**SRS_CHANNEL_43_097: [** If `channel` is `NULL`, `channel_close` shall return immediately. **]**
 
-`channel_close` shall call `channel_internal_close`.
+**SRS_CHANNEL_43_098: [** `channel_close` shall call `channel_internal_close`. **]**
 
 
 ### channel_pull
