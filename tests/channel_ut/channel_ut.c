@@ -319,7 +319,7 @@ TEST_FUNCTION(channel_open_calls_underlying_functions)
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
-/*Codes_SRS_CHANNEL_43_099: [ If there are any failures, channel_open shall fail and return a non-zero value. ]*/
+/*Tests_SRS_CHANNEL_43_099: [ If there are any failures, channel_open shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(channel_open_fails_when_underlying_functions_fail)
 {
     //arrange
@@ -346,6 +346,34 @@ TEST_FUNCTION(channel_open_fails_when_underlying_functions_fail)
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
+/*Tests_SRS_CHANNEL_43_097: [If channel is NULL, channel_close shall return immediately.] */
+TEST_FUNCTION(channel_close_returns_immediately_with_null_channel)
+{
+    //arrange
+
+    //act
+    channel_close(NULL);
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CHANNEL_43_098: [ channel_close shall call channel_internal_close. ]*/
+TEST_FUNCTION(channel_close_calls_underlying_functions)
+{
+    //arrange
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
+    umock_c_reset_all_calls();
+    setup_channel_close_expectations();
+
+    //act
+    channel_close(channel);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
 
 /* channel_pull */
 

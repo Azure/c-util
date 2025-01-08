@@ -1074,6 +1074,39 @@ TEST_FUNCTION(channel_internal_cancel_op_cancels_matched_op)
     THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
 }
 
+/*Tests_SRS_CHANNEL_INTERNAL_43_155: [ If there are any failures, cancel_op shall fail. ]*/
+TEST_FUNCTION(channel_internal_cancel_op_fails_to_cancel_abandoned_op)
+{
+    //arrange
+    THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
+    int32_t pull_context = 0;
+    THANDLE(ASYNC_OP) pull_op = NULL;
+    setup_first_op_expectations();
+    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_abandoned, &pull_context, &pull_op);
+    ASSERT_IS_NOT_NULL(pull_op);
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
+
+    setup_channel_internal_close_expectations(1);
+    channel_internal_close(channel_internal);
+
+    ASSERT_ARE_EQUAL(int, 1, pull_context);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG));
+
+    //act
+    real_async_op_cancel(pull_op);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
+    THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
+}
+
+
 /* execute_callbacks */
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_148: [ If channel_internal_op_context is NULL, execute_callbacks shall terminate the process. ]*/
