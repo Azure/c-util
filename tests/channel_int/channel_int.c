@@ -144,7 +144,6 @@ static THANDLE(THREADPOOL) setup_threadpool()
     ASSERT_IS_NOT_NULL(execution_engine);
     THANDLE(THREADPOOL) threadpool = threadpool_create(execution_engine);
     ASSERT_IS_NOT_NULL(threadpool);
-    ASSERT_ARE_EQUAL(int, 0, threadpool_open(threadpool));
     return threadpool;
 }
 
@@ -273,12 +272,12 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-    ASSERT_ARE_EQUAL(int, 0, threadpool_open(g.g_threadpool));
+    // Do Nothing.
 }
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
 {
-    threadpool_close(g.g_threadpool);
+    // Do Nothing.
 }
 
 

@@ -30,8 +30,6 @@ Initialize the watchdog global threadpool.
 
 **SRS_WATCHDOG_THREADPOOL_42_003: [** `watchdog_threadpool_init` shall create a `threadpool` by calling `threadpool_create`. **]**
 
-**SRS_WATCHDOG_THREADPOOL_42_004: [** `watchdog_threadpool_init` shall open the `threadpool` by calling `threadpool_open`. **]**
-
 **SRS_WATCHDOG_THREADPOOL_42_006: [** `watchdog_threadpool_init` shall store the `threadpool`. **]**
 
 **SRS_WATCHDOG_THREADPOOL_42_007: [** If there are any other errors then `watchdog_threadpool_init` shall fail and return a non-zero value. **]**
@@ -47,8 +45,6 @@ MOCKABLE_FUNCTION(, void, watchdog_threadpool_deinit);
 De-initialize the watchdog.
 
 **SRS_WATCHDOG_THREADPOOL_42_009: [** If the watchdog threadpool has not been initialized then `watchdog_deinit` shall return. **]**
-
-**SRS_WATCHDOG_THREADPOOL_42_010: [** `watchdog_threadpool_deinit` shall close the `threadpool` by calling `threadpool_close`. **]**
 
 **SRS_WATCHDOG_THREADPOOL_42_011: [** `watchdog_threadpool_deinit` shall destroy the `threadpool` by assign `threadpool` to NULL. **]**
 

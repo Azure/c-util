@@ -67,27 +67,16 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, watchdog_threadpool_init)
             }
             else
             {
-                /*Codes_SRS_WATCHDOG_THREADPOOL_42_004: [ watchdog_threadpool_init shall open the threadpool by calling threadpool_open. ]*/
-                if (threadpool_open(threadpool) != 0)
-                {
-                    /*Codes_SRS_WATCHDOG_THREADPOOL_42_007: [ If there are any other errors then watchdog_threadpool_init shall fail and return a non-zero value. ]*/
-                    LogError("threadpool_open failed");
-                    result = MU_FAILURE;
-                }
-                else
-                {
-                    /*Codes_SRS_WATCHDOG_THREADPOOL_42_006: [ watchdog_threadpool_init shall store the threadpool. ]*/
-                    THANDLE_INITIALIZE_MOVE(THREADPOOL)(&g_watchdog.threadpool, &threadpool);
+                /*Codes_SRS_WATCHDOG_THREADPOOL_42_006: [ watchdog_threadpool_init shall store the threadpool. ]*/
+                THANDLE_INITIALIZE_MOVE(THREADPOOL)(&g_watchdog.threadpool, &threadpool);
 
-                    g_watchdog.execution_engine = execution_engine;
+                g_watchdog.execution_engine = execution_engine;
 
-                    (void)interlocked_exchange(&g_watchdog_init_state, WATCHDOG_INIT_OK);
+                (void)interlocked_exchange(&g_watchdog_init_state, WATCHDOG_INIT_OK);
 
-                    /*Codes_SRS_WATCHDOG_THREADPOOL_42_008: [ watchdog_threadpool_init shall return 0. ]*/
-                    result = 0;
-                    goto all_ok;
-                }
-                THANDLE_ASSIGN(THREADPOOL)(&threadpool, NULL);
+                /*Codes_SRS_WATCHDOG_THREADPOOL_42_008: [ watchdog_threadpool_init shall return 0. ]*/
+                result = 0;
+                goto all_ok;
             }
             execution_engine_dec_ref(execution_engine);
         }
@@ -106,9 +95,6 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_threadpool_deinit)
     }
     else
     {
-        /*Codes_SRS_WATCHDOG_THREADPOOL_42_010: [ watchdog_threadpool_deinit shall close the threadpool by calling threadpool_close. ]*/
-        threadpool_close(g_watchdog.threadpool);
-
         /*Codes_SRS_WATCHDOG_THREADPOOL_42_011: [ watchdog_threadpool_deinit shall destroy the threadpool by assign threadpool to NULL. ]*/
         THANDLE_ASSIGN(THREADPOOL)(&g_watchdog.threadpool, NULL);
 

@@ -33,18 +33,21 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
-static void expect_init_verbose(int threapool_open_result)
+static void expect_init_verbose(int threadpool_result)
 {
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CallCannotFail();
     STRICT_EXPECTED_CALL(execution_engine_create(NULL));
-    STRICT_EXPECTED_CALL(threadpool_create(test_execution_engine));
-    STRICT_EXPECTED_CALL(threadpool_open(IGNORED_ARG))
-        .SetReturn(threapool_open_result);
 
-    if (threapool_open_result != 0)
+    if (threadpool_result == 0) {
+        STRICT_EXPECTED_CALL(threadpool_create(test_execution_engine));
+    }
+    else {
+        STRICT_EXPECTED_CALL(threadpool_create(test_execution_engine)).SetReturn(NULL);
+    }
+
+    if (threadpool_result != 0)
     {
-        STRICT_EXPECTED_CALL(THANDLE_ASSIGN(THREADPOOL)(IGNORED_ARG, NULL));
         STRICT_EXPECTED_CALL(execution_engine_dec_ref(test_execution_engine));
     }
     else
@@ -68,7 +71,6 @@ static void expect_init_fail(void)
 static void expect_deinit(void)
 {
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(threadpool_close(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(THREADPOOL)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(execution_engine_dec_ref(test_execution_engine));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
@@ -120,7 +122,6 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_GLOBAL_MOCK_RETURNS(execution_engine_create, test_execution_engine, NULL);
     REGISTER_GLOBAL_MOCK_RETURNS(threadpool_create, g.test_threadpool, NULL);
-    REGISTER_GLOBAL_MOCK_RETURNS(threadpool_open, 0, MU_FAILURE);
 
     REGISTER_UMOCK_ALIAS_TYPE(EXECUTION_ENGINE_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(REAL_THREADPOOL), void*);
@@ -156,7 +157,6 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 
 /*Tests_SRS_WATCHDOG_THREADPOOL_42_002: [ watchdog_threadpool_init shall create an execution engine by calling execution_engine_create. ]*/
 /*Tests_SRS_WATCHDOG_THREADPOOL_42_003: [ watchdog_threadpool_init shall create a threadpool by calling threadpool_create. ]*/
-/*Tests_SRS_WATCHDOG_THREADPOOL_42_004: [ watchdog_threadpool_init shall open the threadpool by calling threadpool_open. ]*/
 /*Tests_SRS_WATCHDOG_THREADPOOL_42_006: [ watchdog_threadpool_init shall store the threadpool. ]*/
 /*Tests_SRS_WATCHDOG_THREADPOOL_42_008: [ watchdog_threadpool_init shall return 0. ]*/
 TEST_FUNCTION(watchdog_threadpool_init_succeeds)
@@ -243,7 +243,6 @@ TEST_FUNCTION(watchdog_threadpool_deinit_without_init_returns)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_WATCHDOG_THREADPOOL_42_010: [ watchdog_threadpool_deinit shall close the threadpool by calling threadpool_close. ]*/
 /*Tests_SRS_WATCHDOG_THREADPOOL_42_011: [ watchdog_threadpool_deinit shall destroy the threadpool by assign threadpool to NULL. ]*/
 /*Tests_SRS_WATCHDOG_THREADPOOL_42_016: [ watchdog_threadpool_deinit shall destroy the execution_engine by calling execution_engine_dec_ref. ]*/
 TEST_FUNCTION(watchdog_threadpool_deinit_cleans_up)
