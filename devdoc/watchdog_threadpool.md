@@ -48,8 +48,6 @@ De-initialize the watchdog.
 
 **SRS_WATCHDOG_THREADPOOL_42_011: [** `watchdog_threadpool_deinit` shall destroy the `threadpool` by assign `threadpool` to NULL. **]**
 
-**SRS_WATCHDOG_THREADPOOL_42_016: [** `watchdog_threadpool_deinit` shall destroy the `execution_engine` by calling `execution_engine_dec_ref`. **]**
-
 **SRS_WATCHDOG_THREADPOOL_42_013: [** After `watchdog_threadpool_deinit` returns then `watchdog_threadpool_init` may be called again. **]**
 
 ### watchdog_threadpool_get

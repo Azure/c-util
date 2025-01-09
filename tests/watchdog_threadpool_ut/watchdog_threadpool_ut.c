@@ -33,46 +33,48 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
-static void expect_init_verbose(int threadpool_result)
+static void expect_init_verbose(bool fail_threadpool_create)
 {
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CallCannotFail();
     STRICT_EXPECTED_CALL(execution_engine_create(NULL));
 
-    if (threadpool_result == 0) {
-        STRICT_EXPECTED_CALL(threadpool_create(test_execution_engine));
-    }
-    else {
-        STRICT_EXPECTED_CALL(threadpool_create(test_execution_engine)).SetReturn(NULL);
-    }
-
-    if (threadpool_result != 0)
+    if (fail_threadpool_create)
     {
-        STRICT_EXPECTED_CALL(execution_engine_dec_ref(test_execution_engine));
+        STRICT_EXPECTED_CALL(threadpool_create(test_execution_engine))
+            .SetReturn(NULL);
     }
     else
     {
+        STRICT_EXPECTED_CALL(threadpool_create(test_execution_engine));
         STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(THREADPOOL)(IGNORED_ARG, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG))
+            .CallCannotFail();
     }
-    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG))
-        .CallCannotFail();
+
+    STRICT_EXPECTED_CALL(execution_engine_dec_ref(test_execution_engine));
+
+    if (fail_threadpool_create)
+    {
+        STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG))
+            .CallCannotFail();
+    }
 }
 
 static void expect_init(void)
 {
-    expect_init_verbose(0);
+    expect_init_verbose(false);
 }
 
 static void expect_init_fail(void)
 {
-    expect_init_verbose(MU_FAILURE);
+    expect_init_verbose(true);
 }
 
 static void expect_deinit(void)
 {
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(THREADPOOL)(IGNORED_ARG, NULL));
-    STRICT_EXPECTED_CALL(execution_engine_dec_ref(test_execution_engine));
     STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, IGNORED_ARG));
 }
 
@@ -244,7 +246,6 @@ TEST_FUNCTION(watchdog_threadpool_deinit_without_init_returns)
 }
 
 /*Tests_SRS_WATCHDOG_THREADPOOL_42_011: [ watchdog_threadpool_deinit shall destroy the threadpool by assign threadpool to NULL. ]*/
-/*Tests_SRS_WATCHDOG_THREADPOOL_42_016: [ watchdog_threadpool_deinit shall destroy the execution_engine by calling execution_engine_dec_ref. ]*/
 TEST_FUNCTION(watchdog_threadpool_deinit_cleans_up)
 {
     // arrange
