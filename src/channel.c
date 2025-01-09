@@ -93,7 +93,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, channel_open, THANDLE(CHANNEL), channel)
     {
         CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
         /*Codes_SRS_CHANNEL_43_096 : [channel_open shall call channel_internal_open.]*/
-        if (channel_internal_open(channel_ptr->channel_internal))
+        if (channel_internal_open(channel_ptr->channel_internal) != 0)
         {
             /*Codes_SRS_CHANNEL_43_099: [ If there are any failures, channel_open shall fail and return a non-zero value. ]*/
             LogError("Failure in channel_internal_open(channel_internal=%p)", channel_ptr->channel_internal);
