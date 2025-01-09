@@ -205,7 +205,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, tp_worker_thread_open, TP_WORKER_THREAD_HANDL
             THANDLE_INITIALIZE_MOVE(THREADPOOL)(&worker_thread->threadpool, &(THANDLE(THREADPOOL)){threadpool_create(worker_thread->execution_engine)});
             if (worker_thread->threadpool == NULL)
             {
-                LogError("threadpool_open failed");
+                LogError("threadpool_create failed");
                 /*Codes_SRS_TP_WORKER_THREAD_42_020: [ If there are any errors then tp_worker_thread_open shall fail and return a non-zero value. ]*/
                 result = MU_FAILURE;
             }
