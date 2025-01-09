@@ -1080,6 +1080,10 @@ TEST_FUNCTION(channel_internal_cancel_op_cancels_matched_op)
     THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
 }
 
+/*
+* This test fails because there is an inherent limitation that prevents cancelling an abandoned operation.
+* The test is disabled until the underlying issue is fixed. TODO Task 30251613
+*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_155: [ If there are any failures, cancel_op shall fail. ]*/
 DISABLE_TEST_FUNCTION(channel_internal_cancel_op_fails_to_cancel_abandoned_op)
 {

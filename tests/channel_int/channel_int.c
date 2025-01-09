@@ -355,6 +355,10 @@ TEST_FUNCTION(test_push_and_cancel)
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
+/*
+* This test fails because there is an inherent limitation that prevents cancelling an abandoned operation.
+* The test is disabled until the underlying issue is fixed. TODO Task 30251613
+*/
 DISABLE_TEST_FUNCTION(test_cancel_after_close)
 {
     /// arrange
