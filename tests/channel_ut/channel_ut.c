@@ -167,7 +167,6 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_IS_NOT_NULL(temp);
     THANDLE_INITIALIZE_MOVE(THREADPOOL)(&g.g_threadpool, &temp);
     ASSERT_IS_NOT_NULL(g.g_threadpool);
-    ASSERT_ARE_EQUAL(int, 0, threadpool_open(g.g_threadpool));
 
     {
         LOG_CONTEXT_HANDLE raw_log_context;
@@ -201,7 +200,6 @@ TEST_SUITE_CLEANUP(suite_cleanup)
     THANDLE_ASSIGN(RC_STRING)(&g.g_push_correlation_id, NULL);
     THANDLE_ASSIGN(RC_STRING)(&g.g_pull_correlation_id, NULL);
     THANDLE_ASSIGN(PTR(LOG_CONTEXT_HANDLE))(&g.g_log_context, NULL);
-    threadpool_close(g.g_threadpool);
     THANDLE_ASSIGN(THREADPOOL)(&g.g_threadpool, NULL);
     execution_engine_dec_ref(g_execution_engine);
     umock_c_deinit();

@@ -262,7 +262,6 @@ TEST_SUITE_INITIALIZE(suite_init)
     THANDLE_GET_T(REAL_THREADPOOL)(g.test_threadpool)->dummy = 11;
 
     REGISTER_GLOBAL_MOCK_RETURNS(threadpool_create, g.test_threadpool, NULL);
-    REGISTER_GLOBAL_MOCK_RETURNS(threadpool_open, 0, MU_FAILURE);
     REGISTER_GLOBAL_MOCK_HOOK(threadpool_schedule_work, hook_threadpool_schedule_work);
 
     REGISTER_GLOBAL_MOCK_HOOK(THANDLE_INITIALIZE_MOVE(THREADPOOL), THANDLE_INITIALIZE_MOVE(REAL_THREADPOOL));
