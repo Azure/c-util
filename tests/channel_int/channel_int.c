@@ -21,6 +21,9 @@
 #include "c_util/rc_ptr.h"
 #include "c_util/channel.h"
 
+
+#define DISABLE_TEST_FUNCTION(x) static void x(void)
+
 TEST_DEFINE_ENUM_TYPE(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(CHANNEL_RESULT, CHANNEL_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
@@ -299,6 +302,8 @@ TEST_FUNCTION(test_pull_and_cancel)
 {
     /// arrange
     THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t context;
     (void)interlocked_exchange(&context, TEST_ORIGINAL_VALUE);
 
@@ -317,14 +322,16 @@ TEST_FUNCTION(test_pull_and_cancel)
 
     // cleanup
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    channel_close(channel);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
-
 }
 
 TEST_FUNCTION(test_push_and_cancel)
 {
     /// arrange
     THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t context;
     (void)interlocked_exchange(&context, TEST_ORIGINAL_VALUE);
 
@@ -343,6 +350,39 @@ TEST_FUNCTION(test_push_and_cancel)
 
     // cleanup
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    channel_close(channel);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/*
+* This test fails because there is an inherent limitation that prevents cancelling an abandoned operation.
+* The test is disabled until the underlying issue is fixed. TODO Task 30251613
+*/
+DISABLE_TEST_FUNCTION(test_cancel_after_close)
+{
+    /// arrange
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
+    volatile_atomic int32_t context;
+    (void)interlocked_exchange(&context, TEST_ORIGINAL_VALUE);
+
+    /// act
+    THANDLE(ASYNC_OP) async_op = NULL;
+    CHANNEL_RESULT result = channel_pull(channel, g.g_pull_correlation_id, test_on_pull_callback_abandoned, (void*)&context, &async_op);
+    ASSERT_IS_NOT_NULL(async_op);
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
+    channel_close(channel);
+    async_op_cancel(async_op);
+
+    //wait for callback to execute
+    InterlockedHL_WaitForNotValue(&context, TEST_ORIGINAL_VALUE, UINT32_MAX);
+
+    /// assert
+    ASSERT_ARE_EQUAL(int32_t, pull_abandoned, interlocked_add(&context, 0));
+
+    /// cleanup
+    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
@@ -350,6 +390,8 @@ TEST_FUNCTION(test_pull_and_abandon)
 {
     /// arrange
     THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t context;
     (void)interlocked_exchange(&context, TEST_ORIGINAL_VALUE);
 
@@ -358,7 +400,7 @@ TEST_FUNCTION(test_pull_and_abandon)
     CHANNEL_RESULT result = channel_pull(channel, g.g_pull_correlation_id, test_on_pull_callback_abandoned, (void*)&context, &async_op);
     ASSERT_IS_NOT_NULL(async_op);
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+    channel_close(channel);
 
     //wait for callback to execute
     InterlockedHL_WaitForNotValue(&context, TEST_ORIGINAL_VALUE, UINT32_MAX);
@@ -367,13 +409,16 @@ TEST_FUNCTION(test_pull_and_abandon)
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
     ASSERT_ARE_EQUAL(int32_t, pull_abandoned, interlocked_add(&context, 0));
 
-    // cleanup
+    /// cleanup
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
 TEST_FUNCTION(test_push_and_abandon)
 {
     /// arrange
     THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t context;
     (void)interlocked_exchange(&context, TEST_ORIGINAL_VALUE);
 
@@ -382,7 +427,7 @@ TEST_FUNCTION(test_push_and_abandon)
     CHANNEL_RESULT result = channel_push(channel, g.g_push_correlation_id, g.g_data, test_on_push_callback_abandoned, (void*)&context, &async_op);
     ASSERT_IS_NOT_NULL(async_op);
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+    channel_close(channel);
 
     //wait for callback to execute
     InterlockedHL_WaitForNotValue(&context, TEST_ORIGINAL_VALUE, UINT32_MAX);
@@ -390,12 +435,17 @@ TEST_FUNCTION(test_push_and_abandon)
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
     ASSERT_ARE_EQUAL(int32_t, push_abandoned, interlocked_add(&context, 0));
+
+    /// cleanup
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
 TEST_FUNCTION(test_pull_and_then_push)
 {
     /// arrange
     THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t pull_context;
     (void)interlocked_exchange(&pull_context, TEST_ORIGINAL_VALUE);
     volatile_atomic int32_t push_context;
@@ -422,6 +472,7 @@ TEST_FUNCTION(test_pull_and_then_push)
     // cleanup
     THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
     THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
+    channel_close(channel);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
@@ -429,6 +480,8 @@ TEST_FUNCTION(test_push_and_then_pull)
 {
     /// arrange
     THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t pull_context;
     (void)interlocked_exchange(&pull_context, TEST_ORIGINAL_VALUE);
     volatile_atomic int32_t push_context;
@@ -455,6 +508,7 @@ TEST_FUNCTION(test_push_and_then_pull)
     // cleanup
     THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
     THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
+    channel_close(channel);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
@@ -462,6 +516,8 @@ TEST_FUNCTION(test_pull_after_pull)
 {
     /// arrange
     THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t pull_context_1;
     (void)interlocked_exchange(&pull_context_1, TEST_ORIGINAL_VALUE);
     volatile_atomic int32_t pull_context_2;
@@ -479,6 +535,7 @@ TEST_FUNCTION(test_pull_after_pull)
     ASSERT_IS_NOT_NULL(pull_op2);
     CHANNEL_RESULT push_result = channel_push(channel, g.g_push_correlation_id, g.g_data, test_on_push_callback_success, (void*)&push_context, &push_op);
     ASSERT_IS_NOT_NULL(push_op);
+    channel_close(channel);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 
     //wait for callback to execute
@@ -504,6 +561,8 @@ TEST_FUNCTION(test_push_after_push)
 {
     /// arrange
     THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
 
     volatile_atomic int32_t push_context_1;
     (void)interlocked_exchange(&push_context_1, TEST_ORIGINAL_VALUE);
@@ -524,6 +583,7 @@ TEST_FUNCTION(test_push_after_push)
     ASSERT_IS_NOT_NULL(push_op2);
     CHANNEL_RESULT pull_result = channel_pull(channel, g.g_pull_correlation_id, test_on_pull_callback_success, (void*)&pull_context, &pull_op);
     ASSERT_IS_NOT_NULL(pull_op);
+    channel_close(channel);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 
     //wait for callback to execute
@@ -549,6 +609,8 @@ TEST_FUNCTION(test_channel_maintains_data_order)
 {
     //arrange
     THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     (void)interlocked_exchange(&g_push_callback_count, 0);
 
     THREAD_HANDLE pull_thread;
@@ -570,6 +632,7 @@ TEST_FUNCTION(test_channel_maintains_data_order)
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&g_push_callback_count, CHANNEL_ORDER_TEST_COUNT, UINT32_MAX));
 
     //cleanup
+    channel_close(channel);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 

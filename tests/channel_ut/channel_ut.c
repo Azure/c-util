@@ -104,9 +104,30 @@ static void test_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT 
 
 static void setup_channel_create_expectations(void)
 {
-    STRICT_EXPECTED_CALL(channel_internal_create_and_open(g.g_log_context, g.g_threadpool));
+    STRICT_EXPECTED_CALL(channel_internal_create(g.g_log_context, g.g_threadpool));
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(CHANNEL_INTERNAL)(IGNORED_ARG, IGNORED_ARG));
+}
+
+static void setup_channel_open_expectations(void)
+{
+    STRICT_EXPECTED_CALL(channel_internal_open(IGNORED_ARG));
+}
+
+static THANDLE(CHANNEL) test_create_and_open_channel(void)
+{
+    setup_channel_create_expectations();
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    setup_channel_open_expectations();
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    return channel;
+}
+
+static void setup_channel_close_expectations(void)
+{
+    STRICT_EXPECTED_CALL(channel_internal_close(IGNORED_ARG));
 }
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
@@ -121,9 +142,11 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
 
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(channel_internal_create_and_open, NULL);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(channel_internal_create, NULL);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(channel_internal_open, MU_FAILURE);
 
     REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
+
 
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(THREADPOOL), void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(CHANNEL), void*);
@@ -252,7 +275,6 @@ TEST_FUNCTION(channel_create_fails_when_underlying_functions_fail)
 
 /* channel_dispose */
 
-/*Tests_SRS_CHANNEL_43_094: [ channel_dispose shall call channel_internal_close. ]*/
 /*Tests_SRS_CHANNEL_43_092: [ channel_dispose shall release the reference to THANDLE(CHANNEL_INTERNAL). ]*/
 TEST_FUNCTION(channel_dispose_succeeds)
 {
@@ -260,7 +282,6 @@ TEST_FUNCTION(channel_dispose_succeeds)
     THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(channel_internal_close(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(CHANNEL_INTERNAL)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
@@ -271,6 +292,85 @@ TEST_FUNCTION(channel_dispose_succeeds)
     ASSERT_IS_NULL(channel);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
+}
+
+/* channel_open */
+
+/*Tests_SRS_CHANNEL_43_095: [If channel is NULL, channel_open shall fail and return a non - zero value.]*/
+/*Tests_SRS_CHANNEL_43_096: [channel_open shall call channel_internal_open.]*/
+TEST_FUNCTION(channel_open_calls_underlying_functions)
+{
+    //arrange
+    setup_channel_create_expectations();
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    setup_channel_open_expectations();;
+
+    //act
+    int result = channel_open(channel);
+
+    //assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    channel_close(channel);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/*Tests_SRS_CHANNEL_43_099: [ If there are any failures, channel_open shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(channel_open_fails_when_underlying_functions_fail)
+{
+    //arrange
+    setup_channel_create_expectations();
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    umock_c_reset_all_calls();
+
+    setup_channel_open_expectations();
+    umock_c_negative_tests_snapshot();
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+            // act
+            int result = channel_open(channel);
+            // assert
+            ASSERT_ARE_NOT_EQUAL(int, 0, result, "On failed call %zu", i);
+        }
+    }
+    //cleanup
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/*Tests_SRS_CHANNEL_43_097: [If channel is NULL, channel_close shall return immediately.] */
+TEST_FUNCTION(channel_close_returns_immediately_with_null_channel)
+{
+    //arrange
+
+    //act
+    channel_close(NULL);
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CHANNEL_43_098: [ channel_close shall call channel_internal_close. ]*/
+TEST_FUNCTION(channel_close_calls_underlying_functions)
+{
+    //arrange
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
+    umock_c_reset_all_calls();
+    setup_channel_close_expectations();
+
+    //act
+    channel_close(channel);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
 /* channel_pull */
@@ -318,7 +418,7 @@ TEST_FUNCTION(channel_pull_fails_with_null_out_op_pull)
 TEST_FUNCTION(channel_pull_calls_channel_internal_pull)
 {
     //arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
     THANDLE(ASYNC_OP) pull_op = NULL;
     umock_c_reset_all_calls();
 
@@ -334,6 +434,7 @@ TEST_FUNCTION(channel_pull_calls_channel_internal_pull)
 
     //cleanup
     THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
+    channel_close(channel);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
@@ -382,7 +483,7 @@ TEST_FUNCTION(channel_push_fails_with_null_out_op_push)
 TEST_FUNCTION(channel_push_calls_channel_internal_push)
 {
     //arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
     THANDLE(ASYNC_OP) push_op = NULL;
     THANDLE(RC_PTR) data_rc_ptr = rc_ptr_create_with_move_pointer(test_data, do_nothing);
     umock_c_reset_all_calls();
@@ -400,6 +501,7 @@ TEST_FUNCTION(channel_push_calls_channel_internal_push)
     //cleanup
     THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
     THANDLE_ASSIGN(RC_PTR)(&data_rc_ptr, NULL);
+    channel_close(channel);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 

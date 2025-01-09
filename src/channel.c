@@ -30,8 +30,6 @@ THANDLE_TYPE_DEFINE(CHANNEL);
 
 static void channel_dispose(CHANNEL* channel)
 {
-    /*Codes_SRS_CHANNEL_43_094: [ channel_dispose shall call channel_internal_close. ]*/
-    channel_internal_close(channel->channel_internal);
     /*Codes_SRS_CHANNEL_43_092: [ channel_dispose shall release the reference to THANDLE(CHANNEL_INTERNAL). ]*/
     THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel->channel_internal, NULL);
 }
@@ -47,11 +45,11 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_
     else
     {
         /*Codes_SRS_CHANNEL_43_078: [ channel_create shall create a CHANNEL_INTERNAL object by calling THANDLE_MALLOC with channel_internal_dispose as dispose.]*/
-        THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create_and_open(log_context, threadpool);
+        THANDLE(CHANNEL_INTERNAL) channel_internal = channel_internal_create(log_context, threadpool);
         if (channel_internal == NULL)
         {
             /*Codes_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
-            LogError("Failure in channel_internal_create_and_open(log_context=%p, threadpool=%p)", log_context, threadpool);
+            LogError("Failure in channel_internal_create(log_context=%p, threadpool=%p)", log_context, threadpool);
         }
         else
         {
@@ -78,6 +76,48 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_
     }
 all_ok:
     return result;
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, int, channel_open, THANDLE(CHANNEL), channel)
+{
+    int result;
+    /*Codes_SRS_CHANNEL_43_095: [If channel is NULL, channel_open shall fail and return a non - zero value.]*/
+    if (channel == NULL)
+    {
+        LogError("Invalid arguments: THANDLE(CHANNEL) channel=%p", channel);
+        result = MU_FAILURE;
+    }
+    else
+    {
+        CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
+        /*Codes_SRS_CHANNEL_43_096 : [channel_open shall call channel_internal_open.]*/
+        if (channel_internal_open(channel_ptr->channel_internal) != 0)
+        {
+            /*Codes_SRS_CHANNEL_43_099: [ If there are any failures, channel_open shall fail and return a non-zero value. ]*/
+            LogError("Failure in channel_internal_open(channel_internal=%p)", channel_ptr->channel_internal);
+            result = MU_FAILURE;
+        }
+        else
+        {
+            result = 0;
+        }
+    }
+    return result;
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, void, channel_close, THANDLE(CHANNEL), channel)
+{
+    /*Codes_SRS_CHANNEL_43_097: [If channel is NULL, channel_close shall return immediately.]*/
+    if (channel == NULL)
+    {
+        LogError("Invalid arguments: THANDLE(CHANNEL) channel=%p", channel);
+    }
+    else
+    {
+        CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
+        /*Codes_SRS_CHANNEL_43_098: [ channel_close shall call channel_internal_close. ]*/
+        channel_internal_close(channel_ptr->channel_internal);
+    }
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id,PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull)

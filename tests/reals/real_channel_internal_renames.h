@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 #define CHANNEL_INTERNAL real_CHANNEL_INTERNAL
-#define channel_internal_create_and_open real_channel_internal_create_and_open
+#define channel_internal_create real_channel_internal_create
 #define channel_internal_pull real_channel_internal_pull
 #define channel_internal_push real_channel_internal_push
+#define channel_internal_open real_channel_internal_open
 #define channel_internal_close real_channel_internal_close
