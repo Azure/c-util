@@ -30,8 +30,6 @@ THANDLE_TYPE_DEFINE(CHANNEL);
 
 static void channel_dispose(CHANNEL* channel)
 {
-    /*Codes_SRS_CHANNEL_43_094: [ channel_dispose shall call channel_internal_close. ]*/
-    channel_internal_close(channel->channel_internal);
     /*Codes_SRS_CHANNEL_43_092: [ channel_dispose shall release the reference to THANDLE(CHANNEL_INTERNAL). ]*/
     THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel->channel_internal, NULL);
 }

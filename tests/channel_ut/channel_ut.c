@@ -277,7 +277,6 @@ TEST_FUNCTION(channel_create_fails_when_underlying_functions_fail)
 
 /* channel_dispose */
 
-/*Tests_SRS_CHANNEL_43_094: [ channel_dispose shall call channel_internal_close. ]*/
 /*Tests_SRS_CHANNEL_43_092: [ channel_dispose shall release the reference to THANDLE(CHANNEL_INTERNAL). ]*/
 TEST_FUNCTION(channel_dispose_succeeds)
 {
@@ -285,7 +284,6 @@ TEST_FUNCTION(channel_dispose_succeeds)
     THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(channel_internal_close(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(CHANNEL_INTERNAL)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 

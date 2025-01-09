@@ -140,8 +140,6 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THA
 
 `channel_dispose` disposes the given `channel` and schedules all pending operations to be abandoned.
 
-**SRS_CHANNEL_43_094: [** `channel_dispose` shall call `channel_internal_close`. **]**
-
 **SRS_CHANNEL_43_092: [** `channel_dispose` shall release the reference to `THANDLE(CHANNEL_INTERNAL)`. **]**
 
 ### channel_open
