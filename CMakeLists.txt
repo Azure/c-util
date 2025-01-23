@@ -291,7 +291,7 @@ SOURCE_GROUP(devdoc FILES ${c_util_md_files})
 #this is the product (a library)
 add_library(c_util ${c_util_c_files} ${c_util_cpp_files} ${c_util_h_files} ${c_util_md_files})
 
-target_link_libraries(c_util c_pal)
+target_link_libraries(c_util c_pal clds)
 
 target_include_directories(c_util PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc> ${MURMURHASH2_DIR})
 
