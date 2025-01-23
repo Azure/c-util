@@ -77,6 +77,11 @@ if ((NOT TARGET c_pal) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-pal/CMakeLis
     add_subdirectory(deps/c-pal)
 endif()
 
+if ((NOT TARGET clds) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/clds/CMakeLists.txt))
+    add_subdirectory(deps/clds)
+    include_directories(${CMAKE_CURRENT_LIST_DIR}/deps/clds/inc)
+endif()
+
 if (
     (NOT TARGET mimalloc-obj) AND
     (${GBALLOC_LL_TYPE} STREQUAL "MIMALLOC") AND
@@ -162,6 +167,7 @@ set(c_util_c_files
     ./src/map.c
     ./src/memory_data.c
     ./src/object_lifetime_tracker.c
+    ./src/queue_processor.c
     ./src/rc_ptr.c
     ./src/rc_string.c
     ./src/rc_string_array.c
@@ -215,6 +221,7 @@ set(c_util_h_files
     ./inc/c_util/map.h
     ./inc/c_util/memory_data.h
     ./inc/c_util/object_lifetime_tracker.h
+    ./inc/c_util/queue_processor.h
     ./inc/c_util/rc_ptr.h
     ./inc/c_util/rc_string.h
     ./inc/c_util/rc_string_array.h

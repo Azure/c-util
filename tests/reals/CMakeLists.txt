@@ -20,6 +20,7 @@ set(c_util_reals_c_files
     real_rc_string_array.c
     real_rc_string_utils.c
     real_singlylinkedlist.c
+    real_queue_processor.c
     real_cancellation_token.c
     real_tcall_dispatcher_cancellation_token_cancel_call.c
     real_uuid_string.c
@@ -57,6 +58,8 @@ set(c_util_reals_h_files
     real_memory_data_renames.h
     real_murmurhash2.h
     real_murmurhash2_renames.h
+    real_queue_processor.h
+    real_queue_processor_renames.h
     real_rc_ptr.h
     real_rc_ptr_renames.h
     real_rc_string.h
@@ -106,4 +109,4 @@ get_murmurhash2_directory(MURMURHASH2_DIR)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../../src)
 add_library(c_util_reals ${c_util_reals_c_files} ${c_util_reals_cpp_files} ${c_util_reals_h_files})
 target_include_directories(c_util_reals PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests/reals> ${MURMURHASH2_DIR} $<TARGET_PROPERTY:c_util,INTERFACE_INCLUDE_DIRECTORIES>)
-target_link_libraries(c_util_reals c_logging_v2 c_pal_reals)
+target_link_libraries(c_util_reals c_logging_v2 c_pal_reals clds_reals)
