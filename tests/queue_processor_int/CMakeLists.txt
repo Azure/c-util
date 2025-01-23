@@ -12,7 +12,7 @@ set(${theseTestsName}_c_files
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util clds clds_reals)
 
 if(WIN32)
     if("${building}" STREQUAL "exe")
