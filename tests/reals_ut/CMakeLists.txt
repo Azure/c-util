@@ -7,8 +7,7 @@ set(${theseTestsName}_test_files
     ${theseTestsName}.c
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util"  ADDITIONAL_LIBS c_util c_util_reals c_pal
-
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util c_util_reals c_pal)
 
 if(WIN32)
     if("${building}" STREQUAL "exe")
