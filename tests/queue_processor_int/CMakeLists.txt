@@ -12,7 +12,7 @@ set(${theseTestsName}_c_files
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util cpal)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util)
 
 if(WIN32)
     if("${building}" STREQUAL "exe")
