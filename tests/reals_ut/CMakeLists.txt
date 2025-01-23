@@ -7,11 +7,8 @@ set(${theseTestsName}_test_files
     ${theseTestsName}.c
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" 
-ADDITIONAL_LIBS c_util c_util_reals c_pal
-MOCK_PRECOMPILE_HEADERS
-    "c_util/queue_processor.h"
-)
+build_test_artifacts(${theseTestsName} "tests/c_util"  ADDITIONAL_LIBS c_util c_util_reals c_pal
+
 
 if(WIN32)
     if("${building}" STREQUAL "exe")
