@@ -22,8 +22,6 @@
 #include "c_util/channel.h"
 
 
-#define DISABLE_TEST_FUNCTION(x) static void x(void)
-
 TEST_DEFINE_ENUM_TYPE(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(CHANNEL_RESULT, CHANNEL_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
@@ -358,7 +356,7 @@ TEST_FUNCTION(test_push_and_cancel)
 * This test fails because there is an inherent limitation that prevents cancelling an abandoned operation.
 * The test is disabled until the underlying issue is fixed. TODO Task 30251613
 */
-DISABLE_TEST_FUNCTION(test_cancel_after_close)
+DISABLED_TEST_FUNCTION(test_cancel_after_close)
 {
     /// arrange
     THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
