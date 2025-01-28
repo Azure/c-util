@@ -6,7 +6,7 @@
 
 Consumers of data call `channel_pull` to register a `PULL_CALLBACK` function to be called when data becomes available.
 
-Producers of data call `channel_push` to notify the channel that data is available and provide a `PUSH_CALLBACK` to be called when the data has been consumed.
+Producers of data call `channel_push` to notify the channel that data is available and provide a `PUSH_CALLBACK` to be called when the data has been delivered to the consumer.
 
 `channel_pull` and `channel_push` can be called from different threads in any order. The callbacks are executed on threadpool threads.
 

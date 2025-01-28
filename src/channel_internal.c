@@ -210,13 +210,13 @@ static void execute_callbacks(void* context)
         if (channel_op->pull_callback != NULL)
         {
             channel_op->pull_callback(channel_op->pull_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id, channel_op->data);
-            /*Codes_SRS_CHANNEL_INTERNAL_43_157: [ execute_callbacks shall call sm_exec_end for each callback. ]*/
+            /*Codes_SRS_CHANNEL_INTERNAL_43_157: [ execute_callbacks shall call sm_exec_end for each callback that is called. ]*/
             sm_exec_end(channel_op->channel_internal->sm);
         }
         if (channel_op->push_callback != NULL)
         {
             channel_op->push_callback(channel_op->push_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id);
-            /*Codes_SRS_CHANNEL_INTERNAL_43_157: [ execute_callbacks shall call sm_exec_end for each callback. ]*/
+            /*Codes_SRS_CHANNEL_INTERNAL_43_157: [ execute_callbacks shall call sm_exec_end for each callback that is called. ]*/
             sm_exec_end(channel_op->channel_internal->sm);
         }
 

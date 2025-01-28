@@ -230,6 +230,6 @@ channel_internal_open` opens the given `channel_internal`.
 
 **SRS_CHANNEL_INTERNAL_43_145: [** `execute_callbacks` shall call the stored callback(s) with the `result` of the `operation`.  **]**
 
-**SRS_CHANNEL_INTERNAL_43_157: [** `execute_callbacks` shall call `sm_exec_end` for each call callback. **]**
+**SRS_CHANNEL_INTERNAL_43_157: [** `execute_callbacks` shall call `sm_exec_end` for each callback that is called. **]**
 
 **SRS_CHANNEL_INTERNAL_43_147: [** `execute_callbacks` shall perform cleanup of the `operation`. **]**
