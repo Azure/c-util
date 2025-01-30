@@ -40,7 +40,7 @@ stateDiagram-v2
     R --> C: channel_close
     N --> C: channel_close
     
-
+    C --> O: channel_open
     C --> [*]: channel_destroy
 
 ```
@@ -49,22 +49,19 @@ stateDiagram-v2
 
 The first call to `channel_pull`/`channel_push` creates an `operation` and adds it to a `list of pending operations`. When `channel_push`/`channel_pull` is called subsequently, the least-recently added `operation` in the `list of pending operations` is scheduled to have its callbacks called on the threadpool. Each operation stores the `CHANNEL_CALLBACK_RESULT` that the callback should be called with.
 
-`CHANNEL_CALLBACK_RESULT_ABANDONED`: The callbacks are called with this result when the when the module is disposing.
+`CHANNEL_CALLBACK_RESULT_ABANDONED`: The callbacks are called with this result when channel is closed.
 
 `CHANNEL_CALLBACK_RESULT_CANCELLED`: The callbacks are called with this result when the `operation` has been cancelled. 
 
 `CHANNEL_CALLBACK_RESULT_OK`: The callbacks are called with this result in the success case.
 
-`CHANNEL_CALLBACK_RESULT_ABANDONED` trumps `CHANNEL_CALLBACK_RESULT_CANCELLED` trumps `CHANNEL_CALLBACK_RESULT_OK`.
+In the case when an `operation`'s callbacks are scheduled to be called with `CHANNEL_CALLBACK_RESULT_OK` but the operation is cancelled before they can execute, the callbacks are called with `CHANNEL_CALLBACK_RESULT_CANCELLED`.
 
-```mermaid
-stateDiagram-v2
-    [*] --> OK
-    OK --> CANCELLED
-    CANCELLED --> ABANDONED
-```
-
-The value of the `CHANNEL_CALLBACK_RESULT` stored in the `operation` can only change in the direction shown above.  If the `operation` is abandoned, it cannot be cancelled.
+Notes on operation state transitions:
+- An incomplete operation (unpaired call to `channel_push`/`channel_pull`) can be cancelled.
+- An `operation` that is scheduled to be called with `CHANNEL_CALLBACK_RESULT_OK` (but callbacks have not yet executed) can be cancelled.
+- An `operation` that is abandoned cannot be cancelled.
+- An `operation` that is cancelled cannot be complete with `CHANNEL_CALLBACK_RESULT_OK`.
 
 ## Reentrancy
 
