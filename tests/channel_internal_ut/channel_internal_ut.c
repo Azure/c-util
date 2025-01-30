@@ -233,10 +233,9 @@ static void setup_second_op_expectations(bool is_pull, bool expected_fail, THREA
         .SetReturn(expected_fail ? 1 : 0);
     if (expected_fail)
     {
-        STRICT_EXPECTED_CALL(ps_util_terminate_process());
         STRICT_EXPECTED_CALL(THANDLE_ASSIGN(ASYNC_OP)(IGNORED_ARG, NULL));
-        STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG)); //This won't actually get called, but it's needed because ps_util_terminate_process is mocked
-        STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG)); //This won't actually get called, but it's needed because ps_util_terminate_process is mocked
+        STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
 
     }
     else
@@ -692,7 +691,7 @@ TEST_FUNCTION(channel_internal_pull_after_push_succeeds)
 }
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_023: [If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR.]*/
-TEST_FUNCTION(channel_internal_pull_fails_when_underlying_functions_fail)
+TEST_FUNCTION(channel_internal_pull_as_first_op_fails_when_underlying_functions_fail)
 {
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
@@ -724,8 +723,8 @@ TEST_FUNCTION(channel_internal_pull_fails_when_underlying_functions_fail)
     THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
 }
 
-/*Tests_SRS_CHANNEL_INTERNAL_43_163: [ If threadpool_schedule_work fails, channel_internal_pull shall terminate the process. ]*/
-TEST_FUNCTION(channel_internal_pull_after_push_terminates_process_if_threadpool_schedule_work_fails)
+/*Tests_SRS_CHANNEL_INTERNAL_43_023: [If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR.]*/
+TEST_FUNCTION(channel_internal_pull_as_second_op_fails_if_underlying_functions_fail)
 {
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
@@ -907,7 +906,7 @@ TEST_FUNCTION(channel_internal_push_after_pull_succeeds)
 
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
-TEST_FUNCTION(channel_internal_push_fails_when_underlying_functions_fail)
+TEST_FUNCTION(channel_internal_push_as_first_op_fails_when_underlying_functions_fail)
 {
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
@@ -941,8 +940,8 @@ TEST_FUNCTION(channel_internal_push_fails_when_underlying_functions_fail)
     THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
 }
 
-/*Tests_SRS_CHANNEL_INTERNAL_43_164: [ If threadpool_schedule_work fails, channel_internal_push shall terminate the process. ]*/
-TEST_FUNCTION(channel_internal_push_terminates_process_if_threadpool_schedule_work_fails)
+/*Tests_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
+TEST_FUNCTION(channel_internal_push_as_second_op_fails_if_underlying_functions_fail)
 {
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();

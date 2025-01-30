@@ -142,8 +142,6 @@ channel_internal_open` opens the given `channel_internal`.
 
  - **SRS_CHANNEL_INTERNAL_43_113: [** `channel_internal_pull` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the obtained `operation` as `work_function_context`. **]**
 
- - **SRS_CHANNEL_INTERNAL_43_163: [** If `threadpool_schedule_work` fails, `channel_internal_pull` shall terminate the process. **]**
-
  - **SRS_CHANNEL_INTERNAL_43_114: [** `channel_internal_pull` shall set `*out_op_pull` to the `THANDLE(ASYNC_OP)` of the obtained `operation`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_115: [** `channel_internal_pull` shall call `srw_lock_release_exclusive`. **]**
@@ -183,8 +181,6 @@ channel_internal_open` opens the given `channel_internal`.
  - **SRS_CHANNEL_INTERNAL_43_128: [** `channel_internal_push` shall store the `correlation_id`, `push_callback`, `push_context` and `data` in the obtained `operation`. **]**
 
  - **SRS_CHANNEL_INTERNAL_43_129: [** `channel_internal_push` shall call `threadpool_schedule_work` with `execute_callbacks` as `work_function` and the obtained `operation` as `work_function_context`. **]**
-
- - **SRS_CHANNEL_INTERNAL_43_164: [** If `threadpool_schedule_work` fails, `channel_internal_push` shall terminate the process. **]**
 
  - **SRS_CHANNEL_INTERNAL_43_130: [** `channel_internal_push` shall set `*out_op_push` to the `THANDLE(ASYNC_OP)` of the obtained `operation`. **]**
 
