@@ -106,7 +106,7 @@ static void test_data_dispose(void* data)
     (void)data;
 }
 
-static void test_pull_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
+static void test_on_data_available_cb_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
 {
     ASSERT_ARE_EQUAL(int, 0, (*(int32_t*)context));
     (*(int32_t*)context)++;
@@ -116,7 +116,7 @@ static void test_pull_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT 
     ASSERT_IS_NULL(data);
 }
 
-static void test_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
+static void test_on_data_consumed_cb_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
 {
     ASSERT_ARE_EQUAL(int, 0, (*(int32_t*)context));
     (*(int32_t*)context)++;
@@ -125,7 +125,7 @@ static void test_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT 
     ASSERT_ARE_EQUAL(void_ptr, g.g_push_correlation_id, push_correlation_id);
 }
 
-static void test_pull_callback_ok(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
+static void test_on_data_available_cb_ok(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
 {
     ASSERT_ARE_EQUAL(int, 0, (*(int32_t*)context));
     (*(int32_t*)context)++;
@@ -135,7 +135,7 @@ static void test_pull_callback_ok(void* context, CHANNEL_CALLBACK_RESULT result,
     ASSERT_ARE_EQUAL(void_ptr, data->ptr, test_data);
 }
 
-static void test_push_callback_ok(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
+static void test_on_data_consumed_cb_ok(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
 {
     ASSERT_ARE_EQUAL(int, 0, (*(int32_t*)context));
     (*(int32_t*)context)++;
@@ -144,7 +144,7 @@ static void test_push_callback_ok(void* context, CHANNEL_CALLBACK_RESULT result,
     ASSERT_ARE_EQUAL(void_ptr, g.g_push_correlation_id, push_correlation_id);
 }
 
-static void test_pull_callback_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
+static void test_on_data_available_cb_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
 {
     ASSERT_ARE_EQUAL(int, 0, (*(int32_t*)context));
     (*(int32_t*)context)++;
@@ -154,7 +154,7 @@ static void test_pull_callback_cancelled(void* context, CHANNEL_CALLBACK_RESULT 
     ASSERT_IS_NULL(data);
 }
 
-static void test_pull_callback_matched_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
+static void test_on_data_available_cb_matched_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
 {
     ASSERT_ARE_EQUAL(int, 0, (*(int32_t*)context));
     (*(int32_t*)context)++;
@@ -164,7 +164,7 @@ static void test_pull_callback_matched_cancelled(void* context, CHANNEL_CALLBACK
     ASSERT_IS_NOT_NULL(data);
 }
 
-static void test_push_callback_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
+static void test_on_data_consumed_cb_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
 {
     ASSERT_ARE_EQUAL(int, 0, (*(int32_t*)context));
     (*(int32_t*)context)++;
@@ -350,8 +350,8 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(PDLIST_ENTRY, void*)
     REGISTER_UMOCK_ALIAS_TYPE(const PDLIST_ENTRY, void*)
     REGISTER_UMOCK_ALIAS_TYPE(RC_PTR_FREE_FUNC, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(PULL_CALLBACK, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(PUSH_CALLBACK, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(ON_DATA_AVAILABLE_CB, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(ON_DATA_CONSUMED_CB, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ASYNC_OP_CANCEL_IMPL, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ASYNC_OP_DISPOSE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(ASYNC_OP), void*);
@@ -524,7 +524,7 @@ TEST_FUNCTION(channel_internal_close_calls_underlying_functions)
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
     THANDLE(ASYNC_OP) pull_op = NULL;
     int32_t pull_context = 0;
-    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_abandoned, &pull_context, &pull_op);
+    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_on_data_available_cb_abandoned, &pull_context, &pull_op);
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
     umock_c_reset_all_calls();
 
@@ -571,9 +571,9 @@ TEST_FUNCTION(channel_internal_dispose_calls_underlying_functions)
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_152: [ channel_internal_pull shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_010: [ channel_internal_pull shall call srw_lock_acquire_exclusive. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_101: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL pull_callback: ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_101: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_available_cb: ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_103: [ channel_internal_pull shall create a THANDLE(ASYNC_OP) by calling async_op_create with cancel_op as cancel. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_104: [ channel_internal_pull shall store the correlation_id, pull_callback and pull_context in the THANDLE(ASYNC_OP). ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_104: [ channel_internal_pull shall store the correlation_id, on_data_available_cb and pull_context in the THANDLE(ASYNC_OP). ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_111: [ channel_internal_pull shall set the result of the created operation to CHANNEL_CALLBACK_RESULT_OK. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_105: [ channel_internal_pull shall insert the created THANDLE(ASYNC_OP) in the list of pending operations by calling DList_InsertTailList. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_107: [ channel_internal_pull shall set *out_op_pull to the created THANDLE(ASYNC_OP). ]*/
@@ -588,7 +588,7 @@ TEST_FUNCTION(channel_internal_pull_on_empty_succeeds)
     setup_first_op_expectations();
 
     //act
-    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_abandoned, &pull_context, &pull_op);
+    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_on_data_available_cb_abandoned, &pull_context, &pull_op);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
@@ -604,9 +604,9 @@ TEST_FUNCTION(channel_internal_pull_on_empty_succeeds)
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_152: [ channel_internal_pull shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_010: [ channel_internal_pull shall call srw_lock_acquire_exclusive. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_101: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL pull_callback: ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_101: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_available_cb: ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_103: [ channel_internal_pull shall create a THANDLE(ASYNC_OP) by calling async_op_create with cancel_op as cancel. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_104: [ channel_internal_pull shall store the correlation_id, pull_callback and pull_context in the THANDLE(ASYNC_OP). ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_104: [ channel_internal_pull shall store the correlation_id, on_data_available_cb and pull_context in the THANDLE(ASYNC_OP). ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_111: [ channel_internal_pull shall set the result of the created operation to CHANNEL_CALLBACK_RESULT_OK. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_105: [ channel_internal_pull shall insert the created THANDLE(ASYNC_OP) in the list of pending operations by calling DList_InsertTailList. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_107: [ channel_internal_pull shall set *out_op_pull to the created THANDLE(ASYNC_OP). ]*/
@@ -618,7 +618,7 @@ TEST_FUNCTION(channel_internal_pull_after_pull_succeeds)
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
     int32_t pull_context_1 = 0;
     THANDLE(ASYNC_OP) pull_op_1 = NULL;
-    CHANNEL_RESULT pull_result_1 = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_abandoned, &pull_context_1, &pull_op_1);
+    CHANNEL_RESULT pull_result_1 = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_on_data_available_cb_abandoned, &pull_context_1, &pull_op_1);
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result_1);
     ASSERT_IS_NOT_NULL(pull_op_1);
     int32_t pull_context_2 = 0;
@@ -628,7 +628,7 @@ TEST_FUNCTION(channel_internal_pull_after_pull_succeeds)
     setup_first_op_expectations();
 
     //act
-    CHANNEL_RESULT pull_result_2 = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_abandoned, &pull_context_2, &pull_op_2);
+    CHANNEL_RESULT pull_result_2 = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_on_data_available_cb_abandoned, &pull_context_2, &pull_op_2);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result_2);
@@ -645,9 +645,9 @@ TEST_FUNCTION(channel_internal_pull_after_pull_succeeds)
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_152: [ channel_internal_pull shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_010: [channel_internal_pull shall call srw_lock_acquire_exclusive.]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_108 : [If the first operation in the list of pending operations contains a non - NULL push_callback : ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_108 : [If the first operation in the list of pending operations contains a non - NULL on_data_consumed_cb : ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_109 : [channel_internal_pull shall call DList_RemoveHeadList on the list of pending operations to obtain the operation.]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_112 : [channel_internal_pull shall store the correlation_id, pull_callback and pull_context in the obtained operation.]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_112 : [channel_internal_pull shall store the correlation_id, on_data_available_cb and pull_context in the obtained operation.]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_113 : [channel_internal_pull shall call threadpool_schedule_work with execute_callbacks as work_function and the obtained operation as work_function_context.]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_114 : [channel_internal_pull shall set * out_op_pull to the THANDLE(ASYNC_OP) of the obtained operation.]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_115 : [channel_internal_pull shall call srw_lock_release_exclusive.]*/
@@ -659,7 +659,7 @@ TEST_FUNCTION(channel_internal_pull_after_push_succeeds)
     int32_t push_context = 0;
     THANDLE(ASYNC_OP) push_op = NULL;
     THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
-    CHANNEL_RESULT push_result_1 = channel_internal_push(channel_internal, g.g_push_correlation_id, rc_ptr, test_push_callback_ok, &push_context, &push_op);
+    CHANNEL_RESULT push_result_1 = channel_internal_push(channel_internal, g.g_push_correlation_id, rc_ptr, test_on_data_consumed_cb_ok, &push_context, &push_op);
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result_1);
     ASSERT_IS_NOT_NULL(push_op);
     umock_c_reset_all_calls();
@@ -672,7 +672,7 @@ TEST_FUNCTION(channel_internal_pull_after_push_succeeds)
     setup_op_cleanup_expectations(true);
 
     //act
-    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_ok, &pull_context, &pull_op);
+    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_on_data_available_cb_ok, &pull_context, &pull_op);
     work_function(work_context);
 
     //assert
@@ -711,7 +711,7 @@ TEST_FUNCTION(channel_internal_pull_as_first_op_fails_when_underlying_functions_
             umock_c_negative_tests_fail_call(i);
 
             // act
-            CHANNEL_RESULT result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_abandoned, &pull_context, &pull_op);
+            CHANNEL_RESULT result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_on_data_available_cb_abandoned, &pull_context, &pull_op);
 
             // assert
             ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_ERROR, result, "On failed call %zu", i);
@@ -731,7 +731,7 @@ TEST_FUNCTION(channel_internal_pull_as_second_op_fails_if_underlying_functions_f
     THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
     int32_t push_context = 0;
     THANDLE(ASYNC_OP) push_op = NULL;
-    CHANNEL_RESULT push_result = channel_internal_push(channel_internal, g.g_push_correlation_id, data, test_push_callback_ok, &push_context, &push_op);
+    CHANNEL_RESULT push_result = channel_internal_push(channel_internal, g.g_push_correlation_id, data, test_on_data_consumed_cb_ok, &push_context, &push_op);
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result);
     ASSERT_IS_NOT_NULL(push_op);
 
@@ -745,7 +745,7 @@ TEST_FUNCTION(channel_internal_pull_as_second_op_fails_if_underlying_functions_f
     int pull_context = 0;
 
     //act
-    CHANNEL_RESULT result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_abandoned, &pull_context, &pull_op);
+    CHANNEL_RESULT result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_on_data_available_cb_abandoned, &pull_context, &pull_op);
 
     // assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_ERROR, result);
@@ -776,9 +776,9 @@ TEST_FUNCTION(channel_internal_pull_as_second_op_fails_if_underlying_functions_f
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_153: [ channel_internal_push shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_116: [ channel_internal_push shall call srw_lock_acquire_exclusive. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_117: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL push_callback: ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_117: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_119: [ channel_internal_push shall create a THANDLE(ASYNC_OP) by calling async_op_create with cancel_op as cancel. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_120: [ channel_internal_push shall store the correlation_id, push_callback, push_context and data in the THANDLE(ASYNC_OP). ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_120: [ channel_internal_push shall store the correlation_id, on_data_consumed_cb, push_context and data in the THANDLE(ASYNC_OP). ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_127: [ channel_internal_push shall set the result of the created operation to CHANNEL_CALLBACK_RESULT_OK. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_121: [ channel_internal_push shall insert the created THANDLE(ASYNC_OP) in the list of pending operations by calling DList_InsertTailList. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_123: [ channel_internal_push shall set *out_op_push to the created THANDLE(ASYNC_OP). ]*/
@@ -796,7 +796,7 @@ TEST_FUNCTION(channel_internal_push_on_empty_succeeds)
     setup_first_op_expectations();
 
     //act
-    CHANNEL_RESULT pull_result = channel_internal_push(channel_internal, g.g_push_correlation_id, data, test_push_callback_abandoned, &push_context, &push_op);
+    CHANNEL_RESULT pull_result = channel_internal_push(channel_internal, g.g_push_correlation_id, data, test_on_data_consumed_cb_abandoned, &push_context, &push_op);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
@@ -813,9 +813,9 @@ TEST_FUNCTION(channel_internal_push_on_empty_succeeds)
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_153: [ channel_internal_push shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_116: [ channel_internal_push shall call srw_lock_acquire_exclusive. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_117: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL push_callback: ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_117: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_119: [ channel_internal_push shall create a THANDLE(ASYNC_OP) by calling async_op_create with cancel_op as cancel. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_120: [ channel_internal_push shall store the correlation_id, push_callback, push_context and data in the THANDLE(ASYNC_OP). ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_120: [ channel_internal_push shall store the correlation_id, on_data_consumed_cb, push_context and data in the THANDLE(ASYNC_OP). ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_127: [ channel_internal_push shall set the result of the created operation to CHANNEL_CALLBACK_RESULT_OK. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_121: [ channel_internal_push shall insert the created THANDLE(ASYNC_OP) in the list of pending operations by calling DList_InsertTailList. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_123: [ channel_internal_push shall set *out_op_push to the created THANDLE(ASYNC_OP). ]*/
@@ -828,7 +828,7 @@ TEST_FUNCTION(channel_internal_push_after_push_succeeds)
     int32_t push_context_1 = 0;
     THANDLE(RC_PTR) data_1 = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
     THANDLE(ASYNC_OP) push_op_1 = NULL;
-    CHANNEL_RESULT push_result_1 = channel_internal_push(channel_internal, g.g_push_correlation_id, data_1, test_push_callback_abandoned, &push_context_1, &push_op_1);
+    CHANNEL_RESULT push_result_1 = channel_internal_push(channel_internal, g.g_push_correlation_id, data_1, test_on_data_consumed_cb_abandoned, &push_context_1, &push_op_1);
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result_1);
     ASSERT_IS_NOT_NULL(push_op_1);
     int32_t push_context_2 = 0;
@@ -839,7 +839,7 @@ TEST_FUNCTION(channel_internal_push_after_push_succeeds)
     setup_first_op_expectations();
 
     //act
-    CHANNEL_RESULT push_result_2 = channel_internal_push(channel_internal, g.g_push_correlation_id, data_2, test_push_callback_abandoned, &push_context_2, &push_op_2);
+    CHANNEL_RESULT push_result_2 = channel_internal_push(channel_internal, g.g_push_correlation_id, data_2, test_on_data_consumed_cb_abandoned, &push_context_2, &push_op_2);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result_2);
@@ -858,9 +858,9 @@ TEST_FUNCTION(channel_internal_push_after_push_succeeds)
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_153: [ channel_internal_push shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_116: [ channel_internal_push shall call srw_lock_acquire_exclusive. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_124: [ Otherwise (the first operation in the list of pending operations contains a non-NULL pull_callback): ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_124: [ Otherwise (the first operation in the list of pending operations contains a non-NULL on_data_available_cb): ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_125: [ channel_internal_push shall call DList_RemoveHeadList on the list of pending operations to obtain the operation. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_128: [ channel_internal_push shall store the correlation_id, push_callback, push_context and data in the obtained operation. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_128: [ channel_internal_push shall store the correlation_id, on_data_consumed_cb, push_context and data in the obtained operation. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_129: [ channel_internal_push shall call threadpool_schedule_work with execute_callbacks as work_function and the obtained operation as work_function_context. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_130: [ channel_internal_push shall set *out_op_push to the THANDLE(ASYNC_OP) of the obtained operation. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_131: [ channel_internal_push shall call srw_lock_release_exclusive. ]*/
@@ -871,7 +871,7 @@ TEST_FUNCTION(channel_internal_push_after_pull_succeeds)
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
     int32_t pull_context = 0;
     THANDLE(ASYNC_OP) pull_op = NULL;
-    CHANNEL_RESULT pull_result_1 = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_ok, &pull_context, &pull_op);
+    CHANNEL_RESULT pull_result_1 = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_on_data_available_cb_ok, &pull_context, &pull_op);
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result_1);
     ASSERT_IS_NOT_NULL(pull_op);
 
@@ -886,7 +886,7 @@ TEST_FUNCTION(channel_internal_push_after_pull_succeeds)
     setup_op_cleanup_expectations(true);
 
     //act
-    CHANNEL_RESULT push_result = channel_internal_push(channel_internal, g.g_push_correlation_id, rc_ptr, test_push_callback_ok, &push_context, &push_op);
+    CHANNEL_RESULT push_result = channel_internal_push(channel_internal, g.g_push_correlation_id, rc_ptr, test_on_data_consumed_cb_ok, &push_context, &push_op);
     work_function(work_context);
 
     //assert
@@ -927,7 +927,7 @@ TEST_FUNCTION(channel_internal_push_as_first_op_fails_when_underlying_functions_
             umock_c_negative_tests_fail_call(i);
 
             // act
-            CHANNEL_RESULT result = channel_internal_push(channel_internal, g.g_push_correlation_id, data, test_push_callback_abandoned, &push_context, &push_op);
+            CHANNEL_RESULT result = channel_internal_push(channel_internal, g.g_push_correlation_id, data, test_on_data_consumed_cb_abandoned, &push_context, &push_op);
 
             // assert
             ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_ERROR, result, "On failed call %zu", i);
@@ -947,7 +947,7 @@ TEST_FUNCTION(channel_internal_push_as_second_op_fails_if_underlying_functions_f
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
     THANDLE(ASYNC_OP) pull_op = NULL;
     int32_t pull_context = 0;
-    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_ok, &pull_context, &pull_op);
+    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_on_data_available_cb_ok, &pull_context, &pull_op);
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
     ASSERT_IS_NOT_NULL(pull_op);
 
@@ -962,7 +962,7 @@ TEST_FUNCTION(channel_internal_push_as_second_op_fails_if_underlying_functions_f
     int push_context = 0;
 
     //act
-    CHANNEL_RESULT result = channel_internal_push(channel_internal, g.g_push_correlation_id, data, test_push_callback_ok, &push_context, &push_op);
+    CHANNEL_RESULT result = channel_internal_push(channel_internal, g.g_push_correlation_id, data, test_on_data_consumed_cb_ok, &push_context, &push_op);
 
     // assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_ERROR, result);
@@ -1002,7 +1002,7 @@ TEST_FUNCTION(channel_internal_cancel_op_cancels_pull)
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
     int32_t pull_context = 0;
     THANDLE(ASYNC_OP) pull_op = NULL;
-    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_cancelled, &pull_context, &pull_op);
+    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_on_data_available_cb_cancelled, &pull_context, &pull_op);
     ASSERT_IS_NOT_NULL(pull_op);
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
     umock_c_reset_all_calls();
@@ -1046,8 +1046,8 @@ TEST_FUNCTION(channel_internal_cancel_op_cancels_matched_op)
     int32_t push_context = 0;
     THANDLE(ASYNC_OP) push_op = NULL;
 
-    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_matched_cancelled, &pull_context, &pull_op);
-    CHANNEL_RESULT push_result = channel_internal_push(channel_internal, g.g_push_correlation_id, data, test_push_callback_cancelled, &push_context, &push_op);
+    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_on_data_available_cb_matched_cancelled, &pull_context, &pull_op);
+    CHANNEL_RESULT push_result = channel_internal_push(channel_internal, g.g_push_correlation_id, data, test_on_data_consumed_cb_cancelled, &push_context, &push_op);
 
     ASSERT_IS_NOT_NULL(pull_op);
     ASSERT_IS_NOT_NULL(push_op);
@@ -1091,7 +1091,7 @@ DISABLE_TEST_FUNCTION(channel_internal_cancel_op_fails_to_cancel_abandoned_op)
     int32_t pull_context = 0;
     THANDLE(ASYNC_OP) pull_op = NULL;
     setup_first_op_expectations();
-    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_abandoned, &pull_context, &pull_op);
+    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_on_data_available_cb_abandoned, &pull_context, &pull_op);
     ASSERT_IS_NOT_NULL(pull_op);
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
 
@@ -1136,8 +1136,8 @@ TEST_FUNCTION(channel_internal_execute_callback_fails_with_NULL_context)
     int32_t push_context = 0;
     THANDLE(ASYNC_OP) push_op = NULL;
 
-    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_pull_callback_ok, &pull_context, &pull_op);
-    CHANNEL_RESULT push_result = channel_internal_push(channel_internal, g.g_push_correlation_id, data, test_push_callback_ok, &push_context, &push_op);
+    CHANNEL_RESULT pull_result = channel_internal_pull(channel_internal, g.g_pull_correlation_id, test_on_data_available_cb_ok, &pull_context, &pull_op);
+    CHANNEL_RESULT push_result = channel_internal_push(channel_internal, g.g_push_correlation_id, data, test_on_data_consumed_cb_ok, &push_context, &push_op);
 
     ASSERT_IS_NOT_NULL(pull_op);
     ASSERT_IS_NOT_NULL(push_op);

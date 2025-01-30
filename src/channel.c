@@ -120,19 +120,19 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, channel_close, THANDLE(CHANNEL), channel)
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id,PULL_CALLBACK, pull_callback, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull)
+IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id,ON_DATA_AVAILABLE_CB, on_data_available_cb, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull)
 {
     CHANNEL_RESULT result;
 
     /*Codes_SRS_CHANNEL_43_007: [ If channel is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
-    /*Codes_SRS_CHANNEL_43_008: [ If pull_callback is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
+    /*Codes_SRS_CHANNEL_43_008: [ If on_data_available_cb is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
     /*Codes_SRS_CHANNEL_43_009: [ If out_op_pull is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
     if (channel == NULL ||
-        pull_callback == NULL ||
+        on_data_available_cb == NULL ||
         out_op_pull == NULL
         )
     {
-        LogError("Invalid arguments: THANDLE(CHANNEL) channel=%p, THANDLE(RC_STRING) correlation_id=%" PRI_RC_STRING ", PULL_CALLBACK pull_callback=%p, void* pull_context=%p, THANDLE(ASYNC_OP)* out_op_pull=%p", channel, RC_STRING_VALUE_OR_NULL(correlation_id),  pull_callback, pull_context, out_op_pull);
+        LogError("Invalid arguments: THANDLE(CHANNEL) channel=%p, THANDLE(RC_STRING) correlation_id=%" PRI_RC_STRING ", ON_DATA_AVAILABLE_CB on_data_available_cb=%p, void* pull_context=%p, THANDLE(ASYNC_OP)* out_op_pull=%p", channel, RC_STRING_VALUE_OR_NULL(correlation_id),  on_data_available_cb, pull_context, out_op_pull);
         result = CHANNEL_RESULT_INVALID_ARGS;
     }
     else
@@ -140,24 +140,24 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), ch
         CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
 
         /*Codes_SRS_CHANNEL_43_011: [ channel_pull shall call channel_internal_pull and return as it returns. ]*/
-        result = channel_internal_pull(channel_ptr->channel_internal, correlation_id, pull_callback, pull_context, out_op_pull);
+        result = channel_internal_pull(channel_ptr->channel_internal, correlation_id, on_data_available_cb, pull_context, out_op_pull);
     }
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, PUSH_CALLBACK, push_callback, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push)
+IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, ON_DATA_CONSUMED_CB, on_data_consumed_cb, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push)
 {
     CHANNEL_RESULT result;
 
     /*Codes_SRS_CHANNEL_43_024: [ If channel is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
-    /*Codes_SRS_CHANNEL_43_025: [ If push_callback is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
+    /*Codes_SRS_CHANNEL_43_025: [ If on_data_consumed_cb is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
     /*Codes_SRS_CHANNEL_43_026: [ If out_op_push is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
     if (channel == NULL ||
-        push_callback == NULL ||
+        on_data_consumed_cb == NULL ||
         out_op_push == NULL
         )
     {
-        LogError("Invalid arguments: THANDLE(CHANNEL) channel=%p, THANDLE(RC_STRING) correlation_id=%" PRI_RC_STRING ", THANDLE(RC_PTR) data=%p, PUSH_CALLBACK push_callback=%p, void* push_context=%p, THANDLE(ASYNC_OP)* out_op_push=%p", channel, RC_STRING_VALUE_OR_NULL(correlation_id), data, push_callback, push_context, out_op_push);
+        LogError("Invalid arguments: THANDLE(CHANNEL) channel=%p, THANDLE(RC_STRING) correlation_id=%" PRI_RC_STRING ", THANDLE(RC_PTR) data=%p, ON_DATA_CONSUMED_CB on_data_consumed_cb=%p, void* push_context=%p, THANDLE(ASYNC_OP)* out_op_push=%p", channel, RC_STRING_VALUE_OR_NULL(correlation_id), data, on_data_consumed_cb, push_context, out_op_push);
         result = CHANNEL_RESULT_INVALID_ARGS;
     }
     else
@@ -165,7 +165,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), ch
         CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
 
         /*Codes_SRS_CHANNEL_43_041: [ channel_push shall call channel_internal_push and return as it returns. ]*/
-        result = channel_internal_push(channel_ptr->channel_internal, correlation_id, data, push_callback, push_context, out_op_push);
+        result = channel_internal_push(channel_ptr->channel_internal, correlation_id, data, on_data_consumed_cb, push_context, out_op_push);
     }
     return result;
 }

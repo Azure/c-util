@@ -34,8 +34,8 @@ extern "C" {
     THANDLE(CHANNEL_INTERNAL) real_channel_internal_create(THANDLE(PTR(LOG_CONTEXT_HANDLE)) log_context, THANDLE(THREADPOOL) threadpool);
     void real_channel_internal_close(THANDLE(CHANNEL_INTERNAL) channel_internal);
     int real_channel_internal_open(THANDLE(CHANNEL_INTERNAL) channel_internal);
-    CHANNEL_RESULT real_channel_internal_pull(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE(RC_STRING) correlation_id, PULL_CALLBACK pull_callback, void* pull_context, THANDLE(ASYNC_OP)* out_op_pull);
-    CHANNEL_RESULT real_channel_internal_push(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE(RC_STRING) correlation_id, THANDLE(RC_PTR) data, PUSH_CALLBACK push_callback, void* push_context, THANDLE(ASYNC_OP)* out_op_push);
+    CHANNEL_RESULT real_channel_internal_pull(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE(RC_STRING) correlation_id, ON_DATA_AVAILABLE_CB on_data_available_cb, void* pull_context, THANDLE(ASYNC_OP)* out_op_pull);
+    CHANNEL_RESULT real_channel_internal_push(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE(RC_STRING) correlation_id, THANDLE(RC_PTR) data, ON_DATA_CONSUMED_CB on_data_consumed_cb, void* push_context, THANDLE(ASYNC_OP)* out_op_push);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
