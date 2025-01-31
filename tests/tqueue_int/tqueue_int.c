@@ -225,7 +225,6 @@ static int tqueue_chaos_thread_func(void* arg)
             if (push_result == TQUEUE_PUSH_OK)
             {
                 (void)interlocked_increment_64(&test_context->successful_push_count);
-                wake_by_address_single_64(&test_context->successful_push_count);
             }
             break;
         }
@@ -238,7 +237,6 @@ static int tqueue_chaos_thread_func(void* arg)
             {
                 ASSERT_ARE_NOT_EQUAL(int64_t, -1, item.x);
                 (void)interlocked_increment_64(&test_context->successful_pop_count);
-                wake_by_address_single_64(&test_context->successful_pop_count);
             }
             break;
         }
@@ -287,11 +285,6 @@ TEST_FUNCTION(TQUEUE_chaos_knight_test)
         // get how many pushes and pops at the beginning of the time slice
         int64_t last_successful_push_count = interlocked_add_64(&test_context.successful_push_count, 0);
         int64_t last_successful_pop_count = interlocked_add_64(&test_context.successful_pop_count, 0);
-
-        // Ensures that the tests below for current_successful_push_count > last_successful_push_count and/or current_successful_pop_count > last_successful_pop_count
-        // do not fail due to multi-threading synchronization issues
-        InterlockedHL_WaitForNotValue64(&test_context.successful_push_count, last_successful_push_count, INT_MAX);
-        InterlockedHL_WaitForNotValue64(&test_context.successful_pop_count, last_successful_pop_count, INT_MAX);
 
         ThreadAPI_Sleep(TEST_CHECK_PERIOD);
 
