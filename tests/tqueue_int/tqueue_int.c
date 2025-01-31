@@ -204,6 +204,9 @@ static int tqueue_chaos_thread_func(void* arg)
 {
     TQUEUE_CHAOS_TEST_CONTEXT* test_context = arg;
 
+    // Checking timeout locally in each thread since yielding of CPU to main thread may be delayed or not materialized
+    // fast enough due to high number of threads doing intensive work. Due to this the ctest timeout of 1500 sec may get
+    // triggered and kill the test
     double start_time = timer_global_get_elapsed_ms();
     double current_time = start_time;
     while ((interlocked_add(&test_context->terminate_test, 0) == 0) && (current_time - start_time < CHAOS_TEST_RUNTIME))
@@ -328,10 +331,13 @@ typedef struct TQUEUE_CHAOS_TEST_THANDLE_CONTEXT_TAG
     uint32_t max_queue_size;
 } TQUEUE_CHAOS_TEST_THANDLE_CONTEXT;
 
-static int pusher_thread_func(void* arg)
+static int pusher_threads_func(void* arg)
 {
     TQUEUE_CHAOS_TEST_THANDLE_CONTEXT* test_context = arg;
 
+    // Checking timeout locally in each thread since yielding of CPU to main thread may be delayed or not materialized
+    // fast enough due to high number of threads doing intensive work. Due to this the ctest timeout of 1500 sec may get
+    // triggered and kill the test
     double start_time = timer_global_get_elapsed_ms();
     double current_time = start_time;
     while ((interlocked_add(&test_context->terminate_test, 0) == 0) && (current_time - start_time < CHAOS_TEST_RUNTIME))
@@ -359,10 +365,13 @@ static int pusher_thread_func(void* arg)
     return 0;
 }
 
-static int popper_thread_func(void* arg)
+static int popper_threads_func(void* arg)
 {
     TQUEUE_CHAOS_TEST_THANDLE_CONTEXT* test_context = arg;
 
+    // Checking timeout locally in each thread since yielding of CPU to main thread may be delayed or not materialized
+    // fast enough due to high number of threads doing intensive work. Due to this the ctest timeout of 1500 sec may get
+    // triggered and kill the test
     double start_time = timer_global_get_elapsed_ms();
     double current_time = start_time;
     while ((interlocked_add(&test_context->terminate_test, 0) == 0) && (current_time - start_time < CHAOS_TEST_RUNTIME))
@@ -400,8 +409,8 @@ static void test_and_terminate_chaos_test(TQUEUE_CHAOS_TEST_THANDLE_CONTEXT *tes
 
         // Ensures that the tests below for current_successful_push_count > last_successful_push_count and/or current_successful_pop_count > last_successful_pop_count
         // do not fail due to multi-threading synchronization issues
-        InterlockedHL_WaitForNotValue64(&test_context->successful_push_count, last_successful_push_count, INT_MAX);
-        InterlockedHL_WaitForNotValue64(&test_context->successful_pop_count, last_successful_pop_count, INT_MAX);
+        ASSERT_IS_TRUE(INTERLOCKED_HL_OK == InterlockedHL_WaitForNotValue64(&test_context->successful_push_count, last_successful_push_count, INT_MAX));
+        ASSERT_IS_TRUE(INTERLOCKED_HL_OK == InterlockedHL_WaitForNotValue64(&test_context->successful_pop_count, last_successful_pop_count, INT_MAX));
 
         ThreadAPI_Sleep(TEST_CHECK_PERIOD);
 
@@ -424,7 +433,7 @@ static void test_and_terminate_chaos_test(TQUEUE_CHAOS_TEST_THANDLE_CONTEXT *tes
     (void)interlocked_exchange(&test_context->terminate_test, 1);
 }
 
-static void TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(uint32_t initial_queue_size, uint32_t max_queue_size, int pusher_count, int popper_count)
+static void TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(uint32_t initial_queue_size, uint32_t max_queue_size, uint32_t pusher_count, uint32_t popper_count)
 {
     // arrange
     TQUEUE_CHAOS_TEST_THANDLE_CONTEXT test_context = { .queue = TQUEUE_CREATE(THANDLE(TEST_THANDLE))(initial_queue_size, max_queue_size, TEST_THANDLE_copy_item, TEST_THANDLE_dispose, NULL) };
@@ -436,41 +445,41 @@ static void TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(uint32_t in
     (void)interlocked_exchange_64(&test_context.successful_get_volatile_count, 0);
     (void)interlocked_exchange(&test_context.terminate_test, 0);
 
-    THREAD_HANDLE *pusher_thread = malloc(sizeof(THREAD_HANDLE) * pusher_count);
-    ASSERT_IS_NOT_NULL(pusher_thread);
-    THREAD_HANDLE *popper_thread = malloc(sizeof(THREAD_HANDLE) * popper_count);
-    ASSERT_IS_NOT_NULL(popper_thread);
+    THREAD_HANDLE *pusher_threads = malloc_2(pusher_count, sizeof(THREAD_HANDLE));
+    ASSERT_IS_NOT_NULL(pusher_threads);
+    THREAD_HANDLE *popper_threads = malloc_2(popper_count, sizeof(THREAD_HANDLE));
+    ASSERT_IS_NOT_NULL(popper_threads);
 
     // act
-    for (int i = 0; i < pusher_count; i++)
+    for (size_t i = 0; i < pusher_count; i++)
     {
-        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&pusher_thread[i], pusher_thread_func, &test_context));
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&pusher_threads[i], pusher_threads_func, &test_context));
     }
 
-    for (int i = 0; i < popper_count; i++)
+    for (size_t i = 0; i < popper_count; i++)
     {
-        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&popper_thread[i], popper_thread_func, &test_context));
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&popper_threads[i], popper_threads_func, &test_context));
     }
 
     test_and_terminate_chaos_test(&test_context);
 
-    for (int i = 0; i < pusher_count; i++)
+    for (size_t i = 0; i < pusher_count; i++)
     {
         int dont_care;
-        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(pusher_thread[i], &dont_care));
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(pusher_threads[i], &dont_care));
     }
 
-    for (int i = 0; i < popper_count; i++)
+    for (size_t i = 0; i < popper_count; i++)
     {
         int dont_care;
-        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(popper_thread[i], &dont_care));
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(popper_threads[i], &dont_care));
     }
 
     // assert
 
     // clean
-    free(pusher_thread);
-    free(popper_thread);
+    free(pusher_threads);
+    free(popper_threads);
     TQUEUE_ASSIGN(THANDLE(TEST_THANDLE))(&test_context.queue, NULL);
 }
 
@@ -510,6 +519,10 @@ MU_DEFINE_ENUM_STRINGS(QUEUE_ENTRY_STATE, QUEUE_ENTRY_STATE_VALUES);
 static int tqueue_chaos_thread_THANDLE_func(void* arg)
 {
     TQUEUE_CHAOS_TEST_THANDLE_CONTEXT* test_context = arg;
+
+    // Checking timeout locally in each thread since yielding of CPU to main thread may be delayed or not materialized
+    // fast enough due to high number of threads doing intensive work. Due to this the ctest timeout of 1500 sec may get
+    // triggered and kill the test
     double start_time = timer_global_get_elapsed_ms();
     double current_time = start_time;
     while ((interlocked_add(&test_context->terminate_test, 0) == 0) && (current_time - start_time < CHAOS_TEST_RUNTIME))
@@ -570,7 +583,6 @@ static int tqueue_chaos_thread_THANDLE_func(void* arg)
             int64_t current_count = TQUEUE_GET_VOLATILE_COUNT(THANDLE(TEST_THANDLE))(test_context->queue);
             ASSERT_IS_TRUE(((current_count >= 0) && (current_count <= test_context->max_queue_size)));
             (void)interlocked_increment_64(&test_context->successful_get_volatile_count);
-            wake_by_address_single_64(&test_context->successful_get_volatile_count);
         }
         }
         current_time = timer_global_get_elapsed_ms();
