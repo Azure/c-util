@@ -431,7 +431,7 @@ static void test_and_terminate_chaos_test(TQUEUE_CHAOS_TEST_THANDLE_CONTEXT *tes
     (void)interlocked_exchange(&test_context->terminate_test, 1);
 }
 
-static void TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(uint32_t initial_queue_size, uint32_t max_queue_size, int pusher_count, int popper_count)
+static void TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(uint32_t initial_queue_size, uint32_t max_queue_size, int pusher_count, int popper_count)
 {
     // arrange
     TQUEUE_CHAOS_TEST_THANDLE_CONTEXT test_context = { .queue = TQUEUE_CREATE(THANDLE(TEST_THANDLE))(initial_queue_size, max_queue_size, TEST_THANDLE_copy_item, TEST_THANDLE_dispose, NULL) };
@@ -488,14 +488,14 @@ static void TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(uint32_t init
 // queue size used is 16
 TEST_FUNCTION(TQUEUE_test_with_1_pusher_and_1_popper_queue_size_16)
 {
-    TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(16, 16, 1, 1);
+    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 16, 1, 1);
 }
 
 // This test has one pusher and one popper and validates the fact that order is preserved in this case
 // queue size used is 1 for maximum torture
 TEST_FUNCTION(TQUEUE_test_with_1_pusher_and_1_popper_queue_size_1)
 {
-    TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(1, 1, 1, 1);
+    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(1, 1, 1, 1);
 }
 
 static bool TEST_THANDLE_should_pop(void* context, THANDLE(TEST_THANDLE)* item)
@@ -642,12 +642,17 @@ TEST_FUNCTION(TQUEUE_chaos_knight_test_with_THANDLE)
 
 TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_1_pusher_and_, N_THREADS, _poppers))
 {
-    TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(16, 16, 1, N_THREADS);
+    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 16, 1, N_THREADS);
+}
+
+TEST_FUNCTION(MU_C5(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_and_, N_THREADS, _poppers))
+{
+    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 16, N_THREADS, N_THREADS);
 }
 
 TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_and_1_popper))
 {
-    TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(16, 16, N_THREADS, 1);
+    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 16, N_THREADS, 1);
 }
 
 // And now the same with queues that grow
@@ -656,14 +661,19 @@ TEST_FUNCTION(TQUEUE_chaos_knight_test_with_THANDLE_grow_queue)
     TQUEUE_chaos_knight_test_with_THANDLE_template(16, 1024 * 1024);
 }
 
+TEST_FUNCTION(MU_C5(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_, N_THREADS, _poppers_grow_queue))
+{
+    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 1024 * 1024, N_THREADS, N_THREADS);
+}
+
 TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_1_pusher_and_, N_THREADS, _poppers_grow_queue))
 {
-    TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(16, 1024 * 1024, 1, N_THREADS);
+    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 1024 * 1024, 1, N_THREADS);
 }
 
 TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_and_1_popper_grow_queue))
 {
-    TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(16, 1024 * 1024, N_THREADS, 1);
+    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 1024 * 1024, N_THREADS, 1);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
