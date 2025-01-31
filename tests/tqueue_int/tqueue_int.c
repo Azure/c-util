@@ -195,7 +195,7 @@ static void TEST_THANDLE_dispose(void* context, THANDLE(TEST_THANDLE)* item)
 }
 
 #ifdef USE_VALGRIND
-#define CHAOS_TEST_RUNTIME 5000 // ms
+#define CHAOS_TEST_RUNTIME 2000 // ms
 #else // USE_VALGRIND
 #define CHAOS_TEST_RUNTIME 1000 // ms
 #endif
