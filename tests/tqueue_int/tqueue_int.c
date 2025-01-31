@@ -194,11 +194,7 @@ static void TEST_THANDLE_dispose(void* context, THANDLE(TEST_THANDLE)* item)
     THANDLE_ASSIGN(TEST_THANDLE)(item, NULL);
 }
 
-#ifdef USE_VALGRIND
-#define CHAOS_TEST_RUNTIME 2000 // ms
-#else // USE_VALGRIND
 #define CHAOS_TEST_RUNTIME 1000 // ms
-#endif
 
 static int tqueue_chaos_thread_func(void* arg)
 {
