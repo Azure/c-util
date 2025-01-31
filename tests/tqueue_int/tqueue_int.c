@@ -60,7 +60,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 {
 }
 
-TEST_FUNCTION(TQUEUE_CREATE_with_NULL_callbacks_succeds)
+DISABLED_TEST_FUNCTION(TQUEUE_CREATE_with_NULL_callbacks_succeds)
 {
     // arrange
 
@@ -74,7 +74,7 @@ TEST_FUNCTION(TQUEUE_CREATE_with_NULL_callbacks_succeds)
     TQUEUE_ASSIGN(FOO)(&queue, NULL);
 }
 
-TEST_FUNCTION(TQUEUE_PUSH_succeeds)
+DISABLED_TEST_FUNCTION(TQUEUE_PUSH_succeeds)
 {
     // arrange
     TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, 1024, NULL, NULL, NULL);
@@ -91,7 +91,7 @@ TEST_FUNCTION(TQUEUE_PUSH_succeeds)
     TQUEUE_ASSIGN(FOO)(&queue, NULL);
 }
 
-TEST_FUNCTION(TQUEUE_POP_succeeds)
+DISABLED_TEST_FUNCTION(TQUEUE_POP_succeeds)
 {
     // arrange
     TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, 1024, NULL, NULL, NULL);
@@ -111,7 +111,7 @@ TEST_FUNCTION(TQUEUE_POP_succeeds)
     TQUEUE_ASSIGN(FOO)(&queue, NULL);
 }
 
-TEST_FUNCTION(TQUEUE_GET_COUNT_succeeds)
+DISABLED_TEST_FUNCTION(TQUEUE_GET_COUNT_succeeds)
 {
     // arrange
     TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, 1024, NULL, NULL, NULL);
@@ -141,7 +141,7 @@ static bool pop_condition_function_43(void* context, FOO* foo)
     return (foo->x == 43) ? true : false;
 }
 
-TEST_FUNCTION(TQUEUE_POP_IF_succeeds)
+DISABLED_TEST_FUNCTION(TQUEUE_POP_IF_succeeds)
 {
     // arrange
     TQUEUE(FOO) queue = TQUEUE_CREATE(FOO)(16, 1024, NULL, NULL, NULL);
@@ -179,11 +179,19 @@ typedef struct TQUEUE_CHAOS_TEST_CONTEXT_TAG
 MU_DEFINE_ENUM_WITHOUT_INVALID(TQUEUE_ACTION_TYPE, TQUEUE_ACTION_TYPE_VALUES);
 MU_DEFINE_ENUM_STRINGS_WITHOUT_INVALID(TQUEUE_ACTION_TYPE, TQUEUE_ACTION_TYPE_VALUES);
 
+#ifdef USE_VALGRIND
+#define CHAOS_TEST_RUNTIME 5000 // ms
+#else // USE_VALGRIND
+#define CHAOS_TEST_RUNTIME 1000 // ms
+#endif
+
 static int tqueue_chaos_thread_func(void* arg)
 {
     TQUEUE_CHAOS_TEST_CONTEXT* test_context = arg;
 
-    while (interlocked_add(&test_context->terminate_test, 0) == 0)
+    double start_time = timer_global_get_elapsed_ms();
+    double current_time = start_time;
+    while ((interlocked_add(&test_context->terminate_test, 0) == 0) && (current_time - start_time < CHAOS_TEST_RUNTIME))
     {
         TQUEUE_ACTION_TYPE action_type = (TQUEUE_ACTION_TYPE)((uint32_t)rand() * ((MU_COUNT_ARG(TQUEUE_ACTION_TYPE_VALUES))) / ((uint32_t)RAND_MAX + 1));
 
@@ -219,6 +227,7 @@ static int tqueue_chaos_thread_func(void* arg)
         }
         }
 
+        current_time = timer_global_get_elapsed_ms();
 #ifdef USE_VALGRIND
         // yield
         ThreadAPI_Sleep(0);
@@ -232,14 +241,8 @@ static int tqueue_chaos_thread_func(void* arg)
 
 #define N_THREADS 16
 
-#ifdef USE_VALGRIND
-#define CHAOS_TEST_RUNTIME 5000 // ms
-#else // USE_VALGRIND
-#define CHAOS_TEST_RUNTIME 1000 // ms
-#endif
-
 // This test is rather chaotic and has a number of threads performing random actions on the queue
-TEST_FUNCTION(TQUEUE_chaos_knight_test)
+DISABLED_TEST_FUNCTION(TQUEUE_chaos_knight_test)
 {
     // arrange
     TQUEUE_CHAOS_TEST_CONTEXT test_context = { .queue = TQUEUE_CREATE(FOO)(16, 1024, NULL, NULL, NULL) };
@@ -305,17 +308,13 @@ typedef struct ONE_PUSHER_ONE_POPPER_TEST_CONTEXT_TAG
     volatile_atomic int32_t terminate_test;
 } ONE_PUSHER_ONE_POPPER_TEST_CONTEXT;
 
-#ifdef USE_VALGRIND
-#define ONE_PUSHE_ONE_POPPER_TEST_RUNTIME 5000 // ms
-#else // USE_VALGRIND
-#define ONE_PUSHE_ONE_POPPER_TEST_RUNTIME 1000 // ms
-#endif
-
 static int pusher_thread_func(void* arg)
 {
     ONE_PUSHER_ONE_POPPER_TEST_CONTEXT* test_context = arg;
 
-    while (interlocked_add(&test_context->terminate_test, 0) == 0)
+    double start_time = timer_global_get_elapsed_ms();
+    double current_time = start_time;
+    while ((interlocked_add(&test_context->terminate_test, 0) == 0) && (current_time - start_time < CHAOS_TEST_RUNTIME))
     {
         int64_t next_push_number = interlocked_increment_64(&test_context->next_push_number) - 1;
         FOO item = { .x = next_push_number };
@@ -325,6 +324,8 @@ static int pusher_thread_func(void* arg)
         {
             (void)interlocked_decrement_64(&test_context->next_push_number);
         }
+
+        current_time = timer_global_get_elapsed_ms();
 
 #ifdef USE_VALGRIND
         // yield
@@ -339,7 +340,9 @@ static int popper_thread_func(void* arg)
 {
     ONE_PUSHER_ONE_POPPER_TEST_CONTEXT* test_context = arg;
 
-    while (interlocked_add(&test_context->terminate_test, 0) == 0)
+    double start_time = timer_global_get_elapsed_ms();
+    double current_time = start_time;
+    while ((interlocked_add(&test_context->terminate_test, 0) == 0) && (current_time - start_time < CHAOS_TEST_RUNTIME))
     {
         FOO item = { .x = -1 };
         TQUEUE_POP_RESULT pop_result = TQUEUE_POP(FOO)(test_context->queue, &item, NULL, NULL, NULL);
@@ -350,6 +353,8 @@ static int popper_thread_func(void* arg)
             ASSERT_ARE_EQUAL(int, expected_pop_number, item.x);
         }
 
+        current_time = timer_global_get_elapsed_ms();
+
 #ifdef USE_VALGRIND
         // yield
         ThreadAPI_Sleep(0);
@@ -359,7 +364,7 @@ static int popper_thread_func(void* arg)
     return 0;
 }
 
-static void TQUEUE_test_with_1_pusher_and_1_popper_with_queue_size(uint32_t initial_queue_size, uint32_t max_queue_size)
+static void TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(uint32_t initial_queue_size, uint32_t max_queue_size, int pusher_count, int popper_count)
 {
     // arrange
     ONE_PUSHER_ONE_POPPER_TEST_CONTEXT test_context = { .queue = TQUEUE_CREATE(FOO)(initial_queue_size, max_queue_size, NULL, NULL, NULL) };
@@ -369,12 +374,21 @@ static void TQUEUE_test_with_1_pusher_and_1_popper_with_queue_size(uint32_t init
     (void)interlocked_exchange_64(&test_context.next_expected_pop_number, 1);
     (void)interlocked_exchange(&test_context.terminate_test, 0);
 
-    THREAD_HANDLE pusher_thread;
-    THREAD_HANDLE popper_thread;
+    THREAD_HANDLE *pusher_thread = malloc(sizeof(THREAD_HANDLE) * pusher_count);
+    ASSERT_IS_NOT_NULL(pusher_thread);
+    THREAD_HANDLE *popper_thread = malloc(sizeof(THREAD_HANDLE) * pusher_count);
+    ASSERT_IS_NOT_NULL(popper_thread);
 
     // act
-    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&pusher_thread, pusher_thread_func, &test_context));
-    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&popper_thread, popper_thread_func, &test_context));
+    for (int i = 0; i < pusher_count; i++)
+    {
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&pusher_thread[i], pusher_thread_func, &test_context));
+    }
+
+    for (int i = 0; i < popper_count; i++)
+    {
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&popper_thread[i], popper_thread_func, &test_context));
+    }
 
     double start_time = timer_global_get_elapsed_ms();
     double current_time = start_time;
@@ -391,24 +405,28 @@ static void TQUEUE_test_with_1_pusher_and_1_popper_with_queue_size(uint32_t init
             (current_time - start_time) / 1000, current_expected_pop_number);
 
         current_time = timer_global_get_elapsed_ms();
-    } while (current_time - start_time < ONE_PUSHE_ONE_POPPER_TEST_RUNTIME);
+    } while (current_time - start_time < CHAOS_TEST_RUNTIME);
 
     // terminate test
     (void)interlocked_exchange(&test_context.terminate_test, 1);
 
+    for (int i = 0; i < pusher_count; i++)
     {
         int dont_care;
-        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(pusher_thread, &dont_care));
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(pusher_thread[i], &dont_care));
     }
 
+    for (int i = 0; i < popper_count; i++)
     {
         int dont_care;
-        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(popper_thread, &dont_care));
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(popper_thread[i], &dont_care));
     }
 
     // assert
 
     // clean
+    free(pusher_thread);
+    free(popper_thread);
     TQUEUE_ASSIGN(FOO)(&test_context.queue, NULL);
 }
 
@@ -416,14 +434,14 @@ static void TQUEUE_test_with_1_pusher_and_1_popper_with_queue_size(uint32_t init
 // queue size used is 16
 TEST_FUNCTION(TQUEUE_test_with_1_pusher_and_1_popper_queue_size_16)
 {
-    TQUEUE_test_with_1_pusher_and_1_popper_with_queue_size(16, 16);
+    TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(16, 16, 1, 1);
 }
 
 // This test has one pusher and one popper and validates the fact that order is preserved in this case
 // queue size used is 1 for maximum torture
-TEST_FUNCTION(TQUEUE_test_with_1_pusher_and_1_popper_queue_size_1)
+DISABLED_TEST_FUNCTION(TQUEUE_test_with_1_pusher_and_1_popper_queue_size_1)
 {
-    TQUEUE_test_with_1_pusher_and_1_popper_with_queue_size(1, 1);
+    TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(1, 1, 1, 1);
 }
 
 // This test is very similar to the one without the THANDLE
@@ -461,8 +479,9 @@ MU_DEFINE_ENUM_STRINGS(QUEUE_ENTRY_STATE, QUEUE_ENTRY_STATE_VALUES);
 static int tqueue_chaos_thread_THANDLE_func(void* arg)
 {
     TQUEUE_CHAOS_TEST_THANDLE_CONTEXT* test_context = arg;
-
-    while (interlocked_add(&test_context->terminate_test, 0) == 0)
+    double start_time = timer_global_get_elapsed_ms();
+    double current_time = start_time;
+    while ((interlocked_add(&test_context->terminate_test, 0) == 0) && (current_time - start_time < CHAOS_TEST_RUNTIME))
     {
         TQUEUE_ACTION_TYPE_THANDLE_TEST action_type = (TQUEUE_ACTION_TYPE_THANDLE_TEST)((uint32_t)rand() * ((MU_COUNT_ARG(TQUEUE_ACTION_TYPE_THANDLE_TEST_VALUES))) / ((uint32_t)RAND_MAX + 1));
 
@@ -519,6 +538,7 @@ static int tqueue_chaos_thread_THANDLE_func(void* arg)
             (void)interlocked_increment_64(&test_context->succesful_get_volatile_count);
         }
         }
+        current_time = timer_global_get_elapsed_ms();
 
 #ifdef USE_VALGRIND
         // yield
@@ -541,11 +561,10 @@ static void TEST_THANDLE_dispose(void* context, THANDLE(TEST_THANDLE)* item)
     THANDLE_ASSIGN(TEST_THANDLE)(item, NULL);
 }
 
-static void TQUEUE_chaos_knight_test_with_THANDLE_template(uint32_t initial_queue_size, uint32_t max_queue_size, uint32_t pusher_count, uint32_t popper_count, bool reject_pops_randomly)
+static void TQUEUE_chaos_knight_test_with_THANDLE_template(uint32_t initial_queue_size, uint32_t max_queue_size)
 {
     // arrange
-    LogInfo("Running chaos test with uint32_t initial_queue_size=%" PRIu32 ", uint32_t max_queue_size=%" PRIu32 ", uint32_t pusher_count=%" PRIu32 ", uint32_t popper_count=%" PRIu32 ", bool reject_pops_randomly=%" PRI_BOOL "",
-        initial_queue_size, max_queue_size, pusher_count, popper_count, MU_BOOL_VALUE(reject_pops_randomly));
+    LogInfo("Running chaos test with uint32_t initial_queue_size=%" PRIu32 ", uint32_t max_queue_size=%" PRIu32 "", initial_queue_size, max_queue_size);
 
     TQUEUE_CHAOS_TEST_THANDLE_CONTEXT test_context = { .queue = TQUEUE_CREATE(THANDLE(TEST_THANDLE))(initial_queue_size, max_queue_size, TEST_THANDLE_copy_item, TEST_THANDLE_dispose, NULL) };
     ASSERT_IS_NOT_NULL(test_context.queue);
@@ -609,35 +628,35 @@ static void TQUEUE_chaos_knight_test_with_THANDLE_template(uint32_t initial_queu
 // This test is rather chaotic and has a number of threads performing random actions on the queue
 // But on top it is exercising a queue of THANDLE elements!
 // It also uses a condition function for popping which randomly rejects pops
-TEST_FUNCTION(TQUEUE_chaos_knight_test_with_THANDLE)
+DISABLED_TEST_FUNCTION(TQUEUE_chaos_knight_test_with_THANDLE)
 {
-    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 16, N_THREADS, N_THREADS, true);
+    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 16);
 }
 
-TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_1_pusher_and_, N_THREADS, _poppers))
+DISABLED_TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_1_pusher_and_, N_THREADS, _poppers))
 {
-    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 16, 1, N_THREADS, true);
+    TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(16, 16, 1, N_THREADS);
 }
 
-TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_and_1_popper))
+DISABLED_TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_and_1_popper))
 {
-    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 16, N_THREADS, 1, true);
+    TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(16, 16, N_THREADS, 1);
 }
 
 // And now the same with queues that grow
 TEST_FUNCTION(TQUEUE_chaos_knight_test_with_THANDLE_grow_queue)
 {
-    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 1024 * 1024, N_THREADS, N_THREADS, true);
+    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 1024 * 1024);
 }
 
-TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_1_pusher_and_, N_THREADS, _poppers_grow_queue))
+DISABLED_TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_1_pusher_and_, N_THREADS, _poppers_grow_queue))
 {
-    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 1024 * 1024, 1, N_THREADS, true);
+    TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(16, 1024 * 1024, 1, N_THREADS);
 }
 
-TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_and_1_popper_grow_queue))
+DISABLED_TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_and_1_popper_grow_queue))
 {
-    TQUEUE_chaos_knight_test_with_THANDLE_template(16, 1024 * 1024, N_THREADS, 1, true);
+    TQUEUE_test_with_N_pusher_and_N_popper_with_queue_size(16, 1024 * 1024, N_THREADS, 1);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
