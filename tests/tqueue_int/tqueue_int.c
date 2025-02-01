@@ -44,6 +44,7 @@ TQUEUE_TYPE_DEFINE(THANDLE(TEST_THANDLE));
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(TQUEUE_PUSH_RESULT, TQUEUE_PUSH_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(TQUEUE_POP_RESULT, TQUEUE_POP_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
@@ -377,6 +378,7 @@ static int popper_threads_func(void* arg)
         ASSERT_IS_TRUE((pop_result == TQUEUE_POP_OK) || (pop_result == TQUEUE_POP_QUEUE_EMPTY), "TQUEUE_POP(THANDLE(TEST_THANDLE)) failed with %" PRI_MU_ENUM "", MU_ENUM_VALUE(TQUEUE_POP_RESULT, pop_result));
         if (pop_result == TQUEUE_POP_OK)
         {
+            ASSERT_ARE_NOT_EQUAL(int64_t, item->a_value, -1);
             (void)interlocked_increment_64(&test_context->successful_pop_count);
             wake_by_address_single_64(&test_context->successful_pop_count);
             THANDLE_ASSIGN(TEST_THANDLE)(&item, NULL);
@@ -403,12 +405,12 @@ static void test_and_terminate_chaos_test(TQUEUE_CHAOS_TEST_THANDLE_CONTEXT *tes
         int64_t last_successful_push_count = interlocked_add_64(&test_context->successful_push_count, 0);
         int64_t last_successful_pop_count = interlocked_add_64(&test_context->successful_pop_count, 0);
 
+        ThreadAPI_Sleep(TEST_CHECK_PERIOD);
+        
         // Ensures that the tests below for current_successful_push_count > last_successful_push_count and/or current_successful_pop_count > last_successful_pop_count
         // do not fail due to multi-threading synchronization issues
-        ASSERT_IS_TRUE(INTERLOCKED_HL_OK == InterlockedHL_WaitForNotValue64(&test_context->successful_push_count, last_successful_push_count, INT_MAX));
-        ASSERT_IS_TRUE(INTERLOCKED_HL_OK == InterlockedHL_WaitForNotValue64(&test_context->successful_pop_count, last_successful_pop_count, INT_MAX));
-
-        ThreadAPI_Sleep(TEST_CHECK_PERIOD);
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue64(&test_context->successful_push_count, last_successful_push_count, INT_MAX));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue64(&test_context->successful_pop_count, last_successful_pop_count, INT_MAX));
 
         // get how many pushes and pops at the end of the time slice
         int64_t current_successful_push_count = interlocked_add_64(&test_context->successful_push_count, 0);
@@ -643,9 +645,9 @@ TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_1_pu
     TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 16, 1, N_THREADS);
 }
 
-TEST_FUNCTION(MU_C5(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_and_, N_THREADS, _poppers))
+TEST_FUNCTION(MU_C5(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, 8, _pushers_and_, 8, _poppers))
 {
-    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 16, N_THREADS, N_THREADS);
+    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 16, 8, 8);
 }
 
 TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_and_1_popper))
@@ -659,9 +661,9 @@ TEST_FUNCTION(TQUEUE_chaos_knight_test_with_THANDLE_grow_queue)
     TQUEUE_chaos_knight_test_with_THANDLE_template(16, 1024 * 1024);
 }
 
-TEST_FUNCTION(MU_C5(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_, N_THREADS, _poppers_grow_queue))
+TEST_FUNCTION(MU_C5(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, 8, _pushers_, 8, _poppers_grow_queue))
 {
-    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 1024 * 1024, N_THREADS, N_THREADS);
+    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 1024 * 1024, 8, 8);
 }
 
 TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_1_pusher_and_, N_THREADS, _poppers_grow_queue))
