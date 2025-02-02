@@ -378,7 +378,7 @@ static int popper_threads_func(void* arg)
         ASSERT_IS_TRUE((pop_result == TQUEUE_POP_OK) || (pop_result == TQUEUE_POP_QUEUE_EMPTY), "TQUEUE_POP(THANDLE(TEST_THANDLE)) failed with %" PRI_MU_ENUM "", MU_ENUM_VALUE(TQUEUE_POP_RESULT, pop_result));
         if (pop_result == TQUEUE_POP_OK)
         {
-            ASSERT_ARE_NOT_EQUAL(int64_t, item->a_value, -1);
+            ASSERT_IS_NOT_NULL(item);
             (void)interlocked_increment_64(&test_context->successful_pop_count);
             wake_by_address_single_64(&test_context->successful_pop_count);
             THANDLE_ASSIGN(TEST_THANDLE)(&item, NULL);
@@ -645,9 +645,9 @@ TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_1_pu
     TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 16, 1, N_THREADS);
 }
 
-TEST_FUNCTION(MU_C5(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, 8, _pushers_and_, 8, _poppers))
+TEST_FUNCTION(MU_C5(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_and_, N_THREADS, _poppers))
 {
-    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 16, 8, 8);
+    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 16, N_THREADS, N_THREADS);
 }
 
 TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_and_1_popper))
@@ -661,9 +661,9 @@ TEST_FUNCTION(TQUEUE_chaos_knight_test_with_THANDLE_grow_queue)
     TQUEUE_chaos_knight_test_with_THANDLE_template(16, 1024 * 1024);
 }
 
-TEST_FUNCTION(MU_C5(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, 8, _pushers_, 8, _poppers_grow_queue))
+TEST_FUNCTION(MU_C5(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_, N_THREADS, _pushers_, N_THREADS, _poppers_grow_queue))
 {
-    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 1024 * 1024, 8, 8);
+    TQUEUE_test_with_N_pushers_and_N_poppers_with_queue_size(16, 1024 * 1024, N_THREADS, N_THREADS);
 }
 
 TEST_FUNCTION(MU_C3(TQUEUE_chaos_knight_test_with_THANDLE_queue_size_16_and_1_pusher_and_, N_THREADS, _poppers_grow_queue))
