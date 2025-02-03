@@ -44,6 +44,7 @@ TQUEUE_TYPE_DEFINE(THANDLE(TEST_THANDLE));
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(TQUEUE_PUSH_RESULT, TQUEUE_PUSH_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(TQUEUE_POP_RESULT, TQUEUE_POP_RESULT_VALUES);
+TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
@@ -377,6 +378,7 @@ static int popper_threads_func(void* arg)
         ASSERT_IS_TRUE((pop_result == TQUEUE_POP_OK) || (pop_result == TQUEUE_POP_QUEUE_EMPTY), "TQUEUE_POP(THANDLE(TEST_THANDLE)) failed with %" PRI_MU_ENUM "", MU_ENUM_VALUE(TQUEUE_POP_RESULT, pop_result));
         if (pop_result == TQUEUE_POP_OK)
         {
+            ASSERT_IS_NOT_NULL(item);
             (void)interlocked_increment_64(&test_context->successful_pop_count);
             wake_by_address_single_64(&test_context->successful_pop_count);
             THANDLE_ASSIGN(TEST_THANDLE)(&item, NULL);
@@ -403,12 +405,12 @@ static void test_and_terminate_chaos_test(TQUEUE_CHAOS_TEST_THANDLE_CONTEXT *tes
         int64_t last_successful_push_count = interlocked_add_64(&test_context->successful_push_count, 0);
         int64_t last_successful_pop_count = interlocked_add_64(&test_context->successful_pop_count, 0);
 
+        ThreadAPI_Sleep(TEST_CHECK_PERIOD);
+        
         // Ensures that the tests below for current_successful_push_count > last_successful_push_count and/or current_successful_pop_count > last_successful_pop_count
         // do not fail due to multi-threading synchronization issues
-        ASSERT_IS_TRUE(INTERLOCKED_HL_OK == InterlockedHL_WaitForNotValue64(&test_context->successful_push_count, last_successful_push_count, INT_MAX));
-        ASSERT_IS_TRUE(INTERLOCKED_HL_OK == InterlockedHL_WaitForNotValue64(&test_context->successful_pop_count, last_successful_pop_count, INT_MAX));
-
-        ThreadAPI_Sleep(TEST_CHECK_PERIOD);
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue64(&test_context->successful_push_count, last_successful_push_count, INT_MAX));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue64(&test_context->successful_pop_count, last_successful_pop_count, INT_MAX));
 
         // get how many pushes and pops at the end of the time slice
         int64_t current_successful_push_count = interlocked_add_64(&test_context->successful_push_count, 0);
