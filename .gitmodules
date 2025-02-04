@@ -28,3 +28,6 @@
 [submodule "deps/vcpkg"]
 	path = deps/vcpkg
 	url = https://github.com/microsoft/vcpkg.git
+[submodule "deps/clds"]
+	path = deps/clds
+	url = https://github.com/Azure/clds.git

@@ -12,7 +12,7 @@ Design:
 
 Historically, there has been a [`worker_thread`](../../deps/c-util/devdoc/worker_thread_requirements.md) module which starts exactly one thread to run a user callback and provides a function to resume that thread when it is idle. This gives the ability to run some work on a single thread but it ties up a thread for the lifetime of the worker thread module.
 
-There is also a [`queue_processor`](../../deps/zrpc/devdoc/queue_processor.md) module which provides a way to push arbitrary data on a queue and call a callback on a single threadpool thread to process that data. The threading logic of `queue_processor` is based on `worker_thread` but it uses threadpools so that the thread does not need to be always running when there is no work. However, `queue_processor` is not as generic and only handles work based on a queue.
+There is also a [`queue_processor`](../../deps/c-util/devdoc/queue_processor.md) module which provides a way to push arbitrary data on a queue and call a callback on a single threadpool thread to process that data. The threading logic of `queue_processor` is based on `worker_thread` but it uses threadpools so that the thread does not need to be always running when there is no work. However, `queue_processor` is not as generic and only handles work based on a queue.
 
 This module aims to take the threadpool logic from `queue_processor` and provide the same interface as `worker_thread` so that it can be a drop-in replacement.
 
