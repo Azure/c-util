@@ -833,37 +833,40 @@ TEST_FUNCTION(test_channel_maintains_data_order)
 
 TEST_FUNCTION(test_close_does_not_get_stuck)
 {
-    //arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
-    ASSERT_IS_NOT_NULL(channel);
-    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
-    (void)interlocked_exchange(&test_signal, 0);
-
-    //act
-    THREAD_HANDLE pull_threads[CHANNEL_CLOSE_TEST_THREAD_COUNT];
-
-    for (int i = 0; i < CHANNEL_CLOSE_TEST_THREAD_COUNT; i++)
+    for (size_t run_iteration = 0; run_iteration < 100; run_iteration++)
     {
-        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&pull_threads[i], pull_once, (void*)channel));
+        //arrange
+        THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+        ASSERT_IS_NOT_NULL(channel);
+        ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
+        (void)interlocked_exchange(&test_signal, 0);
+
+        //act
+        THREAD_HANDLE pull_threads[CHANNEL_CLOSE_TEST_THREAD_COUNT];
+
+        for (size_t i = 0; i < CHANNEL_CLOSE_TEST_THREAD_COUNT; i++)
+        {
+            ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&pull_threads[i], pull_once, (void*)channel));
+        }
+
+        THREAD_HANDLE close_thread;
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&close_thread, close_channel, (void*)channel));
+
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWakeAll(&test_signal, 1));
+
+        for (size_t i = 0; i < CHANNEL_CLOSE_TEST_THREAD_COUNT; i++)
+        {
+            int pull_result;
+            ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(pull_threads[i], &pull_result));
+            ASSERT_ARE_EQUAL(int, 0, pull_result);
+        }
+        int close_result;
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(close_thread, &close_result));
+        ASSERT_ARE_EQUAL(int, 0, close_result);
+
+        //cleanup
+        THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
     }
-
-    THREAD_HANDLE close_thread;
-    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&close_thread, close_channel, (void*)channel));
-
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWakeAll(&test_signal, 1));
-
-    for (int i = 0; i < CHANNEL_CLOSE_TEST_THREAD_COUNT; i++)
-    {
-        int pull_result;
-        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(pull_threads[i], &pull_result));
-        ASSERT_ARE_EQUAL(int, 0, pull_result);
-    }
-    int close_result;
-    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(close_thread, &close_result));
-    ASSERT_ARE_EQUAL(int, 0, close_result);
-
-    //cleanup
-    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
