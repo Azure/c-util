@@ -297,6 +297,18 @@ TEST_FUNCTION(channel_dispose_succeeds)
 /* channel_open */
 
 /*Tests_SRS_CHANNEL_43_095: [If channel is NULL, channel_open shall fail and return a non - zero value.]*/
+TEST_FUNCTION(channel_open_fails_with_null_channel)
+{
+    //arrange
+
+    //act
+    int result = channel_open(NULL);
+
+    //assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
 /*Tests_SRS_CHANNEL_43_096: [channel_open shall call channel_internal_open.]*/
 TEST_FUNCTION(channel_open_calls_underlying_functions)
 {

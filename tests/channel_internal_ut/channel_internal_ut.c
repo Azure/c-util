@@ -263,6 +263,7 @@ static void setup_op_cleanup_expectations(bool completed)
 static void setup_channel_internal_close_expectations(size_t num_ops)
 {
     STRICT_EXPECTED_CALL(sm_close_begin_with_cb(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_acquire_exclusive(IGNORED_ARG));
     STRICT_EXPECTED_CALL(DList_RemoveHeadList(IGNORED_ARG));
     for (size_t i = 0; i < num_ops; ++i)
     {
@@ -270,6 +271,7 @@ static void setup_channel_internal_close_expectations(size_t num_ops)
         setup_op_cleanup_expectations(false);
         STRICT_EXPECTED_CALL(DList_RemoveHeadList(IGNORED_ARG));
     }
+    STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
     STRICT_EXPECTED_CALL(sm_close_end(IGNORED_ARG));
 }
 
@@ -512,9 +514,12 @@ TEST_FUNCTION(channel_internal_open_fails_when_underlying_functions_fail)
 /* channel_internal_close */
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_094: [ channel_internal_close shall call sm_close_begin_with_cb with abandon_pending_operation as the callback. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_167: [ abandon_pending_operations shall call srw_lock_acquire_exclusive.]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_168: [ abandon_pending_operations shall set is_open to false.]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_095: [ abandon_pending_operations shall iterate over the list of pending operations and do the following: ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_096: [ set the result of the operation to CHANNEL_CALLBACK_RESULT_ABANDONED. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_097: [ call threadpool_schedule_work with execute_callbacks as work_function. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_169: [ abandon_pending_operations shall call srw_lock_release_exclusive. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_100: [ channel_internal_close shall call sm_close_end. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_145: [ execute_callbacks shall call the stored callback(s) with the result of the operation. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_157: [ execute_callbacks shall call sm_exec_end for each callback that is called. ]*/
@@ -572,6 +577,7 @@ TEST_FUNCTION(channel_internal_dispose_calls_underlying_functions)
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_152: [ channel_internal_pull shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_010: [ channel_internal_pull shall call srw_lock_acquire_exclusive. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_170: [ channel_internal_pull shall check if is_open is true. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_101: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_available_cb: ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_103: [ channel_internal_pull shall create a THANDLE(ASYNC_OP) by calling async_op_create with cancel_op as cancel. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_104: [ channel_internal_pull shall store the correlation_id, on_data_available_cb and pull_context in the THANDLE(ASYNC_OP). ]*/
@@ -605,6 +611,7 @@ TEST_FUNCTION(channel_internal_pull_on_empty_succeeds)
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_152: [ channel_internal_pull shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_010: [ channel_internal_pull shall call srw_lock_acquire_exclusive. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_170: [ channel_internal_pull shall check if is_open is true. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_101: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_available_cb: ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_103: [ channel_internal_pull shall create a THANDLE(ASYNC_OP) by calling async_op_create with cancel_op as cancel. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_104: [ channel_internal_pull shall store the correlation_id, on_data_available_cb and pull_context in the THANDLE(ASYNC_OP). ]*/
@@ -644,15 +651,16 @@ TEST_FUNCTION(channel_internal_pull_after_pull_succeeds)
     THANDLE_ASSIGN(CHANNEL_INTERNAL)(&channel_internal, NULL);
 }
 
-/*Tests_SRS_CHANNEL_INTERNAL_43_152: [ channel_internal_pull shall call sm_exec_begin. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_152: [channel_internal_pull shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_010: [channel_internal_pull shall call srw_lock_acquire_exclusive.]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_108 : [If the first operation in the list of pending operations contains a non - NULL on_data_consumed_cb : ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_109 : [channel_internal_pull shall call DList_RemoveHeadList on the list of pending operations to obtain the operation.]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_112 : [channel_internal_pull shall store the correlation_id, on_data_available_cb and pull_context in the obtained operation.]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_113 : [channel_internal_pull shall call threadpool_schedule_work with execute_callbacks as work_function and the obtained operation as work_function_context.]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_114 : [channel_internal_pull shall set * out_op_pull to the THANDLE(ASYNC_OP) of the obtained operation.]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_115 : [channel_internal_pull shall call srw_lock_release_exclusive.]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_011 : [channel_internal_pull shall succeeds and return CHANNEL_RESULT_OK.]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_170: [channel_internal_pull shall check if is_open is true. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_108: [If the first operation in the list of pending operations contains a non - NULL on_data_consumed_cb : ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_109: [channel_internal_pull shall call DList_RemoveHeadList on the list of pending operations to obtain the operation.]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_112: [channel_internal_pull shall store the correlation_id, on_data_available_cb and pull_context in the obtained operation.]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_113: [channel_internal_pull shall call threadpool_schedule_work with execute_callbacks as work_function and the obtained operation as work_function_context.]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_114: [channel_internal_pull shall set * out_op_pull to the THANDLE(ASYNC_OP) of the obtained operation.]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_115: [channel_internal_pull shall call srw_lock_release_exclusive.]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_011: [channel_internal_pull shall succeeds and return CHANNEL_RESULT_OK.]*/
 TEST_FUNCTION(channel_internal_pull_after_push_succeeds)
 {
     //arrange
@@ -777,6 +785,7 @@ TEST_FUNCTION(channel_internal_pull_as_second_op_fails_if_underlying_functions_f
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_153: [ channel_internal_push shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_116: [ channel_internal_push shall call srw_lock_acquire_exclusive. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_171: [ channel_internal_push shall check if is_open is true. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_117: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_119: [ channel_internal_push shall create a THANDLE(ASYNC_OP) by calling async_op_create with cancel_op as cancel. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_120: [ channel_internal_push shall store the correlation_id, on_data_consumed_cb, push_context and data in the THANDLE(ASYNC_OP). ]*/
@@ -814,6 +823,7 @@ TEST_FUNCTION(channel_internal_push_on_empty_succeeds)
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_153: [ channel_internal_push shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_116: [ channel_internal_push shall call srw_lock_acquire_exclusive. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_171: [ channel_internal_push shall check if is_open is true. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_117: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_119: [ channel_internal_push shall create a THANDLE(ASYNC_OP) by calling async_op_create with cancel_op as cancel. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_120: [ channel_internal_push shall store the correlation_id, on_data_consumed_cb, push_context and data in the THANDLE(ASYNC_OP). ]*/
@@ -859,6 +869,7 @@ TEST_FUNCTION(channel_internal_push_after_push_succeeds)
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_153: [ channel_internal_push shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_116: [ channel_internal_push shall call srw_lock_acquire_exclusive. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_171: [ channel_internal_push shall check if is_open is true. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_124: [ Otherwise (the first operation in the list of pending operations contains a non-NULL on_data_available_cb): ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_125: [ channel_internal_push shall call DList_RemoveHeadList on the list of pending operations to obtain the operation. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_128: [ channel_internal_push shall store the correlation_id, on_data_consumed_cb, push_context and data in the obtained operation. ]*/

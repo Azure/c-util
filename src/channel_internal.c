@@ -42,8 +42,8 @@ typedef struct CHANNEL_OP_TAG
 {
     ON_DATA_CONSUMED_CB on_data_consumed_cb;
     ON_DATA_AVAILABLE_CB on_data_available_cb;
-    void* push_context;
-    void* pull_context;
+    void* on_data_consumed_context;
+    void* on_data_available_context;
     THANDLE(RC_PTR) data;
     DLIST_ENTRY anchor;
 
@@ -224,13 +224,13 @@ static void execute_callbacks(void* context)
         /*Codes_SRS_CHANNEL_INTERNAL_43_145: [ execute_callbacks shall call the stored callback(s) with the result of the operation. ]*/
         if (channel_op->on_data_available_cb != NULL)
         {
-            channel_op->on_data_available_cb(channel_op->pull_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id, channel_op->data);
+            channel_op->on_data_available_cb(channel_op->on_data_available_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id, channel_op->data);
             /*Codes_SRS_CHANNEL_INTERNAL_43_157: [ execute_callbacks shall call sm_exec_end for each callback that is called. ]*/
             sm_exec_end(channel_op->channel_internal->sm);
         }
         if (channel_op->on_data_consumed_cb != NULL)
         {
-            channel_op->on_data_consumed_cb(channel_op->push_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id);
+            channel_op->on_data_consumed_cb(channel_op->on_data_consumed_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id);
             /*Codes_SRS_CHANNEL_INTERNAL_43_157: [ execute_callbacks shall call sm_exec_end for each callback that is called. ]*/
             sm_exec_end(channel_op->channel_internal->sm);
         }
@@ -310,7 +310,7 @@ static void dispose_channel_op(void* context)
     (void)context;
 }
 
-static int enqueue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE(ASYNC_OP)* out_op, THANDLE(RC_STRING) pull_correlation_id, ON_DATA_AVAILABLE_CB on_data_available_cb, void* pull_context, THANDLE(RC_STRING) push_correlation_id, ON_DATA_CONSUMED_CB on_data_consumed_cb, void* push_context, THANDLE(RC_PTR) data)
+static int enqueue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE(ASYNC_OP)* out_op, THANDLE(RC_STRING) pull_correlation_id, ON_DATA_AVAILABLE_CB on_data_available_cb, void* on_data_available_context, THANDLE(RC_STRING) push_correlation_id, ON_DATA_CONSUMED_CB on_data_consumed_cb, void* on_data_consumed_context, THANDLE(RC_PTR) data)
 {
     int result;
 
@@ -326,15 +326,15 @@ static int enqueue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE
     {
         CHANNEL_OP* channel_op = async_op->context;
 
-        /*Codes_SRS_CHANNEL_INTERNAL_43_104: [ channel_internal_pull shall store the correlation_id, on_data_available_cb and pull_context in the THANDLE(ASYNC_OP). ]*/
+        /*Codes_SRS_CHANNEL_INTERNAL_43_104: [ channel_internal_pull shall store the correlation_id, on_data_available_cb and on_data_available_context in the THANDLE(ASYNC_OP). ]*/
         THANDLE_INITIALIZE(RC_STRING)(&channel_op->pull_correlation_id, pull_correlation_id);
         channel_op->on_data_available_cb = on_data_available_cb;
-        channel_op->pull_context = pull_context;
+        channel_op->on_data_available_context = on_data_available_context;
 
-        /*Codes_SRS_CHANNEL_INTERNAL_43_120: [ channel_internal_push shall store the correlation_id, on_data_consumed_cb, push_context and data in the THANDLE(ASYNC_OP). ]*/
+        /*Codes_SRS_CHANNEL_INTERNAL_43_120: [ channel_internal_push shall store the correlation_id, on_data_consumed_cb, on_data_consumed_context and data in the THANDLE(ASYNC_OP). ]*/
         THANDLE_INITIALIZE(RC_STRING)(&channel_op->push_correlation_id, push_correlation_id);
         channel_op->on_data_consumed_cb = on_data_consumed_cb;
-        channel_op->push_context = push_context;
+        channel_op->on_data_consumed_context = on_data_consumed_context;
         THANDLE_INITIALIZE(RC_PTR)(&channel_op->data, data);
 
         THANDLE_INITIALIZE(ASYNC_OP)(&channel_op->async_op, async_op);
@@ -357,7 +357,7 @@ static int enqueue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE
     return result;
 }
 
-static int dequeue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE(ASYNC_OP)* out_op, THANDLE(RC_STRING) pull_correlation_id, ON_DATA_AVAILABLE_CB on_data_available_cb, void* pull_context, THANDLE(RC_STRING) push_correlation_id, ON_DATA_CONSUMED_CB on_data_consumed_cb, void* push_context, THANDLE(RC_PTR) data)
+static int dequeue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE(ASYNC_OP)* out_op, THANDLE(RC_STRING) pull_correlation_id, ON_DATA_AVAILABLE_CB on_data_available_cb, void* on_data_available_context, THANDLE(RC_STRING) push_correlation_id, ON_DATA_CONSUMED_CB on_data_consumed_cb, void* on_data_consumed_context, THANDLE(RC_PTR) data)
 {
     int result;
 
@@ -370,17 +370,17 @@ static int dequeue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE
     CHANNEL_OP* channel_op = CONTAINING_RECORD(op_entry, CHANNEL_OP, anchor);
     if (on_data_available_cb != NULL)
     {
-        /*Codes_SRS_CHANNEL_INTERNAL_43_112: [ channel_internal_pull shall store the correlation_id, on_data_available_cb and pull_context in the obtained operation. ]*/
+        /*Codes_SRS_CHANNEL_INTERNAL_43_112: [ channel_internal_pull shall store the correlation_id, on_data_available_cb and on_data_available_context in the obtained operation. ]*/
         THANDLE_INITIALIZE(RC_STRING)(&channel_op->pull_correlation_id, pull_correlation_id);
         channel_op->on_data_available_cb = on_data_available_cb;
-        channel_op->pull_context = pull_context;
+        channel_op->on_data_available_context = on_data_available_context;
     }
     else if (on_data_consumed_cb != NULL)
     {
-        /*Codes_SRS_CHANNEL_INTERNAL_43_128: [ channel_internal_push shall store the correlation_id, on_data_consumed_cb, push_context and data in the obtained operation. ]*/
+        /*Codes_SRS_CHANNEL_INTERNAL_43_128: [ channel_internal_push shall store the correlation_id, on_data_consumed_cb, on_data_consumed_context and data in the obtained operation. ]*/
         THANDLE_INITIALIZE(RC_STRING)(&channel_op->push_correlation_id, push_correlation_id);
         channel_op->on_data_consumed_cb = on_data_consumed_cb;
-        channel_op->push_context = push_context;
+        channel_op->on_data_consumed_context = on_data_consumed_context;
         THANDLE_ASSIGN(RC_PTR)(&channel_op->data, data);
     }
     THANDLE(ASYNC_OP) temp = NULL;
@@ -391,15 +391,6 @@ static int dequeue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE
     {
         LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool=%p, execute_callbacks=%p, channel_op=%p)", channel_internal_ptr->threadpool, execute_callbacks, channel_op);
         result = MU_FAILURE;
-        // For testing purposes, we must unset the callback
-        if (on_data_available_cb != NULL)
-        {
-            channel_op->on_data_available_cb = NULL;
-        }
-        else if (on_data_consumed_cb != NULL)
-        {
-            channel_op->on_data_consumed_cb = NULL;
-        }
     }
     else
     {
@@ -412,7 +403,7 @@ static int dequeue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_STRING), correlation_id, ON_DATA_AVAILABLE_CB, on_data_available_cb, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull)
+IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_STRING), correlation_id, ON_DATA_AVAILABLE_CB, on_data_available_cb, void*, on_data_available_context, THANDLE(ASYNC_OP)*, out_op_pull)
 {
     CHANNEL_RESULT result;
     CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_internal);
@@ -445,10 +436,10 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHA
                     CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->on_data_available_cb != NULL
                     )
                 {
-                    if (enqueue_operation(channel_internal, out_op_pull, correlation_id, on_data_available_cb, pull_context, NULL, NULL, NULL, NULL) != 0)
+                    if (enqueue_operation(channel_internal, out_op_pull, correlation_id, on_data_available_cb, on_data_available_context, NULL, NULL, NULL, NULL) != 0)
                     {
                         /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                        LogError("Failure in enqueue_operation(channel_internal=%p, out_op_pull=%p, correlation_id=%" PRI_RC_STRING ", on_data_available_cb=%p, pull_context=%p, NULL, NULL, NULL, NULL)", channel_internal, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_available_cb, pull_context);
+                        LogError("Failure in enqueue_operation(channel_internal=%p, out_op_pull=%p, correlation_id=%" PRI_RC_STRING ", on_data_available_cb=%p, on_data_available_context=%p, NULL, NULL, NULL, NULL)", channel_internal, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_available_cb, on_data_available_context);
                         result = CHANNEL_RESULT_ERROR;
                     }
                     else
@@ -460,10 +451,10 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHA
                 /*Codes_SRS_CHANNEL_INTERNAL_43_108: [ If the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
                 else
                 {
-                    if (dequeue_operation(channel_internal, out_op_pull, correlation_id, on_data_available_cb, pull_context, NULL, NULL, NULL, NULL) != 0)
+                    if (dequeue_operation(channel_internal, out_op_pull, correlation_id, on_data_available_cb, on_data_available_context, NULL, NULL, NULL, NULL) != 0)
                     {
                         /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                        LogError("Failure in dequeue_operation(channel_internal=%p, out_op_pull=%p, correlation_id=%" PRI_RC_STRING ", on_data_available_cb=%p, pull_context=%p, NULL, NULL, NULL, NULL)", channel_internal, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_available_cb, pull_context);
+                        LogError("Failure in dequeue_operation(channel_internal=%p, out_op_pull=%p, correlation_id=%" PRI_RC_STRING ", on_data_available_cb=%p, on_data_available_context=%p, NULL, NULL, NULL, NULL)", channel_internal, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_available_cb, on_data_available_context);
                         result = CHANNEL_RESULT_ERROR;
                     }
                     else
@@ -481,7 +472,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHA
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, ON_DATA_CONSUMED_CB, on_data_consumed_cb, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push)
+IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHANNEL_INTERNAL), channel_internal, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, ON_DATA_CONSUMED_CB, on_data_consumed_cb, void*, on_data_consumed_context, THANDLE(ASYNC_OP)*, out_op_push)
 {
     CHANNEL_RESULT result;
     CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_internal);
@@ -515,10 +506,10 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHA
                     CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->on_data_consumed_cb != NULL
                     )
                 {
-                    if (enqueue_operation(channel_internal, out_op_push, NULL, NULL, NULL, correlation_id, on_data_consumed_cb, push_context, data) != 0)
+                    if (enqueue_operation(channel_internal, out_op_push, NULL, NULL, NULL, correlation_id, on_data_consumed_cb, on_data_consumed_context, data) != 0)
                     {
                         /*Codes_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                        LogError("Failure in enqueue_operation(channel_internal=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", on_data_consumed_cb=%p, push_context=%p, data=%p)", channel_internal, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_consumed_cb, push_context, data);
+                        LogError("Failure in enqueue_operation(channel_internal=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", on_data_consumed_cb=%p, on_data_consumed_context=%p, data=%p)", channel_internal, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_consumed_cb, on_data_consumed_context, data);
                         result = CHANNEL_RESULT_ERROR;
                     }
                     else
@@ -530,10 +521,10 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHA
                 /*Codes_SRS_CHANNEL_INTERNAL_43_124: [ Otherwise (the first operation in the list of pending operations contains a non-NULL on_data_available_cb): ]*/
                 else
                 {
-                    if (dequeue_operation(channel_internal, out_op_push, NULL, NULL, NULL, correlation_id, on_data_consumed_cb, push_context, data) != 0)
+                    if (dequeue_operation(channel_internal, out_op_push, NULL, NULL, NULL, correlation_id, on_data_consumed_cb, on_data_consumed_context, data) != 0)
                     {
                         /*Codes_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                        LogError("Failure in dequeue_operation(channel_internal=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", on_data_consumed_cb=%p, push_context=%p, data=%p)", channel_internal, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_consumed_cb, push_context, data);
+                        LogError("Failure in dequeue_operation(channel_internal=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", on_data_consumed_cb=%p, on_data_consumed_context=%p, data=%p)", channel_internal, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_consumed_cb, on_data_consumed_context, data);
                         result = CHANNEL_RESULT_ERROR;
                     }
                     else
