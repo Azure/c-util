@@ -30,6 +30,7 @@ typedef struct CHANNEL_INTERNAL_TAG
 {
     THANDLE(THREADPOOL) threadpool;
     SM_HANDLE sm;
+    bool is_open;
     SRW_LOCK_HANDLE lock;
     DLIST_ENTRY op_list;
     THANDLE(PTR(LOG_CONTEXT_HANDLE)) log_context;
@@ -76,23 +77,34 @@ static void channel_internal_dispose(CHANNEL_INTERNAL* channel_internal)
 static void abandon_pending_operations(void* context)
 {
     CHANNEL_INTERNAL* channel_internal_ptr = context;
-    /*Codes_SRS_CHANNEL_INTERNAL_43_095: [ abandon_pending_operations shall iterate over the list of pending operations and do the following: ]*/
-    for (DLIST_ENTRY* entry = DList_RemoveHeadList(&channel_internal_ptr->op_list); entry != &channel_internal_ptr->op_list; entry = DList_RemoveHeadList(&channel_internal_ptr->op_list))
+
+    /*Codes_SRS_CHANNEL_INTERNAL_43_167: [abandon_pending_operations shall call srw_lock_acquire_exclusive.]*/
+    srw_lock_acquire_exclusive(channel_internal_ptr->lock);
     {
-        CHANNEL_OP* channel_op = CONTAINING_RECORD(entry, CHANNEL_OP, anchor);
+        /*Codes_SRS_CHANNEL_INTERNAL_43_168: [abandon_pending_operations shall set is_open to false.]*/
+        channel_internal_ptr->is_open = false;
 
-        /*Codes_SRS_CHANNEL_INTERNAL_43_096: [ set the result of the operation to CHANNEL_CALLBACK_RESULT_ABANDONED. ]*/
-        channel_op->result = CHANNEL_CALLBACK_RESULT_ABANDONED;
 
-        /*Codes_SRS_CHANNEL_INTERNAL_43_097: [ call threadpool_schedule_work with execute_callbacks as work_function. ]*/
-        if (threadpool_schedule_work(channel_internal_ptr->threadpool, execute_callbacks, channel_op) != 0)
+        /*Codes_SRS_CHANNEL_INTERNAL_43_095: [ abandon_pending_operations shall iterate over the list of pending operations and do the following: ]*/
+        for (DLIST_ENTRY* entry = DList_RemoveHeadList(&channel_internal_ptr->op_list); entry != &channel_internal_ptr->op_list; entry = DList_RemoveHeadList(&channel_internal_ptr->op_list))
         {
-            LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool=%p, execute_callbacks=%p, channel_op=%p)", channel_internal_ptr->threadpool, execute_callbacks, channel_op);
+            CHANNEL_OP* channel_op = CONTAINING_RECORD(entry, CHANNEL_OP, anchor);
+
+            /*Codes_SRS_CHANNEL_INTERNAL_43_096: [ set the result of the operation to CHANNEL_CALLBACK_RESULT_ABANDONED. ]*/
+            channel_op->result = CHANNEL_CALLBACK_RESULT_ABANDONED;
+
+            /*Codes_SRS_CHANNEL_INTERNAL_43_097: [ call threadpool_schedule_work with execute_callbacks as work_function. ]*/
+            if (threadpool_schedule_work(channel_internal_ptr->threadpool, execute_callbacks, channel_op) != 0)
+            {
+                LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool=%p, execute_callbacks=%p, channel_op=%p)", channel_internal_ptr->threadpool, execute_callbacks, channel_op);
+            }
+            else
+            {
+                /* all ok */
+            }
         }
-        else
-        {
-            /* all ok */
-        }
+        /*Codes_SRS_CHANNEL_INTERNAL_43_169: [ abandon_pending_operations shall call srw_lock_release_exclusive. ]*/
+        srw_lock_release_exclusive(channel_internal_ptr->lock);
     }
 }
 
@@ -183,6 +195,9 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, channel_internal_open, THANDLE(CHANNEL_INTERN
     }
     else
     {
+        CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_internal);
+        /*Codes_SRS_CHANNEL_INTERNAL_43_166: [ channel_internal_open shall set is_open to true. ]*/
+        channel_internal_ptr->is_open = true;
         /*Codes_SRS_CHANNEL_INTERNAL_43_160 : [channel_internal_open shall call sm_open_end.]*/
         sm_open_end(channel_internal->sm, true);
         /*Codes_SRS_CHANNEL_INTERNAL_43_162 : [channel_internal_open shall succeed and return 0.]*/
@@ -415,37 +430,47 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_pull, THANDLE(CHA
         /*Codes_SRS_CHANNEL_INTERNAL_43_010: [ channel_internal_pull shall call srw_lock_acquire_exclusive. ]*/
         srw_lock_acquire_exclusive(channel_internal_ptr->lock);
         {
-            /*Codes_SRS_CHANNEL_INTERNAL_43_101: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_available_cb: ]*/
-            if (
-                DList_IsListEmpty(&channel_internal_ptr->op_list) ||
-                CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->on_data_available_cb != NULL
-                )
+            /*Codes_SRS_CHANNEL_INTERNAL_43_170: [ channel_internal_pull shall check if is_open is true. ]*/
+            if (!channel_internal_ptr->is_open)
             {
-                if (enqueue_operation(channel_internal, out_op_pull, correlation_id, on_data_available_cb, pull_context, NULL, NULL, NULL, NULL) != 0)
-                {
-                    /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                    LogError("Failure in enqueue_operation(channel_internal=%p, out_op_pull=%p, correlation_id=%" PRI_RC_STRING ", on_data_available_cb=%p, pull_context=%p, NULL, NULL, NULL, NULL)", channel_internal, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_available_cb, pull_context);
-                    result = CHANNEL_RESULT_ERROR;
-                }
-                else
-                {
-                    /*Codes_SRS_CHANNEL_INTERNAL_43_011: [ channel_internal_pull shall succeeds and return CHANNEL_RESULT_OK. ]*/
-                    result = CHANNEL_RESULT_OK;
-                }
+                /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
+                LogError("channel is closing, cannot start a new channel_internal_pull operation");
+                result = CHANNEL_RESULT_ERROR;
             }
-            /*Codes_SRS_CHANNEL_INTERNAL_43_108: [ If the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
             else
             {
-                if (dequeue_operation(channel_internal, out_op_pull, correlation_id, on_data_available_cb, pull_context, NULL, NULL, NULL, NULL) != 0)
+                /*Codes_SRS_CHANNEL_INTERNAL_43_101: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_available_cb: ]*/
+                if (
+                    DList_IsListEmpty(&channel_internal_ptr->op_list) ||
+                    CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->on_data_available_cb != NULL
+                    )
                 {
-                    /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                    LogError("Failure in dequeue_operation(channel_internal=%p, out_op_pull=%p, correlation_id=%" PRI_RC_STRING ", on_data_available_cb=%p, pull_context=%p, NULL, NULL, NULL, NULL)", channel_internal, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_available_cb, pull_context);
-                    result = CHANNEL_RESULT_ERROR;
+                    if (enqueue_operation(channel_internal, out_op_pull, correlation_id, on_data_available_cb, pull_context, NULL, NULL, NULL, NULL) != 0)
+                    {
+                        /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
+                        LogError("Failure in enqueue_operation(channel_internal=%p, out_op_pull=%p, correlation_id=%" PRI_RC_STRING ", on_data_available_cb=%p, pull_context=%p, NULL, NULL, NULL, NULL)", channel_internal, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_available_cb, pull_context);
+                        result = CHANNEL_RESULT_ERROR;
+                    }
+                    else
+                    {
+                        /*Codes_SRS_CHANNEL_INTERNAL_43_011: [ channel_internal_pull shall succeeds and return CHANNEL_RESULT_OK. ]*/
+                        result = CHANNEL_RESULT_OK;
+                    }
                 }
+                /*Codes_SRS_CHANNEL_INTERNAL_43_108: [ If the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
                 else
                 {
-                    /* Codes_SRS_CHANNEL_INTERNAL_43_011: [ channel_internal_pull shall succeeds and return CHANNEL_RESULT_OK. ]*/
-                    result = CHANNEL_RESULT_OK;
+                    if (dequeue_operation(channel_internal, out_op_pull, correlation_id, on_data_available_cb, pull_context, NULL, NULL, NULL, NULL) != 0)
+                    {
+                        /*Codes_SRS_CHANNEL_INTERNAL_43_023: [ If there are any failures, channel_internal_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
+                        LogError("Failure in dequeue_operation(channel_internal=%p, out_op_pull=%p, correlation_id=%" PRI_RC_STRING ", on_data_available_cb=%p, pull_context=%p, NULL, NULL, NULL, NULL)", channel_internal, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_available_cb, pull_context);
+                        result = CHANNEL_RESULT_ERROR;
+                    }
+                    else
+                    {
+                        /* Codes_SRS_CHANNEL_INTERNAL_43_011: [ channel_internal_pull shall succeeds and return CHANNEL_RESULT_OK. ]*/
+                        result = CHANNEL_RESULT_OK;
+                    }
                 }
             }
             /*Codes_SRS_CHANNEL_INTERNAL_43_115: [ channel_internal_pull shall call srw_lock_release_exclusive. ]*/
@@ -475,37 +500,47 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_internal_push, THANDLE(CHA
         /*Codes_SRS_CHANNEL_INTERNAL_43_116: [ channel_internal_push shall call srw_lock_acquire_exclusive. ]*/
         srw_lock_acquire_exclusive(channel_internal_ptr->lock);
         {
-            /*Codes_SRS_CHANNEL_INTERNAL_43_117: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
-            if (
-                DList_IsListEmpty(&channel_internal_ptr->op_list) ||
-                CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->on_data_consumed_cb != NULL
-                )
+            /*Codes_SRS_CHANNEL_INTERNAL_43_171: [ channel_internal_push shall check if is_open is true. ]*/
+            if (!channel_internal_ptr->is_open)
             {
-                if (enqueue_operation(channel_internal, out_op_push, NULL, NULL, NULL, correlation_id, on_data_consumed_cb, push_context, data) != 0)
-                {
-                    /*Codes_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                    LogError("Failure in enqueue_operation(channel_internal=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", on_data_consumed_cb=%p, push_context=%p, data=%p)", channel_internal, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_consumed_cb, push_context, data);
-                    result = CHANNEL_RESULT_ERROR;
-                }
-                else
-                {
-                    /*Codes_SRS_CHANNEL_INTERNAL_43_132: [ channel_internal_push shall succeed and return CHANNEL_RESULT_OK. ]*/
-                    result = CHANNEL_RESULT_OK;
-                }
+                /*Codes_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
+                LogError("channel is closing, cannot start a new channel_internal_push operation");
+                result = CHANNEL_RESULT_ERROR;
             }
-            /*Codes_SRS_CHANNEL_INTERNAL_43_124: [ Otherwise (the first operation in the list of pending operations contains a non-NULL on_data_available_cb): ]*/
             else
             {
-                if (dequeue_operation(channel_internal, out_op_push, NULL, NULL, NULL, correlation_id, on_data_consumed_cb, push_context, data) != 0)
+                /*Codes_SRS_CHANNEL_INTERNAL_43_117: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
+                if (
+                    DList_IsListEmpty(&channel_internal_ptr->op_list) ||
+                    CONTAINING_RECORD(channel_internal_ptr->op_list.Flink, CHANNEL_OP, anchor)->on_data_consumed_cb != NULL
+                    )
                 {
-                    /*Codes_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                    LogError("Failure in dequeue_operation(channel_internal=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", on_data_consumed_cb=%p, push_context=%p, data=%p)", channel_internal, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_consumed_cb, push_context, data);
-                    result = CHANNEL_RESULT_ERROR;
+                    if (enqueue_operation(channel_internal, out_op_push, NULL, NULL, NULL, correlation_id, on_data_consumed_cb, push_context, data) != 0)
+                    {
+                        /*Codes_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
+                        LogError("Failure in enqueue_operation(channel_internal=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", on_data_consumed_cb=%p, push_context=%p, data=%p)", channel_internal, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_consumed_cb, push_context, data);
+                        result = CHANNEL_RESULT_ERROR;
+                    }
+                    else
+                    {
+                        /*Codes_SRS_CHANNEL_INTERNAL_43_132: [ channel_internal_push shall succeed and return CHANNEL_RESULT_OK. ]*/
+                        result = CHANNEL_RESULT_OK;
+                    }
                 }
+                /*Codes_SRS_CHANNEL_INTERNAL_43_124: [ Otherwise (the first operation in the list of pending operations contains a non-NULL on_data_available_cb): ]*/
                 else
                 {
-                    /*Codes_SRS_CHANNEL_INTERNAL_43_132: [ channel_internal_push shall succeed and return CHANNEL_RESULT_OK. ]*/
-                    result = CHANNEL_RESULT_OK;
+                    if (dequeue_operation(channel_internal, out_op_push, NULL, NULL, NULL, correlation_id, on_data_consumed_cb, push_context, data) != 0)
+                    {
+                        /*Codes_SRS_CHANNEL_INTERNAL_43_041: [ If there are any failures, channel_internal_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
+                        LogError("Failure in dequeue_operation(channel_internal=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", on_data_consumed_cb=%p, push_context=%p, data=%p)", channel_internal, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_consumed_cb, push_context, data);
+                        result = CHANNEL_RESULT_ERROR;
+                    }
+                    else
+                    {
+                        /*Codes_SRS_CHANNEL_INTERNAL_43_132: [ channel_internal_push shall succeed and return CHANNEL_RESULT_OK. ]*/
+                        result = CHANNEL_RESULT_OK;
+                    }
                 }
             }
             /*Codes_SRS_CHANNEL_INTERNAL_43_131: [ channel_internal_push shall call srw_lock_release_exclusive. ]*/

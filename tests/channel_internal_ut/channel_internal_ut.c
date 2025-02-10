@@ -462,6 +462,7 @@ TEST_FUNCTION(channel_internal_create_fails_when_underlying_functions_fail)
 /* channel_internal_open */
 
 /*Tests_SRS_CHANNEL_INTERNAL_43_159: [channel_internal_open shall call sm_open_begin.]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_166: [ channel_internal_open shall set is_open to true. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_160: [ channel_internal_open shall call sm_open_end. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_162: [ channel_internal_open shall succeed and return 0. ]*/
 TEST_FUNCTION(channel_internal_open_succeeds)

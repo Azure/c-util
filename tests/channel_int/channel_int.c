@@ -29,6 +29,8 @@ TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
 #define CHANNEL_ORDER_TEST_COUNT 10000
 
+#define CHANNEL_CLOSE_TEST_THREAD_COUNT 100
+
 #define TEST_ORIGINAL_VALUE 4242
 
 static struct
@@ -52,6 +54,7 @@ static int32_t push_success = 0x0005;
 static int32_t pull_abandoned = 0x0006;
 static int32_t push_abandoned = 0x0007;
 static void* test_data2 = (void*)0x0008;
+static int32_t test_signal;
 
 static void test_on_data_available_cb_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
 {
@@ -189,6 +192,40 @@ static int pull_data(void* context)
         THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
         THANDLE_ASSIGN(RC_STRING)(&correlation_id, NULL);
     }
+    return 0;
+}
+
+static int pull_once(void* context)
+{
+    THANDLE(CHANNEL) channel = context;
+
+    THANDLE(RC_STRING) correlation_id = rc_string_create("pull_correlation_id");
+    ASSERT_IS_NOT_NULL(correlation_id);
+
+    volatile_atomic int32_t pull_context;
+    (void)interlocked_exchange(&pull_context, TEST_ORIGINAL_VALUE);
+
+    THANDLE(ASYNC_OP) async_op = NULL;
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&test_signal, 0, UINT32_MAX));
+
+    CHANNEL_RESULT pull_result = channel_pull(channel, correlation_id, test_on_data_available_cb_abandoned, (void*)&pull_context, &async_op);
+
+    if (pull_result == CHANNEL_RESULT_OK)
+    {
+        ASSERT_IS_NOT_NULL(async_op);
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&pull_context, pull_abandoned, UINT32_MAX));
+    }
+    THANDLE_ASSIGN(RC_STRING)(&correlation_id, NULL);
+
+    return 0;
+}
+
+static int close_channel(void* context)
+{
+    THANDLE(CHANNEL) channel = context;
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&test_signal, 0, UINT32_MAX));
+    channel_close(channel);
     return 0;
 }
 
@@ -791,6 +828,41 @@ TEST_FUNCTION(test_channel_maintains_data_order)
 
     //cleanup
     channel_close(channel);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+TEST_FUNCTION(test_close_does_not_get_stuck)
+{
+    //arrange
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
+    (void)interlocked_exchange(&test_signal, 0);
+
+    //act
+    THREAD_HANDLE pull_threads[CHANNEL_CLOSE_TEST_THREAD_COUNT];
+
+    for (int i = 0; i < CHANNEL_CLOSE_TEST_THREAD_COUNT; i++)
+    {
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&pull_threads[i], pull_once, (void*)channel));
+    }
+
+    THREAD_HANDLE close_thread;
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&close_thread, close_channel, (void*)channel));
+
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWakeAll(&test_signal, 1));
+
+    for (int i = 0; i < CHANNEL_CLOSE_TEST_THREAD_COUNT; i++)
+    {
+        int pull_result;
+        ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(pull_threads[i], &pull_result));
+        ASSERT_ARE_EQUAL(int, 0, pull_result);
+    }
+    int close_result;
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Join(close_thread, &close_result));
+    ASSERT_ARE_EQUAL(int, 0, close_result);
+
+    //cleanup
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 

@@ -70,6 +70,8 @@ channel_internal_open` opens the given `channel_internal`.
 
 **SRS_CHANNEL_INTERNAL_43_159: [** `channel_internal_open` shall call `sm_open_begin`. **]**
 
+**SRS_CHANNEL_INTERNAL_43_166: [** `channel_internal_open` shall set `is_open` to `true`. **]**
+
 **SRS_CHANNEL_INTERNAL_43_160: [** `channel_internal_open` shall call `sm_open_end`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_161: [** If there are any failures, `channel_internal_open` shall fail and return a non-zero value. **]**
@@ -86,11 +88,17 @@ channel_internal_open` opens the given `channel_internal`.
 
 **SRS_CHANNEL_INTERNAL_43_094: [** `channel_internal_close` shall call `sm_close_begin_with_cb` with `abandon_pending_operations` as the callback. **]**
 
+**SRS_CHANNEL_INTERNAL_43_167: [** `abandon_pending_operations` shall call `srw_lock_acquire_exclusive`. **]**
+
+**SRS_CHANNEL_INTERNAL_43_168: [** `abandon_pending_operations` shall set `is_open` to `false`. **]**
+
 **SRS_CHANNEL_INTERNAL_43_095: [** `abandon_pending_operations` shall iterate over the list of pending operations and do the following: **]**
 
  - **SRS_CHANNEL_INTERNAL_43_096: [** set the `result` of the `operation` to `CHANNEL_CALLBACK_RESULT_ABANDONED`. **]**
 
  - **SRS_CHANNEL_INTERNAL_43_097: [** call `threadpool_schedule_work` with `execute_callbacks` as `work_function`. **]**
+
+**SRS_CHANNEL_INTERNAL_43_169: [** `abandon_pending_operations` shall call `srw_lock_release_exclusive`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_100: [** `channel_internal_close` shall call `sm_close_end`. **]**
 
@@ -121,6 +129,8 @@ channel_internal_open` opens the given `channel_internal`.
 **SRS_CHANNEL_INTERNAL_43_152: [** `channel_internal_pull` shall call `sm_exec_begin`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_010: [** `channel_internal_pull` shall call `srw_lock_acquire_exclusive`. **]**
+
+**SRS_CHANNEL_INTERNAL_43_170: [** `channel_internal_pull` shall check if `is_open` is `true`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_101: [** If the list of pending operations is empty or the first operation in the list of pending operations contains a `non-NULL` `on_data_available_cb`: **]**
 
@@ -161,6 +171,8 @@ channel_internal_open` opens the given `channel_internal`.
 **SRS_CHANNEL_INTERNAL_43_153: [** `channel_internal_push` shall call `sm_exec_begin`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_116: [** `channel_internal_push` shall call `srw_lock_acquire_exclusive`. **]**
+
+**SRS_CHANNEL_INTERNAL_43_171: [** `channel_internal_push` shall check if `is_open` is `true`. **]**
 
 **SRS_CHANNEL_INTERNAL_43_117: [** If the list of pending operations is empty or the first operation in the list of pending operations contains a `non-NULL` `on_data_consumed_cb`: **]**
 
