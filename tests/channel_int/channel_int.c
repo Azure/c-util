@@ -54,7 +54,7 @@ static int32_t push_success = 0x0005;
 static int32_t pull_abandoned = 0x0006;
 static int32_t push_abandoned = 0x0007;
 static void* test_data2 = (void*)0x0008;
-static int32_t test_signal;
+static volatile_atomic int32_t test_signal;
 
 static void test_on_data_available_cb_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
 {
