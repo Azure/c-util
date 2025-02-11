@@ -391,6 +391,16 @@ static int dequeue_operation(THANDLE(CHANNEL_INTERNAL) channel_internal, THANDLE
     {
         LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool=%p, execute_callbacks=%p, channel_op=%p)", channel_internal_ptr->threadpool, execute_callbacks, channel_op);
         result = MU_FAILURE;
+        // execute_callbacks calls sm_exec_end once for each non-NULL callback.
+        // In the case where threadpool_schedule_work fails, sm_exec_end is called immediately.Therefore the callback must be unset so that sm_exec_end is not called twice.
+        if (on_data_available_cb != NULL)
+        {
+            channel_op->on_data_available_cb = NULL;
+        }
+        else if (on_data_consumed_cb != NULL)
+        {
+            channel_op->on_data_consumed_cb = NULL;
+        }
     }
     else
     {
