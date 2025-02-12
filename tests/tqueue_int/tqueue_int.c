@@ -174,6 +174,7 @@ typedef struct TQUEUE_CHAOS_TEST_CONTEXT_TAG
     volatile_atomic int64_t successful_push_count;
     volatile_atomic int64_t successful_pop_count;
     volatile_atomic int32_t terminate_test;
+    volatile_atomic int32_t active_chaos_threads;
 } TQUEUE_CHAOS_TEST_CONTEXT;
 
 #define TQUEUE_ACTION_TYPE_VALUES \
@@ -249,12 +250,16 @@ static int tqueue_chaos_thread_func(void* arg)
 #endif
     }
 
+    (void)interlocked_decrement(&test_context->active_chaos_threads);
+
     return 0;
 }
 
 #define TEST_CHECK_PERIOD 500 // ms
 
 #define N_THREADS 16
+
+#define PROGRESS_WAIT_TIME 500 // ms
 
 // This test is rather chaotic and has a number of threads performing random actions on the queue
 TEST_FUNCTION(TQUEUE_chaos_knight_test)
@@ -269,12 +274,14 @@ TEST_FUNCTION(TQUEUE_chaos_knight_test)
     (void)interlocked_exchange_64(&test_context.successful_push_count, 0);
     (void)interlocked_exchange_64(&test_context.successful_pop_count, 0);
     (void)interlocked_exchange(&test_context.terminate_test, 0);
+    (void)interlocked_exchange(&test_context.active_chaos_threads, 0);
 
     // act
     // assert
     THREAD_HANDLE thread_handles[N_THREADS];
     for (uint32_t i = 0; i < N_THREADS; i++)
     {
+        (void)interlocked_increment(&test_context.active_chaos_threads);
         ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&thread_handles[i], tqueue_chaos_thread_func, &test_context));
     }
 
@@ -288,18 +295,30 @@ TEST_FUNCTION(TQUEUE_chaos_knight_test)
 
         ThreadAPI_Sleep(TEST_CHECK_PERIOD);
 
+        INTERLOCKED_HL_RESULT wait_result;
+
+        // Ensures that the tests below for current_successful_push_count > last_successful_push_count and/or current_successful_pop_count > last_successful_pop_count
+        // do not fail due to multi-threading synchronization issues
+        do
+        {
+            wait_result = InterlockedHL_WaitForNotValue64(&test_context.successful_push_count, last_successful_push_count, PROGRESS_WAIT_TIME);
+            ASSERT_IS_TRUE((wait_result == INTERLOCKED_HL_OK) || (wait_result == INTERLOCKED_HL_TIMEOUT));
+        } while ((wait_result == INTERLOCKED_HL_TIMEOUT) && (interlocked_add(&test_context.active_chaos_threads, 0) > 0));
+
+        do
+        {
+            wait_result = InterlockedHL_WaitForNotValue64(&test_context.successful_pop_count, last_successful_pop_count, PROGRESS_WAIT_TIME);
+            ASSERT_IS_TRUE((wait_result == INTERLOCKED_HL_OK) || (wait_result == INTERLOCKED_HL_TIMEOUT));
+        } while ((wait_result == INTERLOCKED_HL_TIMEOUT) && (interlocked_add(&test_context.active_chaos_threads, 0) > 0));
+
         // get how many pushes and pops at the end of the time slice
         int64_t current_successful_push_count = interlocked_add_64(&test_context.successful_push_count, 0);
         int64_t current_successful_pop_count = interlocked_add_64(&test_context.successful_pop_count, 0);
 
-        // make sure we had at least one successful push and one pop (not stuck)
-        ASSERT_IS_TRUE(current_successful_push_count > last_successful_push_count);
-        ASSERT_IS_TRUE(current_successful_pop_count > last_successful_pop_count);
-
         current_time = timer_global_get_elapsed_ms();
 
-        LogInfo("%.02f seconds elapsed, successful push count=%" PRId64 ", successful pop count=%" PRId64 "",
-            (current_time - start_time) / 1000, current_successful_push_count, current_successful_pop_count);
+        LogInfo("%.02f seconds elapsed, successful push count=%" PRId64 ", successful pop count=%" PRId64 ", active_chaos_threads=%" PRId32 "",
+            (current_time - start_time) / 1000, current_successful_push_count, current_successful_pop_count, interlocked_add(&test_context.active_chaos_threads, 0));
     } while (current_time - start_time < CHAOS_TEST_RUNTIME);
 
     // terminate test
@@ -400,8 +419,6 @@ static int popper_thread_func(void* arg)
     return 0;
 }
 
-#define PROGRESS_WAIT_TIME 500 // ms
-
 static void test_and_terminate_chaos_test(TQUEUE_CHAOS_TEST_THANDLE_CONTEXT *test_context)
 {
     double start_time = timer_global_get_elapsed_ms();
@@ -422,13 +439,13 @@ static void test_and_terminate_chaos_test(TQUEUE_CHAOS_TEST_THANDLE_CONTEXT *tes
         {
             wait_result = InterlockedHL_WaitForNotValue64(&test_context->successful_push_count, last_successful_push_count, PROGRESS_WAIT_TIME);
             ASSERT_IS_TRUE((wait_result == INTERLOCKED_HL_OK) || (wait_result == INTERLOCKED_HL_TIMEOUT));
-        } while ((interlocked_add(&test_context->active_chaos_threads, 0) > 0) && (wait_result == INTERLOCKED_HL_TIMEOUT));
+        } while ((wait_result == INTERLOCKED_HL_TIMEOUT) && (interlocked_add(&test_context->active_chaos_threads, 0) > 0));
 
         do
         {
             wait_result = InterlockedHL_WaitForNotValue64(&test_context->successful_pop_count, last_successful_pop_count, PROGRESS_WAIT_TIME);
             ASSERT_IS_TRUE((wait_result == INTERLOCKED_HL_OK) || (wait_result == INTERLOCKED_HL_TIMEOUT));
-        } while ((interlocked_add(&test_context->active_chaos_threads, 0) > 0) && (wait_result == INTERLOCKED_HL_TIMEOUT));
+        } while ((wait_result == INTERLOCKED_HL_TIMEOUT) && (interlocked_add(&test_context->active_chaos_threads, 0) > 0));
 
         // get how many pushes and pops at the end of the time slice
         int64_t current_successful_push_count = interlocked_add_64(&test_context->successful_push_count, 0);
@@ -437,8 +454,8 @@ static void test_and_terminate_chaos_test(TQUEUE_CHAOS_TEST_THANDLE_CONTEXT *tes
         
         current_time = timer_global_get_elapsed_ms();
 
-        LogInfo("%.02f seconds elapsed, successful push count=%" PRId64 ", successful pop count=%" PRId64 ", successful get_count count=%" PRId64 "",
-            (current_time - start_time) / 1000, current_successful_push_count, current_successful_pop_count, current_successful_get_volatile_count);
+        LogInfo("%.02f seconds elapsed, successful push count=%" PRId64 ", successful pop count=%" PRId64 ", successful get_count count=%" PRId64 ", active_chaos_threads=%" PRId32 "",
+            (current_time - start_time) / 1000, current_successful_push_count, current_successful_pop_count, current_successful_get_volatile_count, interlocked_add(&test_context->active_chaos_threads, 0));
     } while (current_time - start_time < CHAOS_TEST_RUNTIME);
 
     // terminate test
