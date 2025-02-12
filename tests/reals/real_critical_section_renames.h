@@ -1,4 +1,4 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-#define enter_crit_section                                        real_enter_crit_section
-#define leave_crit_section                                        real_leave_crit_section
+#define critical_section_enter                                        real_critical_section_enter
+#define critical_section_leave                                        real_critical_section_leave

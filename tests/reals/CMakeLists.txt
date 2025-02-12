@@ -48,6 +48,7 @@ set(c_util_reals_h_files
     real_constbuffer_array_tarray_renames.h
     real_constbuffer_array_batcher_nv.h
     real_constbuffer_array_batcher_nv_renames.h
+    real_critical_section.h
     real_critical_section_renames.h
     real_doublylinkedlist.h
     real_doublylinkedlist_renames.h

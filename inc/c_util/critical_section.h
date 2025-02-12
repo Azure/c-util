@@ -20,8 +20,8 @@ extern "C"
 {
 #endif
 
-    MOCKABLE_FUNCTION(, void, enter_crit_section, volatile_atomic int32_t*, access_value);
-    MOCKABLE_FUNCTION(, void, leave_crit_section, volatile_atomic int32_t*, access_value);
+    MOCKABLE_FUNCTION(, int, critical_section_enter, volatile_atomic int32_t*, access_value);
+    MOCKABLE_FUNCTION(, int, critical_section_leave, volatile_atomic int32_t*, access_value);
 
 #ifdef __cplusplus
 }
