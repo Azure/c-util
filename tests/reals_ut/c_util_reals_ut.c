@@ -98,5 +98,5 @@ TEST_FUNCTION(check_all_c_util_reals)
     // assert
     // no explicit assert. if it builds, it works
 }
-        
+
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
