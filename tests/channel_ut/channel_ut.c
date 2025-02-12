@@ -62,8 +62,8 @@ static void* test_pull_context = (void*)0x1002;
 static void* test_push_context = (void*)0x1004;
 
 
-static PULL_CALLBACK test_pull_callback = (PULL_CALLBACK)0x1005;
-static PUSH_CALLBACK test_push_callback = (PUSH_CALLBACK)0x1006;
+static ON_DATA_AVAILABLE_CB test_on_data_available_cb = (ON_DATA_AVAILABLE_CB)0x1005;
+static ON_DATA_CONSUMED_CB test_on_data_consumed_cb = (ON_DATA_CONSUMED_CB)0x1006;
 static THANDLE(RC_PTR) test_data_rc_ptr = (RC_PTR*)0x1007;
 static THANDLE(CHANNEL) test_channel = (CHANNEL*)0x1008;
 static void* test_data = (void*)0x1009;
@@ -79,7 +79,7 @@ static void do_nothing(void* data)
     (void)data;
 }
 
-static void test_pull_callback_abandoned(
+static void test_on_data_available_cb_abandoned(
     void* context,
     CHANNEL_CALLBACK_RESULT result,
     THANDLE(RC_STRING) pull_correlation_id,
@@ -94,7 +94,7 @@ static void test_pull_callback_abandoned(
     ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
 }
 
-static void test_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
+static void test_on_data_consumed_cb_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
 {
     ASSERT_ARE_EQUAL(void_ptr, test_push_context, context);
     ASSERT_IS_NULL(pull_correlation_id);
@@ -104,9 +104,30 @@ static void test_push_callback_abandoned(void* context, CHANNEL_CALLBACK_RESULT 
 
 static void setup_channel_create_expectations(void)
 {
-    STRICT_EXPECTED_CALL(channel_internal_create_and_open(g.g_log_context, g.g_threadpool));
+    STRICT_EXPECTED_CALL(channel_internal_create(g.g_log_context, g.g_threadpool));
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(CHANNEL_INTERNAL)(IGNORED_ARG, IGNORED_ARG));
+}
+
+static void setup_channel_open_expectations(void)
+{
+    STRICT_EXPECTED_CALL(channel_internal_open(IGNORED_ARG));
+}
+
+static THANDLE(CHANNEL) test_create_and_open_channel(void)
+{
+    setup_channel_create_expectations();
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    setup_channel_open_expectations();
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    return channel;
+}
+
+static void setup_channel_close_expectations(void)
+{
+    STRICT_EXPECTED_CALL(channel_internal_close(IGNORED_ARG));
 }
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
@@ -121,17 +142,19 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
 
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc, NULL);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(channel_internal_create_and_open, NULL);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(channel_internal_create, NULL);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(channel_internal_open, MU_FAILURE);
 
     REGISTER_CHANNEL_INTERNAL_GLOBAL_MOCK_HOOKS();
+
 
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(THREADPOOL), void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(CHANNEL), void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(CHANNEL_INTERNAL), void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(RC_PTR), void*);
     REGISTER_UMOCK_ALIAS_TYPE(RC_PTR_FREE_FUNC, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(PULL_CALLBACK, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(PUSH_CALLBACK, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(ON_DATA_AVAILABLE_CB, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(ON_DATA_CONSUMED_CB, void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(PTR(LOG_CONTEXT_HANDLE)), void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(RC_STRING), void*);
 
@@ -252,7 +275,6 @@ TEST_FUNCTION(channel_create_fails_when_underlying_functions_fail)
 
 /* channel_dispose */
 
-/*Tests_SRS_CHANNEL_43_094: [ channel_dispose shall call channel_internal_close. ]*/
 /*Tests_SRS_CHANNEL_43_092: [ channel_dispose shall release the reference to THANDLE(CHANNEL_INTERNAL). ]*/
 TEST_FUNCTION(channel_dispose_succeeds)
 {
@@ -260,7 +282,6 @@ TEST_FUNCTION(channel_dispose_succeeds)
     THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(channel_internal_close(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(CHANNEL_INTERNAL)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
@@ -273,6 +294,97 @@ TEST_FUNCTION(channel_dispose_succeeds)
 
 }
 
+/* channel_open */
+
+/*Tests_SRS_CHANNEL_43_095: [If channel is NULL, channel_open shall fail and return a non - zero value.]*/
+TEST_FUNCTION(channel_open_fails_with_null_channel)
+{
+    //arrange
+
+    //act
+    int result = channel_open(NULL);
+
+    //assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CHANNEL_43_096: [channel_open shall call channel_internal_open.]*/
+TEST_FUNCTION(channel_open_calls_underlying_functions)
+{
+    //arrange
+    setup_channel_create_expectations();
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    setup_channel_open_expectations();;
+
+    //act
+    int result = channel_open(channel);
+
+    //assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    channel_close(channel);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/*Tests_SRS_CHANNEL_43_099: [ If there are any failures, channel_open shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(channel_open_fails_when_underlying_functions_fail)
+{
+    //arrange
+    setup_channel_create_expectations();
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    umock_c_reset_all_calls();
+
+    setup_channel_open_expectations();
+    umock_c_negative_tests_snapshot();
+    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+            // act
+            int result = channel_open(channel);
+            // assert
+            ASSERT_ARE_NOT_EQUAL(int, 0, result, "On failed call %zu", i);
+        }
+    }
+    //cleanup
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/*Tests_SRS_CHANNEL_43_097: [If channel is NULL, channel_close shall return immediately.] */
+TEST_FUNCTION(channel_close_returns_immediately_with_null_channel)
+{
+    //arrange
+
+    //act
+    channel_close(NULL);
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CHANNEL_43_098: [ channel_close shall call channel_internal_close. ]*/
+TEST_FUNCTION(channel_close_calls_underlying_functions)
+{
+    //arrange
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
+    umock_c_reset_all_calls();
+    setup_channel_close_expectations();
+
+    //act
+    channel_close(channel);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
 /* channel_pull */
 
 /*Tests_SRS_CHANNEL_43_007: [ If channel is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
@@ -281,15 +393,15 @@ TEST_FUNCTION(channel_pull_fails_with_null_channel)
     //arrange
 
     //act
-    CHANNEL_RESULT result = channel_pull(NULL, g.g_pull_correlation_id, test_pull_callback, test_pull_context, &test_out_op.out_op_pull);
+    CHANNEL_RESULT result = channel_pull(NULL, g.g_pull_correlation_id, test_on_data_available_cb, test_pull_context, &test_out_op.out_op_pull);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CHANNEL_43_008: [ If pull_callback is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
-TEST_FUNCTION(channel_pull_fails_with_null_pull_callback)
+/*Tests_SRS_CHANNEL_43_008: [ If on_data_available_cb is NULL, channel_pull shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
+TEST_FUNCTION(channel_pull_fails_with_null_on_data_available_cb)
 {
     //arrange
 
@@ -307,7 +419,7 @@ TEST_FUNCTION(channel_pull_fails_with_null_out_op_pull)
     //arrange
 
     //act
-    CHANNEL_RESULT result = channel_pull(test_channel, g.g_pull_correlation_id, test_pull_callback, test_pull_context, NULL);
+    CHANNEL_RESULT result = channel_pull(test_channel, g.g_pull_correlation_id, test_on_data_available_cb, test_pull_context, NULL);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
@@ -318,14 +430,14 @@ TEST_FUNCTION(channel_pull_fails_with_null_out_op_pull)
 TEST_FUNCTION(channel_pull_calls_channel_internal_pull)
 {
     //arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
     THANDLE(ASYNC_OP) pull_op = NULL;
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(channel_internal_pull(IGNORED_ARG, g.g_pull_correlation_id, test_pull_callback_abandoned, test_pull_context, &pull_op));
+    STRICT_EXPECTED_CALL(channel_internal_pull(IGNORED_ARG, g.g_pull_correlation_id, test_on_data_available_cb_abandoned, test_pull_context, &pull_op));
 
     //act
-    CHANNEL_RESULT result = channel_pull(channel, g.g_pull_correlation_id, test_pull_callback_abandoned, test_pull_context, &pull_op);
+    CHANNEL_RESULT result = channel_pull(channel, g.g_pull_correlation_id, test_on_data_available_cb_abandoned, test_pull_context, &pull_op);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
@@ -334,6 +446,7 @@ TEST_FUNCTION(channel_pull_calls_channel_internal_pull)
 
     //cleanup
     THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
+    channel_close(channel);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
@@ -345,15 +458,15 @@ TEST_FUNCTION(channel_push_fails_with_null_channel)
     //arrange
 
     //act
-    CHANNEL_RESULT result = channel_push(NULL, g.g_push_correlation_id, test_data_rc_ptr, test_push_callback, test_push_context, &test_out_op.out_op_push);
+    CHANNEL_RESULT result = channel_push(NULL, g.g_push_correlation_id, test_data_rc_ptr, test_on_data_consumed_cb, test_push_context, &test_out_op.out_op_push);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CHANNEL_43_025: [ If push_callback is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
-TEST_FUNCTION(channel_push_fails_with_null_push_callback)
+/*Tests_SRS_CHANNEL_43_025: [ If on_data_consumed_cb is NULL, channel_push shall fail and return CHANNEL_RESULT_INVALID_ARGS. ]*/
+TEST_FUNCTION(channel_push_fails_with_null_on_data_consumed_cb)
 {
     //arrange
 
@@ -371,7 +484,7 @@ TEST_FUNCTION(channel_push_fails_with_null_out_op_push)
     //arrange
 
     //act
-    CHANNEL_RESULT result = channel_push(test_channel, g.g_push_correlation_id, test_data_rc_ptr, test_push_callback, test_push_context, NULL);
+    CHANNEL_RESULT result = channel_push(test_channel, g.g_push_correlation_id, test_data_rc_ptr, test_on_data_consumed_cb, test_push_context, NULL);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_INVALID_ARGS, result);
@@ -382,15 +495,15 @@ TEST_FUNCTION(channel_push_fails_with_null_out_op_push)
 TEST_FUNCTION(channel_push_calls_channel_internal_push)
 {
     //arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
     THANDLE(ASYNC_OP) push_op = NULL;
     THANDLE(RC_PTR) data_rc_ptr = rc_ptr_create_with_move_pointer(test_data, do_nothing);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(channel_internal_push(IGNORED_ARG, g.g_push_correlation_id, data_rc_ptr, test_push_callback_abandoned, test_push_context, &push_op));
+    STRICT_EXPECTED_CALL(channel_internal_push(IGNORED_ARG, g.g_push_correlation_id, data_rc_ptr, test_on_data_consumed_cb_abandoned, test_push_context, &push_op));
 
     //act
-    CHANNEL_RESULT result = channel_push(channel, g.g_push_correlation_id, data_rc_ptr, test_push_callback_abandoned, test_push_context, &push_op);
+    CHANNEL_RESULT result = channel_push(channel, g.g_push_correlation_id, data_rc_ptr, test_on_data_consumed_cb_abandoned, test_push_context, &push_op);
 
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
@@ -400,6 +513,7 @@ TEST_FUNCTION(channel_push_calls_channel_internal_push)
     //cleanup
     THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
     THANDLE_ASSIGN(RC_PTR)(&data_rc_ptr, NULL);
+    channel_close(channel);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
