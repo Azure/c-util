@@ -157,6 +157,7 @@ set(c_util_c_files
     ./src/constbuffer_array_splitter.c
     ./src/constbuffer_array_sync_wrapper.c
     ./src/constbuffer_array_tarray.c
+    ./src/critical_section.c
     ./src/doublylinkedlist.c
     ./src/external_command_helper.c
     ./src/map.c
@@ -208,6 +209,7 @@ set(c_util_h_files
     ./inc/c_util/constbuffer_array_splitter.h
     ./inc/c_util/constbuffer_array_sync_wrapper.h
     ./inc/c_util/constbuffer_array_tarray.h
+    ./inc/c_util/critical_section.h
     ./inc/c_util/doublylinkedlist.h
     ./inc/c_util/external_command_helper.h
     ./inc/c_util/flags_to_string.h
