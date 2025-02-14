@@ -57,6 +57,17 @@ static bool timer_stop_calls_callback = false;
 static TIMER_STOP_HOOK timer_stop_hook = NULL;
 static void* timer_stop_hook_context = NULL;
 
+static void my_THANDLE_THREADPOOL_TIMER_ASSIGN(THANDLE(THREADPOOL_TIMER)* left, THANDLE(THREADPOOL_TIMER) right)
+{
+    (void)left;
+    (void)right;
+
+    if (timer_stop_calls_callback)
+    {
+        timer_stop_hook(timer_stop_hook_context);
+    }
+}
+
 static void expect_start(uint32_t timeout, THANDLE(real_RC_STRING) message, THREADPOOL_WORK_FUNCTION* callback, void** context)
 {
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
@@ -67,7 +78,9 @@ static void expect_start(uint32_t timeout, THANDLE(real_RC_STRING) message, THRE
 
     STRICT_EXPECTED_CALL(threadpool_timer_start(test_threadpool, timeout, 0, IGNORED_ARG, IGNORED_ARG))
         .CaptureArgumentValue_work_function(callback)
-        .CaptureArgumentValue_work_function_context(context);
+        .CaptureArgumentValue_work_function_context(context)
+        .SetReturn(test_timer_instance);
+    STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(THREADPOOL_TIMER)(IGNORED_ARG, IGNORED_ARG));
 }
 
 static WATCHDOG_HANDLE do_start(THREADPOOL_WORK_FUNCTION* callback, void** context)
@@ -102,8 +115,9 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_SM_GLOBAL_MOCK_HOOK();
 
 
-    REGISTER_GLOBAL_MOCK_RETURNS(threadpool_timer_start, 0, NULL);
+    REGISTER_GLOBAL_MOCK_RETURNS(threadpool_timer_start, test_timer_instance, NULL);
     REGISTER_GLOBAL_MOCK_RETURNS(threadpool_timer_restart, 0, MU_FAILURE);
+    REGISTER_GLOBAL_MOCK_HOOK(THANDLE_ASSIGN(THREADPOOL_TIMER), my_THANDLE_THREADPOOL_TIMER_ASSIGN);
 
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(THREADPOOL), void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(THREADPOOL_TIMER), void*);
@@ -315,11 +329,11 @@ TEST_FUNCTION(watchdog_reset_cancels_and_restarts_the_timer)
     WATCHDOG_HANDLE result = do_start(&callback, &context);
 
     STRICT_EXPECTED_CALL(sm_close_begin(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(threadpool_timer_cancel(test_timer_instance));
+    STRICT_EXPECTED_CALL(threadpool_timer_cancel(IGNORED_ARG));
     STRICT_EXPECTED_CALL(sm_close_end(IGNORED_ARG));
     STRICT_EXPECTED_CALL(sm_open_begin(IGNORED_ARG));
     STRICT_EXPECTED_CALL(sm_open_end(IGNORED_ARG, true));
-    STRICT_EXPECTED_CALL(threadpool_timer_restart(test_timer_instance, 42, 0));
+    STRICT_EXPECTED_CALL(threadpool_timer_restart(IGNORED_ARG, 42, 0));
 
     // act
     watchdog_reset(result);
