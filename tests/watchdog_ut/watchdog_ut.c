@@ -41,7 +41,7 @@
 static void* test_callback_context = (void*)0x100A;
 
 static THANDLE(THREADPOOL) test_threadpool = (void*)0x100B;
-static TIMER_INSTANCE_HANDLE test_timer_instance = (TIMER_INSTANCE_HANDLE)0x100C;
+static THANDLE(THREADPOOL_TIMER) test_timer_instance = (void*)0x100C;
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
@@ -56,15 +56,6 @@ typedef void(*TIMER_STOP_HOOK)(void* context);
 static bool timer_stop_calls_callback = false;
 static TIMER_STOP_HOOK timer_stop_hook = NULL;
 static void* timer_stop_hook_context = NULL;
-static void hook_threadpool_timer_destroy(TIMER_INSTANCE_HANDLE timer)
-{
-    (void)timer;
-
-    if (timer_stop_calls_callback)
-    {
-        timer_stop_hook(timer_stop_hook_context);
-    }
-}
 
 static void expect_start(uint32_t timeout, THANDLE(real_RC_STRING) message, THREADPOOL_WORK_FUNCTION* callback, void** context)
 {
@@ -74,10 +65,9 @@ static void expect_start(uint32_t timeout, THANDLE(real_RC_STRING) message, THRE
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(RC_STRING)(IGNORED_ARG, message));
     STRICT_EXPECTED_CALL(sm_open_end(IGNORED_ARG, true));
 
-    STRICT_EXPECTED_CALL(threadpool_timer_start(test_threadpool, timeout, 0, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+    STRICT_EXPECTED_CALL(threadpool_timer_start(test_threadpool, timeout, 0, IGNORED_ARG, IGNORED_ARG))
         .CaptureArgumentValue_work_function(callback)
-        .CaptureArgumentValue_work_function_context(context)
-        .CopyOutArgumentBuffer_timer_handle(&test_timer_instance, sizeof(test_timer_instance));
+        .CaptureArgumentValue_work_function_context(context);
 }
 
 static WATCHDOG_HANDLE do_start(THREADPOOL_WORK_FUNCTION* callback, void** context)
@@ -112,12 +102,11 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_SM_GLOBAL_MOCK_HOOK();
 
 
-    REGISTER_GLOBAL_MOCK_RETURNS(threadpool_timer_start, 0, MU_FAILURE);
+    REGISTER_GLOBAL_MOCK_RETURNS(threadpool_timer_start, 0, NULL);
     REGISTER_GLOBAL_MOCK_RETURNS(threadpool_timer_restart, 0, MU_FAILURE);
-    REGISTER_GLOBAL_MOCK_HOOK(threadpool_timer_destroy, hook_threadpool_timer_destroy);
 
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(THREADPOOL), void*);
-    REGISTER_UMOCK_ALIAS_TYPE(TIMER_INSTANCE_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(THANDLE(THREADPOOL_TIMER), void*);
     REGISTER_UMOCK_ALIAS_TYPE(THREADPOOL_WORK_FUNCTION, void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(RC_STRING), void*);
     REGISTER_UMOCK_ALIAS_TYPE(SM_HANDLE, void*);
@@ -360,7 +349,7 @@ TEST_FUNCTION(watchdog_stop_with_NULL_watchdog_returns)
 
 /*Tests_SRS_WATCHDOG_45_015: [ watchdog_stop shall call sm_close_begin. ]*/
 /*Tests_SRS_WATCHDOG_45_016: [ watchdog_stop shall call sm_close_end if sm_close_begin succeeds. ]*/
-/*Tests_SRS_WATCHDOG_42_024: [ watchdog_stop shall stop and cleanup the timer by calling threadpool_timer_destroy. ]*/
+/*Tests_SRS_WATCHDOG_42_024: [ watchdog_stop shall stop and cleanup the timer by decrementing timer reference count. ]*/
 /*Tests_SRS_WATCHDOG_45_017: [ watchdog_stop shall call sm_destroy. ]*/
 /*Tests_SRS_WATCHDOG_42_025: [ watchdog_stop shall free the watchdog. ]*/
 TEST_FUNCTION(watchdog_stop_stops_the_timer)
@@ -372,7 +361,7 @@ TEST_FUNCTION(watchdog_stop_stops_the_timer)
 
     STRICT_EXPECTED_CALL(sm_close_begin(IGNORED_ARG));
     STRICT_EXPECTED_CALL(sm_close_end(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(threadpool_timer_destroy(test_timer_instance));
+    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(THREADPOOL_TIMER)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(sm_destroy(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_STRING)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
@@ -403,7 +392,7 @@ TEST_FUNCTION(watchdog_stop_stops_the_timer_after_it_fired)
 
     STRICT_EXPECTED_CALL(sm_close_begin(IGNORED_ARG));
     STRICT_EXPECTED_CALL(sm_close_end(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(threadpool_timer_destroy(test_timer_instance));
+    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(THREADPOOL_TIMER)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(sm_destroy(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_STRING)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));
@@ -440,7 +429,7 @@ TEST_FUNCTION(watchdog_stop_prevents_callback_from_calling_if_timer_fires_on_sto
 
     STRICT_EXPECTED_CALL(sm_close_begin(IGNORED_ARG));
     STRICT_EXPECTED_CALL(sm_close_end(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(threadpool_timer_destroy(test_timer_instance));
+    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(THREADPOOL_TIMER)(IGNORED_ARG, NULL));
     STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG)); //callback checking state.
     STRICT_EXPECTED_CALL(sm_destroy(IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_STRING)(IGNORED_ARG, NULL));

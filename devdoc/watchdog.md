@@ -112,7 +112,7 @@ MOCKABLE_FUNCTION(, void, watchdog_stop, WATCHDOG_INSTANCE_HANDLE, watchdog);
 
 **SRS_WATCHDOG_45_016: [** `watchdog_stop` shall call `sm_close_end` if `sm_close_begin` succeeds. **]**
 
-**SRS_WATCHDOG_42_024: [** `watchdog_stop` shall stop and cleanup the timer by calling `threadpool_timer_destroy`. **]**
+**SRS_WATCHDOG_42_024: [** `watchdog_stop` shall stop and cleanup the timer by decrementing timer reference count. **]**
 
 **SRS_WATCHDOG_45_017: [** `watchdog_stop` shall call `sm_destroy`. **]**
 
