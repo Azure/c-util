@@ -33,6 +33,7 @@
 
 #include "real_gballoc_hl.h"
 #include "real_channel_internal.h"
+#include "real_threadpool.h"
 
 #include "c_util/channel.h"
 
