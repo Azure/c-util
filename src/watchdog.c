@@ -23,7 +23,7 @@ typedef struct WATCHDOG_TAG
 
     SM_HANDLE state;
     uint32_t timeout_ms;
-    TIMER_INSTANCE_HANDLE timer;
+    THANDLE(THREADPOOL_TIMER) timer;
     THANDLE(RC_STRING) message;
 } WATCHDOG;
 
@@ -112,13 +112,15 @@ IMPLEMENT_MOCKABLE_FUNCTION(, WATCHDOG_HANDLE, watchdog_start, THANDLE(THREADPOO
                     sm_open_end(result->state, true);
 
                     /*Codes_SRS_WATCHDOG_42_018: [ watchdog_start shall create a timer that expires after timeout_ms by calling threadpool_timer_start with watchdog_expired_callback as the callback. ]*/
-                    if (threadpool_timer_start(threadpool, timeout_ms, 0, watchdog_expired_callback, result, &result->timer) != 0)
+                    THANDLE(THREADPOOL_TIMER) timer = threadpool_timer_start(threadpool, timeout_ms, 0, watchdog_expired_callback, result);
+                    if (timer == NULL)
                     {
                         /*Codes_SRS_WATCHDOG_42_019: [ If there are any errors then watchdog_start shall fail and return NULL. ]*/
                         LogError("threadpool_timer_start failed");
                     }
                     else
                     {
+                        THANDLE_INITIALIZE_MOVE(THREADPOOL_TIMER)(&result->timer, &timer);
                         /*Codes_SRS_WATCHDOG_42_020: [ watchdog_start shall succeed and return the allocated handle. ]*/
                         goto all_ok;
                     }
@@ -197,8 +199,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_stop, WATCHDOG_HANDLE, watchdog)
             sm_close_end(watchdog->state);
         }
 
-        /*Codes_SRS_WATCHDOG_42_024: [ watchdog_stop shall stop and cleanup the timer by calling threadpool_timer_destroy. ]*/
-        threadpool_timer_destroy(watchdog->timer);
+        /*Codes_SRS_WATCHDOG_42_024: [ watchdog_stop shall stop and cleanup the timer by decrementing timer reference count. ]*/
+        THANDLE_ASSIGN(THREADPOOL_TIMER)(&watchdog->timer, NULL);
 
         /*Codes_SRS_WATCHDOG_45_017: [ watchdog_stop shall call sm_destroy. ]*/
         sm_destroy(watchdog->state);
