@@ -20,6 +20,6 @@ make --jobs=$CORES
 
 # /*reenable with this task Task 10086393: reenable sm_chaos (https://msazure.visualstudio.com/One/_workitems/edit/10086393)*/
 # /*reenable channel int helgrind with this task https://msazure.visualstudio.com/One/_workitems/edit/29923828*/
-ctest -j $CORES --output-on-failure -E "sm_int_helgrind|sm_int_valgrind|tqueue_int_valgrind|channel_int_helgrind"
+ctest -j $CORES --output-on-failure -E "sm_int_helgrind|sm_int_valgrind|tqueue_int_valgrind"
 
 popd 
