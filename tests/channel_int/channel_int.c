@@ -800,6 +800,8 @@ TEST_FUNCTION(test_push_after_push)
     THANDLE_ASSIGN(ASYNC_OP)(&push_op2, NULL);
 }
 
+// TODO: Fix threadpool_linux and then enable this test. Task 31404616
+#ifdef WIN32
 TEST_FUNCTION(test_channel_maintains_data_order)
 {
     //arrange
@@ -830,6 +832,7 @@ TEST_FUNCTION(test_channel_maintains_data_order)
     channel_close(channel);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
+#endif
 
 TEST_FUNCTION(test_close_does_not_get_stuck)
 {
