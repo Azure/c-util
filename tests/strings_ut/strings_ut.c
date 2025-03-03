@@ -35,6 +35,7 @@ static const char* MODIFIED_STRING_VALUE2 = "*nitial_";
 
 #define NUMBER_OF_CHAR_TOCOPY           8
 #define TEST_INTEGER_VALUE              1234
+#define DEFAULT_STRING_BUFFER_SIZE      128
 
 static const struct JSONEncoding {
     const char* source;
@@ -134,7 +135,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         count = umock_c_negative_tests_call_count();
         for (index = 0; index < count; index++)
         {
-            char tmp_msg[64];
+            char tmp_msg[DEFAULT_STRING_BUFFER_SIZE];
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
@@ -226,7 +227,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         count = umock_c_negative_tests_call_count();
         for (index = 0; index < count; index++)
         {
-            char tmp_msg[64];
+            char tmp_msg[DEFAULT_STRING_BUFFER_SIZE];
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
@@ -392,7 +393,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         count = umock_c_negative_tests_call_count();
         for (index = 0; index < count; index++)
         {
-            char tmp_msg[64];
+            char tmp_msg[DEFAULT_STRING_BUFFER_SIZE];
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
@@ -819,7 +820,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         count = umock_c_negative_tests_call_count();
         for (index = 0; index < count; index++)
         {
-            char tmp_msg[64];
+            char tmp_msg[DEFAULT_STRING_BUFFER_SIZE];
             int nResult;
 
             umock_c_negative_tests_reset();
@@ -1081,7 +1082,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         for (index = 0; index < count; index++)
         {
             STRING_HANDLE str_result;
-            char tmp_msg[64];
+            char tmp_msg[DEFAULT_STRING_BUFFER_SIZE];
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
@@ -1183,7 +1184,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         for (index = 0; index < count; index++)
         {
             STRING_HANDLE result;
-            char tmp_msg[64];
+            char tmp_msg[DEFAULT_STRING_BUFFER_SIZE];
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
@@ -1380,7 +1381,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         count = umock_c_negative_tests_call_count();
         for (index = 0; index < count; index++)
         {
-            char tmp_msg[64];
+            char tmp_msg[DEFAULT_STRING_BUFFER_SIZE];
             STRING_HANDLE result;
 
             umock_c_negative_tests_reset();
@@ -1611,7 +1612,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         count = umock_c_negative_tests_call_count();
         for (index = 0; index < count; index++)
         {
-            char tmp_msg[64];
+            char tmp_msg[DEFAULT_STRING_BUFFER_SIZE];
             int str_result;
 
             umock_c_negative_tests_reset();
