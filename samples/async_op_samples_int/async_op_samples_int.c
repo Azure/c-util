@@ -35,6 +35,12 @@ TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES);
 
 TEST_DEFINE_ENUM_TYPE(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_RESULT_VALUES)
 
+#ifdef USE_VALGRIND
+#define ASYNC_OP_DEFAULT_WAIT 3000
+#else
+#define ASYNC_OP_DEFAULT_WAIT 1000
+#endif
+
 typedef struct TEST_MODULE_TAG
 {
     COMMON_ASYNC_OP_MODULE_INTERFACE module_interface;
@@ -429,7 +435,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_with_fake_cancel)
         {
             ASSERT_IS_NOT_NULL(async_op);
         }
-        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
         ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
         // cleanup
@@ -467,7 +473,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_with_real_cancel)
         {
             ASSERT_IS_NOT_NULL(async_op);
         }
-        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
         ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
         // cleanup
@@ -506,7 +512,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_on_sync_path_with_fake_
         {
             ASSERT_IS_NOT_NULL(async_op);
         }
-        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
         ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
         // cleanup
@@ -545,7 +551,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_on_sync_path_with_real_
         {
             ASSERT_IS_NOT_NULL(async_op);
         }
-        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
         ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
         // cleanup
@@ -585,7 +591,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_on_sync_path_first_then
         {
             ASSERT_IS_NOT_NULL(async_op);
         }
-        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
         ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
         // cleanup
@@ -625,7 +631,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_on_sync_path_first_then
         {
             ASSERT_IS_NOT_NULL(async_op);
         }
-        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
         ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
         // cleanup
@@ -665,7 +671,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_on_async_path_first_the
         {
             ASSERT_IS_NOT_NULL(async_op);
         }
-        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
         ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
         // cleanup
@@ -705,7 +711,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_on_async_path_first_the
         {
             ASSERT_IS_NOT_NULL(async_op);
         }
-        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
         ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
         // cleanup
@@ -736,7 +742,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_then_cancel_is_noop_wit
             ASSERT_ARE_EQUAL(int, 0, g_test_modules_with_fake_cancel[i].module_interface.execute_async_no_async_op_out(g_test_modules_with_fake_cancel[i].module_interface.handle, 1 /* Short timeout */, test_ASYNC_OP_MODULE_CALLBACK, result_context));
         }
 
-        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
         ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
         // act
@@ -781,7 +787,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_then_cancel_is_noop_wit
             ASSERT_ARE_EQUAL(int, 0, g_test_modules_with_real_cancel[i].module_interface.execute_async_no_async_op_out(g_test_modules_with_real_cancel[i].module_interface.handle, 1 /* Short timeout */, test_ASYNC_OP_MODULE_CALLBACK, result_context));
         }
 
-        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
         ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
         // act
@@ -882,7 +888,7 @@ TEST_FUNCTION(all_modules_can_be_canceled_successfully_with_real_cancel)
         }
 
         // assert
-        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
         ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context->result);
 
         // cleanup
@@ -923,7 +929,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_with_fake_cancel_and_3_
             {
                 ASSERT_IS_NOT_NULL(async_op);
             }
-            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
             ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
             // cleanup
@@ -965,7 +971,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_with_real_cancel_and_3_
             {
                 ASSERT_IS_NOT_NULL(async_op);
             }
-            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
             ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
             // cleanup
@@ -1000,7 +1006,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_then_cancel_is_noop_wit
                 ASSERT_ARE_EQUAL(int, 0, g_test_modules_with_fake_cancel[i].module_interface.execute_async_no_async_op_out(g_test_modules_with_fake_cancel[i].module_interface.handle, 1 /* Short timeout */, test_ASYNC_OP_MODULE_CALLBACK, result_context));
             }
 
-            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
             ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
             // act
@@ -1049,7 +1055,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_then_cancel_is_noop_wit
                 ASSERT_ARE_EQUAL(int, 0, g_test_modules_with_real_cancel[i].module_interface.execute_async_no_async_op_out(g_test_modules_with_real_cancel[i].module_interface.handle, 1 /* Short timeout */, test_ASYNC_OP_MODULE_CALLBACK, result_context));
             }
 
-            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
             ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
             // act
@@ -1106,7 +1112,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_on_sync_path_with_fake_
             {
                 ASSERT_IS_NOT_NULL(async_op);
             }
-            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
             ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
             // cleanup
@@ -1149,7 +1155,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_on_sync_path_with_real_
             {
                 ASSERT_IS_NOT_NULL(async_op);
             }
-            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
             ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
             // cleanup
@@ -1194,7 +1200,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_on_sync_path_then_async
             {
                 ASSERT_IS_NOT_NULL(async_op);
             }
-            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
             ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
             // cleanup
@@ -1239,7 +1245,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_on_sync_path_then_async
             {
                 ASSERT_IS_NOT_NULL(async_op);
             }
-            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
             ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
             // cleanup
@@ -1284,7 +1290,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_on_async_path_then_sync
             {
                 ASSERT_IS_NOT_NULL(async_op);
             }
-            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
             ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
             // cleanup
@@ -1329,7 +1335,7 @@ TEST_FUNCTION(all_modules_can_execute_async_successfully_on_async_path_then_sync
             {
                 ASSERT_IS_NOT_NULL(async_op);
             }
-            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
             ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_OK, result_context->result);
 
             // cleanup
@@ -1378,7 +1384,7 @@ TEST_FUNCTION(all_modules_can_be_canceled_successfully_with_fake_cancel_after_ma
             }
 
             // assert
-            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
             // Note that the cleanup will block for 2 seconds because the real operation must still complete
             ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context->result);
 
@@ -1428,7 +1434,7 @@ TEST_FUNCTION(all_modules_can_be_canceled_successfully_with_real_cancel_after_ma
             }
 
             // assert
-            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, 1000));
+            ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&result_context->callback_called, 1, ASYNC_OP_DEFAULT_WAIT));
             ASSERT_ARE_EQUAL(COMMON_ASYNC_OP_MODULE_RESULT, COMMON_ASYNC_OP_MODULE_CANCELED, result_context->result);
 
             // cleanup
