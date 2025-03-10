@@ -47,13 +47,13 @@ static EXECUTION_ENGINE_HANDLE g_execution_engine = NULL;
 static volatile_atomic int32_t g_on_data_consumed_cb_count;
 
 static void* test_data = (void*)0x0001;
+static void* test_data2 = (void*)0x0008;
 static int32_t pull_cancelled = 0x0002;
 static int32_t push_cancelled = 0x0003;
 static int32_t pull_success = 0x0004;
 static int32_t push_success = 0x0005;
 static int32_t pull_abandoned = 0x0006;
 static int32_t push_abandoned = 0x0007;
-static void* test_data2 = (void*)0x0008;
 static volatile_atomic int32_t test_signal;
 
 static void test_on_data_available_cb_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
@@ -132,12 +132,12 @@ static void test_on_data_consumed_cb_success(void* context, CHANNEL_CALLBACK_RES
     ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
 }
 
-static void test_free_channel_data(void* data)
+static void test_free_channel_data(void* context, void* data)
 {
     ASSERT_ARE_EQUAL(void_ptr, test_data, data);
 }
 
-static void test_free_channel_data2(void* data)
+static void test_free_channel_data2(void* context, void* data)
 {
     ASSERT_ARE_EQUAL(void_ptr, test_data2, data);
 }
@@ -256,7 +256,7 @@ static int push_data(void* context)
     for (int32_t i = 1; i <= CHANNEL_ORDER_TEST_COUNT; i++)
     {
         THANDLE(RC_STRING) correlation_id = rc_string_create_with_format("push_correlation_id_%" PRId32 "", i);
-        THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer((void*)(intptr_t)i, dummy_free_func);
+        THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer((void*)(intptr_t)i, dummy_free_func, NULL);
         ASSERT_IS_NOT_NULL(data);
 
         THANDLE(ASYNC_OP) async_op = NULL;
@@ -286,9 +286,9 @@ TEST_SUITE_INITIALIZE(suite_init)
     THANDLE_INITIALIZE_MOVE(THREADPOOL)(&g.g_threadpool, &temp);
     ASSERT_IS_NOT_NULL(g.g_threadpool);
 
-    THANDLE_INITIALIZE_MOVE(RC_PTR)(&g.g_data, &(THANDLE(RC_PTR)){ rc_ptr_create_with_move_pointer(test_data, test_free_channel_data) });
+    THANDLE_INITIALIZE_MOVE(RC_PTR)(&g.g_data, &(THANDLE(RC_PTR)){ rc_ptr_create_with_move_pointer(test_data, test_free_channel_data, NULL) });
     ASSERT_IS_NOT_NULL(g.g_data);
-    THANDLE_INITIALIZE_MOVE(RC_PTR)(&g.g_data2, &(THANDLE(RC_PTR)){ rc_ptr_create_with_move_pointer(test_data2, test_free_channel_data2) });
+    THANDLE_INITIALIZE_MOVE(RC_PTR)(&g.g_data2, &(THANDLE(RC_PTR)){ rc_ptr_create_with_move_pointer(test_data2, test_free_channel_data2, NULL) });
     ASSERT_IS_NOT_NULL(g.g_data2);
 
     THANDLE_INITIALIZE_MOVE(RC_STRING)(&g.g_pull_correlation_id, &(THANDLE(RC_STRING)){ rc_string_create("pull_correlation_id")});

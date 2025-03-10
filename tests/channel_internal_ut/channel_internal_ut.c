@@ -101,8 +101,9 @@ static struct G_TAG /*g comes from "global*/
 static void* test_data = (void*)0x1001;
 static void* test_data_2 = (void*)0x1002;
 
-static void test_data_dispose(void* data)
+static void test_data_dispose(void* context, void* data)
 {
+    (void)context;
     (void)data;
 }
 
@@ -667,7 +668,7 @@ TEST_FUNCTION(channel_internal_pull_after_push_succeeds)
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
     int32_t push_context = 0;
     THANDLE(ASYNC_OP) push_op = NULL;
-    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
+    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
     CHANNEL_RESULT push_result_1 = channel_internal_push(channel_internal, g.g_push_correlation_id, rc_ptr, test_on_data_consumed_cb_ok, &push_context, &push_op);
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result_1);
     ASSERT_IS_NOT_NULL(push_op);
@@ -737,7 +738,7 @@ TEST_FUNCTION(channel_internal_pull_as_second_op_fails_if_underlying_functions_f
 {
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
-    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
     int32_t push_context = 0;
     THANDLE(ASYNC_OP) push_op = NULL;
     CHANNEL_RESULT push_result = channel_internal_push(channel_internal, g.g_push_correlation_id, data, test_on_data_consumed_cb_ok, &push_context, &push_op);
@@ -798,7 +799,7 @@ TEST_FUNCTION(channel_internal_push_on_empty_succeeds)
 {
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
-    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
     THANDLE(ASYNC_OP) push_op = NULL;
     umock_c_reset_all_calls();
 
@@ -837,13 +838,13 @@ TEST_FUNCTION(channel_internal_push_after_push_succeeds)
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
     int32_t push_context_1 = 0;
-    THANDLE(RC_PTR) data_1 = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
+    THANDLE(RC_PTR) data_1 = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
     THANDLE(ASYNC_OP) push_op_1 = NULL;
     CHANNEL_RESULT push_result_1 = channel_internal_push(channel_internal, g.g_push_correlation_id, data_1, test_on_data_consumed_cb_abandoned, &push_context_1, &push_op_1);
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result_1);
     ASSERT_IS_NOT_NULL(push_op_1);
     int32_t push_context_2 = 0;
-    THANDLE(RC_PTR) data_2 = rc_ptr_create_with_move_pointer(test_data_2, test_data_dispose);
+    THANDLE(RC_PTR) data_2 = rc_ptr_create_with_move_pointer(test_data_2, test_data_dispose, NULL);
     THANDLE(ASYNC_OP) push_op_2 = NULL;
     umock_c_reset_all_calls();
 
@@ -889,7 +890,7 @@ TEST_FUNCTION(channel_internal_push_after_pull_succeeds)
 
     int32_t push_context = 0;
     THANDLE(ASYNC_OP) push_op = NULL;
-    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
+    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
     THREADPOOL_WORK_FUNCTION work_function;
     void* work_context;
     umock_c_reset_all_calls();
@@ -923,7 +924,7 @@ TEST_FUNCTION(channel_internal_push_as_first_op_fails_when_underlying_functions_
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
     THANDLE(ASYNC_OP) push_op = NULL;
-    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
     umock_c_reset_all_calls();
 
     int32_t push_context = 0;
@@ -964,7 +965,7 @@ TEST_FUNCTION(channel_internal_push_as_second_op_fails_if_underlying_functions_f
     ASSERT_IS_NOT_NULL(pull_op);
 
     THANDLE(ASYNC_OP) push_op = NULL;
-    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
 
     umock_c_reset_all_calls();
 
@@ -1045,7 +1046,7 @@ TEST_FUNCTION(channel_internal_cancel_op_cancels_matched_op)
 {
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
-    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
     umock_c_reset_all_calls();
 
     THREADPOOL_WORK_FUNCTION work_function;
@@ -1135,7 +1136,7 @@ TEST_FUNCTION(channel_internal_execute_callback_fails_with_NULL_context)
 {
     //arrange
     THANDLE(CHANNEL_INTERNAL) channel_internal = test_create_and_open_channel_internal();
-    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose);
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
     umock_c_reset_all_calls();
 
     THREADPOOL_WORK_FUNCTION work_function;

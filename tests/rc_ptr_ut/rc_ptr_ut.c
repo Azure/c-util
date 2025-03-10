@@ -32,14 +32,17 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 }
 
 static void* test_free_func = (void*)0x1000;
+static void* test_free_func_context = (void*)0x1001;
 
-static void test_dispose(void* ptr)
+static void test_dispose(void* context, void* ptr)
 {
+    ASSERT_ARE_EQUAL(void_ptr, test_free_func_context, context);
     ASSERT_ARE_EQUAL(void_ptr, test_free_func, ptr);
 }
 
-static void check_free_func_called(void* ptr)
+static void check_free_func_called(void* context, void* ptr)
 {
+    ASSERT_ARE_EQUAL(void_ptr, test_free_func_context, context);
     ASSERT_ARE_EQUAL(int, 0, (*(int*)ptr)++);
 }
 
@@ -80,7 +83,7 @@ TEST_FUNCTION(rc_ptr_create_with_move_pointer_fails_with_null_ptr)
     //arrange
 
     //act
-    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(NULL, test_dispose);
+    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(NULL, test_dispose, test_free_func_context);
 
     //assert
     ASSERT_IS_NULL(rc_ptr);
@@ -95,11 +98,12 @@ TEST_FUNCTION(rc_ptr_create_with_move_pointer_succeeds)
     STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
 
     //act
-    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_free_func, test_dispose);
+    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_free_func, test_dispose, test_free_func_context);
 
     //assert
     ASSERT_IS_NOT_NULL(rc_ptr);
     ASSERT_ARE_EQUAL(void_ptr, test_free_func, rc_ptr->ptr);
+    ASSERT_ARE_EQUAL(void_ptr, test_free_func_context, rc_ptr->free_func_context);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //cleanup
@@ -114,7 +118,7 @@ TEST_FUNCTION(rc_ptr_with_move_pointer_fail_when_underlying_functions_fail)
     .SetReturn(NULL);
 
     //act
-    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_free_func, test_dispose);
+    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_free_func, test_dispose, test_free_func_context);
 
     //assert
     ASSERT_IS_NULL(rc_ptr);
@@ -125,7 +129,7 @@ TEST_FUNCTION(rc_ptr_dispose_calls_free_func)
 {
     //arrange
     int num = 0;
-    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(&num, check_free_func_called);
+    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(&num, check_free_func_called, test_free_func_context);
     ASSERT_IS_NOT_NULL(rc_ptr);
     umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(free(IGNORED_ARG));

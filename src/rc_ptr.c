@@ -21,11 +21,11 @@ static void rc_ptr_dispose(RC_PTR* rc_ptr)
     /*Codes_SRS_RC_PTR_43_006: [ If free_func is not NULL, rc_ptr_dispose shall call free_func with the ptr. ]*/
     if (rc_ptr->free_func != NULL)
     {
-        rc_ptr->free_func((void*)rc_ptr->ptr);
+        rc_ptr->free_func(rc_ptr->free_func_context, (void*)rc_ptr->ptr);
     }
 }
 
-THANDLE(RC_PTR) rc_ptr_create_with_move_pointer(void* ptr, RC_PTR_FREE_FUNC free_func)
+THANDLE(RC_PTR) rc_ptr_create_with_move_pointer(void* ptr, RC_PTR_FREE_FUNC free_func, void* free_func_context)
 {
     THANDLE(RC_PTR) result = NULL;
     /*Codes_SRS_RC_PTR_43_001: [ If ptr is NULL, rc_ptr_create_with_move_pointer shall fail and return NULL. ]*/
@@ -46,9 +46,10 @@ THANDLE(RC_PTR) rc_ptr_create_with_move_pointer(void* ptr, RC_PTR_FREE_FUNC free
         {
             RC_PTR* rc_ptr = THANDLE_GET_T(RC_PTR)(thandle);
 
-            /*Codes_SRS_RC_PTR_43_003: [ rc_ptr_create_with_move_pointer shall store the given ptr and free_func in the created THANDLE(RC_PTR). ]*/
+            /*Codes_SRS_RC_PTR_43_003: [ rc_ptr_create_with_move_pointer shall store the given ptr, free_func and free_func_context in the created THANDLE(RC_PTR). ]*/
             rc_ptr->ptr = ptr;
             rc_ptr->free_func = free_func;
+            rc_ptr->free_func_context = free_func_context;
 
             /*Codes_SRS_RC_PTR_43_005: [ rc_ptr_create_with_move_pointer shall succeed and return a non-NULL value. ]*/
             THANDLE_INITIALIZE_MOVE(RC_PTR)(&result, &thandle);
