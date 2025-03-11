@@ -75,8 +75,9 @@ static struct TEST_OUT_OP_TAG
     THANDLE(ASYNC_OP) out_op_push;
 } test_out_op = { NULL, NULL };
 
-static void do_nothing(void* data)
+static void do_nothing(void* context, void* data)
 {
+    (void)context;
     (void)data;
 }
 
@@ -498,7 +499,7 @@ TEST_FUNCTION(channel_push_calls_channel_internal_push)
     //arrange
     THANDLE(CHANNEL) channel = test_create_and_open_channel();
     THANDLE(ASYNC_OP) push_op = NULL;
-    THANDLE(RC_PTR) data_rc_ptr = rc_ptr_create_with_move_pointer(test_data, do_nothing);
+    THANDLE(RC_PTR) data_rc_ptr = rc_ptr_create_with_move_pointer(test_data, do_nothing, NULL);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(channel_internal_push(IGNORED_ARG, g.g_push_correlation_id, data_rc_ptr, test_on_data_consumed_cb_abandoned, test_push_context, &push_op));

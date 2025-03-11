@@ -12,12 +12,13 @@
 
 #include "c_pal/thandle.h"
 
-typedef void (*RC_PTR_FREE_FUNC)(void* context);
+typedef void (*RC_PTR_FREE_FUNC)(void* context, void* ptr);
 
 typedef struct RC_PTR_TAG
 {
     void* ptr;
     RC_PTR_FREE_FUNC free_func;
+    void* free_func_context;
 } RC_PTR;
 
 THANDLE_TYPE_DECLARE(RC_PTR);
@@ -34,7 +35,7 @@ extern "C"
 {
 #endif
 
-    MOCKABLE_FUNCTION(, THANDLE(RC_PTR), rc_ptr_create_with_move_pointer, void*, ptr, RC_PTR_FREE_FUNC, free_func);
+    MOCKABLE_FUNCTION(, THANDLE(RC_PTR), rc_ptr_create_with_move_pointer, void*, ptr, RC_PTR_FREE_FUNC, free_func, void*, free_func_context);
 
 #ifdef __cplusplus
 }

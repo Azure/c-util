@@ -26,7 +26,7 @@ extern "C"
     typedef struct RC_PTR_TAG real_RC_PTR;
     THANDLE_TYPE_DECLARE(real_RC_PTR);
 
-    MOCKABLE_FUNCTION(, THANDLE(RC_PTR), real_rc_ptr_create_with_move_pointer, void*, ptr, RC_PTR_FREE_FUNC, free_func);
+    MOCKABLE_FUNCTION(, THANDLE(RC_PTR), real_rc_ptr_create_with_move_pointer, void*, ptr, RC_PTR_FREE_FUNC, free_func, void*, free_func_context);
 
 #ifdef __cplusplus
 }
