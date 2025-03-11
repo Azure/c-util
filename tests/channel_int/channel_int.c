@@ -134,11 +134,13 @@ static void test_on_data_consumed_cb_success(void* context, CHANNEL_CALLBACK_RES
 
 static void test_free_channel_data(void* context, void* data)
 {
+    (void)context;
     ASSERT_ARE_EQUAL(void_ptr, test_data, data);
 }
 
 static void test_free_channel_data2(void* context, void* data)
 {
+    (void)context;
     ASSERT_ARE_EQUAL(void_ptr, test_data2, data);
 }
 
@@ -229,8 +231,9 @@ static int close_channel(void* context)
     return 0;
 }
 
-static void dummy_free_func(void* ptr)
+static void dummy_free_func(void* context, void* ptr)
 {
+    (void)context;
     (void)ptr;
 }
 
