@@ -268,7 +268,6 @@ static void setup_channel_internal_close_expectations(size_t num_ops)
     STRICT_EXPECTED_CALL(DList_RemoveHeadList(IGNORED_ARG));
     for (size_t i = 0; i < num_ops; ++i)
     {
-        STRICT_EXPECTED_CALL(threadpool_schedule_work(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
         setup_op_cleanup_expectations(false);
         STRICT_EXPECTED_CALL(DList_RemoveHeadList(IGNORED_ARG));
     }
@@ -519,7 +518,7 @@ TEST_FUNCTION(channel_internal_open_fails_when_underlying_functions_fail)
 /*Tests_SRS_CHANNEL_INTERNAL_43_168: [ abandon_pending_operations shall set is_open to false.]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_095: [ abandon_pending_operations shall iterate over the list of pending operations and do the following: ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_096: [ set the result of the operation to CHANNEL_CALLBACK_RESULT_ABANDONED. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_097: [ call threadpool_schedule_work with execute_callbacks as work_function. ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_097: [ call execute_callbacks with the operation as context.]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_169: [ abandon_pending_operations shall call srw_lock_release_exclusive. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_100: [ channel_internal_close shall call sm_close_end. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_145: [ execute_callbacks shall call the stored callback(s) with the result of the operation. ]*/
