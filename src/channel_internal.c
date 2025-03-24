@@ -84,20 +84,20 @@ static void abandon_pending_operations(void* context)
         /*Codes_SRS_CHANNEL_INTERNAL_43_168: [abandon_pending_operations shall set is_open to false.]*/
         channel_internal_ptr->is_open = false;
 
-
-        /*Codes_SRS_CHANNEL_INTERNAL_43_095: [ abandon_pending_operations shall iterate over the list of pending operations and do the following: ]*/
-        for (DLIST_ENTRY* entry = DList_RemoveHeadList(&channel_internal_ptr->op_list); entry != &channel_internal_ptr->op_list; entry = DList_RemoveHeadList(&channel_internal_ptr->op_list))
-        {
-            CHANNEL_OP* channel_op = CONTAINING_RECORD(entry, CHANNEL_OP, anchor);
-
-            /*Codes_SRS_CHANNEL_INTERNAL_43_096: [ set the result of the operation to CHANNEL_CALLBACK_RESULT_ABANDONED. ]*/
-            channel_op->result = CHANNEL_CALLBACK_RESULT_ABANDONED;
-
-            /*Codes_SRS_CHANNEL_INTERNAL_43_097: [ call execute_callbacks with the operation as context.]*/
-            execute_callbacks(channel_op);
-        }
         /*Codes_SRS_CHANNEL_INTERNAL_43_169: [ abandon_pending_operations shall call srw_lock_release_exclusive. ]*/
         srw_lock_release_exclusive(channel_internal_ptr->lock);
+    }
+
+    /*Codes_SRS_CHANNEL_INTERNAL_43_095: [ abandon_pending_operations shall iterate over the list of pending operations and do the following: ]*/
+    for (DLIST_ENTRY* entry = DList_RemoveHeadList(&channel_internal_ptr->op_list); entry != &channel_internal_ptr->op_list; entry = DList_RemoveHeadList(&channel_internal_ptr->op_list))
+    {
+        CHANNEL_OP* channel_op = CONTAINING_RECORD(entry, CHANNEL_OP, anchor);
+
+        /*Codes_SRS_CHANNEL_INTERNAL_43_096: [ set the result of the operation to CHANNEL_CALLBACK_RESULT_ABANDONED. ]*/
+        channel_op->result = CHANNEL_CALLBACK_RESULT_ABANDONED;
+
+        /*Codes_SRS_CHANNEL_INTERNAL_43_097: [ call execute_callbacks with the operation as context.]*/
+        execute_callbacks(channel_op);
     }
 }
 
@@ -189,8 +189,16 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, channel_internal_open, THANDLE(CHANNEL_INTERN
     else
     {
         CHANNEL_INTERNAL* channel_internal_ptr = THANDLE_GET_T(CHANNEL_INTERNAL)(channel_internal);
+
+        /*Codes_SRS_CHANNEL_INTERNAL_43_172: [ channel_internal_open shall call srw_lock_acquire_exclusive. ]*/
+        srw_lock_acquire_exclusive(channel_internal_ptr->lock);
+
         /*Codes_SRS_CHANNEL_INTERNAL_43_166: [ channel_internal_open shall set is_open to true. ]*/
         channel_internal_ptr->is_open = true;
+
+        /*Codes_SRS_CHANNEL_INTERNAL_43_173: [ channel_internal_open shall call srw_lock_release_exclusive. ]*/
+        srw_lock_release_exclusive(channel_internal_ptr->lock);
+
         /*Codes_SRS_CHANNEL_INTERNAL_43_160 : [channel_internal_open shall call sm_open_end.]*/
         sm_open_end(channel_internal->sm, true);
         /*Codes_SRS_CHANNEL_INTERNAL_43_162 : [channel_internal_open shall succeed and return 0.]*/
