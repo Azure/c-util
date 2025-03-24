@@ -93,15 +93,8 @@ static void abandon_pending_operations(void* context)
             /*Codes_SRS_CHANNEL_INTERNAL_43_096: [ set the result of the operation to CHANNEL_CALLBACK_RESULT_ABANDONED. ]*/
             channel_op->result = CHANNEL_CALLBACK_RESULT_ABANDONED;
 
-            /*Codes_SRS_CHANNEL_INTERNAL_43_097: [ call threadpool_schedule_work with execute_callbacks as work_function. ]*/
-            if (threadpool_schedule_work(channel_internal_ptr->threadpool, execute_callbacks, channel_op) != 0)
-            {
-                LogError("Failure in threadpool_schedule_work(channel_internal_ptr->threadpool=%p, execute_callbacks=%p, channel_op=%p)", channel_internal_ptr->threadpool, execute_callbacks, channel_op);
-            }
-            else
-            {
-                /* all ok */
-            }
+            /*Codes_SRS_CHANNEL_INTERNAL_43_097: [ call execute_callbacks with the operation as context.]*/
+            execute_callbacks(channel_op);
         }
         /*Codes_SRS_CHANNEL_INTERNAL_43_169: [ abandon_pending_operations shall call srw_lock_release_exclusive. ]*/
         srw_lock_release_exclusive(channel_internal_ptr->lock);

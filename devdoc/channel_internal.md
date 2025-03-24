@@ -84,7 +84,7 @@ channel_internal_open` opens the given `channel_internal`.
     static void channel_internal_close(THANDLE(CHANNEL_INTERNAL) channel_internal);
 ```
 
-`channel_internal_close` schedules all pending operations to be abandoned.
+`channel_internal_close` abandons all pending operations.
 
 **SRS_CHANNEL_INTERNAL_43_094: [** `channel_internal_close` shall call `sm_close_begin_with_cb` with `abandon_pending_operations` as the callback. **]**
 
@@ -96,7 +96,7 @@ channel_internal_open` opens the given `channel_internal`.
 
  - **SRS_CHANNEL_INTERNAL_43_096: [** set the `result` of the `operation` to `CHANNEL_CALLBACK_RESULT_ABANDONED`. **]**
 
- - **SRS_CHANNEL_INTERNAL_43_097: [** call `threadpool_schedule_work` with `execute_callbacks` as `work_function`. **]**
+ - **SRS_CHANNEL_INTERNAL_43_097: [** call `execute_callbacks` with the `operation` as `context`.**]**
 
 **SRS_CHANNEL_INTERNAL_43_169: [** `abandon_pending_operations` shall call `srw_lock_release_exclusive`. **]**
 
