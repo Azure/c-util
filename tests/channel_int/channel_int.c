@@ -17,6 +17,7 @@
 #include "c_pal/threadpool.h"
 #include "c_pal/threadapi.h"
 #include "c_pal/sync.h"
+#include "c_pal/srw_lock.h"
 
 #include "c_util/rc_ptr.h"
 #include "c_util/channel.h"
@@ -42,6 +43,12 @@ static struct
     THANDLE(RC_STRING) g_push_correlation_id;
 }g;
 
+typedef struct TEST_CALLBACK_CONTEXT_TAG
+{
+    THANDLE(CHANNEL) channel;
+    volatile_atomic int32_t trigger;
+} TEST_CALLBACK_CONTEXT;
+
 static EXECUTION_ENGINE_HANDLE g_execution_engine = NULL;
 
 static volatile_atomic int32_t g_on_data_consumed_cb_count;
@@ -55,6 +62,7 @@ static int32_t push_success = 0x0005;
 static int32_t pull_abandoned = 0x0006;
 static int32_t push_abandoned = 0x0007;
 static volatile_atomic int32_t test_signal;
+static SRW_LOCK_HANDLE g_lock;
 
 static void test_on_data_available_cb_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
 {
@@ -94,6 +102,24 @@ static void test_on_data_available_cb_abandoned(void* context, CHANNEL_CALLBACK_
     ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
 }
 
+static void test_on_data_available_cb_abandoned_with_lock(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
+{
+    ASSERT_IS_NOT_NULL(context);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
+    ASSERT_IS_NOT_NULL(pull_correlation_id);
+    ASSERT_IS_NULL(push_correlation_id);
+    ASSERT_IS_NULL(data);
+
+    srw_lock_acquire_exclusive(g_lock);
+
+    int32_t original_value = interlocked_exchange(context, pull_abandoned);
+    ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
+
+    srw_lock_release_exclusive(g_lock);
+
+    wake_by_address_single(context);
+}
+
 static void test_on_data_consumed_cb_abandoned(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
 {
     ASSERT_IS_NOT_NULL(context);
@@ -130,6 +156,19 @@ static void test_on_data_consumed_cb_success(void* context, CHANNEL_CALLBACK_RES
     int32_t original_value = interlocked_exchange(context, push_success);
     wake_by_address_single(context);
     ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
+}
+
+static void test_on_data_consumed_attempts_to_close_channel(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
+{
+    ASSERT_IS_NOT_NULL(context);
+    TEST_CALLBACK_CONTEXT* test_context = context;
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
+    ASSERT_IS_NULL(pull_correlation_id);
+    ASSERT_IS_NOT_NULL(push_correlation_id);
+    channel_close(test_context->channel);
+    int32_t original_value = interlocked_exchange(&test_context->trigger, push_abandoned);
+    ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
+    wake_by_address_single(&test_context->trigger);
 }
 
 static void test_free_channel_data(void* context, void* data)
@@ -204,19 +243,29 @@ static int pull_once(void* context)
     THANDLE(RC_STRING) correlation_id = rc_string_create("pull_correlation_id");
     ASSERT_IS_NOT_NULL(correlation_id);
 
-    volatile_atomic int32_t pull_context;
-    (void)interlocked_exchange(&pull_context, TEST_ORIGINAL_VALUE);
+
+    volatile_atomic int32_t trigger;
+    (void)interlocked_exchange(&trigger, TEST_ORIGINAL_VALUE);
 
     THANDLE(ASYNC_OP) async_op = NULL;
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&test_signal, 0, UINT32_MAX));
+    CHANNEL_RESULT pull_result;
 
-    CHANNEL_RESULT pull_result = channel_pull(channel, correlation_id, test_on_data_available_cb_abandoned, (void*)&pull_context, &async_op);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&test_signal, TEST_ORIGINAL_VALUE, UINT32_MAX));
+
+    // Acquiring a this lock here and also in the callback is to ensure that it does not cause a deadlock.
+    srw_lock_acquire_exclusive(g_lock);
+    {
+
+        pull_result = channel_pull(channel, correlation_id, test_on_data_available_cb_abandoned_with_lock, (void*)&trigger, &async_op);
+
+        srw_lock_release_exclusive(g_lock);
+    }
 
     if (pull_result == CHANNEL_RESULT_OK)
     {
         ASSERT_IS_NOT_NULL(async_op);
         THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
-        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&pull_context, pull_abandoned, UINT32_MAX));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&trigger, pull_abandoned, UINT32_MAX));
     }
     THANDLE_ASSIGN(RC_STRING)(&correlation_id, NULL);
 
@@ -844,6 +893,8 @@ TEST_FUNCTION(test_close_does_not_get_stuck)
         //arrange
         THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
         ASSERT_IS_NOT_NULL(channel);
+        g_lock = srw_lock_create(false, NULL);
+        ASSERT_IS_NOT_NULL(g_lock);
         ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
         (void)interlocked_exchange(&test_signal, 0);
 
@@ -871,8 +922,36 @@ TEST_FUNCTION(test_close_does_not_get_stuck)
         ASSERT_ARE_EQUAL(int, 0, close_result);
 
         //cleanup
+        srw_lock_destroy(g_lock);
         THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
     }
+}
+
+TEST_FUNCTION(channel_close_does_not_deadlock_if_called_from_callback)
+{
+    //arrange
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
+
+    TEST_CALLBACK_CONTEXT context;
+    (void)interlocked_exchange(&context.trigger, TEST_ORIGINAL_VALUE);
+    THANDLE_INITIALIZE(CHANNEL)(&context.channel, channel);
+
+    THANDLE(ASYNC_OP) async_op = NULL;
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_push(channel, g.g_push_correlation_id, g.g_data, test_on_data_consumed_attempts_to_close_channel, (void*)&context, &async_op));
+    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+
+    //act
+    channel_close(channel);
+
+    //assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&context.trigger, TEST_ORIGINAL_VALUE, UINT32_MAX));
+    ASSERT_ARE_EQUAL(int32_t, push_abandoned, interlocked_add(&context.trigger, 0));
+
+    //cleanup
+    THANDLE_ASSIGN(CHANNEL)(&context.channel, NULL);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
