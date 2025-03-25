@@ -266,7 +266,12 @@ static void setup_op_cleanup_expectations(bool completed)
 static void setup_channel_internal_close_expectations(size_t num_ops)
 {
     STRICT_EXPECTED_CALL(sm_close_begin_with_cb(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(DList_InitializeListHead(IGNORED_ARG));
     STRICT_EXPECTED_CALL(srw_lock_acquire_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(DList_AppendTailList(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(DList_RemoveEntryList(IGNORED_ARG))
+        .CallCannotFail();
+    STRICT_EXPECTED_CALL(DList_InitializeListHead(IGNORED_ARG));
     STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
     STRICT_EXPECTED_CALL(DList_RemoveHeadList(IGNORED_ARG));
     for (size_t i = 0; i < num_ops; ++i)
@@ -520,8 +525,10 @@ TEST_FUNCTION(channel_internal_open_fails_when_underlying_functions_fail)
 /*Tests_SRS_CHANNEL_INTERNAL_43_094: [ channel_internal_close shall call sm_close_begin_with_cb with abandon_pending_operation as the callback. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_167: [ abandon_pending_operations shall call srw_lock_acquire_exclusive.]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_168: [ abandon_pending_operations shall set is_open to false.]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_174: [abandon_pending_operations shall make a local copy of the list of pending operations.]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_175: [abandon_pending_operations shall set the list of pending operations to an empty list by calling DList_InitializeListHead.]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_169: [ abandon_pending_operations shall call srw_lock_release_exclusive. ]*/
-/*Tests_SRS_CHANNEL_INTERNAL_43_095: [ abandon_pending_operations shall iterate over the list of pending operations and do the following: ]*/
+/*Tests_SRS_CHANNEL_INTERNAL_43_095: [ abandon_pending_operations shall iterate over the local copy and do the following: ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_096: [ set the result of the operation to CHANNEL_CALLBACK_RESULT_ABANDONED. ]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_097: [ call execute_callbacks with the operation as context.]*/
 /*Tests_SRS_CHANNEL_INTERNAL_43_100: [ channel_internal_close shall call sm_close_end. ]*/

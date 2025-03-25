@@ -96,9 +96,13 @@ channel_internal_open` opens the given `channel_internal`.
 
 **SRS_CHANNEL_INTERNAL_43_168: [** `abandon_pending_operations` shall set `is_open` to `false`. **]**
 
+**SRS_CHANNEL_INTERNAL_43_174: [** `abandon_pending_operations` shall make a local copy of the list of pending operations. **]**
+
+**SRS_CHANNEL_INTERNAL_43_175: [** `abandon_pending_operations` shall set the list of pending operations to an empty list by calling `DList_InitializeListHead`. **]**
+
 **SRS_CHANNEL_INTERNAL_43_169: [** `abandon_pending_operations` shall call `srw_lock_release_exclusive`. **]**
 
-**SRS_CHANNEL_INTERNAL_43_095: [** `abandon_pending_operations` shall iterate over the list of pending operations and do the following: **]**
+**SRS_CHANNEL_INTERNAL_43_095: [** `abandon_pending_operations` shall iterate over the local copy and do the following: **]**
 
  - **SRS_CHANNEL_INTERNAL_43_096: [** set the `result` of the `operation` to `CHANNEL_CALLBACK_RESULT_ABANDONED`. **]**
 

@@ -78,18 +78,27 @@ static void abandon_pending_operations(void* context)
 {
     CHANNEL_INTERNAL* channel_internal_ptr = context;
 
+    DLIST_ENTRY op_list;
+    DList_InitializeListHead(&op_list);
     /*Codes_SRS_CHANNEL_INTERNAL_43_167: [abandon_pending_operations shall call srw_lock_acquire_exclusive.]*/
     srw_lock_acquire_exclusive(channel_internal_ptr->lock);
     {
         /*Codes_SRS_CHANNEL_INTERNAL_43_168: [abandon_pending_operations shall set is_open to false.]*/
         channel_internal_ptr->is_open = false;
 
+        /*Codes_SRS_CHANNEL_INTERNAL_43_174: [abandon_pending_operations shall make a local copy of the list of pending operations.]*/
+        DList_AppendTailList(&op_list, &channel_internal_ptr->op_list);
+        (void)DList_RemoveEntryList(&channel_internal_ptr->op_list);
+
+        /*Codes_SRS_CHANNEL_INTERNAL_43_175 : [abandon_pending_operations shall set the list of pending operations to an empty list by calling DList_InitializeListHead.]*/
+        DList_InitializeListHead(&channel_internal_ptr->op_list);
+
         /*Codes_SRS_CHANNEL_INTERNAL_43_169: [ abandon_pending_operations shall call srw_lock_release_exclusive. ]*/
         srw_lock_release_exclusive(channel_internal_ptr->lock);
     }
 
-    /*Codes_SRS_CHANNEL_INTERNAL_43_095: [ abandon_pending_operations shall iterate over the list of pending operations and do the following: ]*/
-    for (DLIST_ENTRY* entry = DList_RemoveHeadList(&channel_internal_ptr->op_list); entry != &channel_internal_ptr->op_list; entry = DList_RemoveHeadList(&channel_internal_ptr->op_list))
+    /*Codes_SRS_CHANNEL_INTERNAL_43_095: [ abandon_pending_operations shall iterate over the local copy and do the following: ]*/
+    for (DLIST_ENTRY* entry = DList_RemoveHeadList(&op_list); entry != &op_list; entry = DList_RemoveHeadList(&op_list))
     {
         CHANNEL_OP* channel_op = CONTAINING_RECORD(entry, CHANNEL_OP, anchor);
 
