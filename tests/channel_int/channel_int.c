@@ -252,7 +252,7 @@ static int pull_once(void* context)
 
     ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&test_signal, TEST_ORIGINAL_VALUE, UINT32_MAX));
 
-    // Acquiring a this lock here and also in the callback is to ensure that it doesn not cause a deadlock.
+    // Acquiring a this lock here and also in the callback is to ensure that it does not cause a deadlock.
     srw_lock_acquire_exclusive(g_lock);
     {
 
