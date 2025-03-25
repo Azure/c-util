@@ -74,6 +74,15 @@ static void channel_internal_dispose(CHANNEL_INTERNAL* channel_internal)
     sm_destroy(channel_internal->sm);
 }
 
+
+static int copy_entry(PDLIST_ENTRY listEntry, void* actionContext, bool* continueProcessing)
+{
+    DLIST_ENTRY* op_list = (DLIST_ENTRY*)actionContext;
+    DList_InsertTailList(op_list, listEntry);
+    *continueProcessing = true;
+    return 0;
+}
+
 static void abandon_pending_operations(void* context)
 {
     CHANNEL_INTERNAL* channel_internal_ptr = context;
@@ -87,8 +96,7 @@ static void abandon_pending_operations(void* context)
         channel_internal_ptr->is_open = false;
 
         /*Codes_SRS_CHANNEL_INTERNAL_43_174: [abandon_pending_operations shall make a local copy of the list of pending operations.]*/
-        DList_AppendTailList(&op_list, &channel_internal_ptr->op_list);
-        (void)DList_RemoveEntryList(&channel_internal_ptr->op_list);
+        (void)DList_ForEach(&channel_internal_ptr->op_list, copy_entry, &op_list);
 
         /*Codes_SRS_CHANNEL_INTERNAL_43_175 : [abandon_pending_operations shall set the list of pending operations to an empty list by calling DList_InitializeListHead.]*/
         DList_InitializeListHead(&channel_internal_ptr->op_list);

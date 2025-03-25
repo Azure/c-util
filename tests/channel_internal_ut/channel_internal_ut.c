@@ -268,9 +268,12 @@ static void setup_channel_internal_close_expectations(size_t num_ops)
     STRICT_EXPECTED_CALL(sm_close_begin_with_cb(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(DList_InitializeListHead(IGNORED_ARG));
     STRICT_EXPECTED_CALL(srw_lock_acquire_exclusive(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(DList_AppendTailList(IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(DList_RemoveEntryList(IGNORED_ARG))
+    STRICT_EXPECTED_CALL(DList_ForEach(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .CallCannotFail();
+    for (size_t i = 0; i < num_ops; ++i)
+    {
+        STRICT_EXPECTED_CALL(DList_InsertTailList(IGNORED_ARG, IGNORED_ARG));
+    }
     STRICT_EXPECTED_CALL(DList_InitializeListHead(IGNORED_ARG));
     STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
     STRICT_EXPECTED_CALL(DList_RemoveHeadList(IGNORED_ARG));
