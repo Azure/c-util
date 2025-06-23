@@ -14,6 +14,4 @@ set(${theseTestsName}_h_files
     ../../inc/c_util/async_type_helper.h
 )
 
-include_directories(../../../deps/azure-zrpc/pal/interfaces/inc)
-
 build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util  c_pal_reals c_util_reals)

@@ -180,7 +180,6 @@ set(c_util_c_files
     ./src/watchdog_threadpool.c
     ./src/worker_thread.c
     ./src/sync_wrapper.c
-    ./src/async_type_helper.c
 )
 
 set(c_util_cpp_files
