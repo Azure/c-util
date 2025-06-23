@@ -20,6 +20,5 @@ set(${theseTestsName}_h_files
 )
 
 include_directories(../../inc)
-include_directories(../../../deps/azure-zrpc/pal/interfaces/inc)
 
 build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util c_pal_reals)
