@@ -56,7 +56,6 @@ extern "C" {
 #define ASYNC_TYPE_HELPER_NON_CONST_TYPE_const_UUID_T UUID_T
 
 typedef const char* const_charptr_t;
-typedef const UUID_T const_UUID_T;
 typedef char* charptr_t;
 typedef void* void_ptr;
 typedef CONSTBUFFER_ARRAY_HANDLE* constbuffer_array_ptr;
