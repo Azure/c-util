@@ -28,7 +28,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include "c_util/channel.h"
-#include "umock_c/umock_c_prod.h"
 
     typedef struct CHANNEL_TAG real_CHANNEL;
     THANDLE_TYPE_DECLARE(real_CHANNEL);

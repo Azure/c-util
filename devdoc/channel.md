@@ -67,16 +67,6 @@ Notes on operation state transitions:
 
 `channel_pull` and `channel_push` can be called from callbacks of this module. Since the callbacks are executed on threadpool threads, there is no risk of stack overflow or deadlock.
 
-## Need for `CHANNEL`
-
-The lifetime of the state of the `channel` module is linked to two things:
- - `THANDLE(CHANNEL)` references held by the producer and consumer.
- - `THANDLE(ASYNC_OP)` operations returned from `channel_push` and `channel_pull`. The `THANDLE(ASYNC_OP)`s need to hold references to the state of the `channel` because `async_op_cancel` needs to be able to lock the list of pending operations to remove the operation from the list.
-
-Since the `THANDLE(ASYNC_OP)`s can outlive the `THANDLE(CHANNEL)` references and `THANDLE(ASYNC_OP)` must access the state of the `channel`, the state of the `channel` cannot be freed when the last `THANDLE(CHANNEL)` reference is released. 
-
-To decouple the lifetime of the state from the `THANDLE(CHANNEL)` references, `THANDLE(CHANNEL)` is used to store the state of the module. `THANDLE(CHANNEL)` holds a single reference to `THANDLE(CHANNEL)` and each `THANDLE(ASYNC_OP)` also holds a reference to `THANDLE(CHANNEL)`. When the last `THANDLE(CHANNEL)` reference is released, all pending operations are abandoned and `THANDLE(CHANNEL)` releases its reference to `THANDLE(CHANNEL)`. However, `THANDLE(CHANNEL)` is not freed yet because `THANDLE(ASYNC_OP)`s still hold references to it.
-
 ## Exposed API
 
 ```
@@ -154,7 +144,7 @@ channel_open` opens the given `channel`.
 
 ### channel_close
 ```c
-    static void channel_close(THANDLE(CHANNEL) channel);
+    MOCKABLE_FUNCTION(, void, channel_close, THANDLE(CHANNEL), channel);
 ```
 
 `channel_close` abandons all pending operations.
