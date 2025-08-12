@@ -4,7 +4,8 @@
 #define REAL_CHANNEL_H
 
 #include "macro_utils/macro_utils.h"
-#include "c_util/channel.h"
+
+#include "c_pal/thandle.h"
 
 #define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
 
@@ -26,9 +27,11 @@
 extern "C" {
 #endif /* __cplusplus */
 
-THANDLE_TYPE_DECLARE(CHANNEL);
-typedef struct CHANNEL_TAG real_CHANNEL;
-THANDLE_TYPE_DECLARE(real_CHANNEL);
+#include "c_util/channel.h"
+#include "umock_c/umock_c_prod.h"
+
+    typedef struct CHANNEL_TAG real_CHANNEL;
+    THANDLE_TYPE_DECLARE(real_CHANNEL);
 
     THANDLE(CHANNEL) real_channel_create(THANDLE(PTR(LOG_CONTEXT_HANDLE)) log_context, THANDLE(THREADPOOL) threadpool);
     int real_channel_open(THANDLE(CHANNEL) channel);
