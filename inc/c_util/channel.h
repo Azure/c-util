@@ -14,12 +14,27 @@
 #include "c_util/rc_ptr.h"
 #include "c_util/rc_string.h"
 
-#include "c_util/channel_common.h"
-
 #include "umock_c/umock_c_prod.h"
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+#define CHANNEL_RESULT_VALUES \
+    CHANNEL_RESULT_OK, \
+    CHANNEL_RESULT_INVALID_ARGS, \
+    CHANNEL_RESULT_ERROR
+
+MU_DEFINE_ENUM(CHANNEL_RESULT, CHANNEL_RESULT_VALUES);
+
+#define CHANNEL_CALLBACK_RESULT_VALUES \
+    CHANNEL_CALLBACK_RESULT_OK, \
+    CHANNEL_CALLBACK_RESULT_CANCELLED, \
+    CHANNEL_CALLBACK_RESULT_ABANDONED
+
+MU_DEFINE_ENUM(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_VALUES);
+
+typedef void(*ON_DATA_AVAILABLE_CB)(void* pull_context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data);
+typedef void(*ON_DATA_CONSUMED_CB)(void* push_context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id);
 
 typedef struct CHANNEL_TAG CHANNEL;
 
