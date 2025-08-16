@@ -35,13 +35,18 @@ Key dependencies in order: `macro-utils-c` → `c-logging` → `c-pal` → `c-ut
 
 ### Building and Testing
 ```bash
-# Configure with tests enabled
+# Recommended: Use out-of-source build in cmake folder
+mkdir cmake
+cd cmake
+cmake .. -Drun_unittests=ON -Drun_int_tests=ON -DCMAKE_BUILD_TYPE=Debug
+
+# Alternative: In-source build (not recommended for development)
 cmake . -Drun_unittests=ON -Drun_int_tests=ON -DCMAKE_BUILD_TYPE=Debug
 
-# Build
+# Build from cmake folder
 cmake --build .
 
-# Run tests
+# Run tests from cmake folder
 ctest -C Debug --output-on-failure
 ```
 
@@ -55,6 +60,14 @@ ctest -C Debug --output-on-failure
 - Integration tests suffix with `_int`, unit tests with `_ut`
 - Always use `real_gballoc_hl_init()` in test setup and `real_gballoc_hl_deinit()` in cleanup
 - Test file structure: `BEGIN_TEST_SUITE()`, `TEST_SUITE_INITIALIZE()`, `TEST_FUNCTION()`, `TEST_SUITE_CLEANUP()`
+- **API Section Comments**: Mark the beginning of tests for each API with comments like `/* API_FUNCTION_NAME */`
+- **SRS Requirements**: Tag each test with SRS requirements using format `/*Tests_SRS_MODULE_NN_NNN: [requirement description]*/`
+  - **AI-Generated Code**: Use spec author ID `88` for all GitHub Copilot AI-generated modules and requirements
+- **AAA Pattern**: All test functions must follow the Arrange-Act-Assert pattern with clear comment sections:
+  - `///arrange` - Setup test data and mock expectations
+  - `///act` - Execute the function under test
+  - `///assert` - Verify results and mock call expectations
+  - `///cleanup` - Release resources and reset handles to NULL (when applicable)
 
 ## Code Conventions
 

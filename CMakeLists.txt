@@ -150,6 +150,7 @@ set(c_util_c_files
     ./src/cancellation_token.c
     ./src/channel.c
     ./src/constbuffer.c
+    ./src/constbuffer_thandle.c
     ./src/constbuffer_array.c
     ./src/constbuffer_array_batcher_nv.c
     ./src/constbuffer_array_splitter.c
@@ -197,6 +198,7 @@ set(c_util_h_files
     ./inc/c_util/cancellation_token.h
     ./inc/c_util/channel.h
     ./inc/c_util/constbuffer.h
+    ./inc/c_util/constbuffer_thandle.h
     ./inc/c_util/constbuffer_format.h
     ./inc/c_util/constbuffer_version.h
     ./inc/c_util/constbuffer_array.h
