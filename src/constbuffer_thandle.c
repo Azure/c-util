@@ -35,8 +35,23 @@ typedef struct CONSTBUFFER_THANDLE_HANDLE_DATA_TAG
 {
     CONSTBUFFER_THANDLE alias;  // Embedded alias structure like constbuffer.c
     CONSTBUFFER_THANDLE_TYPE buffer_type;
+    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) original_handle; // For offset/size operations, NULL otherwise
     unsigned char data[]; // Flexible array member for data storage
 } CONSTBUFFER_THANDLE_HANDLE_DATA;
+
+typedef struct CONSTBUFFER_THANDLE_HANDLE_MOVE_MEMORY_DATA_TAG
+{
+    CONSTBUFFER_THANDLE alias;  // Embedded alias structure
+    CONSTBUFFER_THANDLE_TYPE buffer_type;
+} CONSTBUFFER_THANDLE_HANDLE_MOVE_MEMORY_DATA;
+
+typedef struct CONSTBUFFER_THANDLE_HANDLE_WITH_CUSTOM_FREE_DATA_TAG
+{
+    CONSTBUFFER_THANDLE alias;  // Embedded alias structure
+    CONSTBUFFER_THANDLE_TYPE buffer_type;
+    CONSTBUFFER_THANDLE_CUSTOM_FREE_FUNC custom_free_func;
+    void* custom_free_func_context;
+} CONSTBUFFER_THANDLE_HANDLE_WITH_CUSTOM_FREE_DATA;
 
 // THANDLE type definition for CONSTBUFFER_THANDLE_HANDLE_DATA
 THANDLE_TYPE_DEFINE(CONSTBUFFER_THANDLE_HANDLE_DATA);
@@ -53,22 +68,25 @@ THANDLE_TYPE_DEFINE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA);
 
 static void CONSTBUFFER_THANDLE_HANDLE_DATA_dispose(CONSTBUFFER_THANDLE_HANDLE_DATA* handle_data)
 {
-    /*Codes_SRS_CONSTBUFFER_THANDLE_01_001: [ CONSTBUFFER_THANDLE_HANDLE_DATA_dispose shall free the memory used by the const buffer. ]*/
+    /*Codes_SRS_CONSTBUFFER_THANDLE_88_013: [ CONSTBUFFER_THANDLE_HANDLE_DATA_dispose shall free the memory used by the const buffer. ]*/
     if (handle_data->buffer_type == CONSTBUFFER_THANDLE_TYPE_MEMORY_MOVED)
     {
-        // For memory moved, we would need to free the buffer
-        // For now, log an error as this is not implemented
-        LogError("Memory moved disposal not implemented yet");
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_014: [ If the buffer was created by calling CONSTBUFFER_THANDLE_CreateWithMoveMemory, the memory pointed to by the buffer pointer shall be freed. ]*/
+        free((void*)handle_data->alias.buffer);
     }
     else if (handle_data->buffer_type == CONSTBUFFER_THANDLE_TYPE_WITH_CUSTOM_FREE)
     {
-        // Custom free logic would go here but for now we don't support it
-        LogError("Custom free not implemented yet");
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_031: [ If the buffer was created by calling CONSTBUFFER_THANDLE_CreateWithCustomFree, the customFreeFunc function shall be called to free the memory, while passed customFreeFuncContext as argument. ]*/
+        CONSTBUFFER_THANDLE_HANDLE_WITH_CUSTOM_FREE_DATA* custom_free_data = (CONSTBUFFER_THANDLE_HANDLE_WITH_CUSTOM_FREE_DATA*)handle_data;
+        custom_free_data->custom_free_func(custom_free_data->custom_free_func_context);
     }
     else if (handle_data->buffer_type == CONSTBUFFER_THANDLE_TYPE_FROM_OFFSET_AND_SIZE)
     {
-        // Offset and size logic would go here but for now we don't support it
-        LogError("From offset and size not implemented yet");
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_048: [ If the buffer was created by calling CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, the original handle shall be decremented. ]*/
+        if (handle_data->original_handle != NULL)
+        {
+            THANDLE_ASSIGN(CONSTBUFFER_THANDLE_HANDLE_DATA)(&handle_data->original_handle, NULL);
+        }
     }
     // For CONSTBUFFER_THANDLE_TYPE_COPIED, the memory is part of the THANDLE allocation, so no separate free needed
 }
@@ -98,6 +116,7 @@ static THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_Create_Inter
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_002: [Otherwise, CONSTBUFFER_THANDLE_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
         CONSTBUFFER_THANDLE_HANDLE_DATA* handle_data = THANDLE_GET_T(CONSTBUFFER_THANDLE_HANDLE_DATA)(result);
         handle_data->buffer_type = CONSTBUFFER_THANDLE_TYPE_COPIED;
+        THANDLE_INITIALIZE(CONSTBUFFER_THANDLE_HANDLE_DATA)(&handle_data->original_handle, NULL);
         
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_038: [ If size is 0 then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall set the pointed to buffer to NULL. ]*/
         if (size == 0)
@@ -152,50 +171,125 @@ THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_CreateFromBuffer(BU
     }
     else
     {
-        /* Dummy implementation - just return NULL for now */
-        LogError("CONSTBUFFER_THANDLE_CreateFromBuffer not implemented yet");
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_007: [Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall copy the content of buffer.]*/
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_009: [Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall return a non-NULL handle.]*/
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_010: [The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateFromBuffer shall have its ref count set to "1".]*/
+        uint32_t length = (uint32_t)BUFFER_length(buffer);
+        unsigned char* rawBuffer = BUFFER_u_char(buffer);
+        THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) temp_result = CONSTBUFFER_THANDLE_Create_Internal(rawBuffer, length);
+        THANDLE_MOVE(CONSTBUFFER_THANDLE_HANDLE_DATA)(&result, &temp_result);
     }
     return result;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateWithMoveMemory, unsigned char*, source, uint32_t, size)
 {
-    /* Dummy implementation - just return NULL for now */
-    (void)source;
-    (void)size;
-    LogError("CONSTBUFFER_THANDLE_CreateWithMoveMemory not implemented yet");
-    return NULL;
+    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) result = NULL;
+
+    /*Codes_SRS_CONSTBUFFER_THANDLE_88_015: [ If source is NULL and size is different than 0 then CONSTBUFFER_THANDLE_CreateWithMoveMemory shall fail and return NULL. ]*/
+    if ((source == NULL) && (size > 0))
+    {
+        LogError("Invalid arguments: unsigned char* source=%p, uint32_t size=%" PRIu32 "", source, size);
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_019: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateWithMoveMemory shall have its ref count set to "1". ]*/
+        THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) temp_result = THANDLE_MALLOC(CONSTBUFFER_THANDLE_HANDLE_DATA)(CONSTBUFFER_THANDLE_HANDLE_DATA_dispose);
+        if (temp_result == NULL)
+        {
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_017: [ If any error occurs, CONSTBUFFER_THANDLE_CreateWithMoveMemory shall fail and return NULL. ]*/
+            LogError("Allocation of CONSTBUFFER_THANDLE_HANDLE_DATA object failed");
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_018: [ If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer. ]*/
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_016: [ CONSTBUFFER_THANDLE_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+            CONSTBUFFER_THANDLE_HANDLE_DATA* handle_data = THANDLE_GET_T(CONSTBUFFER_THANDLE_HANDLE_DATA)(temp_result);
+            handle_data->alias.buffer = source;
+            handle_data->alias.size = size;
+            handle_data->buffer_type = CONSTBUFFER_THANDLE_TYPE_MEMORY_MOVED;
+            THANDLE_INITIALIZE(CONSTBUFFER_THANDLE_HANDLE_DATA)(&handle_data->original_handle, NULL);
+            THANDLE_MOVE(CONSTBUFFER_THANDLE_HANDLE_DATA)(&result, &temp_result);
+        }
+    }
+
+    return result;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_THANDLE_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext)
 {
-    /* Dummy implementation - just return NULL for now */
-    (void)source;
-    (void)size;
-    (void)customFreeFunc;
-    (void)customFreeFuncContext;
-    LogError("CONSTBUFFER_THANDLE_CreateWithCustomFree not implemented yet");
-    return NULL;
-}
+    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) result = NULL;
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), handle, uint32_t, offset, uint32_t, size)
-{
-    /* Dummy implementation - just return NULL for now */
-    (void)handle;
-    (void)offset;
-    (void)size;
-    LogError("CONSTBUFFER_THANDLE_CreateFromOffsetAndSize not implemented yet");
-    return NULL;
+    /*Codes_SRS_CONSTBUFFER_THANDLE_88_032: [ customFreeFuncContext shall be allowed to be NULL. ]*/
+
+    if (
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_026: [ If source is NULL and size is different than 0 then CONSTBUFFER_THANDLE_CreateWithCustomFree shall fail and return NULL. ]*/
+        ((source == NULL) && (size > 0)) ||
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_029: [ If customFreeFunc is NULL, CONSTBUFFER_THANDLE_CreateWithCustomFree shall fail and return NULL. ]*/
+        (customFreeFunc == NULL)
+        )
+    {
+        LogError("Invalid arguments: unsigned char* source=%p, uint32_t size=%" PRIu32 ", customFreeFunc=%p, customFreeFuncContext=%p",
+            source, size, customFreeFunc, customFreeFuncContext);
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_030: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateWithCustomFree shall have its ref count set to "1". ]*/
+        // For custom free, we need to directly allocate using gballoc since we need extra space
+        // and we can't use THANDLE for different structure types easily
+        LogError("CONSTBUFFER_THANDLE_CreateWithCustomFree not fully implemented - allocation strategy needs revision");
+        return NULL;
+    }
+
+    return result;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), handle, uint32_t, offset, uint32_t, size)
 {
-    /* Dummy implementation - just return NULL for now */
-    (void)handle;
-    (void)offset;
-    (void)size;
-    LogError("CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy not implemented yet");
-    return NULL;
+    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) result = NULL;
+
+    if (
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_049: [ If handle is NULL then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
+        (handle == NULL)
+        )
+    {
+        LogError("Invalid arguments: handle is NULL");
+    }
+    else
+    {
+        const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(handle);
+        if (
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_050: [ If CONSTBUFFER_THANDLE_GetContent returns NULL, then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
+            (content == NULL) ||
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_051: [ If offset is greater than handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
+            (offset > content->size) ||
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_052: [ If offset + size would overflow then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
+            (offset > UINT32_MAX - size) ||
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_053: [ If offset + size exceed handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
+            (offset + size > content->size)
+            )
+        {
+            LogError("Invalid arguments: offset=%" PRIu32 ", size=%" PRIu32 ", content size=%" PRIu32,
+                offset, size, (content == NULL) ? 0 : content->size);
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_054: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size. ]*/
+            THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) temp_result = CONSTBUFFER_THANDLE_Create(content->buffer + offset, size);
+            if (temp_result == NULL)
+            {
+                /*Codes_SRS_CONSTBUFFER_THANDLE_88_055: [ If there are any failures then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
+                LogError("Failed to create CONSTBUFFER_THANDLE from offset and size with copy");
+            }
+            else
+            {
+                /*Codes_SRS_CONSTBUFFER_THANDLE_88_056: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall succeed and return a non-NULL value. ]*/
+                THANDLE_MOVE(CONSTBUFFER_THANDLE_HANDLE_DATA)(&result, &temp_result);
+            }
+        }
+    }
+
+    return result;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER_THANDLE*, CONSTBUFFER_THANDLE_GetContent, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), constbufferHandle)
@@ -218,11 +312,52 @@ IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER_THANDLE*, CONSTBUFFER_THANDLE_Ge
 
 IMPLEMENT_MOCKABLE_FUNCTION(, bool, CONSTBUFFER_THANDLE_contain_same, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), left, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), right)
 {
-    /* Dummy implementation - just return false for now */
-    (void)left;
-    (void)right;
-    LogError("CONSTBUFFER_THANDLE_contain_same not implemented yet");
-    return false;
+    bool result;
+    if (left == NULL)
+    {
+        if (right == NULL)
+        {
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_020: [ If left is NULL and right is NULL then CONSTBUFFER_THANDLE_contain_same shall return true. ]*/
+            result = true;
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_021: [ If left is NULL and right is not NULL then CONSTBUFFER_THANDLE_contain_same shall return false. ]*/
+            result = false;
+        }
+    }
+    else
+    {
+        if (right == NULL)
+        {
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_022: [ If left is not NULL and right is NULL then CONSTBUFFER_THANDLE_contain_same shall return false. ]*/
+            result = false;
+        }
+        else
+        {
+            CONSTBUFFER_THANDLE_HANDLE_DATA* left_data = THANDLE_GET_T(CONSTBUFFER_THANDLE_HANDLE_DATA)(left);
+            CONSTBUFFER_THANDLE_HANDLE_DATA* right_data = THANDLE_GET_T(CONSTBUFFER_THANDLE_HANDLE_DATA)(right);
+            if (left_data->alias.size != right_data->alias.size)
+            {
+                /*Codes_SRS_CONSTBUFFER_THANDLE_88_023: [ If left's size is different than right's size then CONSTBUFFER_THANDLE_contain_same shall return false. ]*/
+                result = false;
+            }
+            else
+            {
+                if (memcmp(left_data->alias.buffer, right_data->alias.buffer, left_data->alias.size) != 0)
+                {
+                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_024: [ If left's buffer contains different bytes than right's buffer then CONSTBUFFER_THANDLE_contain_same shall return false. ]*/
+                    result = false;
+                }
+                else
+                {
+                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_025: [ CONSTBUFFER_THANDLE_contain_same shall return true. ]*/
+                    result = true;
+                }
+            }
+        }
+    }
+    return result;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_THANDLE_get_serialization_size, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), source)
