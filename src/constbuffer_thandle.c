@@ -33,8 +33,8 @@ MU_DEFINE_ENUM_STRINGS(CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THAND
 
 typedef struct CONSTBUFFER_THANDLE_HANDLE_DATA_TAG
 {
+    CONSTBUFFER_THANDLE alias;  // Embedded alias structure like constbuffer.c
     CONSTBUFFER_THANDLE_TYPE buffer_type;
-    uint32_t size;
     unsigned char data[]; // Flexible array member for data storage
 } CONSTBUFFER_THANDLE_HANDLE_DATA;
 
@@ -98,16 +98,25 @@ static THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_Create_Inter
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_002: [Otherwise, CONSTBUFFER_THANDLE_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
         CONSTBUFFER_THANDLE_HANDLE_DATA* handle_data = THANDLE_GET_T(CONSTBUFFER_THANDLE_HANDLE_DATA)(result);
         handle_data->buffer_type = CONSTBUFFER_THANDLE_TYPE_COPIED;
-        handle_data->size = size;
         
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_038: [ If size is 0 then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall set the pointed to buffer to NULL. ]*/
-        if (size > 0 && source != NULL)
+        if (size == 0)
+        {
+            handle_data->alias.buffer = NULL;
+            handle_data->alias.size = 0;
+        }
+        else
         {
             /*Codes_SRS_CONSTBUFFER_THANDLE_88_004: [Otherwise CONSTBUFFER_THANDLE_Create shall return a non-NULL handle.]*/
             /*Codes_SRS_CONSTBUFFER_THANDLE_88_007: [Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall copy the content of buffer.]*/
             /*Codes_SRS_CONSTBUFFER_THANDLE_88_009: [Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall return a non-NULL handle.]*/
             /*Codes_SRS_CONSTBUFFER_THANDLE_88_039: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall set the pointed to a non-NULL value that contains the same bytes as offset...offset+size-1 of handle. ]*/
-            (void)memcpy(handle_data->data, source, size);
+            if (source != NULL)
+            {
+                (void)memcpy(handle_data->data, source, size);
+            }
+            handle_data->alias.buffer = handle_data->data;
+            handle_data->alias.size = size;
         }
     }
     return result;
@@ -189,7 +198,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUF
     return NULL;
 }
 
-const CONSTBUFFER_THANDLE* CONSTBUFFER_THANDLE_GetContent(THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) constbufferHandle)
+IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER_THANDLE*, CONSTBUFFER_THANDLE_GetContent, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), constbufferHandle)
 {
     const CONSTBUFFER_THANDLE* result;
     if (constbufferHandle == NULL)
@@ -201,9 +210,8 @@ const CONSTBUFFER_THANDLE* CONSTBUFFER_THANDLE_GetContent(THANDLE(CONSTBUFFER_TH
     else
     {
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_012: [Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a const CONSTBUFFER_THANDLE* that matches byte by byte the original bytes used to created the const buffer and has the same length.]*/
-        // For now, return NULL as this needs proper implementation
-        LogError("CONSTBUFFER_THANDLE_GetContent not implemented yet");
-        result = NULL;
+        CONSTBUFFER_THANDLE_HANDLE_DATA* handle_data = THANDLE_GET_T(CONSTBUFFER_THANDLE_HANDLE_DATA)(constbufferHandle);
+        result = &(handle_data->alias);
     }
     return result;
 }
