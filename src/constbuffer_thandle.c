@@ -107,13 +107,13 @@ static THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_Create_Inter
 {
     /*Codes_SRS_CONSTBUFFER_THANDLE_88_005: [The non-NULL handle returned by CONSTBUFFER_THANDLE_Create shall have its ref count set to "1".]*/
     /*Codes_SRS_CONSTBUFFER_THANDLE_88_010: [The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateFromBuffer shall have its ref count set to "1".]*/
-    /*Codes_SRS_CONSTBUFFER_THANDLE_88_037: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall allocate enough memory to hold CONSTBUFFER_THANDLE_HANDLE and size bytes. ]*/
+    /*Codes_SRS_CONSTBUFFER_THANDLE_88_030: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateWithCustomFree shall have its ref count set to "1". ]*/
     THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) result = THANDLE_MALLOC_FLEX(CONSTBUFFER_THANDLE_HANDLE_DATA)(CONSTBUFFER_THANDLE_HANDLE_DATA_dispose, size, 1);
     if (result == NULL)
     {
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_003: [If creating the copy fails then CONSTBUFFER_THANDLE_Create shall return NULL.]*/
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_008: [If copying the content fails, then CONSTBUFFER_THANDLE_CreateFromBuffer shall fail and return NULL.] */
-        /*Codes_SRS_CONSTBUFFER_THANDLE_88_040: [ If there are any failures then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_055: [ If there are any failures then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
         LogError("failure in THANDLE_MALLOC_FLEX(CONSTBUFFER_THANDLE_HANDLE_DATA)(CONSTBUFFER_THANDLE_HANDLE_DATA_dispose, size=%" PRIu32 ")",
             size);
     }
@@ -124,7 +124,7 @@ static THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_Create_Inter
         handle_data->buffer_type = CONSTBUFFER_THANDLE_TYPE_COPIED;
         THANDLE_INITIALIZE(CONSTBUFFER_THANDLE_HANDLE_DATA)(&handle_data->original_handle, NULL);
         
-        /*Codes_SRS_CONSTBUFFER_THANDLE_88_038: [ If size is 0 then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall set the pointed to buffer to NULL. ]*/
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_054: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size. ]*/
         if (size == 0)
         {
             handle_data->alias.buffer = NULL;
