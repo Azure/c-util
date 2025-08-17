@@ -69,6 +69,92 @@ ctest -C Debug --output-on-failure
   - `///assert` - Verify results and mock call expectations
   - `///cleanup` - Release resources and reset handles to NULL (when applicable)
 
+### Reals Pattern for Testing
+The "reals" pattern provides non-mocked implementations of modules for testing scenarios where actual functionality is needed rather than mocked behavior.
+
+#### Reals Architecture
+- **Purpose**: Enable tests to use real implementations of dependencies while still controlling specific components under test
+- **Location**: All reals are in `tests/reals/` directory with standardized naming
+- **Build**: Compiled into `c_util_reals` library that links with `c_pal_reals` for platform dependencies
+
+#### Reals File Structure
+Each module follows a three-file pattern:
+```c
+// 1. real_MODULE.h - Declares real function prototypes and mock registration macro
+#ifndef REAL_MODULE_H
+#define REAL_MODULE_H
+#include "macro_utils/macro_utils.h"
+
+#define R2(X) REGISTER_GLOBAL_MOCK_HOOK(X, real_##X);
+#define REGISTER_MODULE_GLOBAL_MOCK_HOOK() \
+    MU_FOR_EACH_1(R2, FUNCTION1, FUNCTION2, FUNCTION3)
+
+#include "c_util/module.h"
+// Function prototypes with real_ prefix
+extern RETURN_TYPE real_FUNCTION_NAME(PARAMS...);
+#endif
+
+// 2. real_MODULE.c - Includes all dependency renames and original source
+#include "real_dependency1_renames.h" // IWYU pragma: keep
+#include "real_dependency2_renames.h" // IWYU pragma: keep
+#include "real_MODULE_renames.h" // IWYU pragma: keep
+#include "../../src/MODULE.c"
+
+// 3. real_MODULE_renames.h - Maps original symbols to real_ prefixed versions
+#ifndef REAL_MODULE_RENAMES_H
+#define REAL_MODULE_RENAMES_H
+#define FUNCTION1 real_FUNCTION1
+#define FUNCTION2 real_FUNCTION2
+#define FUNCTION3 real_FUNCTION3
+#endif
+```
+
+#### Using Reals in Tests
+**Unit Tests with Selective Mocking**:
+```c
+#define ENABLE_MOCKS
+#include "c_pal/gballoc_hl.h"  // Mock this
+#include "c_util/dependency.h" // Mock this 
+#undef ENABLE_MOCKS
+
+#include "real_gballoc_hl.h"   // Use real memory allocation
+
+// In test setup:
+int result = real_gballoc_hl_init(NULL, NULL);
+ASSERT_ARE_EQUAL(int, 0, result);
+
+// In test cleanup:
+real_gballoc_hl_deinit();
+```
+
+**Integration Tests**:
+```c
+#include "c_pal/gballoc_hl.h"         // Direct use, no mocking
+#include "c_pal/gballoc_hl_redirect.h" // Redirect malloc/free
+
+// Use standard gballoc_hl_init/deinit - no "real_" prefix needed
+```
+
+#### Reals Dependency Chain
+Reals maintain the same dependency order as the main modules:
+- `c_pal_reals` provides platform reals (gballoc_hl, interlocked, etc.)
+- `c_util_reals` depends on `c_pal_reals` and provides utility reals
+- Test libraries link with appropriate reals for their dependency level
+
+#### Common Reals Usage Patterns
+- **Memory Management**: Always use `real_gballoc_hl_*` in unit test setup/cleanup
+- **Threading**: Use `real_interlocked_*` when testing thread-safe components
+- **Async Operations**: Use `real_async_op` when testing async patterns without mocking the framework
+- **Collections**: Use `real_doublylinkedlist`, `real_tarray` for data structure functionality
+- **Platform Services**: Use `real_threadpool`, `real_srw_lock` on Windows for system integration
+
+#### IWYU Pragma Requirement
+All renames includes in real implementation files must have IWYU pragma:
+```c
+#include "real_dependency_renames.h" // IWYU pragma: keep
+```
+This prevents Include What You Use from removing these seemingly unused headers that are essential for symbol renaming.
+
 ## Code Conventions
 
 ### Error Handling
@@ -207,7 +293,8 @@ Standard include order pattern for both headers and source files:
 ### IWYU Pragma Usage
 Use Include What You Use (IWYU) pragmas to control header dependencies:
 - `// IWYU pragma: keep` - Force inclusion of headers that appear unused
-- Common in "real" test files: `#include "real_gballoc_hl_renames.h" // IWYU pragma: keep`
+- **Critical for Reals**: All `real_*_renames.h` includes must have IWYU pragma to prevent removal
+- Example: `#include "real_gballoc_hl_renames.h" // IWYU pragma: keep`
 
 ## Documentation
 Detailed requirements for each module are in `devdoc/*.md` with SRS (Software Requirements Specification) numbering for traceability.
