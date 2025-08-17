@@ -211,3 +211,9 @@ Use Include What You Use (IWYU) pragmas to control header dependencies:
 
 ## Documentation
 Detailed requirements for each module are in `devdoc/*.md` with SRS (Software Requirements Specification) numbering for traceability.
+
+### Requirements Documentation Formatting
+- All function names, parameter names, type names, and keywords (like `NULL`, `true`, `false`) must be enclosed in backticks in requirements documentation
+- Examples: `CONSTBUFFER_THANDLE_Create`, `source`, `THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA)`, `NULL`
+- Backticks should NOT be used in actual code files or unit test files - only in documentation
+- This ensures proper markdown formatting and consistent documentation style across the project

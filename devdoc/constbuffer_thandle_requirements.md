@@ -79,15 +79,15 @@ THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_Create(const unsign
 
 `CONSTBUFFER_THANDLE_Create` creates a const buffer from a memory area.
 
-**SRS_CONSTBUFFER_THANDLE_88_001: [** If source is NULL and size is different than 0 then CONSTBUFFER_THANDLE_Create shall fail and return NULL. **]**
+**SRS_CONSTBUFFER_THANDLE_88_001: [** If `source` is `NULL` and `size` is different than 0 then `CONSTBUFFER_THANDLE_Create` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_002: [** Otherwise, CONSTBUFFER_THANDLE_Create shall create a copy of the memory area pointed to by source having size bytes. **]**
+**SRS_CONSTBUFFER_THANDLE_88_002: [** Otherwise, `CONSTBUFFER_THANDLE_Create` shall create a copy of the memory area pointed to by `source` having `size` bytes. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_003: [** If creating the copy fails then CONSTBUFFER_THANDLE_Create shall return NULL. **]**
+**SRS_CONSTBUFFER_THANDLE_88_003: [** If creating the copy fails then `CONSTBUFFER_THANDLE_Create` shall return `NULL`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_004: [** Otherwise CONSTBUFFER_THANDLE_Create shall return a non-NULL handle. **]**
+**SRS_CONSTBUFFER_THANDLE_88_004: [** Otherwise `CONSTBUFFER_THANDLE_Create` shall return a non-`NULL` handle. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_005: [** The non-NULL handle returned by CONSTBUFFER_THANDLE_Create shall have its ref count set to "1". **]**
+**SRS_CONSTBUFFER_THANDLE_88_005: [** The non-`NULL` handle returned by `CONSTBUFFER_THANDLE_Create` shall have its ref count set to "1". **]**
 
 ## CONSTBUFFER_THANDLE_CreateFromBuffer
 
@@ -97,15 +97,15 @@ THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_CreateFromBuffer(BU
 
 `CONSTBUFFER_THANDLE_CreateFromBuffer` creates a const buffer from an existing BUFFER_HANDLE by copying its content.
 
-**SRS_CONSTBUFFER_THANDLE_88_006: [** If buffer is NULL then CONSTBUFFER_THANDLE_CreateFromBuffer shall fail and return NULL. **]**
+**SRS_CONSTBUFFER_THANDLE_88_006: [** If `buffer` is `NULL` then `CONSTBUFFER_THANDLE_CreateFromBuffer` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_007: [** Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall copy the content of buffer. **]**
+**SRS_CONSTBUFFER_THANDLE_88_007: [** Otherwise, `CONSTBUFFER_THANDLE_CreateFromBuffer` shall copy the content of `buffer`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_008: [** If copying the content fails, then CONSTBUFFER_THANDLE_CreateFromBuffer shall fail and return NULL. **]**
+**SRS_CONSTBUFFER_THANDLE_88_008: [** If copying the content fails, then `CONSTBUFFER_THANDLE_CreateFromBuffer` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_009: [** Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall return a non-NULL handle. **]**
+**SRS_CONSTBUFFER_THANDLE_88_009: [** Otherwise, `CONSTBUFFER_THANDLE_CreateFromBuffer` shall return a non-`NULL` handle. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_010: [** The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateFromBuffer shall have its ref count set to "1". **]**
+**SRS_CONSTBUFFER_THANDLE_88_010: [** The non-`NULL` handle returned by `CONSTBUFFER_THANDLE_CreateFromBuffer` shall have its ref count set to "1". **]**
 
 ## CONSTBUFFER_THANDLE_GetContent
 
@@ -115,9 +115,9 @@ const CONSTBUFFER_THANDLE* CONSTBUFFER_THANDLE_GetContent(THANDLE(CONSTBUFFER_TH
 
 `CONSTBUFFER_THANDLE_GetContent` returns a pointer to a CONSTBUFFER_THANDLE structure that can be used to access the stored bytes and the size of the const buffer.
 
-**SRS_CONSTBUFFER_THANDLE_88_011: [** If constbufferHandle is NULL then CONSTBUFFER_THANDLE_GetContent shall return NULL. **]**
+**SRS_CONSTBUFFER_THANDLE_88_011: [** If `constbufferHandle` is `NULL` then `CONSTBUFFER_THANDLE_GetContent` shall return `NULL`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_012: [** Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a pointer to a CONSTBUFFER_THANDLE structure. **]**
+**SRS_CONSTBUFFER_THANDLE_88_012: [** Otherwise, `CONSTBUFFER_THANDLE_GetContent` shall return a pointer to a `CONSTBUFFER_THANDLE` structure. **]**
 
 ## CONSTBUFFER_THANDLE_CreateWithMoveMemory
 
@@ -127,21 +127,21 @@ THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_CreateWithMoveMemor
 
 `CONSTBUFFER_THANDLE_CreateWithMoveMemory` creates a const buffer by moving the memory ownership from the caller to the const buffer.
 
-**SRS_CONSTBUFFER_THANDLE_88_015: [** If source is NULL and size is different than 0 then CONSTBUFFER_THANDLE_CreateWithMoveMemory shall fail and return NULL. **]**
+**SRS_CONSTBUFFER_THANDLE_88_015: [** If `source` is `NULL` and `size` is different than 0 then `CONSTBUFFER_THANDLE_CreateWithMoveMemory` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_016: [** CONSTBUFFER_THANDLE_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. **]**
+**SRS_CONSTBUFFER_THANDLE_88_016: [** `CONSTBUFFER_THANDLE_CreateWithMoveMemory` shall store the `source` and `size` and return a non-`NULL` handle to the newly created const buffer. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_017: [** If any error occurs, CONSTBUFFER_THANDLE_CreateWithMoveMemory shall fail and return NULL. **]**
+**SRS_CONSTBUFFER_THANDLE_88_017: [** If any error occurs, `CONSTBUFFER_THANDLE_CreateWithMoveMemory` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_018: [** If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer. **]**
+**SRS_CONSTBUFFER_THANDLE_88_018: [** If `source` is non-`NULL` and `size` is 0, the `source` pointer shall be owned (and freed) by the newly created instance of const buffer. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_019: [** The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateWithMoveMemory shall have its ref count set to "1". **]**
+**SRS_CONSTBUFFER_THANDLE_88_019: [** The non-`NULL` handle returned by `CONSTBUFFER_THANDLE_CreateWithMoveMemory` shall have its ref count set to "1". **]**
 
 ## Disposal
 
-**SRS_CONSTBUFFER_THANDLE_88_013: [** CONSTBUFFER_THANDLE_HANDLE_DATA_dispose shall free the memory used by the const buffer. **]**
+**SRS_CONSTBUFFER_THANDLE_88_013: [** `CONSTBUFFER_THANDLE_HANDLE_DATA_dispose` shall free the memory used by the const buffer. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_014: [** If the buffer was created by calling CONSTBUFFER_THANDLE_CreateWithMoveMemory, the memory pointed to by the buffer pointer shall be freed. **]**
+**SRS_CONSTBUFFER_THANDLE_88_014: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateWithMoveMemory`, the memory pointed to by the buffer pointer shall be freed. **]**
 
 ## CONSTBUFFER_THANDLE_contain_same
 
@@ -151,17 +151,17 @@ bool CONSTBUFFER_THANDLE_contain_same(THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) l
 
 `CONSTBUFFER_THANDLE_contain_same` compares two const buffer handles to determine if they contain the same data.
 
-**SRS_CONSTBUFFER_THANDLE_88_020: [** If left is NULL and right is NULL then CONSTBUFFER_THANDLE_contain_same shall return true. **]**
+**SRS_CONSTBUFFER_THANDLE_88_020: [** If `left` is `NULL` and `right` is `NULL` then `CONSTBUFFER_THANDLE_contain_same` shall return `true`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_021: [** If left is NULL and right is not NULL then CONSTBUFFER_THANDLE_contain_same shall return false. **]**
+**SRS_CONSTBUFFER_THANDLE_88_021: [** If `left` is `NULL` and `right` is not `NULL` then `CONSTBUFFER_THANDLE_contain_same` shall return `false`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_022: [** If left is not NULL and right is NULL then CONSTBUFFER_THANDLE_contain_same shall return false. **]**
+**SRS_CONSTBUFFER_THANDLE_88_022: [** If `left` is not `NULL` and `right` is `NULL` then `CONSTBUFFER_THANDLE_contain_same` shall return `false`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_023: [** If left's size is different than right's size then CONSTBUFFER_THANDLE_contain_same shall return false. **]**
+**SRS_CONSTBUFFER_THANDLE_88_023: [** If `left`'s size is different than `right`'s size then `CONSTBUFFER_THANDLE_contain_same` shall return `false`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_024: [** If left's buffer contains different bytes than right's buffer then CONSTBUFFER_THANDLE_contain_same shall return false. **]**
+**SRS_CONSTBUFFER_THANDLE_88_024: [** If `left`'s buffer contains different bytes than `right`'s buffer then `CONSTBUFFER_THANDLE_contain_same` shall return `false`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_025: [** CONSTBUFFER_THANDLE_contain_same shall return true. **]**
+**SRS_CONSTBUFFER_THANDLE_88_025: [** `CONSTBUFFER_THANDLE_contain_same` shall return `true`. **]**
 
 ## CONSTBUFFER_THANDLE_CreateWithCustomFree
 
@@ -171,23 +171,23 @@ THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_CreateWithCustomFre
 
 `CONSTBUFFER_THANDLE_CreateWithCustomFree` creates a const buffer by taking ownership of existing memory and using a custom function to free it.
 
-**SRS_CONSTBUFFER_THANDLE_88_026: [** If source is NULL and size is different than 0 then CONSTBUFFER_THANDLE_CreateWithCustomFree shall fail and return NULL. **]**
+**SRS_CONSTBUFFER_THANDLE_88_026: [** If `source` is `NULL` and `size` is different than 0 then `CONSTBUFFER_THANDLE_CreateWithCustomFree` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_027: [** If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer. **]**
+**SRS_CONSTBUFFER_THANDLE_88_027: [** If `source` is non-`NULL` and `size` is 0, the `source` pointer shall be owned (and freed) by the newly created instance of const buffer. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_028: [** CONSTBUFFER_THANDLE_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer. **]**
+**SRS_CONSTBUFFER_THANDLE_88_028: [** `CONSTBUFFER_THANDLE_CreateWithCustomFree` shall store the `source` and `size` and return a non-`NULL` handle to the newly created const buffer. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_029: [** If customFreeFunc is NULL, CONSTBUFFER_THANDLE_CreateWithCustomFree shall fail and return NULL. **]**
+**SRS_CONSTBUFFER_THANDLE_88_029: [** If `customFreeFunc` is `NULL`, `CONSTBUFFER_THANDLE_CreateWithCustomFree` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_030: [** The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateWithCustomFree shall have its ref count set to "1". **]**
+**SRS_CONSTBUFFER_THANDLE_88_030: [** The non-`NULL` handle returned by `CONSTBUFFER_THANDLE_CreateWithCustomFree` shall have its ref count set to "1". **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_031: [** If the buffer was created by calling CONSTBUFFER_THANDLE_CreateWithCustomFree, the customFreeFunc function shall be called to free the memory, while passed customFreeFuncContext as argument. **]**
+**SRS_CONSTBUFFER_THANDLE_88_031: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateWithCustomFree`, the `customFreeFunc` function shall be called to free the memory, while passed `customFreeFuncContext` as argument. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_032: [** customFreeFuncContext shall be allowed to be NULL. **]**
+**SRS_CONSTBUFFER_THANDLE_88_032: [** `customFreeFuncContext` shall be allowed to be `NULL`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_033: [** If any error occurs, CONSTBUFFER_THANDLE_CreateWithCustomFree shall fail and return NULL. **]**
+**SRS_CONSTBUFFER_THANDLE_88_033: [** If any error occurs, `CONSTBUFFER_THANDLE_CreateWithCustomFree` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_034: [** CONSTBUFFER_THANDLE_CreateWithCustomFree shall store customFreeFunc and customFreeFuncContext in order to use them to free the memory when the const buffer resources are freed. **]**
+**SRS_CONSTBUFFER_THANDLE_88_034: [** `CONSTBUFFER_THANDLE_CreateWithCustomFree` shall store `customFreeFunc` and `customFreeFuncContext` in order to use them to free the memory when the const buffer resources are freed. **]**
 
 ## CONSTBUFFER_THANDLE_CreateFromOffsetAndSize
 
@@ -349,11 +349,11 @@ MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), CONSTBUFF
 
 `CONSTBUFFER_THANDLE_CreateWritableHandle` constructs a new `THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA)` of size `size`. Buffers of `THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA)` are writeable (the same buffer can be reused to fill).
 
-**SRS_CONSTBUFFER_THANDLE_88_089: [** If `size` is 0, then `CONSTBUFFER_THANDLE_CreateWritableHandle` shall fail and return NULL. **]**
+**SRS_CONSTBUFFER_THANDLE_88_089: [** If `size` is 0, then `CONSTBUFFER_THANDLE_CreateWritableHandle` shall fail and return `NULL`. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_090: [** `CONSTBUFFER_THANDLE_CreateWritableHandle` shall allocate memory for the `THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA)`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_091: [** If any error occurs, `CONSTBUFFER_THANDLE_CreateWritableHandle` shall fail and return NULL. **]**
+**SRS_CONSTBUFFER_THANDLE_88_091: [** If any error occurs, `CONSTBUFFER_THANDLE_CreateWritableHandle` shall fail and return `NULL`. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_092: [** `CONSTBUFFER_THANDLE_CreateWritableHandle` shall set the ref count of the newly created `THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA)` to 1. **]**
 
