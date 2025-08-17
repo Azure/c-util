@@ -135,7 +135,7 @@ MOCKABLE_FUNCTION(, THANDLE(MY_TYPE), my_type_create, int, param);
 ### SRS Documentation Pattern
 - Each module has detailed requirements in `devdoc/{module}_requirements.md`
 - Requirements use SRS (Software Requirements Specification) numbering: `SRS_MODULE_NN_NNN`
-- Implementation code includes requirement references: `/*Tests_SRS_ASYNC_OP_02_001: [ requirement text ]*/`
+- Implementation code includes requirement references: `/*Codes_SRS_MODULE_XX_NNN: [ requirement text ]*/`
 - Traceability tool validates that all SRS requirements are implemented and tested
 
 ### Traceability Tool Usage

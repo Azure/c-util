@@ -199,8 +199,6 @@ MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDL
 
 **SRS_CONSTBUFFER_THANDLE_88_035: [** If `handle` is `NULL` then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_036: [** If `CONSTBUFFER_THANDLE_GetContent` returns `NULL`, then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
-
 **SRS_CONSTBUFFER_THANDLE_88_037: [** If `offset` is greater than `handle`'s size then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_038: [** If `offset + size` would overflow then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
@@ -234,8 +232,6 @@ MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDL
 `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` creates a new `CONSTBUFFER_THANDLE_HANDLE_DATA` by copying data from an existing handle starting at a given offset and with a given size.
 
 **SRS_CONSTBUFFER_THANDLE_88_049: [** If `handle` is `NULL` then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_050: [** If `CONSTBUFFER_THANDLE_GetContent` returns `NULL`, then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_051: [** If `offset` is greater than `handle`'s size then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
 
