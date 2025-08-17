@@ -240,11 +240,30 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUF
     }
     else
     {
-        /*Codes_SRS_CONSTBUFFER_THANDLE_88_030: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateWithCustomFree shall have its ref count set to "1". ]*/
-        // For custom free, we need to directly allocate using gballoc since we need extra space
-        // and we can't use THANDLE for different structure types easily
-        LogError("CONSTBUFFER_THANDLE_CreateWithCustomFree not fully implemented - allocation strategy needs revision");
-        return NULL;
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_033: [ If any error occurs, CONSTBUFFER_THANDLE_CreateWithCustomFree shall fail and return NULL. ]*/
+        // Allocate extra space for the custom free function fields beyond the base structure
+        size_t extra_size = sizeof(CONSTBUFFER_THANDLE_HANDLE_WITH_CUSTOM_FREE_DATA) - sizeof(CONSTBUFFER_THANDLE_HANDLE_DATA);
+        THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) temp_result = THANDLE_MALLOC_FLEX(CONSTBUFFER_THANDLE_HANDLE_DATA)(CONSTBUFFER_THANDLE_HANDLE_DATA_dispose, 1, extra_size);
+        if (temp_result == NULL)
+        {
+            LogError("failure in THANDLE_MALLOC_FLEX");
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_027: [ If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer. ]*/
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_028: [ CONSTBUFFER_THANDLE_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+            CONSTBUFFER_THANDLE_HANDLE_WITH_CUSTOM_FREE_DATA* custom_free_data = (CONSTBUFFER_THANDLE_HANDLE_WITH_CUSTOM_FREE_DATA*)THANDLE_GET_T(CONSTBUFFER_THANDLE_HANDLE_DATA)(temp_result);
+            custom_free_data->alias.buffer = source;
+            custom_free_data->alias.size = size;
+            custom_free_data->buffer_type = CONSTBUFFER_THANDLE_TYPE_WITH_CUSTOM_FREE;
+
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_034: [ CONSTBUFFER_THANDLE_CreateWithCustomFree shall store customFreeFunc and customFreeFuncContext in order to use them to free the memory when the const buffer resources are freed. ]*/
+            custom_free_data->custom_free_func = customFreeFunc;
+            custom_free_data->custom_free_func_context = customFreeFuncContext;
+
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_030: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateWithCustomFree shall have its ref count set to "1". ]*/
+            THANDLE_MOVE(CONSTBUFFER_THANDLE_HANDLE_DATA)(&result, &temp_result);
+        }
     }
 
     return result;
