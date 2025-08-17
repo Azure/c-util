@@ -77,7 +77,12 @@ static size_t my_BUFFER_length(BUFFER_HANDLE handle)
     return result;
 }
 
-MOCK_FUNCTION_WITH_CODE(, void, test_free_func, void*, context)
+MOCK_FUNCTION_WITH_CODE(, void, test_free_func_with_free, void*, context)
+    real_gballoc_hl_free(context);
+MOCK_FUNCTION_END()
+
+MOCK_FUNCTION_WITH_CODE(, void, test_free_func_no_free, void*, context)
+    (void)context; // Mock function that does not actually free memory
 MOCK_FUNCTION_END()
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
@@ -1627,7 +1632,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_with_NULL_source_and_non_
     ///arrange
 
     ///act
-    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) handle = CONSTBUFFER_THANDLE_CreateWithCustomFree(NULL, 1, test_free_func, (void*)0x4242);
+    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) handle = CONSTBUFFER_THANDLE_CreateWithCustomFree(NULL, 1, test_free_func_no_free, (void*)0x4242);
 
     ///assert
     ASSERT_IS_NULL(handle);
@@ -1665,7 +1670,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_succeeds)
     test_buffer[1] = 43;
 
     ///act
-    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) handle = CONSTBUFFER_THANDLE_CreateWithCustomFree(test_buffer, 2, test_free_func, test_buffer);
+    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) handle = CONSTBUFFER_THANDLE_CreateWithCustomFree(test_buffer, 2, test_free_func_with_free, test_buffer);
 
     ///assert
     ASSERT_IS_NOT_NULL(handle);
@@ -1689,7 +1694,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_with_NULL_customFreeFuncC
     test_buffer[1] = 43;
 
     ///act
-    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) handle = CONSTBUFFER_THANDLE_CreateWithCustomFree(test_buffer, 2, test_free_func, NULL);
+    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) handle = CONSTBUFFER_THANDLE_CreateWithCustomFree(test_buffer, 2, test_free_func_no_free, NULL);
 
     ///assert
     ASSERT_IS_NOT_NULL(handle);
@@ -1715,7 +1720,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_with_0_size_succeeds)
     test_buffer[1] = 43;
 
     ///act
-    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) handle = CONSTBUFFER_THANDLE_CreateWithCustomFree(test_buffer, 0, test_free_func, test_buffer);
+    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) handle = CONSTBUFFER_THANDLE_CreateWithCustomFree(test_buffer, 0, test_free_func_with_free, test_buffer);
 
     ///assert
     ASSERT_IS_NOT_NULL(handle);
@@ -1735,7 +1740,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_with_NULL_source_and_0_si
     ///arrange
 
     ///act
-    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) handle = CONSTBUFFER_THANDLE_CreateWithCustomFree(NULL, 0, test_free_func, (void*)0x4242);
+    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) handle = CONSTBUFFER_THANDLE_CreateWithCustomFree(NULL, 0, test_free_func_no_free, (void*)0x4242);
 
     ///assert
     ASSERT_IS_NOT_NULL(handle);
@@ -1758,12 +1763,12 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_calls_custom_free_func_on
     ASSERT_IS_NOT_NULL(test_buffer);
     test_buffer[0] = 42;
     test_buffer[1] = 43;
-    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) handle = CONSTBUFFER_THANDLE_CreateWithCustomFree(test_buffer, 2, test_free_func, (void*)0x4242);
+    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) handle = CONSTBUFFER_THANDLE_CreateWithCustomFree(test_buffer, 2, test_free_func_no_free, (void*)0x4242);
     ASSERT_IS_NOT_NULL(handle);
     umock_c_reset_all_calls();
 
     ///act
-    STRICT_EXPECTED_CALL(test_free_func((void*)0x4242));
+    STRICT_EXPECTED_CALL(test_free_func_no_free((void*)0x4242));
     STRICT_EXPECTED_CALL(gballoc_hl_free(IGNORED_ARG));
     THANDLE_ASSIGN(CONSTBUFFER_THANDLE_HANDLE_DATA)(&handle, NULL);
 
@@ -1784,7 +1789,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_fails_when_malloc_fails)
         .SetReturn(NULL);
 
     ///act
-    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) result = CONSTBUFFER_THANDLE_CreateWithCustomFree(test_buffer, sizeof(test_buffer), test_free_func, test_buffer);
+    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) result = CONSTBUFFER_THANDLE_CreateWithCustomFree(test_buffer, sizeof(test_buffer), test_free_func_with_free, test_buffer);
 
     ///assert
     ASSERT_IS_NULL(result);
