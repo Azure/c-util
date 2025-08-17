@@ -2,68 +2,7 @@
 
 ## Overview
 
-ConstBuffer THANDLE is a module that implements a read-only buffer of bytes (unsigned char) using the THANDLE reference counting system.**SRS_CONSTBUFFER_THANDLE_88_034: [** `CONSTBUFFER_THANDLE_CreateWithCustomFree` shall store `customFreeFunc` and `customFreeFuncContext` in order to use them to free the memory when the const buffer resources are freed. **]**
-
-## CONSTBUFFER_THANDLE_CreateFromOffsetAndSize
-
-```c
-MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), handle, uint32_t, offset, uint32_t, size)
-```
-
-`CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` creates a new `CONSTBUFFER_THANDLE_HANDLE_DATA` from a region of an existing one.
-
-**SRS_CONSTBUFFER_THANDLE_88_035: [** If `handle` is `NULL` then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_036: [** If `CONSTBUFFER_THANDLE_GetContent` returns `NULL`, then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_037: [** If `offset` is greater than `handle`'s size then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_038: [** If `offset + size` would overflow then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_039: [** If `offset + size` exceed `handle`'s size then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_040: [** If `offset` is 0 and `size` is equal to `handle`'s size then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall increment the reference count of `handle` and return `handle`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_041: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall allocate memory for a new `CONSTBUFFER_THANDLE_HANDLE_DATA`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_042: [** If there are any failures then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_043: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall set the buffer pointer to point to `handle`'s buffer + `offset`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_044: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall set the size to the provided `size`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_045: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall increment the reference count of `handle` and store it. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_046: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall set the ref count of the newly created `CONSTBUFFER_THANDLE_HANDLE_DATA` to 1. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_047: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall succeed and return a non-NULL value. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_048: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize`, the original handle shall be decremented. **]**
-
-## CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy
-
-```c
-MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), handle, uint32_t, offset, uint32_t, size);
-```
-
-`CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` creates a new `CONSTBUFFER_THANDLE_HANDLE_DATA` by copying data from an existing handle starting at a given offset and with a given size.
-
-**SRS_CONSTBUFFER_THANDLE_88_049: [** If `handle` is `NULL` then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_050: [** If `CONSTBUFFER_THANDLE_GetContent` returns `NULL`, then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_051: [** If `offset` is greater than `handle`'s size then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_052: [** If `offset + size` would overflow then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_053: [** If `offset + size` exceed `handle`'s size then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_054: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall create a new const buffer by copying data from `handle`'s buffer starting at `offset` and with the given `size`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_055: [** If there are any failures then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_056: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall succeed and return a non-NULL value. **]**
-Once created, the buffer can no longer be changed. The buffer uses THANDLE for thread-safe reference counting.
+ConstBuffer THANDLE is a module that implements a read-only buffer of bytes (unsigned char) using the THANDLE reference counting system. Once created, the buffer can no longer be changed. The buffer uses THANDLE for thread-safe reference counting.
 
 ## References
 
@@ -119,6 +58,7 @@ MOCKABLE_INTERFACE(constbuffer_thandle,
     FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateWithMoveMemory, unsigned char*, source, uint32_t, size),
     FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_THANDLE_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext),
     FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), handle, uint32_t, offset, uint32_t, size),
+    FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), handle, uint32_t, offset, uint32_t, size),
     FUNCTION(, const CONSTBUFFER_THANDLE*, CONSTBUFFER_THANDLE_GetContent, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), constbufferHandle),
     FUNCTION(, bool, CONSTBUFFER_THANDLE_HANDLE_contain_same, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), left, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), right),
     FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_Clone, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), constbufferHandle),
@@ -248,3 +188,63 @@ THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_CreateWithCustomFre
 **SRS_CONSTBUFFER_THANDLE_88_033: [** If any error occurs, CONSTBUFFER_THANDLE_CreateWithCustomFree shall fail and return NULL. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_034: [** CONSTBUFFER_THANDLE_CreateWithCustomFree shall store customFreeFunc and customFreeFuncContext in order to use them to free the memory when the const buffer resources are freed. **]**
+
+## CONSTBUFFER_THANDLE_CreateFromOffsetAndSize
+
+```c
+MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), handle, uint32_t, offset, uint32_t, size)
+```
+
+`CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` creates a new `CONSTBUFFER_THANDLE_HANDLE_DATA` from a region of an existing one.
+
+**SRS_CONSTBUFFER_THANDLE_88_035: [** If `handle` is `NULL` then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_036: [** If `CONSTBUFFER_THANDLE_GetContent` returns `NULL`, then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_037: [** If `offset` is greater than `handle`'s size then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_038: [** If `offset + size` would overflow then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_039: [** If `offset + size` exceed `handle`'s size then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_040: [** If `offset` is 0 and `size` is equal to `handle`'s size then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall increment the reference count of `handle` and return `handle`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_041: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall allocate memory for a new `CONSTBUFFER_THANDLE_HANDLE_DATA`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_042: [** If there are any failures then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_043: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall set the buffer pointer to point to `handle`'s buffer + `offset`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_044: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall set the size to the provided `size`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_045: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall increment the reference count of `handle` and store it. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_046: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall set the ref count of the newly created `CONSTBUFFER_THANDLE_HANDLE_DATA` to 1. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_047: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall succeed and return a non-NULL value. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_048: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize`, the original handle shall be decremented. **]**
+
+## CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy
+
+```c
+MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), handle, uint32_t, offset, uint32_t, size);
+```
+
+`CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` creates a new `CONSTBUFFER_THANDLE_HANDLE_DATA` by copying data from an existing handle starting at a given offset and with a given size.
+
+**SRS_CONSTBUFFER_THANDLE_88_049: [** If `handle` is `NULL` then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_050: [** If `CONSTBUFFER_THANDLE_GetContent` returns `NULL`, then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_051: [** If `offset` is greater than `handle`'s size then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_052: [** If `offset + size` would overflow then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_053: [** If `offset + size` exceed `handle`'s size then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_054: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall create a new const buffer by copying data from `handle`'s buffer starting at `offset` and with the given `size`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_055: [** If there are any failures then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_056: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall succeed and return a non-NULL value. **]**
