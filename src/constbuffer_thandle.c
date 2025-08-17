@@ -292,6 +292,78 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUF
     return result;
 }
 
+IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), handle, uint32_t, offset, uint32_t, size)
+{
+    THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) result = NULL;
+
+    if (handle == NULL)
+    {
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_035: [ If handle is NULL then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL. ]*/
+        LogError("Invalid arguments: handle is NULL");
+    }
+    else
+    {
+        const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(handle);
+        if (content == NULL)
+        {
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_036: [ If CONSTBUFFER_THANDLE_GetContent returns NULL, then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL. ]*/
+            LogError("Failed to get content from handle");
+        }
+        else if (offset > content->size)
+        {
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_037: [ If offset is greater than handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL. ]*/
+            LogError("Invalid arguments: offset=%" PRIu32 " > content->size=%" PRIu32, offset, content->size);
+        }
+        else if (offset > UINT32_MAX - size)
+        {
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_038: [ If offset + size would overflow then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL. ]*/
+            LogError("Invalid arguments: offset=%" PRIu32 " + size=%" PRIu32 " would overflow", offset, size);
+        }
+        else if (offset + size > content->size)
+        {
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_039: [ If offset + size exceed handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL. ]*/
+            LogError("Invalid arguments: offset=%" PRIu32 " + size=%" PRIu32 " > content->size=%" PRIu32, offset, size, content->size);
+        }
+        else
+        {
+            if (offset == 0 && size == content->size)
+            {
+                /*Codes_SRS_CONSTBUFFER_THANDLE_88_040: [ If offset is 0 and size is equal to handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall increment the reference count of handle and return handle. ]*/
+                THANDLE_ASSIGN(CONSTBUFFER_THANDLE_HANDLE_DATA)(&result, handle);
+            }
+            else
+            {
+                /*Codes_SRS_CONSTBUFFER_THANDLE_88_041: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall allocate memory for a new CONSTBUFFER_THANDLE_HANDLE_DATA. ]*/
+                THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) temp_result = THANDLE_MALLOC(CONSTBUFFER_THANDLE_HANDLE_DATA)(CONSTBUFFER_THANDLE_HANDLE_DATA_dispose);
+                if (temp_result == NULL)
+                {
+                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_042: [ If there are any failures then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL. ]*/
+                    LogError("Failed to allocate CONSTBUFFER_THANDLE_HANDLE_DATA");
+                }
+                else
+                {
+                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_043: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the buffer pointer to point to handle's buffer + offset. ]*/
+                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_044: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the size to the provided size. ]*/
+                    CONSTBUFFER_THANDLE_HANDLE_DATA* handle_data = THANDLE_GET_T(CONSTBUFFER_THANDLE_HANDLE_DATA)(temp_result);
+                    handle_data->alias.buffer = (content->buffer == NULL) ? NULL : content->buffer + offset;
+                    handle_data->alias.size = size;
+                    handle_data->buffer_type = CONSTBUFFER_THANDLE_TYPE_FROM_OFFSET_AND_SIZE;
+                    
+                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_045: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall increment the reference count of handle and store it. ]*/
+                    THANDLE_INITIALIZE(CONSTBUFFER_THANDLE_HANDLE_DATA)(&handle_data->original_handle, NULL);
+                    THANDLE_ASSIGN(CONSTBUFFER_THANDLE_HANDLE_DATA)(&handle_data->original_handle, handle);
+                    
+                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_046: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the ref count of the newly created CONSTBUFFER_THANDLE_HANDLE_DATA to 1. ]*/
+                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_047: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall succeed and return a non-NULL value. ]*/
+                    THANDLE_MOVE(CONSTBUFFER_THANDLE_HANDLE_DATA)(&result, &temp_result);
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
 IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER_THANDLE*, CONSTBUFFER_THANDLE_GetContent, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), constbufferHandle)
 {
     const CONSTBUFFER_THANDLE* result;
