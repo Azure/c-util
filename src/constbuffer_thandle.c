@@ -19,6 +19,12 @@
 #include "c_util/constbuffer_version.h"
 #include "c_util/constbuffer_thandle.h"
 
+static void* calls_malloc(size_t size, void* context)
+{
+    (void)context;
+    return malloc(size); /*in all the contexts where this is called, it is verified that the size is 0..UINT32_MAX, which is a subset of 0..SIZE_MAX*/
+}
+
 // in order to optimize memory usage, the const buffer structure contains a discriminator that tells what kind of const buffer it is (copied, with custom free, etc.).
 // Each type of const buffer has its own structure that contains the common fields and the specific fields.
 #define CONSTBUFFER_THANDLE_TYPE_VALUES \
@@ -434,32 +440,163 @@ IMPLEMENT_MOCKABLE_FUNCTION(, bool, CONSTBUFFER_THANDLE_contain_same, THANDLE(CO
 
 IMPLEMENT_MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_THANDLE_get_serialization_size, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), source)
 {
-    /* Dummy implementation - just return 0 for now */
-    (void)source;
-    LogError("CONSTBUFFER_THANDLE_get_serialization_size not implemented yet");
-    return 0;
+    uint32_t result;
+    /*Codes_SRS_CONSTBUFFER_THANDLE_88_057: [ If source is NULL then CONSTBUFFER_THANDLE_get_serialization_size shall fail and return 0. ]*/
+    if (source == NULL)
+    {
+        LogError("invalid argument THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) source=%p", source);
+        result = 0;
+    }
+    else
+    {
+        const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(source);
+        if (content == NULL)
+        {
+            LogError("CONSTBUFFER_THANDLE_GetContent failed");
+            result = 0;
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_058: [ If sizeof(uint8_t) + sizeof(uint32_t) + source's size exceed UINT32_MAX then CONSTBUFFER_THANDLE_get_serialization_size shall fail and return 0. ]*/
+            if (content->size > UINT32_MAX - CONSTBUFFER_VERSION_SIZE - CONSTBUFFER_SIZE_SIZE)
+            {
+                LogError("serialization size exceeds UINT32_MAX=%" PRIu32 ". It is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->size=%" PRIu32 "",
+                    UINT32_MAX, CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, content->size);
+                result = 0;
+            }
+            else
+            {
+                /*Codes_SRS_CONSTBUFFER_THANDLE_88_059: [ Otherwise CONSTBUFFER_THANDLE_get_serialization_size shall succeed and return sizeof(uint8_t) + sizeof(uint32_t) + source's size. ]*/
+                result = CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE + content->size;
+            }
+        }
+    }
+    return result;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_THANDLE_to_buffer, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), source, CONSTBUFFER_THANDLE_to_buffer_alloc, alloc, void*, alloc_context, uint32_t*, serialized_size)
 {
-    /* Dummy implementation - just return NULL for now */
-    (void)source;
-    (void)alloc;
-    (void)alloc_context;
-    (void)serialized_size;
-    LogError("CONSTBUFFER_THANDLE_to_buffer not implemented yet");
-    return NULL;
+    unsigned char* result;
+    if (
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_060: [ If source is NULL then CONSTBUFFER_THANDLE_to_buffer shall fail and return NULL. ]*/
+        (source == NULL) ||
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_061: [ If serialized_size is NULL then CONSTBUFFER_THANDLE_to_buffer shall fail and return NULL. ]*/
+        (serialized_size == NULL)
+        )
+    {
+        LogError("invalid arguments THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) source=%p, CONSTBUFFER_THANDLE_to_buffer_alloc alloc=%p, uint32_t* serialized_size=%p",
+            source, alloc, serialized_size);
+        result = NULL;
+    }
+    else
+    {
+        const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(source);
+        if (content == NULL)
+        {
+            LogError("CONSTBUFFER_THANDLE_GetContent failed");
+            result = NULL;
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_062: [ If alloc is NULL then CONSTBUFFER_THANDLE_to_buffer shall use malloc as provided by gballoc_hl_redirect.h. ]*/
+            if (alloc == NULL)
+            {
+                alloc = &calls_malloc;
+            }
+
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_068: [ If there are any failures then CONSTBUFFER_THANDLE_to_buffer shall fail and return NULL. ]*/
+            if (UINT32_MAX - CONSTBUFFER_VERSION_SIZE - CONSTBUFFER_SIZE_SIZE < content->size)
+            {
+                /*overflow*/
+                LogError("serialization size exceeds UINT32_MAX=%" PRIu32 ". Serialization size is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + content->size=%" PRIu32 "",
+                    UINT32_MAX, CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, content->size);
+                result = NULL;
+            }
+            else
+            {
+                /*Codes_SRS_CONSTBUFFER_THANDLE_88_063: [ CONSTBUFFER_THANDLE_to_buffer shall allocate memory using alloc for holding the complete serialization. ]*/
+                result = alloc(CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE + content->size, alloc_context);
+                if (result == NULL)
+                {
+                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_068: [ If there are any failures then CONSTBUFFER_THANDLE_to_buffer shall fail and return NULL. ]*/
+                    LogError("failure in alloc=%p, (sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + content->size=%" PRIu32 " alloc_context=%p);",
+                        alloc, CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, content->size, alloc_context);
+                    /*return as is*/
+                }
+                else
+                {
+                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_064: [ CONSTBUFFER_THANDLE_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1). ]*/
+                    write_uint8_t(result + CONSTBUFFER_VERSION_OFFSET, CONSTBUFFER_VERSION_V1);
+
+                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_065: [ CONSTBUFFER_THANDLE_to_buffer shall write at offsets 1-4 of the allocated memory the value of source's size in network byte order. ]*/
+                    write_uint32_t(result + CONSTBUFFER_SIZE_OFFSET, content->size);
+                    
+                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_066: [ CONSTBUFFER_THANDLE_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source's buffer. ]*/
+                    if (content->buffer != NULL && content->size > 0)
+                    {
+                        (void)memcpy(result + CONSTBUFFER_CONTENT_OFFSET, content->buffer, content->size);
+                    }
+
+                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_067: [ CONSTBUFFER_THANDLE_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
+                    *serialized_size = CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE + content->size;
+                    /*return as is*/
+                }
+            }
+        }
+    }
+    return result;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_THANDLE_to_fixed_size_buffer, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), source, unsigned char*, destination, uint32_t, destination_size, uint32_t*, serialized_size)
 {
-    /* Dummy implementation - just return error for now */
-    (void)source;
-    (void)destination;
-    (void)destination_size;
-    (void)serialized_size;
-    LogError("CONSTBUFFER_THANDLE_to_fixed_size_buffer not implemented yet");
-    return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_ERROR;
+    CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT result;
+
+    /*Tests_SRS_CONSTBUFFER_THANDLE_88_069: [ If `source` is `NULL` then `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall fail and return `CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG`. ]*/
+    /*Tests_SRS_CONSTBUFFER_THANDLE_88_070: [ If `destination` is `NULL` then `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall fail and return `CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG`. ]*/
+    /*Tests_SRS_CONSTBUFFER_THANDLE_88_071: [ If `serialized_size` is `NULL` then `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall fail and return `CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG`. ]*/
+    if (
+        (source == NULL) ||
+        (destination == NULL) ||
+        (serialized_size == NULL)
+        )
+    {
+        LogError("invalid argument THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) source=%p, unsigned char* destination=%p, uint32_t destination_size=%" PRIu32 ", uint32_t* serialized_size=%p",
+            source, destination, destination_size, serialized_size);
+        result = CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG;
+    }
+    else
+    {
+        uint32_t needed_size;
+        /*Tests_SRS_CONSTBUFFER_THANDLE_88_077: [ If there are any failures then `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall fail and return `CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_ERROR`. ]*/
+        needed_size = CONSTBUFFER_THANDLE_get_serialization_size(source);
+        if (needed_size == 0)
+        {
+            LogError("failure in CONSTBUFFER_THANDLE_get_serialization_size(source=%p)", source);
+            result = CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_ERROR;
+        }
+        else
+        {
+            /*Tests_SRS_CONSTBUFFER_THANDLE_88_072: [ If the size of serialization exceeds `destination_size` then `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall fail, write in `serialized_size` how much it would need and return `CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INSUFFICIENT_BUFFER`. ]*/
+            if (needed_size > destination_size)
+            {
+                *serialized_size = needed_size;
+                result = CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INSUFFICIENT_BUFFER;
+            }
+            else
+            {
+                /*Tests_SRS_CONSTBUFFER_THANDLE_88_073: [ `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall write at offset 0 of `destination` the version of serialization (currently 1). ]*/
+                destination[0] = CONSTBUFFER_VERSION_V1;
+                /*Tests_SRS_CONSTBUFFER_THANDLE_88_074: [ `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall write at offset 1 of `destination` the value of `source`'s size in network byte order. ]*/
+                write_uint32_t(destination + CONSTBUFFER_SIZE_OFFSET, source->alias.size);
+                /*Tests_SRS_CONSTBUFFER_THANDLE_88_075: [ `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall copy all the bytes of `source`'s buffer in `destination` starting at offset 5. ]*/
+                (void)memcpy(destination + CONSTBUFFER_CONTENT_OFFSET, source->alias.buffer, source->alias.size);
+                /*Tests_SRS_CONSTBUFFER_THANDLE_88_076: [ `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall succeed, write in `serialized_size` how much it used and return `CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_OK`. ]*/
+                *serialized_size = needed_size;
+                result = CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_OK;
+            }
+        }
+    }
+    return result;
 }
 
 IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_from_buffer, const unsigned char*, source, uint32_t, size, uint32_t*, consumed, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA)*, destination)

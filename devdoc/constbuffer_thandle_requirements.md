@@ -248,3 +248,69 @@ MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDL
 **SRS_CONSTBUFFER_THANDLE_88_055: [** If there are any failures then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_056: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall succeed and return a non-NULL value. **]**
+
+## CONSTBUFFER_THANDLE_get_serialization_size
+
+```c
+MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_THANDLE_get_serialization_size, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), source)
+```
+
+`CONSTBUFFER_THANDLE_get_serialization_size` returns the size required to serialize the const buffer.
+
+**SRS_CONSTBUFFER_THANDLE_88_057: [** If `source` is `NULL` then `CONSTBUFFER_THANDLE_get_serialization_size` shall fail and return 0. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_058: [** If `sizeof(uint8_t) + sizeof(uint32_t) + source's size` exceed `UINT32_MAX` then `CONSTBUFFER_THANDLE_get_serialization_size` shall fail and return 0. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_059: [** Otherwise `CONSTBUFFER_THANDLE_get_serialization_size` shall succeed and return `sizeof(uint8_t) + sizeof(uint32_t) + source's size`. **]**
+
+## CONSTBUFFER_THANDLE_to_buffer
+
+```c
+MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_THANDLE_to_buffer, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), source, CONSTBUFFER_THANDLE_to_buffer_alloc, alloc, void*, alloc_context, uint32_t*, serialized_size)
+```
+
+`CONSTBUFFER_THANDLE_to_buffer` serializes the const buffer to a binary representation.
+
+**SRS_CONSTBUFFER_THANDLE_88_060: [** If `source` is `NULL` then `CONSTBUFFER_THANDLE_to_buffer` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_061: [** If `serialized_size` is `NULL` then `CONSTBUFFER_THANDLE_to_buffer` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_062: [** If `alloc` is `NULL` then `CONSTBUFFER_THANDLE_to_buffer` shall use `malloc` as provided by `gballoc_hl_redirect.h`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_063: [** `CONSTBUFFER_THANDLE_to_buffer` shall allocate memory using `alloc` for holding the complete serialization. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_064: [** `CONSTBUFFER_THANDLE_to_buffer` shall write at offset 0 of the allocated memory the version of the serialization (currently 1). **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_065: [** `CONSTBUFFER_THANDLE_to_buffer` shall write at offsets 1-4 of the allocated memory the value of `source`'s size in network byte order. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_066: [** `CONSTBUFFER_THANDLE_to_buffer` shall write starting at offset 5 of the allocated memory the bytes of `source`'s buffer. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_067: [** `CONSTBUFFER_THANDLE_to_buffer` shall succeed, write in `serialized_size` the size of the serialization and return the allocated memory. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_068: [** If there are any failures then `CONSTBUFFER_THANDLE_to_buffer` shall fail and return `NULL`. **]**
+
+## CONSTBUFFER_THANDLE_to_fixed_size_buffer
+
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_THANDLE_to_fixed_size_buffer, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), source, unsigned char*, destination, uint32_t, destination_size, uint32_t*, serialized_size)
+```
+
+`CONSTBUFFER_THANDLE_to_fixed_size_buffer` serializes the const buffer to a fixed-size destination buffer.
+
+**SRS_CONSTBUFFER_THANDLE_88_069: [** If `source` is `NULL` then `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall fail and return `CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_070: [** If `destination` is `NULL` then `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall fail and return `CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_071: [** If `serialized_size` is `NULL` then `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall fail and return `CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_072: [** If the size of serialization exceeds `destination_size` then `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall fail, write in `serialized_size` how much it would need and return `CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INSUFFICIENT_BUFFER`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_073: [** `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall write at offset 0 of `destination` the version of serialization (currently 1). **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_074: [** `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall write at offset 1 of `destination` the value of `source`'s size in network byte order. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_075: [** `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall copy all the bytes of `source`'s buffer in `destination` starting at offset 5. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_076: [** `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall succeed, write in `serialized_size` how much it used and return `CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_OK`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_077: [** If there are any failures then `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall fail and return `CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_ERROR`. **]**
