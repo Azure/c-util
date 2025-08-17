@@ -314,3 +314,91 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER
 **SRS_CONSTBUFFER_THANDLE_88_076: [** `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall succeed, write in `serialized_size` how much it used and return `CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_OK`. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_077: [** If there are any failures then `CONSTBUFFER_THANDLE_to_fixed_size_buffer` shall fail and return `CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_ERROR`. **]**
+
+## CONSTBUFFER_THANDLE_from_buffer
+
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_from_buffer, const unsigned char*, source, uint32_t, size, uint32_t*, consumed, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA)*, destination)
+```
+
+`CONSTBUFFER_THANDLE_from_buffer` deserializes a const buffer from a serialized buffer.
+
+**SRS_CONSTBUFFER_THANDLE_88_078: [** If `source` is `NULL` then `CONSTBUFFER_THANDLE_from_buffer` shall fail and return `CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_079: [** If `consumed` is `NULL` then `CONSTBUFFER_THANDLE_from_buffer` shall fail and return `CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_080: [** If `destination` is `NULL` then `CONSTBUFFER_THANDLE_from_buffer` shall fail and return `CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_081: [** If `size` is 0 then `CONSTBUFFER_THANDLE_from_buffer` shall fail and return `CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_082: [** If source byte at offset 0 is not 1 (current version) then `CONSTBUFFER_THANDLE_from_buffer` shall fail and return `CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_DATA`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_083: [** If source's size is less than sizeof(uint8_t) + sizeof(uint32_t) then `CONSTBUFFER_THANDLE_from_buffer` shall fail and return `CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_DATA`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_084: [** `CONSTBUFFER_THANDLE_from_buffer` shall read the number of serialized content bytes from offset 1 of source. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_085: [** If source's size is less than sizeof(uint8_t) + sizeof(uint32_t) + number of content bytes then `CONSTBUFFER_THANDLE_from_buffer` shall fail and return `CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_DATA`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_086: [** `CONSTBUFFER_THANDLE_from_buffer` shall create a THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) from the bytes at offset 5 of source. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_087: [** `CONSTBUFFER_THANDLE_from_buffer` shall succeed, write in `consumed` the total number of consumed bytes from source, write in `destination` the constructed THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) and return `CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_OK`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_088: [** If there are any failures then `CONSTBUFFER_THANDLE_from_buffer` shall fail and return `CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_ERROR`. **]**
+
+## CONSTBUFFER_THANDLE_CreateWritableHandle
+
+```c
+MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateWritableHandle, uint32_t, size)
+```
+
+`CONSTBUFFER_THANDLE_CreateWritableHandle` constructs a new `THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA)` of size `size`. Buffers of `THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA)` are writeable (the same buffer can be reused to fill).
+
+**SRS_CONSTBUFFER_THANDLE_88_089: [** If `size` is 0, then `CONSTBUFFER_THANDLE_CreateWritableHandle` shall fail and return NULL. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_090: [** `CONSTBUFFER_THANDLE_CreateWritableHandle` shall allocate memory for the `THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA)`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_091: [** If any error occurs, `CONSTBUFFER_THANDLE_CreateWritableHandle` shall fail and return NULL. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_092: [** `CONSTBUFFER_THANDLE_CreateWritableHandle` shall set the ref count of the newly created `THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA)` to 1. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_093: [** `CONSTBUFFER_THANDLE_CreateWritableHandle` shall succeed and return a non-`NULL` `THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA)`. **]**
+
+## CONSTBUFFER_THANDLE_GetWritableBuffer
+
+```c
+MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_THANDLE_GetWritableBuffer, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), constbufferWritableHandle)
+```
+
+`CONSTBUFFER_THANDLE_GetWritableBuffer` returns a pointer to the writable buffer of `constbufferWritableHandle`.
+
+**SRS_CONSTBUFFER_THANDLE_88_094: [** If `constbufferWritableHandle` is `NULL`, then `CONSTBUFFER_THANDLE_GetWritableBuffer` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_095: [** `CONSTBUFFER_THANDLE_GetWritableBuffer` shall succeed and return a pointer to the non-CONST buffer of `constbufferWritableHandle`. **]**
+
+## CONSTBUFFER_THANDLE_SealWritableHandle
+
+```c
+MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_SealWritableHandle, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), constbufferWritableHandle)
+```
+
+`CONSTBUFFER_THANDLE_SealWritableHandle` seals a writable handle, making it immutable.
+
+**SRS_CONSTBUFFER_THANDLE_88_096: [** If `constbufferWritableHandle` is `NULL` then `CONSTBUFFER_THANDLE_SealWritableHandle` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_097: [** `CONSTBUFFER_THANDLE_SealWritableHandle` shall create a new `THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA)` from the contents of `constbufferWritableHandle`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_098: [** If there are any failures then `CONSTBUFFER_THANDLE_SealWritableHandle` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_099: [** `CONSTBUFFER_THANDLE_SealWritableHandle` shall succeed and return a non-`NULL` `THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA)`. **]**
+
+## CONSTBUFFER_THANDLE_GetWritableBufferSize
+
+```c
+MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_THANDLE_GetWritableBufferSize, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), constbufferWritableHandle)
+```
+
+`CONSTBUFFER_THANDLE_GetWritableBufferSize` returns the size of the writable buffer.
+
+**SRS_CONSTBUFFER_THANDLE_88_100: [** If `constbufferWritableHandle` is `NULL`, then `CONSTBUFFER_THANDLE_GetWritableBufferSize` shall return 0. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_101: [** `CONSTBUFFER_THANDLE_GetWritableBufferSize` shall succeed and return the size of the writable buffer of `constbufferWritableHandle`. **]**
