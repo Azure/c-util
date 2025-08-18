@@ -32,11 +32,15 @@ MU_DEFINE_ENUM_STRINGS(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_VALUES);
 typedef struct CHANNEL_TAG
 {
     THANDLE(THREADPOOL) threadpool;
-    SM_HANDLE sm;
-    bool is_open;
+    SM_HANDLE sm;bool is_open;
     SRW_LOCK_HANDLE lock;
     DLIST_ENTRY op_list;
     THANDLE(PTR(LOG_CONTEXT_HANDLE)) log_context;
+    volatile_atomic int32_t count_of_operations_pushed;
+    volatile_atomic int32_t count_of_operations_pulled;
+    volatile_atomic int32_t count_of_operation_push_errors;
+    volatile_atomic int32_t count_of_operation_pull_errors;
+    volatile_atomic int32_t count_of_operations_abandoned;
 }CHANNEL;
 
 THANDLE_TYPE_DEFINE(CHANNEL);
@@ -116,6 +120,8 @@ static void abandon_pending_operations(void* context)
         /*Codes_SRS_CHANNEL_43_096: [ set the result of the operation to CHANNEL_CALLBACK_RESULT_ABANDONED. ]*/
         channel_op->result = CHANNEL_CALLBACK_RESULT_ABANDONED;
 
+        (void)interlocked_increment(&channel_ptr->count_of_operations_abandoned);
+
         /*Codes_SRS_CHANNEL_43_097: [ call execute_callbacks with the operation as context.]*/
         execute_callbacks(channel_op);
     }
@@ -173,6 +179,11 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_
 
                 channel_ptr->sm = sm;
                 channel_ptr->lock = lock;
+                (void)interlocked_exchange(&channel_ptr->count_of_operations_pushed, 0);
+                (void)interlocked_exchange(&channel_ptr->count_of_operations_pulled, 0);
+                (void)interlocked_exchange(&channel_ptr->count_of_operation_push_errors, 0);
+                (void)interlocked_exchange(&channel_ptr->count_of_operation_pull_errors, 0);
+                (void)interlocked_exchange(&channel_ptr->count_of_operations_abandoned, 0);
 
                 /*Codes_SRS_CHANNEL_43_080: [ channel_create shall store given threadpool in the created CHANNEL. ]*/
                 THANDLE_INITIALIZE(THREADPOOL)(&channel_ptr->threadpool, threadpool);
@@ -469,12 +480,14 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), ch
                 {
                     if (enqueue_operation(channel, out_op_pull, correlation_id, on_data_available_cb, on_data_available_context, NULL, NULL, NULL, NULL) != 0)
                     {
+                        (void)interlocked_increment(&channel_ptr->count_of_operation_pull_errors);
                         /*Codes_SRS_CHANNEL_43_023: [ If there are any failures, channel_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
                         LogError("Failure in enqueue_operation(channel=%p, out_op_pull=%p, correlation_id=%" PRI_RC_STRING ", on_data_available_cb=%p, on_data_available_context=%p, NULL, NULL, NULL, NULL)", channel, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_available_cb, on_data_available_context);
                         result = CHANNEL_RESULT_ERROR;
                     }
                     else
                     {
+                        (void)interlocked_increment(&channel_ptr->count_of_operations_pulled);
                         /*Codes_SRS_CHANNEL_43_011: [ channel_pull shall succeeds and return CHANNEL_RESULT_OK. ]*/
                         result = CHANNEL_RESULT_OK;
                     }
@@ -484,12 +497,14 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), ch
                 {
                     if (dequeue_operation(channel, out_op_pull, correlation_id, on_data_available_cb, on_data_available_context, NULL, NULL, NULL, NULL) != 0)
                     {
+                        (void)interlocked_increment(&channel_ptr->count_of_operation_pull_errors);
                         /*Codes_SRS_CHANNEL_43_023: [ If there are any failures, channel_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
                         LogError("Failure in dequeue_operation(channel=%p, out_op_pull=%p, correlation_id=%" PRI_RC_STRING ", on_data_available_cb=%p, on_data_available_context=%p, NULL, NULL, NULL, NULL)", channel, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_available_cb, on_data_available_context);
                         result = CHANNEL_RESULT_ERROR;
                     }
                     else
                     {
+                        (void)interlocked_increment(&channel_ptr->count_of_operations_pulled);
                         /* Codes_SRS_CHANNEL_43_011: [ channel_pull shall succeeds and return CHANNEL_RESULT_OK. ]*/
                         result = CHANNEL_RESULT_OK;
                     }
@@ -539,12 +554,14 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), ch
                 {
                     if (enqueue_operation(channel, out_op_push, NULL, NULL, NULL, correlation_id, on_data_consumed_cb, on_data_consumed_context, data) != 0)
                     {
+                        (void)interlocked_increment(&channel_ptr->count_of_operation_push_errors);
                         /*Codes_SRS_CHANNEL_43_041: [ If there are any failures, channel_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
                         LogError("Failure in enqueue_operation(channel=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", on_data_consumed_cb=%p, on_data_consumed_context=%p, data=%p)", channel, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_consumed_cb, on_data_consumed_context, data);
                         result = CHANNEL_RESULT_ERROR;
                     }
                     else
                     {
+                        (void)interlocked_increment(&channel_ptr->count_of_operations_pushed);
                         /*Codes_SRS_CHANNEL_43_132: [ channel_push shall succeed and return CHANNEL_RESULT_OK. ]*/
                         result = CHANNEL_RESULT_OK;
                     }
@@ -554,12 +571,14 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), ch
                 {
                     if (dequeue_operation(channel, out_op_push, NULL, NULL, NULL, correlation_id, on_data_consumed_cb, on_data_consumed_context, data) != 0)
                     {
+                        (void)interlocked_increment(&channel_ptr->count_of_operation_push_errors);
                         /*Codes_SRS_CHANNEL_43_041: [ If there are any failures, channel_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
                         LogError("Failure in dequeue_operation(channel=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", on_data_consumed_cb=%p, on_data_consumed_context=%p, data=%p)", channel, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_consumed_cb, on_data_consumed_context, data);
                         result = CHANNEL_RESULT_ERROR;
                     }
                     else
                     {
+                        (void)interlocked_increment(&channel_ptr->count_of_operations_pushed);
                         /*Codes_SRS_CHANNEL_43_132: [ channel_push shall succeed and return CHANNEL_RESULT_OK. ]*/
                         result = CHANNEL_RESULT_OK;
                     }
@@ -571,5 +590,29 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), ch
         result == CHANNEL_RESULT_OK ? (void)0 : sm_exec_end(channel_ptr->sm);
     }
 
+    return result;
+}
+
+int channel_get_stat_snapshot(THANDLE(CHANNEL) channel, CHANNEL_STATS* channel_stats)
+{
+    int result;
+    if (
+        channel == NULL ||
+        channel_stats == NULL
+        )
+    {
+        LogError("Invalid arguments: THANDLE(CHANNEL) channel=%p, CHANNEL_STATS* channel_stats=%p", channel, channel_stats);
+        result = MU_FAILURE;
+    }
+    else
+    {
+        CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
+        channel_stats->count_of_operations_pushed = interlocked_add(&channel_ptr->count_of_operations_pushed, 0);
+        channel_stats->count_of_operations_pulled = interlocked_add(&channel_ptr->count_of_operations_pulled, 0);
+        channel_stats->count_of_operation_push_errors = interlocked_add(&channel_ptr->count_of_operation_push_errors, 0);
+        channel_stats->count_of_operation_pull_errors = interlocked_add(&channel_ptr->count_of_operation_pull_errors, 0);
+        channel_stats->count_of_operations_abandoned = interlocked_add(&channel_ptr->count_of_operations_abandoned, 0);
+        result = 0;
+    }
     return result;
 }
