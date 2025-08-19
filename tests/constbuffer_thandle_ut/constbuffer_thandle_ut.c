@@ -183,6 +183,28 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_source_NULL_and_size_0_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_102: [If source is non-NULL and size is 0 then CONSTBUFFER_THANDLE_Create shall create an empty buffer.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_004: [Otherwise CONSTBUFFER_THANDLE_Create shall return a non-NULL handle.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_005: [The non-NULL handle returned by CONSTBUFFER_THANDLE_Create shall have its ref count set to "1".]*/
+TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_source_non_NULL_and_size_0_succeeds)
+{
+    ///arrange
+    unsigned char source[] = { 1, 2, 3 };
+
+    ///act
+    THANDLE(CONSTBUFFER) result = CONSTBUFFER_THANDLE_Create(source, 0);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(result);
+    ASSERT_IS_NOT_NULL(content);
+    ASSERT_ARE_EQUAL(uint32_t, 0, content->size);
+    ASSERT_IS_NULL(content->buffer);
+
+    ///cleanup
+    THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
+}
+
 /*Tests_SRS_CONSTBUFFER_THANDLE_88_003: [If creating the copy fails then CONSTBUFFER_THANDLE_Create shall return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_fails_when_malloc_fails)
 {

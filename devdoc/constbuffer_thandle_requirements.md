@@ -81,6 +81,8 @@ THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_Create(const unsigned char* source, uin
 
 **SRS_CONSTBUFFER_THANDLE_88_001: [** If `source` is `NULL` and `size` is different than 0 then `CONSTBUFFER_THANDLE_Create` shall fail and return `NULL`. **]**
 
+**SRS_CONSTBUFFER_THANDLE_88_102: [** If `source` is non-`NULL` and `size` is 0 then `CONSTBUFFER_THANDLE_Create` shall create an empty buffer. **]**
+
 **SRS_CONSTBUFFER_THANDLE_88_002: [** Otherwise, `CONSTBUFFER_THANDLE_Create` shall create a copy of the memory area pointed to by `source` having `size` bytes. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_003: [** If creating the copy fails then `CONSTBUFFER_THANDLE_Create` shall return `NULL`. **]**

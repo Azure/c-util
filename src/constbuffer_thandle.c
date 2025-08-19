@@ -127,6 +127,7 @@ static THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_Create_Internal(const unsigned c
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_054: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size. ]*/
         if (size == 0)
         {
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_102: [If source is non-NULL and size is 0 then CONSTBUFFER_THANDLE_Create shall create an empty buffer.]*/
             handle_data->alias.buffer = NULL;
             handle_data->alias.size = 0;
         }
