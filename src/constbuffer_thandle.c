@@ -473,8 +473,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_THANDLE_get_serialization_si
             /*Codes_SRS_CONSTBUFFER_THANDLE_88_058: [ If sizeof(uint8_t) + sizeof(uint32_t) + source's size exceed UINT32_MAX then CONSTBUFFER_THANDLE_get_serialization_size shall fail and return 0. ]*/
             if (content->size > UINT32_MAX - CONSTBUFFER_VERSION_SIZE - CONSTBUFFER_SIZE_SIZE)
             {
-                LogError("serialization size exceeds UINT32_MAX=%" PRIu32 ". It is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->size=%" PRIu32 "",
-                    UINT32_MAX, CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, content->size);
+                LogError("serialization size exceeds UINT32_MAX. It is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + source->size=%" PRIu32 "",
+                    CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, content->size);
                 result = 0;
             }
             else
@@ -521,8 +521,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_THANDLE_to_buffer, THA
             if (UINT32_MAX - CONSTBUFFER_VERSION_SIZE - CONSTBUFFER_SIZE_SIZE < content->size)
             {
                 /*overflow*/
-                LogError("serialization size exceeds UINT32_MAX=%" PRIu32 ". Serialization size is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + content->size=%" PRIu32 "",
-                    UINT32_MAX, CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, content->size);
+                LogError("serialization size exceeds UINT32_MAX. Serialization size is the sum of sizeof(uint8_t)=%zu + sizeof(uint32_t)=%zu + content->size=%" PRIu32 "",
+                    CONSTBUFFER_VERSION_SIZE, CONSTBUFFER_SIZE_SIZE, content->size);
                 result = NULL;
             }
             else

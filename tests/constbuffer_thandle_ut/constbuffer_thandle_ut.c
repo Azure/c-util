@@ -24,7 +24,6 @@
 #include "c_util/buffer_.h"
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
-#include "c_pal/interlocked.h"
 #undef ENABLE_MOCKS
 
 #include "real_gballoc_hl.h"
@@ -89,8 +88,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    (void)error_code;
-    ASSERT_FAIL("umock_c reported error");
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(constbuffer_thandle_ut)
