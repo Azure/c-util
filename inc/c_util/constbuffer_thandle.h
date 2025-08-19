@@ -69,10 +69,8 @@ MU_DEFINE_ENUM(CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_THAN
 MU_DEFINE_ENUM(CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_VALUES)
 
 MOCKABLE_INTERFACE(constbuffer_thandle,
-    /*this creates a new constbuffer_thandle from a memory area*/
     FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_Create, const unsigned char*, source, uint32_t, size),
 
-    /*this creates a new constbuffer_thandle from an existing BUFFER_HANDLE*/
     FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFromBuffer, BUFFER_HANDLE, buffer),
 
     FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateWithMoveMemory, unsigned char*, source, uint32_t, size),
