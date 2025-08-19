@@ -39,12 +39,6 @@ typedef struct CONSTBUFFER_TAG
     unsigned char data[]; // Flexible array member for data storage
 } CONSTBUFFER;
 
-typedef struct CONSTBUFFER_THANDLE_HANDLE_MOVE_MEMORY_DATA_TAG
-{
-    CONSTBUFFER_THANDLE alias;  // Embedded alias structure
-    CONSTBUFFER_THANDLE_TYPE buffer_type;
-} CONSTBUFFER_THANDLE_HANDLE_MOVE_MEMORY_DATA;
-
 typedef struct CONSTBUFFER_THANDLE_HANDLE_WITH_CUSTOM_FREE_DATA_TAG
 {
     CONSTBUFFER_THANDLE alias;  // Embedded alias structure
