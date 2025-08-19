@@ -156,7 +156,10 @@ THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_Create(const unsigned char* source, uin
     else
     {
         THANDLE(CONSTBUFFER) temp_result = CONSTBUFFER_THANDLE_Create_Internal(source, size);
-        THANDLE_MOVE(CONSTBUFFER)(&result, &temp_result);
+        if (temp_result != NULL)
+        {
+            THANDLE_MOVE(CONSTBUFFER)(&result, &temp_result);
+        }
     }
     return result;
 }
@@ -178,7 +181,10 @@ THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateFromBuffer(BUFFER_HANDLE buffer)
         uint32_t length = (uint32_t)BUFFER_length(buffer);
         unsigned char* rawBuffer = BUFFER_u_char(buffer);
         THANDLE(CONSTBUFFER) temp_result = CONSTBUFFER_THANDLE_Create_Internal(rawBuffer, length);
-        THANDLE_MOVE(CONSTBUFFER)(&result, &temp_result);
+        if (temp_result != NULL)
+        {
+            THANDLE_MOVE(CONSTBUFFER)(&result, &temp_result);
+        }
     }
     return result;
 }
