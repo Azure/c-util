@@ -21,10 +21,10 @@ typedef struct CONSTBUFFER_THANDLE_TAG
 } CONSTBUFFER_THANDLE;
 
 /*forward declaration for the THANDLE type*/
-typedef struct CONSTBUFFER_THANDLE_HANDLE_DATA_TAG CONSTBUFFER_THANDLE_HANDLE_DATA;
+typedef struct CONSTBUFFER_TAG CONSTBUFFER;
 
 /*declare the THANDLE type*/
-THANDLE_TYPE_DECLARE(CONSTBUFFER_THANDLE_HANDLE_DATA);
+THANDLE_TYPE_DECLARE(CONSTBUFFER);
 
 /*this is the writable handle*/
 typedef struct CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA_TAG CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA;
@@ -53,28 +53,28 @@ MU_DEFINE_ENUM(CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_THAN
 MU_DEFINE_ENUM(CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_VALUES)
 
 MOCKABLE_INTERFACE(constbuffer_thandle,
-    FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_Create, const unsigned char*, source, uint32_t, size),
-    FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateFromBuffer, BUFFER_HANDLE, buffer),
-    FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateWithMoveMemory, unsigned char*, source, uint32_t, size),
-    FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_THANDLE_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext),
-    FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), handle, uint32_t, offset, uint32_t, size),
-    FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), handle, uint32_t, offset, uint32_t, size),
-    FUNCTION(, const CONSTBUFFER_THANDLE*, CONSTBUFFER_THANDLE_GetContent, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), constbufferHandle),
-    FUNCTION(, bool, CONSTBUFFER_THANDLE_HANDLE_contain_same, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), left, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), right),
-    FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_Clone, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), constbufferHandle),
-    FUNCTION(, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_THANDLE_to_fixed_size_buffer, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), constbufferHandle, unsigned char*, destination, uint32_t, destination_size, uint32_t*, serialized_size),
-    FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateWritableHandle, uint32_t, size),
-    FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_SealWritableHandle, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), constbufferWritableHandle),
+    FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_Create, const unsigned char*, source, uint32_t, size),
+    FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFromBuffer, BUFFER_HANDLE, buffer),
+    FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateWithMoveMemory, unsigned char*, source, uint32_t, size),
+    FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_THANDLE_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext),
+    FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, THANDLE(CONSTBUFFER), handle, uint32_t, offset, uint32_t, size),
+    FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy, THANDLE(CONSTBUFFER), handle, uint32_t, offset, uint32_t, size),
+    FUNCTION(, const CONSTBUFFER_THANDLE*, CONSTBUFFER_THANDLE_GetContent, THANDLE(CONSTBUFFER), constbufferHandle),
+    FUNCTION(, bool, CONSTBUFFER_THANDLE_HANDLE_contain_same, THANDLE(CONSTBUFFER), left, THANDLE(CONSTBUFFER), right),
+    FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_Clone, THANDLE(CONSTBUFFER), constbufferHandle),
+    FUNCTION(, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_THANDLE_to_fixed_size_buffer, THANDLE(CONSTBUFFER), constbufferHandle, unsigned char*, destination, uint32_t, destination_size, uint32_t*, serialized_size),
+    FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateWritableHandle, uint32_t, size),
+    FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_SealWritableHandle, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), constbufferWritableHandle),
     FUNCTION(, unsigned char*, CONSTBUFFER_THANDLE_GetWritableBuffer, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), constbufferWritableHandle),
-    FUNCTION(, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_CreateFromBuffer, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA)*, constbufferHandle, const unsigned char*, source, uint32_t, size),
-    FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_to_buffer, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), constbufferHandle, CONSTBUFFER_THANDLE_to_buffer_alloc, alloc, void*, alloc_context)
+    FUNCTION(, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_CreateFromBuffer, THANDLE(CONSTBUFFER)*, constbufferHandle, const unsigned char*, source, uint32_t, size),
+    FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_to_buffer, THANDLE(CONSTBUFFER), constbufferHandle, CONSTBUFFER_THANDLE_to_buffer_alloc, alloc, void*, alloc_context)
 )
 ```
 
 ## CONSTBUFFER_THANDLE_Create
 
 ```c
-THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_Create(const unsigned char* source, uint32_t size)
+THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_Create(const unsigned char* source, uint32_t size)
 ```
 
 `CONSTBUFFER_THANDLE_Create` creates a const buffer from a memory area.
@@ -92,7 +92,7 @@ THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_Create(const unsign
 ## CONSTBUFFER_THANDLE_CreateFromBuffer
 
 ```c
-THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_CreateFromBuffer(BUFFER_HANDLE buffer)
+THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateFromBuffer(BUFFER_HANDLE buffer)
 ```
 
 `CONSTBUFFER_THANDLE_CreateFromBuffer` creates a const buffer from an existing BUFFER_HANDLE by copying its content.
@@ -110,7 +110,7 @@ THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_CreateFromBuffer(BU
 ## CONSTBUFFER_THANDLE_GetContent
 
 ```c
-const CONSTBUFFER_THANDLE* CONSTBUFFER_THANDLE_GetContent(THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) constbufferHandle)
+const CONSTBUFFER_THANDLE* CONSTBUFFER_THANDLE_GetContent(THANDLE(CONSTBUFFER) constbufferHandle)
 ```
 
 `CONSTBUFFER_THANDLE_GetContent` returns a pointer to a CONSTBUFFER_THANDLE structure that can be used to access the stored bytes and the size of the const buffer.
@@ -122,7 +122,7 @@ const CONSTBUFFER_THANDLE* CONSTBUFFER_THANDLE_GetContent(THANDLE(CONSTBUFFER_TH
 ## CONSTBUFFER_THANDLE_CreateWithMoveMemory
 
 ```c
-THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_CreateWithMoveMemory(unsigned char* source, uint32_t size)
+THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateWithMoveMemory(unsigned char* source, uint32_t size)
 ```
 
 `CONSTBUFFER_THANDLE_CreateWithMoveMemory` creates a const buffer by moving the memory ownership from the caller to the const buffer.
@@ -139,14 +139,14 @@ THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_CreateWithMoveMemor
 
 ## Disposal
 
-**SRS_CONSTBUFFER_THANDLE_88_013: [** `CONSTBUFFER_THANDLE_HANDLE_DATA_dispose` shall free the memory used by the const buffer. **]**
+**SRS_CONSTBUFFER_THANDLE_88_013: [** `CONSTBUFFER_dispose` shall free the memory used by the const buffer. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_014: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateWithMoveMemory`, the memory pointed to by the buffer pointer shall be freed. **]**
 
 ## CONSTBUFFER_THANDLE_contain_same
 
 ```c
-bool CONSTBUFFER_THANDLE_contain_same(THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) left, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) right)
+bool CONSTBUFFER_THANDLE_contain_same(THANDLE(CONSTBUFFER) left, THANDLE(CONSTBUFFER) right)
 ```
 
 `CONSTBUFFER_THANDLE_contain_same` compares two const buffer handles to determine if they contain the same data.
@@ -166,7 +166,7 @@ bool CONSTBUFFER_THANDLE_contain_same(THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) l
 ## CONSTBUFFER_THANDLE_CreateWithCustomFree
 
 ```c
-THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_CreateWithCustomFree(const unsigned char* source, uint32_t size, CONSTBUFFER_THANDLE_CUSTOM_FREE_FUNC customFreeFunc, void* customFreeFuncContext)
+THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateWithCustomFree(const unsigned char* source, uint32_t size, CONSTBUFFER_THANDLE_CUSTOM_FREE_FUNC customFreeFunc, void* customFreeFuncContext)
 ```
 
 `CONSTBUFFER_THANDLE_CreateWithCustomFree` creates a const buffer by taking ownership of existing memory and using a custom function to free it.
@@ -192,10 +192,10 @@ THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) CONSTBUFFER_THANDLE_CreateWithCustomFre
 ## CONSTBUFFER_THANDLE_CreateFromOffsetAndSize
 
 ```c
-MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), handle, uint32_t, offset, uint32_t, size)
+MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, THANDLE(CONSTBUFFER), handle, uint32_t, offset, uint32_t, size)
 ```
 
-`CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` creates a new `CONSTBUFFER_THANDLE_HANDLE_DATA` from a region of an existing one.
+`CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` creates a new `CONSTBUFFER` from a region of an existing one.
 
 **SRS_CONSTBUFFER_THANDLE_88_035: [** If `handle` is `NULL` then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
 
@@ -207,7 +207,7 @@ MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDL
 
 **SRS_CONSTBUFFER_THANDLE_88_040: [** If `offset` is 0 and `size` is equal to `handle`'s size then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall increment the reference count of `handle` and return `handle`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_041: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall allocate memory for a new `CONSTBUFFER_THANDLE_HANDLE_DATA`. **]**
+**SRS_CONSTBUFFER_THANDLE_88_041: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall allocate memory for a new `CONSTBUFFER`. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_042: [** If there are any failures then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall fail and return `NULL`. **]**
 
@@ -217,7 +217,7 @@ MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDL
 
 **SRS_CONSTBUFFER_THANDLE_88_045: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall increment the reference count of `handle` and store it. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_046: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall set the ref count of the newly created `CONSTBUFFER_THANDLE_HANDLE_DATA` to 1. **]**
+**SRS_CONSTBUFFER_THANDLE_88_046: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall set the ref count of the newly created `CONSTBUFFER` to 1. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_047: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall succeed and return a non-NULL value. **]**
 
@@ -226,10 +226,10 @@ MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDL
 ## CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy
 
 ```c
-MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), handle, uint32_t, offset, uint32_t, size);
+MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy, THANDLE(CONSTBUFFER), handle, uint32_t, offset, uint32_t, size);
 ```
 
-`CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` creates a new `CONSTBUFFER_THANDLE_HANDLE_DATA` by copying data from an existing handle starting at a given offset and with a given size.
+`CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` creates a new `CONSTBUFFER` by copying data from an existing handle starting at a given offset and with a given size.
 
 **SRS_CONSTBUFFER_THANDLE_88_049: [** If `handle` is `NULL` then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
 
@@ -248,7 +248,7 @@ MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDL
 ## CONSTBUFFER_THANDLE_get_serialization_size
 
 ```c
-MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_THANDLE_get_serialization_size, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), source)
+MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_THANDLE_get_serialization_size, THANDLE(CONSTBUFFER), source)
 ```
 
 `CONSTBUFFER_THANDLE_get_serialization_size` returns the size required to serialize the const buffer.
@@ -262,7 +262,7 @@ MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_THANDLE_get_serialization_size, THANDL
 ## CONSTBUFFER_THANDLE_to_buffer
 
 ```c
-MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_THANDLE_to_buffer, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), source, CONSTBUFFER_THANDLE_to_buffer_alloc, alloc, void*, alloc_context, uint32_t*, serialized_size)
+MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_THANDLE_to_buffer, THANDLE(CONSTBUFFER), source, CONSTBUFFER_THANDLE_to_buffer_alloc, alloc, void*, alloc_context, uint32_t*, serialized_size)
 ```
 
 `CONSTBUFFER_THANDLE_to_buffer` serializes the const buffer to a binary representation.
@@ -288,7 +288,7 @@ MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_THANDLE_to_buffer, THANDLE(CONST
 ## CONSTBUFFER_THANDLE_to_fixed_size_buffer
 
 ```c
-MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_THANDLE_to_fixed_size_buffer, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), source, unsigned char*, destination, uint32_t, destination_size, uint32_t*, serialized_size)
+MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_THANDLE_to_fixed_size_buffer, THANDLE(CONSTBUFFER), source, unsigned char*, destination, uint32_t, destination_size, uint32_t*, serialized_size)
 ```
 
 `CONSTBUFFER_THANDLE_to_fixed_size_buffer` serializes the const buffer to a fixed-size destination buffer.
@@ -314,7 +314,7 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER
 ## CONSTBUFFER_THANDLE_from_buffer
 
 ```c
-MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_from_buffer, const unsigned char*, source, uint32_t, size, uint32_t*, consumed, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA)*, destination)
+MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_from_buffer, const unsigned char*, source, uint32_t, size, uint32_t*, consumed, THANDLE(CONSTBUFFER)*, destination)
 ```
 
 `CONSTBUFFER_THANDLE_from_buffer` deserializes a const buffer from a serialized buffer.
@@ -335,9 +335,9 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_
 
 **SRS_CONSTBUFFER_THANDLE_88_085: [** If source's size is less than sizeof(uint8_t) + sizeof(uint32_t) + number of content bytes then `CONSTBUFFER_THANDLE_from_buffer` shall fail and return `CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_DATA`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_086: [** `CONSTBUFFER_THANDLE_from_buffer` shall create a THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) from the bytes at offset 5 of source. **]**
+**SRS_CONSTBUFFER_THANDLE_88_086: [** `CONSTBUFFER_THANDLE_from_buffer` shall create a THANDLE(CONSTBUFFER) from the bytes at offset 5 of source. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_087: [** `CONSTBUFFER_THANDLE_from_buffer` shall succeed, write in `consumed` the total number of consumed bytes from source, write in `destination` the constructed THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA) and return `CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_OK`. **]**
+**SRS_CONSTBUFFER_THANDLE_88_087: [** `CONSTBUFFER_THANDLE_from_buffer` shall succeed, write in `consumed` the total number of consumed bytes from source, write in `destination` the constructed THANDLE(CONSTBUFFER) and return `CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_OK`. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_088: [** If there are any failures then `CONSTBUFFER_THANDLE_from_buffer` shall fail and return `CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_ERROR`. **]**
 
@@ -374,18 +374,18 @@ MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_THANDLE_GetWritableBuffer, THAND
 ## CONSTBUFFER_THANDLE_SealWritableHandle
 
 ```c
-MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA), CONSTBUFFER_THANDLE_SealWritableHandle, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), constbufferWritableHandle)
+MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_SealWritableHandle, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), constbufferWritableHandle)
 ```
 
 `CONSTBUFFER_THANDLE_SealWritableHandle` seals a writable handle, making it immutable.
 
 **SRS_CONSTBUFFER_THANDLE_88_096: [** If `constbufferWritableHandle` is `NULL` then `CONSTBUFFER_THANDLE_SealWritableHandle` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_097: [** `CONSTBUFFER_THANDLE_SealWritableHandle` shall create a new `THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA)` from the contents of `constbufferWritableHandle`. **]**
+**SRS_CONSTBUFFER_THANDLE_88_097: [** `CONSTBUFFER_THANDLE_SealWritableHandle` shall create a new `THANDLE(CONSTBUFFER)` from the contents of `constbufferWritableHandle`. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_098: [** If there are any failures then `CONSTBUFFER_THANDLE_SealWritableHandle` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_099: [** `CONSTBUFFER_THANDLE_SealWritableHandle` shall succeed and return a non-`NULL` `THANDLE(CONSTBUFFER_THANDLE_HANDLE_DATA)`. **]**
+**SRS_CONSTBUFFER_THANDLE_88_099: [** `CONSTBUFFER_THANDLE_SealWritableHandle` shall succeed and return a non-`NULL` `THANDLE(CONSTBUFFER)`. **]**
 
 ## CONSTBUFFER_THANDLE_GetWritableBufferSize
 
