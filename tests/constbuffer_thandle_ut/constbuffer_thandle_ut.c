@@ -46,7 +46,7 @@ static const char* buffer1 = "le buffer no 1";
 #define BUFFER1_u_char ((unsigned char*)buffer1)
 #define BUFFER1_length (uint32_t)strlen(buffer1)
 
-unsigned char* my_BUFFER_u_char(BUFFER_HANDLE handle)
+static unsigned char* my_BUFFER_u_char(BUFFER_HANDLE handle)
 {
     unsigned char* result;
     if (handle == BUFFER1_HANDLE)
