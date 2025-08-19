@@ -32,7 +32,7 @@ extern "C" {
     typedef struct CHANNEL_TAG real_CHANNEL;
     THANDLE_TYPE_DECLARE(real_CHANNEL);
 
-    THANDLE(CHANNEL) real_channel_create(THANDLE(PTR(LOG_CONTEXT_HANDLE)) log_context, THANDLE(THREADPOOL) threadpool);
+    THANDLE(CHANNEL) real_channel_create(THANDLE(PTR(LOG_CONTEXT_HANDLE)) log_context, THANDLE(THREADPOOL) threadpool, int overflow_level);
     int real_channel_open(THANDLE(CHANNEL) channel);
     void real_channel_close(THANDLE(CHANNEL) channel);
     CHANNEL_RESULT real_channel_pull(THANDLE(CHANNEL) channel, THANDLE(RC_STRING) correlation_id, ON_DATA_AVAILABLE_CB on_data_available_cb, void* pull_context, THANDLE(ASYNC_OP)* out_op_pull);
