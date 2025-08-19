@@ -53,6 +53,7 @@ THANDLE_TYPE_DECLARE(CHANNEL);
     MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, ON_DATA_AVAILABLE_CB, on_data_available_cb, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
     MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, ON_DATA_CONSUMED_CB, on_data_consumed_cb, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
     MOCKABLE_FUNCTION(, int, channel_get_stat_snapshot, THANDLE(CHANNEL), channel, CHANNEL_STATS*, channel_stats);
+    MOCKABLE_FUNCTION(, int, channel_set_overflowed, THANDLE(CHANNEL), channel);
 
 #ifdef __cplusplus
 }

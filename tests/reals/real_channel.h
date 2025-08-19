@@ -15,7 +15,9 @@
         channel_open, \
         channel_close, \
         channel_pull, \
-        channel_push \
+        channel_push, \
+        channel_get_stat_snapshot, \
+        channel_set_overflowed \
     ) \
     REGISTER_GLOBAL_MOCK_HOOK(THANDLE_MOVE(CHANNEL), THANDLE_MOVE(real_CHANNEL)) \
     REGISTER_GLOBAL_MOCK_HOOK(THANDLE_INITIALIZE(CHANNEL), THANDLE_INITIALIZE(real_CHANNEL)) \
@@ -38,6 +40,7 @@ extern "C" {
     CHANNEL_RESULT real_channel_pull(THANDLE(CHANNEL) channel, THANDLE(RC_STRING) correlation_id, ON_DATA_AVAILABLE_CB on_data_available_cb, void* pull_context, THANDLE(ASYNC_OP)* out_op_pull);
     CHANNEL_RESULT real_channel_push(THANDLE(CHANNEL) channel, THANDLE(RC_STRING) correlation_id, THANDLE(RC_PTR) data, ON_DATA_CONSUMED_CB on_data_consumed_cb, void* push_context, THANDLE(ASYNC_OP)* out_op_push);
     int real_channel_get_stat_snapshot(THANDLE(CHANNEL) channel, CHANNEL_STATS* channel_stats);
+    int real_channel_set_overflowed(THANDLE(CHANNEL) channel);
 
 
 #ifdef __cplusplus

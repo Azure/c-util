@@ -610,3 +610,19 @@ int channel_get_stat_snapshot(THANDLE(CHANNEL) channel, CHANNEL_STATS* channel_s
     return result;
 }
 
+int channel_set_overflowed(THANDLE(CHANNEL) channel)
+{
+    int result;
+    if (channel == NULL)
+    {
+        LogError("Invalid argument: THANDLE(CHANNEL) channel=%p", channel);
+        result = MU_FAILURE;
+    }
+    else
+    {
+        CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
+        (void)interlocked_exchange(&channel_ptr->is_overflowed, 1);
+        result = 0;
+    }
+    return result;
+}
