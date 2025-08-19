@@ -167,7 +167,7 @@ bool CONSTBUFFER_THANDLE_contain_same(THANDLE(CONSTBUFFER) left, THANDLE(CONSTBU
 
 **SRS_CONSTBUFFER_THANDLE_88_024: [** If `left`'s buffer contains different bytes than `right`'s buffer then `CONSTBUFFER_THANDLE_contain_same` shall return `false`. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_025: [** `CONSTBUFFER_THANDLE_contain_same` shall return `true`. **]**
+**SRS_CONSTBUFFER_THANDLE_88_025: [** Otherwise, `CONSTBUFFER_THANDLE_contain_same` shall return `true`. **]**
 
 ## CONSTBUFFER_THANDLE_CreateWithCustomFree
 

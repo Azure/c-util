@@ -442,7 +442,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, bool, CONSTBUFFER_THANDLE_contain_same, THANDLE(CO
                 }
                 else
                 {
-                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_025: [ CONSTBUFFER_THANDLE_contain_same shall return true. ]*/
+                    /*Codes_SRS_CONSTBUFFER_THANDLE_88_025: [ Otherwise, CONSTBUFFER_THANDLE_contain_same shall return true. ]*/
                     result = true;
                 }
             }

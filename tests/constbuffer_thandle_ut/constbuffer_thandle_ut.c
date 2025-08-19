@@ -615,7 +615,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_and_right_content_not_e
     THANDLE_ASSIGN(CONSTBUFFER)(&right, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_025: [CONSTBUFFER_THANDLE_contain_same shall return true.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_025: [Otherwise, CONSTBUFFER_THANDLE_contain_same shall return true.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_and_right_same_returns_true)
 {
     ///arrange
