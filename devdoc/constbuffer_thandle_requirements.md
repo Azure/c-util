@@ -141,6 +141,10 @@ THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateWithMoveMemory(unsigned char* sou
 
 ## Disposal
 
+```c
+static void CONSTBUFFER_dispose(CONSTBUFFER* handle_data)
+```
+
 **SRS_CONSTBUFFER_THANDLE_88_013: [** `CONSTBUFFER_dispose` shall free the memory used by the const buffer. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_014: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateWithMoveMemory`, the memory pointed to by the buffer pointer shall be freed. **]**
