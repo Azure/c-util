@@ -19,12 +19,6 @@
 #include "c_util/constbuffer_version.h"
 #include "c_util/constbuffer_thandle.h"
 
-static void* calls_malloc(size_t size, void* context)
-{
-    (void)context;
-    return malloc(size); /*in all the contexts where this is called, it is verified that the size is 0..UINT32_MAX, which is a subset of 0..SIZE_MAX*/
-}
-
 // in order to optimize memory usage, the const buffer structure contains a discriminator that tells what kind of const buffer it is (copied, with custom free, etc.).
 // Each type of const buffer has its own structure that contains the common fields and the specific fields.
 #define CONSTBUFFER_THANDLE_TYPE_VALUES \
@@ -71,6 +65,12 @@ typedef struct CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA_TAG
 
 // THANDLE type definition for CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA
 THANDLE_TYPE_DEFINE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA);
+
+static void* calls_malloc(size_t size, void* context)
+{
+    (void)context;
+    return malloc(size); /*in all the contexts where this is called, it is verified that the size is 0..UINT32_MAX, which is a subset of 0..SIZE_MAX*/
+}
 
 static void CONSTBUFFER_dispose(CONSTBUFFER* handle_data)
 {

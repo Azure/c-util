@@ -51,7 +51,7 @@ ctest -C Debug --output-on-failure
 ```
 
 ### Memory Allocator Selection
-- Set `GBALLOC_LL_TYPE` to control allocator: `JEMALLOC`, `MIMALLOC`, or default `HEAP`
+- Set `GBALLOC_LL_TYPE` to control allocator: `JEMALLOC`, `MIMALLOC`, `WIN32HEAP`, or default `PASSTHROUGH`
 - Use `vcpkg.json` dependencies for jemalloc on Windows
 - Custom allocators integrate via `THANDLE_TYPE_DEFINE_WITH_MALLOC_FUNCTIONS`
 
