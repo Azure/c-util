@@ -293,7 +293,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFr
             (offset + size > content->size)
             )
         {
-            LogError("Invalid arguments: offset=%" PRIu32 ", size=%" PRIu32 ", content size=%" PRIu32,
+            LogError("Invalid arguments: offset=%" PRIu32 ", size=%" PRIu32 ", content size=%" PRIu32 "",
                 offset, size, content->size);
         }
         else
@@ -331,7 +331,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFr
         if (offset > content->size)
         {
             /*Codes_SRS_CONSTBUFFER_THANDLE_88_037: [ If offset is greater than handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL. ]*/
-            LogError("Invalid arguments: offset=%" PRIu32 " > content->size=%" PRIu32, offset, content->size);
+            LogError("Invalid arguments: offset=%" PRIu32 " > content->size=%" PRIu32 "", offset, content->size);
         }
         else if (offset > UINT32_MAX - size)
         {
@@ -341,7 +341,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFr
         else if (offset + size > content->size)
         {
             /*Codes_SRS_CONSTBUFFER_THANDLE_88_039: [ If offset + size exceed handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL. ]*/
-            LogError("Invalid arguments: offset=%" PRIu32 " + size=%" PRIu32 " > content->size=%" PRIu32, offset, size, content->size);
+            LogError("Invalid arguments: offset=%" PRIu32 " + size=%" PRIu32 " > content->size=%" PRIu32 "", offset, size, content->size);
         }
         else
         {

@@ -158,6 +158,11 @@ This prevents Include What You Use from removing these seemingly unused headers 
 - Check all allocations and handle failures gracefully
 - Never ignore return values from THANDLE operations
 
+### Logging Conventions
+- All `LogError()` and `LogInfo()` statements ending with format specifiers like `PRIu32`, `PRId32`, etc. must include `""` after the format specifier
+- Example: `LogError("Failed to create buffer, size=%" PRIu32 "", size);` (note the `""` after `PRIu32`)
+- This ensures proper string literal termination and consistent logging format across the codebase
+
 ### Header Structure
 ```c
 // Standard header pattern
