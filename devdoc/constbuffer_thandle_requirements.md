@@ -61,7 +61,6 @@ MOCKABLE_INTERFACE(constbuffer_thandle,
     FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy, THANDLE(CONSTBUFFER), handle, uint32_t, offset, uint32_t, size),
     FUNCTION(, const CONSTBUFFER_THANDLE*, CONSTBUFFER_THANDLE_GetContent, THANDLE(CONSTBUFFER), constbufferHandle),
     FUNCTION(, bool, CONSTBUFFER_THANDLE_HANDLE_contain_same, THANDLE(CONSTBUFFER), left, THANDLE(CONSTBUFFER), right),
-    FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_Clone, THANDLE(CONSTBUFFER), constbufferHandle),
     FUNCTION(, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_THANDLE_to_fixed_size_buffer, THANDLE(CONSTBUFFER), constbufferHandle, unsigned char*, destination, uint32_t, destination_size, uint32_t*, serialized_size),
     FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateWritableHandle, uint32_t, size),
     FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_SealWritableHandle, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), constbufferWritableHandle),
@@ -181,9 +180,9 @@ THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateWithCustomFree(const unsigned cha
 
 **SRS_CONSTBUFFER_THANDLE_88_027: [** If `source` is non-`NULL` and `size` is 0, the `source` pointer shall be owned (and freed) by the newly created instance of const buffer. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_028: [** `CONSTBUFFER_THANDLE_CreateWithCustomFree` shall store the `source` and `size` and return a non-`NULL` handle to the newly created const buffer. **]**
-
 **SRS_CONSTBUFFER_THANDLE_88_029: [** If `customFreeFunc` is `NULL`, `CONSTBUFFER_THANDLE_CreateWithCustomFree` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_028: [** `CONSTBUFFER_THANDLE_CreateWithCustomFree` shall store the `source` and `size` and return a non-`NULL` handle to the newly created const buffer. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_030: [** The non-`NULL` handle returned by `CONSTBUFFER_THANDLE_CreateWithCustomFree` shall have its ref count set to "1". **]**
 
