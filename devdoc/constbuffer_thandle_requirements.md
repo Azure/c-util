@@ -162,9 +162,15 @@ THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateWithMoveMemory(unsigned char* sou
 static void CONSTBUFFER_dispose(CONSTBUFFER* handle_data)
 ```
 
+`CONSTBUFFER_dispose` is called automatically by the THANDLE system when the reference count reaches zero to clean up resources and free memory.
+
 **SRS_CONSTBUFFER_THANDLE_88_013: [** `CONSTBUFFER_dispose` shall free the memory used by the const buffer. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_014: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateWithMoveMemory`, the memory pointed to by the buffer pointer shall be freed. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_031: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateWithCustomFree`, the `customFreeFunc` function shall be called to free the memory, while passed `customFreeFuncContext` as argument. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_048: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize`, the original handle shall be decremented. **]**
 
 ## CONSTBUFFER_THANDLE_contain_same
 
@@ -204,8 +210,6 @@ THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateWithCustomFree(const unsigned cha
 
 **SRS_CONSTBUFFER_THANDLE_88_030: [** The non-`NULL` handle returned by `CONSTBUFFER_THANDLE_CreateWithCustomFree` shall have its ref count set to "1". **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_031: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateWithCustomFree`, the `customFreeFunc` function shall be called to free the memory, while passed `customFreeFuncContext` as argument. **]**
-
 **SRS_CONSTBUFFER_THANDLE_88_032: [** `customFreeFuncContext` shall be allowed to be `NULL`. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_033: [** If any error occurs, `CONSTBUFFER_THANDLE_CreateWithCustomFree` shall fail and return `NULL`. **]**
@@ -243,8 +247,6 @@ MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFromOffsetAn
 **SRS_CONSTBUFFER_THANDLE_88_046: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall set the ref count of the newly created `CONSTBUFFER` to 1. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_047: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize` shall succeed and return a non-NULL value. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_048: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize`, the original handle shall be decremented. **]**
 
 ## CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy
 
