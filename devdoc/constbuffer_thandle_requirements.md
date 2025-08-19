@@ -170,7 +170,7 @@ static void CONSTBUFFER_dispose(CONSTBUFFER* handle_data)
 
 **SRS_CONSTBUFFER_THANDLE_88_031: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateWithCustomFree`, the `customFreeFunc` function shall be called to free the memory, while passed `customFreeFuncContext` as argument. **]**
 
-**SRS_CONSTBUFFER_THANDLE_88_048: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize`, the original handle shall be decremented. **]**
+**SRS_CONSTBUFFER_THANDLE_88_048: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize`, the original handle shall be assigned to `NULL`. **]**
 
 ## CONSTBUFFER_THANDLE_contain_same
 

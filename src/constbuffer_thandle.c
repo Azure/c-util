@@ -82,7 +82,7 @@ static void CONSTBUFFER_dispose(CONSTBUFFER* handle_data)
     }
     else if (handle_data->buffer_type == CONSTBUFFER_THANDLE_TYPE_FROM_OFFSET_AND_SIZE)
     {
-        /*Codes_SRS_CONSTBUFFER_THANDLE_88_048: [ If the buffer was created by calling CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, the original handle shall be decremented. ]*/
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_048: [ If the buffer was created by calling CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, the original handle shall be assigned to NULL. ]*/
         if (handle_data->original_handle != NULL)
         {
             THANDLE_ASSIGN(CONSTBUFFER)(&handle_data->original_handle, NULL);

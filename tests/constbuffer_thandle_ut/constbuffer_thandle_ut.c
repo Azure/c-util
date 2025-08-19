@@ -795,7 +795,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_offset_and_size_s
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
-    /*Tests_SRS_CONSTBUFFER_THANDLE_88_048: [ If the buffer was created by calling CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, the original handle shall be decremented.]*/
+    /*Tests_SRS_CONSTBUFFER_THANDLE_88_048: [ If the buffer was created by calling CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, the original handle shall be assigned to NULL.]*/
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
