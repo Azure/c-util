@@ -108,7 +108,7 @@ static THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_Create_Internal(const unsigned c
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_003: [ If creating the copy fails then CONSTBUFFER_THANDLE_Create shall return NULL. ]*/
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_008: [ If copying the content fails, then CONSTBUFFER_THANDLE_CreateFromBuffer shall fail and return NULL. ]*/
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_055: [ If there are any failures then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
-        LogError("failure in THANDLE_MALLOC_FLEX(CONSTBUFFER)(CONSTBUFFER_dispose, size=%" PRIu32 ")",
+        LogError("failure in THANDLE_MALLOC_FLEX(CONSTBUFFER)(CONSTBUFFER_dispose, size=%" PRIu32 ", 1)",
             size);
     }
     else
@@ -710,12 +710,12 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA),
     else
     {
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_090: [ CONSTBUFFER_THANDLE_CreateWritableHandle shall allocate memory for the THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA). ]*/
-        THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA) temp_result = THANDLE_MALLOC_FLEX(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA)(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA_dispose, size, sizeof(unsigned char));
+        THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA) temp_result = THANDLE_MALLOC_FLEX(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA)(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA_dispose, size, 1);
         if (temp_result == NULL)
         {
             /*Codes_SRS_CONSTBUFFER_THANDLE_88_091: [ If any error occurs, CONSTBUFFER_THANDLE_CreateWritableHandle shall fail and return NULL. ]*/
-            LogError("failure in THANDLE_MALLOC_FLEX(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA)(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA_dispose, size=%" PRIu32 ", sizeof(unsigned char)=%zu)",
-                size, sizeof(unsigned char));
+            LogError("failure in THANDLE_MALLOC_FLEX(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA)(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA_dispose, size=%" PRIu32 ", 1)",
+                size);
         }
         else
         {

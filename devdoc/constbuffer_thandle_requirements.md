@@ -4,6 +4,8 @@
 
 ConstBuffer THANDLE is a module that implements a read-only buffer of bytes (unsigned char) using the THANDLE reference counting system. Once created, the buffer can no longer be changed. The buffer uses THANDLE for thread-safe reference counting.
 
+This module provides the same functionality as the original `constbuffer` module but uses THANDLE instead of traditional reference counting. THANDLE provides thread-safe reference counting and automatic cleanup, making it safer for use in multi-threaded environments. New code should prefer `constbuffer_thandle` over the original `constbuffer`.
+
 ## References
 
 [THANDLE](../deps/c-pal/common/inc/c_pal/thandle.h)

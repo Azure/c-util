@@ -246,10 +246,10 @@ cmake --build . --target c_util_traceability
 All dependencies are managed as git submodules in `deps/`:
 ```bash
 # Initialize submodules when cloning
-git clone --recursive https://github.com/Azure/c-util.git
+git clone https://github.com/Azure/c-util.git
 
 # Update existing submodules
-git submodule update --init --recursive
+git submodule update --init
 
 # Update to latest dependency versions
 git submodule update --remote
