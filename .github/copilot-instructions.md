@@ -25,12 +25,6 @@ c-util is a Microsoft Azure C utility library providing fundamental data structu
 - Always provide both `cancel` and `dispose` function pointers to `async_op_create`
 - Use `async_op_from_context()` to get THANDLE from context pointer
 
-### Dependency Chain
-Key dependencies in order: `macro-utils-c` → `c-logging` → `c-pal` → `c-util`
-- **c-pal**: Platform abstraction layer providing `interlocked.h`, `gballoc_hl.h`, `thandle.h`
-- **umock-c**: Mocking framework used extensively in tests
-- **c-logging**: Structured logging with `LogError()`, `LogInfo()` macros
-
 ## Development Workflows
 
 ### Building and Testing
@@ -145,6 +139,7 @@ Reals maintain the same dependency order as the main modules:
 - **Memory Management**: Always use `real_gballoc_hl_*` in unit test setup/cleanup
 - **Threading**: Use `real_interlocked_*` when testing thread-safe components
 - **Async Operations**: Use `real_async_op` when testing async patterns without mocking the framework
+- **THANDLE Types**: Use `real_thandle_helper.h` to create real THANDLE implementations with leak detection and memory management even when the underlying type is mocked. Pattern: include interlocked renames, use `REAL_THANDLE_DECLARE(TYPE)` and `REAL_THANDLE_DEFINE(TYPE)`, then `REGISTER_REAL_THANDLE_MOCK_HOOK(TYPE)` to hook THANDLE operations to real implementations
 - **Collections**: Use `real_doublylinkedlist`, `real_tarray` for data structure functionality
 - **Platform Services**: Use `real_threadpool`, `real_srw_lock` on Windows for system integration
 
@@ -166,7 +161,14 @@ This prevents Include What You Use from removing these seemingly unused headers 
 ### Header Structure
 ```c
 // Standard header pattern
-#include <stdint.h>  // Always first for C99 types
+#ifdef __cplusplus
+#include <cstdint>
+#include <cstddef>
+#else
+#include <stdint.h>
+#include <stddef.h>
+#endif
+
 #include "macro_utils/macro_utils.h"
 #include "c_pal/thandle.h" 
 #include "umock_c/umock_c_prod.h"
@@ -213,7 +215,6 @@ MOCKABLE_FUNCTION(, THANDLE(MY_TYPE), my_type_create, int, param);
 - Never directly assign THANDLE variables - always use `THANDLE_ASSIGN()`
 - Don't forget to call `TARRAY_TYPE_DEFINE()` in source files after declaring in headers
 - Match alignment requirements when using `malloc_flex` for variable-sized allocations
-- Always check if async operations support cancellation before calling `async_op_cancel()`
 - Include `gballoc_hl_redirect.h` in source files to redirect malloc/free calls
 
 ## Requirements and Traceability
@@ -250,15 +251,15 @@ git submodule update --remote
 ```
 
 ### Dependency Chain
-Critical to understand the layered dependency structure:
+Critical to understand the layered dependency structure: `macro-utils-c` → `c-logging` → `c-pal` → `c-util`
 1. **macro-utils-c**: Fundamental macros for generic programming
-2. **c-logging**: Structured logging infrastructure 
-3. **c-pal**: Platform abstraction layer (threading, memory, THANDLE)
+2. **c-logging**: Structured logging infrastructure with `LogError()`, `LogInfo()` macros
+3. **c-pal**: Platform abstraction layer providing `interlocked.h`, `gballoc_hl.h`, `thandle.h` (threading, memory, THANDLE)
 4. **c-util**: This library (builds on all above)
 
 ### External Dependencies
 - **smhasher/MurmurHash2**: Required for hash functionality - build fails if submodule not updated
-- **umock-c**: Mocking framework for unit tests
+- **umock-c**: Mocking framework used extensively in unit tests
 - **ctest**: Test runner framework
 - **vcpkg**: Package manager for Windows-specific dependencies (jemalloc)
 
