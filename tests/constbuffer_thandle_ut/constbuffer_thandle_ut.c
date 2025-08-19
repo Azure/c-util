@@ -145,6 +145,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_source_NULL_and_size_not_0_fails)
 
     ///assert
     ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_CONSTBUFFER_THANDLE_88_002: [Otherwise, CONSTBUFFER_THANDLE_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
@@ -155,11 +156,14 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_valid_args_succeeds)
     ///arrange
     unsigned char source[] = { 1, 2, 3 };
 
+    STRICT_EXPECTED_CALL(gballoc_hl_malloc_flex(IGNORED_ARG, sizeof(source), 1));
+
     ///act
     THANDLE(CONSTBUFFER) result = CONSTBUFFER_THANDLE_Create(source, sizeof(source));
 
     ///assert
     ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
     /*Tests_SRS_CONSTBUFFER_THANDLE_88_013: [CONSTBUFFER_dispose shall free the memory used by the const buffer.]*/
@@ -172,12 +176,14 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_valid_args_succeeds)
 TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_source_NULL_and_size_0_succeeds)
 {
     ///arrange
+    STRICT_EXPECTED_CALL(gballoc_hl_malloc_flex(IGNORED_ARG, 0, 1));
 
     ///act
     THANDLE(CONSTBUFFER) result = CONSTBUFFER_THANDLE_Create(NULL, 0);
 
     ///assert
     ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
@@ -219,6 +225,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_fails_when_malloc_fails)
 
     ///assert
     ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
 }
@@ -235,6 +242,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_with_NULL_fails)
 
     ///assert
     ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_CONSTBUFFER_THANDLE_88_012: [Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a pointer to a CONSTBUFFER_THANDLE structure.]*/
@@ -318,6 +326,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_with_NULL_source_and_size
 
     ///assert
     ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_CONSTBUFFER_THANDLE_88_016: [CONSTBUFFER_THANDLE_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer.]*/
@@ -420,6 +429,12 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_frees_moved_memory_on_dis
     ASSERT_ARE_EQUAL(uint8_t, 0xBB, content->buffer[1]);
     ASSERT_ARE_EQUAL(uint8_t, 0xCC, content->buffer[2]);
 
+    umock_c_reset_all_calls();
+
+    // Expect the free calls that will happen during disposal
+    STRICT_EXPECTED_CALL(gballoc_hl_free(IGNORED_ARG)); // free the moved memory
+    STRICT_EXPECTED_CALL(gballoc_hl_free(IGNORED_ARG)); // free the THANDLE structure
+
     ///act & cleanup
     // When we release the handle, it should free the moved memory
     // We can't directly test that the memory was freed, but we can verify
@@ -429,6 +444,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_frees_moved_memory_on_dis
     ///assert
     // If we get here without crash/error, the disposal worked correctly
     // The memory pointed to by test_buffer is now freed and should not be accessed
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_CONSTBUFFER_THANDLE_88_017: [If any error occurs, CONSTBUFFER_THANDLE_CreateWithMoveMemory shall fail and return NULL.]*/
@@ -502,21 +518,19 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromBuffer_succeeds)
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromBuffer_fails_when_malloc_fails)
 {
     ///arrange
-    // TODO: Implement malloc failure test with proper mocking
-    /*STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
+    STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
     STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER1_length, IGNORED_ARG))
-        .SetReturn(NULL);*/
+        .SetReturn(NULL);
 
     ///act
     THANDLE(CONSTBUFFER) result = CONSTBUFFER_THANDLE_CreateFromBuffer(BUFFER1_HANDLE);
 
     ///assert
-    // For now, just test normal operation
-    ASSERT_IS_NOT_NULL(result);
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
-    THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
 /* CONSTBUFFER_THANDLE_contain_same */
@@ -531,6 +545,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_NULL_and_right_NULL_ret
 
     ///assert
     ASSERT_IS_TRUE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_CONSTBUFFER_THANDLE_88_021: [If left is NULL and right is not NULL then CONSTBUFFER_THANDLE_contain_same shall return false.]*/
@@ -540,12 +555,14 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_NULL_and_right_not_NULL
     unsigned char rightSource = 'r';
     THANDLE(CONSTBUFFER) right = CONSTBUFFER_THANDLE_Create(&rightSource, sizeof(rightSource));
     ASSERT_IS_NOT_NULL(right);
+    umock_c_reset_all_calls();
 
     ///act
     bool result = CONSTBUFFER_THANDLE_contain_same(NULL, right);
 
     ///assert
     ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&right, NULL);
@@ -558,12 +575,14 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_not_NULL_and_right_NULL
     unsigned char leftSource = 'l';
     THANDLE(CONSTBUFFER) left = CONSTBUFFER_THANDLE_Create(&leftSource, sizeof(leftSource));
     ASSERT_IS_NOT_NULL(left);
+    umock_c_reset_all_calls();
 
     ///act
     bool result = CONSTBUFFER_THANDLE_contain_same(left, NULL);
 
     ///assert
     ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&left, NULL);
@@ -580,12 +599,14 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_and_right_sizes_not_equ
     unsigned char rightSource[2] = { 'r', 'r' };
     THANDLE(CONSTBUFFER) right = CONSTBUFFER_THANDLE_Create(rightSource, sizeof(rightSource));
     ASSERT_IS_NOT_NULL(right);
+    umock_c_reset_all_calls();
 
     ///act
     bool result = CONSTBUFFER_THANDLE_contain_same(left, right);
 
     ///assert
     ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&left, NULL);
@@ -603,12 +624,14 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_and_right_content_not_e
     unsigned char rightSource[2] = { 'r', 'r' };
     THANDLE(CONSTBUFFER) right = CONSTBUFFER_THANDLE_Create(rightSource, sizeof(rightSource));
     ASSERT_IS_NOT_NULL(right);
+    umock_c_reset_all_calls();
 
     ///act
     bool result = CONSTBUFFER_THANDLE_contain_same(left, right);
 
     ///assert
     ASSERT_IS_FALSE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&left, NULL);
@@ -626,12 +649,14 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_and_right_same_returns_
     unsigned char rightSource[2] = { '1', '2' };
     THANDLE(CONSTBUFFER) right = CONSTBUFFER_THANDLE_Create(rightSource, sizeof(rightSource));
     ASSERT_IS_NOT_NULL(right);
+    umock_c_reset_all_calls();
 
     ///act
     bool result = CONSTBUFFER_THANDLE_contain_same(left, right);
 
     ///assert
     ASSERT_IS_TRUE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&left, NULL);
@@ -650,6 +675,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_NULL_handle_fails
 
     ///assert
     ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_CONSTBUFFER_THANDLE_88_037: [If offset is greater than handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL.]*/
@@ -660,11 +686,14 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_offset_too_large_
     THANDLE(CONSTBUFFER) source = CONSTBUFFER_THANDLE_Create(test_buffer, sizeof(test_buffer));
     ASSERT_IS_NOT_NULL(source);
 
+    umock_c_reset_all_calls();
+
     ///act
     THANDLE(CONSTBUFFER) result = CONSTBUFFER_THANDLE_CreateFromOffsetAndSize(source, 5, 1);
 
     ///assert
     ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
@@ -678,6 +707,8 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_offset_plus_size_
     THANDLE(CONSTBUFFER) source = CONSTBUFFER_THANDLE_Create(test_buffer, sizeof(test_buffer));
     ASSERT_IS_NOT_NULL(source);
 
+    umock_c_reset_all_calls();
+
     ///act
     THANDLE(CONSTBUFFER) result1 = CONSTBUFFER_THANDLE_CreateFromOffsetAndSize(source, 0, 5);
     THANDLE(CONSTBUFFER) result2 = CONSTBUFFER_THANDLE_CreateFromOffsetAndSize(source, 4, 1);
@@ -687,6 +718,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_offset_plus_size_
     ASSERT_IS_NULL(result1);
     ASSERT_IS_NULL(result2);
     ASSERT_IS_NULL(result3);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
@@ -1144,6 +1176,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialization_size_with_source_NULL_fails)
 
     ///assert
     ASSERT_ARE_EQUAL(uint32_t, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_CONSTBUFFER_THANDLE_88_058: [If sizeof(uint8_t) + sizeof(uint32_t) + source's size exceed UINT32_MAX then CONSTBUFFER_THANDLE_get_serialization_size shall fail and return 0.]*/
@@ -1155,12 +1188,15 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialization_size_with_too_big_size_fails
     THANDLE(CONSTBUFFER) normal_h = CONSTBUFFER_THANDLE_Create(test_buffer, sizeof(test_buffer));
     ASSERT_IS_NOT_NULL(normal_h);
 
+    umock_c_reset_all_calls();
+
     ///act
     uint32_t result = CONSTBUFFER_THANDLE_get_serialization_size(normal_h);
 
     ///assert
     // For normal sizes, should succeed
     ASSERT_ARE_EQUAL(uint32_t, CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE + 10, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&normal_h, NULL);
@@ -1173,11 +1209,14 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialization_size_with_0_size_succeeds)
     THANDLE(CONSTBUFFER) smallest = CONSTBUFFER_THANDLE_Create(NULL, 0);
     ASSERT_IS_NOT_NULL(smallest);
 
+    umock_c_reset_all_calls();
+
     ///act
     uint32_t result = CONSTBUFFER_THANDLE_get_serialization_size(smallest);
 
     ///assert
     ASSERT_ARE_EQUAL(uint32_t, CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE + 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&smallest, NULL);
@@ -1191,11 +1230,14 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialization_size_with_2_size_succeeds)
     THANDLE(CONSTBUFFER) small_buffer = CONSTBUFFER_THANDLE_Create(test_data, sizeof(test_data));
     ASSERT_IS_NOT_NULL(small_buffer);
 
+    umock_c_reset_all_calls();
+
     ///act
     uint32_t result = CONSTBUFFER_THANDLE_get_serialization_size(small_buffer);
 
     ///assert
     ASSERT_ARE_EQUAL(uint32_t, CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE + 2, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&small_buffer, NULL);
@@ -1214,6 +1256,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_to_buffer_with_source_NULL_fails)
 
     ///assert
     ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 /*Tests_SRS_CONSTBUFFER_THANDLE_88_061: [If serialized_size is NULL then CONSTBUFFER_THANDLE_to_buffer shall fail and return NULL.]*/
@@ -1224,11 +1267,14 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_to_buffer_with_size_NULL_fails)
     THANDLE(CONSTBUFFER) source = CONSTBUFFER_THANDLE_Create(test_data, sizeof(test_data));
     ASSERT_IS_NOT_NULL(source);
 
+    umock_c_reset_all_calls();
+
     ///act
     unsigned char* result = CONSTBUFFER_THANDLE_to_buffer(source, NULL, NULL, NULL);
 
     ///assert
     ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
@@ -1815,6 +1861,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_fails_when_malloc_fails)
 
     ///assert
     ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
 }
@@ -1848,6 +1895,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWritableHandle_fails_when_malloc_fails)
 
     ///assert
     ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
 }
@@ -1930,6 +1978,8 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_SealWritableHandle_fails_when_Create_fails)
     ASSERT_IS_NOT_NULL(buffer);
     (void)memcpy(buffer, BUFFER1_u_char, BUFFER1_length);
     
+    umock_c_reset_all_calls();
+    
     // Mock failure in the internal Create call used by SealWritableHandle
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, BUFFER1_length, 1))
         .SetReturn(NULL);
@@ -1939,6 +1989,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_SealWritableHandle_fails_when_Create_fails)
 
     ///assert
     ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA)(&handle, NULL);
