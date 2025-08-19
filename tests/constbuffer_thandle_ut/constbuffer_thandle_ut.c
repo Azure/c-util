@@ -135,7 +135,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 
 /* CONSTBUFFER_THANDLE_Create */
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_001: [If source is NULL and size is different than 0 then CONSTBUFFER_THANDLE_Create shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_001: [ If source is NULL and size is different than 0 then CONSTBUFFER_THANDLE_Create shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_source_NULL_and_size_not_0_fails)
 {
     ///arrange
@@ -148,9 +148,9 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_source_NULL_and_size_not_0_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_002: [Otherwise, CONSTBUFFER_THANDLE_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_004: [Otherwise CONSTBUFFER_THANDLE_Create shall return a non-NULL handle.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_005: [The non-NULL handle returned by CONSTBUFFER_THANDLE_Create shall have its ref count set to "1".]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_002: [ Otherwise, CONSTBUFFER_THANDLE_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_004: [ Otherwise CONSTBUFFER_THANDLE_Create shall return a non-NULL handle.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_005: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_Create shall have its ref count set to "1".]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_valid_args_succeeds)
 {
     ///arrange
@@ -166,13 +166,13 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_valid_args_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
-    /*Tests_SRS_CONSTBUFFER_THANDLE_88_013: [CONSTBUFFER_dispose shall free the memory used by the const buffer.]*/
+    /*Tests_SRS_CONSTBUFFER_THANDLE_88_013: [ CONSTBUFFER_dispose shall free the memory used by the const buffer.]*/
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_002: [Otherwise, CONSTBUFFER_THANDLE_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_004: [Otherwise CONSTBUFFER_THANDLE_Create shall return a non-NULL handle.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_005: [The non-NULL handle returned by CONSTBUFFER_THANDLE_Create shall have its ref count set to "1".]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_002: [ Otherwise, CONSTBUFFER_THANDLE_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_004: [ Otherwise CONSTBUFFER_THANDLE_Create shall return a non-NULL handle.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_005: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_Create shall have its ref count set to "1".]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_source_NULL_and_size_0_succeeds)
 {
     ///arrange
@@ -189,9 +189,9 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_source_NULL_and_size_0_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_102: [If source is non-NULL and size is 0 then CONSTBUFFER_THANDLE_Create shall create an empty buffer.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_004: [Otherwise CONSTBUFFER_THANDLE_Create shall return a non-NULL handle.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_005: [The non-NULL handle returned by CONSTBUFFER_THANDLE_Create shall have its ref count set to "1".]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_102: [ If source is non-NULL and size is 0 then CONSTBUFFER_THANDLE_Create shall create an empty buffer.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_004: [ Otherwise CONSTBUFFER_THANDLE_Create shall return a non-NULL handle.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_005: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_Create shall have its ref count set to "1".]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_source_non_NULL_and_size_0_succeeds)
 {
     ///arrange
@@ -211,7 +211,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_source_non_NULL_and_size_0_succeed
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_003: [If creating the copy fails then CONSTBUFFER_THANDLE_Create shall return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_003: [ If creating the copy fails then CONSTBUFFER_THANDLE_Create shall return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_fails_when_malloc_fails)
 {
     ///arrange
@@ -232,7 +232,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_fails_when_malloc_fails)
 
 /* CONSTBUFFER_THANDLE_GetContent */
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_011: [If constbufferHandle is NULL then CONSTBUFFER_THANDLE_GetContent shall return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_011: [ If constbufferHandle is NULL then CONSTBUFFER_THANDLE_GetContent shall return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_with_NULL_fails)
 {
     ///arrange
@@ -245,7 +245,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_with_NULL_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_012: [Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a pointer to a CONSTBUFFER_THANDLE structure.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_012: [ Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a pointer to a CONSTBUFFER_THANDLE structure.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_succeeds)
 {
     ///arrange
@@ -270,7 +270,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&handle, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_012: [Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a pointer to a CONSTBUFFER_THANDLE structure.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_012: [ Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a pointer to a CONSTBUFFER_THANDLE structure.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_with_empty_buffer_succeeds)
 {
     ///arrange
@@ -291,7 +291,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_with_empty_buffer_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&handle, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_012: [Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a pointer to a CONSTBUFFER_THANDLE structure.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_012: [ Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a pointer to a CONSTBUFFER_THANDLE structure.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_with_single_byte_succeeds)
 {
     ///arrange
@@ -316,7 +316,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_with_single_byte_succeeds)
 
 /* CONSTBUFFER_THANDLE_CreateWithMoveMemory */
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_015: [If source is NULL and size is different than 0 then CONSTBUFFER_THANDLE_CreateWithMoveMemory shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_015: [ If source is NULL and size is different than 0 then CONSTBUFFER_THANDLE_CreateWithMoveMemory shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_with_NULL_source_and_size_not_0_fails)
 {
     ///arrange
@@ -329,8 +329,8 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_with_NULL_source_and_size
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_016: [CONSTBUFFER_THANDLE_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_019: [The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateWithMoveMemory shall have its ref count set to "1".]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_016: [ CONSTBUFFER_THANDLE_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_019: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateWithMoveMemory shall have its ref count set to "1".]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_succeeds)
 {
     ///arrange
@@ -357,8 +357,8 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&handle, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_016: [CONSTBUFFER_THANDLE_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_018: [If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_016: [ CONSTBUFFER_THANDLE_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_018: [ If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_with_0_size_succeeds)
 {
     ///arrange
@@ -384,7 +384,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_with_0_size_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&handle, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_016: [CONSTBUFFER_THANDLE_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_016: [ CONSTBUFFER_THANDLE_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_with_NULL_source_and_0_size_succeeds)
 {
     ///arrange
@@ -407,7 +407,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_with_NULL_source_and_0_si
     THANDLE_ASSIGN(CONSTBUFFER)(&handle, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_014: [If the buffer was created by calling CONSTBUFFER_THANDLE_CreateWithMoveMemory, the memory pointed to by the buffer pointer shall be freed.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_014: [ If the buffer was created by calling CONSTBUFFER_THANDLE_CreateWithMoveMemory, the memory pointed to by the buffer pointer shall be freed.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_frees_moved_memory_on_dispose)
 {
     ///arrange
@@ -447,7 +447,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_frees_moved_memory_on_dis
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_017: [If any error occurs, CONSTBUFFER_THANDLE_CreateWithMoveMemory shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_017: [ If any error occurs, CONSTBUFFER_THANDLE_CreateWithMoveMemory shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_fails_when_malloc_fails)
 {
     ///arrange
@@ -471,7 +471,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_fails_when_malloc_fails)
 
 /* CONSTBUFFER_THANDLE_CreateFromBuffer */
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_006: [If buffer is NULL then CONSTBUFFER_THANDLE_CreateFromBuffer shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_006: [ If buffer is NULL then CONSTBUFFER_THANDLE_CreateFromBuffer shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromBuffer_with_NULL_fails)
 {
     ///arrange
@@ -484,9 +484,9 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromBuffer_with_NULL_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_007: [Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall copy the content of buffer.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_009: [Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall return a non-NULL handle.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_010: [The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateFromBuffer shall have its ref count set to "1".]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_007: [ Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall copy the content of buffer.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_009: [ Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall return a non-NULL handle.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_010: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateFromBuffer shall have its ref count set to "1".]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromBuffer_succeeds)
 {
     ///arrange
@@ -514,7 +514,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromBuffer_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&handle, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_008: [If copying the content fails, then CONSTBUFFER_THANDLE_CreateFromBuffer shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_008: [ If copying the content fails, then CONSTBUFFER_THANDLE_CreateFromBuffer shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromBuffer_fails_when_malloc_fails)
 {
     ///arrange
@@ -535,7 +535,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromBuffer_fails_when_malloc_fails)
 
 /* CONSTBUFFER_THANDLE_contain_same */
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_020: [If left is NULL and right is NULL then CONSTBUFFER_THANDLE_contain_same shall return true.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_020: [ If left is NULL and right is NULL then CONSTBUFFER_THANDLE_contain_same shall return true.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_NULL_and_right_NULL_returns_true)
 {
     ///arrange
@@ -548,7 +548,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_NULL_and_right_NULL_ret
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_021: [If left is NULL and right is not NULL then CONSTBUFFER_THANDLE_contain_same shall return false.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_021: [ If left is NULL and right is not NULL then CONSTBUFFER_THANDLE_contain_same shall return false.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_NULL_and_right_not_NULL_returns_false)
 {
     ///arrange
@@ -568,7 +568,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_NULL_and_right_not_NULL
     THANDLE_ASSIGN(CONSTBUFFER)(&right, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_022: [If left is not NULL and right is NULL then CONSTBUFFER_THANDLE_contain_same shall return false.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_022: [ If left is not NULL and right is NULL then CONSTBUFFER_THANDLE_contain_same shall return false.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_not_NULL_and_right_NULL_returns_false)
 {
     ///arrange
@@ -588,7 +588,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_not_NULL_and_right_NULL
     THANDLE_ASSIGN(CONSTBUFFER)(&left, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_023: [If left's size is different than right's size then CONSTBUFFER_THANDLE_contain_same shall return false.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_023: [ If left's size is different than right's size then CONSTBUFFER_THANDLE_contain_same shall return false.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_and_right_sizes_not_equal_returns_false)
 {
     ///arrange
@@ -613,7 +613,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_and_right_sizes_not_equ
     THANDLE_ASSIGN(CONSTBUFFER)(&right, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_024: [If left's buffer contains different bytes than right's buffer then CONSTBUFFER_THANDLE_contain_same shall return false.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_024: [ If left's buffer contains different bytes than right's buffer then CONSTBUFFER_THANDLE_contain_same shall return false.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_and_right_content_not_equal_returns_false)
 {
     ///arrange
@@ -638,7 +638,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_and_right_content_not_e
     THANDLE_ASSIGN(CONSTBUFFER)(&right, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_025: [Otherwise, CONSTBUFFER_THANDLE_contain_same shall return true.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_025: [ Otherwise, CONSTBUFFER_THANDLE_contain_same shall return true.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_and_right_same_returns_true)
 {
     ///arrange
@@ -665,7 +665,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_contain_same_with_left_and_right_same_returns_
 
 /* CONSTBUFFER_THANDLE_CreateFromOffsetAndSize */
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_035: [If handle is NULL then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_035: [ If handle is NULL then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_NULL_handle_fails)
 {
     ///arrange
@@ -678,7 +678,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_NULL_handle_fails
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_037: [If offset is greater than handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_037: [ If offset is greater than handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_offset_too_large_fails)
 {
     ///arrange
@@ -699,7 +699,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_offset_too_large_
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_039: [If offset + size exceed handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_039: [ If offset + size exceed handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_offset_plus_size_too_large_fails)
 {
     ///arrange
@@ -724,7 +724,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_offset_plus_size_
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_038: [If offset + size would overflow then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_038: [ If offset + size would overflow then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_overflow_fails)
 {
     ///arrange
@@ -742,7 +742,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_overflow_fails)
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_040: [If offset is 0 and size is equal to handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall increment the reference count of handle and return handle.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_040: [ If offset is 0 and size is equal to handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall increment the reference count of handle and return handle.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_full_buffer_returns_same_handle)
 {
     ///arrange
@@ -763,11 +763,11 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_full_buffer_returns_sa
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_041: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall allocate memory for a new CONSTBUFFER.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_043: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the buffer pointer to point to handle's buffer + offset.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_044: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the size to the provided size.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_046: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the ref count of the newly created CONSTBUFFER to 1.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_047: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall succeed and return a non-NULL value.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_041: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall allocate memory for a new CONSTBUFFER.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_043: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the buffer pointer to point to handle's buffer + offset.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_044: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the size to the provided size.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_046: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the ref count of the newly created CONSTBUFFER to 1.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_047: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall succeed and return a non-NULL value.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_offset_and_size_succeeds)
 {
     ///arrange
@@ -797,12 +797,12 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_offset_and_size_s
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
-    /*Tests_SRS_CONSTBUFFER_THANDLE_88_048: [If the buffer was created by calling CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, the original handle shall be decremented.]*/
+    /*Tests_SRS_CONSTBUFFER_THANDLE_88_048: [ If the buffer was created by calling CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, the original handle shall be decremented.]*/
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_043: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the buffer pointer to point to handle's buffer + offset.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_044: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the size to the provided size.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_043: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the buffer pointer to point to handle's buffer + offset.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_044: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the size to the provided size.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_zero_size_succeeds)
 {
     ///arrange
@@ -825,8 +825,8 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_zero_size_succeed
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_043: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the buffer pointer to point to handle's buffer + offset.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_044: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the size to the provided size.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_043: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the buffer pointer to point to handle's buffer + offset.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_044: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall set the size to the provided size.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_single_byte_succeeds)
 {
     ///arrange
@@ -852,7 +852,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_single_byte_succe
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_045: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall increment the reference count of handle and store it.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_045: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall increment the reference count of handle and store it.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_keeps_original_alive)
 {
     ///arrange
@@ -880,7 +880,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_keeps_original_alive)
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_047: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall succeed and return a non-NULL value.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_047: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall succeed and return a non-NULL value.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_empty_source_buffer_succeeds)
 {
     ///arrange
@@ -900,7 +900,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_with_empty_source_buff
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_042: [If there are any failures then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_042: [ If there are any failures then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_fails_when_error_occurs)
 {
     ///arrange
@@ -918,7 +918,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_fails_when_error_occur
 
 /* CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy */
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_049: [If handle is NULL, CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_049: [ If handle is NULL, CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_NULL_handle_fails)
 {
     ///arrange
@@ -930,8 +930,8 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_NULL_hand
     ASSERT_IS_NULL(result);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_054: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_056: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall succeed and return a non-NULL value.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_054: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_056: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall succeed and return a non-NULL value.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_succeeds)
 {
     ///arrange
@@ -955,7 +955,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_051: [If offset is greater than handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_051: [ If offset is greater than handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_offset_too_large_fails)
 {
     ///arrange
@@ -973,7 +973,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_offset_to
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_053: [If offset + size exceed handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_053: [ If offset + size exceed handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_offset_plus_size_too_large_fails)
 {
     ///arrange
@@ -991,7 +991,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_offset_pl
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_052: [If offset + size would overflow then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_052: [ If offset + size would overflow then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_overflow_fails)
 {
     ///arrange
@@ -1009,7 +1009,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_overflow_
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_054: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_054: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_zero_size_succeeds)
 {
     ///arrange
@@ -1032,7 +1032,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_zero_size
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_054: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_054: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_single_byte_succeeds)
 {
     ///arrange
@@ -1057,7 +1057,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_single_by
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_054: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_054: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_multiple_bytes_from_middle_succeeds)
 {
     ///arrange
@@ -1086,7 +1086,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_multiple_
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_054: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_054: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_full_buffer_copy_succeeds)
 {
     ///arrange
@@ -1115,7 +1115,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_full_buff
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_054: [CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_054: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_empty_source_buffer_succeeds)
 {
     ///arrange
@@ -1137,7 +1137,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_empty_sou
     THANDLE_ASSIGN(CONSTBUFFER)(&result, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_055: [If there are any failures then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_055: [ If there are any failures then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_fails_when_malloc_fails)
 {
     ///arrange
@@ -1154,7 +1154,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_fails_when_mal
     THANDLE(CONSTBUFFER) result = CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy(source_handle, 1, 2);
 
     ///assert
-    /*Tests_SRS_CONSTBUFFER_THANDLE_88_055: [Function should return NULL on failures (malloc failure)]*/
+    /*Tests_SRS_CONSTBUFFER_THANDLE_88_055: [ Function should return NULL on failures (malloc failure)]*/
     ASSERT_IS_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -1166,7 +1166,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_fails_when_mal
 
 /* CONSTBUFFER_THANDLE_get_serialization_size */
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_057: [If source is NULL then CONSTBUFFER_THANDLE_get_serialization_size shall fail and return 0.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_057: [ If source is NULL then CONSTBUFFER_THANDLE_get_serialization_size shall fail and return 0.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialization_size_with_source_NULL_fails)
 {
     ///arrange
@@ -1179,7 +1179,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialization_size_with_source_NULL_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_058: [If sizeof(uint8_t) + sizeof(uint32_t) + source's size exceed UINT32_MAX then CONSTBUFFER_THANDLE_get_serialization_size shall fail and return 0.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_058: [ If sizeof(uint8_t) + sizeof(uint32_t) + source's size exceed UINT32_MAX then CONSTBUFFER_THANDLE_get_serialization_size shall fail and return 0.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialization_size_with_too_big_size_fails)
 {
     ///arrange
@@ -1202,7 +1202,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialization_size_with_too_big_size_fails
     THANDLE_ASSIGN(CONSTBUFFER)(&normal_h, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_059: [Otherwise CONSTBUFFER_THANDLE_get_serialization_size shall succeed and return sizeof(uint8_t) + sizeof(uint32_t) + source's size.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_059: [ Otherwise CONSTBUFFER_THANDLE_get_serialization_size shall succeed and return sizeof(uint8_t) + sizeof(uint32_t) + source's size.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialization_size_with_0_size_succeeds)
 {
     ///arrange
@@ -1222,7 +1222,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialization_size_with_0_size_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&smallest, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_059: [Otherwise CONSTBUFFER_THANDLE_get_serialization_size shall succeed and return sizeof(uint8_t) + sizeof(uint32_t) + source's size.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_059: [ Otherwise CONSTBUFFER_THANDLE_get_serialization_size shall succeed and return sizeof(uint8_t) + sizeof(uint32_t) + source's size.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialization_size_with_2_size_succeeds)
 {
     ///arrange
@@ -1245,7 +1245,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialization_size_with_2_size_succeeds)
 
 /* CONSTBUFFER_THANDLE_to_buffer */
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_060: [If source is NULL then CONSTBUFFER_THANDLE_to_buffer shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_060: [ If source is NULL then CONSTBUFFER_THANDLE_to_buffer shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_to_buffer_with_source_NULL_fails)
 {
     ///arrange
@@ -1259,7 +1259,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_to_buffer_with_source_NULL_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_061: [If serialized_size is NULL then CONSTBUFFER_THANDLE_to_buffer shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_061: [ If serialized_size is NULL then CONSTBUFFER_THANDLE_to_buffer shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_to_buffer_with_size_NULL_fails)
 {
     ///arrange
@@ -1280,12 +1280,12 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_to_buffer_with_size_NULL_fails)
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_062: [If alloc is NULL then CONSTBUFFER_THANDLE_to_buffer shall use malloc as provided by gballoc_hl_redirect.h.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_063: [CONSTBUFFER_THANDLE_to_buffer shall allocate memory using alloc for holding the complete serialization.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_064: [CONSTBUFFER_THANDLE_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1).]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_065: [CONSTBUFFER_THANDLE_to_buffer shall write at offsets 1-4 of the allocated memory the value of source's size in network byte order.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_066: [CONSTBUFFER_THANDLE_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source's buffer.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_067: [CONSTBUFFER_THANDLE_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_062: [ If alloc is NULL then CONSTBUFFER_THANDLE_to_buffer shall use malloc as provided by gballoc_hl_redirect.h.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_063: [ CONSTBUFFER_THANDLE_to_buffer shall allocate memory using alloc for holding the complete serialization.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_064: [ CONSTBUFFER_THANDLE_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1).]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_065: [ CONSTBUFFER_THANDLE_to_buffer shall write at offsets 1-4 of the allocated memory the value of source's size in network byte order.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_066: [ CONSTBUFFER_THANDLE_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source's buffer.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_067: [ CONSTBUFFER_THANDLE_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_to_buffer_with_size_1_with_malloc_succeeds)
 {
     ///arrange
@@ -1317,7 +1317,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_to_buffer_with_size_1_with_malloc_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_067: [CONSTBUFFER_THANDLE_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_067: [ CONSTBUFFER_THANDLE_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_to_buffer_with_0_size_succeeds)
 {
     ///arrange
@@ -1347,7 +1347,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_to_buffer_with_0_size_succeeds)
 
 /* CONSTBUFFER_THANDLE_to_fixed_size_buffer */
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_069: [If source is NULL then CONSTBUFFER_THANDLE_to_fixed_size_buffer shall fail and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_069: [ If source is NULL then CONSTBUFFER_THANDLE_to_fixed_size_buffer shall fail and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_to_fixed_size_buffer_with_source_NULL_fails)
 {
     ///arrange
@@ -1361,7 +1361,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_to_fixed_size_buffer_with_source_NULL_fails)
     ASSERT_ARE_EQUAL(CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG, result);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_070: [If destination is NULL then CONSTBUFFER_THANDLE_to_fixed_size_buffer shall fail and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_070: [ If destination is NULL then CONSTBUFFER_THANDLE_to_fixed_size_buffer shall fail and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_to_fixed_size_buffer_with_destination_NULL_fails)
 {
     ///arrange
@@ -1379,7 +1379,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_to_fixed_size_buffer_with_destination_NULL_fai
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_071: [If serialized_size is NULL then CONSTBUFFER_THANDLE_to_fixed_size_buffer shall fail and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_071: [ If serialized_size is NULL then CONSTBUFFER_THANDLE_to_fixed_size_buffer shall fail and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_to_fixed_size_buffer_with_serialized_size_NULL_fails)
 {
     ///arrange
@@ -1397,7 +1397,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_to_fixed_size_buffer_with_serialized_size_NULL
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_072: [If the size of serialization exceeds destination_size then CONSTBUFFER_THANDLE_to_fixed_size_buffer shall fail, write in serialized_size how much it would need and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INSUFFICIENT_BUFFER.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_072: [ If the size of serialization exceeds destination_size then CONSTBUFFER_THANDLE_to_fixed_size_buffer shall fail, write in serialized_size how much it would need and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INSUFFICIENT_BUFFER.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_to_fixed_size_buffer_with_insufficient_buffer_fails)
 {
     ///arrange
@@ -1417,10 +1417,10 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_to_fixed_size_buffer_with_insufficient_buffer_
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_073: [CONSTBUFFER_THANDLE_to_fixed_size_buffer shall write at offset 0 of destination the version of serialization (currently 1).]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_074: [CONSTBUFFER_THANDLE_to_fixed_size_buffer shall write at offset 1 of destination the value of source's size in network byte order.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_075: [CONSTBUFFER_THANDLE_to_fixed_size_buffer shall copy all the bytes of source's buffer in destination starting at offset 5.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_076: [CONSTBUFFER_THANDLE_to_fixed_size_buffer shall succeed, write in serialized_size how much it used and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_OK.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_073: [ CONSTBUFFER_THANDLE_to_fixed_size_buffer shall write at offset 0 of destination the version of serialization (currently 1).]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_074: [ CONSTBUFFER_THANDLE_to_fixed_size_buffer shall write at offset 1 of destination the value of source's size in network byte order.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_075: [ CONSTBUFFER_THANDLE_to_fixed_size_buffer shall copy all the bytes of source's buffer in destination starting at offset 5.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_076: [ CONSTBUFFER_THANDLE_to_fixed_size_buffer shall succeed, write in serialized_size how much it used and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_OK.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_to_fixed_size_buffer_with_size_1_succeeds)
 {
     ///arrange
@@ -1446,7 +1446,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_to_fixed_size_buffer_with_size_1_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_076: [CONSTBUFFER_THANDLE_to_fixed_size_buffer shall succeed, write in serialized_size how much it used and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_OK.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_076: [ CONSTBUFFER_THANDLE_to_fixed_size_buffer shall succeed, write in serialized_size how much it used and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_OK.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_to_fixed_size_buffer_with_0_size_succeeds)
 {
     ///arrange
@@ -1473,7 +1473,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_to_fixed_size_buffer_with_0_size_succeeds)
 
 /* CONSTBUFFER_THANDLE_from_buffer */
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_078: [If source is NULL then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_078: [ If source is NULL then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_source_NULL_fails)
 {
     ///arrange
@@ -1487,7 +1487,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_source_NULL_fails)
     ASSERT_ARE_EQUAL(CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG, result);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_079: [If consumed is NULL then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_079: [ If consumed is NULL then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_consumed_NULL_fails)
 {
     ///arrange
@@ -1501,7 +1501,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_consumed_NULL_fails)
     ASSERT_ARE_EQUAL(CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG, result);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_080: [If destination is NULL then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_080: [ If destination is NULL then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_destination_NULL_fails)
 {
     ///arrange
@@ -1515,7 +1515,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_destination_NULL_fails)
     ASSERT_ARE_EQUAL(CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG, result);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_081: [If size is 0 then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_081: [ If size is 0 then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_size_0_fails)
 {
     ///arrange
@@ -1530,7 +1530,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_size_0_fails)
     ASSERT_ARE_EQUAL(CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_ARG, result);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_082: [If source byte at offset 0 is not 1 (current version) then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_DATA.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_082: [ If source byte at offset 0 is not 1 (current version) then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_DATA.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_invalid_version_fails)
 {
     ///arrange
@@ -1545,7 +1545,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_invalid_version_fails)
     ASSERT_ARE_EQUAL(CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_DATA, result);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_083: [If source's size is less than sizeof(uint8_t) + sizeof(uint32_t) then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_DATA.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_083: [ If source's size is less than sizeof(uint8_t) + sizeof(uint32_t) then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_DATA.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_too_small_buffer_fails)
 {
     ///arrange
@@ -1560,7 +1560,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_too_small_buffer_fails)
     ASSERT_ARE_EQUAL(CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_DATA, result);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_085: [If source's size is less than sizeof(uint8_t) + sizeof(uint32_t) + number of content bytes then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_DATA.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_085: [ If source's size is less than sizeof(uint8_t) + sizeof(uint32_t) + number of content bytes then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_DATA.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_insufficient_content_bytes_fails)
 {
     ///arrange
@@ -1578,9 +1578,9 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_insufficient_content_bytes_fa
     ASSERT_ARE_EQUAL(CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_INVALID_DATA, result);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_084: [CONSTBUFFER_THANDLE_from_buffer shall read the number of serialized content bytes from offset 1 of source.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_086: [CONSTBUFFER_THANDLE_from_buffer shall create a THANDLE(CONSTBUFFER) from the bytes at offset 5 of source.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_087: [CONSTBUFFER_THANDLE_from_buffer shall succeed, write in consumed the total number of consumed bytes from source, write in destination the constructed THANDLE(CONSTBUFFER) and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_OK.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_084: [ CONSTBUFFER_THANDLE_from_buffer shall read the number of serialized content bytes from offset 1 of source.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_086: [ CONSTBUFFER_THANDLE_from_buffer shall create a THANDLE(CONSTBUFFER) from the bytes at offset 5 of source.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_087: [ CONSTBUFFER_THANDLE_from_buffer shall succeed, write in consumed the total number of consumed bytes from source, write in destination the constructed THANDLE(CONSTBUFFER) and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_OK.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_valid_buffer_succeeds)
 {
     ///arrange
@@ -1608,7 +1608,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_valid_buffer_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&destination, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_087: [CONSTBUFFER_THANDLE_from_buffer shall succeed, write in consumed the total number of consumed bytes from source, write in destination the constructed THANDLE(CONSTBUFFER) and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_OK.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_087: [ CONSTBUFFER_THANDLE_from_buffer shall succeed, write in consumed the total number of consumed bytes from source, write in destination the constructed THANDLE(CONSTBUFFER) and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_OK.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_zero_content_succeeds)
 {
     ///arrange
@@ -1634,7 +1634,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_zero_content_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&destination, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_068: [If there are any failures then CONSTBUFFER_THANDLE_get_serialized_size shall fail and return CONSTBUFFER_THANDLE_GET_SERIALIZED_SIZE_RESULT_ERROR.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_068: [ If there are any failures then CONSTBUFFER_THANDLE_get_serialized_size shall fail and return CONSTBUFFER_THANDLE_GET_SERIALIZED_SIZE_RESULT_ERROR.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialized_size_fails_when_error_occurs)
 {
     ///arrange
@@ -1649,7 +1649,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialized_size_fails_when_error_occurs)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_077: [If there are any failures then CONSTBUFFER_THANDLE_to_fixed_size_buffer shall fail and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_ERROR.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_077: [ If there are any failures then CONSTBUFFER_THANDLE_to_fixed_size_buffer shall fail and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_ERROR.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_to_fixed_size_buffer_fails_when_error_occurs)
 {
     ///arrange
@@ -1665,7 +1665,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_to_fixed_size_buffer_fails_when_error_occurs)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_088: [If there are any failures then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_ERROR.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_088: [ If there are any failures then CONSTBUFFER_THANDLE_from_buffer shall fail and return CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT_ERROR.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_fails_when_error_occurs)
 {
     ///arrange
@@ -1694,7 +1694,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_fails_when_error_occurs)
 
 /* CONSTBUFFER_THANDLE_CreateWithCustomFree */
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_026: [If source is NULL and size is different than 0 then CONSTBUFFER_THANDLE_CreateWithCustomFree shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_026: [ If source is NULL and size is different than 0 then CONSTBUFFER_THANDLE_CreateWithCustomFree shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_with_NULL_source_and_non_zero_size_fails)
 {
     ///arrange
@@ -1708,7 +1708,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_with_NULL_source_and_non_
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_029: [If customFreeFunc is NULL, CONSTBUFFER_THANDLE_CreateWithCustomFree shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_029: [ If customFreeFunc is NULL, CONSTBUFFER_THANDLE_CreateWithCustomFree shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_with_NULL_customFreeFunc_fails)
 {
     ///arrange
@@ -1727,8 +1727,8 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_with_NULL_customFreeFunc_
     real_gballoc_hl_free(test_buffer);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_028: [CONSTBUFFER_THANDLE_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_030: [The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateWithCustomFree shall have its ref count set to "1".]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_028: [ CONSTBUFFER_THANDLE_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_030: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateWithCustomFree shall have its ref count set to "1".]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_succeeds)
 {
     ///arrange
@@ -1752,7 +1752,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&handle, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_032: [customFreeFuncContext shall be allowed to be NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_032: [ customFreeFuncContext shall be allowed to be NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_with_NULL_customFreeFuncContext_succeeds)
 {
     ///arrange
@@ -1777,8 +1777,8 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_with_NULL_customFreeFuncC
     real_gballoc_hl_free(test_buffer);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_027: [If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_028: [CONSTBUFFER_THANDLE_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_027: [ If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_028: [ CONSTBUFFER_THANDLE_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_with_0_size_succeeds)
 {
     ///arrange
@@ -1802,7 +1802,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_with_0_size_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&handle, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_028: [CONSTBUFFER_THANDLE_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_028: [ CONSTBUFFER_THANDLE_CreateWithCustomFree shall store the source and size and return a non-NULL handle to the newly created const buffer.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_with_NULL_source_and_0_size_succeeds)
 {
     ///arrange
@@ -1822,8 +1822,8 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_with_NULL_source_and_0_si
     THANDLE_ASSIGN(CONSTBUFFER)(&handle, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_034: [CONSTBUFFER_THANDLE_CreateWithCustomFree shall store customFreeFunc and customFreeFuncContext in order to use them to free the memory when the const buffer resources are freed.]*/
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_031: [If the buffer was created by calling CONSTBUFFER_THANDLE_CreateWithCustomFree, the customFreeFunc function shall be called to free the memory, while passed customFreeFuncContext as argument.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_034: [ CONSTBUFFER_THANDLE_CreateWithCustomFree shall store customFreeFunc and customFreeFuncContext in order to use them to free the memory when the const buffer resources are freed.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_031: [ If the buffer was created by calling CONSTBUFFER_THANDLE_CreateWithCustomFree, the customFreeFunc function shall be called to free the memory, while passed customFreeFuncContext as argument.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_calls_custom_free_func_on_dispose)
 {
     ///arrange
@@ -1847,7 +1847,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_calls_custom_free_func_on
     real_gballoc_hl_free(test_buffer);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_033: [If any error occurs, CONSTBUFFER_THANDLE_CreateWithCustomFree shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_033: [ If any error occurs, CONSTBUFFER_THANDLE_CreateWithCustomFree shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_fails_when_malloc_fails)
 {
     ///arrange

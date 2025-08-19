@@ -99,21 +99,21 @@ static void CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA_dispose(CONSTBUFFER_THANDLE
 
 static THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_Create_Internal(const unsigned char* source, uint32_t size)
 {
-    /*Codes_SRS_CONSTBUFFER_THANDLE_88_005: [The non-NULL handle returned by CONSTBUFFER_THANDLE_Create shall have its ref count set to "1".]*/
-    /*Codes_SRS_CONSTBUFFER_THANDLE_88_010: [The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateFromBuffer shall have its ref count set to "1".]*/
+    /*Codes_SRS_CONSTBUFFER_THANDLE_88_005: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_Create shall have its ref count set to "1". ]*/
+    /*Codes_SRS_CONSTBUFFER_THANDLE_88_010: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateFromBuffer shall have its ref count set to "1". ]*/
     /*Codes_SRS_CONSTBUFFER_THANDLE_88_030: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateWithCustomFree shall have its ref count set to "1". ]*/
     THANDLE(CONSTBUFFER) result = THANDLE_MALLOC_FLEX(CONSTBUFFER)(CONSTBUFFER_dispose, size, 1);
     if (result == NULL)
     {
-        /*Codes_SRS_CONSTBUFFER_THANDLE_88_003: [If creating the copy fails then CONSTBUFFER_THANDLE_Create shall return NULL.]*/
-        /*Codes_SRS_CONSTBUFFER_THANDLE_88_008: [If copying the content fails, then CONSTBUFFER_THANDLE_CreateFromBuffer shall fail and return NULL.] */
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_003: [ If creating the copy fails then CONSTBUFFER_THANDLE_Create shall return NULL. ]*/
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_008: [ If copying the content fails, then CONSTBUFFER_THANDLE_CreateFromBuffer shall fail and return NULL. ]*/
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_055: [ If there are any failures then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
         LogError("failure in THANDLE_MALLOC_FLEX(CONSTBUFFER)(CONSTBUFFER_dispose, size=%" PRIu32 ")",
             size);
     }
     else
     {
-        /*Codes_SRS_CONSTBUFFER_THANDLE_88_002: [Otherwise, CONSTBUFFER_THANDLE_Create shall create a copy of the memory area pointed to by source having size bytes.]*/
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_002: [ Otherwise, CONSTBUFFER_THANDLE_Create shall create a copy of the memory area pointed to by source having size bytes. ]*/
         CONSTBUFFER* handle_data = THANDLE_GET_T(CONSTBUFFER)(result);
         handle_data->buffer_type = CONSTBUFFER_THANDLE_TYPE_COPIED;
         THANDLE_INITIALIZE(CONSTBUFFER)(&handle_data->original_handle, NULL);
@@ -121,15 +121,15 @@ static THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_Create_Internal(const unsigned c
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_054: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall create a new const buffer by copying data from handle's buffer starting at offset and with the given size. ]*/
         if (size == 0)
         {
-            /*Codes_SRS_CONSTBUFFER_THANDLE_88_102: [If source is non-NULL and size is 0 then CONSTBUFFER_THANDLE_Create shall create an empty buffer.]*/
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_102: [ If source is non-NULL and size is 0 then CONSTBUFFER_THANDLE_Create shall create an empty buffer. ]*/
             handle_data->alias.buffer = NULL;
             handle_data->alias.size = 0;
         }
         else
         {
-            /*Codes_SRS_CONSTBUFFER_THANDLE_88_004: [Otherwise CONSTBUFFER_THANDLE_Create shall return a non-NULL handle.]*/
-            /*Codes_SRS_CONSTBUFFER_THANDLE_88_007: [Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall copy the content of buffer.]*/
-            /*Codes_SRS_CONSTBUFFER_THANDLE_88_009: [Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall return a non-NULL handle.]*/
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_004: [ Otherwise CONSTBUFFER_THANDLE_Create shall return a non-NULL handle. ]*/
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_007: [ Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall copy the content of buffer. ]*/
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_009: [ Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall return a non-NULL handle. ]*/
             /*Codes_SRS_CONSTBUFFER_THANDLE_88_039: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall set the pointed to a non-NULL value that contains the same bytes as offset...offset+size-1 of handle. ]*/
             if (source != NULL)
             {
@@ -145,7 +145,7 @@ static THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_Create_Internal(const unsigned c
 THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_Create(const unsigned char* source, uint32_t size)
 {
     THANDLE(CONSTBUFFER) result = NULL;
-    /*Codes_SRS_CONSTBUFFER_THANDLE_88_001: [If source is NULL and size is different than 0 then CONSTBUFFER_THANDLE_Create shall fail and return NULL.]*/
+    /*Codes_SRS_CONSTBUFFER_THANDLE_88_001: [ If source is NULL and size is different than 0 then CONSTBUFFER_THANDLE_Create shall fail and return NULL. ]*/
     if (
         (source == NULL) &&
         (size != 0)
@@ -165,16 +165,16 @@ THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_Create(const unsigned char* source, uin
 THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateFromBuffer(BUFFER_HANDLE buffer)
 {
     THANDLE(CONSTBUFFER) result = NULL;
-    /*Codes_SRS_CONSTBUFFER_THANDLE_88_006: [If buffer is NULL then CONSTBUFFER_THANDLE_CreateFromBuffer shall fail and return NULL.]*/
+    /*Codes_SRS_CONSTBUFFER_THANDLE_88_006: [ If buffer is NULL then CONSTBUFFER_THANDLE_CreateFromBuffer shall fail and return NULL. ]*/
     if (buffer == NULL)
     {
         LogError("invalid arg passed to CONSTBUFFER_THANDLE_CreateFromBuffer buffer: NULL");
     }
     else
     {
-        /*Codes_SRS_CONSTBUFFER_THANDLE_88_007: [Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall copy the content of buffer.]*/
-        /*Codes_SRS_CONSTBUFFER_THANDLE_88_009: [Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall return a non-NULL handle.]*/
-        /*Codes_SRS_CONSTBUFFER_THANDLE_88_010: [The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateFromBuffer shall have its ref count set to "1".]*/
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_007: [ Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall copy the content of buffer. ]*/
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_009: [ Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall return a non-NULL handle. ]*/
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_010: [ The non-NULL handle returned by CONSTBUFFER_THANDLE_CreateFromBuffer shall have its ref count set to "1". ]*/
         uint32_t length = (uint32_t)BUFFER_length(buffer);
         unsigned char* rawBuffer = BUFFER_u_char(buffer);
         THANDLE(CONSTBUFFER) temp_result = CONSTBUFFER_THANDLE_Create_Internal(rawBuffer, length);
@@ -382,13 +382,13 @@ IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER_THANDLE*, CONSTBUFFER_THANDLE_Ge
     const CONSTBUFFER_THANDLE* result;
     if (constbufferHandle == NULL)
     {
-        /*Codes_SRS_CONSTBUFFER_THANDLE_88_011: [If constbufferHandle is NULL then CONSTBUFFER_THANDLE_GetContent shall return NULL.]*/
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_011: [ If constbufferHandle is NULL then CONSTBUFFER_THANDLE_GetContent shall return NULL. ]*/
         result = NULL;
         LogError("Invalid argument constbufferHandle: NULL");
     }
     else
     {
-        /*Codes_SRS_CONSTBUFFER_THANDLE_88_012: [Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a const CONSTBUFFER_THANDLE* that matches byte by byte the original bytes used to created the const buffer and has the same length.]*/
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_012: [ Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a const CONSTBUFFER_THANDLE* that matches byte by byte the original bytes used to created the const buffer and has the same length. ]*/
         CONSTBUFFER* handle_data = THANDLE_GET_T(CONSTBUFFER)(constbufferHandle);
         result = &(handle_data->alias);
     }
