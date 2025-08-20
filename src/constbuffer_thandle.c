@@ -33,7 +33,7 @@ MU_DEFINE_ENUM_STRINGS(CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THAND
 
 typedef struct CONSTBUFFER_TAG
 {
-    CONSTBUFFER_THANDLE alias;  // Embedded alias structure like constbuffer.c
+    CONSTBUFFER_CONTENT alias;  // Embedded alias structure like constbuffer.c
     CONSTBUFFER_THANDLE_TYPE buffer_type;
     THANDLE(CONSTBUFFER) original_handle; // For offset/size operations, NULL otherwise
     unsigned char data[]; // Flexible array member for data storage
@@ -41,7 +41,7 @@ typedef struct CONSTBUFFER_TAG
 
 typedef struct CONSTBUFFER_THANDLE_HANDLE_WITH_CUSTOM_FREE_DATA_TAG
 {
-    CONSTBUFFER_THANDLE alias;  // Embedded alias structure
+    CONSTBUFFER_CONTENT alias;  // Embedded alias structure
     CONSTBUFFER_THANDLE_TYPE buffer_type;
     CONSTBUFFER_THANDLE_CUSTOM_FREE_FUNC custom_free_func;
     void* custom_free_func_context;
@@ -283,7 +283,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFr
     }
     else
     {
-        const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(handle);
+        const CONSTBUFFER_CONTENT* content = CONSTBUFFER_THANDLE_GetContent(handle);
         if (
             /*Codes_SRS_CONSTBUFFER_THANDLE_88_051: [ If offset is greater than handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
             (offset > content->size) ||
@@ -329,7 +329,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFr
     }
     else
     {
-        const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(handle);
+        const CONSTBUFFER_CONTENT* content = CONSTBUFFER_THANDLE_GetContent(handle);
         if (
             /*Codes_SRS_CONSTBUFFER_THANDLE_88_037: [ If offset is greater than handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL. ]*/
             (offset > content->size)
@@ -391,9 +391,9 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFr
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER_THANDLE*, CONSTBUFFER_THANDLE_GetContent, THANDLE(CONSTBUFFER), constbufferHandle)
+IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER_CONTENT*, CONSTBUFFER_THANDLE_GetContent, THANDLE(CONSTBUFFER), constbufferHandle)
 {
-    const CONSTBUFFER_THANDLE* result;
+    const CONSTBUFFER_CONTENT* result;
     if (constbufferHandle == NULL)
     {
         /*Codes_SRS_CONSTBUFFER_THANDLE_88_011: [ If constbufferHandle is NULL then CONSTBUFFER_THANDLE_GetContent shall return NULL. ]*/
@@ -402,7 +402,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER_THANDLE*, CONSTBUFFER_THANDLE_Ge
     }
     else
     {
-        /*Codes_SRS_CONSTBUFFER_THANDLE_88_012: [ Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a const CONSTBUFFER_THANDLE* that matches byte by byte the original bytes used to created the const buffer and has the same length. ]*/
+        /*Codes_SRS_CONSTBUFFER_THANDLE_88_012: [ Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a const CONSTBUFFER_CONTENT* that matches byte by byte the original bytes used to created the const buffer and has the same length. ]*/
         CONSTBUFFER* handle_data = THANDLE_GET_T(CONSTBUFFER)(constbufferHandle);
         result = &(handle_data->alias);
     }
@@ -470,7 +470,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_THANDLE_get_serialization_si
     }
     else
     {
-        const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(source);
+        const CONSTBUFFER_CONTENT* content = CONSTBUFFER_THANDLE_GetContent(source);
         if (content == NULL)
         {
             LogError("CONSTBUFFER_THANDLE_GetContent failed");
@@ -511,7 +511,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_THANDLE_to_buffer, THA
     }
     else
     {
-        const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(source);
+        const CONSTBUFFER_CONTENT* content = CONSTBUFFER_THANDLE_GetContent(source);
         if (content == NULL)
         {
             LogError("CONSTBUFFER_THANDLE_GetContent failed");
@@ -608,7 +608,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, C
                 /*Codes_SRS_CONSTBUFFER_THANDLE_88_073: [ CONSTBUFFER_THANDLE_to_fixed_size_buffer shall write at offset 0 of destination the version of serialization (currently 1). ]*/
                 destination[0] = CONSTBUFFER_VERSION_V1;
                 /*Codes_SRS_CONSTBUFFER_THANDLE_88_074: [ CONSTBUFFER_THANDLE_to_fixed_size_buffer shall write at offset 1 of destination the value of source's size in network byte order. ]*/
-                const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(source);
+                const CONSTBUFFER_CONTENT* content = CONSTBUFFER_THANDLE_GetContent(source);
                 write_uint32_t(destination + CONSTBUFFER_SIZE_OFFSET, content->size);
                 /*Codes_SRS_CONSTBUFFER_THANDLE_88_075: [ CONSTBUFFER_THANDLE_to_fixed_size_buffer shall copy all the bytes of source's buffer in destination starting at offset 5. ]*/
                 (void)memcpy(destination + CONSTBUFFER_CONTENT_OFFSET, content->buffer, content->size);

@@ -20,7 +20,7 @@ typedef struct CONSTBUFFER_THANDLE_TAG
 {
     const unsigned char* buffer;
     uint32_t size;
-} CONSTBUFFER_THANDLE;
+} CONSTBUFFER_CONTENT;
 
 /*forward declaration for the THANDLE type*/
 typedef struct CONSTBUFFER_TAG CONSTBUFFER;
@@ -67,7 +67,7 @@ MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFromOffsetAn
 
 MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy, THANDLE(CONSTBUFFER), handle, uint32_t, offset, uint32_t, size);
 
-MOCKABLE_FUNCTION(, const CONSTBUFFER_THANDLE*, CONSTBUFFER_THANDLE_GetContent, THANDLE(CONSTBUFFER), constbufferHandle);
+MOCKABLE_FUNCTION(, const CONSTBUFFER_CONTENT*, CONSTBUFFER_THANDLE_GetContent, THANDLE(CONSTBUFFER), constbufferHandle);
 
 MOCKABLE_FUNCTION(, bool, CONSTBUFFER_THANDLE_contain_same, THANDLE(CONSTBUFFER), left, THANDLE(CONSTBUFFER), right);
 
@@ -129,7 +129,7 @@ THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateFromBuffer(BUFFER_HANDLE buffer)
 ## CONSTBUFFER_THANDLE_GetContent
 
 ```c
-const CONSTBUFFER_THANDLE* CONSTBUFFER_THANDLE_GetContent(THANDLE(CONSTBUFFER) constbufferHandle)
+const CONSTBUFFER_CONTENT* CONSTBUFFER_THANDLE_GetContent(THANDLE(CONSTBUFFER) constbufferHandle)
 ```
 
 `CONSTBUFFER_THANDLE_GetContent` returns a pointer to a CONSTBUFFER_THANDLE structure that can be used to access the stored bytes and the size of the const buffer.

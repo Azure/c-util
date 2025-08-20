@@ -51,7 +51,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_valid_data_creates_copy_and_return
     ASSERT_IS_NOT_NULL(handle);
     
     // Verify the content is accessible
-    const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(handle);
+    const CONSTBUFFER_CONTENT* content = CONSTBUFFER_THANDLE_GetContent(handle);
     ASSERT_IS_NOT_NULL(content);
     ASSERT_ARE_EQUAL(uint32_t, sizeof(source_data), content->size);
     ASSERT_ARE_EQUAL(int, 0, memcmp(source_data, content->buffer, sizeof(source_data)));
@@ -74,7 +74,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_single_byte_creates_valid_handle)
     ///assert
     ASSERT_IS_NOT_NULL(handle);
     
-    const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(handle);
+    const CONSTBUFFER_CONTENT* content = CONSTBUFFER_THANDLE_GetContent(handle);
     ASSERT_IS_NOT_NULL(content);
     ASSERT_ARE_EQUAL(uint32_t, 1, content->size);
     ASSERT_ARE_EQUAL(uint8_t, 0xAB, content->buffer[0]);
@@ -93,7 +93,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_Create_with_zero_size_creates_empty_handle)
     ///assert
     ASSERT_IS_NOT_NULL(handle);
     
-    const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(handle);
+    const CONSTBUFFER_CONTENT* content = CONSTBUFFER_THANDLE_GetContent(handle);
     ASSERT_IS_NOT_NULL(content);
     ASSERT_ARE_EQUAL(uint32_t, 0, content->size);
     ASSERT_IS_NULL(content->buffer);
@@ -120,7 +120,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_takes_ownership_of_alloca
     ///assert
     ASSERT_IS_NOT_NULL(handle);
     
-    const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(handle);
+    const CONSTBUFFER_CONTENT* content = CONSTBUFFER_THANDLE_GetContent(handle);
     ASSERT_IS_NOT_NULL(content);
     ASSERT_ARE_EQUAL(uint32_t, 4, content->size);
     ASSERT_ARE_EQUAL(void_ptr, allocated_buffer, content->buffer);  // Should be the same pointer
@@ -147,7 +147,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithMoveMemory_with_zero_size_takes_owne
     ///assert
     ASSERT_IS_NOT_NULL(handle);
     
-    const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(handle);
+    const CONSTBUFFER_CONTENT* content = CONSTBUFFER_THANDLE_GetContent(handle);
     ASSERT_IS_NOT_NULL(content);
     ASSERT_ARE_EQUAL(uint32_t, 0, content->size);
     
@@ -178,7 +178,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateWithCustomFree_uses_custom_free_function
     ///assert
     ASSERT_IS_NOT_NULL(handle);
     
-    const CONSTBUFFER_THANDLE* content = CONSTBUFFER_THANDLE_GetContent(handle);
+    const CONSTBUFFER_CONTENT* content = CONSTBUFFER_THANDLE_GetContent(handle);
     ASSERT_IS_NOT_NULL(content);
     ASSERT_ARE_EQUAL(uint32_t, 3, content->size);
     ASSERT_ARE_EQUAL(void_ptr, allocated_buffer, content->buffer);  // Should be the same pointer
@@ -206,8 +206,8 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_creates_view_into_orig
     ///assert
     ASSERT_IS_NOT_NULL(offset_handle);
     
-    const CONSTBUFFER_THANDLE* original_content = CONSTBUFFER_THANDLE_GetContent(original_handle);
-    const CONSTBUFFER_THANDLE* offset_content = CONSTBUFFER_THANDLE_GetContent(offset_handle);
+    const CONSTBUFFER_CONTENT* original_content = CONSTBUFFER_THANDLE_GetContent(original_handle);
+    const CONSTBUFFER_CONTENT* offset_content = CONSTBUFFER_THANDLE_GetContent(offset_handle);
     
     ASSERT_IS_NOT_NULL(original_content);
     ASSERT_IS_NOT_NULL(offset_content);
@@ -261,8 +261,8 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_creates_indepe
     ///assert
     ASSERT_IS_NOT_NULL(copy_handle);
     
-    const CONSTBUFFER_THANDLE* original_content = CONSTBUFFER_THANDLE_GetContent(original_handle);
-    const CONSTBUFFER_THANDLE* copy_content = CONSTBUFFER_THANDLE_GetContent(copy_handle);
+    const CONSTBUFFER_CONTENT* original_content = CONSTBUFFER_THANDLE_GetContent(original_handle);
+    const CONSTBUFFER_CONTENT* copy_content = CONSTBUFFER_THANDLE_GetContent(copy_handle);
     
     ASSERT_IS_NOT_NULL(original_content);
     ASSERT_IS_NOT_NULL(copy_content);
@@ -351,8 +351,8 @@ TEST_FUNCTION(multiple_handles_to_same_data_share_content_properly)
     ASSERT_IS_NOT_NULL(handle1);
     ASSERT_IS_NOT_NULL(handle2);
     
-    const CONSTBUFFER_THANDLE* content1 = CONSTBUFFER_THANDLE_GetContent(handle1);
-    const CONSTBUFFER_THANDLE* content2 = CONSTBUFFER_THANDLE_GetContent(handle2);
+    const CONSTBUFFER_CONTENT* content1 = CONSTBUFFER_THANDLE_GetContent(handle1);
+    const CONSTBUFFER_CONTENT* content2 = CONSTBUFFER_THANDLE_GetContent(handle2);
     
     ASSERT_IS_NOT_NULL(content1);
     ASSERT_IS_NOT_NULL(content2);
