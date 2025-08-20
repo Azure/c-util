@@ -33,10 +33,13 @@ typedef struct CHANNEL_TAG
 {
     THANDLE(THREADPOOL) threadpool;
     SM_HANDLE sm;
-    bool is_open;
     SRW_LOCK_HANDLE lock;
     DLIST_ENTRY op_list;
     THANDLE(PTR(LOG_CONTEXT_HANDLE)) log_context;
+    volatile_atomic int32_t count_of_operations_pushed;
+    volatile_atomic int32_t count_of_operations_pulled;
+    volatile_atomic int32_t overflow_level;
+    volatile_atomic int32_t is_overflowed;
 }CHANNEL;
 
 THANDLE_TYPE_DEFINE(CHANNEL);
@@ -95,9 +98,6 @@ static void abandon_pending_operations(void* context)
     /*Codes_SRS_CHANNEL_43_167: [abandon_pending_operations shall call srw_lock_acquire_exclusive.]*/
     srw_lock_acquire_exclusive(channel_ptr->lock);
     {
-        /*Codes_SRS_CHANNEL_43_168: [abandon_pending_operations shall set is_open to false.]*/
-        channel_ptr->is_open = false;
-
         /*Codes_SRS_CHANNEL_43_174: [abandon_pending_operations shall make a local copy of the list of pending operations.]*/
         (void)DList_ForEach(&channel_ptr->op_list, copy_entry, &op_list);
 
@@ -138,7 +138,7 @@ void channel_close(THANDLE(CHANNEL) channel)
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool)
+IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool, int32_t, overflow_level)
 {
     THANDLE(CHANNEL) result = NULL;
 
@@ -173,6 +173,10 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_
 
                 channel_ptr->sm = sm;
                 channel_ptr->lock = lock;
+                (void)interlocked_exchange(&channel_ptr->count_of_operations_pushed, 0);
+                (void)interlocked_exchange(&channel_ptr->count_of_operations_pulled, 0);
+                (void)interlocked_exchange(&channel_ptr->overflow_level, overflow_level);
+                (void)interlocked_exchange(&channel_ptr->is_overflowed, 0);
 
                 /*Codes_SRS_CHANNEL_43_080: [ channel_create shall store given threadpool in the created CHANNEL. ]*/
                 THANDLE_INITIALIZE(THREADPOOL)(&channel_ptr->threadpool, threadpool);
@@ -213,9 +217,6 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, channel_open, THANDLE(CHANNEL), channel)
         /*Codes_SRS_CHANNEL_43_172: [ channel_open shall call srw_lock_acquire_exclusive. ]*/
         srw_lock_acquire_exclusive(channel_ptr->lock);
 
-        /*Codes_SRS_CHANNEL_43_166: [ channel_open shall set is_open to true. ]*/
-        channel_ptr->is_open = true;
-
         /*Codes_SRS_CHANNEL_43_173: [ channel_open shall call srw_lock_release_exclusive. ]*/
         srw_lock_release_exclusive(channel_ptr->lock);
 
@@ -239,6 +240,12 @@ static void execute_callbacks(void* context)
     {
         CHANNEL_OP* channel_op = (CHANNEL_OP*)context;
         CHANNEL_CALLBACK_RESULT result = channel_op->result; // local copy to make sure both callbacks are called with the same result
+
+        if (result == CHANNEL_CALLBACK_RESULT_OK)
+        {
+            CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel_op->channel);
+            (void)interlocked_increment(&channel_ptr->count_of_operations_pulled);
+        }
 
         LOGGER_LOG(LOG_LEVEL_VERBOSE, T_PTR_VALUE_OR_NULL(channel_op->channel->log_context), "Executing callbacks for pull_correlation_id=%" PRI_RC_STRING ", push_correlation_id=%" PRI_RC_STRING ", callback_result=%" PRI_MU_ENUM "", RC_STRING_VALUE_OR_NULL(channel_op->pull_correlation_id), RC_STRING_VALUE_OR_NULL(channel_op->push_correlation_id), MU_ENUM_VALUE(CHANNEL_CALLBACK_RESULT, result));
 
@@ -452,20 +459,17 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), ch
         /*Codes_SRS_CHANNEL_43_010: [ channel_pull shall call srw_lock_acquire_exclusive. ]*/
         srw_lock_acquire_exclusive(channel_ptr->lock);
         {
-            /*Codes_SRS_CHANNEL_43_170: [ channel_pull shall check if is_open is true. ]*/
-            if (!channel_ptr->is_open)
+            /*Codes_SRS_CHANNEL_43_101: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_available_cb: ]*/
+            if (
+                DList_IsListEmpty(&channel_ptr->op_list) ||
+                CONTAINING_RECORD(channel_ptr->op_list.Flink, CHANNEL_OP, anchor)->on_data_available_cb != NULL
+                )
             {
-                /*Codes_SRS_CHANNEL_43_023: [ If there are any failures, channel_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                LogError("channel is closing, cannot start a new channel_pull operation");
-                result = CHANNEL_RESULT_ERROR;
-            }
-            else
-            {
-                /*Codes_SRS_CHANNEL_43_101: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_available_cb: ]*/
-                if (
-                    DList_IsListEmpty(&channel_ptr->op_list) ||
-                    CONTAINING_RECORD(channel_ptr->op_list.Flink, CHANNEL_OP, anchor)->on_data_available_cb != NULL
-                    )
+                if (interlocked_add(&channel_ptr->is_overflowed, 0) == 1)
+                {
+                    result = CHANNEL_RESULT_OVERFLOWED;;
+                }
+                else
                 {
                     if (enqueue_operation(channel, out_op_pull, correlation_id, on_data_available_cb, on_data_available_context, NULL, NULL, NULL, NULL) != 0)
                     {
@@ -479,20 +483,20 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), ch
                         result = CHANNEL_RESULT_OK;
                     }
                 }
-                /*Codes_SRS_CHANNEL_43_108: [ If the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
+            }
+            /*Codes_SRS_CHANNEL_43_108: [ If the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
+            else
+            {
+                if (dequeue_operation(channel, out_op_pull, correlation_id, on_data_available_cb, on_data_available_context, NULL, NULL, NULL, NULL) != 0)
+                {
+                    /*Codes_SRS_CHANNEL_43_023: [ If there are any failures, channel_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
+                    LogError("Failure in dequeue_operation(channel=%p, out_op_pull=%p, correlation_id=%" PRI_RC_STRING ", on_data_available_cb=%p, on_data_available_context=%p, NULL, NULL, NULL, NULL)", channel, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_available_cb, on_data_available_context);
+                    result = CHANNEL_RESULT_ERROR;
+                }
                 else
                 {
-                    if (dequeue_operation(channel, out_op_pull, correlation_id, on_data_available_cb, on_data_available_context, NULL, NULL, NULL, NULL) != 0)
-                    {
-                        /*Codes_SRS_CHANNEL_43_023: [ If there are any failures, channel_pull shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                        LogError("Failure in dequeue_operation(channel=%p, out_op_pull=%p, correlation_id=%" PRI_RC_STRING ", on_data_available_cb=%p, on_data_available_context=%p, NULL, NULL, NULL, NULL)", channel, out_op_pull, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_available_cb, on_data_available_context);
-                        result = CHANNEL_RESULT_ERROR;
-                    }
-                    else
-                    {
-                        /* Codes_SRS_CHANNEL_43_011: [ channel_pull shall succeeds and return CHANNEL_RESULT_OK. ]*/
-                        result = CHANNEL_RESULT_OK;
-                    }
+                    /* Codes_SRS_CHANNEL_43_011: [ channel_pull shall succeeds and return CHANNEL_RESULT_OK. ]*/
+                    result = CHANNEL_RESULT_OK;
                 }
             }
             /*Codes_SRS_CHANNEL_43_115: [ channel_pull shall call srw_lock_release_exclusive. ]*/
@@ -522,46 +526,57 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), ch
         /*Codes_SRS_CHANNEL_43_116: [ channel_push shall call srw_lock_acquire_exclusive. ]*/
         srw_lock_acquire_exclusive(channel_ptr->lock);
         {
-            /*Codes_SRS_CHANNEL_43_171: [ channel_push shall check if is_open is true. ]*/
-            if (!channel_ptr->is_open)
+            // BKTODO: state variable instead of flag
+            if (channel_ptr->is_overflowed != 0)
             {
-                /*Codes_SRS_CHANNEL_43_041: [ If there are any failures, channel_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                LogError("channel is closing, cannot start a new channel_push operation");
-                result = CHANNEL_RESULT_ERROR;
+                LogInfo("channel_push: channel is overflowed, cannot push new data");
+                result = CHANNEL_RESULT_OVERFLOWED;
             }
             else
             {
-                /*Codes_SRS_CHANNEL_43_117: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
-                if (
-                    DList_IsListEmpty(&channel_ptr->op_list) ||
-                    CONTAINING_RECORD(channel_ptr->op_list.Flink, CHANNEL_OP, anchor)->on_data_consumed_cb != NULL
-                    )
+                if (interlocked_add(&channel_ptr->count_of_operations_pulled, 0) == 0 &&
+                    interlocked_add(&channel_ptr->overflow_level, 0) != 0 &&
+                    interlocked_add(&channel_ptr->count_of_operations_pushed, 0) >= channel_ptr->overflow_level)
                 {
-                    if (enqueue_operation(channel, out_op_push, NULL, NULL, NULL, correlation_id, on_data_consumed_cb, on_data_consumed_context, data) != 0)
-                    {
-                        /*Codes_SRS_CHANNEL_43_041: [ If there are any failures, channel_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                        LogError("Failure in enqueue_operation(channel=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", on_data_consumed_cb=%p, on_data_consumed_context=%p, data=%p)", channel, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_consumed_cb, on_data_consumed_context, data);
-                        result = CHANNEL_RESULT_ERROR;
-                    }
-                    else
-                    {
-                        /*Codes_SRS_CHANNEL_43_132: [ channel_push shall succeed and return CHANNEL_RESULT_OK. ]*/
-                        result = CHANNEL_RESULT_OK;
-                    }
+                    interlocked_exchange(&channel_ptr->is_overflowed, 1);
+                    result = CHANNEL_RESULT_OVERFLOWED;
                 }
-                /*Codes_SRS_CHANNEL_43_124: [ Otherwise (the first operation in the list of pending operations contains a non-NULL on_data_available_cb): ]*/
                 else
                 {
-                    if (dequeue_operation(channel, out_op_push, NULL, NULL, NULL, correlation_id, on_data_consumed_cb, on_data_consumed_context, data) != 0)
+                    /*Codes_SRS_CHANNEL_43_117: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
+                    if (
+                        DList_IsListEmpty(&channel_ptr->op_list) ||
+                        CONTAINING_RECORD(channel_ptr->op_list.Flink, CHANNEL_OP, anchor)->on_data_consumed_cb != NULL
+                        )
                     {
-                        /*Codes_SRS_CHANNEL_43_041: [ If there are any failures, channel_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
-                        LogError("Failure in dequeue_operation(channel=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", on_data_consumed_cb=%p, on_data_consumed_context=%p, data=%p)", channel, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_consumed_cb, on_data_consumed_context, data);
-                        result = CHANNEL_RESULT_ERROR;
+                        if (enqueue_operation(channel, out_op_push, NULL, NULL, NULL, correlation_id, on_data_consumed_cb, on_data_consumed_context, data) != 0)
+                        {
+                            /*Codes_SRS_CHANNEL_43_041: [ If there are any failures, channel_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
+                            LogError("Failure in enqueue_operation(channel=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", on_data_consumed_cb=%p, on_data_consumed_context=%p, data=%p)", channel, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_consumed_cb, on_data_consumed_context, data);
+                            result = CHANNEL_RESULT_ERROR;
+                        }
+                        else
+                        {
+                            (void)interlocked_increment(&channel_ptr->count_of_operations_pushed);
+                            /*Codes_SRS_CHANNEL_43_132: [ channel_push shall succeed and return CHANNEL_RESULT_OK. ]*/
+                            result = CHANNEL_RESULT_OK;
+                        }
                     }
+                    /*Codes_SRS_CHANNEL_43_124: [ Otherwise (the first operation in the list of pending operations contains a non-NULL on_data_available_cb): ]*/
                     else
                     {
-                        /*Codes_SRS_CHANNEL_43_132: [ channel_push shall succeed and return CHANNEL_RESULT_OK. ]*/
-                        result = CHANNEL_RESULT_OK;
+                        if (dequeue_operation(channel, out_op_push, NULL, NULL, NULL, correlation_id, on_data_consumed_cb, on_data_consumed_context, data) != 0)
+                        {
+                            /*Codes_SRS_CHANNEL_43_041: [ If there are any failures, channel_push shall fail and return CHANNEL_RESULT_ERROR. ]*/
+                            LogError("Failure in dequeue_operation(channel=%p, out_op_push=%p, NULL, NULL, NULL, correlation_id=%" PRI_RC_STRING ", on_data_consumed_cb=%p, on_data_consumed_context=%p, data=%p)", channel, out_op_push, RC_STRING_VALUE_OR_NULL(correlation_id), on_data_consumed_cb, on_data_consumed_context, data);
+                            result = CHANNEL_RESULT_ERROR;
+                        }
+                        else
+                        {
+                            (void)interlocked_increment(&channel_ptr->count_of_operations_pushed);
+                            /*Codes_SRS_CHANNEL_43_132: [ channel_push shall succeed and return CHANNEL_RESULT_OK. ]*/
+                            result = CHANNEL_RESULT_OK;
+                        }
                     }
                 }
             }
@@ -571,5 +586,43 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), ch
         result == CHANNEL_RESULT_OK ? (void)0 : sm_exec_end(channel_ptr->sm);
     }
 
+    return result;
+}
+
+int channel_get_stat_snapshot(THANDLE(CHANNEL) channel, CHANNEL_STATS* channel_stats)
+{
+    int result;
+    if (
+        channel == NULL ||
+        channel_stats == NULL
+        )
+    {
+        LogError("Invalid arguments: THANDLE(CHANNEL) channel=%p, CHANNEL_STATS* channel_stats=%p", channel, channel_stats);
+        result = MU_FAILURE;
+    }
+    else
+    {
+        CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
+        channel_stats->count_of_operations_pushed = interlocked_add(&channel_ptr->count_of_operations_pushed, 0);
+        channel_stats->count_of_operations_pulled = interlocked_add(&channel_ptr->count_of_operations_pulled, 0);
+        result = 0;
+    }
+    return result;
+}
+
+int channel_set_overflowed(THANDLE(CHANNEL) channel)
+{
+    int result;
+    if (channel == NULL)
+    {
+        LogError("Invalid argument: THANDLE(CHANNEL) channel=%p", channel);
+        result = MU_FAILURE;
+    }
+    else
+    {
+        CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
+        (void)interlocked_exchange(&channel_ptr->is_overflowed, 1);
+        result = 0;
+    }
     return result;
 }
