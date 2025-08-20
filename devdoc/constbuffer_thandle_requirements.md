@@ -126,18 +126,6 @@ THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateFromBuffer(BUFFER_HANDLE buffer)
 
 **SRS_CONSTBUFFER_THANDLE_88_010: [** The non-`NULL` handle returned by `CONSTBUFFER_THANDLE_CreateFromBuffer` shall have its ref count set to "1". **]**
 
-## CONSTBUFFER_THANDLE_GetContent
-
-```c
-const CONSTBUFFER_CONTENT* CONSTBUFFER_THANDLE_GetContent(THANDLE(CONSTBUFFER) constbufferHandle)
-```
-
-`CONSTBUFFER_THANDLE_GetContent` returns a pointer to a CONSTBUFFER_THANDLE structure that can be used to access the stored bytes and the size of the const buffer.
-
-**SRS_CONSTBUFFER_THANDLE_88_011: [** If `constbufferHandle` is `NULL` then `CONSTBUFFER_THANDLE_GetContent` shall return `NULL`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_012: [** Otherwise, `CONSTBUFFER_THANDLE_GetContent` shall return a pointer to a `CONSTBUFFER_THANDLE` structure. **]**
-
 ## CONSTBUFFER_THANDLE_CreateWithMoveMemory
 
 ```c
@@ -171,26 +159,6 @@ static void CONSTBUFFER_dispose(CONSTBUFFER* handle_data)
 **SRS_CONSTBUFFER_THANDLE_88_031: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateWithCustomFree`, the `customFreeFunc` function shall be called to free the memory, while passed `customFreeFuncContext` as argument. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_048: [** If the buffer was created by calling `CONSTBUFFER_THANDLE_CreateFromOffsetAndSize`, the original handle shall be assigned to `NULL`. **]**
-
-## CONSTBUFFER_THANDLE_contain_same
-
-```c
-bool CONSTBUFFER_THANDLE_contain_same(THANDLE(CONSTBUFFER) left, THANDLE(CONSTBUFFER) right)
-```
-
-`CONSTBUFFER_THANDLE_contain_same` compares two const buffer handles to determine if they contain the same data.
-
-**SRS_CONSTBUFFER_THANDLE_88_020: [** If `left` is `NULL` and `right` is `NULL` then `CONSTBUFFER_THANDLE_contain_same` shall return `true`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_021: [** If `left` is `NULL` and `right` is not `NULL` then `CONSTBUFFER_THANDLE_contain_same` shall return `false`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_022: [** If `left` is not `NULL` and `right` is `NULL` then `CONSTBUFFER_THANDLE_contain_same` shall return `false`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_023: [** If `left`'s size is different than `right`'s size then `CONSTBUFFER_THANDLE_contain_same` shall return `false`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_024: [** If `left`'s buffer contains different bytes than `right`'s buffer then `CONSTBUFFER_THANDLE_contain_same` shall return `false`. **]**
-
-**SRS_CONSTBUFFER_THANDLE_88_025: [** Otherwise, `CONSTBUFFER_THANDLE_contain_same` shall return `true`. **]**
 
 ## CONSTBUFFER_THANDLE_CreateWithCustomFree
 
@@ -269,6 +237,38 @@ MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFromOffsetAn
 **SRS_CONSTBUFFER_THANDLE_88_055: [** If there are any failures then `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall fail and return `NULL`. **]**
 
 **SRS_CONSTBUFFER_THANDLE_88_056: [** `CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy` shall succeed and return a non-NULL value. **]**
+
+## CONSTBUFFER_THANDLE_GetContent
+
+```c
+const CONSTBUFFER_CONTENT* CONSTBUFFER_THANDLE_GetContent(THANDLE(CONSTBUFFER) constbufferHandle)
+```
+
+`CONSTBUFFER_THANDLE_GetContent` returns a pointer to a CONSTBUFFER_CONTENT structure that can be used to access the stored bytes and the size of the const buffer.
+
+**SRS_CONSTBUFFER_THANDLE_88_011: [** If `constbufferHandle` is `NULL` then `CONSTBUFFER_THANDLE_GetContent` shall return `NULL`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_012: [** Otherwise, `CONSTBUFFER_THANDLE_GetContent` shall return a const `CONSTBUFFER_CONTENT`* that matches byte by byte the original bytes used to created the const buffer and has the same length. **]**
+
+## CONSTBUFFER_THANDLE_contain_same
+
+```c
+bool CONSTBUFFER_THANDLE_contain_same(THANDLE(CONSTBUFFER) left, THANDLE(CONSTBUFFER) right)
+```
+
+`CONSTBUFFER_THANDLE_contain_same` compares the contents of 2 const buffers and returns `true` if they are equal.
+
+**SRS_CONSTBUFFER_THANDLE_88_020: [** If `left` is `NULL` and `right` is `NULL` then `CONSTBUFFER_THANDLE_contain_same` shall return `true`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_021: [** If `left` is `NULL` and `right` is not `NULL` then `CONSTBUFFER_THANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_022: [** If `left` is not `NULL` and `right` is `NULL` then `CONSTBUFFER_THANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_023: [** If `left`'s size is different than `right`'s size then `CONSTBUFFER_THANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_024: [** If `left`'s buffer contains different bytes than `right`'s buffer then `CONSTBUFFER_THANDLE_contain_same` shall return `false`. **]**
+
+**SRS_CONSTBUFFER_THANDLE_88_025: [** Otherwise, `CONSTBUFFER_THANDLE_contain_same` shall return `true`. **]**
 
 ## CONSTBUFFER_THANDLE_get_serialization_size
 
