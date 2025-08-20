@@ -10,6 +10,7 @@ set(c_util_reals_c_files
     real_constbuffer_array.c
     real_constbuffer_array_tarray.c
     real_constbuffer_array_batcher_nv.c
+    real_constbuffer_thandle.c
     real_critical_section.c
     real_doublylinkedlist.c
     real_external_command_helper.c
@@ -44,6 +45,8 @@ set(c_util_reals_h_files
     real_constbuffer_array_tarray_renames.h
     real_constbuffer_array_batcher_nv.h
     real_constbuffer_array_batcher_nv_renames.h
+    real_constbuffer_thandle.h
+    real_constbuffer_thandle_renames.h
     real_critical_section.h
     real_critical_section_renames.h
     real_doublylinkedlist.h
