@@ -11,7 +11,6 @@
 
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
-#include "c_pal/interlocked.h"
 #include "c_pal/thandle.h"
 
 #include "c_util/memory_data.h"
@@ -247,7 +246,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateWi
         THANDLE(CONSTBUFFER) temp_result = THANDLE_MALLOC_FLEX(CONSTBUFFER)(CONSTBUFFER_dispose, 1, extra_size);
         if (temp_result == NULL)
         {
-            LogError("failure in THANDLE_MALLOC_FLEX");
+            LogError("failure in THANDLE_MALLOC_FLEX, extra_size=%zu", extra_size);
         }
         else
         {
@@ -303,7 +302,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFr
             if (temp_result == NULL)
             {
                 /*Codes_SRS_CONSTBUFFER_THANDLE_88_055: [ If there are any failures then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL. ]*/
-                LogError("Failed to create CONSTBUFFER_THANDLE from offset and size with copy");
+                LogError("Failed to create CONSTBUFFER_THANDLE from offset and size with copy, offset=%" PRIu32 ", size=%" PRIu32 "", offset, size);
             }
             else
             {
