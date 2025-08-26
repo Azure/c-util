@@ -183,6 +183,42 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemo
     return (CONSTBUFFER_HANDLE)result;
 }
 
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemoryWithCustomFree, unsigned char*, source, uint32_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext)
+{
+    CONSTBUFFER_HANDLE_WITH_CUSTOM_FREE_DATA* result;
+
+    /* Codes_SRS_CONSTBUFFER_01_001: [ If source is NULL and size is different than 0 then CONSTBUFFER_Create shall fail and return NULL. ]*/
+    if ((source == NULL) && (size > 0))
+    {
+        LogError("Invalid arguments: unsigned char* source=%p, uint32_t size=%" PRIu32 "", source, size);
+        result = NULL;
+    }
+    else
+    {
+        result = malloc(sizeof(CONSTBUFFER_HANDLE_WITH_CUSTOM_FREE_DATA));
+        if (result == NULL)
+        {
+            /* Codes_SRS_CONSTBUFFER_01_005: [ If any error occurs, CONSTBUFFER_CreateWithMoveMemory shall fail and return NULL. ]*/
+            LogError("Allocation of CONSTBUFFER_HANDLE_DATA object failed");
+        }
+        else
+        {
+            /* Codes_SRS_CONSTBUFFER_01_004: [ If source is non-NULL and size is 0, the source pointer shall be owned (and freed) by the newly created instance of const buffer. ]*/
+            /* Codes_SRS_CONSTBUFFER_01_002: [ CONSTBUFFER_CreateWithMoveMemory shall store the source and size and return a non-NULL handle to the newly created const buffer. ]*/
+            result->alias.buffer = source;
+            result->alias.size = size;
+            result->buffer_type = CONSTBUFFER_TYPE_WITH_CUSTOM_FREE;
+
+            result->custom_free_func = customFreeFunc;
+            result->custom_free_func_context = customFreeFuncContext;
+
+            /* Codes_SRS_CONSTBUFFER_01_003: [ The non-NULL handle returned by CONSTBUFFER_CreateWithMoveMemory shall have its ref count set to "1". ]*/
+            (void)interlocked_exchange(&result->count, 1);
+        }
+    }
+    return (CONSTBUFFER_HANDLE)result;
+}
+
 IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext)
 {
     CONSTBUFFER_HANDLE_WITH_CUSTOM_FREE_DATA* result;
@@ -519,7 +555,7 @@ unsigned char* CONSTBUFFER_to_buffer(CONSTBUFFER_HANDLE source, CONSTBUFFER_to_b
 
                 /*Codes_SRS_CONSTBUFFER_02_051: [ CONSTBUFFER_to_buffer shall write at offsets 1-4 of the allocated memory the value of source->alias.size in network byte order. ]*/
                 write_uint32_t(result + CONSTBUFFER_SIZE_OFFSET, (uint32_t)source->alias.size);
-                
+
                 /*Codes_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
                 (void)memcpy(result + CONSTBUFFER_CONTENT_OFFSET, source->alias.buffer, source->alias.size);
 
@@ -535,7 +571,7 @@ unsigned char* CONSTBUFFER_to_buffer(CONSTBUFFER_HANDLE source, CONSTBUFFER_to_b
 CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT CONSTBUFFER_to_fixed_size_buffer(CONSTBUFFER_HANDLE source, unsigned char* destination, uint32_t destination_size, uint32_t* serialized_size)
 {
     CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT result;
-    
+
     if (
         /*Codes_SRS_CONSTBUFFER_02_055: [ If source is NULL then CONSTBUFFER_to_fixed_size_buffer shall fail and return CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG. ]*/
         (source == NULL) ||
@@ -599,7 +635,7 @@ CONSTBUFFER_FROM_BUFFER_RESULT CONSTBUFFER_from_buffer(const unsigned char* sour
         (destination == NULL)
         )
     {
-        LogError("invalid arguments const unsigned char* source=%p, uint32_t size=%" PRIu32 ", uint32_t* consumed=%p, CONSTBUFFER_HANDLE* destination=%p", 
+        LogError("invalid arguments const unsigned char* source=%p, uint32_t size=%" PRIu32 ", uint32_t* consumed=%p, CONSTBUFFER_HANDLE* destination=%p",
             source, size, consumed, destination);
         result = CONSTBUFFER_FROM_BUFFER_RESULT_INVALID_ARG;
     }
@@ -730,7 +766,7 @@ CONSTBUFFER_HANDLE CONSTBUFFER_SealWritableHandle(CONSTBUFFER_WRITABLE_HANDLE co
     else
     {
         /*Codes_SRS_CONSTBUFFER_51_009: [ `CONSTBUFFER_SealWritableHandle` shall succeed and return a non-`NULL` `CONSTBUFFER_HANDLE`. ]*/
-        result = (CONSTBUFFER_HANDLE) constbufferWritableHandle;       
+        result = (CONSTBUFFER_HANDLE) constbufferWritableHandle;
     }
     return result;
 }
