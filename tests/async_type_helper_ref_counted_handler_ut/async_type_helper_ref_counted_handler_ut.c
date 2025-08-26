@@ -15,13 +15,11 @@
 #include "c_pal/interlocked.h" /*included for mocking reasons - it will prohibit creation of mocks belonging to this interlocked.h, temporary solution*/
 
 #define ENABLE_MOCKS
-#include "umock_c/umock_c_prod.h"
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 #include "test_ref_counted.h"
 #include "test_ref_counted.c"
 #undef ENABLE_MOCKS
-
 #include "real_gballoc_hl.h"
 
 

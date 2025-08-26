@@ -19,7 +19,6 @@
 #include "c_pal/interlocked.h" /*included for mocking reasons - it will prohibit creation of mocks belonging to interlocked.h - at the moment verified through int tests - this is porting legacy code, temporary solution*/
 
 #define ENABLE_MOCKS
-#include "umock_c/umock_c_prod.h"
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
@@ -27,6 +26,7 @@
 
 #include "c_util/for_each_in_folder.h"
 
+#include "umock_c/umock_c_prod.h"
 MOCKABLE_FUNCTION(, int, TEST_ON_EACH_IN_FOLDER, const char*, folder, const WIN32_FIND_DATAA*, findData, void*, context, bool*, enumerationShouldContinue)
 
 #undef ENABLE_MOCKS
