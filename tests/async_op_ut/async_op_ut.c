@@ -12,6 +12,7 @@
 
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
+#include "umock_c/umock_c_prod.h"
 MOCKABLE_FUNCTION(, void, user_free, void*, ptr);
 MOCKABLE_FUNCTION(, void, user_cancel, void*, ptr);
 #undef ENABLE_MOCKS

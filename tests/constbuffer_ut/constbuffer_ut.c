@@ -13,6 +13,7 @@
 #include "testrunnerswitcher.h"
 
 #define ENABLE_MOCKS
+#include "umock_c/umock_c_prod.h"
 #include "umock_c/umock_c.h"
 #include "c_util/buffer_.h"
 #include "c_pal/gballoc_hl.h"

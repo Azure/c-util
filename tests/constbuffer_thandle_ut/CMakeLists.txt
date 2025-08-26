@@ -14,4 +14,13 @@ set(${theseTestsName}_c_files
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_pal c_pal_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" 
+    ADDITIONAL_LIBS c_pal c_pal_reals
+    NO_MOCK_PRECOMPILE_HEADERS
+        "c_logging/logger.h"
+        "c_pal/thandle.h"
+    MOCK_PRECOMPILE_HEADERS
+        "c_util/buffer_.h"
+        "c_pal/gballoc_hl.h"
+        "c_pal/gballoc_hl_redirect.h"
+)

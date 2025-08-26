@@ -113,6 +113,10 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
     umock_c_negative_tests_deinit();
 }
 
+// The following functions are compile-time tests for macro behavior and are intentionally not called
+#pragma warning(push)
+#pragma warning(disable: 4505) // unreferenced function with internal linkage has been removed
+
 /*Tests_SRS_ASYNC_TYPE_HELPER_42_015: [ If ASYNC_TYPE_HELPER_HAS_CONST_{type} is defined as 1 then ASYNC_TYPE_HELPER_STRIP_CONST_TYPE(type) shall expand to ASYNC_TYPE_HELPER_NON_CONST_TYPE_{type}. ]*/
 #define ASYNC_TYPE_HELPER_HAS_CONST_my_test_type 1
 #define ASYNC_TYPE_HELPER_NON_CONST_TYPE_my_test_type char*
@@ -170,6 +174,8 @@ static void test_add_pointer(my_type_gets_a_pointer ASYNC_TYPE_HELPER_ADD_POINTE
 {
     becomes_a_pointer[0] = 'a';
 }
+
+#pragma warning(pop)
 
 //
 // ASYNC_TYPE_HELPER_COPY_HANDLER(const_charptr_t)
