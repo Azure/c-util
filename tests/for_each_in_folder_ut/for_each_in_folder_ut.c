@@ -23,6 +23,7 @@
 
 #include "c_pal/string_utils.h"
 
+#include "umock_c/umock_c_prod.h"
     MOCKABLE_FUNCTION(, DWORD, mocked_GetLastError);
 
     MOCKABLE_FUNCTION(, HANDLE, mocked_FindFirstFileA,

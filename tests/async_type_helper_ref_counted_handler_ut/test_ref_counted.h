@@ -4,7 +4,7 @@
 #define TEST_REF_COUNTED_H
 
 #include "c_pal/refcount.h"
-#include "umock_c/umock_c.h"
+#include "umock_c/umock_c_prod.h"
 
 
 

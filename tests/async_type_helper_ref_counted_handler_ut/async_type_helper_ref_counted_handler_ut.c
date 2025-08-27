@@ -20,7 +20,6 @@
 #include "test_ref_counted.h"
 #include "test_ref_counted.c"
 #undef ENABLE_MOCKS
-
 #include "real_gballoc_hl.h"
 
 

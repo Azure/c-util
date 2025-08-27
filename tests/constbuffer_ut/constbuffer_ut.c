@@ -13,11 +13,11 @@
 #include "testrunnerswitcher.h"
 
 #define ENABLE_MOCKS
-#include "umock_c/umock_c.h"
 #include "c_util/buffer_.h"
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
+#include "umock_c/umock_c_prod.h"
 MOCKABLE_FUNCTION(, void*, test_alloc, size_t, size, void*, context);
 
 #undef ENABLE_MOCKS
