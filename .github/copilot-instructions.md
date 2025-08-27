@@ -11,6 +11,9 @@ All code must follow the comprehensive coding standards defined in `deps/c-build
 - **Platform Abstraction**: `deps/c-pal/.github/copilot-instructions.md` (THANDLE patterns, execution engines, async patterns)  
 - **Logging Framework**: `deps/c-logging/.github/copilot-instructions.md` (structured logging, ETW support)
 - **Macro Utilities**: `deps/macro-utils-c/.github/copilot-instructions.md` (metaprogramming patterns)
+- **Test Framework**: `deps/ctest/.github/copilot-instructions.md` (test execution framework)
+- **Test Runner**: `deps/c-testrunnerswitcher/.github/copilot-instructions.md` (test runner abstraction)
+- **Mocking Framework**: `deps/umock-c/.github/copilot-instructions.md` (unit test mocking patterns)
 
 ## Core Architecture Patterns
 
@@ -29,28 +32,11 @@ All code must follow the comprehensive coding standards defined in `deps/c-build
 
 ### Asynchronous Operations Framework
 - **async_op.h** provides the base for all async operations with built-in cancellation support
-- `ASYNC_OP_STATE` enum tracks operation lifecycle: `ASYNC_RUNNING` → `ASYNC_CANCELLING`
+- `ASYNC_OP_STATE` enum tracks operation lifecycle: `ASYNC_RUNNING` -> `ASYNC_CANCELLING`
 - Always provide both `cancel` and `dispose` function pointers to `async_op_create`
 - Use `async_op_from_context()` to get THANDLE from context pointer
 
 ## Development Workflows
-
-### Building and Testing
-```powershell
-# Recommended: Use out-of-source build in cmake folder
-mkdir cmake
-cd cmake
-cmake .. -Drun_unittests=ON -Drun_int_tests=ON -DCMAKE_BUILD_TYPE=Debug
-
-# Alternative: In-source build (not recommended for development)
-cmake . -Drun_unittests=ON -Drun_int_tests=ON -DCMAKE_BUILD_TYPE=Debug
-
-# Build from cmake folder
-cmake --build .
-
-# Run tests from cmake folder
-ctest -C Debug --output-on-failure
-```
 
 ### Memory Allocator Selection
 - Set `GBALLOC_LL_TYPE` to control allocator: `JEMALLOC`, `MIMALLOC`, `WIN32HEAP`, or default `PASSTHROUGH`
