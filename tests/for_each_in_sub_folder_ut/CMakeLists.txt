@@ -19,6 +19,7 @@ build_test_artifacts(${theseTestsName} "tests/c_util"
     ADDITIONAL_LIBS c_pal_reals c_util_reals
     NO_MOCK_PRECOMPILE_HEADERS
         "windows.h"
+        "c_pal/interlocked.h"
     MOCK_PRECOMPILE_HEADERS
         "c_pal/gballoc_hl.h"
         "c_pal/gballoc_hl_redirect.h"
