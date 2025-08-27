@@ -4,6 +4,14 @@
 
 c-util is a Microsoft Azure C utility library providing fundamental data structures and asynchronous operation primitives. This is a C99/C11 library with extensive macro-based code generation patterns for type-safe generic programming.
 
+## External Dependencies and Standards
+All code must follow the comprehensive coding standards defined in `deps/c-build-tools/.github/general_coding_instructions.md`. For detailed build infrastructure, testing patterns, and pipeline conventions, refer to dependency-specific instructions:
+
+- **Build Infrastructure**: `deps/c-build-tools/.github/copilot-instructions.md`
+- **Platform Abstraction**: `deps/c-pal/.github/copilot-instructions.md` (THANDLE patterns, execution engines, async patterns)  
+- **Logging Framework**: `deps/c-logging/.github/copilot-instructions.md` (structured logging, ETW support)
+- **Macro Utilities**: `deps/macro-utils-c/.github/copilot-instructions.md` (metaprogramming patterns)
+
 ## Core Architecture Patterns
 
 ### THANDLE Reference Counting System
@@ -28,7 +36,7 @@ c-util is a Microsoft Azure C utility library providing fundamental data structu
 ## Development Workflows
 
 ### Building and Testing
-```bash
+```powershell
 # Recommended: Use out-of-source build in cmake folder
 mkdir cmake
 cd cmake
@@ -231,7 +239,7 @@ MOCKABLE_FUNCTION(, THANDLE(MY_TYPE), my_type_create, int, param);
 - Traceability tool validates that all SRS requirements are implemented and tested
 
 ### Traceability Tool Usage
-```bash
+```powershell
 # Run traceability check (Visual Studio generator only)
 cmake . -Drun_traceability=ON
 cmake --build . --target c_util_traceability
@@ -244,7 +252,7 @@ cmake --build . --target c_util_traceability
 
 ### Git Submodules
 All dependencies are managed as git submodules in `deps/`:
-```bash
+```powershell
 # Initialize submodules when cloning
 git clone https://github.com/Azure/c-util.git
 
