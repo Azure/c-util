@@ -18,6 +18,7 @@
         CONSTBUFFER_Create, \
         CONSTBUFFER_CreateFromBuffer, \
         CONSTBUFFER_CreateWithMoveMemory, \
+        CONSTBUFFER_CreateWithMoveMemoryWithCustomFree, \
         CONSTBUFFER_CreateWithCustomFree, \
         CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, \
         CONSTBUFFER_IncRef, \
@@ -51,6 +52,8 @@ CONSTBUFFER_HANDLE real_CONSTBUFFER_Create(const unsigned char* source, uint32_t
 CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer);
 
 CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateWithMoveMemory(unsigned char* source, uint32_t size);
+
+CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateWithMoveMemoryWithCustomFree(unsigned char* source, uint32_t size, CONSTBUFFER_CUSTOM_FREE_FUNC custom_free_func, void* custom_free_func_context);
 
 CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateWithCustomFree(const unsigned char* source, uint32_t size, CONSTBUFFER_CUSTOM_FREE_FUNC custom_free_func, void* custom_free_func_context);
 
