@@ -39,7 +39,7 @@ stateDiagram-v2
     E --> C: channel_close
     R --> C: channel_close
     N --> C: channel_close
-    
+
     C --> O: channel_open
     C --> [*]: channel_destroy
 
@@ -51,7 +51,7 @@ The first call to `channel_pull`/`channel_push` creates an `operation` and adds 
 
 `CHANNEL_CALLBACK_RESULT_ABANDONED`: The callbacks are called with this result when channel is closed.
 
-`CHANNEL_CALLBACK_RESULT_CANCELLED`: The callbacks are called with this result when the `operation` has been cancelled. 
+`CHANNEL_CALLBACK_RESULT_CANCELLED`: The callbacks are called with this result when the `operation` has been cancelled.
 
 `CHANNEL_CALLBACK_RESULT_OK`: The callbacks are called with this result in the success case.
 
@@ -148,6 +148,8 @@ channel_open` opens the given `channel`.
 ```
 
 `channel_close` abandons all pending operations.
+
+    **SRS_CHANNEL_18_001: [** If `channel` is `NULL`, `channel_close` shall return immediately. **]**
 
 **SRS_CHANNEL_43_094: [** `channel_close` shall call `sm_close_begin_with_cb` with `abandon_pending_operations` as the callback. **]**
 

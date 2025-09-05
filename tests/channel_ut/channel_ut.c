@@ -523,6 +523,19 @@ TEST_FUNCTION(channel_open_fails_when_underlying_functions_fail)
 
 /* channel_close */
 
+/*Tests_SRS_CHANNEL_18_001: [ If channel is NULL, channel_close shall return immediately. ]*/
+TEST_FUNCTION(channel_close_called_with_NULL_channel_does_nothing)
+{
+    //arrange
+
+    //act
+    channel_close(NULL);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+
 /*Tests_SRS_CHANNEL_43_094: [ channel_close shall call sm_close_begin_with_cb with abandon_pending_operation as the callback. ]*/
 /*Tests_SRS_CHANNEL_43_167: [ abandon_pending_operations shall call srw_lock_acquire_exclusive.]*/
 /*Tests_SRS_CHANNEL_43_168: [ abandon_pending_operations shall set is_open to false.]*/

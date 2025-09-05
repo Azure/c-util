@@ -123,18 +123,26 @@ static void abandon_pending_operations(void* context)
 
 void channel_close(THANDLE(CHANNEL) channel)
 {
-    CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
-
-    /*Codes_SRS_CHANNEL_43_094: [ channel_close shall call sm_close_begin_with_cb with abandon_pending_operation as the callback. ]*/
-    SM_RESULT sm_close_begin_result = sm_close_begin_with_cb(channel_ptr->sm, abandon_pending_operations, channel_ptr, NULL, NULL);
-    if (sm_close_begin_result != SM_EXEC_GRANTED)
+    if (channel == NULL)
     {
-        LogError("Failure in sm_close_begin_with_cb(channel_ptr->sm=%p, abandon_pending_operations=%p, channel_ptr=%p, NULL, NULL). SM_RESULT sm_close_begin_result = %" PRI_MU_ENUM "", channel_ptr->sm, abandon_pending_operations, channel_ptr, MU_ENUM_VALUE(SM_RESULT, sm_close_begin_result));
+        /*Codes_SRS_CHANNEL_18_001: [ If channel is NULL, channel_close shall return immediately. ]*/
+        // do nothing
     }
     else
     {
-        /*Codes_SRS_CHANNEL_43_100: [ channel_close shall call sm_close_end. ]*/
-        sm_close_end(channel_ptr->sm);
+        CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
+
+        /*Codes_SRS_CHANNEL_43_094: [ channel_close shall call sm_close_begin_with_cb with abandon_pending_operation as the callback. ]*/
+        SM_RESULT sm_close_begin_result = sm_close_begin_with_cb(channel_ptr->sm, abandon_pending_operations, channel_ptr, NULL, NULL);
+        if (sm_close_begin_result != SM_EXEC_GRANTED)
+        {
+            LogError("Failure in sm_close_begin_with_cb(channel_ptr->sm=%p, abandon_pending_operations=%p, channel_ptr=%p, NULL, NULL). SM_RESULT sm_close_begin_result = %" PRI_MU_ENUM "", channel_ptr->sm, abandon_pending_operations, channel_ptr, MU_ENUM_VALUE(SM_RESULT, sm_close_begin_result));
+        }
+        else
+        {
+            /*Codes_SRS_CHANNEL_43_100: [ channel_close shall call sm_close_end. ]*/
+            sm_close_end(channel_ptr->sm);
+        }
     }
 }
 
