@@ -149,7 +149,7 @@ channel_open` opens the given `channel`.
 
 `channel_close` abandons all pending operations.
 
-    **SRS_CHANNEL_18_001: [** If `channel` is `NULL`, `channel_close` shall return immediately. **]**
+**SRS_CHANNEL_18_001: [** If `channel` is `NULL`, `channel_close` shall return immediately. **]**
 
 **SRS_CHANNEL_43_094: [** `channel_close` shall call `sm_close_begin_with_cb` with `abandon_pending_operations` as the callback. **]**
 
