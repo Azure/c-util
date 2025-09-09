@@ -73,7 +73,8 @@ Notes on operation state transitions:
 #define CHANNEL_RESULT_VALUES \
     CHANNEL_RESULT_OK, \
     CHANNEL_RESULT_INVALID_ARGS, \
-    CHANNEL_RESULT_ERROR
+    CHANNEL_RESULT_ERROR, \
+    CHANNEL_RESULT_SEALED
 
 MU_DEFINE_ENUM(CHANNEL_RESULT, CHANNEL_RESULT_VALUES);
 
@@ -84,21 +85,25 @@ MU_DEFINE_ENUM(CHANNEL_RESULT, CHANNEL_RESULT_VALUES);
 
 MU_DEFINE_ENUM(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_VALUES);
 
-typedef void(*ON_DATA_AVAILABLE_CB)(void* pull_context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_PTR) data);
-typedef void(*ON_DATA_CONSUMED_CB)(void* push_context, CHANNEL_CALLBACK_RESULT result);
+typedef void(*ON_DATA_AVAILABLE_CB)(void* pull_context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data);
+typedef void(*ON_DATA_CONSUMED_CB)(void* push_context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id);
 
 THANDLE_TYPE_DECLARE(CHANNEL);
 
-MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool);
+MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool, uint32_t, channel_capacity);
 MOCKABLE_FUNCTION(, int, channel_open, THANDLE(CHANNEL), channel);
 MOCKABLE_FUNCTION(, void, channel_close, THANDLE(CHANNEL), channel);
 MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, ON_DATA_AVAILABLE_CB, on_data_available_cb, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
 MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, ON_DATA_CONSUMED_CB, on_data_consumed_cb, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
+MOCKABLE_FUNCTION(, uint32_t, channel_get_count_of_items_in_channel, THANDLE(CHANNEL), channel);
+MOCKABLE_FUNCTION(, int, channel_seal_channel, THANDLE(CHANNEL), channel);
 ```
 
 ### channel_create
+
 ```c
-    MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool);
+    MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool, uint32_t, channel_capacity);
+
 ```
 
 `channel_create` creates the channel and returns it.
@@ -119,8 +124,8 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THA
 
 **SRS_CHANNEL_43_002: [** If there are any failures, `channel_create` shall fail and return `NULL`. **]**
 
-
 ### channel_open
+
 ```c
     MOCKABLE_FUNCTION(, int, channel_open, THANDLE(CHANNEL), channel);
 ```
@@ -131,8 +136,6 @@ channel_open` opens the given `channel`.
 
 **SRS_CHANNEL_43_172: [** `channel_open` shall call `srw_lock_acquire_exclusive`. **]**
 
-**SRS_CHANNEL_43_166: [** `channel_open` shall set `is_open` to `true`. **]**
-
 **SRS_CHANNEL_43_173: [** `channel_open` shall call `srw_lock_release_exclusive`. **]**
 
 **SRS_CHANNEL_43_160: [** `channel_open` shall call `sm_open_end`. **]**
@@ -141,8 +144,8 @@ channel_open` opens the given `channel`.
 
 **SRS_CHANNEL_43_162: [** `channel_open` shall succeed and return 0. **]**
 
-
 ### channel_close
+
 ```c
     MOCKABLE_FUNCTION(, void, channel_close, THANDLE(CHANNEL), channel);
 ```
@@ -154,8 +157,6 @@ channel_open` opens the given `channel`.
 **SRS_CHANNEL_43_094: [** `channel_close` shall call `sm_close_begin_with_cb` with `abandon_pending_operations` as the callback. **]**
 
 **SRS_CHANNEL_43_167: [** `abandon_pending_operations` shall call `srw_lock_acquire_exclusive`. **]**
-
-**SRS_CHANNEL_43_168: [** `abandon_pending_operations` shall set `is_open` to `false`. **]**
 
 **SRS_CHANNEL_43_174: [** `abandon_pending_operations` shall make a local copy of the list of pending operations. **]**
 
@@ -171,14 +172,13 @@ channel_open` opens the given `channel`.
 
 **SRS_CHANNEL_43_100: [** `channel_close` shall call `sm_close_end`. **]**
 
-
 ### channel_dispose
+
 ```c
     static void channel_dispose(CHANNEL* channel);
 ```
 
 `channel_dispose` disposes the given `channel`.
-
 
 **SRS_CHANNEL_43_150: [** `channel_dispose` shall release the reference to the `log_context` **]**
 
@@ -189,6 +189,7 @@ channel_open` opens the given `channel`.
 **SRS_CHANNEL_43_165: [** `channel_dispose` shall call `sm_destroy`. **]**
 
 ### channel_pull
+
 ```c
     MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, ON_DATA_AVAILABLE_CB, on_data_available_cb, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
 ```
@@ -199,9 +200,9 @@ channel_open` opens the given `channel`.
 
 **SRS_CHANNEL_43_010: [** `channel_pull` shall call `srw_lock_acquire_exclusive`. **]**
 
-**SRS_CHANNEL_43_170: [** `channel_pull` shall check if `is_open` is `true`. **]**
+**SRS_CHANNEL_43_101: [** If the list of pending operations is empty or the first operation in the list of pending operations contains a non-`NULL` `on_data_available_cb`: **]**
 
-**SRS_CHANNEL_43_101: [** If the list of pending operations is empty or the first operation in the list of pending operations contains a `non-NULL` `on_data_available_cb`: **]**
+ - **SRS_CHANNEL_18_002: [** If the `channel` is sealed, `channel_pull` shall call `srw_lock_release_exclusive` and `sm_exec_end`, and return `CHANNEL_RESULT_SEALED`. **]**
 
  - **SRS_CHANNEL_43_103: [** `channel_pull` shall create a `THANDLE(ASYNC_OP)` by calling `async_op_create` with `cancel_op` as `cancel`. **]**
 
@@ -223,14 +224,16 @@ channel_open` opens the given `channel`.
 
  - **SRS_CHANNEL_43_114: [** `channel_pull` shall set `*out_op_pull` to the `THANDLE(ASYNC_OP)` of the obtained `operation`. **]**
 
+ - **SRS_CHANNEL_18_004: [** `channel_pull` shall decrement the count of items in the channel. **]**
+
 **SRS_CHANNEL_43_115: [** `channel_pull` shall call `srw_lock_release_exclusive`. **]**
 
 **SRS_CHANNEL_43_011: [** `channel_pull` shall succeeds and return `CHANNEL_RESULT_OK`. **]**
 
 **SRS_CHANNEL_43_023: [** If there are any failures, `channel_pull` shall fail and return `CHANNEL_RESULT_ERROR`. **]**
 
-
 ### channel_push
+
 ```c
     MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, ON_DATA_CONSUMED_CB, on_data_consumed_cb, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
 ```
@@ -241,7 +244,9 @@ channel_open` opens the given `channel`.
 
 **SRS_CHANNEL_43_116: [** `channel_push` shall call `srw_lock_acquire_exclusive`. **]**
 
-**SRS_CHANNEL_43_171: [** `channel_push` shall check if `is_open` is `true`. **]**
+**SRS_CHANNEL_18_005: [** If the `channel` is sealed, `channel_push` shall call `srw_lock_release_exclusive` and `sm_exec_end`, and return `CHANNEL_RESULT_SEALED`. **]**
+
+**SRS_CHANNEL_18_006: [** If the `channel` is over capacity, `channel_push` shall seal the `channel`, call `srw_lock_release_exclusive` and `sm_exec_end`, and return `CHANNEL_RESULT_SEALED`. **]**
 
 **SRS_CHANNEL_43_117: [** If the list of pending operations is empty or the first operation in the list of pending operations contains a `non-NULL` `on_data_consumed_cb`: **]**
 
@@ -254,6 +259,8 @@ channel_open` opens the given `channel`.
  - **SRS_CHANNEL_43_121: [** `channel_push` shall insert the created `THANDLE(ASYNC_OP)` in the list of pending operations by calling `DList_InsertTailList`. **]**
 
  - **SRS_CHANNEL_43_123: [** `channel_push` shall set `*out_op_push` to the created `THANDLE(ASYNC_OP)`. **]**
+
+ - **SRS_CHANNEL_18_007: [** `channel_push` shall increment the count of items in the channel. **]**
 
 **SRS_CHANNEL_43_124: [** Otherwise (the first operation in the list of pending operations contains a `non-NULL` `on_data_available_cb`): **]**
 
@@ -271,8 +278,8 @@ channel_open` opens the given `channel`.
 
 **SRS_CHANNEL_43_041: [** If there are any failures, `channel_push` shall fail and return `CHANNEL_RESULT_ERROR`. **]**
 
-
 ### cancel_op
+
 ```c
     static void cancel_op(void* channel_op_context);
 ```
@@ -295,8 +302,8 @@ channel_open` opens the given `channel`.
 
 **SRS_CHANNEL_43_155: [** If there are any failures, `cancel_op` shall fail. **]**
 
-
 ### execute_callbacks
+
 ```c
     static void execute_callbacks(void* channel_op_context);
 ```
@@ -310,3 +317,28 @@ channel_open` opens the given `channel`.
 **SRS_CHANNEL_43_157: [** `execute_callbacks` shall call `sm_exec_end` for each callback that is called. **]**
 
 **SRS_CHANNEL_43_147: [** `execute_callbacks` shall perform cleanup of the `operation`. **]**
+
+### channel_get_count_of_items_in_channel
+
+```c
+MOCKABLE_FUNCTION(, uint32_t, channel_get_count_of_items_in_channel, THANDLE(CHANNEL), channel);
+```
+
+`channel_get_count_of_items_in_channel` returns the number of items currently stored in the `channel`.
+
+**SRS_CHANNEL_18_008: [** If `channel` is `NULL`, `channel_get_count_of_items_in_channel` shall return `UINT32_MAX`. **]**
+
+**SRS_CHANNEL_18_009: [** `channel_get_count_of_items_in_channel` shall return the count of items in the `channel`. **]**
+
+### channel_seal_channel
+
+```c
+MOCKABLE_FUNCTION(, int, channel_seal_channel, THANDLE(CHANNEL), channel);
+```
+`channel_seal_channel` is a way to externally seal a `channel`.
+
+**SRS_CHANNEL_18_010: [** If `channel` is `NULL`, `channel_seal_channel` shall fail and return a non-zero value. **]**
+
+**SRS_CHANNEL_18_011: [** `channel_seal_channel` shall set the `channel` as sealed. **]**
+
+**SRS_CHANNEL_18_012: [** `channel_seal_channel` shall succeed and return 0. **]**

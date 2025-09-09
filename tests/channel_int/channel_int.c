@@ -376,7 +376,7 @@ TEST_FUNCTION(test_channel_create_and_destroy)
     /// arrange
 
     /// act
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
 
     /// assert
     ASSERT_IS_NOT_NULL(channel);
@@ -388,7 +388,7 @@ TEST_FUNCTION(test_channel_create_and_destroy)
 TEST_FUNCTION(test_pull_and_cancel)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t context;
@@ -416,7 +416,7 @@ TEST_FUNCTION(test_pull_and_cancel)
 TEST_FUNCTION(test_push_and_cancel)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t context;
@@ -448,7 +448,7 @@ TEST_FUNCTION(test_push_and_cancel)
 DISABLED_TEST_FUNCTION(test_cancel_after_close)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t context;
@@ -476,7 +476,7 @@ DISABLED_TEST_FUNCTION(test_cancel_after_close)
 TEST_FUNCTION(test_pull_and_abandon)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t context;
@@ -503,7 +503,7 @@ TEST_FUNCTION(test_pull_and_abandon)
 TEST_FUNCTION(test_push_and_abandon)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t context;
@@ -533,7 +533,7 @@ TEST_FUNCTION(test_push_and_abandon)
 TEST_FUNCTION(test_channel_reopen_and_push_pull)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t pull_context;
@@ -601,7 +601,7 @@ TEST_FUNCTION(test_channel_reopen_and_push_pull)
 TEST_FUNCTION(test_channel_is_clean_after_closing)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t push_context;
@@ -641,7 +641,7 @@ TEST_FUNCTION(test_channel_is_clean_after_closing)
 TEST_FUNCTION(test_channel_reopen_after_pull_cancel_and_push_cancel)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t pull_context;
@@ -690,7 +690,7 @@ TEST_FUNCTION(test_channel_reopen_after_pull_cancel_and_push_cancel)
 TEST_FUNCTION(test_pull_and_then_push)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t pull_context;
@@ -726,7 +726,7 @@ TEST_FUNCTION(test_pull_and_then_push)
 TEST_FUNCTION(test_push_and_then_pull)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t pull_context;
@@ -762,7 +762,7 @@ TEST_FUNCTION(test_push_and_then_pull)
 TEST_FUNCTION(test_pull_after_pull)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     volatile_atomic int32_t pull_context_1;
@@ -807,7 +807,7 @@ TEST_FUNCTION(test_pull_after_pull)
 TEST_FUNCTION(test_push_after_push)
 {
     /// arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
 
@@ -857,7 +857,7 @@ TEST_FUNCTION(test_push_after_push)
 TEST_FUNCTION(test_channel_maintains_data_order)
 {
     //arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
     (void)interlocked_exchange(&g_on_data_consumed_cb_count, 0);
@@ -891,7 +891,7 @@ TEST_FUNCTION(test_close_does_not_get_stuck)
     for (size_t run_iteration = 0; run_iteration < 100; run_iteration++)
     {
         //arrange
-        THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+        THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
         ASSERT_IS_NOT_NULL(channel);
         g_lock = srw_lock_create(false, NULL);
         ASSERT_IS_NOT_NULL(g_lock);
@@ -930,7 +930,7 @@ TEST_FUNCTION(test_close_does_not_get_stuck)
 TEST_FUNCTION(channel_close_does_not_deadlock_if_called_from_callback)
 {
     //arrange
-    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
 
@@ -951,6 +951,210 @@ TEST_FUNCTION(channel_close_does_not_deadlock_if_called_from_callback)
 
     //cleanup
     THANDLE_ASSIGN(CHANNEL)(&context.channel, NULL);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+
+// What this test does:
+// 1. Creates a channel with a fixed capacity
+// 2. Pushes items into the channel until it reaches capacity and seals it.
+// 3. Verifies that further push attempts are rejected.
+// 4. Pulls all items from the channel.
+// 5. Verifies that further pull attempts are rejected.
+TEST_FUNCTION(channel_with_seal_due_to_capacity_fills_up_and_empties)
+{
+    // arrange
+    volatile_atomic int32_t push_context[5] = {0};
+    volatile_atomic int32_t pull_context[5] = {0};
+    THANDLE(ASYNC_OP) async_op = NULL;
+
+    // 1. Creates a channel with a fixed capacity
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, 5);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
+
+    // act
+
+    // 2. Pushes items into the channel until it reaches capacity and seals it.
+    for (int i = 0; i < 5; i++)
+    {
+        (void)interlocked_exchange(&push_context[i], TEST_ORIGINAL_VALUE);
+
+        ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_push(channel, g.g_push_correlation_id, g.g_data, test_on_data_consumed_cb_success, (void*)&push_context[i], &async_op));
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
+    ASSERT_ARE_EQUAL(uint32_t, 5, channel_get_count_of_items_in_channel(channel));
+
+    // assert
+
+    // 3. Verifies that further push attempts are rejected.
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_SEALED, channel_push(channel, g.g_push_correlation_id, g.g_data, test_on_data_consumed_cb_success, (void*)&push_context, &async_op));
+
+    // 4. Pulls all items from the channel.
+    for (int i = 0; i < 5; i++)
+    {
+        (void)interlocked_exchange(&pull_context[i], TEST_ORIGINAL_VALUE);
+
+        ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_pull(channel, g.g_pull_correlation_id, test_on_data_available_cb_success, (void*)&pull_context[i], &async_op));
+        ASSERT_IS_NOT_NULL(async_op);
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
+
+    ASSERT_ARE_EQUAL(uint32_t, 0, channel_get_count_of_items_in_channel(channel));
+
+
+    // 5. Verifies that further pull attempts are rejected.
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_SEALED, channel_pull(channel, g.g_pull_correlation_id, test_on_data_available_cb_success, (void*)&pull_context, &async_op));
+
+    for (int i = 0; i < 5; i++)
+    {
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&push_context[i], push_success, UINT32_MAX));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&pull_context[i], pull_success, UINT32_MAX));
+    }
+
+    // cleanup
+
+    channel_close(channel);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+// What this test does:
+// 1. Creates a channel with infinite capacity
+// 2. Pushes items into the channel.
+// 3. Manually seals the channel
+// 4. Verifies that further push attempts are rejected.
+// 5. Pulls all items from the channel.
+// 6. Verifies that further pull attempts are rejected.
+TEST_FUNCTION(channel_with_manual_seal_fills_up_and_empties)
+{
+    // arrange
+    volatile_atomic int32_t push_context[10] = {0};
+    volatile_atomic int32_t pull_context[10] = {0};
+    THANDLE(ASYNC_OP) async_op = NULL;
+
+    // 1. Creates a channel with infinite capacity
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, UINT32_MAX);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
+
+    // act
+
+    // 2. Pushes items into the channel
+    for (int i = 0; i < 10; i++)
+    {
+        (void)interlocked_exchange(&push_context[i], TEST_ORIGINAL_VALUE);
+
+        ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_push(channel, g.g_push_correlation_id, g.g_data, test_on_data_consumed_cb_success, (void*)&push_context[i], &async_op));
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
+
+    // 3. Manually seals the channel
+    ASSERT_ARE_EQUAL(int, 0, channel_seal_channel(channel));
+
+    // assert
+
+    // 4. Verifies that further push attempts are rejected.
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_SEALED, channel_push(channel, g.g_push_correlation_id, g.g_data, test_on_data_consumed_cb_success, (void*)&push_context, &async_op));
+
+    // 5. Pulls all items from the channel.
+    for (int i = 0; i < 10; i++)
+    {
+        (void)interlocked_exchange(&pull_context[i], TEST_ORIGINAL_VALUE);
+
+        ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_pull(channel, g.g_pull_correlation_id, test_on_data_available_cb_success, (void*)&pull_context[i], &async_op));
+        ASSERT_IS_NOT_NULL(async_op);
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
+
+    // 6. Verifies that further pull attempts are rejected.
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_SEALED, channel_pull(channel, g.g_pull_correlation_id, test_on_data_available_cb_success, (void*)&pull_context, &async_op));
+
+    for (int i = 0; i < 10; i++)
+    {
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&push_context[i], push_success, UINT32_MAX));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&pull_context[i], pull_success, UINT32_MAX));
+    }
+
+
+    // cleanup
+
+    channel_close(channel);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+// What this test does:
+// 1. Creates a channel with a fixed capacity
+// 2. Pushes items into the channel until it almost reaches capacity.
+// 3. Pulls all items from the channel.
+// 4. Pushes items into the channel until it almost reaches capacity.
+// 5. Pulls all items from the channel.
+TEST_FUNCTION(channel_with_fixed_capacity_might_never_seal_if_capacity_not_reached)
+{
+    // arrange
+    volatile_atomic int32_t push_context[5] = {0};
+    volatile_atomic int32_t pull_context[5] = {0};
+    THANDLE(ASYNC_OP) async_op = NULL;
+
+    // 1. Creates a channel with a fixed capacity
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool, 6);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
+
+    // act
+
+    // 2. Pushes items into the channel until it almost reaches capacity.
+    for (int i = 0; i < 5; i++)
+    {
+        (void)interlocked_exchange(&push_context[i], TEST_ORIGINAL_VALUE);
+
+        ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_push(channel, g.g_push_correlation_id, g.g_data, test_on_data_consumed_cb_success, (void*)&push_context[i], &async_op));
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
+
+    // 3. Pulls all items from the channel.
+    for (int i = 0; i < 5; i++)
+    {
+        (void)interlocked_exchange(&pull_context[i], TEST_ORIGINAL_VALUE);
+
+        ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_pull(channel, g.g_pull_correlation_id, test_on_data_available_cb_success, (void*)&pull_context[i], &async_op));
+        ASSERT_IS_NOT_NULL(async_op);
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
+
+    for (int i = 0; i < 5; i++)
+    {
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&push_context[i], push_success, UINT32_MAX));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&pull_context[i], pull_success, UINT32_MAX));
+    }
+
+    // 4. Pushes items into the channel until it almost reaches capacity.
+    for (int i = 0; i < 5; i++)
+    {
+        (void)interlocked_exchange(&push_context[i], TEST_ORIGINAL_VALUE);
+
+        ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_push(channel, g.g_push_correlation_id, g.g_data, test_on_data_consumed_cb_success, (void*)&push_context[i], &async_op));
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
+
+    // 5. Pulls all items from the channel.
+    for (int i = 0; i < 5; i++)
+    {
+        (void)interlocked_exchange(&pull_context[i], TEST_ORIGINAL_VALUE);
+
+        ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_pull(channel, g.g_pull_correlation_id, test_on_data_available_cb_success, (void*)&pull_context[i], &async_op));
+        ASSERT_IS_NOT_NULL(async_op);
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    }
+
+    for (int i = 0; i < 5; i++)
+    {
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&push_context[i], push_success, UINT32_MAX));
+        ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&pull_context[i], pull_success, UINT32_MAX));
+    }
+
+    // cleanup
+
+    channel_close(channel);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 

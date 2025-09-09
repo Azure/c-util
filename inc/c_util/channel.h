@@ -22,7 +22,8 @@ extern "C" {
 #define CHANNEL_RESULT_VALUES \
     CHANNEL_RESULT_OK, \
     CHANNEL_RESULT_INVALID_ARGS, \
-    CHANNEL_RESULT_ERROR
+    CHANNEL_RESULT_ERROR, \
+    CHANNEL_RESULT_SEALED
 
 MU_DEFINE_ENUM(CHANNEL_RESULT, CHANNEL_RESULT_VALUES);
 
@@ -40,11 +41,13 @@ typedef struct CHANNEL_TAG CHANNEL;
 
 THANDLE_TYPE_DECLARE(CHANNEL);
 
-    MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool);
+    MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool, uint32_t, channel_capacity);
     MOCKABLE_FUNCTION(, int, channel_open, THANDLE(CHANNEL), channel);
     MOCKABLE_FUNCTION(, void, channel_close, THANDLE(CHANNEL), channel);
     MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, ON_DATA_AVAILABLE_CB, on_data_available_cb, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
     MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, ON_DATA_CONSUMED_CB, on_data_consumed_cb, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
+    MOCKABLE_FUNCTION(, uint32_t, channel_get_count_of_items_in_channel, THANDLE(CHANNEL), channel);
+    MOCKABLE_FUNCTION(, int, channel_seal_channel, THANDLE(CHANNEL), channel);
 
 #ifdef __cplusplus
 }

@@ -193,7 +193,7 @@ static void setup_channel_open_expectations(void)
 static THANDLE(CHANNEL) test_create_and_open_channel(void)
 {
     setup_channel_create_expectations();
-    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool, UINT32_MAX);
     ASSERT_IS_NOT_NULL(channel);
     setup_channel_open_expectations();
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
@@ -367,7 +367,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(ASYNC_OP), void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(RC_STRING), void*);
     REGISTER_UMOCK_ALIAS_TYPE(THANDLE(PTR(LOG_CONTEXT_HANDLE)), void*);
-
+    REGISTER_UMOCK_ALIAS_TYPE(DLIST_ACTION_FUNCTION, void*);
 
     REGISTER_TYPE(CHANNEL_RESULT, CHANNEL_RESULT);
     REGISTER_TYPE(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT);
@@ -437,7 +437,7 @@ TEST_FUNCTION(channel_create_succeeds)
     setup_channel_create_expectations();
 
     //act
-    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool, UINT32_MAX);
 
     //assert
     ASSERT_IS_NOT_NULL(channel);
@@ -461,7 +461,7 @@ TEST_FUNCTION(channel_create_fails_when_underlying_functions_fail)
             umock_c_negative_tests_fail_call(i);
 
             // act
-            THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+            THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool, UINT32_MAX);
 
             // assert
             ASSERT_IS_NULL(channel, "On failed call %zu", i);
@@ -473,7 +473,6 @@ TEST_FUNCTION(channel_create_fails_when_underlying_functions_fail)
 
 /*Tests_SRS_CHANNEL_43_159: [channel_open shall call sm_open_begin.]*/
 /*Tests_SRS_CHANNEL_43_172: [ channel_open shall call srw_lock_acquire_exclusive. ]*/
-/*Tests_SRS_CHANNEL_43_166: [ channel_open shall set is_open to true. ]*/
 /*Tests_SRS_CHANNEL_43_173: [ channel_open shall call srw_lock_release_exclusive. ]*/
 /*Tests_SRS_CHANNEL_43_160: [ channel_open shall call sm_open_end. ]*/
 /*Tests_SRS_CHANNEL_43_162: [ channel_open shall succeed and return 0. ]*/
@@ -481,7 +480,7 @@ TEST_FUNCTION(channel_open_succeeds)
 {
     //arrange
     setup_channel_create_expectations();
-    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool, UINT32_MAX);
     setup_channel_open_expectations();
 
     //act
@@ -500,7 +499,7 @@ TEST_FUNCTION(channel_open_succeeds)
 TEST_FUNCTION(channel_open_fails_when_underlying_functions_fail)
 {
     //arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool, UINT32_MAX);
     umock_c_reset_all_calls();
 
     setup_channel_open_expectations();
@@ -538,7 +537,6 @@ TEST_FUNCTION(channel_close_called_with_NULL_channel_does_nothing)
 
 /*Tests_SRS_CHANNEL_43_094: [ channel_close shall call sm_close_begin_with_cb with abandon_pending_operation as the callback. ]*/
 /*Tests_SRS_CHANNEL_43_167: [ abandon_pending_operations shall call srw_lock_acquire_exclusive.]*/
-/*Tests_SRS_CHANNEL_43_168: [ abandon_pending_operations shall set is_open to false.]*/
 /*Tests_SRS_CHANNEL_43_174: [abandon_pending_operations shall make a local copy of the list of pending operations.]*/
 /*Tests_SRS_CHANNEL_43_175: [abandon_pending_operations shall set the list of pending operations to an empty list by calling DList_InitializeListHead.]*/
 /*Tests_SRS_CHANNEL_43_169: [ abandon_pending_operations shall call srw_lock_release_exclusive. ]*/
@@ -582,7 +580,7 @@ TEST_FUNCTION(channel_close_calls_underlying_functions)
 TEST_FUNCTION(channel_dispose_calls_underlying_functions)
 {
     //arrange
-    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool);
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool, UINT32_MAX);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(PTR(LOG_CONTEXT_HANDLE))(IGNORED_ARG, NULL));
@@ -602,7 +600,6 @@ TEST_FUNCTION(channel_dispose_calls_underlying_functions)
 
 /*Tests_SRS_CHANNEL_43_152: [ channel_pull shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_43_010: [ channel_pull shall call srw_lock_acquire_exclusive. ]*/
-/*Tests_SRS_CHANNEL_43_170: [ channel_pull shall check if is_open is true. ]*/
 /*Tests_SRS_CHANNEL_43_101: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_available_cb: ]*/
 /*Tests_SRS_CHANNEL_43_103: [ channel_pull shall create a THANDLE(ASYNC_OP) by calling async_op_create with cancel_op as cancel. ]*/
 /*Tests_SRS_CHANNEL_43_104: [ channel_pull shall store the correlation_id, on_data_available_cb and pull_context in the THANDLE(ASYNC_OP). ]*/
@@ -636,7 +633,6 @@ TEST_FUNCTION(channel_pull_on_empty_succeeds)
 
 /*Tests_SRS_CHANNEL_43_152: [ channel_pull shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_43_010: [ channel_pull shall call srw_lock_acquire_exclusive. ]*/
-/*Tests_SRS_CHANNEL_43_170: [ channel_pull shall check if is_open is true. ]*/
 /*Tests_SRS_CHANNEL_43_101: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_available_cb: ]*/
 /*Tests_SRS_CHANNEL_43_103: [ channel_pull shall create a THANDLE(ASYNC_OP) by calling async_op_create with cancel_op as cancel. ]*/
 /*Tests_SRS_CHANNEL_43_104: [ channel_pull shall store the correlation_id, on_data_available_cb and pull_context in the THANDLE(ASYNC_OP). ]*/
@@ -678,7 +674,6 @@ TEST_FUNCTION(channel_pull_after_pull_succeeds)
 
 /*Tests_SRS_CHANNEL_43_152: [channel_pull shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_43_010: [channel_pull shall call srw_lock_acquire_exclusive.]*/
-/*Tests_SRS_CHANNEL_43_170: [channel_pull shall check if is_open is true. ]*/
 /*Tests_SRS_CHANNEL_43_108: [If the first operation in the list of pending operations contains a non - NULL on_data_consumed_cb : ]*/
 /*Tests_SRS_CHANNEL_43_109: [channel_pull shall call DList_RemoveHeadList on the list of pending operations to obtain the operation.]*/
 /*Tests_SRS_CHANNEL_43_112: [channel_pull shall store the correlation_id, on_data_available_cb and pull_context in the obtained operation.]*/
@@ -723,6 +718,7 @@ TEST_FUNCTION(channel_pull_after_push_succeeds)
     channel_close(channel);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
+
 
 /*Tests_SRS_CHANNEL_43_023: [If there are any failures, channel_pull shall fail and return CHANNEL_RESULT_ERROR.]*/
 TEST_FUNCTION(channel_pull_as_first_op_fails_when_underlying_functions_fail)
@@ -806,11 +802,73 @@ TEST_FUNCTION(channel_pull_as_second_op_fails_if_underlying_functions_fail)
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
+/*Tests_SRS_CHANNEL_18_002: [ If the channel is sealed, channel_pull shall shall call srw_lock_release_exclusive and sm_exec_end, and return CHANNEL_RESULT_SEALED. ]*/
+TEST_FUNCTION(channel_pull_fails_if_channel_is_sealed_and_channel_is_empty)
+{
+    // arrange
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
+    ASSERT_ARE_EQUAL(int, 0, channel_seal_channel(channel));
+    THANDLE(ASYNC_OP) pull_op = NULL;
+    int32_t pull_context = 0;
+
+    STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_acquire_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(DList_IsListEmpty(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
+
+    // act
+    CHANNEL_RESULT pull_result = channel_pull(channel, g.g_pull_correlation_id, test_on_data_available_cb_abandoned, &pull_context, &pull_op);
+
+    // assert
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_SEALED, pull_result);
+    ASSERT_IS_NULL(pull_op);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    channel_close(channel);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/*Tests_SRS_CHANNEL_18_004: [ channel_pull shall decrement the count of items in the channel. ]*/
+TEST_FUNCTION(channel_pull_decrements_count_of_items)
+{
+    // arrange
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
+
+    int32_t push_context[2] = {0};
+    for (int i=0; i < 2; i++)
+    {
+        THANDLE(ASYNC_OP) push_op = NULL;
+        CHANNEL_RESULT push_result = channel_push(channel, g.g_push_correlation_id, data, i == 0 ? test_on_data_consumed_cb_ok : test_on_data_consumed_cb_abandoned, &push_context[i], &push_op);
+        ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result);
+        ASSERT_IS_NOT_NULL(push_op);
+        THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
+    }
+    THANDLE_ASSIGN(RC_PTR)(&data, NULL);
+    ASSERT_ARE_EQUAL(uint32_t, 2, channel_get_count_of_items_in_channel(channel));
+
+    // act
+    int32_t pull_context = 0;
+    THANDLE(ASYNC_OP) pull_op = NULL;
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_pull(channel, g.g_pull_correlation_id, test_on_data_available_cb_ok, &pull_context, &pull_op));
+    ASSERT_IS_NOT_NULL(pull_op);
+    THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
+    uint32_t item_count_after_pull = channel_get_count_of_items_in_channel(channel);
+
+    // assert
+    ASSERT_ARE_EQUAL(uint32_t, 1, item_count_after_pull);
+
+    // cleanup
+    channel_close(channel);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
 /* channel_push */
 
 /*Tests_SRS_CHANNEL_43_153: [ channel_push shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_43_116: [ channel_push shall call srw_lock_acquire_exclusive. ]*/
-/*Tests_SRS_CHANNEL_43_171: [ channel_push shall check if is_open is true. ]*/
 /*Tests_SRS_CHANNEL_43_117: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
 /*Tests_SRS_CHANNEL_43_119: [ channel_push shall create a THANDLE(ASYNC_OP) by calling async_op_create with cancel_op as cancel. ]*/
 /*Tests_SRS_CHANNEL_43_120: [ channel_push shall store the correlation_id, on_data_consumed_cb, push_context and data in the THANDLE(ASYNC_OP). ]*/
@@ -848,7 +906,6 @@ TEST_FUNCTION(channel_push_on_empty_succeeds)
 
 /*Tests_SRS_CHANNEL_43_153: [ channel_push shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_43_116: [ channel_push shall call srw_lock_acquire_exclusive. ]*/
-/*Tests_SRS_CHANNEL_43_171: [ channel_push shall check if is_open is true. ]*/
 /*Tests_SRS_CHANNEL_43_117: [ If the list of pending operations is empty or the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
 /*Tests_SRS_CHANNEL_43_119: [ channel_push shall create a THANDLE(ASYNC_OP) by calling async_op_create with cancel_op as cancel. ]*/
 /*Tests_SRS_CHANNEL_43_120: [ channel_push shall store the correlation_id, on_data_consumed_cb, push_context and data in the THANDLE(ASYNC_OP). ]*/
@@ -894,7 +951,6 @@ TEST_FUNCTION(channel_push_after_push_succeeds)
 
 /*Tests_SRS_CHANNEL_43_153: [ channel_push shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_43_116: [ channel_push shall call srw_lock_acquire_exclusive. ]*/
-/*Tests_SRS_CHANNEL_43_171: [ channel_push shall check if is_open is true. ]*/
 /*Tests_SRS_CHANNEL_43_124: [ Otherwise (the first operation in the list of pending operations contains a non-NULL on_data_available_cb): ]*/
 /*Tests_SRS_CHANNEL_43_125: [ channel_push shall call DList_RemoveHeadList on the list of pending operations to obtain the operation. ]*/
 /*Tests_SRS_CHANNEL_43_128: [ channel_push shall store the correlation_id, on_data_consumed_cb, push_context and data in the obtained operation. ]*/
@@ -929,8 +985,8 @@ TEST_FUNCTION(channel_push_after_pull_succeeds)
     //assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result);
     ASSERT_IS_NOT_NULL(push_op);
-    ASSERT_ARE_EQUAL(int32_t, 1, pull_context);
     ASSERT_ARE_EQUAL(int32_t, 1, push_context);
+    ASSERT_ARE_EQUAL(int32_t, 1, pull_context);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //cleanup
@@ -1022,6 +1078,99 @@ TEST_FUNCTION(channel_push_as_second_op_fails_if_underlying_functions_fail)
     //cleanup
     THANDLE_ASSIGN(RC_PTR)(&data, NULL);
     THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/*Tests_SRS_CHANNEL_18_005: [ If the channel is sealed, channel_push shall call srw_lock_release_exclusive and sm_exec_end, and return CHANNEL_RESULT_SEALED. ]*/
+TEST_FUNCTION(channel_push_fails_if_channel_is_sealed)
+{
+    // arrange
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
+    umock_c_reset_all_calls();
+    THANDLE(ASYNC_OP) push_op = NULL;
+    int32_t push_context = 0;
+
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
+    ASSERT_ARE_EQUAL(int, 0, channel_seal_channel(channel));
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_acquire_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
+
+    // act
+    CHANNEL_RESULT push_result = channel_push(channel, g.g_push_correlation_id, data, test_on_data_consumed_cb_abandoned, &push_context, &push_op);
+
+    // assert
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_SEALED, push_result);
+    ASSERT_IS_NULL(push_op);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    THANDLE_ASSIGN(RC_PTR)(&data, NULL);
+    channel_close(channel);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/*Tests_SRS_CHANNEL_18_006: [ If the channel is over capacity, channel_push shall seal the channel, call srw_lock_release_exclusive and sm_exec_end, and return CHANNEL_RESULT_SEALED. ]*/
+TEST_FUNCTION(channel_push_fails_if_channel_is_at_capacity_but_not_yet_sealed)
+{
+    // arrange
+    THANDLE(ASYNC_OP) push_op = NULL;
+    int32_t push_context[2] = {0};
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
+
+    THANDLE(CHANNEL) channel = channel_create(g.g_log_context, g.g_threadpool, 1);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
+
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_push(channel, g.g_push_correlation_id, data, test_on_data_consumed_cb_abandoned, &push_context[0], &push_op));
+    ASSERT_IS_NOT_NULL(push_op);
+    THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
+
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_acquire_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(srw_lock_release_exclusive(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
+
+    // act
+    CHANNEL_RESULT push_result = channel_push(channel, g.g_push_correlation_id, data, test_on_data_consumed_cb_abandoned, &push_context[1], &push_op);
+
+    // assert
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_SEALED, push_result);
+    ASSERT_IS_NULL(push_op);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    THANDLE_ASSIGN(RC_PTR)(&data, NULL);
+    channel_close(channel);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/*Tests_SRS_CHANNEL_18_007: [ channel_push shall increment the count of items in the channel. ]*/
+TEST_FUNCTION(channel_push_increments_count_of_items)
+{
+    // arrange
+    THANDLE(ASYNC_OP) push_op = NULL;
+    int32_t push_context = {0};
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
+    THANDLE(RC_PTR) data = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
+
+    // act
+    ASSERT_ARE_EQUAL(uint32_t, 0, channel_get_count_of_items_in_channel(channel));
+
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_push(channel, g.g_push_correlation_id, data, test_on_data_consumed_cb_abandoned, &push_context, &push_op));
+    ASSERT_IS_NOT_NULL(push_op);
+    THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(uint32_t, 1, channel_get_count_of_items_in_channel(channel));
+
+    //cleanup
+    THANDLE_ASSIGN(RC_PTR)(&data, NULL);
+    channel_close(channel);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
@@ -1205,6 +1354,135 @@ TEST_FUNCTION(channel_execute_callback_fails_with_NULL_context)
     THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
     THANDLE_ASSIGN(ASYNC_OP)(&pull_op, NULL);
     THANDLE_ASSIGN(RC_PTR)(&data, NULL);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/* channel_get_count_of_items_in_channel */
+
+/*Tests_SRS_CHANNEL_18_008: [ If channel is NULL, channel_get_count_of_items_in_channel shall return UINT32_MAX. ]*/
+TEST_FUNCTION(channel_get_count_of_items_in_channel_called_with_NULL_channel)
+{
+    //arrange
+
+    //act
+    uint32_t count = channel_get_count_of_items_in_channel(NULL);
+
+    //assert
+    ASSERT_ARE_EQUAL(uint32_t, UINT32_MAX, count);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CHANNEL_18_009: [ channel_get_count_of_items_in_channel shall return the count of items in the channel. ]*/
+TEST_FUNCTION(channel_get_count_of_items_in_channel_returns_0_for_0_items)
+{
+    // arrange
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
+
+    // act
+    uint32_t count = channel_get_count_of_items_in_channel(channel);
+
+    // assert
+    ASSERT_ARE_EQUAL(uint32_t, 0, count);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/*Tests_SRS_CHANNEL_18_009: [ channel_get_count_of_items_in_channel shall return the count of items in the channel. ]*/
+TEST_FUNCTION(channel_get_count_of_items_in_channel_returns_1_for_1_items)
+{
+    // arrange
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
+    int32_t push_context = 0;
+    THANDLE(ASYNC_OP) push_op = NULL;
+    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
+    CHANNEL_RESULT push_result_1 = channel_push(channel, g.g_push_correlation_id, rc_ptr, test_on_data_consumed_cb_abandoned, &push_context, &push_op);
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result_1);
+    ASSERT_IS_NOT_NULL(push_op);
+    THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
+    THANDLE_ASSIGN(RC_PTR)(&rc_ptr, NULL);
+    umock_c_reset_all_calls();
+
+
+    // act
+    uint32_t count = channel_get_count_of_items_in_channel(channel);
+
+    // assert
+    ASSERT_ARE_EQUAL(uint32_t, 1, count);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    channel_close(channel);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/*Tests_SRS_CHANNEL_18_009: [ channel_get_count_of_items_in_channel shall return the count of items in the channel. ]*/
+TEST_FUNCTION(channel_get_count_of_items_in_channel_returns_42_for_42_items)
+{
+    // arrange
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
+    int32_t push_context[42] = {0};
+    for (int i = 0; i < 42; i++)
+    {
+        THANDLE(ASYNC_OP) push_op = NULL;
+        THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
+        CHANNEL_RESULT push_result_1 = channel_push(channel, g.g_push_correlation_id, rc_ptr, test_on_data_consumed_cb_abandoned, &push_context[i], &push_op);
+        ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result_1);
+        ASSERT_IS_NOT_NULL(push_op);
+        THANDLE_ASSIGN(ASYNC_OP)(&push_op, NULL);
+        THANDLE_ASSIGN(RC_PTR)(&rc_ptr, NULL);
+    }
+    umock_c_reset_all_calls();
+
+    // act
+    uint32_t count = channel_get_count_of_items_in_channel(channel);
+
+    // assert
+    ASSERT_ARE_EQUAL(uint32_t, 42, count);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    channel_close(channel);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/* channel_seal_channel */
+
+/*Tests_SRS_CHANNEL_18_010: [ If channel is NULL, channel_seal_channel shall fail and return a non-zero value. ]*/
+TEST_FUNCTION(channel_seal_channel_called_with_NULL_channel_fails)
+{
+    //arrange
+
+    //act
+    int result = channel_seal_channel(NULL);
+
+    //assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*Tests_SRS_CHANNEL_18_011: [ channel_seal_channel shall set the channel as sealed. ]*/
+/*Tests_SRS_CHANNEL_18_012: [ channel_seal_channel shall succeed and return 0. ]*/
+TEST_FUNCTION(channel_seal_channel_seals_channel)
+{
+    // arrange
+    THANDLE(CHANNEL) channel = test_create_and_open_channel();
+    int32_t push_context = 0;
+    THANDLE(ASYNC_OP) push_op = NULL;
+    THANDLE(RC_PTR) rc_ptr = rc_ptr_create_with_move_pointer(test_data, test_data_dispose, NULL);
+
+    // act
+    int seal_result = channel_seal_channel(channel);
+    CHANNEL_RESULT push_result = channel_push(channel, g.g_push_correlation_id, rc_ptr, test_on_data_consumed_cb_abandoned, &push_context, &push_op);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, seal_result);
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_SEALED, push_result);
+    ASSERT_IS_NULL(push_op);
+
+    // cleanup
+    THANDLE_ASSIGN(RC_PTR)(&rc_ptr, NULL);
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
