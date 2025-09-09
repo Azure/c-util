@@ -468,8 +468,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), ch
                 /*Codes_SRS_CHANNEL_18_002: [ If the channel is sealed, channel_pull shall call srw_lock_release_exclusive and sm_exec_end, and return CHANNEL_RESULT_SEALED. ]*/
                 if (interlocked_add(&channel_ptr->is_sealed, 0) == 1)
                 {
-                    LogError("channel is sealed, cannot pull new data");
-                    result = CHANNEL_RESULT_SEALED;;
+                    LogError("Channel is sealed, cannot pull new data. channel=%p", channel);
+                    result = CHANNEL_RESULT_SEALED;
                 }
                 else
                 {
@@ -533,7 +533,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), ch
             if (channel_ptr->is_sealed != 0)
             {
                 /*Codes_SRS_CHANNEL_18_005: [ If the channel is sealed, channel_push shall call srw_lock_release_exclusive and sm_exec_end, and return CHANNEL_RESULT_SEALED. ]*/
-                LogInfo("Channel is sealed, cannot push new data");
+                LogError("Channel is sealed, cannot push new data. channel=%p", channel);
                 result = CHANNEL_RESULT_SEALED;
             }
             else
@@ -541,7 +541,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), ch
                 /*Codes_SRS_CHANNEL_18_006: [ If the channel is over capacity, channel_push shall seal the channel, call srw_lock_release_exclusive and sm_exec_end, and return CHANNEL_RESULT_SEALED. ]*/
                 if ((uint32_t)interlocked_add(&channel_ptr->count_of_items_in_channel, 0) >= channel_ptr->channel_capacity)
                 {
-                    LogInfo("Sealing channel, cannot push new data");
+                    LogError("Sealing channel, cannot push new data. channel=%p", channel);
                     interlocked_exchange(&channel_ptr->is_sealed, 1);
                     result = CHANNEL_RESULT_SEALED;
                 }
