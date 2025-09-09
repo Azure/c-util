@@ -1075,7 +1075,6 @@ TEST_FUNCTION(channel_with_manual_seal_fills_up_and_empties)
         ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForValue(&pull_context[i], pull_success, UINT32_MAX));
     }
 
-
     // cleanup
 
     channel_close(channel);
