@@ -31,6 +31,7 @@
         constbuffer_array_get_buffer_content, \
         constbuffer_array_get_all_buffers_size, \
         constbuffer_array_get_const_buffer_handle_array, \
+        constbuffer_array_remove_empty_buffers, \
         CONSTBUFFER_ARRAY_HANDLE_contain_same \
 )
 
@@ -60,6 +61,9 @@ CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_add_back(CONSTBUFFER_ARRAY_HANDL
 
 /*remove back*/
 CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_remove_back(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, CONSTBUFFER_HANDLE* constbuffer_handle);
+
+/*remove empty buffers*/
+CONSTBUFFER_ARRAY_HANDLE real_constbuffer_array_remove_empty_buffers(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle);
 
 /* getters */
 int real_constbuffer_array_get_buffer_count(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, uint32_t* buffer_count);
