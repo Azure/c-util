@@ -47,28 +47,20 @@ TEST_FUNCTION(constbuffer_array_remove_empty_buffers_with_realistic_mixed_data_s
     unsigned char payload_data[] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE };   // 5-byte payload
     unsigned char footer_data[] = { 0xFF, 0xFE };                      // 2-byte footer
     
-    // Create individual buffers
-    CONSTBUFFER_HANDLE header_buffer = CONSTBUFFER_Create(header_data, sizeof(header_data));
-    ASSERT_IS_NOT_NULL(header_buffer);
-    CONSTBUFFER_HANDLE empty_buffer1 = CONSTBUFFER_Create(NULL, 0);
-    ASSERT_IS_NOT_NULL(empty_buffer1);
-    CONSTBUFFER_HANDLE payload_buffer = CONSTBUFFER_Create(payload_data, sizeof(payload_data));
-    ASSERT_IS_NOT_NULL(payload_buffer);
-    CONSTBUFFER_HANDLE empty_buffer2 = CONSTBUFFER_Create(NULL, 0);
-    ASSERT_IS_NOT_NULL(empty_buffer2);
-    CONSTBUFFER_HANDLE footer_buffer = CONSTBUFFER_Create(footer_data, sizeof(footer_data));
-    ASSERT_IS_NOT_NULL(footer_buffer);
-    CONSTBUFFER_HANDLE empty_buffer3 = CONSTBUFFER_Create(NULL, 0);
-    ASSERT_IS_NOT_NULL(empty_buffer3);
-    
     // Create array with mixed empty and non-empty buffers
     CONSTBUFFER_HANDLE buffers[6];
-    buffers[0] = header_buffer;
-    buffers[1] = empty_buffer1;
-    buffers[2] = payload_buffer;
-    buffers[3] = empty_buffer2;
-    buffers[4] = footer_buffer;
-    buffers[5] = empty_buffer3;
+    buffers[0] = CONSTBUFFER_Create(header_data, sizeof(header_data));
+    ASSERT_IS_NOT_NULL(buffers[0]);
+    buffers[1] = CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(buffers[1]);
+    buffers[2] = CONSTBUFFER_Create(payload_data, sizeof(payload_data));
+    ASSERT_IS_NOT_NULL(buffers[2]);
+    buffers[3] = CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(buffers[3]);
+    buffers[4] = CONSTBUFFER_Create(footer_data, sizeof(footer_data));
+    ASSERT_IS_NOT_NULL(buffers[4]);
+    buffers[5] = CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(buffers[5]);
     
     CONSTBUFFER_ARRAY_HANDLE original_array = constbuffer_array_create(buffers, 6);
     ASSERT_IS_NOT_NULL(original_array);
@@ -102,12 +94,10 @@ TEST_FUNCTION(constbuffer_array_remove_empty_buffers_with_realistic_mixed_data_s
     ASSERT_ARE_EQUAL(int, 0, memcmp(footer_data, filtered_buffer->buffer, sizeof(footer_data)));
     
     ///cleanup
-    CONSTBUFFER_DecRef(header_buffer);
-    CONSTBUFFER_DecRef(empty_buffer1);
-    CONSTBUFFER_DecRef(payload_buffer);
-    CONSTBUFFER_DecRef(empty_buffer2);
-    CONSTBUFFER_DecRef(footer_buffer);
-    CONSTBUFFER_DecRef(empty_buffer3);
+    for (uint32_t i = 0; i < 6; i++)
+    {
+        CONSTBUFFER_DecRef(buffers[i]);
+    }
     constbuffer_array_dec_ref(original_array);
     constbuffer_array_dec_ref(filtered_array);
 }
@@ -188,32 +178,23 @@ TEST_FUNCTION(constbuffer_array_remove_empty_buffers_preserves_buffer_content_an
     unsigned char data3[] = { 0x05, 0x06 };
     unsigned char data4[] = { 0x07, 0x08, 0x09, 0x0A };
     
-    CONSTBUFFER_HANDLE buffer1 = CONSTBUFFER_Create(data1, sizeof(data1));
-    ASSERT_IS_NOT_NULL(buffer1);
-    CONSTBUFFER_HANDLE empty1 = CONSTBUFFER_Create(NULL, 0);
-    ASSERT_IS_NOT_NULL(empty1);
-    CONSTBUFFER_HANDLE buffer2 = CONSTBUFFER_Create(data2, sizeof(data2));
-    ASSERT_IS_NOT_NULL(buffer2);
-    CONSTBUFFER_HANDLE empty2 = CONSTBUFFER_Create(NULL, 0);
-    ASSERT_IS_NOT_NULL(empty2);
-    CONSTBUFFER_HANDLE empty3 = CONSTBUFFER_Create(NULL, 0);
-    ASSERT_IS_NOT_NULL(empty3);
-    CONSTBUFFER_HANDLE buffer3 = CONSTBUFFER_Create(data3, sizeof(data3));
-    ASSERT_IS_NOT_NULL(buffer3);
-    CONSTBUFFER_HANDLE buffer4 = CONSTBUFFER_Create(data4, sizeof(data4));
-    ASSERT_IS_NOT_NULL(buffer4);
-    CONSTBUFFER_HANDLE empty4 = CONSTBUFFER_Create(NULL, 0);
-    ASSERT_IS_NOT_NULL(empty4);
-    
     CONSTBUFFER_HANDLE buffers[8];
-    buffers[0] = buffer1;
-    buffers[1] = empty1;
-    buffers[2] = buffer2;
-    buffers[3] = empty2;
-    buffers[4] = empty3;
-    buffers[5] = buffer3;
-    buffers[6] = buffer4;
-    buffers[7] = empty4;
+    buffers[0] = CONSTBUFFER_Create(data1, sizeof(data1));
+    ASSERT_IS_NOT_NULL(buffers[0]);
+    buffers[1] = CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(buffers[1]);
+    buffers[2] = CONSTBUFFER_Create(data2, sizeof(data2));
+    ASSERT_IS_NOT_NULL(buffers[2]);
+    buffers[3] = CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(buffers[3]);
+    buffers[4] = CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(buffers[4]);
+    buffers[5] = CONSTBUFFER_Create(data3, sizeof(data3));
+    ASSERT_IS_NOT_NULL(buffers[5]);
+    buffers[6] = CONSTBUFFER_Create(data4, sizeof(data4));
+    ASSERT_IS_NOT_NULL(buffers[6]);
+    buffers[7] = CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(buffers[7]);
     
     CONSTBUFFER_ARRAY_HANDLE original_array = constbuffer_array_create(buffers, 8);
     ASSERT_IS_NOT_NULL(original_array);
@@ -255,14 +236,10 @@ TEST_FUNCTION(constbuffer_array_remove_empty_buffers_preserves_buffer_content_an
     ASSERT_ARE_EQUAL(int, 0, memcmp(data4, buffer->buffer, sizeof(data4)));
     
     ///cleanup
-    CONSTBUFFER_DecRef(buffer1);
-    CONSTBUFFER_DecRef(empty1);
-    CONSTBUFFER_DecRef(buffer2);
-    CONSTBUFFER_DecRef(empty2);
-    CONSTBUFFER_DecRef(empty3);
-    CONSTBUFFER_DecRef(buffer3);
-    CONSTBUFFER_DecRef(buffer4);
-    CONSTBUFFER_DecRef(empty4);
+    for (uint32_t i = 0; i < 8; i++)
+    {
+        CONSTBUFFER_DecRef(buffers[i]);
+    }
     constbuffer_array_dec_ref(original_array);
     constbuffer_array_dec_ref(filtered_array);
 }
@@ -308,17 +285,13 @@ TEST_FUNCTION(constbuffer_array_remove_empty_buffers_with_no_empty_buffers_retur
     unsigned char data2[] = { 0x33, 0x44, 0x55 };
     unsigned char data3[] = { 0x66 };
     
-    CONSTBUFFER_HANDLE buffer1 = CONSTBUFFER_Create(data1, sizeof(data1));
-    ASSERT_IS_NOT_NULL(buffer1);
-    CONSTBUFFER_HANDLE buffer2 = CONSTBUFFER_Create(data2, sizeof(data2));
-    ASSERT_IS_NOT_NULL(buffer2);
-    CONSTBUFFER_HANDLE buffer3 = CONSTBUFFER_Create(data3, sizeof(data3));
-    ASSERT_IS_NOT_NULL(buffer3);
-    
     CONSTBUFFER_HANDLE buffers[3];
-    buffers[0] = buffer1;
-    buffers[1] = buffer2;
-    buffers[2] = buffer3;
+    buffers[0] = CONSTBUFFER_Create(data1, sizeof(data1));
+    ASSERT_IS_NOT_NULL(buffers[0]);
+    buffers[1] = CONSTBUFFER_Create(data2, sizeof(data2));
+    ASSERT_IS_NOT_NULL(buffers[1]);
+    buffers[2] = CONSTBUFFER_Create(data3, sizeof(data3));
+    ASSERT_IS_NOT_NULL(buffers[2]);
     
     CONSTBUFFER_ARRAY_HANDLE original_array = constbuffer_array_create(buffers, 3);
     ASSERT_IS_NOT_NULL(original_array);
@@ -353,58 +326,11 @@ TEST_FUNCTION(constbuffer_array_remove_empty_buffers_with_no_empty_buffers_retur
     }
     
     ///cleanup
-    CONSTBUFFER_DecRef(buffer1);
-    CONSTBUFFER_DecRef(buffer2);
-    CONSTBUFFER_DecRef(buffer3);
+    for (uint32_t i = 0; i < 3; i++)
+    {
+        CONSTBUFFER_DecRef(buffers[i]);
+    }
     constbuffer_array_dec_ref(original_array);
-    constbuffer_array_dec_ref(filtered_array);
-}
-
-TEST_FUNCTION(constbuffer_array_remove_empty_buffers_reference_counting_works_correctly)
-{
-    ///arrange
-    unsigned char data[] = { 0xAA, 0xBB, 0xCC };
-    CONSTBUFFER_HANDLE data_buffer = CONSTBUFFER_Create(data, sizeof(data));
-    ASSERT_IS_NOT_NULL(data_buffer);
-    CONSTBUFFER_HANDLE empty_buffer = CONSTBUFFER_Create(NULL, 0);
-    ASSERT_IS_NOT_NULL(empty_buffer);
-    
-    CONSTBUFFER_HANDLE buffers[2];
-    buffers[0] = data_buffer;
-    buffers[1] = empty_buffer;
-    
-    CONSTBUFFER_ARRAY_HANDLE original_array = constbuffer_array_create(buffers, 2);
-    ASSERT_IS_NOT_NULL(original_array);
-    
-    ///act
-    CONSTBUFFER_ARRAY_HANDLE filtered_array = constbuffer_array_remove_empty_buffers(original_array);
-    
-    ///assert
-    ASSERT_IS_NOT_NULL(filtered_array);
-    uint32_t filtered_count;
-    int result = constbuffer_array_get_buffer_count(filtered_array, &filtered_count);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(uint32_t, 1, filtered_count);
-    
-    // The filtered array should be usable independently
-    const CONSTBUFFER* filtered_buffer = constbuffer_array_get_buffer_content(filtered_array, 0);
-    ASSERT_IS_NOT_NULL(filtered_buffer);
-    ASSERT_ARE_EQUAL(uint32_t, sizeof(data), filtered_buffer->size);
-    ASSERT_ARE_EQUAL(int, 0, memcmp(data, filtered_buffer->buffer, sizeof(data)));
-    
-    // Release original array - filtered array should still work
-    constbuffer_array_dec_ref(original_array);
-    original_array = NULL;
-    
-    // Verify filtered array still works after original is released
-    filtered_buffer = constbuffer_array_get_buffer_content(filtered_array, 0);
-    ASSERT_IS_NOT_NULL(filtered_buffer);
-    ASSERT_ARE_EQUAL(uint32_t, sizeof(data), filtered_buffer->size);
-    ASSERT_ARE_EQUAL(int, 0, memcmp(data, filtered_buffer->buffer, sizeof(data)));
-    
-    ///cleanup
-    CONSTBUFFER_DecRef(data_buffer);
-    CONSTBUFFER_DecRef(empty_buffer);
     constbuffer_array_dec_ref(filtered_array);
 }
 

@@ -3609,10 +3609,9 @@ TEST_FUNCTION(constbuffer_array_remove_empty_buffers_with_NULL_handle_fails)
     ///arrange
 
     ///act
-    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_remove_empty_buffers(NULL);
+    ASSERT_IS_NULL(constbuffer_array_remove_empty_buffers(NULL));
 
     ///assert
-    ASSERT_IS_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     ///cleanup
