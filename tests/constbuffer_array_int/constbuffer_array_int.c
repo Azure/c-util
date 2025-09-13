@@ -73,8 +73,7 @@ TEST_FUNCTION(constbuffer_array_remove_empty_buffers_with_realistic_mixed_data_s
     
     // Verify the filtered array contains only non-empty buffers
     uint32_t filtered_count;
-    int result = constbuffer_array_get_buffer_count(filtered_array, &filtered_count);
-    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 0, constbuffer_array_get_buffer_count(filtered_array, &filtered_count));
     ASSERT_ARE_EQUAL(uint32_t, 3, filtered_count);
     
     // Verify each buffer in the filtered array is correct
