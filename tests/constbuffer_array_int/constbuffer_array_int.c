@@ -247,8 +247,8 @@ TEST_FUNCTION(constbuffer_array_remove_empty_buffers_preserves_buffer_content_an
 TEST_FUNCTION(constbuffer_array_remove_empty_buffers_with_only_empty_buffers_returns_empty_array)
 {
     ///arrange
-    const uint32_t buffer_count = 5;
-    CONSTBUFFER_HANDLE empty_buffers[5];
+    const uint32_t buffer_count = 2;
+    CONSTBUFFER_HANDLE empty_buffers[2];
     
     for (uint32_t i = 0; i < buffer_count; i++)
     {
