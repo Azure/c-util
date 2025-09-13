@@ -20,8 +20,7 @@ BEGIN_TEST_SUITE(constbuffer_array_int)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
-    int result = gballoc_hl_init(NULL, NULL);
-    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 0, gballoc_hl_init(NULL, NULL));
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
