@@ -857,6 +857,85 @@ IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER_HANDLE*, constbuffer_array_get_c
     return result;
 }
 
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_empty_buffers, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle)
+{
+    CONSTBUFFER_ARRAY_HANDLE result;
+
+    if (constbuffer_array_handle == NULL)
+    {
+        /*Codes_SRS_CONSTBUFFER_ARRAY_88_001: [ If constbuffer_array_handle is NULL then constbuffer_array_remove_empty_buffers shall fail and return NULL. ]*/
+        LogError("Invalid arguments: CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle=%p", constbuffer_array_handle);
+        result = NULL;
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_ARRAY_88_002: [ constbuffer_array_remove_empty_buffers shall get the buffer count from constbuffer_array_handle. ]*/
+        /*Codes_SRS_CONSTBUFFER_ARRAY_88_003: [ constbuffer_array_remove_empty_buffers shall examine each buffer in constbuffer_array_handle to determine if it is empty (size equals 0). ]*/
+        
+        uint32_t non_empty_count = 0;
+        uint32_t i;
+        
+        // Count non-empty buffers
+        for (i = 0; i < constbuffer_array_handle->nBuffers; i++)
+        {
+            const CONSTBUFFER* buffer_content = CONSTBUFFER_GetContent(constbuffer_array_handle->buffers[i]);
+            if (buffer_content->size > 0)
+            {
+                non_empty_count++;
+            }
+        }
+        
+        if (non_empty_count == constbuffer_array_handle->nBuffers)
+        {
+            /*Codes_SRS_CONSTBUFFER_ARRAY_88_004: [ If no buffers in constbuffer_array_handle are empty, constbuffer_array_remove_empty_buffers shall increment the reference count of constbuffer_array_handle and return constbuffer_array_handle. ]*/
+            constbuffer_array_inc_ref(constbuffer_array_handle);
+            result = constbuffer_array_handle;
+        }
+        else if (non_empty_count == 0)
+        {
+            /*Codes_SRS_CONSTBUFFER_ARRAY_88_005: [ If all buffers in constbuffer_array_handle are empty, constbuffer_array_remove_empty_buffers shall create and return a new empty CONSTBUFFER_ARRAY_HANDLE. ]*/
+            result = constbuffer_array_create_empty();
+            if (result == NULL)
+            {
+                /*Codes_SRS_CONSTBUFFER_ARRAY_88_010: [ If any error occurs, constbuffer_array_remove_empty_buffers shall fail and return NULL. ]*/
+                LogError("failure in constbuffer_array_create_empty()");
+            }
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_ARRAY_88_006: [ constbuffer_array_remove_empty_buffers shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE that can hold only the non-empty buffers. ]*/
+            result = REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, non_empty_count, sizeof(CONSTBUFFER_HANDLE));
+            if (result == NULL)
+            {
+                /*Codes_SRS_CONSTBUFFER_ARRAY_88_010: [ If any error occurs, constbuffer_array_remove_empty_buffers shall fail and return NULL. ]*/
+                LogError("failure in REFCOUNT_TYPE_CREATE_FLEX(CONSTBUFFER_ARRAY_HANDLE_DATA, non_empty_count=%" PRIu32 ", sizeof(CONSTBUFFER_HANDLE)=%zu)", non_empty_count, sizeof(CONSTBUFFER_HANDLE));
+            }
+            else
+            {
+                result->buffers = result->buffers_memory;
+                result->nBuffers = non_empty_count;
+                result->custom_free = NULL;
+                
+                /*Codes_SRS_CONSTBUFFER_ARRAY_88_007: [ constbuffer_array_remove_empty_buffers shall copy all non-empty buffers from constbuffer_array_handle to the new const buffer array. ]*/
+                /*Codes_SRS_CONSTBUFFER_ARRAY_88_008: [ constbuffer_array_remove_empty_buffers shall increment the reference count of all copied buffers. ]*/
+                uint32_t dest_index = 0;
+                for (i = 0; i < constbuffer_array_handle->nBuffers; i++)
+                {
+                    const CONSTBUFFER* buffer_content = CONSTBUFFER_GetContent(constbuffer_array_handle->buffers[i]);
+                    if (buffer_content->size > 0)
+                    {
+                        result->buffers[dest_index] = constbuffer_array_handle->buffers[i];
+                        CONSTBUFFER_IncRef(result->buffers[dest_index]);
+                        dest_index++;
+                    }
+                }
+            }
+        }
+    }
+
+    /*Codes_SRS_CONSTBUFFER_ARRAY_88_009: [ On success constbuffer_array_remove_empty_buffers shall return a non-NULL handle. ]*/
+    return result;
+}
 
 IMPLEMENT_MOCKABLE_FUNCTION(, bool, CONSTBUFFER_ARRAY_HANDLE_contain_same, CONSTBUFFER_ARRAY_HANDLE, left, CONSTBUFFER_ARRAY_HANDLE, right)
 {

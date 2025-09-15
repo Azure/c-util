@@ -19,6 +19,8 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_buff
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_empty);
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_array_array, const CONSTBUFFER_ARRAY_HANDLE*, buffer_arrays, uint32_t, buffer_array_count);
 
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_empty_buffers, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle);
+
 MOCKABLE_FUNCTION(, void, constbuffer_array_inc_ref, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle);
 MOCKABLE_FUNCTION(, void, constbuffer_array_dec_ref, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle);
 
@@ -166,6 +168,34 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_arra
 **SRS_CONSTBUFFER_ARRAY_42_007: [** `constbuffer_array_create_from_array_array` shall succeed and return a non-`NULL` value. **]**
 
 **SRS_CONSTBUFFER_ARRAY_42_008: [** If there are any failures then `constbuffer_array_create_from_array_array` shall fail and return `NULL`. **]**
+
+### constbuffer_array_remove_empty_buffers
+
+```c
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_empty_buffers, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle);
+```
+
+`constbuffer_array_remove_empty_buffers` creates a new const buffer array with all zero-sized buffers removed from the original array.
+
+**SRS_CONSTBUFFER_ARRAY_88_001: [** If `constbuffer_array_handle` is `NULL` then `constbuffer_array_remove_empty_buffers` shall fail and return `NULL`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_88_002: [** `constbuffer_array_remove_empty_buffers` shall get the buffer count from `constbuffer_array_handle`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_88_003: [** `constbuffer_array_remove_empty_buffers` shall examine each buffer in `constbuffer_array_handle` to determine if it is empty (size equals 0). **]**
+
+**SRS_CONSTBUFFER_ARRAY_88_004: [** If no buffers in `constbuffer_array_handle` are empty, `constbuffer_array_remove_empty_buffers` shall increment the reference count of `constbuffer_array_handle` and return `constbuffer_array_handle`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_88_005: [** If all buffers in `constbuffer_array_handle` are empty, `constbuffer_array_remove_empty_buffers` shall create and return a new empty `CONSTBUFFER_ARRAY_HANDLE`. **]**
+
+**SRS_CONSTBUFFER_ARRAY_88_006: [** `constbuffer_array_remove_empty_buffers` shall allocate memory for a new `CONSTBUFFER_ARRAY_HANDLE` that can hold only the non-empty buffers. **]**
+
+**SRS_CONSTBUFFER_ARRAY_88_007: [** `constbuffer_array_remove_empty_buffers` shall copy all non-empty buffers from `constbuffer_array_handle` to the new const buffer array. **]**
+
+**SRS_CONSTBUFFER_ARRAY_88_008: [** `constbuffer_array_remove_empty_buffers` shall increment the reference count of all copied buffers. **]**
+
+**SRS_CONSTBUFFER_ARRAY_88_009: [** On success `constbuffer_array_remove_empty_buffers` shall return a non-`NULL` handle. **]**
+
+**SRS_CONSTBUFFER_ARRAY_88_010: [** If any error occurs, `constbuffer_array_remove_empty_buffers` shall fail and return `NULL`. **]**
 
 ### constbuffer_array_inc_ref
 

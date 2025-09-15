@@ -3601,4 +3601,213 @@ TEST_FUNCTION(CONSTBUFFER_ARRAY_HANDLE_contain_same_with_content_of_buffers_same
     constbuffer_array_dec_ref(right);
 }
 
+/* constbuffer_array_remove_empty_buffers */
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_88_001: [ If constbuffer_array_handle is NULL then constbuffer_array_remove_empty_buffers shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_remove_empty_buffers_with_NULL_handle_fails)
+{
+    ///arrange
+
+    ///act
+    ASSERT_IS_NULL(constbuffer_array_remove_empty_buffers(NULL));
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_88_004: [ If no buffers in constbuffer_array_handle are empty, constbuffer_array_remove_empty_buffers shall increment the reference count of constbuffer_array_handle and return constbuffer_array_handle. ]*/
+TEST_FUNCTION(constbuffer_array_remove_empty_buffers_with_no_empty_buffers_returns_same_handle)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE buffers[3];
+    buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
+    buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
+    buffers[2] = TEST_CONSTBUFFER_HANDLE_3;
+    CONSTBUFFER_ARRAY_HANDLE original = constbuffer_array_create(buffers, 3);
+    ASSERT_IS_NOT_NULL(original);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_1));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_2));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_3));
+    STRICT_EXPECTED_CALL(interlocked_increment(IGNORED_ARG));
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_remove_empty_buffers(original);
+
+    ///assert
+    ASSERT_ARE_EQUAL(void_ptr, original, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    constbuffer_array_dec_ref(original);
+    constbuffer_array_dec_ref(result);
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_88_002: [ constbuffer_array_remove_empty_buffers shall get the buffer count from constbuffer_array_handle. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_88_003: [ constbuffer_array_remove_empty_buffers shall examine each buffer in constbuffer_array_handle to determine if it is empty (size equals 0). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_88_005: [ If all buffers in constbuffer_array_handle are empty, constbuffer_array_remove_empty_buffers shall create and return a new empty CONSTBUFFER_ARRAY_HANDLE. ]*/
+TEST_FUNCTION(constbuffer_array_remove_empty_buffers_with_all_empty_buffers_returns_empty_array)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE empty_buffer1 = real_CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(empty_buffer1);
+    CONSTBUFFER_HANDLE empty_buffer2 = real_CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(empty_buffer2);
+    
+    CONSTBUFFER_HANDLE buffers[2];
+    buffers[0] = empty_buffer1;
+    buffers[1] = empty_buffer2;
+    CONSTBUFFER_ARRAY_HANDLE original = constbuffer_array_create(buffers, 2);
+    ASSERT_IS_NOT_NULL(original);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(empty_buffer1));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(empty_buffer2));
+    constbuffer_array_create_empty_inert_path();
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_remove_empty_buffers(original);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_NOT_EQUAL(void_ptr, original, result);
+    uint32_t buffer_count;
+    ASSERT_ARE_EQUAL(int, 0, constbuffer_array_get_buffer_count(result, &buffer_count));
+    ASSERT_ARE_EQUAL(uint32_t, 0, buffer_count);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    constbuffer_array_dec_ref(original);
+    constbuffer_array_dec_ref(result);
+    CONSTBUFFER_DecRef(empty_buffer1);
+    CONSTBUFFER_DecRef(empty_buffer2);
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_88_002: [ constbuffer_array_remove_empty_buffers shall get the buffer count from constbuffer_array_handle. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_88_003: [ constbuffer_array_remove_empty_buffers shall examine each buffer in constbuffer_array_handle to determine if it is empty (size equals 0). ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_88_006: [ constbuffer_array_remove_empty_buffers shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE that can hold only the non-empty buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_88_007: [ constbuffer_array_remove_empty_buffers shall copy all non-empty buffers from constbuffer_array_handle to the new const buffer array. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_88_008: [ constbuffer_array_remove_empty_buffers shall increment the reference count of all copied buffers. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_88_009: [ On success constbuffer_array_remove_empty_buffers shall return a non-NULL handle. ]*/
+TEST_FUNCTION(constbuffer_array_remove_empty_buffers_with_mixed_buffers_removes_empty_ones)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE empty_buffer1 = real_CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(empty_buffer1);
+    CONSTBUFFER_HANDLE empty_buffer2 = real_CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(empty_buffer2);
+    
+    CONSTBUFFER_HANDLE buffers[5];
+    buffers[0] = TEST_CONSTBUFFER_HANDLE_1;  // size 1
+    buffers[1] = empty_buffer1;              // size 0
+    buffers[2] = TEST_CONSTBUFFER_HANDLE_2;  // size 2
+    buffers[3] = empty_buffer2;              // size 0
+    buffers[4] = TEST_CONSTBUFFER_HANDLE_3;  // size 3
+    CONSTBUFFER_ARRAY_HANDLE original = constbuffer_array_create(buffers, 5);
+    ASSERT_IS_NOT_NULL(original);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_1));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(empty_buffer1));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_2));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(empty_buffer2));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_3));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 3, sizeof(CONSTBUFFER_HANDLE)));
+    STRICT_EXPECTED_CALL(interlocked_exchange(IGNORED_ARG, 1))
+        .CallCannotFail();
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_1));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(empty_buffer1));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_2));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_2));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(empty_buffer2));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_3));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_3));
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_remove_empty_buffers(original);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_ARE_NOT_EQUAL(void_ptr, original, result);
+    uint32_t buffer_count;
+    ASSERT_ARE_EQUAL(int, 0, constbuffer_array_get_buffer_count(result, &buffer_count));
+    ASSERT_ARE_EQUAL(uint32_t, 3, buffer_count);
+    
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    
+    // Verify the non-empty buffers are in the result
+    CONSTBUFFER_HANDLE result_buffer_0 = constbuffer_array_get_buffer(result, 0);
+    CONSTBUFFER_HANDLE result_buffer_1 = constbuffer_array_get_buffer(result, 1);
+    CONSTBUFFER_HANDLE result_buffer_2 = constbuffer_array_get_buffer(result, 2);
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_1, result_buffer_0);
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_2, result_buffer_1);
+    ASSERT_ARE_EQUAL(void_ptr, TEST_CONSTBUFFER_HANDLE_3, result_buffer_2);
+
+    ///cleanup
+    constbuffer_array_dec_ref(original);
+    constbuffer_array_dec_ref(result);
+    CONSTBUFFER_DecRef(result_buffer_0);
+    CONSTBUFFER_DecRef(result_buffer_1);
+    CONSTBUFFER_DecRef(result_buffer_2);
+    CONSTBUFFER_DecRef(empty_buffer1);
+    CONSTBUFFER_DecRef(empty_buffer2);
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_88_004: [ If no buffers in constbuffer_array_handle are empty, constbuffer_array_remove_empty_buffers shall increment the reference count of constbuffer_array_handle and return constbuffer_array_handle. ]*/
+TEST_FUNCTION(constbuffer_array_remove_empty_buffers_with_empty_array_returns_same_handle)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE original = constbuffer_array_create_empty();
+    ASSERT_IS_NOT_NULL(original);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(interlocked_increment(IGNORED_ARG));
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_remove_empty_buffers(original);
+
+    ///assert
+    ASSERT_ARE_EQUAL(void_ptr, original, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    constbuffer_array_dec_ref(original);
+    constbuffer_array_dec_ref(result);
+}
+
+/*Tests_SRS_CONSTBUFFER_ARRAY_88_010: [ If any error occurs, constbuffer_array_remove_empty_buffers shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_remove_empty_buffers_fails_when_malloc_fails)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE empty_buffer = real_CONSTBUFFER_Create(NULL, 0);
+    ASSERT_IS_NOT_NULL(empty_buffer);
+    
+    CONSTBUFFER_HANDLE buffers[2];
+    buffers[0] = TEST_CONSTBUFFER_HANDLE_1;  // size 1
+    buffers[1] = empty_buffer;               // size 0
+    CONSTBUFFER_ARRAY_HANDLE original = constbuffer_array_create(buffers, 2);
+    ASSERT_IS_NOT_NULL(original);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(TEST_CONSTBUFFER_HANDLE_1));
+    STRICT_EXPECTED_CALL(CONSTBUFFER_GetContent(empty_buffer));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 1, sizeof(CONSTBUFFER_HANDLE)))
+        .SetReturn(NULL);
+
+    ///act
+    CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_remove_empty_buffers(original);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    constbuffer_array_dec_ref(original);
+    CONSTBUFFER_DecRef(empty_buffer);
+}
+
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
