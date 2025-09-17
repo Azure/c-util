@@ -16,4 +16,4 @@ set(${theseTestsName}_h_files
 
 include_directories(../../inc)
 
-build_test_artifacts(${theseTestsName} "tests/thread_notifications_lackey_dll" ADDITIONAL_LIBS c_logging_v2 c_pal c_pal_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_logging_v2 c_pal c_pal_reals)
