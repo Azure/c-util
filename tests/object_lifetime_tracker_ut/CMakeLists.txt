@@ -1,4 +1,4 @@
-#Copyright (c) Microsoft. All rights reserved.
+﻿#Copyright (c) Microsoft. All rights reserved.
 
 set(theseTestsName object_lifetime_tracker_ut)
 
@@ -14,4 +14,6 @@ set(${theseTestsName}_h_files
 ../../inc/c_util/object_lifetime_tracker.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util_reals c_pal_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util_reals c_pal_reals 
+    ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/object_lifetime_tracker_ut_pch.h"
+)

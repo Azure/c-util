@@ -1,38 +1,7 @@
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
-
-#include "macro_utils/macro_utils.h"
-#include "testrunnerswitcher.h"
-
-#include "c_logging/logger.h"
-
-#include "c_pal/thandle.h"
-
-#include "umock_c/umock_c.h"
-#include "umock_c/umocktypes_stdint.h"
-#include "umock_c/umocktypes_bool.h"
-#include "umock_c/umocktypes_charptr.h"
-#include "umock_c/umock_c_negative_tests.h"
-
-#define ENABLE_MOCKS
-#include "c_util/buffer_.h"
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
-#undef ENABLE_MOCKS
-
-#include "real_gballoc_hl.h"
-
-#include "c_util/constbuffer.h"
-#include "c_util/constbuffer_format.h"
-#include "c_util/constbuffer_version.h"
-#include "c_util/memory_data.h"
-#include "c_util/constbuffer_thandle.h"
+#include "constbuffer_thandle_ut_pch.h"
 
 TEST_DEFINE_ENUM_TYPE(CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_VALUES)
 IMPLEMENT_UMOCK_C_ENUM_TYPE(CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_VALUES)

@@ -1,4 +1,4 @@
-#Copyright (c) Microsoft. All rights reserved.
+﻿#Copyright (c) Microsoft. All rights reserved.
 
 set(theseTestsName sync_wrapper_ut)
 
@@ -19,4 +19,6 @@ set(${theseTestsName}_h_files
     test_ref_counted.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util  c_pal_reals c_util_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util  c_pal_reals c_util_reals 
+    ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/sync_wrapper_ut_pch.h"
+)

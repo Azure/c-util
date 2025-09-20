@@ -1,17 +1,7 @@
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <stdlib.h>
-
-#include "macro_utils/macro_utils.h"
-
-#include "testrunnerswitcher.h"
-#include "umock_c/umock_c.h"
-#include "umock_c/umocktypes_charptr.h"
-
-#define ENABLE_MOCKS
-
-#include "c_util/strings.h"
+#include "map_ut_pch.h"
 
 STRING_HANDLE my_STRING_construct(const char* psz)
 {
@@ -29,15 +19,6 @@ STRING_HANDLE my_STRING_new_JSON(const char* source)
     (void)source;
     return malloc(1);
 }
-
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
-
-#undef ENABLE_MOCKS
-
-#include "real_gballoc_hl.h"
-
-#include "c_util/map.h"
 
 TEST_DEFINE_ENUM_TYPE(MAP_RESULT, MAP_RESULT_VALUES)
 IMPLEMENT_UMOCK_C_ENUM_TYPE(MAP_RESULT, MAP_RESULT_VALUES);

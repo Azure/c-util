@@ -1,28 +1,13 @@
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <stddef.h>
-
-#include <limits.h>
-
-#include "umock_c/umocktypes_stdint.h"
-
-#include "macro_utils/macro_utils.h"
-#include "testrunnerswitcher.h"
+#include "constbuffer_ut_pch.h"
 
 #define ENABLE_MOCKS
-#include "c_util/buffer_.h"
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
-
+#undef ENABLE_MOCKS_DECL
 #include "umock_c/umock_c_prod.h"
 MOCKABLE_FUNCTION(, void*, test_alloc, size_t, size, void*, context);
-
 #undef ENABLE_MOCKS
-
-#include "real_gballoc_hl.h"
 
 static void* my_gballoc_malloc_with_context(size_t size, void* context)
 {
