@@ -6,18 +6,18 @@
 STRING_HANDLE my_STRING_construct(const char* psz)
 {
     (void)psz;
-    return malloc(1);
+    return real_gballoc_hl_malloc(1);
 }
 
 static void my_STRING_delete(STRING_HANDLE handle)
 {
-    free(handle);
+    real_gballoc_hl_free(handle);
 }
 
 STRING_HANDLE my_STRING_new_JSON(const char* source)
 {
     (void)source;
-    return malloc(1);
+    return real_gballoc_hl_malloc(1);
 }
 
 TEST_DEFINE_ENUM_TYPE(MAP_RESULT, MAP_RESULT_VALUES)
