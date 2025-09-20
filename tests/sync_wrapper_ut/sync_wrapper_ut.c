@@ -1,43 +1,14 @@
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 
 
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdbool.h>
-#include <stdint.h>
 
-
-#include "macro_utils/macro_utils.h"
-
-#include "testrunnerswitcher.h"
-#include "umock_c/umock_c.h"
-#include "umock_c/umocktypes.h"
-#include "umock_c/umocktypes_stdint.h"
-#include "umock_c/umock_c_negative_tests.h"
-
-#include "c_pal/interlocked.h" /*included for mocking reasons - it will prohibit creation of mocks belonging to interlocked.h - at the moment verified through int tests - this is porting legacy code, temporary solution*/
-#include "c_pal/sync.h" /*included for mocking reasons - it will prohibit creation of mocks belonging to sync.h - at the moment verified through int tests - this is porting legacy code, temporary solution*/
+#include "sync_wrapper_ut_pch.h"
 
 #define ENABLE_MOCKS
-
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
-
-#include "c_pal/interlocked_hl.h"
-#include "c_pal/log_critical_and_terminate.h"
-
-#include "test_async.h"
-#include "test_ref_counted.h"
+#undef ENABLE_MOCKS_DECL
+#include "umock_c/umock_c_prod.h"
 #include "../src/interlocked_hl.c"
-
 #undef ENABLE_MOCKS
-
-#include "real_gballoc_hl.h"
-
-
-#include "test_sync_wrappers.h"
-
-#include "c_util/sync_wrapper.h"
 
 TEST_DEFINE_ENUM_TYPE(SYNC_WRAPPER_RESULT, SYNC_WRAPPER_RESULT_VALUES)
 

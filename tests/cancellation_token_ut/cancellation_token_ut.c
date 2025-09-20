@@ -1,37 +1,14 @@
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <stdlib.h>
-#include <inttypes.h>
-
-#include "real_gballoc_ll.h"
-
-#include "macro_utils/macro_utils.h"
-#include "testrunnerswitcher.h"
-#include "umock_c/umock_c.h"
-#include "umock_c/umock_c_negative_tests.h"
-#include "umock_c/umocktypes_bool.h"
-#include "umock_c/umocktypes_stdint.h"
+#include "cancellation_token_ut_pch.h"
 
 #define ENABLE_MOCKS
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
-#include "c_pal/interlocked.h"
-#include "c_util/tcall_dispatcher_cancellation_token_cancel_call.h"
-#undef ENABLE_MOCKS
-
-#include "real_gballoc_hl.h"
-#include "real_interlocked.h"
-#include "../reals/real_tcall_dispatcher_cancellation_token_cancel_call.h"
-
-#include "c_util/cancellation_token.h"
-
-#define ENABLE_MOCKS
+#undef ENABLE_MOCKS_DECL
 #include "umock_c/umock_c_prod.h"
-
 MOCKABLE_FUNCTION(, void, on_cancel, void*, context);
-MOCKABLE_FUNCTION(, void, on_cancel2, void*, context);
 
+MOCKABLE_FUNCTION(, void, on_cancel2, void*, context);
 #undef ENABLE_MOCKS
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)

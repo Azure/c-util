@@ -1,35 +1,8 @@
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 
 
-#include <stdlib.h>
-#include <inttypes.h>
 
-
-#include "macro_utils/macro_utils.h"
-
-#include "real_gballoc_ll.h"
-
-#include "testrunnerswitcher.h"
-#include "umock_c/umock_c.h"
-#include "umock_c/umocktypes_stdint.h"
-#include "umock_c/umock_c_negative_tests.h"
-
-#define ENABLE_MOCKS
-
-#include "c_util/constbuffer.h"
-#include "c_util/constbuffer_array.h"
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
-#include "c_util/memory_data.h"
-#undef ENABLE_MOCKS
-
-#include "c_util/constbuffer_array_batcher_nv.h"
-
-#include "real_gballoc_hl.h"
-
-#include "../reals/real_constbuffer.h"
-#include "../reals/real_constbuffer_array.h"
-#include "../reals/real_memory_data.h"
+#include "constbuffer_array_batcher_nv_ut_pch.h"
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 

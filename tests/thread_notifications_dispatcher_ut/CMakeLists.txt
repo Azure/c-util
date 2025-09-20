@@ -1,4 +1,4 @@
-#Copyright (c) Microsoft. All rights reserved.
+﻿#Copyright (c) Microsoft. All rights reserved.
 
 set(theseTestsName thread_notifications_dispatcher_ut)
 
@@ -16,10 +16,7 @@ set(${theseTestsName}_h_files
 
 build_test_artifacts(${theseTestsName} "tests/c_util" 
     ADDITIONAL_LIBS c_pal c_pal_reals c_util c_util_reals thread_notifications_lackey_dll
-    MOCK_PRECOMPILE_HEADERS
-        "c_pal/gballoc_hl.h"
-        "c_pal/gballoc_hl_redirect.h"
-        "c_util/tcall_dispatcher_thread_notification_call.h"
+    ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/thread_notifications_dispatcher_ut_pch.h"
 )
 
 if("${building}" STREQUAL "exe")

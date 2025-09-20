@@ -1,28 +1,11 @@
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 
 
-#include <stdlib.h>
-#include <stdint.h>
 
-#include "windows.h"
-
-#include "macro_utils/macro_utils.h"
-
-#include "testrunnerswitcher.h"
-#include "umock_c/umock_c.h"
-#include "umock_c/umocktypes.h"
-#include "umock_c/umocktypes_stdint.h"
-#include "umock_c/umocktypes_charptr.h"
-#include "umock_c/umocktypes_bool.h"
-
-#include "c_pal/interlocked.h" /*included for mocking reasons - it will prohibit creation of mocks belonging to interlocked.h - at the moment verified through int tests - this is porting legacy code, temporary solution*/
+#include "for_each_in_folder_ut_pch.h"
 
 #define ENABLE_MOCKS
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
-
-#include "c_pal/string_utils.h"
-
+#undef ENABLE_MOCKS_DECL
 #include "umock_c/umock_c_prod.h"
     MOCKABLE_FUNCTION(, DWORD, mocked_GetLastError);
 
@@ -41,13 +24,7 @@
     );
 
     MOCKABLE_FUNCTION(, int, TEST_ON_EACH_IN_FOLDER, const char*, folder, const WIN32_FIND_DATAA*, findData, void*, context, bool*, enumerationShouldContinue)
-
 #undef ENABLE_MOCKS
-
-#include "real_gballoc_hl.h"
-#include "real_string_utils.h"
-
-#include "c_util/for_each_in_folder.h"
 
 static HANDLE hook_FindFirstFileA(
     LPCSTR lpFileName,

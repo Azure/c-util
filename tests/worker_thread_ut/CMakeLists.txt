@@ -1,4 +1,4 @@
-#Copyright (c) Microsoft. All rights reserved.
+﻿#Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 set(theseTestsName worker_thread_ut)
@@ -15,7 +15,9 @@ set(${theseTestsName}_h_files
     ../../inc/c_util/worker_thread.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS pal_interfaces c_pal_reals c_pal_reals c_util_reals)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS pal_interfaces c_pal_reals c_pal_reals c_util_reals 
+    ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/worker_thread_ut_pch.h"
+)
 
 if (WIN32)
     if("${building}" STREQUAL "exe")

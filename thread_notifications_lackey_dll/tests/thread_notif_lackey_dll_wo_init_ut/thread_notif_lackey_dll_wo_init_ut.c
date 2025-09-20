@@ -1,35 +1,17 @@
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license.See LICENSE file in the project root for full license information.
 
-// This UT suite only exists because we want to test thread_notifications_lackey_dll_deinit_callback without initializing it
-
-#include <stdbool.h>
-#include <inttypes.h>
-#include <stdlib.h>
-
-#include "macro_utils/macro_utils.h"
-#include "testrunnerswitcher.h"
-
-#include "c_logging/logger.h"
-
-#include "umock_c/umock_c.h"
-#include "umock_c/umocktypes_windows.h"
-#include "umock_c/umock_c_negative_tests.h"
-
-#include "c_pal/interlocked.h"
+#include "thread_notif_lackey_dll_wo_init_ut_pch.h"
 
 #define ENABLE_MOCKS
-
-#include "c_pal/ps_util.h"
-
-#undef ENABLE_MOCKS
-
-#include "thread_notifications_lackey_dll/thread_notifications_lackey_dll.h"
-
+#undef ENABLE_MOCKS_DECL
+#include "umock_c/umock_c_prod.h"
 MOCK_FUNCTION_WITH_CODE(, int, mock_logger_init);
 MOCK_FUNCTION_END(0)
+
 MOCK_FUNCTION_WITH_CODE(, void, mock_logger_deinit);
 MOCK_FUNCTION_END()
+#undef ENABLE_MOCKS
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 

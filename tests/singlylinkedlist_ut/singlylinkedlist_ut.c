@@ -1,29 +1,14 @@
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <stdbool.h>
-#include <stdlib.h>
-
-#include "macro_utils/macro_utils.h"
-#include "testrunnerswitcher.h"
-
-#include "umock_c/umock_c.h"
-#include "umock_c/umocktypes_bool.h"
-#include "c_util/singlylinkedlist.h"
+#include "singlylinkedlist_ut_pch.h"
 
 #define ENABLE_MOCKS
-/* test match function mock */
+#undef ENABLE_MOCKS_DECL
+#include "umock_c/umock_c_prod.h"
 MOCK_FUNCTION_WITH_CODE(, bool, test_match_function, LIST_ITEM_HANDLE, list_item, const void*, match_context)
 MOCK_FUNCTION_END(true);
-
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
-
 #undef ENABLE_MOCKS
-
-#include "real_gballoc_hl.h"
-
-#define TEST_CONTEXT ((const void*)0x4242)
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 

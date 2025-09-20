@@ -1,38 +1,11 @@
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 
 
-#include <stdlib.h>
-#include <stddef.h>
 
-
-#include "macro_utils/macro_utils.h"
-
-#include "testrunnerswitcher.h"
-#include "umock_c/umock_c.h"
-#include "umock_c/umocktypes.h"
-#include "umock_c/umocktypes_charptr.h"
-#include "umock_c/umocktypes_stdint.h"
-#include "umock_c/umock_c_negative_tests.h"
-
-#include "c_pal/interlocked.h" /*included for mocking reasons - it will prohibit creation of mocks belonging to interlocked.h - at the moment verified through int tests - this is porting legacy code, temporary solution*/
-
-#define ENABLE_MOCKS
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
-#include "c_util/constbuffer.h"
-#include "c_util/constbuffer_array.h"
-#undef ENABLE_MOCKS
-
-#include "real_gballoc_hl.h"
-#include "real_constbuffer.h"
-#include "real_constbuffer_array.h"
-
-
-#include "c_util/async_type_helper.h"
-
-#define TEST_PAYLOAD_SIZE 128
+#include "async_type_helper_ut_pch.h"
 
 // {00000000-0000-0000-0000-000000000000}
+
 static const UUID_T NIL_GUID = { 0 };
 
 static UUID_T test_uuid = {
@@ -41,6 +14,8 @@ static UUID_T test_uuid = {
 };
 
 static const unsigned char test_payload_memory[TEST_PAYLOAD_SIZE] = { 0x42, 0x43 };
+
+
 static CONSTBUFFER_HANDLE test_payload;
 static CONSTBUFFER_ARRAY_HANDLE* test_payload_array;
 static uint32_t test_payload_count = 2;

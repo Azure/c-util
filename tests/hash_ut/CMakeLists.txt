@@ -1,4 +1,4 @@
-#Copyright (c) Microsoft. All rights reserved.
+﻿#Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 set(theseTestsName hash_ut)
@@ -16,4 +16,6 @@ set(${theseTestsName}_h_files
 ../../deps/smhasher/src/MurmurHash2.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util 
+    ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/hash_ut_pch.h"
+)
