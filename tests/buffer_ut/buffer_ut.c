@@ -1,39 +1,26 @@
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-
-#include <stdlib.h>
-#include <stddef.h>
-
-
-#include "macro_utils/macro_utils.h"
-#include "umock_c/umock_c.h"
-#include "umock_c/umock_c_negative_tests.h"
-
-#include "testrunnerswitcher.h"
-
-#include "real_gballoc_ll.h"
+#include "buffer_ut_pch.h"
 
 #define ENABLE_MOCKS
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
-#undef ENABLE_MOCKS
-
-#include "real_gballoc_hl.h"
-
-#include "c_util/buffer_.h"
-
+#undef ENABLE_MOCKS_DECL
+#include "umock_c/umock_c_prod.h"
 #define ALLOCATION_SIZE             16
 #define TOTAL_ALLOCATION_SIZE       32
 
 #define BUFFER_TEST1_SIZE             5
 #define BUFFER_TEST2_SIZE             6
-
 static const unsigned char BUFFER_Test1[] = {0x01,0x02,0x03,0x04,0x05};
+
 static const unsigned char BUFFER_Test2[] = {0x06,0x07,0x08,0x09,0x10,0x11};
+
 static const unsigned char BUFFER_TEST_VALUE[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16};
+
 static const unsigned char ADDITIONAL_BUFFER[] = {0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
+
 static const unsigned char TOTAL_BUFFER[] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x22,0x23,0x24,0x25,0x26};
+#undef ENABLE_MOCKS
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 

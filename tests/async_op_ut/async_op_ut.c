@@ -1,27 +1,15 @@
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <stdlib.h>
-#include <stddef.h>
-
-#include "macro_utils/macro_utils.h"
-#include "testrunnerswitcher.h"
-#include "umock_c/umock_c.h"
+#include "async_op_ut_pch.h"
 
 #define ENABLE_MOCKS
-
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
+#undef ENABLE_MOCKS_DECL
 #include "umock_c/umock_c_prod.h"
 MOCKABLE_FUNCTION(, void, user_free, void*, ptr);
+
 MOCKABLE_FUNCTION(, void, user_cancel, void*, ptr);
 #undef ENABLE_MOCKS
-
-#include "real_gballoc_hl.h"
-
-#include "c_pal/thandle.h"
-
-#include "c_util/async_op.h"
 
 TEST_DEFINE_ENUM_TYPE(ASYNC_OP_STATE, ASYNC_OP_STATE_VALUES);
 

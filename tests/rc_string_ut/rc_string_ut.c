@@ -1,26 +1,12 @@
-// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <string.h>
-#include <stdarg.h>
-#include <limits.h>
-
-#include "macro_utils/macro_utils.h"
-#include "testrunnerswitcher.h"
-#include "umock_c/umock_c.h"
-#include "umock_c/umock_c_prod.h"
-#include "umock_c/umock_c_negative_tests.h"
-#include "umock_c/umocktypes_charptr.h"
+#include "rc_string_ut_pch.h"
 
 #define ENABLE_MOCKS
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
-
+#undef ENABLE_MOCKS_DECL
+#include "umock_c/umock_c_prod.h"
 MOCKABLE_FUNCTION(, int, mocked_vsnprintf, void*, s, size_t, n, const char*, format, va_list, args)
-MOCKABLE_FUNCTION(, size_t, mocked_strlen, const char*, s)
 
 // this is only here because umock is attempting to copy the argument s as a char*
 int proxy_mocked_vsnprintf(char* s, size_t n, const char* format, va_list args)
@@ -28,13 +14,8 @@ int proxy_mocked_vsnprintf(char* s, size_t n, const char* format, va_list args)
     return mocked_vsnprintf(s, n, format, args);
 }
 
+MOCKABLE_FUNCTION(, size_t, mocked_strlen, const char*, s)
 #undef ENABLE_MOCKS
-
-#include "c_pal/thandle.h"
-
-#include "real_gballoc_hl.h"
-
-#include "c_util/rc_string.h"
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 

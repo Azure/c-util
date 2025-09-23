@@ -1,44 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-#include <stdlib.h>
-#include <stddef.h>
 
-#include "macro_utils/macro_utils.h"
-
-#include "testrunnerswitcher.h"
-#include "umock_c/umock_c.h"
-#include "umock_c/umocktypes.h"
-#include "umock_c/umocktypes_charptr.h"
-#include "umock_c/umocktypes_stdint.h"
-#include "umock_c/umock_c_negative_tests.h"
-
-#include "c_pal/interlocked.h" /*included for mocking reasons - it will prohibit creation of mocks belonging to interlocked.h - at the moment verified through int tests - this is porting legacy code, temporary solution*/
-
-#define ENABLE_MOCKS
-#define GBALLOC_HL_REDIRECT_H
-#include "test_ref_counted.c"
-#undef GBALLOC_HL_REDIRECT_H
-
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
-#include "c_pal/threadapi.h"
-#include "c_pal/threadpool.h"
-#include "c_pal/thandle.h"
-#include "c_pal/timer.h"
-
-#include "c_pal/interlocked_hl.h"
-#include "c_pal/log_critical_and_terminate.h"
-
-#include "test_async.h"
-#include "test_ref_counted.h"
-#include "c_util/async_type_helper.h"
-#undef ENABLE_MOCKS
-
-#include "real_gballoc_hl.h"
-
-#include "test_async_retry_wrappers.h"
-
-#include "c_util/async_retry_wrapper.h"
+#include "async_retry_wrapper_ut_pch.h"
 
 static TEST_ASYNC_HANDLE test_handle = (TEST_ASYNC_HANDLE)0x42;
 
@@ -250,7 +213,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_ARE_EQUAL(int, 0, umocktypes_charptr_register_types(), "umocktypes_charptr_register_types");
     ASSERT_ARE_EQUAL(int, 0, umocktypes_stdint_register_types(), "umocktypes_stdint_register_types");
 
-    register_reals_test_refcounted();
+    REGISTER_TEST_REF_COUNTED_GLOBAL_MOCK_HOOKS();
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
 
@@ -306,7 +269,7 @@ TEST_FUNCTION_INITIALIZE(method_init)
 {
     for (size_t i = 0; i < MU_COUNT_ARRAY_ITEMS(test_ref_counted); i++)
     {
-        test_ref_counted[i] = UMOCK_REAL(test_refcounted_create)();
+        test_ref_counted[i] = real_test_refcounted_create();
         ASSERT_IS_NOT_NULL(test_ref_counted[i]);
     }
 
@@ -318,7 +281,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 {
     for (size_t i = 0; i < MU_COUNT_ARRAY_ITEMS(test_ref_counted); i++)
     {
-        UMOCK_REAL(test_refcounted_dec_ref)(test_ref_counted[i]);
+        real_test_refcounted_dec_ref(test_ref_counted[i]);
     }
 
     umock_c_negative_tests_deinit();
