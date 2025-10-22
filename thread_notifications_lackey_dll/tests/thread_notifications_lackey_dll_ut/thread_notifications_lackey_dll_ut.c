@@ -1,9 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license.See LICENSE file in the project root for full license information.
 
 #include "thread_notifications_lackey_dll_ut_pch.h"
 
-#define ENABLE_MOCKS
+#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 #undef ENABLE_MOCKS_DECL
 #include "umock_c/umock_c_prod.h"
 MOCK_FUNCTION_WITH_CODE(, void, test_thread_notifications_callback_1, THREAD_NOTIFICATIONS_LACKEY_DLL_REASON, reason);
@@ -17,7 +17,7 @@ MOCK_FUNCTION_END(0)
 
 MOCK_FUNCTION_WITH_CODE(, void, mock_logger_deinit);
 MOCK_FUNCTION_END()
-#undef ENABLE_MOCKS
+#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 static HMODULE test_module_handle = (HMODULE)0x42;
 

@@ -1,12 +1,12 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-
-
+// Copyright (c) Microsoft. All rights reserved.
 
 // Precompiled header for async_type_helper_ut
 
+#ifndef ASYNC_TYPE_HELPER_UT_PCH_H
+#define ASYNC_TYPE_HELPER_UT_PCH_H
+
 #include <stdlib.h>
 #include <stddef.h>
-
 
 #include "macro_utils/macro_utils.h"
 
@@ -19,18 +19,19 @@
 
 #include "c_pal/interlocked.h" /*included for mocking reasons - it will prohibit creation of mocks belonging to interlocked.h - at the moment verified through int tests - this is porting legacy code, temporary solution*/
 
-#define ENABLE_MOCKS
+#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_util/constbuffer.h"
 #include "c_util/constbuffer_array.h"
-#undef ENABLE_MOCKS
+#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 #include "real_gballoc_hl.h"
 #include "real_constbuffer.h"
 #include "real_constbuffer_array.h"
 
-
 #include "c_util/async_type_helper.h"
 
 #define TEST_PAYLOAD_SIZE 128
+
+#endif // ASYNC_TYPE_HELPER_UT_PCH_H

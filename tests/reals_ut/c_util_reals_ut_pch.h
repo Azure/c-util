@@ -1,7 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // Precompiled header for c_util_reals_ut
+
+#ifndef C_UTIL_REALS_UT_PCH_H
+#define C_UTIL_REALS_UT_PCH_H
 
 #include "testrunnerswitcher.h"
 
@@ -58,3 +61,5 @@
 #include "c_util/tcall_dispatcher_thread_notification_call.h"
 #include "c_util/thread_notifications_dispatcher.h"
 #endif
+
+#endif // C_UTIL_REALS_UT_PCH_H

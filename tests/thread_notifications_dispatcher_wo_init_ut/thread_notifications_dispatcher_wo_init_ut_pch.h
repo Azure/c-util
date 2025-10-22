@@ -1,9 +1,12 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license.See LICENSE file in the project root for full license information.
 
 // Precompiled header for thread_notifications_dispatcher_wo_init_ut
 
 // This UT suite exists in order to test APis when the module has not been initialized
+
+#ifndef THREAD_NOTIFICATIONS_DISPATCHER_WO_INIT_UT_PCH_H
+#define THREAD_NOTIFICATIONS_DISPATCHER_WO_INIT_UT_PCH_H
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -17,16 +20,18 @@
 
 #include "c_pal/thandle.h"
 
-#define ENABLE_MOCKS
+#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
 #include "c_util/tcall_dispatcher_thread_notification_call.h"
 
-#undef ENABLE_MOCKS
+#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 #include "real_gballoc_hl.h"
 #include "real_tcall_dispatcher_thread_notification_call.h"
 
 #include "c_util/thread_notifications_dispatcher.h"
+
+#endif // THREAD_NOTIFICATIONS_DISPATCHER_WO_INIT_UT_PCH_H
