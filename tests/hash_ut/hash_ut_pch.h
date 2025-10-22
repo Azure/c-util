@@ -1,7 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // Precompiled header for hash_ut
+
+#ifndef HASH_UT_PCH_H
+#define HASH_UT_PCH_H
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -14,3 +17,5 @@
 #include "umock_c/umocktypes.h"
 
 #include "c_util/hash.h"
+
+#endif // HASH_UT_PCH_H

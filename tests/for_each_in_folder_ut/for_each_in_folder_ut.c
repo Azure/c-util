@@ -1,10 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 
 
 
 #include "for_each_in_folder_ut_pch.h"
 
-#define ENABLE_MOCKS
+#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 #undef ENABLE_MOCKS_DECL
 #include "umock_c/umock_c_prod.h"
     MOCKABLE_FUNCTION(, DWORD, mocked_GetLastError);
@@ -24,7 +24,7 @@
     );
 
     MOCKABLE_FUNCTION(, int, TEST_ON_EACH_IN_FOLDER, const char*, folder, const WIN32_FIND_DATAA*, findData, void*, context, bool*, enumerationShouldContinue)
-#undef ENABLE_MOCKS
+#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 static HANDLE hook_FindFirstFileA(
     LPCSTR lpFileName,

@@ -1,7 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-
+// Copyright (c) Microsoft. All rights reserved.
 
 // Precompiled header for tp_worker_thread_ut
+
+#ifndef TP_WORKER_THREAD_UT_PCH_H
+#define TP_WORKER_THREAD_UT_PCH_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -17,7 +19,7 @@
 #include "umock_c/umocktypes_charptr.h"
 #include "umock_c/umocktypes_stdint.h"
 
-#define ENABLE_MOCKS
+#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
@@ -26,7 +28,7 @@
 #include "c_pal/log_critical_and_terminate.h"
 #include "c_pal/sm.h"
 #include "c_pal/threadpool.h"
-#undef ENABLE_MOCKS
+#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 #include "c_util/tp_worker_thread.h"
 
@@ -38,3 +40,5 @@
 #include "real_sm.h"
 #include "real_threadpool_thandle.h"
 #include "real_threadpool_work_item_thandle.h"
+
+#endif // TP_WORKER_THREAD_UT_PCH_H

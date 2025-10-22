@@ -1,12 +1,12 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-
-
+// Copyright (c) Microsoft. All rights reserved.
 
 // Precompiled header for for_each_in_sub_folder_ut
 
+#ifndef FOR_EACH_IN_SUB_FOLDER_UT_PCH_H
+#define FOR_EACH_IN_SUB_FOLDER_UT_PCH_H
+
 #include <stdlib.h>
 #include <stdint.h>
-
 
 #include "windows.h"
 
@@ -21,7 +21,7 @@
 
 #include "c_pal/interlocked.h" /*included for mocking reasons - it will prohibit creation of mocks belonging to interlocked.h - at the moment verified through int tests - this is porting legacy code, temporary solution*/
 
-#define ENABLE_MOCKS
+#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
@@ -31,7 +31,7 @@
 
 #include "umock_c/umock_c_prod.h"
 
-#undef ENABLE_MOCKS
+#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 #include "real_gballoc_hl.h"
 #include "real_string_utils.h"
@@ -39,3 +39,5 @@
 #include "c_util/for_each_in_sub_folder.h"
 
 #define TEST_FOLDER_DEFINE "c:\\folder"
+
+#endif // FOR_EACH_IN_SUB_FOLDER_UT_PCH_H

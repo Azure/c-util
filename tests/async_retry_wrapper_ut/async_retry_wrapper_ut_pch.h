@@ -1,7 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-
+// Copyright (c) Microsoft. All rights reserved.
 
 // Precompiled header for async_retry_wrapper_ut
+
+#ifndef ASYNC_RETRY_WRAPPER_UT_PCH_H
+#define ASYNC_RETRY_WRAPPER_UT_PCH_H
 
 #include <stdlib.h>
 #include <stddef.h>
@@ -17,7 +19,7 @@
 
 #include "c_pal/interlocked.h" /*included for mocking reasons - it will prohibit creation of mocks belonging to interlocked.h - at the moment verified through int tests - this is porting legacy code, temporary solution*/
 
-#define ENABLE_MOCKS
+#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 #define GBALLOC_HL_REDIRECT_H
 #undef GBALLOC_HL_REDIRECT_H
 
@@ -34,7 +36,7 @@
 #include "test_async.h"
 #include "test_ref_counted.h"
 #include "c_util/async_type_helper.h"
-#undef ENABLE_MOCKS
+#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 #include "real_gballoc_hl.h"
 
@@ -43,3 +45,5 @@
 #include "test_async_retry_wrappers.h"
 
 #include "c_util/async_retry_wrapper.h"
+
+#endif // ASYNC_RETRY_WRAPPER_UT_PCH_H

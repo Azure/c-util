@@ -1,15 +1,15 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "async_op_ut_pch.h"
 
-#define ENABLE_MOCKS
+#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 #undef ENABLE_MOCKS_DECL
 #include "umock_c/umock_c_prod.h"
 MOCKABLE_FUNCTION(, void, user_free, void*, ptr);
 
 MOCKABLE_FUNCTION(, void, user_cancel, void*, ptr);
-#undef ENABLE_MOCKS
+#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 TEST_DEFINE_ENUM_TYPE(ASYNC_OP_STATE, ASYNC_OP_STATE_VALUES);
 
