@@ -30,6 +30,4 @@
 
 #include "flags_to_string_helper.h"
 
-/*following function cannot be mocked because of variable number of arguments:( so it is copy&pasted here*/
-
 #endif // FLAGS_TO_STRING_UT_PCH_H

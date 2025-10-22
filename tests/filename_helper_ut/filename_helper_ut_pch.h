@@ -30,6 +30,4 @@
 
 #include "c_util/filename_helper.h"
 
-/*following function cannot be mocked because of variable number of arguments:( so it is copy&pasted here*/
-
 #endif // FILENAME_HELPER_UT_PCH_H
