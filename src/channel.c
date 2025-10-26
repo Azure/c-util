@@ -250,17 +250,28 @@ static void execute_callbacks(void* context)
 
         LOGGER_LOG(LOG_LEVEL_VERBOSE, T_PTR_VALUE_OR_NULL(channel_op->channel->log_context), "Executing callbacks for pull_correlation_id=%" PRI_RC_STRING ", push_correlation_id=%" PRI_RC_STRING ", callback_result=%" PRI_MU_ENUM "", RC_STRING_VALUE_OR_NULL(channel_op->pull_correlation_id), RC_STRING_VALUE_OR_NULL(channel_op->push_correlation_id), MU_ENUM_VALUE(CHANNEL_CALLBACK_RESULT, result));
 
-        /*Codes_SRS_CHANNEL_43_145: [ execute_callbacks shall call the stored callback(s) with the result of the operation. ]*/
+        // A channel_op might have 2 callbacks, so it might have 2 sm_exec_begin ref's outstanding.
+        // We have to call sm_exec_end for both of them before we call our first callback.
+        // Otherwise, if one of the callbacks calls channel_close, it might deadlock waiting for an sm_exec_end.
+
         if (channel_op->on_data_available_cb != NULL)
         {
-            channel_op->on_data_available_cb(channel_op->on_data_available_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id, channel_op->data);
-            /*Codes_SRS_CHANNEL_43_157: [ execute_callbacks shall call sm_exec_end for each callback that is called. ]*/
             sm_exec_end(channel_op->channel->sm);
         }
         if (channel_op->on_data_consumed_cb != NULL)
         {
-            /*Codes_SRS_CHANNEL_43_157: [ execute_callbacks shall call sm_exec_end for each callback that is called. ]*/
             sm_exec_end(channel_op->channel->sm);
+        }
+
+        /*Codes_SRS_CHANNEL_43_145: [ execute_callbacks shall call the stored callback(s) with the result of the operation. ]*/
+        if (channel_op->on_data_available_cb != NULL)
+        {
+            /*Codes_SRS_CHANNEL_43_157: [ execute_callbacks shall call sm_exec_end for each callback that is called. ]*/
+            channel_op->on_data_available_cb(channel_op->on_data_available_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id, channel_op->data);
+        }
+        if (channel_op->on_data_consumed_cb != NULL)
+        {
+            /*Codes_SRS_CHANNEL_43_157: [ execute_callbacks shall call sm_exec_end for each callback that is called. ]*/
             channel_op->on_data_consumed_cb(channel_op->on_data_consumed_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id);
         }
 
