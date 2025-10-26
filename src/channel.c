@@ -259,9 +259,9 @@ static void execute_callbacks(void* context)
         }
         if (channel_op->on_data_consumed_cb != NULL)
         {
-            channel_op->on_data_consumed_cb(channel_op->on_data_consumed_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id);
             /*Codes_SRS_CHANNEL_43_157: [ execute_callbacks shall call sm_exec_end for each callback that is called. ]*/
             sm_exec_end(channel_op->channel->sm);
+            channel_op->on_data_consumed_cb(channel_op->on_data_consumed_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id);
         }
 
         /*Codes_SRS_CHANNEL_43_147: [ execute_callbacks shall perform cleanup of the operation. ]*/
