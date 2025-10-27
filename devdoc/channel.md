@@ -67,6 +67,18 @@ Notes on operation state transitions:
 
 `channel_pull` and `channel_push` can be called from callbacks of this module. Since the callbacks are executed on threadpool threads, there is no risk of stack overflow or deadlock.
 
+## Internal State
+
+`channel` maintains the following internal state:
+
+- `threadpool`: The `THANDLE(THREADPOOL)` used for executing callbacks.
+- `sm`: The state machine handle for managing lifecycle.
+- `is_open`: A boolean flag indicating whether the channel is open.
+- `lock`: An `SRW_LOCK_HANDLE` protecting access to internal state.
+- `op_list`: A `DLIST_ENTRY` containing the list of pending operations.
+- `pending_operations_count`: A `volatile_atomic int64_t` tracking the current count of pending operations.
+- `log_context`: A `THANDLE(PTR(LOG_CONTEXT_HANDLE))` for logging.
+
 ## Exposed API
 
 ```
@@ -94,6 +106,8 @@ MOCKABLE_FUNCTION(, int, channel_open, THANDLE(CHANNEL), channel);
 MOCKABLE_FUNCTION(, void, channel_close, THANDLE(CHANNEL), channel);
 MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, ON_DATA_AVAILABLE_CB, on_data_available_cb, void*, pull_context, THANDLE(ASYNC_OP)*, out_op_pull);
 MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, ON_DATA_CONSUMED_CB, on_data_consumed_cb, void*, push_context, THANDLE(ASYNC_OP)*, out_op_push);
+MOCKABLE_FUNCTION(, int, channel_get_pending_operations_count, THANDLE(CHANNEL), channel, int64_t*, out_pending_count);
+
 ```
 
 ### channel_create
@@ -114,6 +128,8 @@ MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THA
 **SRS_CHANNEL_43_149: [** `channel_create` shall store the given `log_context` in the created `CHANNEL`. **]**
 
 **SRS_CHANNEL_43_084: [** `channel_create` shall call `DList_InitializeListHead`. **]**
+
+`channel_create` shall initialize `pending_operations_count` to `0`.
 
 **SRS_CHANNEL_43_086: [** `channel_create` shall succeed and return the created `THANDLE(CHANNEL)`. **]**
 
@@ -161,6 +177,8 @@ channel_open` opens the given `channel`.
 
 **SRS_CHANNEL_43_175: [** `abandon_pending_operations` shall set the list of pending operations to an empty list by calling `DList_InitializeListHead`. **]**
 
+`abandon_pending_operations` shall reset `pending_operations_count` to `0`.
+
 **SRS_CHANNEL_43_169: [** `abandon_pending_operations` shall call `srw_lock_release_exclusive`. **]**
 
 **SRS_CHANNEL_43_095: [** `abandon_pending_operations` shall iterate over the local copy and do the following: **]**
@@ -179,7 +197,6 @@ channel_open` opens the given `channel`.
 
 `channel_dispose` disposes the given `channel`.
 
-
 **SRS_CHANNEL_43_150: [** `channel_dispose` shall release the reference to the `log_context` **]**
 
 **SRS_CHANNEL_43_091: [** `channel_dispose` shall release the reference to `THANDLE(THREADPOOL)`. **]**
@@ -187,6 +204,7 @@ channel_open` opens the given `channel`.
 **SRS_CHANNEL_43_099: [** `channel_dispose` shall call `srw_lock_destroy`. **]**
 
 **SRS_CHANNEL_43_165: [** `channel_dispose` shall call `sm_destroy`. **]**
+
 
 ### channel_pull
 ```c
@@ -210,12 +228,16 @@ channel_open` opens the given `channel`.
  - **SRS_CHANNEL_43_111: [** `channel_pull` shall set the `result` of the created `operation` to `CHANNEL_CALLBACK_RESULT_OK`. **]**
 
  - **SRS_CHANNEL_43_105: [** `channel_pull` shall insert the created `THANDLE(ASYNC_OP)` in the list of pending operations by calling `DList_InsertTailList`. **]**
+ 
+ - `channel_pull` shall increment `pending_operations_count` by `1`.
 
  - **SRS_CHANNEL_43_107: [** `channel_pull` shall set `*out_op_pull` to the created `THANDLE(ASYNC_OP)`. **]**
 
 **SRS_CHANNEL_43_108: [** If the first operation in the list of pending operations contains a `non-NULL` `on_data_consumed_cb`: **]**
 
  - **SRS_CHANNEL_43_109: [** `channel_pull` shall call `DList_RemoveHeadList` on the list of pending operations to obtain the `operation`. **]**
+
+ - `channel_pull` shall decrement `pending_operations_count` by `1`.`
 
  - **SRS_CHANNEL_43_112: [** `channel_pull` shall store the `correlation_id`, `on_data_available_cb` and `pull_context` in the obtained `operation`. **]**
 
@@ -253,11 +275,15 @@ channel_open` opens the given `channel`.
 
  - **SRS_CHANNEL_43_121: [** `channel_push` shall insert the created `THANDLE(ASYNC_OP)` in the list of pending operations by calling `DList_InsertTailList`. **]**
 
+ - `channel_push` shall increment `pending_operations_count` by `1`.
+
  - **SRS_CHANNEL_43_123: [** `channel_push` shall set `*out_op_push` to the created `THANDLE(ASYNC_OP)`. **]**
 
 **SRS_CHANNEL_43_124: [** Otherwise (the first operation in the list of pending operations contains a `non-NULL` `on_data_available_cb`): **]**
 
  - **SRS_CHANNEL_43_125: [** `channel_push` shall call `DList_RemoveHeadList` on the list of pending operations to obtain the `operation`. **]**
+
+ - `channel_push` shall decrement `pending_operations_count` by `1`.
 
  - **SRS_CHANNEL_43_128: [** `channel_push` shall store the `correlation_id`, `on_data_consumed_cb`, `push_context` and `data` in the obtained `operation`. **]**
 
@@ -285,6 +311,8 @@ channel_open` opens the given `channel`.
 
 **SRS_CHANNEL_43_135: [** If the `operation` is in the list of pending `operations`, `cancel_op` shall call `DList_RemoveEntryList` to remove it. **]**
 
+If the `operation` is removed from the list, `cancel_op` shall decrement `pending_operations_count` by `1`.
+
 **SRS_CHANNEL_43_139: [** `cancel_op` shall call `srw_lock_release_exclusive`. **]**
 
 **SRS_CHANNEL_43_136: [** If the `result` of the `operation` is `CHANNEL_CALLBACK_RESULT_OK`, `cancel_op` shall set it to `CHANNEL_CALLBACK_RESULT_CANCELLED`. **]**
@@ -310,3 +338,21 @@ channel_open` opens the given `channel`.
 **SRS_CHANNEL_43_157: [** `execute_callbacks` shall call `sm_exec_end` for each callback that is called. **]**
 
 **SRS_CHANNEL_43_147: [** `execute_callbacks` shall perform cleanup of the `operation`. **]**
+
+
+### channel_get_pending_operations_count
+```c
+    MOCKABLE_FUNCTION(, int, channel_get_pending_operations_count, THANDLE(CHANNEL), channel, int64_t*, out_pending_count);
+```
+
+`channel_get_pending_operations_count` gets the current count of pending operations.
+
+If `channel` is `NULL`, `channel_get_pending_operations_count` shall fail and return a non-zero value.
+
+If `out_pending_count` is `NULL`, `channel_get_pending_operations_count` shall fail and return a non-zero value.
+
+`channel_get_pending_operations_count` shall read `pending_operations_count` using `interlocked_add_64`.
+
+`channel_get_pending_operations_count` shall set `*out_pending_count` to the read value.
+
+`channel_get_pending_operations_count` shall succeed and return `0`.
