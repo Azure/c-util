@@ -1,7 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-
+// Copyright (c) Microsoft. All rights reserved.
 
 // Precompiled header for rc_ptr_ut
+
+#ifndef RC_PTR_UT_PCH_H
+#define RC_PTR_UT_PCH_H
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -18,11 +20,13 @@
 
 #include "c_pal/interlocked.h"
 
-#define ENABLE_MOCKS
+#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
-#undef ENABLE_MOCKS
+#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 #include "real_gballoc_hl.h"
 
 #include "c_util/rc_ptr.h"
+
+#endif // RC_PTR_UT_PCH_H

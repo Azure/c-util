@@ -28,11 +28,11 @@ TARRAY_TYPE_DECLARE(THANDLE(A_TEST));
 TARRAY_TYPE_DEFINE(THANDLE(A_TEST));
 
 
-#define ENABLE_MOCKS
+#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 #undef ENABLE_MOCKS_DECL
 #include "umock_c/umock_c_prod.h"
 MOCKABLE_FUNCTION(, void, my_cleanup, TARRAY_TYPEDEF_NAME(uint32_t)*, var2, void*, cleanup_context);
-#undef ENABLE_MOCKS
+#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 

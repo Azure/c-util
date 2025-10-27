@@ -1,7 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-
+// Copyright (c) Microsoft. All rights reserved.
 
 // Precompiled header for channel_ut
+
+#ifndef CHANNEL_UT_PCH_H
+#define CHANNEL_UT_PCH_H
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -20,7 +22,7 @@
 #include "c_pal/execution_engine.h"
 #include "c_pal/interlocked.h"
 
-#define ENABLE_MOCKS
+#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/interlocked_hl.h"
@@ -34,9 +36,7 @@
 #include "c_util/async_op.h"
 #include "c_util/rc_ptr.h"
 #include "c_util/rc_string.h"
-#undef ENABLE_MOCKS
-
-#include "umock_c/umock_c_prod.h"
+#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 #include "real_gballoc_hl.h"
 #include "real_interlocked.h"
@@ -50,9 +50,10 @@
 #include "real_rc_ptr.h"
 #include "real_rc_string.h"
 
-
 #include "c_pal/thandle.h"
 
 #include "c_util/channel.h"
 
 #define DISABLE_TEST_FUNCTION(x) static void x(void)
+
+#endif // CHANNEL_UT_PCH_H

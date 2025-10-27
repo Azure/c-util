@@ -3,6 +3,7 @@
 
 #include "flags_to_string_ut_pch.h"
 
+/*following function cannot be mocked because of variable number of arguments:( so it is copy&pasted here*/
 char* sprintf_char_function(const char* format, ...)
 {
     char* result;

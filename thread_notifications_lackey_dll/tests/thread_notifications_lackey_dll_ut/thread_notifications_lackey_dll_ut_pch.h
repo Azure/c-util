@@ -1,7 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license.See LICENSE file in the project root for full license information.
 
 // Precompiled header for thread_notifications_lackey_dll_ut
+
+#ifndef THREAD_NOTIFICATIONS_LACKEY_DLL_UT_PCH_H
+#define THREAD_NOTIFICATIONS_LACKEY_DLL_UT_PCH_H
 
 #include <stdbool.h>
 #include <inttypes.h>
@@ -20,13 +23,14 @@
 
 #include "c_pal/interlocked.h"
 
-#define ENABLE_MOCKS
+#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 
 #include "c_pal/ps_util.h"
 
-#undef ENABLE_MOCKS
+#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 #include "thread_notifications_lackey_dll/thread_notifications_lackey_dll.h"
 
-
 BOOL WINAPI DllMain_under_test(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);
+
+#endif // THREAD_NOTIFICATIONS_LACKEY_DLL_UT_PCH_H

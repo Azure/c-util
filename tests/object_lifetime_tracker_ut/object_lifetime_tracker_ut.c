@@ -1,9 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 
 
 #include "object_lifetime_tracker_ut_pch.h"
 
-#define ENABLE_MOCKS
+#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 #undef ENABLE_MOCKS_DECL
 #include "umock_c/umock_c_prod.h"
 MOCK_FUNCTION_WITH_CODE(, void, test_destroy_object, void*, object, const void*, context);
@@ -20,7 +20,7 @@ MOCK_FUNCTION_END((lhs == rhs) ? OBJECT_MATCH_FUNCTION_RESULT_MATCHING : OBJECT_
 
 MOCK_FUNCTION_WITH_CODE(, int, test_action_function, void*, object, void*, context)
 MOCK_FUNCTION_END(0);
-#undef ENABLE_MOCKS
+#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 static void* test_key_1 = (void*)0x1003;
 static void* test_key_2 = (void*)0x1004;
