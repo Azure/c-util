@@ -161,12 +161,31 @@ static void test_on_data_consumed_cb_success(void* context, CHANNEL_CALLBACK_RES
 static void test_on_data_consumed_attempts_to_close_channel(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id)
 {
     ASSERT_IS_NOT_NULL(context);
-    TEST_CALLBACK_CONTEXT* test_context = context;
-    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_ABANDONED, result);
-    ASSERT_IS_NULL(pull_correlation_id);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_OK, result);
+    ASSERT_IS_NOT_NULL(pull_correlation_id);
     ASSERT_IS_NOT_NULL(push_correlation_id);
+
+    TEST_CALLBACK_CONTEXT* test_context = context;
     channel_close(test_context->channel);
-    int32_t original_value = interlocked_exchange(&test_context->trigger, push_abandoned);
+
+    int32_t original_value = interlocked_exchange(&test_context->trigger, push_success);
+    ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
+    wake_by_address_single(&test_context->trigger);
+}
+
+static void test_on_data_available_attempts_to_close_channel(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
+{
+    ASSERT_IS_NOT_NULL(context);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_OK, result);
+    ASSERT_IS_NOT_NULL(pull_correlation_id);
+    ASSERT_IS_NOT_NULL(push_correlation_id);
+    ASSERT_IS_NOT_NULL(data);
+    ASSERT_ARE_EQUAL(void_ptr, test_data, data->ptr);
+
+    TEST_CALLBACK_CONTEXT* test_context = context;
+    channel_close(test_context->channel);
+
+    int32_t original_value = interlocked_exchange(&test_context->trigger, pull_success);
     ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
     wake_by_address_single(&test_context->trigger);
 }
@@ -401,7 +420,7 @@ TEST_FUNCTION(test_pull_and_cancel)
     async_op_cancel(async_op);
 
     //wait for callback to execute
-    InterlockedHL_WaitForNotValue(&context, TEST_ORIGINAL_VALUE, UINT32_MAX);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&context, TEST_ORIGINAL_VALUE, UINT32_MAX));
 
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
@@ -429,7 +448,7 @@ TEST_FUNCTION(test_push_and_cancel)
     async_op_cancel(async_op);
 
     //wait for callback to execute
-    InterlockedHL_WaitForNotValue(&context, TEST_ORIGINAL_VALUE, UINT32_MAX);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&context, TEST_ORIGINAL_VALUE, UINT32_MAX));
 
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
@@ -463,7 +482,7 @@ DISABLED_TEST_FUNCTION(test_cancel_after_close)
     async_op_cancel(async_op);
 
     //wait for callback to execute
-    InterlockedHL_WaitForNotValue(&context, TEST_ORIGINAL_VALUE, UINT32_MAX);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&context, TEST_ORIGINAL_VALUE, UINT32_MAX));
 
     /// assert
     ASSERT_ARE_EQUAL(int32_t, pull_abandoned, interlocked_add(&context, 0));
@@ -490,7 +509,7 @@ TEST_FUNCTION(test_pull_and_abandon)
     channel_close(channel);
 
     //wait for callback to execute
-    InterlockedHL_WaitForNotValue(&context, TEST_ORIGINAL_VALUE, UINT32_MAX);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&context, TEST_ORIGINAL_VALUE, UINT32_MAX));
 
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
@@ -517,7 +536,7 @@ TEST_FUNCTION(test_push_and_abandon)
     channel_close(channel);
 
     //wait for callback to execute
-    InterlockedHL_WaitForNotValue(&context, TEST_ORIGINAL_VALUE, UINT32_MAX);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&context, TEST_ORIGINAL_VALUE, UINT32_MAX));
 
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
@@ -550,8 +569,8 @@ TEST_FUNCTION(test_channel_reopen_and_push_pull)
     ASSERT_IS_NOT_NULL(push_op);
 
     //wait for callback to execute
-    InterlockedHL_WaitForNotValue(&pull_context, TEST_ORIGINAL_VALUE, UINT32_MAX);
-    InterlockedHL_WaitForNotValue(&push_context, TEST_ORIGINAL_VALUE, UINT32_MAX);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&pull_context, TEST_ORIGINAL_VALUE, UINT32_MAX));
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&push_context, TEST_ORIGINAL_VALUE, UINT32_MAX));
 
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
@@ -578,8 +597,8 @@ TEST_FUNCTION(test_channel_reopen_and_push_pull)
     ASSERT_IS_NOT_NULL(push_op_2);
 
     //wait for callback to execute
-    InterlockedHL_WaitForNotValue(&pull_context_2, TEST_ORIGINAL_VALUE, UINT32_MAX);
-    InterlockedHL_WaitForNotValue(&push_context_2, TEST_ORIGINAL_VALUE, UINT32_MAX);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&pull_context_2, TEST_ORIGINAL_VALUE, UINT32_MAX));
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&push_context_2, TEST_ORIGINAL_VALUE, UINT32_MAX));
 
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result_2);
@@ -654,7 +673,7 @@ TEST_FUNCTION(test_channel_reopen_after_pull_cancel_and_push_cancel)
     async_op_cancel(pull_op);
 
     //wait for callback to execute
-    InterlockedHL_WaitForNotValue(&pull_context, TEST_ORIGINAL_VALUE, UINT32_MAX);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&pull_context, TEST_ORIGINAL_VALUE, UINT32_MAX));
 
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
@@ -674,7 +693,7 @@ TEST_FUNCTION(test_channel_reopen_after_pull_cancel_and_push_cancel)
     async_op_cancel(push_op);
 
     //wait for callback to execute
-    InterlockedHL_WaitForNotValue(&push_context, TEST_ORIGINAL_VALUE, UINT32_MAX);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&push_context, TEST_ORIGINAL_VALUE, UINT32_MAX));
 
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result);
@@ -707,8 +726,8 @@ TEST_FUNCTION(test_pull_and_then_push)
     ASSERT_IS_NOT_NULL(push_op);
 
     //wait for callback to execute
-    InterlockedHL_WaitForNotValue(&pull_context, TEST_ORIGINAL_VALUE, UINT32_MAX);
-    InterlockedHL_WaitForNotValue(&push_context, TEST_ORIGINAL_VALUE, UINT32_MAX);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&pull_context, TEST_ORIGINAL_VALUE, UINT32_MAX));
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&push_context, TEST_ORIGINAL_VALUE, UINT32_MAX));
 
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result);
@@ -743,8 +762,8 @@ TEST_FUNCTION(test_push_and_then_pull)
     ASSERT_IS_NOT_NULL(pull_op);
 
     //wait for callback to execute
-    InterlockedHL_WaitForNotValue(&pull_context, TEST_ORIGINAL_VALUE, UINT32_MAX);
-    InterlockedHL_WaitForNotValue(&push_context, TEST_ORIGINAL_VALUE, UINT32_MAX);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&pull_context, TEST_ORIGINAL_VALUE, UINT32_MAX));
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&push_context, TEST_ORIGINAL_VALUE, UINT32_MAX));
 
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result);
@@ -786,9 +805,9 @@ TEST_FUNCTION(test_pull_after_pull)
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 
     //wait for callback to execute
-    InterlockedHL_WaitForNotValue(&pull_context_1, TEST_ORIGINAL_VALUE, UINT32_MAX);
-    InterlockedHL_WaitForNotValue(&pull_context_2, TEST_ORIGINAL_VALUE, UINT32_MAX);
-    InterlockedHL_WaitForNotValue(&push_context, TEST_ORIGINAL_VALUE, UINT32_MAX);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&pull_context_1, TEST_ORIGINAL_VALUE, UINT32_MAX));
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&pull_context_2, TEST_ORIGINAL_VALUE, UINT32_MAX));
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&push_context, TEST_ORIGINAL_VALUE, UINT32_MAX));
 
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, pull_result1);
@@ -834,9 +853,9 @@ TEST_FUNCTION(test_push_after_push)
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 
     //wait for callback to execute
-    InterlockedHL_WaitForNotValue(&push_context_1, TEST_ORIGINAL_VALUE, UINT32_MAX);
-    InterlockedHL_WaitForNotValue(&push_context_2, TEST_ORIGINAL_VALUE, UINT32_MAX);
-    InterlockedHL_WaitForNotValue(&pull_context, TEST_ORIGINAL_VALUE, UINT32_MAX);
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&push_context_1, TEST_ORIGINAL_VALUE, UINT32_MAX));
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&push_context_2, TEST_ORIGINAL_VALUE, UINT32_MAX));
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&pull_context, TEST_ORIGINAL_VALUE, UINT32_MAX));
 
     /// assert
     ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, push_result1);
@@ -927,30 +946,79 @@ TEST_FUNCTION(test_close_does_not_get_stuck)
     }
 }
 
-TEST_FUNCTION(channel_close_does_not_deadlock_if_called_from_callback)
+/*
+ * This test verifies that channel_close does not deadlock if called from within a push callback.
+ */
+TEST_FUNCTION(channel_close_does_not_deadlock_if_called_from_push_callback)
 {
     //arrange
     THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
     ASSERT_IS_NOT_NULL(channel);
     ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
 
-    TEST_CALLBACK_CONTEXT context;
-    (void)interlocked_exchange(&context.trigger, TEST_ORIGINAL_VALUE);
-    THANDLE_INITIALIZE(CHANNEL)(&context.channel, channel);
+    TEST_CALLBACK_CONTEXT push_context;
+    (void)interlocked_exchange(&push_context.trigger, TEST_ORIGINAL_VALUE);
+    THANDLE_INITIALIZE(CHANNEL)(&push_context.channel, channel);
+
+    volatile_atomic int32_t pull_context;
+    (void)interlocked_exchange(&pull_context, TEST_ORIGINAL_VALUE);
 
     THANDLE(ASYNC_OP) async_op = NULL;
-    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_push(channel, g.g_push_correlation_id, g.g_data, test_on_data_consumed_attempts_to_close_channel, (void*)&context, &async_op));
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_push(channel, g.g_push_correlation_id, g.g_data, test_on_data_consumed_attempts_to_close_channel, (void*)&push_context, &async_op));
     THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
 
     //act
-    channel_close(channel);
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_pull(channel, g.g_pull_correlation_id, test_on_data_available_cb_success, (void*)&pull_context, &async_op));
+    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
 
     //assert
-    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&context.trigger, TEST_ORIGINAL_VALUE, UINT32_MAX));
-    ASSERT_ARE_EQUAL(int32_t, push_abandoned, interlocked_add(&context.trigger, 0));
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&push_context.trigger, TEST_ORIGINAL_VALUE, UINT32_MAX));
+    ASSERT_ARE_EQUAL(int32_t, push_success, interlocked_add(&push_context.trigger, 0));
+
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&pull_context, TEST_ORIGINAL_VALUE, UINT32_MAX));
+    ASSERT_ARE_EQUAL(int32_t, pull_success, interlocked_add(&pull_context, 0));
 
     //cleanup
-    THANDLE_ASSIGN(CHANNEL)(&context.channel, NULL);
+    THANDLE_ASSIGN(CHANNEL)(&push_context.channel, NULL);
+
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/*
+ * This test verifies that channel_close does not deadlock if called from within a pull callback.
+ */
+TEST_FUNCTION(channel_close_does_not_deadlock_if_called_from_pull_callback)
+{
+    //arrange
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
+
+    TEST_CALLBACK_CONTEXT pull_context;
+    (void)interlocked_exchange(&pull_context.trigger, TEST_ORIGINAL_VALUE);
+    THANDLE_INITIALIZE(CHANNEL)(&pull_context.channel, channel);
+
+    volatile_atomic int32_t push_context;
+    (void)interlocked_exchange(&push_context, TEST_ORIGINAL_VALUE);
+
+    THANDLE(ASYNC_OP) async_op = NULL;
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_push(channel, g.g_push_correlation_id, g.g_data, test_on_data_consumed_cb_success, (void*)&push_context, &async_op));
+    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+
+    //act
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, channel_pull(channel, g.g_pull_correlation_id, test_on_data_available_attempts_to_close_channel, (void*)&pull_context, &async_op));
+    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+
+    //assert
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&pull_context.trigger, TEST_ORIGINAL_VALUE, UINT32_MAX));
+    ASSERT_ARE_EQUAL(int32_t, pull_success, interlocked_add(&pull_context.trigger, 0));
+
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&push_context, TEST_ORIGINAL_VALUE, UINT32_MAX));
+    ASSERT_ARE_EQUAL(int32_t, push_success, interlocked_add(&push_context, 0));
+
+    //cleanup
+    THANDLE_ASSIGN(CHANNEL)(&pull_context.channel, NULL);
+
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
 }
 
