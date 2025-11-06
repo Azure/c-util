@@ -10,11 +10,9 @@
 
 typedef struct TEST_REFCOUNTED_TAG* TEST_REFCOUNTED_HANDLE;
 
-MOCKABLE_INTERFACE(test_refcounted,
-    FUNCTION(, TEST_REFCOUNTED_HANDLE, test_refcounted_create),
-    FUNCTION(, void, test_refcounted_inc_ref, TEST_REFCOUNTED_HANDLE, test_refcounted),
-    FUNCTION(, void, test_refcounted_dec_ref, TEST_REFCOUNTED_HANDLE, test_refcounted)
-);
+MOCKABLE_FUNCTION(, TEST_REFCOUNTED_HANDLE, test_refcounted_create);
+MOCKABLE_FUNCTION(, void, test_refcounted_inc_ref, TEST_REFCOUNTED_HANDLE, test_refcounted);
+MOCKABLE_FUNCTION(, void, test_refcounted_dec_ref, TEST_REFCOUNTED_HANDLE, test_refcounted);
 
 
 

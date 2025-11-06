@@ -56,49 +56,47 @@ MU_DEFINE_ENUM(CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_TO_FIXED_SIZ
 
 MU_DEFINE_ENUM(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_VALUES)
 
-MOCKABLE_INTERFACE(constbuffer,
-    /*this creates a new constbuffer from a memory area*/
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, uint32_t, size),
+/*this creates a new constbuffer from a memory area*/
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, uint32_t, size);
 
-    /*this creates a new constbuffer from an existing BUFFER_HANDLE*/
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer),
+/*this creates a new constbuffer from an existing BUFFER_HANDLE*/
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer);
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, uint32_t, size),
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, uint32_t, size);
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext),
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext);
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size),
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size);
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size),
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size);
 
-    FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle),
+MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle);
 
-    FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHandle),
+MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHandle);
 
-    FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle),
+MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle);
 
-    FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right),
+MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right);
 
-    FUNCTION(, uint32_t, CONSTBUFFER_get_serialization_size, CONSTBUFFER_HANDLE, source),
+MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_get_serialization_size, CONSTBUFFER_HANDLE, source);
 
-    FUNCTION(, unsigned char*, CONSTBUFFER_to_buffer, CONSTBUFFER_HANDLE, source, CONSTBUFFER_to_buffer_alloc, alloc, void*, alloc_context, uint32_t*, serialized_size),
+MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_to_buffer, CONSTBUFFER_HANDLE, source, CONSTBUFFER_to_buffer_alloc, alloc, void*, alloc_context, uint32_t*, serialized_size);
 
-    FUNCTION(, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_to_fixed_size_buffer, CONSTBUFFER_HANDLE, source, unsigned char*, destination, uint32_t, destination_size, uint32_t*, serialized_size),
+MOCKABLE_FUNCTION(, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_to_fixed_size_buffer, CONSTBUFFER_HANDLE, source, unsigned char*, destination, uint32_t, destination_size, uint32_t*, serialized_size);
 
-    FUNCTION(, CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_from_buffer, const unsigned char*, source, uint32_t, size, uint32_t*, consumed, CONSTBUFFER_HANDLE*, destination),
+MOCKABLE_FUNCTION(, CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_from_buffer, const unsigned char*, source, uint32_t, size, uint32_t*, consumed, CONSTBUFFER_HANDLE*, destination);
 
-    FUNCTION(, CONSTBUFFER_WRITABLE_HANDLE, CONSTBUFFER_CreateWritableHandle, uint32_t, size),
+MOCKABLE_FUNCTION(, CONSTBUFFER_WRITABLE_HANDLE, CONSTBUFFER_CreateWritableHandle, uint32_t, size);
 
-    FUNCTION(, unsigned char*, CONSTBUFFER_GetWritableBuffer, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle),
+MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_GetWritableBuffer, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle);
 
-    FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_SealWritableHandle, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle),
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_SealWritableHandle, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle);
 
-    FUNCTION(, void, CONSTBUFFER_WritableHandleIncRef, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle),
+MOCKABLE_FUNCTION(, void, CONSTBUFFER_WritableHandleIncRef, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle);
 
-    FUNCTION(, void, CONSTBUFFER_WritableHandleDecRef, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle),
+MOCKABLE_FUNCTION(, void, CONSTBUFFER_WritableHandleDecRef, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle);
 
-    FUNCTION(, uint32_t, CONSTBUFFER_GetWritableBufferSize, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle)
-)
+MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_GetWritableBufferSize, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle);
 
 #ifdef __cplusplus
 }
