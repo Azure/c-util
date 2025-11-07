@@ -57,7 +57,7 @@ typedef struct ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_TAG
     ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE handle;
 } ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT;
 
-IMPLEMENT_MOCKABLE_FUNCTION(, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, ml_async_op_module_with_retries_create, EXECUTION_ENGINE_HANDLE, execution_engine, COMMON_OP_MODULE_INTERFACE_HANDLE, ll_async_op_module)
+ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE ml_async_op_module_with_retries_create(EXECUTION_ENGINE_HANDLE execution_engine, COMMON_OP_MODULE_INTERFACE_HANDLE ll_async_op_module)
 {
     ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE result;
 
@@ -109,7 +109,7 @@ static void ml_async_op_module_with_retries_close_internal(ML_ASYNC_OP_MODULE_WI
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, ml_async_op_module_with_retries_destroy, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle)
+void ml_async_op_module_with_retries_destroy(ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE handle)
 {
     if (handle == NULL)
     {
@@ -125,7 +125,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, ml_async_op_module_with_retries_destroy, ML_
 }
 
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_open, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle)
+int ml_async_op_module_with_retries_open(ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE handle)
 {
     int result;
     if (handle == NULL)
@@ -158,7 +158,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_open, ML_ASYN
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, ml_async_op_module_with_retries_close, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle)
+void ml_async_op_module_with_retries_close(ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE handle)
 {
     if (handle == NULL)
     {
@@ -346,7 +346,7 @@ static void ml_async_op_module_with_retries_on_ll_complete_do_retry(void* contex
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_with_retries_execute_async, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context)
+int ml_async_op_module_with_retries_execute_async(ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE handle, uint32_t complete_in_ms, THANDLE(ASYNC_OP)* async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback, void* context)
 {
     int result;
     if (
@@ -463,7 +463,7 @@ static int ml_async_op_module_with_retries_execute_async_interface_adapter(void*
     return ml_async_op_module_with_retries_execute_async(context, complete_in_ms, async_op_out, callback, context_callback);
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, COMMON_ASYNC_OP_MODULE_INTERFACE, ml_async_op_module_with_retries_get_interface, ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE, handle)
+COMMON_ASYNC_OP_MODULE_INTERFACE ml_async_op_module_with_retries_get_interface(ML_ASYNC_OP_MODULE_WITH_RETRIES_HANDLE handle)
 {
     COMMON_ASYNC_OP_MODULE_INTERFACE result = (COMMON_ASYNC_OP_MODULE_INTERFACE)
     {

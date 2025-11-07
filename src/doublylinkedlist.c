@@ -129,7 +129,7 @@ void DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY entry)
     listHead->Flink = entry;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, DList_ForEach, PDLIST_ENTRY, listHead, DLIST_ACTION_FUNCTION, actionFunction, void*, actionContext)
+int DList_ForEach(PDLIST_ENTRY listHead, DLIST_ACTION_FUNCTION actionFunction, void* actionContext)
 {
     int result;
     /*Codes_SRS_DLIST_43_001: [If listHead is NULL, DList_ForEach shall fail and return a non - zero value.]*/

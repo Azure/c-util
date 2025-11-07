@@ -188,7 +188,7 @@ THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateFromBuffer(BUFFER_HANDLE buffer)
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateWithMoveMemory, unsigned char*, source, uint32_t, size)
+THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateWithMoveMemory(unsigned char* source, uint32_t size)
 {
     THANDLE(CONSTBUFFER) result = NULL;
 
@@ -222,7 +222,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateWi
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_THANDLE_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext)
+THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateWithCustomFree(const unsigned char* source, uint32_t size, CONSTBUFFER_THANDLE_CUSTOM_FREE_FUNC customFreeFunc, void* customFreeFuncContext)
 {
     THANDLE(CONSTBUFFER) result = NULL;
 
@@ -269,7 +269,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateWi
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy, THANDLE(CONSTBUFFER), handle, uint32_t, offset, uint32_t, size)
+THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy(THANDLE(CONSTBUFFER) handle, uint32_t offset, uint32_t size)
 {
     THANDLE(CONSTBUFFER) result = NULL;
 
@@ -315,7 +315,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFr
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFromOffsetAndSize, THANDLE(CONSTBUFFER), handle, uint32_t, offset, uint32_t, size)
+THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_CreateFromOffsetAndSize(THANDLE(CONSTBUFFER) handle, uint32_t offset, uint32_t size)
 {
     THANDLE(CONSTBUFFER) result = NULL;
 
@@ -390,7 +390,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_CreateFr
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER_CONTENT*, CONSTBUFFER_THANDLE_GetContent, THANDLE(CONSTBUFFER), constbufferHandle)
+const CONSTBUFFER_CONTENT* CONSTBUFFER_THANDLE_GetContent(THANDLE(CONSTBUFFER) constbufferHandle)
 {
     const CONSTBUFFER_CONTENT* result;
     if (constbufferHandle == NULL)
@@ -408,7 +408,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER_CONTENT*, CONSTBUFFER_THANDLE_Ge
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, bool, CONSTBUFFER_THANDLE_contain_same, THANDLE(CONSTBUFFER), left, THANDLE(CONSTBUFFER), right)
+bool CONSTBUFFER_THANDLE_contain_same(THANDLE(CONSTBUFFER) left, THANDLE(CONSTBUFFER) right)
 {
     bool result;
     if (left == NULL)
@@ -458,7 +458,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, bool, CONSTBUFFER_THANDLE_contain_same, THANDLE(CO
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_THANDLE_get_serialization_size, THANDLE(CONSTBUFFER), source)
+uint32_t CONSTBUFFER_THANDLE_get_serialization_size(THANDLE(CONSTBUFFER) source)
 {
     uint32_t result;
     /*Codes_SRS_CONSTBUFFER_THANDLE_88_057: [ If source is NULL then CONSTBUFFER_THANDLE_get_serialization_size shall fail and return 0. ]*/
@@ -494,7 +494,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_THANDLE_get_serialization_si
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_THANDLE_to_buffer, THANDLE(CONSTBUFFER), source, CONSTBUFFER_THANDLE_to_buffer_alloc, alloc, void*, alloc_context, uint32_t*, serialized_size)
+unsigned char* CONSTBUFFER_THANDLE_to_buffer(THANDLE(CONSTBUFFER) source, CONSTBUFFER_THANDLE_to_buffer_alloc alloc, void* alloc_context, uint32_t* serialized_size)
 {
     unsigned char* result;
     if (
@@ -567,7 +567,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_THANDLE_to_buffer, THA
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_THANDLE_to_fixed_size_buffer, THANDLE(CONSTBUFFER), source, unsigned char*, destination, uint32_t, destination_size, uint32_t*, serialized_size)
+CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT CONSTBUFFER_THANDLE_to_fixed_size_buffer(THANDLE(CONSTBUFFER) source, unsigned char* destination, uint32_t destination_size, uint32_t* serialized_size)
 {
     CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT result;
 
@@ -620,7 +620,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT, C
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFER_THANDLE_from_buffer, const unsigned char*, source, uint32_t, size, uint32_t*, consumed, THANDLE(CONSTBUFFER)*, destination)
+CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT CONSTBUFFER_THANDLE_from_buffer(const unsigned char* source, uint32_t size, uint32_t* consumed, THANDLE(CONSTBUFFER)* destination)
 {
     CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT result;
 
@@ -695,7 +695,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_THANDLE_FROM_BUFFER_RESULT, CONSTBUFFE
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), CONSTBUFFER_THANDLE_CreateWritableHandle, uint32_t, size)
+THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA) CONSTBUFFER_THANDLE_CreateWritableHandle(uint32_t size)
 {
     THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA) result = NULL;
 
@@ -731,7 +731,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA),
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_THANDLE_GetWritableBuffer, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), constbufferWritableHandle)
+unsigned char* CONSTBUFFER_THANDLE_GetWritableBuffer(THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA) constbufferWritableHandle)
 {
     unsigned char* result;
     
@@ -753,7 +753,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_THANDLE_GetWritableBuf
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_SealWritableHandle, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), constbufferWritableHandle)
+THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_SealWritableHandle(THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA) constbufferWritableHandle)
 {
     THANDLE(CONSTBUFFER) result = NULL;
     
@@ -785,7 +785,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CONSTBUFFER), CONSTBUFFER_THANDLE_SealWrit
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_THANDLE_GetWritableBufferSize, THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA), constbufferWritableHandle)
+uint32_t CONSTBUFFER_THANDLE_GetWritableBufferSize(THANDLE(CONSTBUFFER_THANDLE_WRITABLE_HANDLE_DATA) constbufferWritableHandle)
 {
     uint32_t result;
     

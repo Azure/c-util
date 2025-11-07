@@ -63,7 +63,7 @@ typedef struct LL_ASYNC_OP_MODULE_REAL_CANCEL_EXECUTE_CONTEXT_TAG
     LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle;
 } LL_ASYNC_OP_MODULE_REAL_CANCEL_EXECUTE_CONTEXT;
 
-IMPLEMENT_MOCKABLE_FUNCTION(, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, ll_async_op_module_real_cancel_create, EXECUTION_ENGINE_HANDLE, execution_engine)
+LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE ll_async_op_module_real_cancel_create(EXECUTION_ENGINE_HANDLE execution_engine)
 {
     LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE result;
 
@@ -125,7 +125,7 @@ static void ll_async_op_module_real_cancel_close_internal(LL_ASYNC_OP_MODULE_REA
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_real_cancel_destroy, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle)
+void ll_async_op_module_real_cancel_destroy(LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle)
 {
     if (handle == NULL)
     {
@@ -149,7 +149,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_real_cancel_destroy, LL_A
 }
 
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, ll_async_op_module_real_cancel_open, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle)
+int ll_async_op_module_real_cancel_open(LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle)
 {
     int result;
     if (handle == NULL)
@@ -182,7 +182,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ll_async_op_module_real_cancel_open, LL_ASYNC
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_real_cancel_close, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle)
+void ll_async_op_module_real_cancel_close(LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle)
 {
     if (handle == NULL)
     {
@@ -319,7 +319,7 @@ static int call_underlying_async(LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle, T
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, ll_async_op_module_real_cancel_execute_async, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context)
+int ll_async_op_module_real_cancel_execute_async(LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle, uint32_t complete_in_ms, THANDLE(ASYNC_OP)* async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback, void* context)
 {
     int result;
     if (
@@ -389,7 +389,7 @@ all_ok:
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_real_cancel_next_call_completes_synchronously, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle, bool, is_synchronous)
+void ll_async_op_module_real_cancel_next_call_completes_synchronously(LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle, bool is_synchronous)
 {
     if (handle == NULL)
     {
@@ -402,7 +402,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_real_cancel_next_call_com
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_real_cancel_set_report_retry_result_count, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle, uint32_t, retry_result_count)
+void ll_async_op_module_real_cancel_set_report_retry_result_count(LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle, uint32_t retry_result_count)
 {
     if (handle == NULL)
     {
@@ -415,7 +415,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_real_cancel_set_report_re
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_real_cancel_set_next_async_result, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle, COMMON_ASYNC_OP_MODULE_RESULT, next_result)
+void ll_async_op_module_real_cancel_set_next_async_result(LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle, COMMON_ASYNC_OP_MODULE_RESULT next_result)
 {
     if (handle == NULL)
     {
@@ -428,7 +428,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, ll_async_op_module_real_cancel_set_next_asyn
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, ll_async_op_module_real_cancel_add_result_settings_to_queue, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle, bool, is_synchronous, COMMON_ASYNC_OP_MODULE_RESULT, next_result)
+int ll_async_op_module_real_cancel_add_result_settings_to_queue(LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle, bool is_synchronous, COMMON_ASYNC_OP_MODULE_RESULT next_result)
 {
     int result;
 
@@ -483,7 +483,7 @@ static int ll_async_op_module_real_cancel_execute_async_interface_adapter(void* 
     return ll_async_op_module_real_cancel_execute_async(context, complete_in_ms, async_op_out, callback, context_callback);
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, COMMON_ASYNC_OP_MODULE_INTERFACE, ll_async_op_module_real_cancel_get_interface, LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE, handle)
+COMMON_ASYNC_OP_MODULE_INTERFACE ll_async_op_module_real_cancel_get_interface(LL_ASYNC_OP_MODULE_REAL_CANCEL_HANDLE handle)
 {
     COMMON_ASYNC_OP_MODULE_INTERFACE result = (COMMON_ASYNC_OP_MODULE_INTERFACE)
     {

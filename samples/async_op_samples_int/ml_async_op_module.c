@@ -48,7 +48,7 @@ typedef struct ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT_TAG
     ML_ASYNC_OP_MODULE_HANDLE handle;
 } ML_ASYNC_OP_MODULE_EXECUTE_CONTEXT;
 
-IMPLEMENT_MOCKABLE_FUNCTION(, ML_ASYNC_OP_MODULE_HANDLE, ml_async_op_module_create, EXECUTION_ENGINE_HANDLE, execution_engine, COMMON_OP_MODULE_INTERFACE_HANDLE, ll_async_op_module)
+ML_ASYNC_OP_MODULE_HANDLE ml_async_op_module_create(EXECUTION_ENGINE_HANDLE execution_engine, COMMON_OP_MODULE_INTERFACE_HANDLE ll_async_op_module)
 {
     ML_ASYNC_OP_MODULE_HANDLE result;
 
@@ -100,7 +100,7 @@ static void ml_async_op_module_close_internal(ML_ASYNC_OP_MODULE_HANDLE handle)
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, ml_async_op_module_destroy, ML_ASYNC_OP_MODULE_HANDLE, handle)
+void ml_async_op_module_destroy(ML_ASYNC_OP_MODULE_HANDLE handle)
 {
     if (handle == NULL)
     {
@@ -116,7 +116,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, ml_async_op_module_destroy, ML_ASYNC_OP_MODU
 }
 
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_open, ML_ASYNC_OP_MODULE_HANDLE, handle)
+int ml_async_op_module_open(ML_ASYNC_OP_MODULE_HANDLE handle)
 {
     int result;
     if (handle == NULL)
@@ -149,7 +149,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_open, ML_ASYNC_OP_MODULE_H
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, ml_async_op_module_close, ML_ASYNC_OP_MODULE_HANDLE, handle)
+void ml_async_op_module_close(ML_ASYNC_OP_MODULE_HANDLE handle)
 {
     if (handle == NULL)
     {
@@ -222,7 +222,7 @@ static void ml_async_op_module_on_ll_complete(void* context, COMMON_ASYNC_OP_MOD
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, ml_async_op_module_execute_async, ML_ASYNC_OP_MODULE_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context)
+int ml_async_op_module_execute_async(ML_ASYNC_OP_MODULE_HANDLE handle, uint32_t complete_in_ms, THANDLE(ASYNC_OP)* async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback, void* context)
 {
     int result;
     if (
@@ -319,7 +319,7 @@ static int ml_async_op_module_execute_async_interface_adapter(void* context, uin
     return ml_async_op_module_execute_async(context, complete_in_ms, async_op_out, callback, context_callback);
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, COMMON_ASYNC_OP_MODULE_INTERFACE, ml_async_op_module_get_interface, ML_ASYNC_OP_MODULE_HANDLE, handle)
+COMMON_ASYNC_OP_MODULE_INTERFACE ml_async_op_module_get_interface(ML_ASYNC_OP_MODULE_HANDLE handle)
 {
     COMMON_ASYNC_OP_MODULE_INTERFACE result = (COMMON_ASYNC_OP_MODULE_INTERFACE)
     {

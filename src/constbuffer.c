@@ -111,7 +111,7 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
     return (CONSTBUFFER_HANDLE)result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, uint32_t, size)
+CONSTBUFFER_HANDLE CONSTBUFFER_Create(const unsigned char* source, uint32_t size)
 {
     CONSTBUFFER_HANDLE result;
     /*Codes_SRS_CONSTBUFFER_02_001: [If source is NULL and size is different than 0 then CONSTBUFFER_Create shall fail and return NULL.]*/
@@ -131,7 +131,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsi
 }
 
 /*this creates a new constbuffer from an existing BUFFER_HANDLE*/
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer)
+CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer)
 {
     CONSTBUFFER_HANDLE result;
     /*Codes_SRS_CONSTBUFFER_02_006: [If buffer is NULL then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.]*/
@@ -149,7 +149,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, 
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, uint32_t, size)
+CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithMoveMemory(unsigned char* source, uint32_t size)
 {
     CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA* result;
 
@@ -183,7 +183,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemo
     return (CONSTBUFFER_HANDLE)result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, uint32_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext)
+CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithCustomFree(const unsigned char* source, uint32_t size, CONSTBUFFER_CUSTOM_FREE_FUNC customFreeFunc, void* customFreeFuncContext)
 {
     CONSTBUFFER_HANDLE_WITH_CUSTOM_FREE_DATA* result;
 
@@ -228,7 +228,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFr
     return (CONSTBUFFER_HANDLE)result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size)
+CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromOffsetAndSize(CONSTBUFFER_HANDLE handle, uint32_t offset, uint32_t size)
 {
     CONSTBUFFER_HANDLE_FROM_OFFSET_AND_SIZE_DATA* result;
 
@@ -282,7 +282,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAn
     return (CONSTBUFFER_HANDLE)result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSizeWithCopy, CONSTBUFFER_HANDLE, handle, uint32_t, offset, uint32_t, size)
+CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromOffsetAndSizeWithCopy(CONSTBUFFER_HANDLE handle, uint32_t offset, uint32_t size)
 {
     CONSTBUFFER_HANDLE result;
 
@@ -318,7 +318,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAn
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle)
+void CONSTBUFFER_IncRef(CONSTBUFFER_HANDLE constbufferHandle)
 {
     if (constbufferHandle == NULL)
     {
@@ -332,7 +332,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, cons
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle)
+const CONSTBUFFER* CONSTBUFFER_GetContent(CONSTBUFFER_HANDLE constbufferHandle)
 {
     const CONSTBUFFER* result;
     if (constbufferHandle == NULL)
@@ -376,7 +376,7 @@ static void CONSTBUFFER_DecRef_internal(CONSTBUFFER_HANDLE constbufferHandle)
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHandle)
+void CONSTBUFFER_DecRef(CONSTBUFFER_HANDLE constbufferHandle)
 {
     if (constbufferHandle == NULL)
     {
@@ -390,7 +390,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, cons
 }
 
 
-IMPLEMENT_MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right)
+bool CONSTBUFFER_HANDLE_contain_same(CONSTBUFFER_HANDLE left, CONSTBUFFER_HANDLE right)
 {
     bool result;
     if (left == NULL)

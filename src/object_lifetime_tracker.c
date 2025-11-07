@@ -4,7 +4,6 @@
 #include <inttypes.h>
 
 #include "macro_utils/macro_utils.h"
-#include "umock_c/umock_c_prod.h"
 
 #include "c_logging/logger.h"
 
@@ -129,7 +128,7 @@ static int is_same_object(PDLIST_ENTRY listEntry, void* context, bool* continueP
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker_create, KEY_MATCH_FUNCTION, key_match_function, OBJECT_MATCH_FUNCTION, object_match_function)
+OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker_create(KEY_MATCH_FUNCTION key_match_function, OBJECT_MATCH_FUNCTION object_match_function)
 {
     OBJECT_LIFETIME_TRACKER_HANDLE result;
     if (
@@ -178,7 +177,7 @@ all_ok:
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker)
+void object_lifetime_tracker_destroy(OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker)
 {
     /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_007: [If object_lifetime_tracker is NULL, object_lifetime_tracker_destroy shall return.]*/
     if (object_lifetime_tracker == NULL)
@@ -194,7 +193,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy, OBJECT_LIFE
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT, object_lifetime_tracker_register_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, DESTROY_OBJECT, destroy_object, const void*, destroy_context)
+OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT object_lifetime_tracker_register_object(OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker, const void* key, void* object, DESTROY_OBJECT destroy_object, const void* destroy_context)
 {
     OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_RESULT result;
     if (
@@ -325,7 +324,7 @@ all_ok:
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, object_lifetime_tracker_unregister_object, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object)
+OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT object_lifetime_tracker_unregister_object(OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker, const void* key, void* object)
 {
 
     OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT result;
@@ -407,7 +406,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, 
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy_all_objects_for_key, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key)
+void object_lifetime_tracker_destroy_all_objects_for_key(OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker, const void* key)
 {
     /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_033: [ If object_lifetime_tracker is NULL, object_lifetime_tracker_destroy_all_objects_for_key shall return. ]*/
     if (object_lifetime_tracker == NULL)
@@ -458,7 +457,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, object_lifetime_tracker_destroy_all_objects_
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_ACT_RESULT, object_lifetime_tracker_act, OBJECT_LIFETIME_TRACKER_HANDLE, object_lifetime_tracker, const void*, key, void*, object, OBJECT_LIFETIME_TRACKER_ACTION_FUNCTION, action_function, void*, context)
+OBJECT_LIFETIME_TRACKER_ACT_RESULT object_lifetime_tracker_act(OBJECT_LIFETIME_TRACKER_HANDLE object_lifetime_tracker, const void* key, void* object, OBJECT_LIFETIME_TRACKER_ACTION_FUNCTION action_function, void* context)
 {
    OBJECT_LIFETIME_TRACKER_ACT_RESULT result;
 

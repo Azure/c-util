@@ -146,7 +146,7 @@ void channel_close(THANDLE(CHANNEL) channel)
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CHANNEL), channel_create, THANDLE(PTR(LOG_CONTEXT_HANDLE)), log_context, THANDLE(THREADPOOL), threadpool)
+THANDLE(CHANNEL) channel_create(THANDLE(PTR(LOG_CONTEXT_HANDLE)) log_context, THANDLE(THREADPOOL) threadpool)
 {
     THANDLE(CHANNEL) result = NULL;
 
@@ -203,7 +203,7 @@ all_ok:
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, channel_open, THANDLE(CHANNEL), channel)
+int channel_open(THANDLE(CHANNEL) channel)
 {
     int result;
     /*Codes_SRS_CHANNEL_43_159: [channel_open shall call sm_open_begin.]*/
@@ -454,7 +454,7 @@ static int dequeue_operation(THANDLE(CHANNEL) channel, THANDLE(ASYNC_OP)* out_op
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, ON_DATA_AVAILABLE_CB, on_data_available_cb, void*, on_data_available_context, THANDLE(ASYNC_OP)*, out_op_pull)
+CHANNEL_RESULT channel_pull(THANDLE(CHANNEL) channel, THANDLE(RC_STRING) correlation_id, ON_DATA_AVAILABLE_CB on_data_available_cb, void* on_data_available_context, THANDLE(ASYNC_OP)* out_op_pull)
 {
     CHANNEL_RESULT result;
     CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
@@ -523,7 +523,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_pull, THANDLE(CHANNEL), ch
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CHANNEL_RESULT, channel_push, THANDLE(CHANNEL), channel, THANDLE(RC_STRING), correlation_id, THANDLE(RC_PTR), data, ON_DATA_CONSUMED_CB, on_data_consumed_cb, void*, on_data_consumed_context, THANDLE(ASYNC_OP)*, out_op_push)
+CHANNEL_RESULT channel_push(THANDLE(CHANNEL) channel, THANDLE(RC_STRING) correlation_id, THANDLE(RC_PTR) data, ON_DATA_CONSUMED_CB on_data_consumed_cb, void* on_data_consumed_context, THANDLE(ASYNC_OP)* out_op_push)
 {
     CHANNEL_RESULT result;
     CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);

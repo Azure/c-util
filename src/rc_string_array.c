@@ -15,7 +15,7 @@
 
 #include "c_util/rc_string_array.h"
 
-IMPLEMENT_MOCKABLE_FUNCTION(, RC_STRING_ARRAY*, rc_string_array_create, uint32_t, count)
+RC_STRING_ARRAY* rc_string_array_create(uint32_t count)
 {
     RC_STRING_ARRAY* result;
 
@@ -72,7 +72,7 @@ all_ok:
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, rc_string_array_destroy, RC_STRING_ARRAY*, rc_string_array)
+void rc_string_array_destroy(RC_STRING_ARRAY* rc_string_array)
 {
     if (rc_string_array == NULL)
     {

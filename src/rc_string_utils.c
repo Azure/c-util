@@ -16,7 +16,7 @@
 
 #include "c_util/rc_string_utils.h"
 
-IMPLEMENT_MOCKABLE_FUNCTION(, RC_STRING_ARRAY*, rc_string_utils_split_by_char, THANDLE(RC_STRING), str, char, delimiter)
+RC_STRING_ARRAY* rc_string_utils_split_by_char(THANDLE(RC_STRING) str, char delimiter)
 {
     RC_STRING_ARRAY* result;
 

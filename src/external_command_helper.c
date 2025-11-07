@@ -22,7 +22,7 @@ MU_DEFINE_ENUM_STRINGS(EXTERNAL_COMMAND_RESULT, EXTERNAL_COMMAND_RESULT_VALUES);
 
 #define COMMAND_OUTPUT_BUFFER_SIZE 2048
 
-IMPLEMENT_MOCKABLE_FUNCTION(, EXTERNAL_COMMAND_RESULT, external_command_helper_execute, const char*, command, RC_STRING_ARRAY**, lines, int*, return_code)
+EXTERNAL_COMMAND_RESULT external_command_helper_execute(const char* command, RC_STRING_ARRAY** lines, int* return_code)
 {
     EXTERNAL_COMMAND_RESULT result;
 
