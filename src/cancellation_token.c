@@ -59,7 +59,7 @@ static void cancellation_token_registration_dispose(CANCELLATION_TOKEN_REGISTRAT
     THANDLE_ASSIGN(CANCELLATION_TOKEN)(&registration->token, NULL);
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CANCELLATION_TOKEN), cancellation_token_create, bool, canceled)
+THANDLE(CANCELLATION_TOKEN) cancellation_token_create(bool canceled)
 {
     /*Codes_SRS_CANCELLATION_TOKEN_04_001: [ cancellation_token_create shall allocate memory for a THANDLE(CANCELLATION_TOKEN). ]*/
     THANDLE(CANCELLATION_TOKEN) result = NULL;
@@ -108,7 +108,7 @@ all_ok:
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, bool, cancellation_token_is_canceled, THANDLE(CANCELLATION_TOKEN), cancellation_token)
+bool cancellation_token_is_canceled(THANDLE(CANCELLATION_TOKEN) cancellation_token)
 {
     bool result;
 
@@ -137,7 +137,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, bool, cancellation_token_is_canceled, THANDLE(CANC
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CANCELLATION_TOKEN_REGISTRATION), cancellation_token_register_notify, THANDLE(CANCELLATION_TOKEN), cancellation_token, TCALL_DISPATCHER_TARGET_FUNC_TYPE_NAME(CANCELLATION_TOKEN_CANCEL_CALL), on_cancel, void*, context)
+THANDLE(CANCELLATION_TOKEN_REGISTRATION) cancellation_token_register_notify(THANDLE(CANCELLATION_TOKEN) cancellation_token, TCALL_DISPATCHER_TARGET_FUNC_TYPE_NAME(CANCELLATION_TOKEN_CANCEL_CALL) on_cancel, void* context)
 {
     THANDLE(CANCELLATION_TOKEN_REGISTRATION) result = NULL;
 
@@ -195,7 +195,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(CANCELLATION_TOKEN_REGISTRATION), cancella
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, cancellation_token_cancel, THANDLE(CANCELLATION_TOKEN), cancellation_token)
+int cancellation_token_cancel(THANDLE(CANCELLATION_TOKEN) cancellation_token)
 {
     int result;
 

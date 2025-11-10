@@ -60,7 +60,7 @@ typedef struct HL_ASYNC_OP_MODULE_CANCEL_ALL_EXECUTE_CONTEXT_TAG
     HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE handle;
 } HL_ASYNC_OP_MODULE_CANCEL_ALL_EXECUTE_CONTEXT;
 
-IMPLEMENT_MOCKABLE_FUNCTION(, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, hl_async_op_module_cancel_all_create, EXECUTION_ENGINE_HANDLE, execution_engine, COMMON_OP_MODULE_INTERFACE_HANDLE, ll_async_op_module)
+HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE hl_async_op_module_cancel_all_create(EXECUTION_ENGINE_HANDLE execution_engine, COMMON_OP_MODULE_INTERFACE_HANDLE ll_async_op_module)
 {
     HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE result;
 
@@ -159,7 +159,7 @@ static void hl_async_op_module_cancel_all_close_internal(HL_ASYNC_OP_MODULE_CANC
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, hl_async_op_module_cancel_all_destroy, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, handle)
+void hl_async_op_module_cancel_all_destroy(HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE handle)
 {
     if (handle == NULL)
     {
@@ -175,7 +175,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, hl_async_op_module_cancel_all_destroy, HL_AS
 }
 
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, hl_async_op_module_cancel_all_open, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, handle)
+int hl_async_op_module_cancel_all_open(HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE handle)
 {
     int result;
     if (handle == NULL)
@@ -209,7 +209,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, hl_async_op_module_cancel_all_open, HL_ASYNC_
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, hl_async_op_module_cancel_all_close, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, handle)
+void hl_async_op_module_cancel_all_close(HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE handle)
 {
     if (handle == NULL)
     {
@@ -297,7 +297,7 @@ static void hl_async_op_module_cancel_all_on_ml_complete(void* context, COMMON_A
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, hl_async_op_module_cancel_all_execute_async, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, handle, uint32_t, complete_in_ms, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context)
+int hl_async_op_module_cancel_all_execute_async(HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE handle, uint32_t complete_in_ms, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback, void* context)
 {
     int result;
     if (
@@ -425,7 +425,7 @@ static int hl_async_op_module_cancel_all_execute_async_interface_adapter(void* c
     return hl_async_op_module_cancel_all_execute_async(context, complete_in_ms, callback, context_callback);
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, COMMON_ASYNC_OP_MODULE_INTERFACE, hl_async_op_module_cancel_all_get_interface, HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE, handle)
+COMMON_ASYNC_OP_MODULE_INTERFACE hl_async_op_module_cancel_all_get_interface(HL_ASYNC_OP_MODULE_CANCEL_ALL_HANDLE handle)
 {
     COMMON_ASYNC_OP_MODULE_INTERFACE result = (COMMON_ASYNC_OP_MODULE_INTERFACE)
     {

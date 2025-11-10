@@ -57,7 +57,7 @@ static void watchdog_expired_callback(void* context)
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, WATCHDOG_HANDLE, watchdog_start, THANDLE(THREADPOOL), threadpool, uint32_t, timeout_ms, THANDLE(RC_STRING), message, WATCHDOG_EXPIRED_CALLBACK, callback, void*, context)
+WATCHDOG_HANDLE watchdog_start(THANDLE(THREADPOOL) threadpool, uint32_t timeout_ms, THANDLE(RC_STRING) message, WATCHDOG_EXPIRED_CALLBACK callback, void* context)
 {
     WATCHDOG_HANDLE result;
 
@@ -138,7 +138,7 @@ all_ok:
 }
 
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_reset, WATCHDOG_HANDLE, watchdog)
+void watchdog_reset(WATCHDOG_HANDLE watchdog)
 {
     if (watchdog == NULL)
     {
@@ -179,7 +179,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_reset, WATCHDOG_HANDLE, watchdog)
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_stop, WATCHDOG_HANDLE, watchdog)
+void watchdog_stop(WATCHDOG_HANDLE watchdog)
 {
     if (watchdog == NULL)
     {

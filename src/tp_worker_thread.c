@@ -40,7 +40,7 @@ typedef struct TP_WORKER_THREAD_TAG
 
 MU_DEFINE_ENUM_STRINGS(TP_WORKER_THREAD_SCHEDULE_PROCESS_RESULT, TP_WORKER_THREAD_SCHEDULE_PROCESS_RESULT_VALUES);
 
-IMPLEMENT_MOCKABLE_FUNCTION(, TP_WORKER_THREAD_HANDLE, tp_worker_thread_create, EXECUTION_ENGINE_HANDLE, execution_engine, TP_WORKER_THREAD_FUNC, worker_func, void*, worker_func_context)
+TP_WORKER_THREAD_HANDLE tp_worker_thread_create(EXECUTION_ENGINE_HANDLE execution_engine, TP_WORKER_THREAD_FUNC worker_func, void* worker_func_context)
 {
     TP_WORKER_THREAD_HANDLE result;
 
@@ -113,7 +113,7 @@ static void tp_worker_thread_close_internal(TP_WORKER_THREAD_HANDLE worker_threa
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, tp_worker_thread_destroy, TP_WORKER_THREAD_HANDLE, worker_thread)
+void tp_worker_thread_destroy(TP_WORKER_THREAD_HANDLE worker_thread)
 {
     if (worker_thread == NULL)
     {
@@ -173,7 +173,7 @@ static void tp_worker_on_threadpool_work(void* context)
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, tp_worker_thread_open, TP_WORKER_THREAD_HANDLE, worker_thread)
+int tp_worker_thread_open(TP_WORKER_THREAD_HANDLE worker_thread)
 {
     int result;
     if (
@@ -243,7 +243,7 @@ all_ok:
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, tp_worker_thread_close, TP_WORKER_THREAD_HANDLE, worker_thread)
+void tp_worker_thread_close(TP_WORKER_THREAD_HANDLE worker_thread)
 {
     if (worker_thread == NULL)
     {
@@ -257,7 +257,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, tp_worker_thread_close, TP_WORKER_THREAD_HAN
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, TP_WORKER_THREAD_SCHEDULE_PROCESS_RESULT, tp_worker_thread_schedule_process, TP_WORKER_THREAD_HANDLE, worker_thread)
+TP_WORKER_THREAD_SCHEDULE_PROCESS_RESULT tp_worker_thread_schedule_process(TP_WORKER_THREAD_HANDLE worker_thread)
 {
     TP_WORKER_THREAD_SCHEDULE_PROCESS_RESULT result;
     if (

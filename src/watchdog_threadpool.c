@@ -31,7 +31,7 @@ static WATCHDOG_THREADPOOL g_watchdog;
 static volatile_atomic int32_t g_watchdog_init_state = WATCHDOG_INIT_NOT_INIT;
 
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, watchdog_threadpool_init)
+int watchdog_threadpool_init(void)
 {
     int result;
 
@@ -83,7 +83,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, watchdog_threadpool_init)
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_threadpool_deinit)
+void watchdog_threadpool_deinit(void)
 {
     WATCHDOG_INIT_STATE state = interlocked_compare_exchange(&g_watchdog_init_state, WATCHDOG_INIT_DEINITIALIZING, WATCHDOG_INIT_OK);
     if (state != WATCHDOG_INIT_OK)
@@ -100,7 +100,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, watchdog_threadpool_deinit)
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(THREADPOOL), watchdog_threadpool_get)
+THANDLE(THREADPOOL) watchdog_threadpool_get(void)
 {
     THANDLE(THREADPOOL) result = NULL;
 

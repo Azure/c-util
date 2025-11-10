@@ -38,7 +38,7 @@ static void sliding_window_average_by_count_dispose(SLIDING_WINDOW_AVERAGE* cont
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(SLIDING_WINDOW_AVERAGE), sliding_window_average_by_count_create, int32_t, window_count)
+THANDLE(SLIDING_WINDOW_AVERAGE) sliding_window_average_by_count_create(int32_t window_count)
 {
     THANDLE(SLIDING_WINDOW_AVERAGE) handle = NULL;
     if (window_count < 1)
@@ -87,7 +87,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(SLIDING_WINDOW_AVERAGE), sliding_window_av
     return handle;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, sliding_window_average_by_count_add, THANDLE(SLIDING_WINDOW_AVERAGE), handle, int64_t, next_count)
+int sliding_window_average_by_count_add(THANDLE(SLIDING_WINDOW_AVERAGE) handle, int64_t next_count)
 {
     int result;
     if (handle == NULL)
@@ -136,7 +136,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, sliding_window_average_by_count_add, THANDLE(
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int,  sliding_window_average_by_count_get, THANDLE(SLIDING_WINDOW_AVERAGE), handle, double*, average)
+int sliding_window_average_by_count_get(THANDLE(SLIDING_WINDOW_AVERAGE) handle, double* average)
 {
     int result;
     if (

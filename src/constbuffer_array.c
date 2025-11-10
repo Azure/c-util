@@ -29,7 +29,7 @@ typedef struct CONSTBUFFER_ARRAY_HANDLE_DATA_TAG
 
 DEFINE_REFCOUNT_TYPE(CONSTBUFFER_ARRAY_HANDLE_DATA);
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create, const CONSTBUFFER_HANDLE*, buffers, uint32_t, buffer_count)
+CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create(const CONSTBUFFER_HANDLE* buffers, uint32_t buffer_count)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
 
@@ -77,7 +77,7 @@ all_ok:
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_empty)
+CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_empty(void)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
 
@@ -109,7 +109,7 @@ static void constbuffer_array_move_buffers_free(void* context)
     free(constbuffer_array_handle->buffers);
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_with_move_buffers, CONSTBUFFER_HANDLE*, buffers, uint32_t, buffer_count)
+CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_with_move_buffers(CONSTBUFFER_HANDLE* buffers, uint32_t buffer_count)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
 
@@ -149,7 +149,7 @@ static void constbuffer_array_buffer_index_and_count_free(void* context)
     constbuffer_array_dec_ref(constbuffer_array_handle);
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_buffer_index_and_count, CONSTBUFFER_ARRAY_HANDLE, original, uint32_t, start_buffer_index, uint32_t, buffer_count)
+CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_buffer_index_and_count(CONSTBUFFER_ARRAY_HANDLE original, uint32_t start_buffer_index, uint32_t buffer_count)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
 
@@ -197,7 +197,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_buffer_offset_and_count, CONSTBUFFER_ARRAY_HANDLE, original, uint32_t, start_buffer_index, uint32_t, buffer_count, uint32_t, start_buffer_offset, uint32_t, end_buffer_offset)
+CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_buffer_offset_and_count(CONSTBUFFER_ARRAY_HANDLE original, uint32_t start_buffer_index, uint32_t buffer_count, uint32_t start_buffer_offset, uint32_t end_buffer_offset)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
 
@@ -321,7 +321,7 @@ all_ok:
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_array_array, const CONSTBUFFER_ARRAY_HANDLE*, buffer_arrays, uint32_t, buffer_array_count)
+CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_array_array(const CONSTBUFFER_ARRAY_HANDLE* buffer_arrays, uint32_t buffer_array_count)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
 
@@ -417,7 +417,7 @@ allOk:;
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_add_front, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, CONSTBUFFER_HANDLE, constbuffer_handle)
+CONSTBUFFER_ARRAY_HANDLE constbuffer_array_add_front(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, CONSTBUFFER_HANDLE constbuffer_handle)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
     if (
@@ -475,7 +475,7 @@ allOk:;
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_front, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, CONSTBUFFER_HANDLE*, constbuffer_handle)
+CONSTBUFFER_ARRAY_HANDLE constbuffer_array_remove_front(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, CONSTBUFFER_HANDLE* constbuffer_handle)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
     if (
@@ -538,7 +538,7 @@ allOk:;
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_add_back, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, CONSTBUFFER_HANDLE, constbuffer_handle)
+CONSTBUFFER_ARRAY_HANDLE constbuffer_array_add_back(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, CONSTBUFFER_HANDLE constbuffer_handle)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
     if (
@@ -596,7 +596,7 @@ allOk:;
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_back, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, CONSTBUFFER_HANDLE*, constbuffer_handle)
+CONSTBUFFER_ARRAY_HANDLE constbuffer_array_remove_back(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, CONSTBUFFER_HANDLE* constbuffer_handle)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
     if (
@@ -659,7 +659,7 @@ allOk:;
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, constbuffer_array_get_buffer_count, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t*, buffer_count)
+int constbuffer_array_get_buffer_count(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, uint32_t* buffer_count)
 {
     int result;
 
@@ -685,7 +685,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, constbuffer_array_get_buffer_count, CONSTBUFF
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, constbuffer_array_get_buffer, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t, buffer_index)
+CONSTBUFFER_HANDLE constbuffer_array_get_buffer(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, uint32_t buffer_index)
 {
     CONSTBUFFER_HANDLE result;
 
@@ -715,7 +715,7 @@ all_ok:
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER*, constbuffer_array_get_buffer_content, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t, buffer_index)
+const CONSTBUFFER* constbuffer_array_get_buffer_content(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, uint32_t buffer_index)
 {
     const CONSTBUFFER* result;
     if (
@@ -738,7 +738,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER*, constbuffer_array_get_buffer_c
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, constbuffer_array_inc_ref, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle)
+void constbuffer_array_inc_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle)
 {
     if (constbuffer_array_handle == NULL)
     {
@@ -752,7 +752,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, constbuffer_array_inc_ref, CONSTBUFFER_ARRAY
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, constbuffer_array_dec_ref, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle)
+void constbuffer_array_dec_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle)
 {
     if (constbuffer_array_handle == NULL)
     {
@@ -784,7 +784,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, constbuffer_array_dec_ref, CONSTBUFFER_ARRAY
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, constbuffer_array_get_all_buffers_size, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t*, all_buffers_size)
+int constbuffer_array_get_all_buffers_size(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, uint32_t* all_buffers_size)
 {
     int result;
 
@@ -838,7 +838,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, constbuffer_array_get_all_buffers_size, CONST
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER_HANDLE*, constbuffer_array_get_const_buffer_handle_array, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle)
+const CONSTBUFFER_HANDLE* constbuffer_array_get_const_buffer_handle_array(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle)
 {
     const CONSTBUFFER_HANDLE* result;
 
@@ -857,7 +857,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER_HANDLE*, constbuffer_array_get_c
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_empty_buffers, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle)
+CONSTBUFFER_ARRAY_HANDLE constbuffer_array_remove_empty_buffers(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
 
@@ -937,7 +937,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, bool, CONSTBUFFER_ARRAY_HANDLE_contain_same, CONSTBUFFER_ARRAY_HANDLE, left, CONSTBUFFER_ARRAY_HANDLE, right)
+bool CONSTBUFFER_ARRAY_HANDLE_contain_same(CONSTBUFFER_ARRAY_HANDLE left, CONSTBUFFER_ARRAY_HANDLE right)
 {
     bool result;
     if (left == NULL)

@@ -48,7 +48,7 @@ typedef struct HL_ASYNC_OP_MODULE_EXECUTE_CONTEXT_TAG
     HL_ASYNC_OP_MODULE_HANDLE handle;
 } HL_ASYNC_OP_MODULE_EXECUTE_CONTEXT;
 
-IMPLEMENT_MOCKABLE_FUNCTION(, HL_ASYNC_OP_MODULE_HANDLE, hl_async_op_module_create, EXECUTION_ENGINE_HANDLE, execution_engine, COMMON_OP_MODULE_INTERFACE_HANDLE, ll_async_op_module)
+HL_ASYNC_OP_MODULE_HANDLE hl_async_op_module_create(EXECUTION_ENGINE_HANDLE execution_engine, COMMON_OP_MODULE_INTERFACE_HANDLE ll_async_op_module)
 {
     HL_ASYNC_OP_MODULE_HANDLE result;
 
@@ -100,7 +100,7 @@ static void hl_async_op_module_close_internal(HL_ASYNC_OP_MODULE_HANDLE handle)
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, hl_async_op_module_destroy, HL_ASYNC_OP_MODULE_HANDLE, handle)
+void hl_async_op_module_destroy(HL_ASYNC_OP_MODULE_HANDLE handle)
 {
     if (handle == NULL)
     {
@@ -116,7 +116,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, hl_async_op_module_destroy, HL_ASYNC_OP_MODU
 }
 
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, hl_async_op_module_open, HL_ASYNC_OP_MODULE_HANDLE, handle)
+int hl_async_op_module_open(HL_ASYNC_OP_MODULE_HANDLE handle)
 {
     int result;
     if (handle == NULL)
@@ -149,7 +149,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, hl_async_op_module_open, HL_ASYNC_OP_MODULE_H
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, void, hl_async_op_module_close, HL_ASYNC_OP_MODULE_HANDLE, handle)
+void hl_async_op_module_close(HL_ASYNC_OP_MODULE_HANDLE handle)
 {
     if (handle == NULL)
     {
@@ -221,7 +221,7 @@ static void hl_async_op_module_on_ml_complete(void* context, COMMON_ASYNC_OP_MOD
     }
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, int, hl_async_op_module_execute_async, HL_ASYNC_OP_MODULE_HANDLE, handle, uint32_t, complete_in_ms, THANDLE(ASYNC_OP)*, async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK, callback, void*, context)
+int hl_async_op_module_execute_async(HL_ASYNC_OP_MODULE_HANDLE handle, uint32_t complete_in_ms, THANDLE(ASYNC_OP)* async_op_out, COMMON_ASYNC_OP_MODULE_EXECUTE_CALLBACK callback, void* context)
 {
     int result;
     if (
@@ -318,7 +318,7 @@ static int hl_async_op_module_execute_async_interface_adapter(void* context, uin
     return hl_async_op_module_execute_async(context, complete_in_ms, async_op_out, callback, context_callback);
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, COMMON_ASYNC_OP_MODULE_INTERFACE, hl_async_op_module_get_interface, HL_ASYNC_OP_MODULE_HANDLE, handle)
+COMMON_ASYNC_OP_MODULE_INTERFACE hl_async_op_module_get_interface(HL_ASYNC_OP_MODULE_HANDLE handle)
 {
     COMMON_ASYNC_OP_MODULE_INTERFACE result = (COMMON_ASYNC_OP_MODULE_INTERFACE)
     {

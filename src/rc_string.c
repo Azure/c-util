@@ -103,7 +103,7 @@ static THANDLE(RC_STRING) rc_string_create_impl(const char* string)
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*, string)
+THANDLE(RC_STRING) rc_string_create(const char* string)
 {
     THANDLE(RC_STRING) result = NULL;
 
@@ -120,7 +120,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create, const char*,
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_vformat, const char*, format, va_list, va)
+THANDLE(RC_STRING) rc_string_create_with_vformat(const char* format, va_list va)
 {
     THANDLE(RC_STRING) result = NULL;
 
@@ -195,7 +195,7 @@ THANDLE(RC_STRING) rc_string_create_with_format_function(const char* format, ...
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_move_memory, const char*, string)
+THANDLE(RC_STRING) rc_string_create_with_move_memory(const char* string)
 {
     THANDLE(RC_STRING) result = NULL;
 
@@ -229,7 +229,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_move_mem
     return result;
 }
 
-IMPLEMENT_MOCKABLE_FUNCTION(, THANDLE(RC_STRING), rc_string_create_with_custom_free, const char*, string, RC_STRING_FREE_FUNC, free_func, void*, free_func_context)
+THANDLE(RC_STRING) rc_string_create_with_custom_free(const char* string, RC_STRING_FREE_FUNC free_func, void* free_func_context)
 {
     THANDLE(RC_STRING) result = NULL;
 
