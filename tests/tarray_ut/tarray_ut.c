@@ -72,7 +72,7 @@ TEST_FUNCTION_CLEANUP(cleans)
 
 /* TARRAY_CREATE(T) */
 
-/*Tests_SRS_TARRAY_02_011: [ TARRAY_CREATE(T) shall return what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(1, NULL, NULL) returns. ]*/
+/*Tests_SRS_TARRAY_02_011: [ TARRAY_CREATE(T) shall return what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(1, NULL) returns. ]*/
 TEST_FUNCTION(uint32_t_can_be_created)
 {
     ///arrange
@@ -132,7 +132,7 @@ TEST_FUNCTION(uint32_t_can_be_created_unhappy_path_2)
     ///clean
 }
 
-/*Tests_SRS_TARRAY_02_011: [ TARRAY_CREATE(T) shall return what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(1, NULL, NULL) returns. ]*/
+/*Tests_SRS_TARRAY_02_011: [ TARRAY_CREATE(T) shall return what TARRAY_CREATE_WITH_CAPACITY_AND_CLEANUP_INTERNAL(T)(1, NULL) returns. ]*/
 TEST_FUNCTION(TARRAY_of_THANDLE_can_be_created)
 {
     ///arrange
@@ -392,7 +392,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_with_same_capacity_succeeds)
     TARRAY_ASSIGN(uint32_t)(&arr, NULL);
 }
 
-/*Tests_SRS_TARRAY_02_007: [ TARRAY_ENSURE_CAPACITY(T) shall shall call realloc_2 to resize arr to the next multiple of 2 greater than or equal to capacity. ]*/
+/*Tests_SRS_TARRAY_02_007: [ TARRAY_ENSURE_CAPACITY(T) shall call realloc_2 to resize arr to the next multiple of 2 greater than or equal to capacity. ]*/
 TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_reallocs_succeeds)
 {
     ///arrange
@@ -416,7 +416,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_reallocs_succeeds)
     TARRAY_ASSIGN(uint32_t)(&arr, NULL);
 }
 
-/*Tests_SRS_TARRAY_02_007: [ TARRAY_ENSURE_CAPACITY(T) shall shall call realloc_2 to resize arr to the next multiple of 2 greater than or equal to capacity. ]*/
+/*Tests_SRS_TARRAY_02_007: [ TARRAY_ENSURE_CAPACITY(T) shall call realloc_2 to resize arr to the next multiple of 2 greater than or equal to capacity. ]*/
 TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_realloc_for_an_array_created_with_TARRAY_CREATE_WITH_CAPACITY_succeeds)
 {
     ///arrange
@@ -440,7 +440,7 @@ TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_realloc_for_an_array_created_with_TARRAY_CR
     TARRAY_ASSIGN(uint32_t)(&arr, NULL);
 }
 
-/*Tests_SRS_TARRAY_02_007: [ TARRAY_ENSURE_CAPACITY(T) shall shall call realloc_2 to resize arr to the next multiple of 2 greater than or equal to capacity. ]*/
+/*Tests_SRS_TARRAY_02_007: [ TARRAY_ENSURE_CAPACITY(T) shall call realloc_2 to resize arr to the next multiple of 2 greater than or equal to capacity. ]*/
 TEST_FUNCTION(TARRAY_ENSURE_CAPACITY_reallocs_does_not_realloc_when_size_is_exactly_power_of_2)
 {
     ///arrange

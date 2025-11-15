@@ -93,7 +93,7 @@ DList_InsertTailList(
 {
     PDLIST_ENTRY Blink;
 
-    /* Codes_SRS_DLIST_06_006: [DListInsertTailList shall place the DLIST_ENTRY at the end of the list defined by the listHead parameter.] */
+    /* Codes_SRS_DLIST_06_006: [DList_InsertTailList shall place the DLIST_ENTRY at the end of the list defined by the listHead parameter.] */
     Blink = ListHead->Blink;
     Entry->Flink = ListHead;
     Entry->Blink = Blink;
@@ -132,14 +132,14 @@ void DList_InsertHeadList(PDLIST_ENTRY listHead, PDLIST_ENTRY entry)
 int DList_ForEach(PDLIST_ENTRY listHead, DLIST_ACTION_FUNCTION actionFunction, void* actionContext)
 {
     int result;
-    /*Codes_SRS_DLIST_43_001: [If listHead is NULL, DList_ForEach shall fail and return a non - zero value.]*/
+    /*Codes_SRS_DLIST_43_001: [If listHead is NULL, DList_ForEach shall fail and return a non-zero value.]*/
     /*Codes_SRS_DLIST_43_002 : [If actionFunction is NULL, DList_ForEach shall fail and return a non - zero value.]*/
     if (
         listHead == NULL ||
         actionFunction == NULL
         )
     {
-        /*Codes_SRS_DLIST_43_012: [If there are any failures, DList_ForEach shall fail and return a non - zero value.]*/
+        /*Codes_SRS_DLIST_43_012: [If there are any failures, DList_ForEach shall fail and return a non-zero value.]*/
         LogError("Invalid args: PDLIST_ENTRY listHead=%p, DLIST_ACTION_FUNCTION actionFunction=%p, void* actionContext=%p", listHead, actionFunction, actionContext);
         result = MU_FAILURE;
     }
@@ -153,7 +153,7 @@ int DList_ForEach(PDLIST_ENTRY listHead, DLIST_ACTION_FUNCTION actionFunction, v
             /*Codes_SRS_DLIST_43_009: [DList_ForEach shall call actionFunction on each entry in the list defined by listHead along with actionContext.]*/
             if (actionFunction(entry, actionContext, &continueProcessing) != 0)
             {
-                /*Codes_SRS_DLIST_43_012: [If there are any failures, DList_ForEach shall fail and return a non - zero value.]*/
+                /*Codes_SRS_DLIST_43_012: [If there are any failures, DList_ForEach shall fail and return a non-zero value.]*/
                 LogError("failure in actionFunction(entry=%p, actionContext=%p, &continueProcessing=%p)", entry, actionContext, &continueProcessing);
                 result = MU_FAILURE;
                 goto end;

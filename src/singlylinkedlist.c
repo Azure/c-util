@@ -176,7 +176,7 @@ LIST_ITEM_HANDLE singlylinkedlist_get_head_item(SINGLYLINKEDLIST_HANDLE list)
         LIST_INSTANCE* list_instance = list;
 
         /* Codes_SRS_LIST_01_008: [singlylinkedlist_get_head_item shall return the head of the list.] */
-        /* Codes_SRS_LIST_01_010: [If the list is empty, singlylinkedlist_get_head_item_shall_return NULL.] */
+        /* Codes_SRS_LIST_01_010: [If the list is empty, list_get_head_item_shall_return NULL.] */
         result = list_instance->head;
     }
 

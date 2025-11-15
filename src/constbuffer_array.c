@@ -245,7 +245,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_buffer_offset_and_count(C
                 result->nBuffers = buffer_count;
                 result->custom_free = NULL;
 
-                /* Codes_SRS_CONSTBUFFER_ARRAY_07_013: [ If buffer_count is 1, constbuffer_array_create_from_buffer_offset_and_count shall get the only buffer by calling CONSTBUFFER_CreateFromOffsetAndSize with paramter start_buffer_offset and end_buffer_offset. ]*/
+                /* Codes_SRS_CONSTBUFFER_ARRAY_07_013: [ If buffer_count is 1, constbuffer_array_create_from_buffer_offset_and_count shall get the only buffer by calling CONSTBUFFER_CreateFromOffsetAndSize with paramter start_buffer_offset and end_buffer_size. ]*/
                 if (buffer_count == 1)
                 {
                     CONSTBUFFER_HANDLE only_buffer = CONSTBUFFER_CreateFromOffsetAndSize(original->buffers[start_buffer_index], start_buffer_offset, end_buffer_offset);
@@ -316,7 +316,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_buffer_offset_and_count(C
     }
     result = NULL;
 
-    /* Codes_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_buffer_offset_and_count shall return a non - NULL handle. ]*/
+    /* Codes_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_buffer_offset_and_count shall return a non-NULL handle. ]*/
 all_ok:
     return result;
 }
@@ -526,7 +526,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_remove_front(CONSTBUFFER_ARRAY_HANDLE
                     result->buffers[i - 1] = constbuffer_array_handle->buffers[i];
                 }
 
-                /*Codes_SRS_CONSTBUFFER_ARRAY_02_049: [ constbuffer_array_remove_front shall succeed, write in constbuffer_handle the front handle and return a non-NULL value. ]*/
+                /*Codes_SRS_CONSTBUFFER_ARRAY_02_049: [ constbuffer_array_remove_front shall succeed and return a non-NULL value. ]*/
                 *constbuffer_handle = constbuffer_array_handle->buffers[0];
                 goto allOk;
             }
@@ -542,9 +542,9 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_add_back(CONSTBUFFER_ARRAY_HANDLE con
 {
     CONSTBUFFER_ARRAY_HANDLE result;
     if (
-        /*Codes_SRS_CONSTBUFFER_ARRAY_05_001: [ If constbuffer_array_handle is NULL then constbuffer_array_add_back shall fail and return NULL ]*/
+        /*Codes_SRS_CONSTBUFFER_ARRAY_05_001: [ If constbuffer_array_handle is NULL then constbuffer_array_add_back shall fail and return NULL. ]*/
         (constbuffer_array_handle == NULL) ||
-        /*Codes_SRS_CONSTBUFFER_ARRAY_05_002: [ If constbuffer_handle is NULL then constbuffer_array_add_back shall fail and return NULL ]*/
+        /*Codes_SRS_CONSTBUFFER_ARRAY_05_002: [ If constbuffer_handle is NULL then constbuffer_array_add_back shall fail and return NULL. ]*/
         (constbuffer_handle == NULL)
         )
     {
@@ -585,7 +585,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_add_back(CONSTBUFFER_ARRAY_HANDLE con
                 CONSTBUFFER_IncRef(constbuffer_handle);
                 result->buffers_memory[result->nBuffers - 1] = constbuffer_handle;
 
-                /*Codes_SRS_CONSTBUFFER_ARRAY_05_006: [ constbuffer_array_add_back shall succeed and return a non-NULL value. ]*/
+                /*Codes_SRS_CONSTBUFFER_ARRAY_05_006: [ constbuffer_array_add_back shall succeed and return a non-NULL value. ] SRS_CONSTBUFFER_ARRAY_05_007: [** If there any failures constbuffer_array_add_back shall fail and return NULL. ]*/
                 goto allOk;
             }
         }

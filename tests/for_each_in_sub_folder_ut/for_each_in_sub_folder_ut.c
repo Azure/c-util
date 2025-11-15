@@ -382,7 +382,7 @@ TEST_FUNCTION(for_each_in_sub_folder_with_dotdot_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_FOR_EACH_IN_SUBFOLDER_02_008: [ on_subfolder_folder shall assemble a string folder\findData->cFileName. ]*/
+/*Tests_SRS_FOR_EACH_IN_SUBFOLDER_02_008: [ on_subfolder_folder shall assemble a string folder\\findData->cFileName. ]*/
 /*Tests_SRS_FOR_EACH_IN_SUBFOLDER_02_009: [ on_subfolder_folder shall call for_each_in_folder with folder set to the previous string, on_each_in_folder set to the original on_each_in_folder passed to for_each_in_sub_folder and context set to the original context passed to for_each_in_sub_folder. ]*/
 /*Tests_SRS_FOR_EACH_IN_SUBFOLDER_02_011: [ on_subfolder_folder shall set enumerationShouldContinue to true, succeed and return 0. ]*/
 TEST_FUNCTION(for_each_in_sub_folder_with_1_subfolder_succeeds)

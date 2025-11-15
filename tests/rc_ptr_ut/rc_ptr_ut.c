@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 
 
 #include "rc_ptr_ut_pch.h"
@@ -69,7 +69,7 @@ TEST_FUNCTION(rc_ptr_create_with_move_pointer_fails_with_null_ptr)
 }
 
 /*Tests_SRS_RC_PTR_43_002: [ rc_ptr_create_with_move_pointer create a THANDLE(RC_PTR) by calling THANDLE_MALLOC with rc_ptr_dispose as the dispose function. ]*/
-/*Tests_SRS_RC_PTR_43_003: [ rc_ptr_create_with_move_pointer shall store the given ptr and free_func in the created THANDLE(RC_PTR). ]*/
+/*Tests_SRS_RC_PTR_43_003: [ rc_ptr_create_with_move_pointer shall store the given ptr, free_func and free_func_context in the created THANDLE(RC_PTR). ]*/
 /*Tests_SRS_RC_PTR_43_005: [ rc_ptr_create_with_move_pointer shall succeed and return a non-NULL value. ]*/
 TEST_FUNCTION(rc_ptr_create_with_move_pointer_succeeds)
 {
@@ -103,7 +103,7 @@ TEST_FUNCTION(rc_ptr_with_move_pointer_fail_when_underlying_functions_fail)
     ASSERT_IS_NULL(rc_ptr);
 }
 
-/*Tests_SRS_RC_PTR_43_006: [ If free_func is not NULL, rc_ptr_dispose shall call free_func with the ptr. ]*/
+/*Tests_SRS_RC_PTR_43_006: [ If free_func is not NULL, rc_ptr_dispose shall call free_func with free_func_context and ptr. ]*/
 TEST_FUNCTION(rc_ptr_dispose_calls_free_func)
 {
     //arrange

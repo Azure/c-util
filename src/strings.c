@@ -283,7 +283,7 @@ STRING_HANDLE STRING_new_JSON(const char* source)
 
         for (i = 0; i < vlen; i++)
         {
-            /*Codes_SRS_STRING_02_014: [If any character has the value outside [1...127] then STRING_new_JSON shall fail and return NULL.] */
+            /*Codes_SRS_STRING_02_014: [If any character has the value outside [1...127] */
             if ((unsigned char)source[i] >= 128) /*this be a UNICODE character begin*/
             {
                 break;
@@ -497,7 +497,7 @@ int STRING_copy(STRING_HANDLE handle, const char* s2)
     else
     {
         STRING* s1 = handle;
-        /* Codes_SRS_STRING_07_026: [If the underlying char* refered to by s1 handle is equal to char* s2 than STRING_copy shall be a noop and return 0.] */
+        /* Codes_SRS_STRING_07_026: [If the underlying char refered to by s1 handle is equal to char s2 than STRING_copy shall be a noop and return 0.] */
         if (s1->s != s2)
         {
             size_t s2Length = strlen(s2);
@@ -812,12 +812,12 @@ int STRING_compare(STRING_HANDLE s1, STRING_HANDLE s2)
     }
     else if (s1 == NULL)
     {
-        /* Codes_SRS_STRING_07_036: [If h1 is NULL and h2 is nonNULL then STRING_compare shall return 1.]*/
+        /* Codes_SRS_STRING_07_036: [If h1 is NULL and h2 is a nonNULL value then STRING_compare shall return 1.]*/
         result = 1;
     }
     else if (s2 == NULL)
     {
-        /* Codes_SRS_STRING_07_037: [If h2 is NULL and h1 is nonNULL then STRING_compare shall return -1.] */
+        /* Codes_SRS_STRING_07_037: [If h2 is NULL and h1 is a nonNULL value then STRING_compare shall return -1.] */
         result = -1;
     }
     else

@@ -19,6 +19,7 @@ project(c_util)
 
 #the following variables are project-wide and can be used with cmake-gui
 option(run_unittests "set run_unittests to ON to run unittests (default is OFF)" OFF)
+option(run_repo_validation "run repository validation" OFF)
 option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF). Chsare dutility does not have any e2e tests, but the option needs to exist to evaluate in IF statements" OFF)
 option(run_int_tests "set run_int_tests to ON to integration tests (default is OFF)." OFF)
 option(run_perf_tests "set run_perf_tests to ON to build performance tests (default is OFF)." OFF)
@@ -309,6 +310,10 @@ if((CMAKE_GENERATOR MATCHES "Visual Studio") AND (${run_traceability}))
     add_custom_target(c_util_traceability ALL
         COMMAND traceabilitytool -buildcheck -e ${CMAKE_CURRENT_LIST_DIR}/deps -i ${CMAKE_CURRENT_LIST_DIR})
     add_dependencies(c_util_traceability traceabilitytool)
+endif()
+
+if(run_repo_validation)
+    add_repo_validation(${PROJECT_NAME})
 endif()
 
 # make an install target so we can produce a Linux native client package.

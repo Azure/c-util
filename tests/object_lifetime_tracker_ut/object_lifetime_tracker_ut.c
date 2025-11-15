@@ -385,7 +385,7 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_with_NULL_destroy_object_f
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_076: [ object_lifetime_tracker_register_object shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object.]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_077: [ If the object is not found in the DList of objects:]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_060: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the object. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object and the given destroy_object in the DList of objects for given key by calling DList_InsertHeadList. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object with the given destroy_object and destroy_context in the DList of objects for given key by calling DList_InsertHeadList. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_078: [ If the given key is not found, object_lifetime_tracker_registeer_object shall return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY. ]*/
 TEST_FUNCTION(object_lifetime_tracker_register_object_with_NULL_destroy_context_succeeds)
 {
@@ -414,7 +414,7 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_with_NULL_destroy_context_
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_076: [ object_lifetime_tracker_register_object shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object.]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_077: [ If the object is not found in the DList of objects:]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_060: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the object. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object and the given destroy_object in the DList of objects for given key by calling DList_InsertHeadList. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object with the given destroy_object and destroy_context in the DList of objects for given key by calling DList_InsertHeadList. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_078: [ If the given key is not found, object_lifetime_tracker_registeer_object shall return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY. ]*/
 
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_051: [ object_lifetime_tracker_register_object shall release the lock. ]*/
@@ -446,7 +446,7 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_new_key)
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_076: [ object_lifetime_tracker_register_object shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object.]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_077: [ If the object is not found in the DList of objects:]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_060: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the object. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object and the given destroy_object in the DList of objects for given key by calling DList_InsertHeadList. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object with the given destroy_object and destroy_context in the DList of objects for given key by calling DList_InsertHeadList. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_078: [ If the given key is not found, object_lifetime_tracker_registeer_object shall return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_051: [ object_lifetime_tracker_register_object shall release the lock. ]*/
 
@@ -487,14 +487,14 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_different_key
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_076: [ object_lifetime_tracker_register_object shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object.]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_077: [ If the object is not found in the DList of objects:]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_060: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the object. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object and the given destroy_object in the DList of objects for given key by calling DList_InsertHeadList. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object with the given destroy_object and destroy_context in the DList of objects for given key by calling DList_InsertHeadList. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_079: [ If the given key is found but the given object is not found, object_lifetime_tracker_register_object shall return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_OBJECT. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_051: [ object_lifetime_tracker_register_object shall release the lock. ]*/
 
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_050: [ is_same_key shall call key_match_function on the obtained key from listEntry and the key in key_match_context. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_054: [ If key_match_function returns KEY_MATCH_FUNCTION_RESULT_MATCHING: ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_055: [ is_same_key shall set continueProcessing to false. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_056: [ is_same_key shall store listEntry in key_match_context ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_056: [ is_same_key shall store listEntry in key_match_context. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_058: [ is_same_key shall succeed and return zero. ]*/
 TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_repeated_key_with_different_objects)
 {
@@ -533,7 +533,7 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_repeated_key_
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_050: [ is_same_key shall call key_match_function on the obtained key from listEntry and the key in key_match_context. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_054: [ If key_match_function returns KEY_MATCH_FUNCTION_RESULT_MATCHING: ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_055: [ is_same_key shall set continueProcessing to false. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_056: [ is_same_key shall store listEntry in key_match_context ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_056: [ is_same_key shall store listEntry in key_match_context. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_058: [ is_same_key shall succeed and return zero. ]*/
 TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_repeated_key_with_repeated_object)
 {
@@ -569,7 +569,7 @@ TEST_FUNCTION(object_lifetime_tracker_register_object_succeeds_for_repeated_key_
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_076: [ object_lifetime_tracker_register_object shall find the list entry for the given object in the DList of objects for the given key by calling DList_ForEach with is_same_object.]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_077: [ If the object is not found in the DList of objects:]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_060: [ object_lifetime_tracker_register_object shall allocate memory to store data associated with the object. ]*/
-/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object and the given destroy_object in the DList of objects for given key by calling DList_InsertHeadList. ]*/
+/*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_019: [ object_lifetime_tracker_register_object shall store the given object with the given destroy_object and destroy_context in the DList of objects for given key by calling DList_InsertHeadList. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_078: [ If the given key is not found, object_lifetime_tracker_registeer_object shall return OBJECT_LIFETIME_TRACKER_REGISTER_OBJECT_NEW_KEY. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_051: [ object_lifetime_tracker_register_object shall release the lock. ]*/
 /*Tests_SRS_OBJECT_LIFETIME_TRACKER_43_050: [ is_same_key shall call key_match_function on the obtained key from listEntry and the key in key_match_context. ]*/

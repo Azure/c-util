@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "doublylinkedlist_ut_pch.h"
@@ -124,7 +124,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
         ASSERT_ARE_EQUAL(int, 0, result);
     }
 
-    /* Tests_SRS_DLIST_06_006: [DListInsertTailList shall place the DLIST_ENTRY at the end of the list defined by the listHead parameter.] */
+    /* Tests_SRS_DLIST_06_006: [DList_InsertTailList shall place the DLIST_ENTRY at the end of the list defined by the listHead parameter.] */
     TEST_FUNCTION(DList_InsertTailList_with_a_list_head_inserts_1st_item_at_the_end_of_the_list)
     {
         // arrange
@@ -139,7 +139,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
         ASSERT_ARE_EQUAL(void_ptr, head.Blink, &(simp1.link));
     }
 
-    /* Tests_SRS_DLIST_06_006: [DListInsertTailList shall place the DLIST_ENTRY at the end of the list defined by the listHead parameter.] */
+    /* Tests_SRS_DLIST_06_006: [DList_InsertTailList shall place the DLIST_ENTRY at the end of the list defined by the listHead parameter.] */
     TEST_FUNCTION(DList_InsertTailList_with_a_list_head_inserts_2nd_item_at_the_end_of_the_list)
     {
         // arrange
@@ -552,7 +552,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 
     }
 
-    /*Tests_SRS_DLIST_43_001: [If listHead is NULL, DList_ForEach shall fail and return a non - zero value.]*/
+    /*Tests_SRS_DLIST_43_001: [If listHead is NULL, DList_ForEach shall fail and return a non-zero value.]*/
     /*Tests_SRS_DLIST_43_012 : [If there are any failures, DList_ForEach shall fail and return a non - zero value.]*/
     TEST_FUNCTION(DList_ForEach_fails_with_NULL_listHead)
     {
@@ -648,7 +648,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     }
 
     /*Tests_SRS_DLIST_43_009: [DList_ForEach shall call actionFunction on each entry in the list defined by listHead along with actionContext.]*/
-    /*Tests_SRS_DLIST_43_012: [If there are any failures, DList_ForEach shall fail and return a non - zero value.]*/
+    /*Tests_SRS_DLIST_43_012: [If there are any failures, DList_ForEach shall fail and return a non-zero value.]*/
     TEST_FUNCTION(DList_ForEach_fails_when_actionFunction_fails)
     {
         ///arrange

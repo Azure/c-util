@@ -104,7 +104,7 @@ int sliding_window_average_by_count_add(THANDLE(SLIDING_WINDOW_AVERAGE) handle, 
         {
             int window_location = handle->next_available_slot % handle->window_count;
 
-            // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_010: [ If next_available_slot is >= windows_count ]
+            // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_010: [ If next_available_slot is \>= window_count ]
             if (internal_handle->next_available_slot >= handle->window_count)
             {
                 // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_011: [ sliding_window_average_by_count_add shall subtract the value at next_available_slot%window_count from the current sum. ]
@@ -113,7 +113,7 @@ int sliding_window_average_by_count_add(THANDLE(SLIDING_WINDOW_AVERAGE) handle, 
                 // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_013: [ sliding_window_average_by_count_add shall assign the next_count value at next_available_slot%window_count index. ]
                 internal_handle->counts[window_location] = next_count;
             }
-            // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_014: [ If the next_available_slot < windows_count ]
+            // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_014: [ If the next_available_slot \< window_count ]
             else
             {
                 // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_015: [ sliding_window_average_by_count_add shall add the next_count value to the current sum ]
@@ -151,13 +151,13 @@ int sliding_window_average_by_count_get(THANDLE(SLIDING_WINDOW_AVERAGE) handle, 
     else
     {
         SLIDING_WINDOW_AVERAGE* internal_handle = THANDLE_GET_T(SLIDING_WINDOW_AVERAGE)(handle);
-        // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_029: [ sliding_window_average_by_count_get shall call srw_lock_acquire_exclusive on the lock in the SLIDING_WINDOW_AVERAGE struct. ]
+        // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_029: [ sliding_window_average_by_count_get shall call srw_lock_acquire_shared on the lock in the SLIDING_WINDOW_AVERAGE struct. ]
         srw_lock_acquire_shared(internal_handle->lock);
         {
             // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_023: [ sliding_window_average_by_count_get shall copy the current average into average. ]
             *average = handle->current_average;
         }
-        // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_030: [ sliding_window_average_by_count_get shall call srw_lock_release_exclusive on the lock in the SLIDING_WINDOW_AVERAGE struct. ]
+        // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_030: [ sliding_window_average_by_count_get shall call srw_lock_release_shared on the lock in the SLIDING_WINDOW_AVERAGE struct. ]
         srw_lock_release_shared(internal_handle->lock);
 
         // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_024: [ sliding_window_average_by_count_get shall return zero on success. ]

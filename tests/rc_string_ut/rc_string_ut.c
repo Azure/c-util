@@ -222,7 +222,7 @@ TEST_FUNCTION(rc_string_create_with_NULL_fails)
     ASSERT_IS_NULL(rc_string);
 }
 
-/* Tests_SRS_RC_STRING_07_010: [ If the resulting memory size requested for the `THANDLE(RC_STRING)`and `string` results in an size_t overflow, `rc_string_create` shall failand return `NULL`. ]*/
+/* Tests_SRS_RC_STRING_07_010: [ If the resulting memory size requested for the THANDLE(RC_STRING) and string results in an size_t overflow,rc_string_create shall fail and return NULL. ]*/
 TEST_FUNCTION(rc_string_create_with_overflow_memory_allocation_size_fails)
 {
     // arrange
@@ -307,7 +307,7 @@ TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_also_fails)
 
 /* rc_string_create_with_format */
 
-/* Tests_SRS_RC_STRING_07_001: [If format is NULL, rc_string_create_with_format shall fail and return NULL.]*/
+/* Tests_SRS_RC_STRING_07_001: [If format is NULL, rc_string_create_with_vformat shall fail and return NULL.]*/
 TEST_FUNCTION(rc_string_create_with_format_format_NULL_fails)
 {
     // arrange
@@ -325,10 +325,10 @@ TEST_FUNCTION(rc_string_create_with_format_format_NULL_fails)
     ASSERT_IS_NULL(rc_string);
 }
 
-/* Tests_SRS_RC_STRING_07_002: [ Otherwise `rc_string_create_with_format` shall determine the total number of characters written using `vsnprintf` with the variable number of arguments. ]*/
-/* Tests_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
-/* Tests_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
-/* Tests_SRS_RC_STRING_07_007: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
+/* Tests_SRS_RC_STRING_07_002: [ Otherwise rc_string_create_with_vformat shall determine the total number of characters written using vsnprintf with the variable number of arguments. ]*/
+/* Tests_SRS_RC_STRING_07_004: [ rc_string_create_with_vformat shall allocate memory for the THANDLE(RC_STRING) and the number of bytes for the resulting formatted string. ]*/
+/* Tests_SRS_RC_STRING_07_005: [ rc_string_create_with_vformat shall fill in the bytes of the string by using vsnprintf. ]*/
+/* Tests_SRS_RC_STRING_07_007: [ rc_string_create_with_vformat shall succeed and return a non-NULL handle. ]*/
 TEST_FUNCTION(rc_string_create_with_format_succeeds)
 {
     // arrange
@@ -348,10 +348,10 @@ TEST_FUNCTION(rc_string_create_with_format_succeeds)
     THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 }
 
-/* Tests_SRS_RC_STRING_07_002: [ Otherwise `rc_string_create_with_format` shall determine the total number of characters written using `vsnprintf` with the variable number of arguments. ]*/
-/* Tests_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
-/* Tests_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
-/* Tests_SRS_RC_STRING_07_007: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
+/* Tests_SRS_RC_STRING_07_002: [ Otherwise rc_string_create_with_vformat shall determine the total number of characters written using vsnprintf with the variable number of arguments. ]*/
+/* Tests_SRS_RC_STRING_07_004: [ rc_string_create_with_vformat shall allocate memory for the THANDLE(RC_STRING) and the number of bytes for the resulting formatted string. ]*/
+/* Tests_SRS_RC_STRING_07_005: [ rc_string_create_with_vformat shall fill in the bytes of the string by using vsnprintf. ]*/
+/* Tests_SRS_RC_STRING_07_007: [ rc_string_create_with_vformat shall succeed and return a non-NULL handle. ]*/
 TEST_FUNCTION(rc_string_create_with_format_succeeds_with_percentage_sign_front)
 {
     // arrange
@@ -371,10 +371,10 @@ TEST_FUNCTION(rc_string_create_with_format_succeeds_with_percentage_sign_front)
     THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 }
 
-/* Tests_SRS_RC_STRING_07_002: [ Otherwise `rc_string_create_with_format` shall determine the total number of characters written using `vsnprintf` with the variable number of arguments. ]*/
-/* Tests_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
-/* Tests_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
-/* Tests_SRS_RC_STRING_07_007: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
+/* Tests_SRS_RC_STRING_07_002: [ Otherwise rc_string_create_with_vformat shall determine the total number of characters written using vsnprintf with the variable number of arguments. ]*/
+/* Tests_SRS_RC_STRING_07_004: [ rc_string_create_with_vformat shall allocate memory for the THANDLE(RC_STRING) and the number of bytes for the resulting formatted string. ]*/
+/* Tests_SRS_RC_STRING_07_005: [ rc_string_create_with_vformat shall fill in the bytes of the string by using vsnprintf. ]*/
+/* Tests_SRS_RC_STRING_07_007: [ rc_string_create_with_vformat shall succeed and return a non-NULL handle. ]*/
 TEST_FUNCTION(rc_string_create_with_format_succeeds_with_longer_string_input)
 {
     // arrange
@@ -394,7 +394,7 @@ TEST_FUNCTION(rc_string_create_with_format_succeeds_with_longer_string_input)
     THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 }
 
-/*Tests_SRS_RC_STRING_07_003: [ If `vsnprintf` failed to determine the total number of characters written, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+/*Tests_SRS_RC_STRING_07_003: [ If vsnprintf failed to determine the total number of characters written, rc_string_create_with_vformat shall fail and return NULL. ]*/
 TEST_FUNCTION(when_vsnprintf_determine_written_characters_length_fails_with_return_value_negative_one_rc_string_create_with_format_also_fails)
 {
     // arrange
@@ -410,7 +410,7 @@ TEST_FUNCTION(when_vsnprintf_determine_written_characters_length_fails_with_retu
 
 }
 
-/*Tests_SRS_RC_STRING_07_003: [ If `vsnprintf` failed to determine the total number of characters written, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+/*Tests_SRS_RC_STRING_07_003: [ If vsnprintf failed to determine the total number of characters written, rc_string_create_with_vformat shall fail and return NULL. ]*/
 TEST_FUNCTION(when_vsnprintf_determine_written_characters_length_fails_with_return_value_negative_two_rc_string_create_with_format_also_fails)
 {
     // arrange
@@ -426,10 +426,10 @@ TEST_FUNCTION(when_vsnprintf_determine_written_characters_length_fails_with_retu
 
 }
 
-/* Tests_SRS_RC_STRING_07_002: [ Otherwise `rc_string_create_with_format` shall determine the total number of characters written using `vsnprintf` with the variable number of arguments. ]*/
-/* Tests_SRS_RC_STRING_07_004: [ `rc_string_create_with_format` shall allocate memory for the `THANDLE(RC_STRING)`and the number of bytes for the resulting formatted string. ]*/
-/* Tests_SRS_RC_STRING_07_005: [ `rc_string_create_with_format` shall fill in the bytes of the string by using `vsnprintf`. ]*/
-/* Tests_SRS_RC_STRING_07_007: [ `rc_string_create_with_format` shall succeed and return a non - `NULL` handle. ]*/
+/* Tests_SRS_RC_STRING_07_002: [ Otherwise rc_string_create_with_vformat shall determine the total number of characters written using vsnprintf with the variable number of arguments. ]*/
+/* Tests_SRS_RC_STRING_07_004: [ rc_string_create_with_vformat shall allocate memory for the THANDLE(RC_STRING) and the number of bytes for the resulting formatted string. ]*/
+/* Tests_SRS_RC_STRING_07_005: [ rc_string_create_with_vformat shall fill in the bytes of the string by using vsnprintf. ]*/
+/* Tests_SRS_RC_STRING_07_007: [ rc_string_create_with_vformat shall succeed and return a non-NULL handle. ]*/
 TEST_FUNCTION(rc_string_create_with_format_with_empty_string_succeeds)
 {
     // arrange
@@ -454,7 +454,7 @@ TEST_FUNCTION(rc_string_create_with_format_with_empty_string_succeeds)
     THANDLE_ASSIGN(RC_STRING)(&rc_string, NULL);
 }
 
-/*Tests_SRS_RC_STRING_07_009: [ If the resulting memory size requested for the `THANDLE(RC_STRING)`and the resulting formatted string results in an size_t overflow in `malloc_flex`, `rc_string_create_with_format` shall failand return `NULL`. ]*/
+/*Tests_SRS_RC_STRING_07_009: [ If the resulting memory size requested for the THANDLE(RC_STRING) and the resulting formatted string results in an size_t overflow in malloc_flex, rc_string_create_with_vformat shall fail and return NULL. ]*/
 TEST_FUNCTION(rc_string_create_with_format_with_overflow_for_memory_allocation_size_fails)
 {
     // arrange
@@ -470,7 +470,7 @@ TEST_FUNCTION(rc_string_create_with_format_with_overflow_for_memory_allocation_s
 
 }
 
-/*Tests_SRS_RC_STRING_07_006: [ If `vsnprintf` failed to construct the resulting formatted string, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+/*Tests_SRS_RC_STRING_07_006: [ If vsnprintf failed to construct the resulting formatted string, rc_string_create_with_vformat shall fail and return NULL. ]*/
 TEST_FUNCTION(when_vsnprintf_get_resulting_formatted_string_fails_with_return_value_negative_one_rc_string_create_with_format_also_fails)
 {
     //// arrange
@@ -487,7 +487,7 @@ TEST_FUNCTION(when_vsnprintf_get_resulting_formatted_string_fails_with_return_va
     ASSERT_IS_NULL(rc_string);
 }
 
-/*Tests_SRS_RC_STRING_07_006: [ If `vsnprintf` failed to construct the resulting formatted string, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+/*Tests_SRS_RC_STRING_07_006: [ If vsnprintf failed to construct the resulting formatted string, rc_string_create_with_vformat shall fail and return NULL. ]*/
 TEST_FUNCTION(when_vsnprintf_get_resulting_formatted_string_fails_with_return_value_negative_two_rc_string_create_with_format_also_fails)
 {
     //// arrange
@@ -504,7 +504,7 @@ TEST_FUNCTION(when_vsnprintf_get_resulting_formatted_string_fails_with_return_va
     ASSERT_IS_NULL(rc_string);
 }
 
-/* Tests_SRS_RC_STRING_07_008: [ If any error occurs, `rc_string_create_with_format` shall fail and return `NULL`. ]*/
+/* Tests_SRS_RC_STRING_07_008: [ If any error occurs, rc_string_create_with_vformat shall fail and return NULL. ]*/
 TEST_FUNCTION(when_underlying_calls_fail_rc_string_create_with_format_also_fails)
 {
     // arrange
@@ -850,7 +850,7 @@ TEST_FUNCTION(when_reference_count_reaches_0_the_custom_free_function_is_called_
     test_free_func(test_string);
 }
 
-/*Tests_SRS_RC_STRING_02_001: [ If self is NULL then rc_string_recreate shall return. ]*/
+/*Tests_SRS_RC_STRING_02_001: [ If source is NULL then rc_string_recreate shall return NULL. ]*/
 TEST_FUNCTION(rc_string_recreate_with_self_NULL_returns)
 {
     ///arrange

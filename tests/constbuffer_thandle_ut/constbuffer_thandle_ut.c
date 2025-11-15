@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "constbuffer_thandle_ut_pch.h"
@@ -845,7 +845,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_fails_when_error_occur
 
 /* CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy */
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_049: [ If handle is NULL, CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_049: [ If handle is NULL then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_with_NULL_handle_fails)
 {
     ///arrange
@@ -1081,7 +1081,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_fails_when_mal
     THANDLE(CONSTBUFFER) result = CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy(source_handle, 1, 2);
 
     ///assert
-    /*Tests_SRS_CONSTBUFFER_THANDLE_88_055: [ Function should return NULL on failures (malloc failure)]*/
+    /*Tests_SRS_CONSTBUFFER_THANDLE_88_055: [ If there are any failures then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL.]*/
     ASSERT_IS_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -1106,7 +1106,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_with_NULL_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_012: [ Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a pointer to a CONSTBUFFER_THANDLE structure.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_012: [ Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a const CONSTBUFFER_CONTENT* that matches byte by byte the original bytes used to created the const buffer and has the same length.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_succeeds)
 {
     ///arrange
@@ -1131,7 +1131,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&handle, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_012: [ Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a pointer to a CONSTBUFFER_THANDLE structure.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_012: [ Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a const CONSTBUFFER_CONTENT* that matches byte by byte the original bytes used to created the const buffer and has the same length.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_with_empty_buffer_succeeds)
 {
     ///arrange
@@ -1152,7 +1152,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_with_empty_buffer_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&handle, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_012: [ Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a pointer to a CONSTBUFFER_THANDLE structure.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_012: [ Otherwise, CONSTBUFFER_THANDLE_GetContent shall return a const CONSTBUFFER_CONTENT* that matches byte by byte the original bytes used to created the const buffer and has the same length.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_GetContent_with_single_byte_succeeds)
 {
     ///arrange
@@ -1775,7 +1775,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_zero_content_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&destination, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_068: [ If there are any failures then CONSTBUFFER_THANDLE_get_serialized_size shall fail and return CONSTBUFFER_THANDLE_GET_SERIALIZED_SIZE_RESULT_ERROR.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_068: [ If there are any failures then CONSTBUFFER_THANDLE_to_buffer shall fail and return NULL.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialized_size_fails_when_error_occurs)
 {
     ///arrange

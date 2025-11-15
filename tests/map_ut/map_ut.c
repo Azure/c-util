@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "map_ut_pch.h"
@@ -352,8 +352,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
     /*Tests_SRS_MAP_02_010: [Otherwise, Map_Add shall add the pair <key,value> to the map.] */
     /*Tests_SRS_MAP_02_012: [Otherwise, Map_Add shall return MAP_OK.] */
-    /*Tests_SRS_MAP_02_043: [Map_GetInternals shall produce in *keys an pointer to an array of const char* having all the keys stored so far by the map.]*/
-    /*Tests_SRS_MAP_02_044: [Map_GetInternals shall produce in *values a pointer to an array of const char* having all the values stored so far by the map.]*/
+    /*Tests_SRS_MAP_02_043: [Map_GetInternals shall produce in keys an pointer to an array of const char having all the keys stored so far by the map.]*/
+    /*Tests_SRS_MAP_02_044: [Map_GetInternals shall produce in values a pointer to an array of const char having all the values stored so far by the map.]*/
     /*Tests_SRS_MAP_02_045: [Map_GetInternals shall produce in *count the number of stored keys and values.]*/
     TEST_FUNCTION(Map_Add_succeeds_2)
     {
@@ -1928,8 +1928,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         Map_Destroy(handle);
     }
 
-    /*Tests_SRS_MAP_02_043: [Map_GetInternals shall produce in *keys an pointer to an array of const char* having all the keys stored so far by the map.]*/
-    /*Tests_SRS_MAP_02_044: [Map_GetInternals shall produce in *values a pointer to an array of const char* having all the values stored so far by the map.]*/
+    /*Tests_SRS_MAP_02_043: [Map_GetInternals shall produce in keys an pointer to an array of const char having all the keys stored so far by the map.]*/
+    /*Tests_SRS_MAP_02_044: [Map_GetInternals shall produce in values a pointer to an array of const char having all the values stored so far by the map.]*/
     /*Tests_SRS_MAP_02_045: [  Map_GetInternals shall produce in *count the number of stored keys and values.]*/
     /*tested by every test in this suite... almost*/
 
@@ -2482,7 +2482,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         Map_Destroy(result);
     }
 
-    /* Tests_SRS_MAP_07_009: [If the mapFilterCallback function is not NULL, then the return value will be check and if it is not zero then Map_Add shall return MAP_FILTER_REJECT.] */
+    /* Tests_SRS_MAP_07_009: [If the mapFilterCallback function is not NULL, then the return value will be checked and if it is not zero then Map_Add shall return MAP_FILTER_REJECT.] */
     TEST_FUNCTION(Map_Add_With_Filter_Succeed)
     {
         ///arrange

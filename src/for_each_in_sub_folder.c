@@ -43,7 +43,7 @@ static int on_subfolder_folder(const char* folder, const WIN32_FIND_DATAA* findD
         }
         else
         {
-            /*Codes_SRS_FOR_EACH_IN_SUBFOLDER_02_008: [ on_subfolder_folder shall assemble a string folder\findData->cFileName. ]*/
+            /*Codes_SRS_FOR_EACH_IN_SUBFOLDER_02_008: [ on_subfolder_folder shall assemble a string folder\\findData->cFileName. ]*/
             char* subfolder = sprintf_char("%s\\%s", folder, findData->cFileName);
             if (subfolder == NULL)
             {

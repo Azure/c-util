@@ -63,7 +63,7 @@ static int worker_thread_func(void* arg)
                 // Codes_SRS_WORKER_THREAD_11_001: [ ... and set the thread state to WORKER_THREAD_STATE_IDLE if it has not been changed. ]
                 (void)interlocked_compare_exchange(&worker_thread->state, WORKER_THREAD_STATE_IDLE, current_state);
 
-                /* Codes_SRS_WORKER_THREAD_01_021: [ When the execute worker function event is signaled, the worker thread shall call the worker_func function passed to worker_thread_create and it shall pass worker_func_context as argument. ]*/
+                /* Codes_SRS_WORKER_THREAD_01_021: [ If the thread state is WORKER_THREAD_STATE_PROCESS_ITEM, the worker thread shall call the worker_func function passed to worker_thread_create and it shall pass worker_func_context as argument... ]*/
                 worker_thread->worker_func(worker_thread->worker_func_context);
                 break;
             case WORKER_THREAD_STATE_CLOSE:
@@ -245,7 +245,7 @@ WORKER_THREAD_SCHEDULE_PROCESS_RESULT worker_thread_schedule_process(WORKER_THRE
     }
     else
     {
-        /* Codes_SRS_WORKER_THREAD_01_041: [ Otherwise worker_thread_schedule_process shall call sm_exec_begin. ]*/
+        /* Codes_SRS_WORKER_THREAD_01_041: [ Otherwise, worker_thread_schedule_process shall call sm_exec_begin. ]*/
         if (sm_exec_begin(worker_thread->sm) != SM_EXEC_GRANTED)
         {
             /* Codes_SRS_WORKER_THREAD_01_042: [ If sm_exec_begin does not grant the execution, worker_thread_schedule_process shall fail and return WORKER_THREAD_SCHEDULE_PROCESS_INVALID_STATE. ]*/

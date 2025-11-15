@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "uuid_string_ut_pch.h"
@@ -85,8 +85,8 @@ static bool isHexDigit(char c)
 }
 
 /*Tests_SRS_UUID_STRING_02_003: [ If any character of uuid_string doesn't match the string representation hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/
-/*Tests_SRS_UUID_STRING_02_004: [ If any character of uuid_string is \0 instead of a hex digit then UUID_T_from_string shall succeed and return UUID_T_FROM_STRING_RESULT_INVALID_DATA. ]*/ /*note: this happens when int_result is 0*/
-/*Tests_SRS_UUID_STRING_02_005: [ If any character of uuid_string is \0 instead of a - then UUID_T_from_string shall succeed and return UUID_T_FROM_STRING_RESULT_INVALID_DATA. ]*/ /*note: this happens when int_result is 0*/
+/*Tests_SRS_UUID_STRING_02_004: [ If any character of uuid_string is \0 instead of a hex digit then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/ /*note: this happens when int_result is 0*/
+/*Tests_SRS_UUID_STRING_02_005: [ If any character of uuid_string is \0 instead of a - then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/ /*note: this happens when int_result is 0*/
 TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
 {
     ///arrange

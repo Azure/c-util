@@ -362,7 +362,7 @@ MAP_RESULT Map_Add(MAP_HANDLE handle, const char* key, const char* value)
         }
         else
         {
-            /* Codes_SRS_MAP_07_009: [If the mapFilterCallback function is not NULL, then the return value will be check and if it is not zero then Map_Add shall return MAP_FILTER_REJECT.] */
+            /* Codes_SRS_MAP_07_009: [If the mapFilterCallback function is not NULL, then the return value will be checked and if it is not zero then Map_Add shall return MAP_FILTER_REJECT.] */
             if ( (handleData->mapFilterCallback != NULL) && (handleData->mapFilterCallback(key, value) != 0) )
             {
                 result = MAP_FILTER_REJECT;
@@ -589,8 +589,8 @@ MAP_RESULT Map_GetInternals(MAP_HANDLE handle, const char*const** keys, const ch
     }
     else
     {
-        /*Codes_SRS_MAP_02_043: [Map_GetInternals shall produce in *keys an pointer to an array of const char* having all the keys stored so far by the map.]*/
-        /*Codes_SRS_MAP_02_044: [Map_GetInternals shall produce in *values a pointer to an array of const char* having all the values stored so far by the map.]*/
+        /*Codes_SRS_MAP_02_043: [Map_GetInternals shall produce in keys an pointer to an array of const char having all the keys stored so far by the map.]*/
+        /*Codes_SRS_MAP_02_044: [Map_GetInternals shall produce in values a pointer to an array of const char having all the values stored so far by the map.]*/
         /*Codes_SRS_MAP_02_045: [  Map_GetInternals shall produce in *count the number of stored keys and values.]*/
         MAP_HANDLE_DATA* handleData = handle;
         *keys =(const char* const*)(handleData->keys);

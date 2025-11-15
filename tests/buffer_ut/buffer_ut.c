@@ -82,7 +82,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     }
 
     /* BUFFER_delete Tests BEGIN */
-    /* Tests_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE.] */
+    /* Tests_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE along with the Buffer.] */
     TEST_FUNCTION(BUFFER_delete_Succeed)
     {
         ///arrange
@@ -102,7 +102,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         //none
     }
 
-    /* Tests_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE.] */
+    /* Tests_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE along with the Buffer.] */
     TEST_FUNCTION(BUFFER_delete_Alloc_Succeed)
     {
         ///arrange
@@ -1375,7 +1375,7 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
     }
 
     /*Tests_SRS_BUFFER_02_002: [Otherwise, BUFFER_create shall allocate memory to hold size bytes and shall copy from source size bytes into the newly allocated memory.] */
-    /*Tests_SRS_BUFFER_02_004: [Otherwise, BUFFER_create shall return a non-NULL handle*/
+    /*Tests_SRS_BUFFER_02_004: [Otherwise, BUFFER_create shall return a non-NULL handle.]*/
     TEST_FUNCTION(BUFFER_create_happy_path)
     {
         ///arrange

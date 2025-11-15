@@ -129,7 +129,7 @@ static THANDLE(CONSTBUFFER) CONSTBUFFER_THANDLE_Create_Internal(const unsigned c
             /*Codes_SRS_CONSTBUFFER_THANDLE_88_004: [ Otherwise CONSTBUFFER_THANDLE_Create shall return a non-NULL handle. ]*/
             /*Codes_SRS_CONSTBUFFER_THANDLE_88_007: [ Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall copy the content of buffer. ]*/
             /*Codes_SRS_CONSTBUFFER_THANDLE_88_009: [ Otherwise, CONSTBUFFER_THANDLE_CreateFromBuffer shall return a non-NULL handle. ]*/
-            /*Codes_SRS_CONSTBUFFER_THANDLE_88_039: [ CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall set the pointed to a non-NULL value that contains the same bytes as offset...offset+size-1 of handle. ]*/
+            /*Codes_SRS_CONSTBUFFER_THANDLE_88_039: [ If offset + size exceed handle's size then CONSTBUFFER_THANDLE_CreateFromOffsetAndSize shall fail and return NULL. ]*/
             if (source != NULL)
             {
                 (void)memcpy(handle_data->data, source, size);
