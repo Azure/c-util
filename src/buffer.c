@@ -189,7 +189,6 @@ int BUFFER_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
             {
                 b->buffer = newBuffer;
                 b->size = size;
-                /* Codes_SRS_BUFFER_01_002: [The size argument can be zero, in which case the underlying buffer held by the buffer instance shall be freed.] */
                 (void)memcpy(b->buffer, source, size);
 
                 result = 0;

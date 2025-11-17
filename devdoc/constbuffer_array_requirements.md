@@ -104,7 +104,7 @@ Note: `constbuffer_array_create_from_buffer_index_and_count` does not increment 
 ### constbuffer_array_create_from_buffer_offset_and_count
 
 ```c
-MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_buffer_offset_and_count, CONSTBUFFER_ARRAY_HANDLE, original, uint32_t, start_buffer_index, uint32_t, buffer_count, uint32_t, start_buffer_offset, uint32_t, end_buffer_size)
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_buffer_offset_and_count, CONSTBUFFER_ARRAY_HANDLE, original, uint32_t, start_buffer_index, uint32_t, buffer_count, uint32_t, start_buffer_offset, uint32_t, end_buffer_offset)
 ```
 
 `constbuffer_array_create_from_buffer_offset_and_count` creates a new const buffer array which is a subset of the existing array in `original`.
@@ -117,7 +117,7 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_buff
 
 **SRS_CONSTBUFFER_ARRAY_07_015: [** If `buffer_count` is equal to original buffer count, start buffer offset is `0` and end buffer offset is equal to the size of the last buffer in `original`, then `constbuffer_array_create_from_buffer_offset_and_count` shall increment the reference count of `original` and return `original`.  **]**
 
-**SRS_CONSTBUFFER_ARRAY_07_013: [** If `buffer_count` is 1, `constbuffer_array_create_from_buffer_offset_and_count` shall get the only buffer by calling `CONSTBUFFER_CreateFromOffsetAndSize` with paramter `start_buffer_offset` and `end_buffer_size`. **]**
+**SRS_CONSTBUFFER_ARRAY_07_013: [** If `buffer_count` is 1, `constbuffer_array_create_from_buffer_offset_and_count` shall get the only buffer by calling `CONSTBUFFER_CreateFromOffsetAndSize` with paramter `start_buffer_offset` and `end_buffer_offset`. **]**
 
 **SRS_CONSTBUFFER_ARRAY_07_011: [** `constbuffer_array_create_from_buffer_offset_and_count` shall compute the start buffer size.  **]**
 
@@ -269,7 +269,7 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_front, CO
 
 **SRS_CONSTBUFFER_ARRAY_01_001: [** `constbuffer_array_remove_front` shall inc_ref the removed buffer. **]**
 
-**SRS_CONSTBUFFER_ARRAY_02_049: [** `constbuffer_array_remove_front` shall succeed and return a non-`NULL` value. **]**
+**SRS_CONSTBUFFER_ARRAY_02_049: [** `constbuffer_array_remove_front` shall succeed, write in `constbuffer_handle` the front handle and return a non-`NULL` value. **]**
 
 **SRS_CONSTBUFFER_ARRAY_02_036: [** If there are any failures then `constbuffer_array_remove_front` shall fail and return `NULL`. **]**
 

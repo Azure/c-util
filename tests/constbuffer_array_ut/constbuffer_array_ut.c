@@ -1314,7 +1314,7 @@ TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_when
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_012: [ constbuffer_array_create_from_buffer_offset_and_count shall get the end buffer by calling CONSTBUFFER_CreateFromOffsetAndSize. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_008: [ constbuffer_array_create_from_buffer_offset_and_count shall copy all of the CONSTBUFFER_HANDLES except first and last buffer from each const buffer array in buffer_arrays to the newly constructed array by calling CONSTBUFFER_IncRef. ]*/
 /* Tests_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_buffer_offset_and_count shall return a non-NULL handle. ]*/
-/* Tests_SRS_CONSTBUFFER_ARRAY_07_013: [ If buffer_count is 1, constbuffer_array_create_from_buffer_offset_and_count shall get the only buffer by calling CONSTBUFFER_CreateFromOffsetAndSize with paramter start_buffer_offset and end_buffer_size. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_07_013: [ If buffer_count is 1, constbuffer_array_create_from_buffer_offset_and_count shall get the only buffer by calling CONSTBUFFER_CreateFromOffsetAndSize with paramter start_buffer_offset and end_buffer_offset. ]*/
 TEST_FUNCTION(constbuffer_array_create_from_buffer_index_and_count_succeeds_when_only_get_one_buffer)
 {
     // arrange
@@ -2238,7 +2238,7 @@ TEST_FUNCTION(constbuffer_array_remove_back_with_constbuffer_array_handle_empty_
 /*Tests_SRS_CONSTBUFFER_ARRAY_02_047: [ constbuffer_array_remove_front shall copy all of constbuffer_array_handle CONSTBUFFER_HANDLEs except the front one. ]*/
 /*Tests_SRS_CONSTBUFFER_ARRAY_02_048: [ constbuffer_array_remove_front shall inc_ref all the copied CONSTBUFFER_HANDLEs. ]*/
 /*Tests_SRS_CONSTBUFFER_ARRAY_01_001: [ constbuffer_array_remove_front shall inc_ref the removed buffer. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_02_049: [ constbuffer_array_remove_front shall succeed and return a non-NULL value. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_02_049: [ constbuffer_array_remove_front shall succeed, write in constbuffer_handle the front handle and return a non-NULL value. ]*/
 TEST_FUNCTION(constbuffer_array_remove_front_with_1_item_succeeds)
 {
     ///arrange
@@ -2305,7 +2305,7 @@ TEST_FUNCTION(constbuffer_array_remove_back_with_1_item_succeeds)
 /*Tests_SRS_CONSTBUFFER_ARRAY_02_047: [ constbuffer_array_remove_front shall copy all of constbuffer_array_handle CONSTBUFFER_HANDLEs except the front one. ]*/
 /*Tests_SRS_CONSTBUFFER_ARRAY_02_048: [ constbuffer_array_remove_front shall inc_ref all the copied CONSTBUFFER_HANDLEs. ]*/
 /*Tests_SRS_CONSTBUFFER_ARRAY_01_001: [ constbuffer_array_remove_front shall inc_ref the removed buffer. ]*/
-/*Tests_SRS_CONSTBUFFER_ARRAY_02_049: [ constbuffer_array_remove_front shall succeed and return a non-NULL value. ]*/
+/*Tests_SRS_CONSTBUFFER_ARRAY_02_049: [ constbuffer_array_remove_front shall succeed, write in constbuffer_handle the front handle and return a non-NULL value. ]*/
 TEST_FUNCTION(constbuffer_array_remove_front_with_2_items_succeeds)
 {
     ///arrange

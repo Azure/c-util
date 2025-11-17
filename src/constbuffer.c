@@ -477,7 +477,7 @@ unsigned char* CONSTBUFFER_to_buffer(CONSTBUFFER_HANDLE source, CONSTBUFFER_to_b
     if (
         /*Codes_SRS_CONSTBUFFER_02_044: [ If source is NULL then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
         (source == NULL) ||
-        /*Codes_SRS_CONSTBUFFER_02_045: [ If size is NULL then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
+        /*Codes_SRS_CONSTBUFFER_02_045: [ If serialized_size is NULL then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
         (serialized_size == NULL)
         )
     {
@@ -523,7 +523,7 @@ unsigned char* CONSTBUFFER_to_buffer(CONSTBUFFER_HANDLE source, CONSTBUFFER_to_b
                 /*Codes_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
                 (void)memcpy(result + CONSTBUFFER_CONTENT_OFFSET, source->alias.buffer, source->alias.size);
 
-                /*Codes_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in size the size of the serialization and return the allocated memory. ]*/
+                /*Codes_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
                 *serialized_size = CONSTBUFFER_VERSION_SIZE + CONSTBUFFER_SIZE_SIZE + (uint32_t)source->alias.size;
                 /*return as is*/
             }
