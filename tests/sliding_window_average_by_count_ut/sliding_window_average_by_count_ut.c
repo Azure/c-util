@@ -278,11 +278,11 @@ TEST_FUNCTION(sliding_window_average_by_count_get_starts_with_0_average)
 }
 
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_009: [ sliding_window_average_by_count_add shall increment the next_available_slot. ]
-// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_010: [ If next_available_slot is \>= window_count ]
+// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_010: [ If next_available_slot is >= window_count ]
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_011: [ sliding_window_average_by_count_add shall subtract the value at next_available_slot%window_count from the current sum. ]
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_012: [ sliding_window_average_by_count_add shall add the next_count value to the current sum. ]
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_013: [ sliding_window_average_by_count_add shall assign the next_count value at next_available_slot%window_count index. ]
-// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_014: [ If the next_available_slot \< window_count ]
+// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_014: [ If the next_available_slot < window_count ]
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_015: [ sliding_window_average_by_count_add shall add the next_count value to the current sum ]
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_016: [ sliding_window_average_by_count_add shall assign the next_slot value at next_available_slot index ]
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_017: [ sliding_window_average_by_count_add shall increment the current count. ]
@@ -316,11 +316,11 @@ TEST_FUNCTION(sliding_window_average_by_count_get_average_windowsize_1_is_correc
 }
 
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_009: [ sliding_window_average_by_count_add shall increment the next_available_slot. ]
-// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_010: [ If next_available_slot is \>= window_count ]
+// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_010: [ If next_available_slot is >= window_count ]
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_011: [ sliding_window_average_by_count_add shall subtract the value at next_available_slot%window_count from the current sum. ]
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_012: [ sliding_window_average_by_count_add shall add the next_count value to the current sum. ]
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_013: [ sliding_window_average_by_count_add shall assign the next_count value at next_available_slot%window_count index. ]
-// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_014: [ If the next_available_slot \< window_count ]
+// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_014: [ If the next_available_slot < window_count ]
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_015: [ sliding_window_average_by_count_add shall add the next_count value to the current sum ]
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_016: [ sliding_window_average_by_count_add shall assign the next_slot value at next_available_slot index ]
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_017: [ sliding_window_average_by_count_add shall increment the current count. ]
@@ -357,7 +357,7 @@ TEST_FUNCTION(sliding_window_average_by_count_get_average_windowsize_3_is_correc
 //
 
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_009: [ sliding_window_average_by_count_add shall increment the next_available_slot. ]
-// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_010: [ If next_available_slot is \>= window_count ]
+// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_010: [ If next_available_slot is >= window_count ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_011: [ sliding_window_average_by_count_add shall subtract the value at next_available_slot%window_count from the current sum. ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_012: [ sliding_window_average_by_count_add shall add the next_count value to the current sum. ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_013: [ sliding_window_average_by_count_add shall assign the next_count value at next_available_slot%window_count index. ]
@@ -398,11 +398,11 @@ TEST_FUNCTION(sliding_window_average_by_count_get_average_windowsize_1_is_correc
 }
 
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_009: [ sliding_window_average_by_count_add shall increment the next_available_slot. ]
-// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_010: [ If next_available_slot is \>= window_count ]
+// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_010: [ If next_available_slot is >= window_count ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_011: [ sliding_window_average_by_count_add shall subtract the value at next_available_slot%window_count from the current sum. ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_012: [ sliding_window_average_by_count_add shall add the next_count value to the current sum. ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_013: [ sliding_window_average_by_count_add shall assign the next_count value at next_available_slot%window_count index. ]
-// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_014: [ If the next_available_slot \< window_count ]
+// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_014: [ If the next_available_slot < window_count ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_015: [ sliding_window_average_by_count_add shall add the next_count value to the current sum ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_016: [ sliding_window_average_by_count_add shall assign the next_slot value at next_available_slot index ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_017: [ sliding_window_average_by_count_add shall increment the current count. ]
@@ -444,11 +444,11 @@ TEST_FUNCTION(sliding_window_average_by_count_get_average_windowsize_2_is_correc
 }
 
 // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_009: [ sliding_window_average_by_count_add shall increment the next_available_slot. ]
-// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_010: [ If next_available_slot is \>= window_count ]
+// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_010: [ If next_available_slot is >= window_count ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_011: [ sliding_window_average_by_count_add shall subtract the value at next_available_slot%window_count from the current sum. ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_012: [ sliding_window_average_by_count_add shall add the next_count value to the current sum. ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_013: [ sliding_window_average_by_count_add shall assign the next_count value at next_available_slot%window_count index. ]
-// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_014: [ If the next_available_slot \< window_count ]
+// Tests_SRS_SLIDING_AVERAGE_WINDOW_45_014: [ If the next_available_slot < window_count ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_015: [ sliding_window_average_by_count_add shall add the next_count value to the current sum ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_016: [ sliding_window_average_by_count_add shall assign the next_slot value at next_available_slot index ]
     // Tests_SRS_SLIDING_AVERAGE_WINDOW_45_017: [ sliding_window_average_by_count_add shall increment the current count. ]

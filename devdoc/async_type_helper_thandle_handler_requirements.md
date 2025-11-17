@@ -69,7 +69,7 @@ int ASYNC_TYPE_HELPER_COPY_HANDLER(THANDLE(THANDLE_TYPE))(THANDLE(THANDLE_TYPE)*
 
 **SRS_ASYNC_TYPE_HELPER_THANDLE_HANDLER_01_004: [** If `dst` is `NULL`, the copy handler shall fail and return a non-zero value. **]**
 
-**SRS_ASYNC_TYPE_HELPER_THANDLE_HANDLER_01_006: [** Otherwise the copy handler shall assign `src` to `dst` by calling `THANDLE_ASSIGN`. **]**
+**SRS_ASYNC_TYPE_HELPER_THANDLE_HANDLER_01_006: [** Otherwise the copy handler shall assign `src` to `dst` by calling `THANDLE_INITIALIZE`. **]**
 
 **SRS_ASYNC_TYPE_HELPER_THANDLE_HANDLER_01_007: [** The copy handler shall succeed and return 0. **]**
 

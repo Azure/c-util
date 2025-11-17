@@ -104,7 +104,7 @@ int sliding_window_average_by_count_add(THANDLE(SLIDING_WINDOW_AVERAGE) handle, 
         {
             int window_location = handle->next_available_slot % handle->window_count;
 
-            // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_010: [ If next_available_slot is \>= window_count ]
+            // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_010: [ If next_available_slot is >= window_count ]
             if (internal_handle->next_available_slot >= handle->window_count)
             {
                 // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_011: [ sliding_window_average_by_count_add shall subtract the value at next_available_slot%window_count from the current sum. ]
@@ -113,7 +113,7 @@ int sliding_window_average_by_count_add(THANDLE(SLIDING_WINDOW_AVERAGE) handle, 
                 // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_013: [ sliding_window_average_by_count_add shall assign the next_count value at next_available_slot%window_count index. ]
                 internal_handle->counts[window_location] = next_count;
             }
-            // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_014: [ If the next_available_slot \< window_count ]
+            // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_014: [ If the next_available_slot < window_count ]
             else
             {
                 // Codes_SRS_SLIDING_AVERAGE_WINDOW_45_015: [ sliding_window_average_by_count_add shall add the next_count value to the current sum ]

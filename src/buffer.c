@@ -129,7 +129,7 @@ BUFFER_HANDLE BUFFER_create_with_size(size_t buff_size)
     return (BUFFER_HANDLE)result;
 }
 
-/* Codes_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE along with the Buffer.] */
+/* Codes_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE.] */
 void BUFFER_delete(BUFFER_HANDLE handle)
 {
     /* Codes_SRS_BUFFER_07_004: [BUFFER_delete shall not delete any BUFFER_HANDLE that is NULL.] */
@@ -138,7 +138,7 @@ void BUFFER_delete(BUFFER_HANDLE handle)
         BUFFER* b = handle;
         if (b->buffer != NULL)
         {
-            /* Codes_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE along with the Buffer.] */
+            /* Codes_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE.] */
             free(b->buffer);
         }
         free(b);

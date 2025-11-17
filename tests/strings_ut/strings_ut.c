@@ -1183,7 +1183,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_negative_tests_deinit();
     }
 
-    /* Tests_SRS_STRING_07_036: [If h1 is NULL and h2 is a nonNULL value then STRING_compare shall return 1.] */
+    /* Tests_SRS_STRING_07_036: [If h1 is NULL and h2 is a non-NULL value then STRING_compare shall return 1.] */
     TEST_FUNCTION(STRING_compare_s1_NULL)
     {
         ///arrange
@@ -1202,7 +1202,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRING_delete(h2);
     }
 
-    /* Tests_SRS_STRING_07_037: [If h2 is NULL and h1 is a nonNULL value then STRING_compare shall return -1.] */
+    /* Tests_SRS_STRING_07_037: [If h2 is NULL and h1 is a non-NULL value then STRING_compare shall return -1.] */
     TEST_FUNCTION(STRING_compare_s2_NULL)
     {
         ///arrange

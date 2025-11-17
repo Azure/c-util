@@ -1081,11 +1081,8 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy_fails_when_mal
     THANDLE(CONSTBUFFER) result = CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy(source_handle, 1, 2);
 
     ///assert
-    /*Tests_SRS_CONSTBUFFER_THANDLE_88_055: [ If there are any failures then CONSTBUFFER_THANDLE_CreateFromOffsetAndSizeWithCopy shall fail and return NULL.]*/
     ASSERT_IS_NULL(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    ///cleanup
 
     ///cleanup
     THANDLE_ASSIGN(CONSTBUFFER)(&source_handle, NULL);
@@ -1486,6 +1483,31 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_to_buffer_with_0_size_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
 }
 
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_068: [ If there are any failures then CONSTBUFFER_THANDLE_to_buffer shall fail and return NULL.]*/
+TEST_FUNCTION(CONSTBUFFER_THANDLE_to_buffer_fails_when_malloc_fails)
+{
+    ///arrange
+    unsigned char test_data[1] = { 42 };
+    THANDLE(CONSTBUFFER) source = CONSTBUFFER_THANDLE_Create(test_data, sizeof(test_data));
+    ASSERT_IS_NOT_NULL(source);
+    uint32_t size;
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+        .SetReturn(NULL);
+
+    ///act
+    unsigned char* result = CONSTBUFFER_THANDLE_to_buffer(source, NULL, NULL, &size);
+
+    ///assert
+    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
+}
+
 /* CONSTBUFFER_THANDLE_to_fixed_size_buffer */
 
 /*Tests_SRS_CONSTBUFFER_THANDLE_88_069: [ If source is NULL then CONSTBUFFER_THANDLE_to_fixed_size_buffer shall fail and return CONSTBUFFER_THANDLE_TO_FIXED_SIZE_BUFFER_RESULT_INVALID_ARG.]*/
@@ -1775,7 +1797,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_zero_content_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&destination, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_068: [ If there are any failures then CONSTBUFFER_THANDLE_to_buffer shall fail and return NULL.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_057: [ If there are any failures then CONSTBUFFER_THANDLE_get_serialization_size shall fail and return 0.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialized_size_fails_when_error_occurs)
 {
     ///arrange
