@@ -26,7 +26,7 @@ void read_uint16_t(const unsigned char* source, uint16_t* destination)
 
 void read_uint32_t(const unsigned char* source, uint32_t* destination)
 {
-    /*Codes_SRS_MEMORY_DATA_02_043: [ read_uint32_t shall  write in destination the bytes at source MSB first. ]*/
+    /*Codes_SRS_MEMORY_DATA_02_043: [ read_uint32_t shall write in destination the bytes at source MSB first. ]*/
     *destination =
         (source[0] << 24) +
         (source[1] << 16) +

@@ -63,7 +63,7 @@ extern const void* singlylinkedlist_get_head_item(SINGLYLINKEDLIST_HANDLE list);
 
 **SRS_LIST_01_009: [** If the list argument is NULL, singlylinkedlist_get_head_item shall return NULL. **]**
 
-**SRS_LIST_01_010: [** If the list is empty, list_get_head_item_shall_return NULL. **]**
+**SRS_LIST_01_010: [** If the list is empty, `singlylinkedlist_get_head_item` shall return `NULL`. **]**
 
 ### singlylinkedlist_get_next_item
 ```c

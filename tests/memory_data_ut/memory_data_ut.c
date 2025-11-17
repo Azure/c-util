@@ -90,7 +90,7 @@ TEST_FUNCTION(read_uint16_t_succeeds)
 
 /* read_uint32_t */
 
-/*Tests_SRS_MEMORY_DATA_02_043: [ read_uint32_t shall  write in destination the bytes at source MSB first. ]*/
+/*Tests_SRS_MEMORY_DATA_02_043: [ read_uint32_t shall write in destination the bytes at source MSB first. ]*/
 TEST_FUNCTION(read_uint32_t_succeeds)
 {
     ///arrange

@@ -292,7 +292,7 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
             }
             else
             {
-                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [ constbuffer_array_splitter_split_to_array_of_array shall allocate a TARRAY of CONSTBUFFER_HANDLE of size total size of all buffers in buffers divided by max_buffer_size (rounded up). ]*/
+                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [ constbuffer_array_splitter_split_to_array_of_array shall allocate a TARRAY of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
                 uint32_t split_array_count = (remaining_buffer_size + max_buffer_size - 1) / max_buffer_size;
                 TARRAY(CONSTBUFFER_ARRAY_HANDLE) temp = TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(split_array_count);
 

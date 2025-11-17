@@ -235,7 +235,7 @@ TEST_FUNCTION(when_the_underlying_malloc_fails_singlylinkedlist_add_fails)
 
 /* singlylinkedlist_get_head_item */
 
-/* Tests_SRS_LIST_01_010: [If the list is empty, list_get_head_item_shall_return NULL.] */
+/* Tests_SRS_LIST_01_010: [If the list is empty, singlylinkedlist_get_head_item shall return NULL.] */
 TEST_FUNCTION(when_the_list_is_empty_singlylinkedlist_get_head_item_yields_NULL)
 {
     // arrange

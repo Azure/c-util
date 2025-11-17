@@ -87,7 +87,7 @@ This takes the `buffers` from a `CONSTBUFFER_ARRAY_HANDLE` and splits them into 
 
 **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_022: [** If `remaining_buffers_size` is smaller or equal to `max_buffer_size`, `constbuffer_array_splitter_split_to_array_of_array` shall call `TARRAY_CREATE_WITH_CAPACITY` with size 1, inc ref the original buffer and return it.  **]**
 
-**SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [** `constbuffer_array_splitter_split_to_array_of_array` shall allocate a TARRAY of `CONSTBUFFER_HANDLE` of size total size of all buffers in `buffers` divided by `max_buffer_size` (rounded up). **]**
+**SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [** `constbuffer_array_splitter_split_to_array_of_array` shall allocate a `TARRAY` of `CONSTBUFFER_HANDLE` of size `remaining_buffer_size` / `max_buffer_size` (rounded up). **]**
 
 **SRS_CONSTBUFFER_ARRAY_SPLITTER_07_010: [** `constbuffer_array_splitter_split_to_array_of_array` shall initialize the start buffer index and offset to `0`, current buffer count to `0` and end buffer size to `0`. **]**
 

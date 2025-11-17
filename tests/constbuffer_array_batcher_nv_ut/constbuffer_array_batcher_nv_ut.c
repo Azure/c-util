@@ -94,7 +94,7 @@ TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_0_count_fails)
     real_constbuffer_array_dec_ref(test_array);
 }
 
-/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_02_001: [ If count greater than UINT32_MAX / sizeof(uint32_t) - 1 then constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_BATCHER_NV_02_001: [ If count is greater than UINT32_MAX / sizeof(uint32_t) - 1 then constbuffer_array_batcher_nv_batch shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_batcher_nv_batch_with_UINT32_MAX_count_fails)
 {
     // arrange
