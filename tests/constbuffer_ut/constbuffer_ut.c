@@ -1125,7 +1125,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         CONSTBUFFER_DecRef(handle);
     }
 
-    /*Tests_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_IncRef shall increment the reference count and return constbufferHandle.]*/
+    /*Tests_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_IncRef shall increment the reference count.]*/
     /*Tests_SRS_CONSTBUFFER_02_016: [Otherwise, CONSTBUFFER_DecRef shall decrement the refcount on the constbufferHandle handle.]*/
     /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_DecRef shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
     TEST_FUNCTION(CONSTBUFFER_IncRef_increments_ref_count_2)
@@ -1145,7 +1145,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         CONSTBUFFER_DecRef(handle);
     }
 
-    /*Tests_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_IncRef shall increment the reference count and return constbufferHandle.]*/
+    /*Tests_SRS_CONSTBUFFER_02_014: [Otherwise, CONSTBUFFER_IncRef shall increment the reference count.]*/
     /*Tests_SRS_CONSTBUFFER_02_016: [Otherwise, CONSTBUFFER_DecRef shall decrement the refcount on the constbufferHandle handle.]*/
     /*Tests_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_DecRef shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
     TEST_FUNCTION(CONSTBUFFER_IncRef_increments_ref_count_3)
@@ -1700,7 +1700,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_source_NULL_fails)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_CONSTBUFFER_02_045: [ If serialized_size is NULL then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
+/*Tests_SRS_CONSTBUFFER_02_045: [ If size is NULL then CONSTBUFFER_to_buffer shall fail and return NULL. ]*/
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_NULL_fails)
 {
     ///arrange
@@ -1760,7 +1760,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_exceeding_UINT32_MAX_fails)
 /*Tests_SRS_CONSTBUFFER_02_050: [ CONSTBUFFER_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1). ]*/
 /*Tests_SRS_CONSTBUFFER_02_051: [ CONSTBUFFER_to_buffer shall write at offsets 1-4 of the allocated memory the value of source->alias.size in network byte order. ]*/
 /*Tests_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
-/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in size the size of the serialization and return the allocated memory. ]*/
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_malloc_succeeds)
 {
     ///arrange
@@ -1806,7 +1806,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_malloc_succeeds)
 /*Tests_SRS_CONSTBUFFER_02_050: [ CONSTBUFFER_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1). ]*/
 /*Tests_SRS_CONSTBUFFER_02_051: [ CONSTBUFFER_to_buffer shall write at offsets 1-4 of the allocated memory the value of source->alias.size in network byte order. ]*/
 /*Tests_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
-/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in size the size of the serialization and return the allocated memory. ]*/
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_0_with_malloc_succeeds)
 {
     ///arrange
@@ -1847,7 +1847,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_0_with_malloc_succeeds)
 /*Tests_SRS_CONSTBUFFER_02_050: [ CONSTBUFFER_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1). ]*/
 /*Tests_SRS_CONSTBUFFER_02_051: [ CONSTBUFFER_to_buffer shall write at offsets 1-4 of the allocated memory the value of source->alias.size in network byte order. ]*/
 /*Tests_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
-/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in size the size of the serialization and return the allocated memory. ]*/
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_custom_alloc_succeeds)
 {
     ///arrange
@@ -1892,7 +1892,7 @@ TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_1_with_custom_alloc_succeeds)
 /*Tests_SRS_CONSTBUFFER_02_050: [ CONSTBUFFER_to_buffer shall write at offset 0 of the allocated memory the version of the serialization (currently 1). ]*/
 /*Tests_SRS_CONSTBUFFER_02_051: [ CONSTBUFFER_to_buffer shall write at offsets 1-4 of the allocated memory the value of source->alias.size in network byte order. ]*/
 /*Tests_SRS_CONSTBUFFER_02_052: [ CONSTBUFFER_to_buffer shall write starting at offset 5 of the allocated memory the bytes of source->alias.buffer. ]*/
-/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in serialized_size the size of the serialization and return the allocated memory. ]*/
+/*Tests_SRS_CONSTBUFFER_02_053: [ CONSTBUFFER_to_buffer shall succeed, write in size the size of the serialization and return the allocated memory. ]*/
 TEST_FUNCTION(CONSTBUFFER_to_buffer_with_size_2_with_custom_alloc_succeeds)
 {
     ///arrange
@@ -2541,7 +2541,7 @@ TEST_FUNCTION(CONSTBUFFER_from_buffer_with_2_size_unhappy_path)
 
 /*CONSTBUFFER_CreateWritableHandle*/
 
-/*Tests_SRS_CONSTBUFFER_51_001: [ If `size` is 0, then CONSTBUFFER_CreateWritableHandle shall fail and return NULL. ]*/
+/*Tests_SRS_CONSTBUFFER_51_001: [ If size is 0, then CONSTBUFFER_CreateWritableHandle shall fail and return NULL. ]*/
 TEST_FUNCTION(CONSTBUFFER_CreateWritableHandle_invalid_args_fails)
 {
     ///arrange
@@ -2555,7 +2555,7 @@ TEST_FUNCTION(CONSTBUFFER_CreateWritableHandle_invalid_args_fails)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_51_003: [ If any error occurs, `CONSTBUFFER_CreateWritableHandle` shall fail and return NULL. ]*/
+/*Tests_SRS_CONSTBUFFER_51_003: [ If any error occurs, CONSTBUFFER_CreateWritableHandle shall fail and return NULL. ]*/
 TEST_FUNCTION(CONSTBUFFER_CreateWritableHandle_fails_when_malloc_fails)
 {
     ///arrange
@@ -2573,7 +2573,7 @@ TEST_FUNCTION(CONSTBUFFER_CreateWritableHandle_fails_when_malloc_fails)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_51_004: [ `CONSTBUFFER_CreateWritableHandle` shall set the ref count of the newly created `CONSTBUFFER_WRITABLE_HANDLE` to 1. ]*/
+/*Tests_SRS_CONSTBUFFER_51_004: [ CONSTBUFFER_CreateWritableHandle shall set the ref count of the newly created CONSTBUFFER_WRITABLE_HANDLE to 1. ]*/
 TEST_FUNCTION(CONSTBUFFER_CreateWritableHandle_is_ref_counted_1)
 {
     ///arrange
@@ -2590,8 +2590,8 @@ TEST_FUNCTION(CONSTBUFFER_CreateWritableHandle_is_ref_counted_1)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_51_002: [ `CONSTBUFFER_CreateWritableHandle` shall allocate memory for the `CONSTBUFFER_WRITABLE_HANDLE`. ]*/
-/*Tests_SRS_CONSTBUFFER_51_005: [ `CONSTBUFFER_CreateWritableHandle` shall succeed and return a non - `NULL` `CONSTBUFFER_WRITABLE_HANDLE`. ]*/
+/*Tests_SRS_CONSTBUFFER_51_002: [ CONSTBUFFER_CreateWritableHandle shall allocate memory for the CONSTBUFFER_WRITABLE_HANDLE ]*/
+/*Tests_SRS_CONSTBUFFER_51_005: [ CONSTBUFFER_CreateWritableHandle shall succeed and return a non-NULL CONSTBUFFER_WRITABLE_HANDLE. ]*/
 TEST_FUNCTION(CONSTBUFFER_CreateWritableHandle_succeeds)
 {
     ///arrange
@@ -2611,7 +2611,7 @@ TEST_FUNCTION(CONSTBUFFER_CreateWritableHandle_succeeds)
 
 /*CONSTBUFFER_getWritableBuffer*/
 
-/*Tests_SRS_CONSTBUFFER_51_006: [ If `constbufferHandle` is `NULL`, then `CONSTBUFFER_GetWritableBuffer` shall fail and return `NULL`. ] */
+/*Tests_SRS_CONSTBUFFER_51_006: [ If constbufferWritableHandle is NULL, then CONSTBUFFER_GetWritableBuffer shall fail and return NULL. ] */
 TEST_FUNCTION(CONSTBUFFER_GetWritableBuffer_invalid_args_fails)
 {
     ///arrange
@@ -2626,7 +2626,7 @@ TEST_FUNCTION(CONSTBUFFER_GetWritableBuffer_invalid_args_fails)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_51_007: [ `CONSTBUFFER_GetWritableBuffer` shall succeed and returns a pointer to the non-CONST buffer of `constbufferWritableHandle`. ]*/
+/*Tests_SRS_CONSTBUFFER_51_007: [ CONSTBUFFER_GetWritableBuffer shall succeed and returns a pointer to the non-CONST buffer of constbufferWritableHandle. ]*/
 TEST_FUNCTION(CONSTBUFFER_GetWritableBuffer_succeeds)
 {
     ///arrange
@@ -2647,7 +2647,7 @@ TEST_FUNCTION(CONSTBUFFER_GetWritableBuffer_succeeds)
 
 /*CONSTBUFFER_sealWritableHandle*/
 
-/*Tests_SRS_CONSTBUFFER_51_008: [ If `constbufferWritableHandle` is `NULL` then `CONSTBUFFER_SealWritableHandle` shall fail and return `NULL`. ]*/
+/*Tests_SRS_CONSTBUFFER_51_008: [ If constbufferWritableHandle is NULL then CONSTBUFFER_SealWritableHandle shall fail and return NULL. ]*/
 TEST_FUNCTION(CONSTBUFFER_SealWritableHandle_invalid_args_fails)
 {
     ///arrange
@@ -2663,7 +2663,7 @@ TEST_FUNCTION(CONSTBUFFER_SealWritableHandle_invalid_args_fails)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_51_009: [`CONSTBUFFER_SealWritableHandle` shall succeed and return a non - `NULL` `CONSTBUFFER_HANDLE`.]*/
+/*Tests_SRS_CONSTBUFFER_51_009: [CONSTBUFFER_SealWritableHandle shall succeed and return a non-NULL CONSTBUFFER_HANDLE.]*/
 TEST_FUNCTION(CONSTBUFFER_SealWritableHandle_succeeds)
 {
     ///arrange
@@ -2699,7 +2699,7 @@ TEST_FUNCTION(CONSTBUFFER_SealWritableHandle_succeeds)
 
 /*CONSTBUFFER_WritableHandleIncRef*/
 
-/*Tests_SRS_CONSTBUFFER_51_010: [ If `constbufferWritableHandle` is NULL then `CONSTBUFFER_WritableHandleIncRef` shall return. ]*/
+/*Tests_SRS_CONSTBUFFER_51_010: [ If constbufferWritableHandle is NULL then CONSTBUFFER_WritableHandleIncRef shall return. ]*/
 TEST_FUNCTION(CONSTBUFFER_WritableHandleIncRef_invalid_args_fails)
 {
     ///arrange
@@ -2712,7 +2712,7 @@ TEST_FUNCTION(CONSTBUFFER_WritableHandleIncRef_invalid_args_fails)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_51_011: [ Otherwise, `CONSTBUFFER_WritableHandleIncRef` shall increment the reference count. ]*/
+/*Tests_SRS_CONSTBUFFER_51_011: [ Otherwise, CONSTBUFFER_WritableHandleIncRef shall increment the reference count of constbufferWritableHandle ]*/
 TEST_FUNCTION(CONSTBUFFER_WritableHandleIncRef_succeeds)
 {
     ///arrange
@@ -2732,7 +2732,7 @@ TEST_FUNCTION(CONSTBUFFER_WritableHandleIncRef_succeeds)
 
 /*CONSTBUFFER_WritableHandleDecRef*/
 
-/*Tests_SRS_CONSTBUFFER_51_012: [ If `constbufferWritableHandle` is NULL then `CONSTBUFFER_WritableHandleDecRef` shall do nothing. ]*/
+/*Tests_SRS_CONSTBUFFER_51_012: [ If constbufferWritableHandle is NULL then CONSTBUFFER_WritableHandleDecRef shall do nothing. ]*/
 TEST_FUNCTION(CONSTBUFFER_WritableHandleDecReff_invalid_args_fails)
 {
     ///arrange
@@ -2745,8 +2745,8 @@ TEST_FUNCTION(CONSTBUFFER_WritableHandleDecReff_invalid_args_fails)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_51_013: [ Otherwise, `CONSTBUFFER_WritableHandleDecRef` shall decrement the refcount on the `constbufferWritableHandle` handle. ]*/
-/*Tests_SRS_CONSTBUFFER_51_014: [ If the refcount reaches zero, then `CONSTBUFFER_WritableHandleDecRef` shall deallocate all resources used by the CONSTBUFFER_HANDLE. ]*/
+/*Tests_SRS_CONSTBUFFER_51_013: [ Otherwise, CONSTBUFFER_WritableHandleDecRef shall decrement the refcount of constbufferWritableHandle. ]*/
+/*Tests_SRS_CONSTBUFFER_51_014: [ If the refcount reaches zero, then CONSTBUFFER_WritableHandleDecRef shall deallocate all resources used by the CONSTBUFFER_HANDLE. ]*/
 TEST_FUNCTION(CONSTBUFFER_WritableHandleDecReff_succeeds)
 {
     ///arrange
@@ -2765,7 +2765,7 @@ TEST_FUNCTION(CONSTBUFFER_WritableHandleDecReff_succeeds)
 
 /*CONSTBUFFER_getWritableBufferSize*/
 
-/*Tests_SRS_CONSTBUFFER_51_015: [ If `constbufferWritableHandle` is `NULL`, then `CONSTBUFFER_GetWritableBufferSize` return 0. ] */
+/*Tests_SRS_CONSTBUFFER_51_015: [ If constbufferWritableHandle is NULL, then CONSTBUFFER_GetWritableBufferSize return 0. ] */
 TEST_FUNCTION(CONSTBUFFER_GetWritableBufferSize_invalid_args_fails)
 {
     ///arrange
@@ -2780,7 +2780,7 @@ TEST_FUNCTION(CONSTBUFFER_GetWritableBufferSize_invalid_args_fails)
     ///cleanup
 }
 
-/*Tests_SRS_CONSTBUFFER_51_016: [ `CONSTBUFFER_GetWritableBufferSize` shall succeed and returns the size of the writable buffer of `constbufferWritableHandle`. ]*/
+/*Tests_SRS_CONSTBUFFER_51_016: [ CONSTBUFFER_GetWritableBufferSize shall succeed and returns the size of the writable buffer of constbufferWritableHandle. ]*/
 TEST_FUNCTION(CONSTBUFFER_GetWritableBufferSize_succeeds)
 {
     ///arrange

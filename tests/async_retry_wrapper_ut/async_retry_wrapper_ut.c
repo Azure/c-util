@@ -778,7 +778,7 @@ TEST_FUNCTION(when_threadpool_schedule_work_fails_error_is_indicated)
 
 /*Tests_SRS_ASYNC_RETRY_WRAPPER_42_006: [ The asynchronous retry wrapper shall copy each argument from IN_ARGS(...) to the allocated context. ]*/
 /*Tests_SRS_ASYNC_RETRY_WRAPPER_42_009: [ Otherwise, the asynchronous retry wrapper shall copy the argument to the context via assignment. ]*/
-/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_017: [ If the out_arg specified as ENUM(type, name, error_value) has one of the values from RETRY_ON_ASYNC(...) then on_{async_function_name}_complete shall call the {async_function_name}_do_retry function to retry the asynchronous call and return. ]*/
+/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_017: [ If the out_arg specified as ENUM(type, name, error_value) has one of the values from RETRY_ON_ASYNC(...) then on_{async_function_name}_complete shall call threadpool_schedule_work with {async_function_name}_do_retry as the work_function to retry the asynchronous call and return. ]*/
 /*Tests_SRS_ASYNC_RETRY_WRAPPER_42_023: [ {async_function_name}_do_retry shall call the function async_function_name, passing the in_args that have been copied to the retry context with the exception of ARG_CB(...) and ARG_CONTEXT(...) which are instead passed as the generated callback handler and the allocated context. ]*/
 TEST_FUNCTION(on_test_async_do_something_async_complete_retries_once)
 {
@@ -806,7 +806,7 @@ TEST_FUNCTION(on_test_async_do_something_async_complete_retries_once)
     saved_callback2(saved_context2, TEST_ASYNC_DUMMY_RESULT_1, 500, 42);
 }
 
-/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_017: [ If the out_arg specified as ENUM(type, name, error_value) has one of the values from RETRY_ON_ASYNC(...) then on_{async_function_name}_complete shall call the {async_function_name}_do_retry function to retry the asynchronous call and return. ]*/
+/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_017: [ If the out_arg specified as ENUM(type, name, error_value) has one of the values from RETRY_ON_ASYNC(...) then on_{async_function_name}_complete shall call threadpool_schedule_work with {async_function_name}_do_retry as the work_function to retry the asynchronous call and return. ]*/
 /*Tests_SRS_ASYNC_RETRY_WRAPPER_42_023: [ {async_function_name}_do_retry shall call the function async_function_name, passing the in_args that have been copied to the retry context with the exception of ARG_CB(...) and ARG_CONTEXT(...) which are instead passed as the generated callback handler and the allocated context. ]*/
 TEST_FUNCTION(on_test_async_do_something_async_complete_retries_until_enum_is_different)
 {
@@ -854,7 +854,7 @@ TEST_FUNCTION(on_test_async_do_something_async_complete_retries_until_enum_is_di
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_017: [ If the out_arg specified as ENUM(type, name, error_value) has one of the values from RETRY_ON_ASYNC(...) then on_{async_function_name}_complete shall call the {async_function_name}_do_retry function to retry the asynchronous call and return. ]*/
+/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_017: [ If the out_arg specified as ENUM(type, name, error_value) has one of the values from RETRY_ON_ASYNC(...) then on_{async_function_name}_complete shall call threadpool_schedule_work with {async_function_name}_do_retry as the work_function to retry the asynchronous call and return. ]*/
 /*Tests_SRS_ASYNC_RETRY_WRAPPER_42_023: [ {async_function_name}_do_retry shall call the function async_function_name, passing the in_args that have been copied to the retry context with the exception of ARG_CB(...) and ARG_CONTEXT(...) which are instead passed as the generated callback handler and the allocated context. ]*/
 TEST_FUNCTION(on_test_async_do_something_multiple_retry_conditions_async_complete_retries_until_enum_is_not_a_retry_value)
 {
@@ -1403,7 +1403,7 @@ TEST_FUNCTION(async_retry_wrapper_with_timeout_calls_user_callback_with_timeout_
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_ASYNC_RETRY_WRAPPER_02_003: [ If the out_arg specified as ENUM(type, name, error_value) has one of the values from RETRY_ON_ASYNC(...) and the the time measured from the initial call to ASYNC_RETRY_WRAPPER() exceeded timeout_ms then the user callback specified in ARG_CB(...) shall be called, passing the context from ARG_CONTEXT(...), and the out_args as they were received by this callback handler with the exception of the ENUM(...) which will have the value specified for timeout_error_value. ]*/
+/*Tests_SRS_ASYNC_RETRY_WRAPPER_02_003: [ If the out_arg specified as ENUM(type, name, error_value) has one of the values from RETRY_ON_ASYNC(...) and the the time measured from the initial call to ASYNC_RETRY_WRAPPER() exceeded timeout_ms then the user callback  specified in ARG_CB(...) shall be called, passing the context from ARG_CONTEXT(...), and the out_args as they were received by this callback handler with the exception of the ENUM(...) which will have the value specified for timeout_error_value. ]*/
 TEST_FUNCTION(async_retry_wrapper_with_timeout_calls_user_callback_with_timeout_value_for_ENUM)
 {
     ///arrange

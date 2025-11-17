@@ -292,7 +292,7 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
             }
             else
             {
-                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [ constbuffer_array_splitter_split_to_array_of_array shall allocate a TARRAY of CONSTBUFFER_HANDLE of size remaining_buffer_size / max_buffer_size (rounded up). ]*/
+                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_023: [ constbuffer_array_splitter_split_to_array_of_array shall allocate a TARRAY of CONSTBUFFER_HANDLE of size total size of all buffers in buffers divided by max_buffer_size (rounded up). ]*/
                 uint32_t split_array_count = (remaining_buffer_size + max_buffer_size - 1) / max_buffer_size;
                 TARRAY(CONSTBUFFER_ARRAY_HANDLE) temp = TARRAY_CREATE_WITH_CAPACITY(CONSTBUFFER_ARRAY_HANDLE)(split_array_count);
 
@@ -323,14 +323,14 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
 
                         if(current_buffer_size + buffer->size < max_buffer_size)
                         {
-                            /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_016: [ If current buffer size added the current sub - tarray size is smaller than max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall include the current buffer to the current sub - tarray. ]*/
+                            /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_016: [ If current buffer size added the current sub-tarray size is smaller than max_buffer_size, constbuffer_array_splitter_split_to_array_of_array shall include the current buffer to the current sub-tarray. ]*/
                             current_buffer_count++;
                             current_buffer_size += buffer->size;
                             end_buffer_size = buffer->size;
 
                             if(i == buffer_count - 1)
                             {
-                                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_014: [ If current buffer is the last buffer in the original constbuffer_array, constbuffer_array_splitter_split_to_array_of_array shall store the sub - tarray with size smaller than max_buffer_size to result. ]*/
+                                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_014: [ If current buffer is the last buffer in the original constbuffer_array, constbuffer_array_splitter_split_to_array_of_array shall store the sub-tarray with size smaller than max_buffer_size to result. ]*/
                                 CONSTBUFFER_ARRAY_HANDLE arr = constbuffer_array_create_from_buffer_offset_and_count(buffers, start_buffer_index, current_buffer_count, start_buffer_offset, end_buffer_size);
 
                                 if(arr == NULL)
@@ -349,14 +349,14 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
                         }
                         else if(current_buffer_size + buffer->size >= max_buffer_size)
                         {
-                            /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_018: [ If current buffer size added the current sub - tarray size is greater than max_buffer_size, then constbuffer_array_splitter_split_to_array_of_array shall get part of the current buffer as end buffer and added a new array into the result until the remaining size for the current buffer is smaller than max_buffer_size. ]*/
+                            /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_018: [ If current buffer size added the current sub-tarray size is greater than max_buffer_size, then constbuffer_array_splitter_split_to_array_of_array shall get part of the current buffer as end buffer and added a new array into the result until the remaining size for the current buffer is smaller than max_buffer_size. ]*/
 
                             current_buffer_count++;
                             end_buffer_size = max_buffer_size - current_buffer_size;
                             bool has_empty = false;
                             if (current_buffer_size + buffer->size == max_buffer_size)
                             {
-                                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_025: [ If current buffer size added the current sub - tarray size is equal to max_buffers_size, then constbuffer_array_splitter_split_to_array_of_array shall include any consecutive empty buffers right after the current buffer to the new array which will be added to the result. ]*/
+                                /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_025: [ If current buffer size added the current sub-tarray size is equal to max_buffers_size, then constbuffer_array_splitter_split_to_array_of_array shall include any consecutive empty buffers right after the current buffer to the new array which will be added to the result. ]*/
                                 while (++i < buffer_count)
                                 {
                                     CONSTBUFFER_HANDLE next = constbuffer_array_get_buffer(buffers, i);
@@ -425,7 +425,7 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
                                 }
                                 else
                                 {
-                                    /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_014: [ If current buffer is the last buffer in the original constbuffer_array, constbuffer_array_splitter_split_to_array_of_array shall store the sub - tarray with size smaller than max_buffer_size to result. ]*/
+                                    /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_014: [ If current buffer is the last buffer in the original constbuffer_array, constbuffer_array_splitter_split_to_array_of_array shall store the sub-tarray with size smaller than max_buffer_size to result. ]*/
                                     if (i == buffer_count - 1)
                                     {
                                         CONSTBUFFER_ARRAY_HANDLE arr2 = constbuffer_array_create_from_buffer_offset_and_count(buffers, start_buffer_index, 1, start_buffer_offset, current_buffer_remaining_size);
@@ -459,7 +459,7 @@ TARRAY(CONSTBUFFER_ARRAY_HANDLE) constbuffer_array_splitter_split_to_array_of_ar
 
                     if (failed)
                     {
-                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_019: [ On any failure, constbuffer_array_splitter_split_to_array_of_array dec ref the sub - tarrays by calling constbuffer_array_dec_ref. ]*/
+                        /* Codes_SRS_CONSTBUFFER_ARRAY_SPLITTER_07_019: [ On any failure, constbuffer_array_splitter_split_to_array_of_array dec ref the sub-tarrays by calling constbuffer_array_dec_ref. ]*/
                         for (uint32_t i = 0; i < buffer_array_count; i++)
                         {
                             constbuffer_array_dec_ref(temp->arr[i]);

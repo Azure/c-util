@@ -362,7 +362,7 @@ MAP_RESULT Map_Add(MAP_HANDLE handle, const char* key, const char* value)
         }
         else
         {
-            /* Codes_SRS_MAP_07_009: [If the mapFilterCallback function is not NULL, then the return value will be check and if it is not zero then Map_Add shall return MAP_FILTER_REJECT.] */
+            /* Codes_SRS_MAP_07_009: [If the mapFilterCallback function is not NULL, then the return value will be checked and if it is not zero then Map_Add shall return MAP_FILTER_REJECT.] */
             if ( (handleData->mapFilterCallback != NULL) && (handleData->mapFilterCallback(key, value) != 0) )
             {
                 result = MAP_FILTER_REJECT;

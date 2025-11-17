@@ -18,7 +18,7 @@ THANDLE_TYPE_DEFINE(RC_PTR);
 
 static void rc_ptr_dispose(RC_PTR* rc_ptr)
 {
-    /*Codes_SRS_RC_PTR_43_006: [ If free_func is not NULL, rc_ptr_dispose shall call free_func with the ptr. ]*/
+    /*Codes_SRS_RC_PTR_43_006: [ If free_func is not NULL, rc_ptr_dispose shall call free_func with free_func_context and ptr. ]*/
     if (rc_ptr->free_func != NULL)
     {
         rc_ptr->free_func(rc_ptr->free_func_context, (void*)rc_ptr->ptr);

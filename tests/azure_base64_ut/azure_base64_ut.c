@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "azure_base64_ut_pch.h"
@@ -1485,7 +1485,7 @@ TEST_FUNCTION(Base64_Encode_bad_input)
 
 }
 
-/*Tests_SRS_BASE64_06_007: [Otherwise Azure_Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of inpuit.]*/
+/*Tests_SRS_BASE64_06_007: [Otherwise Azure_Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of input.]*/
 TEST_FUNCTION(Base64_Encode_simple_good)
 {
     //arrange

@@ -13,7 +13,7 @@ int critical_section_enter(volatile_atomic int32_t* access_value)
 
     if (access_value == NULL)
     {
-        /*Codes_SRS_CRITICAL_SECTION_18_001: [ If access_value is NULL, critical_section_enter shall terminate the process. ]*/
+        /*Codes_SRS_CRITICAL_SECTION_18_001: [ If access_value is NULL, critical_section_enter shall fail and return a non-zero value. ]*/
         LogError("Invalid args: volatile_atomic int32_t* access_value=%p", access_value);
         result = MU_FAILURE;
     }
@@ -23,7 +23,7 @@ int critical_section_enter(volatile_atomic int32_t* access_value)
         {
             /*Codes_SRS_CRITICAL_SECTION_18_002: [ critical_section_enter shall call interlocked_compare_exchange to set access_value to 1 if it was previously 0. ]*/
             int32_t current_val = interlocked_compare_exchange(access_value, 1, 0);
-            /*Codes_SRS_CRITICAL_SECTION_18_003: [ If interlocked_compare_exchange indicates that access_value was changed from 0 to 1, critical_section_enter returns. ]*/
+            /*Codes_SRS_CRITICAL_SECTION_18_003: [ If interlocked_compare_exchange indicates that access_value was changed from 0 to 1, critical_section_enter shall succeed and return 0. ]*/
             if (current_val == 0)
             {
                 result = 0;
@@ -48,7 +48,7 @@ int critical_section_leave(volatile_atomic int32_t* access_value)
 
     if (access_value == NULL)
     {
-        /*Codes_SRS_CRITICAL_SECTION_18_006: [ If access_value is NULL, critical_section_leave shall terminate the process. ]*/
+        /*Codes_SRS_CRITICAL_SECTION_18_006: [ If access_value is NULL, critical_section_leave shall fail and return a non-zero value. ]*/
         LogError("Invalid args: volatile_atomic int32_t* access_value=%p", access_value);
         result = MU_FAILURE;
     }
@@ -58,7 +58,7 @@ int critical_section_leave(volatile_atomic int32_t* access_value)
         (void)interlocked_exchange(access_value, 0);
         /*Codes_SRS_CRITICAL_SECTION_18_008: [ critical_section_leave shall call wake_by_address_single to wake any threads that may be waiting for access_value to change. ]*/
         wake_by_address_single(access_value);
-        /*Codes_SRS_CRITICAL_SECTION_18_009: [ critical_section_leave shall succeed and return 0]*/
+        /*Codes_SRS_CRITICAL_SECTION_18_009: [ critical_section_leave shall succeed and return 0.]*/
         result = 0;
     }
 

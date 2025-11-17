@@ -335,3 +335,5 @@ include(CMakePackageConfigHelpers)
 
 #Insert vld in all executables if so required
 add_vld_if_defined(${CMAKE_CURRENT_SOURCE_DIR})
+
+add_repo_validation(c_util)

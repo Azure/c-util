@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 
 
 #include "async_type_helper_thandle_handler_ut_pch.h"
@@ -79,7 +79,7 @@ TEST_FUNCTION(async_type_helper_thandle_copy_handler_with_NULL_dst_fails)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_ASYNC_TYPE_HELPER_THANDLE_HANDLER_01_006: [ Otherwise the copy handler shall assign src to dst by calling THANDLE_INITIALIZE. ]*/
+/* Tests_SRS_ASYNC_TYPE_HELPER_THANDLE_HANDLER_01_006: [ Otherwise the copy handler shall assign src to dst by calling THANDLE_ASSIGN. ]*/
 /* Tests_SRS_ASYNC_TYPE_HELPER_THANDLE_HANDLER_01_007: [ The copy handler shall succeed and return 0. ]*/
 TEST_FUNCTION(async_type_helper_thandle_copy_handler_succeeds)
 {
@@ -100,7 +100,7 @@ TEST_FUNCTION(async_type_helper_thandle_copy_handler_succeeds)
     THANDLE_ASSIGN(TEST_THANDLE)(&dst, NULL);
 }
 
-/* Tests_SRS_ASYNC_TYPE_HELPER_THANDLE_HANDLER_01_006: [ Otherwise the copy handler shall assign src to dst by calling THANDLE_INITIALIZE. ]*/
+/* Tests_SRS_ASYNC_TYPE_HELPER_THANDLE_HANDLER_01_006: [ Otherwise the copy handler shall assign src to dst by calling THANDLE_ASSIGN. ]*/
 /* Tests_SRS_ASYNC_TYPE_HELPER_THANDLE_HANDLER_01_007: [ The copy handler shall succeed and return 0. ]*/
 TEST_FUNCTION(async_type_helper_thandle_copy_handler_succeeds_src_NULL)
 {

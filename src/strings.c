@@ -812,12 +812,12 @@ int STRING_compare(STRING_HANDLE s1, STRING_HANDLE s2)
     }
     else if (s1 == NULL)
     {
-        /* Codes_SRS_STRING_07_036: [If h1 is NULL and h2 is nonNULL then STRING_compare shall return 1.]*/
+        /* Codes_SRS_STRING_07_036: [If h1 is NULL and h2 is a nonNULL value then STRING_compare shall return 1.]*/
         result = 1;
     }
     else if (s2 == NULL)
     {
-        /* Codes_SRS_STRING_07_037: [If h2 is NULL and h1 is nonNULL then STRING_compare shall return -1.] */
+        /* Codes_SRS_STRING_07_037: [If h2 is NULL and h1 is a nonNULL value then STRING_compare shall return -1.] */
         result = -1;
     }
     else

@@ -132,7 +132,7 @@ void channel_close(THANDLE(CHANNEL) channel)
     {
         CHANNEL* channel_ptr = THANDLE_GET_T(CHANNEL)(channel);
 
-        /*Codes_SRS_CHANNEL_43_094: [ channel_close shall call sm_close_begin_with_cb with abandon_pending_operation as the callback. ]*/
+        /*Codes_SRS_CHANNEL_43_094: [ channel_close shall call sm_close_begin_with_cb with abandon_pending_operations as the callback. ]*/
         SM_RESULT sm_close_begin_result = sm_close_begin_with_cb(channel_ptr->sm, abandon_pending_operations, channel_ptr, NULL, NULL);
         if (sm_close_begin_result != SM_EXEC_GRANTED)
         {
@@ -367,12 +367,12 @@ static int enqueue_operation(THANDLE(CHANNEL) channel, THANDLE(ASYNC_OP)* out_op
     {
         CHANNEL_OP* channel_op = async_op->context;
 
-        /*Codes_SRS_CHANNEL_43_104: [ channel_pull shall store the correlation_id, on_data_available_cb and on_data_available_context in the THANDLE(ASYNC_OP). ]*/
+        /*Codes_SRS_CHANNEL_43_104: [ channel_pull shall store the correlation_id, on_data_available_cb and pull_context in the THANDLE(ASYNC_OP). ]*/
         THANDLE_INITIALIZE(RC_STRING)(&channel_op->pull_correlation_id, pull_correlation_id);
         channel_op->on_data_available_cb = on_data_available_cb;
         channel_op->on_data_available_context = on_data_available_context;
 
-        /*Codes_SRS_CHANNEL_43_120: [ channel_push shall store the correlation_id, on_data_consumed_cb, on_data_consumed_context and data in the THANDLE(ASYNC_OP). ]*/
+        /*Codes_SRS_CHANNEL_43_120: [ channel_push shall store the correlation_id, on_data_consumed_cb, push_context and data in the THANDLE(ASYNC_OP). ]*/
         THANDLE_INITIALIZE(RC_STRING)(&channel_op->push_correlation_id, push_correlation_id);
         channel_op->on_data_consumed_cb = on_data_consumed_cb;
         channel_op->on_data_consumed_context = on_data_consumed_context;
@@ -411,14 +411,14 @@ static int dequeue_operation(THANDLE(CHANNEL) channel, THANDLE(ASYNC_OP)* out_op
     CHANNEL_OP* channel_op = CONTAINING_RECORD(op_entry, CHANNEL_OP, anchor);
     if (on_data_available_cb != NULL)
     {
-        /*Codes_SRS_CHANNEL_43_112: [ channel_pull shall store the correlation_id, on_data_available_cb and on_data_available_context in the obtained operation. ]*/
+        /*Codes_SRS_CHANNEL_43_112: [ channel_pull shall store the correlation_id, on_data_available_cb and pull_context in the obtained operation. ]*/
         THANDLE_INITIALIZE(RC_STRING)(&channel_op->pull_correlation_id, pull_correlation_id);
         channel_op->on_data_available_cb = on_data_available_cb;
         channel_op->on_data_available_context = on_data_available_context;
     }
     else if (on_data_consumed_cb != NULL)
     {
-        /*Codes_SRS_CHANNEL_43_128: [ channel_push shall store the correlation_id, on_data_consumed_cb, on_data_consumed_context and data in the obtained operation. ]*/
+        /*Codes_SRS_CHANNEL_43_128: [ channel_push shall store the correlation_id, on_data_consumed_cb, push_context and data in the obtained operation. ]*/
         THANDLE_INITIALIZE(RC_STRING)(&channel_op->push_correlation_id, push_correlation_id);
         channel_op->on_data_consumed_cb = on_data_consumed_cb;
         channel_op->on_data_consumed_context = on_data_consumed_context;

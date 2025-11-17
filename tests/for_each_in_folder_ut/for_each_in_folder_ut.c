@@ -203,7 +203,7 @@ TEST_FUNCTION(for_each_in_folder_with_with_FindFirstFileA_returning_ERROR_PATH_N
     ///clean
 }
 
-/*Tests_SRS_FOR_EACH_IN_FOLDER_02_016: [ If there are any failure then for_each_in_folder shall fail and return a non-zero value. ]*/
+/*Tests_SRS_FOR_EACH_IN_FOLDER_02_016: [ If there are any failures then for_each_in_folder shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(for_each_in_folder_when_malloc_fails_it_fails)
 {
     ///arrange

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license.See LICENSE file in the project root for full license information.
 
 #include "tcall_dispatcher_ut_pch.h"
@@ -86,7 +86,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 
 /* TCALL_DISPATCHER_CREATE */
 
-/* Tests_SRS_TCALL_DISPATCHER_01_001: [ TCALL_DISPATCHER_CREATE(T) shall call THANDLE_MALLOC to allocate the result. ]*/
+/* Tests_SRS_TCALL_DISPATCHER_01_001: [ TCALL_DISPATCHER_CREATE(T) shall call THANDLE_MALLOC with TCALL_DISPATCHER_LL_FREE_{T} as dispose function. ]*/
 /* Tests_SRS_TCALL_DISPATCHER_01_002: [ TCALL_DISPATCHER_CREATE(T) shall call srw_lock_ll_init to initialize the lock used by the TCALL_DISPATCHER instance. ]*/
 /* Tests_SRS_TCALL_DISPATCHER_01_003: [ TCALL_DISPATCHER_CREATE(T) shall call DList_InitializeListHead to initialize the doubly linked list that holds the target call registrations. ]*/
 /* Tests_SRS_TCALL_DISPATCHER_01_004: [ TCALL_DISPATCHER_CREATE(T) shall succeed and return a non-NULL value. ]*/
@@ -379,7 +379,7 @@ TEST_FUNCTION(TCALL_DISPATCHER_DISPATCH_CALL_with_NULL_tcall_dispatcher_fails)
 }
 
 /* Tests_SRS_TCALL_DISPATCHER_01_022: [ Otherwise, TCALL_DISPATCHER_DISPATCH_CALL(T) shall acquire the lock in shared mode. ]*/
-/* Tests_SRS_TCALL_DISPATCHER_01_023: [ For each call target that was registered, TCALL_DISPATCHER_DISPATCH_CALL(T) shall call the function_to_call with the associated context and the parameters in .... ]*/
+/* Tests_SRS_TCALL_DISPATCHER_01_023: [ For each call target that was registered, TCALL_DISPATCHER_DISPATCH_CALL(T) shall call  the function_to_call with the associated context and the parameters in .... ]*/
 /* Tests_SRS_TCALL_DISPATCHER_01_024: [ TCALL_DISPATCHER_DISPATCH_CALL(T) shall release the lock. ]*/
 /* Tests_SRS_TCALL_DISPATCHER_01_025: [ TCALL_DISPATCHER_DISPATCH_CALL(T) shall succeed and return 0. ]*/
 TEST_FUNCTION(TCALL_DISPATCHER_DISPATCH_CALL_calls_one_target)
@@ -405,7 +405,7 @@ TEST_FUNCTION(TCALL_DISPATCHER_DISPATCH_CALL_calls_one_target)
 }
 
 /* Tests_SRS_TCALL_DISPATCHER_01_022: [ Otherwise, TCALL_DISPATCHER_DISPATCH_CALL(T) shall acquire the lock in shared mode. ]*/
-/* Tests_SRS_TCALL_DISPATCHER_01_023: [ For each call target that was registered, TCALL_DISPATCHER_DISPATCH_CALL(T) shall call the function_to_call with the associated context and the parameters in .... ]*/
+/* Tests_SRS_TCALL_DISPATCHER_01_023: [ For each call target that was registered, TCALL_DISPATCHER_DISPATCH_CALL(T) shall call  the function_to_call with the associated context and the parameters in .... ]*/
 /* Tests_SRS_TCALL_DISPATCHER_01_024: [ TCALL_DISPATCHER_DISPATCH_CALL(T) shall release the lock. ]*/
 /* Tests_SRS_TCALL_DISPATCHER_01_025: [ TCALL_DISPATCHER_DISPATCH_CALL(T) shall succeed and return 0. ]*/
 TEST_FUNCTION(TCALL_DISPATCHER_DISPATCH_CALL_calls_2_targets)
@@ -456,7 +456,7 @@ TEST_FUNCTION(TCALL_DISPATCHER_DISPATCH_CALL_with_no_targets_succeeds)
 }
 
 /* Tests_SRS_TCALL_DISPATCHER_01_022: [ Otherwise, TCALL_DISPATCHER_DISPATCH_CALL(T) shall acquire the lock in shared mode. ]*/
-/* Tests_SRS_TCALL_DISPATCHER_01_023: [ For each call target that was registered, TCALL_DISPATCHER_DISPATCH_CALL(T) shall call the function_to_call with the associated context and the parameters in .... ]*/
+/* Tests_SRS_TCALL_DISPATCHER_01_023: [ For each call target that was registered, TCALL_DISPATCHER_DISPATCH_CALL(T) shall call  the function_to_call with the associated context and the parameters in .... ]*/
 /* Tests_SRS_TCALL_DISPATCHER_01_024: [ TCALL_DISPATCHER_DISPATCH_CALL(T) shall release the lock. ]*/
 /* Tests_SRS_TCALL_DISPATCHER_01_025: [ TCALL_DISPATCHER_DISPATCH_CALL(T) shall succeed and return 0. ]*/
 TEST_FUNCTION(TCALL_DISPATCHER_DISPATCH_CALL_calls_a_target_with_no_args)
@@ -493,7 +493,7 @@ TEST_FUNCTION(TCALL_DISPATCHER_DISPATCH_CALL_calls_a_target_with_no_args)
 }
 
 /* Tests_SRS_TCALL_DISPATCHER_01_022: [ Otherwise, TCALL_DISPATCHER_DISPATCH_CALL(T) shall acquire the lock in shared mode. ]*/
-/* Tests_SRS_TCALL_DISPATCHER_01_023: [ For each call target that was registered, TCALL_DISPATCHER_DISPATCH_CALL(T) shall call the function_to_call with the associated context and the parameters in .... ]*/
+/* Tests_SRS_TCALL_DISPATCHER_01_023: [ For each call target that was registered, TCALL_DISPATCHER_DISPATCH_CALL(T) shall call  the function_to_call with the associated context and the parameters in .... ]*/
 /* Tests_SRS_TCALL_DISPATCHER_01_024: [ TCALL_DISPATCHER_DISPATCH_CALL(T) shall release the lock. ]*/
 /* Tests_SRS_TCALL_DISPATCHER_01_025: [ TCALL_DISPATCHER_DISPATCH_CALL(T) shall succeed and return 0. ]*/
 TEST_FUNCTION(TCALL_DISPATCHER_DISPATCH_CALL_calls_a_target_with_3_args)

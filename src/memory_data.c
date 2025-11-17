@@ -26,7 +26,7 @@ void read_uint16_t(const unsigned char* source, uint16_t* destination)
 
 void read_uint32_t(const unsigned char* source, uint32_t* destination)
 {
-    /*Codes_SRS_MEMORY_DATA_02_043: [ read_uint32_t shall write in destination the bytes at source MSB first. ]*/
+    /*Codes_SRS_MEMORY_DATA_02_043: [ read_uint32_t shall  write in destination the bytes at source MSB first. ]*/
     *destination =
         (source[0] << 24) +
         (source[1] << 16) +
@@ -128,7 +128,7 @@ void write_uuid_t(unsigned char* destination, const UUID_T value)
 
 void read_int8_t(const unsigned char* source, int8_t* destination)
 {
-    /*Codes_SRS_MEMORY_DATA_02_045: [ read_int8_t shall write in destination the signed byte at source. ]*/
+    /*Codes_SRS_MEMORY_DATA_02_045: [ read_int8_t shall  write in destination the signed byte at source. ]*/
     *destination = (int8_t)(source[0]);
 }
 

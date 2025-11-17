@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 
 
 #include "channel_ut_pch.h"
@@ -372,13 +372,13 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 /* channel_create */
 
 
-/*Tests_SRS_CHANNEL_43_151: [ channel_intenral_create shall call sm_create. ]*/
-/*Tests_SRS_CHANNEL_43_098: [ channel_intenral_create shall call srw_lock_create. ]*/
-/*Tests_SRS_CHANNEL_43_078: [ channel_intenral_create shall create a CHANNEL object by calling THANDLE_MALLOC with channel_dispose as dispose.]*/
-/*Tests_SRS_CHANNEL_43_080: [ channel_intenral_create shall store given threadpool in the created CHANNEL. ]*/
+/*Tests_SRS_CHANNEL_43_151: [ channel_create shall call sm_create. ]*/
+/*Tests_SRS_CHANNEL_43_098: [ channel_create shall call srw_lock_create. ]*/
+/*Tests_SRS_CHANNEL_43_078: [ channel_create shall create a CHANNEL object by calling THANDLE_MALLOC with channel_dispose as dispose.]*/
+/*Tests_SRS_CHANNEL_43_080: [ channel_create shall store given threadpool in the created CHANNEL. ]*/
 /*Tests_SRS_CHANNEL_43_149: [ channel_create shall store the given log_context in the created CHANNEL. ]*/
-/*Tests_SRS_CHANNEL_43_084: [ channel_intenral_create shall call DList_InitializeListHead. ]*/
-/*Tests_SRS_CHANNEL_43_086: [ channel_intenral_create shall succeed and return the created THANDLE(CHANNEL). ]*/
+/*Tests_SRS_CHANNEL_43_084: [ channel_create shall call DList_InitializeListHead. ]*/
+/*Tests_SRS_CHANNEL_43_086: [ channel_create shall succeed and return the created THANDLE(CHANNEL). ]*/
 TEST_FUNCTION(channel_create_succeeds)
 {
     //arrange
@@ -484,7 +484,7 @@ TEST_FUNCTION(channel_close_called_with_NULL_channel_does_nothing)
 }
 
 
-/*Tests_SRS_CHANNEL_43_094: [ channel_close shall call sm_close_begin_with_cb with abandon_pending_operation as the callback. ]*/
+/*Tests_SRS_CHANNEL_43_094: [ channel_close shall call sm_close_begin_with_cb with abandon_pending_operations as the callback. ]*/
 /*Tests_SRS_CHANNEL_43_167: [ abandon_pending_operations shall call srw_lock_acquire_exclusive.]*/
 /*Tests_SRS_CHANNEL_43_168: [ abandon_pending_operations shall set is_open to false.]*/
 /*Tests_SRS_CHANNEL_43_174: [abandon_pending_operations shall make a local copy of the list of pending operations.]*/
@@ -627,11 +627,11 @@ TEST_FUNCTION(channel_pull_after_pull_succeeds)
 /*Tests_SRS_CHANNEL_43_152: [channel_pull shall call sm_exec_begin. ]*/
 /*Tests_SRS_CHANNEL_43_010: [channel_pull shall call srw_lock_acquire_exclusive.]*/
 /*Tests_SRS_CHANNEL_43_170: [channel_pull shall check if is_open is true. ]*/
-/*Tests_SRS_CHANNEL_43_108: [If the first operation in the list of pending operations contains a non - NULL on_data_consumed_cb : ]*/
+/*Tests_SRS_CHANNEL_43_108: [If the first operation in the list of pending operations contains a non-NULL on_data_consumed_cb: ]*/
 /*Tests_SRS_CHANNEL_43_109: [channel_pull shall call DList_RemoveHeadList on the list of pending operations to obtain the operation.]*/
 /*Tests_SRS_CHANNEL_43_112: [channel_pull shall store the correlation_id, on_data_available_cb and pull_context in the obtained operation.]*/
 /*Tests_SRS_CHANNEL_43_113: [channel_pull shall call threadpool_schedule_work with execute_callbacks as work_function and the obtained operation as work_function_context.]*/
-/*Tests_SRS_CHANNEL_43_114: [channel_pull shall set * out_op_pull to the THANDLE(ASYNC_OP) of the obtained operation.]*/
+/*Tests_SRS_CHANNEL_43_114: [channel_pull shall set *out_op_pull to the THANDLE(ASYNC_OP) of the obtained operation.]*/
 /*Tests_SRS_CHANNEL_43_115: [channel_pull shall call srw_lock_release_exclusive.]*/
 /*Tests_SRS_CHANNEL_43_011: [channel_pull shall succeeds and return CHANNEL_RESULT_OK.]*/
 TEST_FUNCTION(channel_pull_after_push_succeeds)
