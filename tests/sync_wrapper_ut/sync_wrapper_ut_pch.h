@@ -38,6 +38,8 @@
 
 #include "test_sync_wrappers.h"
 
+#include "real_interlocked_hl.h"
+
 #include "c_util/sync_wrapper.h"
 
 #endif // SYNC_WRAPPER_UT_PCH_H

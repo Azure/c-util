@@ -1,8 +1,13 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-#include "c_pal/refcount.h"
 #include "c_logging/logger.h"
+
+#include "c_pal/refcount.h"
+
 #include "test_ref_counted.h"
+
+#include "real_interlocked.h"         /*because in this file we really want to avoid calls to interlocked_increment/decrement (so we call the "real_..." ones), and we want the functionality*/
+#include "real_interlocked_renames.h" /*because in this file we really want to avoid calls to interlocked_increment/decrement (so we call the "real_..." ones), and we want the functionality*/
 
 typedef struct TEST_REFCOUNTED_TAG
 {
