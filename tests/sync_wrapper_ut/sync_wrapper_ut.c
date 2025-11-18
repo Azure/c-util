@@ -1,20 +1,22 @@
 // Copyright (c) Microsoft. All rights reserved.
 
-
-
 #include "sync_wrapper_ut_pch.h"
 
+#if 0
 #include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 #undef ENABLE_MOCKS_DECL
 #include "umock_c/umock_c_prod.h"
 #include "../src/interlocked_hl.c"
 #include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
+#endif
 
 TEST_DEFINE_ENUM_TYPE(SYNC_WRAPPER_RESULT, SYNC_WRAPPER_RESULT_VALUES)
 
 TEST_DEFINE_ENUM_TYPE(TEST_SYNC_API_RESULT, TEST_SYNC_API_RESULT_VALUES)
 IMPLEMENT_UMOCK_C_ENUM_TYPE(TEST_SYNC_API_RESULT, TEST_SYNC_API_RESULT_VALUES)
 
+TEST_DEFINE_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES)
+MU_DEFINE_ENUM_STRINGS(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES)
 IMPLEMENT_UMOCK_C_ENUM_TYPE(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_RESULT_VALUES)
 
 static TEST_ASYNC_HANDLE test_handle = (TEST_ASYNC_HANDLE)0x42;
@@ -112,7 +114,7 @@ INTERLOCKED_HL_RESULT my_InterlockedHL_WaitForValue(int32_t volatile_atomic* add
         on_have_pointer_type_out_arg_async_complete(on_have_pointer_type_out_arg_async_complete_context, &test_my_pointer);
     }
 
-    return UMOCK_REAL(InterlockedHL_WaitForValue)(address, value, milliseconds);
+    return real_InterlockedHL_WaitForValue(address, value, milliseconds);
 }
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
@@ -128,7 +130,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc_flex, NULL);
     REGISTER_GLOBAL_MOCK_HOOK(InterlockedHL_WaitForValue, my_InterlockedHL_WaitForValue);
-    REGISTER_GLOBAL_MOCK_HOOK(InterlockedHL_SetAndWake, UMOCK_REAL(InterlockedHL_SetAndWake));
+    REGISTER_GLOBAL_MOCK_HOOK(InterlockedHL_SetAndWake, real_InterlockedHL_SetAndWake);
 
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(test_async_do_something_async, MU_FAILURE);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(InterlockedHL_WaitForValue, INTERLOCKED_HL_ERROR);

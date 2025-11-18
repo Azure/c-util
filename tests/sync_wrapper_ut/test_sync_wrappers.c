@@ -11,6 +11,9 @@
 #include "test_async.h"
 #include "test_ref_counted.h"
 
+#include "real_interlocked.h"         /*because in this file we really want to avoid calls to interlocked_increment/decrement (so we call the "real_..." ones), and we want the functionality*/
+#include "real_interlocked_renames.h" /*because in this file we really want to avoid calls to interlocked_increment/decrement (so we call the "real_..." ones), and we want the functionality*/
+
 #include "test_sync_wrappers.h"
 
 #define ASYNC_TYPE_HELPER_USE_ASSIGN_COPY_TEST_ASYNC_API_RESULT 1
