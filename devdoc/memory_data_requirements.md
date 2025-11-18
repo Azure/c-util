@@ -59,7 +59,7 @@ MOCKABLE_FUNCTION(, void, read_uint32_t,  const unsigned char*, source, uint32_t
 
 `read_uint32_t` reads a uint32_t from `source` and writes it into `destination`. 
 
-**SRS_MEMORY_DATA_02_043: [** `read_uint32_t` shall  write in `destination` the bytes at `source` MSB first. **]**
+**SRS_MEMORY_DATA_02_043: [** `read_uint32_t` shall write in `destination` the bytes at `source` MSB first. **]**
 
 ### read_uint64_t
 ```c

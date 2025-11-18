@@ -235,7 +235,7 @@ TEST_FUNCTION(when_the_underlying_malloc_fails_singlylinkedlist_add_fails)
 
 /* singlylinkedlist_get_head_item */
 
-/* Tests_SRS_LIST_01_010: [If the list is empty, singlylinkedlist_get_head_item_shall_return NULL.] */
+/* Tests_SRS_LIST_01_010: [If the list is empty, singlylinkedlist_get_head_item shall return NULL.] */
 TEST_FUNCTION(when_the_list_is_empty_singlylinkedlist_get_head_item_yields_NULL)
 {
     // arrange
@@ -989,8 +989,8 @@ TEST_FUNCTION(singlylinkedlist_remove_if_NULL_list_argument)
 
 /* Tests_SRS_LIST_09_002: [ singlylinkedlist_remove_if shall iterate through all items in a list and remove all that satisfies a certain condition function. ] */
 /* Tests_SRS_LIST_09_003: [ singlylinkedlist_remove_if shall determine whether an item satisfies the condition criteria by invoking the condition function for that item. ] */
-/* Tests_SRS_LIST_09_004: [ If the condition function  remove_item as true, singlylinkedlist_find shall consider that item as to be removed. ] */
-/* Tests_SRS_LIST_09_005: [ If the condition function returns remove_item as false or unchanged, singlylinkedlist_find shall consider that item as not to be removed. ] */
+/* Tests_SRS_LIST_09_004: [ If the condition function returns true, singlylinkedlist_find shall consider that item as to be removed. ] */
+/* Tests_SRS_LIST_09_005: [ If the condition function returns false, singlylinkedlist_find shall consider that item as not to be removed. ] */
 /* Tests_SRS_LIST_09_007: [ If no errors occur, singlylinkedlist_remove_if shall return zero. ] */
 TEST_FUNCTION(singlylinkedlist_remove_if_all_items_succeeds)
 {

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "worker_thread_ut_pch.h"
@@ -501,8 +501,8 @@ TEST_FUNCTION(worker_thread_schedule_process_with_NULL_handle_fails)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_WORKER_THREAD_01_041: [ Otherwise worker_thread_schedule_process shall call sm_exec_begin. ]*/
-/* Tests_SRS_WORKER_THREAD_01_017: [ worker_thread_schedule_process shall set the process event created in worker_thread_create. ]*/
+/* Tests_SRS_WORKER_THREAD_01_041: [ Otherwise, worker_thread_schedule_process shall call sm_exec_begin. ]*/
+/* Tests_SRS_WORKER_THREAD_01_017: [ worker_thread_schedule_process shall set the thread state to WORKER_THREAD_STATE_PROCESS_ITEM. ]*/
 /* Tests_SRS_WORKER_THREAD_01_043: [ worker_thread_schedule_process shall call sm_exec_end. ]*/
 /* Tests_SRS_WORKER_THREAD_01_015: [ On success worker_thread_schedule_process shall return WORKER_THREAD_SCHEDULE_PROCESS_OK. ]*/
 TEST_FUNCTION(worker_thread_schedule_process_succeeds)
@@ -603,8 +603,8 @@ TEST_FUNCTION(when_sm_foes_not_grant_the_execution_worker_thread_schedule_proces
 /* worker_thread */
 
 /* Tests_SRS_WORKER_THREAD_01_019: [ The worker thread started by worker_thread_create shall get the thread state. ]*/
-/* Tests_SRS_WORKER_THREAD_01_021: [ When the execute worker function event is signaled, the worker thread shall call the worker_func function passed to worker_thread_create and it shall pass worker_func_context as argument. ]*/
-// Tests_SRS_WORKER_THREAD_11_001: [ ... and set the thread state to idle if it has not been changed. ]
+/* Tests_SRS_WORKER_THREAD_01_021: [ If the thread state is WORKER_THREAD_STATE_PROCESS_ITEM, the worker thread shall call the worker_func function passed to worker_thread_create and it shall pass worker_func_context as argument... ]*/
+// Tests_SRS_WORKER_THREAD_11_001: [ ... and set the thread state to WORKER_THREAD_STATE_IDLE if it has not been changed. ]
 // Tests_SRS_WORKER_THREAD_01_020: [ If the thread state is WORKER_THREAD_STATE_CLOSE, the worker thread shall exit. ]
 // Tests_SRS_WORKER_THREAD_11_002: [ If the thread state is WORKER_THREAD_STATE_IDLE, the worker thread shall wait for the state to transition to something else. ]
 TEST_FUNCTION(when_the_execute_work_event_is_signaled_the_worker_thread_executes_the_work_function)
@@ -635,7 +635,7 @@ TEST_FUNCTION(when_the_execute_work_event_is_signaled_the_worker_thread_executes
     worker_thread_destroy(worker_thread);
 }
 
-/* Tests_SRS_WORKER_THREAD_01_020: [ When the shutdown event is signaled, the worker thread shall exit. ]*/
+/* Tests_SRS_WORKER_THREAD_01_020: [ If the thread state is WORKER_THREAD_STATE_CLOSE, the worker thread shall exit. ]*/
 TEST_FUNCTION(when_the_shutdown_event_is_signaled_the_worker_thread_exits)
 {
     // arrange

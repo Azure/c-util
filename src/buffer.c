@@ -23,7 +23,7 @@ typedef struct BUFFER_TAG
 BUFFER_HANDLE BUFFER_new(void)
 {
     BUFFER* temp = malloc(sizeof(BUFFER));
-    /* Codes_SRS_BUFFER_07_002: [BUFFER_new shall return NULL on any error that occurs.] */
+    /* Codes_SRS_BUFFER_07_002: [If handle is NULL BUFFER_fill shall return a non-zero value.] */
     if (temp != NULL)
     {
         temp->buffer = NULL;
@@ -129,7 +129,7 @@ BUFFER_HANDLE BUFFER_create_with_size(size_t buff_size)
     return (BUFFER_HANDLE)result;
 }
 
-/* Codes_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE along with the Buffer.] */
+/* Codes_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE.] */
 void BUFFER_delete(BUFFER_HANDLE handle)
 {
     /* Codes_SRS_BUFFER_07_004: [BUFFER_delete shall not delete any BUFFER_HANDLE that is NULL.] */
@@ -138,7 +138,7 @@ void BUFFER_delete(BUFFER_HANDLE handle)
         BUFFER* b = handle;
         if (b->buffer != NULL)
         {
-            /* Codes_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE along with the Buffer.] */
+            /* Codes_SRS_BUFFER_07_003: [BUFFER_delete shall delete the data associated with the BUFFER_HANDLE.] */
             free(b->buffer);
         }
         free(b);
@@ -189,7 +189,6 @@ int BUFFER_build(BUFFER_HANDLE handle, const unsigned char* source, size_t size)
             {
                 b->buffer = newBuffer;
                 b->size = size;
-                /* Codes_SRS_BUFFER_01_002: [The size argument can be zero, in which case nothing shall be copied from source.] */
                 (void)memcpy(b->buffer, source, size);
 
                 result = 0;
@@ -396,7 +395,7 @@ int BUFFER_shrink(BUFFER_HANDLE handle, size_t decreaseSize, bool fromEnd)
     }
     else if (decreaseSize > handle->size)
     {
-        /* Codes_SRS_BUFFER_07_038: [ If decreaseSize is less than the size of the buffer, BUFFER_shrink shall return a non-null value ] */
+        /* Codes_SRS_BUFFER_07_038: [ If decreaseSize is more than the size of the buffer, BUFFER_shrink shall return a non-null value ] */
         LogError("Failure: decrease size is more than buffer size.");
         result = MU_FAILURE;
     }

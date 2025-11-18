@@ -297,7 +297,7 @@ TEST_FUNCTION(sync_wrapper_call_with_NULL_callback_arg_2_fails)
 /* Tests_SRS_SYNC_WRAPPER_01_016: [ SYNC_WRAPPER shall expand async_function_name to the name of the synchronous wrapper around async_function_name. ]*/
 /* Tests_SRS_SYNC_WRAPPER_01_009: [ On success, the synchronous wrapper shall return in the out args the values of the arguments received in the callback. ]*/
 /* Tests_SRS_SYNC_WRAPPER_01_017: [ For each argument: ]*/
-/* Tests_SRS_SYNC_WRAPPER_01_018: [ If SYNC_WRAPPER_USE_ASSIGN_COPY_{type} is defined as 1, on_{async_function_name}_complete shall copy the argument value by assigning it. ]*/
+/* Tests_SRS_SYNC_WRAPPER_01_018: [ If ASYNC_TYPE_HELPER_USE_ASSIGN_COPY_{type} is defined as 1, on_{async_function_name}_complete shall copy the argument value by assigning it. ]*/
 TEST_FUNCTION(sync_wrapper_call_succeeds)
 {
     // arrange
@@ -529,7 +529,7 @@ TEST_FUNCTION(sync_wrapper_call_with_no_args_succeeds)
 }
 
 /* Tests_SRS_SYNC_WRAPPER_01_017: [ For each argument: ]*/
-/* Tests_SRS_SYNC_WRAPPER_01_019: [ If SYNC_WRAPPER_USE_ASSIGN_COPY_{type} is not defined, on_{async_function_name}_complete shall call a copy function with the following declaration: ]*/
+/* Tests_SRS_SYNC_WRAPPER_01_019: [ If ASYNC_TYPE_HELPER_USE_ASSIGN_COPY_{type} is not defined as 1, on_{async_function_name}_complete shall call a copy function with the following declaration: ]*/
 /* Tests_SRS_SYNC_WRAPPER_01_026: [ OUT_ARG shall be expanded to the appropriate argument wherever needed by using arg_type and arg_name. ]*/
 TEST_FUNCTION(sync_wrapper_call_with_custom_copy_succeeds)
 {
@@ -577,7 +577,7 @@ TEST_FUNCTION(when_copy_arg_fails_sync_wrapper_call_with_custom_copy_fails)
 }
 
 /* Tests_SRS_SYNC_WRAPPER_01_017: [ For each argument: ]*/
-/* Tests_SRS_SYNC_WRAPPER_01_019: [ If SYNC_WRAPPER_USE_ASSIGN_COPY_{type} is not defined, on_{async_function_name}_complete shall call a copy function with the following declaration: ]*/
+/* Tests_SRS_SYNC_WRAPPER_01_019: [ If ASYNC_TYPE_HELPER_USE_ASSIGN_COPY_{type} is not defined as 1, on_{async_function_name}_complete shall call a copy function with the following declaration: ]*/
 TEST_FUNCTION(sync_wrapper_call_with_custom_copy_for_ref_counted_handle_succeeds)
 {
     // arrange

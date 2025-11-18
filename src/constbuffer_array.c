@@ -316,7 +316,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_buffer_offset_and_count(C
     }
     result = NULL;
 
-    /* Codes_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_buffer_offset_and_count shall return a non - NULL handle. ]*/
+    /* Codes_SRS_CONSTBUFFER_ARRAY_07_009: [ constbuffer_array_create_from_buffer_offset_and_count shall return a non-NULL handle. ]*/
 all_ok:
     return result;
 }
@@ -542,9 +542,9 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_add_back(CONSTBUFFER_ARRAY_HANDLE con
 {
     CONSTBUFFER_ARRAY_HANDLE result;
     if (
-        /*Codes_SRS_CONSTBUFFER_ARRAY_05_001: [ If constbuffer_array_handle is NULL then constbuffer_array_add_back shall fail and return NULL ]*/
+        /*Codes_SRS_CONSTBUFFER_ARRAY_05_001: [ If constbuffer_array_handle is NULL then constbuffer_array_add_back shall fail and return NULL. ]*/
         (constbuffer_array_handle == NULL) ||
-        /*Codes_SRS_CONSTBUFFER_ARRAY_05_002: [ If constbuffer_handle is NULL then constbuffer_array_add_back shall fail and return NULL ]*/
+        /*Codes_SRS_CONSTBUFFER_ARRAY_05_002: [ If constbuffer_handle is NULL then constbuffer_array_add_back shall fail and return NULL. ]*/
         (constbuffer_handle == NULL)
         )
     {
@@ -964,7 +964,7 @@ bool CONSTBUFFER_ARRAY_HANDLE_contain_same(CONSTBUFFER_ARRAY_HANDLE left, CONSTB
         {
             if (left->nBuffers != right->nBuffers)
             {
-                /*Codes_SRS_CONSTBUFFER_ARRAY_02_053: [ If the number of CONSTBUFFER_HANDLEs in left is different then the number of CONSTBUFFER_HANDLEs in right then CONSTBUFFER_ARRAY_HANDLE_contain_same shall return false. ]*/
+                /*Codes_SRS_CONSTBUFFER_ARRAY_02_053: [ If the number of CONSTBUFFER_HANDLEs in left is different then the number of CONSTBUFFER_HANDLEs in right then  CONSTBUFFER_ARRAY_HANDLE_contain_same shall return false. ]*/
                 result = false;
             }
             else

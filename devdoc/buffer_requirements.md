@@ -78,7 +78,7 @@ extern BUFFER_HANDLE BUFFER_create_with_size(size_t buff_size)
 void BUFFER_delete(BUFFER_HANDLE handle)
 ```
 
-**SRS_BUFFER_07_003: [** BUFFER_delete shall delete the data associated with the BUFFER_HANDLE along with the Buffer. **]**
+**SRS_BUFFER_07_003: [** BUFFER_delete shall delete the data associated with the BUFFER_HANDLE. **]**
 
 **SRS_BUFFER_07_004: [** BUFFER_delete shall not delete any BUFFER_HANDLE that is NULL. **]**
 

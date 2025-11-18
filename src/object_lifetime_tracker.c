@@ -73,7 +73,7 @@ static int is_same_key(PDLIST_ENTRY listEntry, void* context, bool* continueProc
     case KEY_MATCH_FUNCTION_RESULT_MATCHING:
         /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_055: [ is_same_key shall set continueProcessing to false. ]*/
         *continueProcessing = false;
-        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_056: [ is_same_key shall store listEntry in key_match_context ]*/
+        /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_056: [ is_same_key shall store listEntry in key_match_context. ]*/
         key_match_context->found_list_entry = listEntry;
         /*Codes_SRS_OBJECT_LIFETIME_TRACKER_43_058: [ is_same_key shall succeed and return zero. ]*/
         result = 0;

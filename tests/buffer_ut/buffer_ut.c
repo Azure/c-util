@@ -1375,7 +1375,7 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
     }
 
     /*Tests_SRS_BUFFER_02_002: [Otherwise, BUFFER_create shall allocate memory to hold size bytes and shall copy from source size bytes into the newly allocated memory.] */
-    /*Tests_SRS_BUFFER_02_004: [Otherwise, BUFFER_create shall return a non-NULL handle*/
+    /*Tests_SRS_BUFFER_02_004: [Otherwise, BUFFER_create shall return a non-NULL handle.]*/
     TEST_FUNCTION(BUFFER_create_happy_path)
     {
         ///arrange

@@ -283,14 +283,14 @@ MOCKABLE_FUNCTION(, uint32_t, CONSTBUFFER_get_serialization_size, CONSTBUFFER_HA
 ### CONSTBUFFER_to_buffer
 
 ```c
-MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_to_buffer, CONSTBUFFER_HANDLE, source, CONSTBUFFER_to_buffer_alloc, alloc, void*, alloc_context, uint32_t*, size),
+MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_to_buffer, CONSTBUFFER_HANDLE, source, CONSTBUFFER_to_buffer_alloc, alloc, void*, alloc_context, uint32_t*, serialized_size),
 ```
 
 `CONSTBUFFER_to_buffer` returns the serialized form of `source` using memory allocated with `alloc`. It writes in `size` the number of bytes of the returned buffer.
 
 **SRS_CONSTBUFFER_02_044: [** If `source` is `NULL` then `CONSTBUFFER_to_buffer` shall fail and return `NULL`. **]**
 
-**SRS_CONSTBUFFER_02_045: [** If `size` is `NULL` then `CONSTBUFFER_to_buffer` shall fail and return `NULL`. **]**
+**SRS_CONSTBUFFER_02_045: [** If `serialized_size` is `NULL` then `CONSTBUFFER_to_buffer` shall fail and return `NULL`. **]**
 
 **SRS_CONSTBUFFER_02_046: [** If `alloc` is `NULL` then `CONSTBUFFER_to_buffer` shall use `malloc` as provided by `gballoc_hl_redirect.h`. **]**
 
@@ -302,7 +302,7 @@ MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_to_buffer, CONSTBUFFER_HANDLE, s
 
 **SRS_CONSTBUFFER_02_052: [** `CONSTBUFFER_to_buffer` shall write starting at offset 5 of the allocated memory the bytes of `source->alias.buffer`. **]**
 
-**SRS_CONSTBUFFER_02_053: [** `CONSTBUFFER_to_buffer` shall succeed, write in `size` the size of the serialization and return the allocated memory. **]**
+**SRS_CONSTBUFFER_02_053: [** `CONSTBUFFER_to_buffer` shall succeed, write in `serialized_size` the size of the serialization and return the allocated memory. **]**
 
 **SRS_CONSTBUFFER_02_054: [** If there are any failures then `CONSTBUFFER_to_buffer` shall fail and return `NULL`. **]**
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "memory_data_ut_pch.h"
@@ -427,7 +427,7 @@ TEST_FUNCTION(write_uuid_t_succeeds_2)
 
 /* read_int8_t */
 
-/*Tests_SRS_MEMORY_DATA_02_045: [ read_int8_t shall write in destination the signed byte at source. ]*/
+/*Tests_SRS_MEMORY_DATA_02_045: [ read_int8_t shall  write in destination the signed byte at source. ]*/
 TEST_FUNCTION(read_int8_t_positive)
 {
     ///arrange
@@ -443,7 +443,7 @@ TEST_FUNCTION(read_int8_t_positive)
     ///clean
 }
 
-/*Tests_SRS_MEMORY_DATA_02_045: [ read_int8_t shall write in destination the signed byte at source. ]*/
+/*Tests_SRS_MEMORY_DATA_02_045: [ read_int8_t shall  write in destination the signed byte at source. ]*/
 TEST_FUNCTION(read_int8_t_negative)
 {
     ///arrange

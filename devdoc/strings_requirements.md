@@ -227,9 +227,9 @@ extern int STRING_compare(STRING_HANDLE h1, STRING_HANDLE h2);
 
 **SRS_STRING_01_002: [** If h1 and h2 are both NULL then STRING_compare shall return 0. **]**
 
-**SRS_STRING_07_036: [** If h1 is NULL and h2 is a nonNULL value then STRING_compare shall return 1. **]**
+**SRS_STRING_07_036: [** If h1 is NULL and h2 is a non-NULL value then STRING_compare shall return 1. **]**
 
-**SRS_STRING_07_037: [** If h2 is NULL and h1 is a nonNULL value then STRING_compare shall return -1. **]**
+**SRS_STRING_07_037: [** If h2 is NULL and h1 is a non-NULL value then STRING_compare shall return -1. **]**
 
 **SRS_STRING_07_038: [** STRING_compare shall compare the char s variable using the strcmp function. **]**
 

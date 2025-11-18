@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "map_ut_pch.h"
@@ -2482,7 +2482,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         Map_Destroy(result);
     }
 
-    /* Tests_SRS_MAP_07_009: [If the mapFilterCallback function is not NULL, then the return value will be check and if it is not zero then Map_Add shall return MAP_FILTER_REJECT.] */
+    /* Tests_SRS_MAP_07_009: [If the mapFilterCallback function is not NULL, then the return value will be checked and if it is not zero then Map_Add shall return MAP_FILTER_REJECT.] */
     TEST_FUNCTION(Map_Add_With_Filter_Succeed)
     {
         ///arrange

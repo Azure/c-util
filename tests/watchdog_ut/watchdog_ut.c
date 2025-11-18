@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 
 
 
@@ -355,7 +355,7 @@ TEST_FUNCTION(watchdog_stop_stops_the_timer)
 
 /*Tests_SRS_WATCHDOG_45_015: [ watchdog_stop shall call sm_close_begin. ]*/
 /*Tests_SRS_WATCHDOG_45_016: [ watchdog_stop shall call sm_close_end if sm_close_begin succeeds. ]*/
-/*Tests_SRS_WATCHDOG_42_024: [ watchdog_stop shall stop and cleanup the timer by calling threadpool_timer_destroy. ]*/
+/*Tests_SRS_WATCHDOG_42_024: [ watchdog_stop shall stop and cleanup the timer by decrementing timer reference count. ]*/
 /*Tests_SRS_WATCHDOG_45_017: [ watchdog_stop shall call sm_destroy. ]*/
 /*Tests_SRS_WATCHDOG_42_025: [ watchdog_stop shall free the watchdog. ]*/
 TEST_FUNCTION(watchdog_stop_stops_the_timer_after_it_fired)

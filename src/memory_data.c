@@ -128,7 +128,7 @@ void write_uuid_t(unsigned char* destination, const UUID_T value)
 
 void read_int8_t(const unsigned char* source, int8_t* destination)
 {
-    /*Codes_SRS_MEMORY_DATA_02_045: [ read_int8_t shall write in destination the signed byte at source. ]*/
+    /*Codes_SRS_MEMORY_DATA_02_045: [ read_int8_t shall  write in destination the signed byte at source. ]*/
     *destination = (int8_t)(source[0]);
 }
 

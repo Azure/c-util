@@ -75,7 +75,7 @@ static THANDLE(RC_STRING) rc_string_create_impl(const char* string)
 
     if (string_length_with_terminator > SIZE_MAX - (sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING)))
     {
-        /* Codes_SRS_RC_STRING_07_010: [ If the resulting memory size requested for the THANDLE(RC_STRING)and string results in an size_t overflow, rc_string_create shall fail and return NULL. ]*/
+        /* Codes_SRS_RC_STRING_07_010: [ If the resulting memory size requested for the THANDLE(RC_STRING) and string results in an size_t overflow,rc_string_create shall fail and return NULL. ]*/
         LogError("Size_t overflowed, extra size is %zu, string_length_with_terminator=%zu", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + string_length_with_terminator, string_length_with_terminator);
     }
     else
@@ -131,7 +131,7 @@ THANDLE(RC_STRING) rc_string_create_with_vformat(const char* format, va_list va)
     }
     else
     {
-        /*Codes_SRS_RC_STRING_07_002: [ Otherwise, rc_string_create_with_vformat shall determine the total number of characters written using the variable number of arguments. ]*/
+        /*Codes_SRS_RC_STRING_07_002: [ Otherwise rc_string_create_with_vformat shall determine the total number of characters written using vsnprintf with the variable number of arguments. ]*/
         va_list args_copy;
         va_copy(args_copy, va);
 
@@ -147,12 +147,12 @@ THANDLE(RC_STRING) rc_string_create_with_vformat(const char* format, va_list va)
         {
             if (string_length == INT_MAX)
             {
-                /*Codes_SRS_RC_STRING_07_009: [ If the resulting memory size requested for the THANDLE(RC_STRING)and the resulting formatted string results in an size_t overflow in malloc_flex, rc_string_create_with_vformat shall failand return NULL. ]*/
+                /*Codes_SRS_RC_STRING_07_009: [ If the resulting memory size requested for the THANDLE(RC_STRING) and the resulting formatted string results in an size_t overflow in malloc_flex, rc_string_create_with_vformat shall fail and return NULL. ]*/
                 LogError("int overflowed, extra size is %zu, string_length_with_terminator=%zu", sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + (size_t)string_length + 1, (size_t)string_length + 1);
             }
             else
             {
-                /*Codes_SRS_RC_STRING_07_004: [ rc_string_create_with_vformat shall allocate memory for the THANDLE(RC_STRING)and the number of bytes for the resulting formatted string. ]*/
+                /*Codes_SRS_RC_STRING_07_004: [ rc_string_create_with_vformat shall allocate memory for the THANDLE(RC_STRING) and the number of bytes for the resulting formatted string. ]*/
                 THANDLE(RC_STRING) temp_result = THANDLE_MALLOC_FLEX(RC_STRING)(rc_string_dispose, sizeof(RC_STRING_INTERNAL) - sizeof(RC_STRING) + (size_t)string_length_with_terminator, 1);
                 if (temp_result == NULL)
                 {
@@ -175,7 +175,7 @@ THANDLE(RC_STRING) rc_string_create_with_vformat(const char* format, va_list va)
                     }
                     else
                     {
-                        /*Codes_SRS_RC_STRING_07_007: [ rc_string_create_with_vformat shall succeed and return a non - NULL handle. ]*/
+                        /*Codes_SRS_RC_STRING_07_007: [ rc_string_create_with_vformat shall succeed and return a non-NULL handle. ]*/
                         THANDLE_MOVE(RC_STRING)(&result, &temp_result);
                     }
                 }

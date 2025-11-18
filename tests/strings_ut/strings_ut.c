@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "strings_ut_pch.h"
@@ -134,7 +134,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_negative_tests_deinit();
     }
 
-    /* Tests_SRS_STRING_07_007: [STRING_new_with_memory shall return a NULL STRING_HANDLE if the supplied char* is empty.] */
+    /* Tests_SRS_STRING_07_007: [STRING_new_with_memory shall return a NULL STRING_HANDLE if the supplied char* is NULL.] */
     TEST_FUNCTION(STRING_new_With_Memory_NULL_Memory_Fail)
     {
         ///arrange
@@ -415,7 +415,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRING_delete(g_hString);
     }
 
-    /* Tests_SRS_STRING_07_013: [STRING_concat shall return a nonzero number if the STRING_HANDLE and const char* is NULL.] */
+    /* Tests_SRS_STRING_07_013: [STRING_concat shall return a nonzero number if an error is encountered.] */
     TEST_FUNCTION(STRING_Concat_HANDLE_NULL_Fail)
     {
         ///arrange
@@ -436,7 +436,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
     }
 
-    /* Tests_SRS_STRING_07_013: [STRING_concat shall return a nonzero number if the STRING_HANDLE and const char* is NULL.] */
+    /* Tests_SRS_STRING_07_013: [STRING_concat shall return a nonzero number if an error is encountered.] */
     TEST_FUNCTION(STRING_Concat_CharPtr_NULL_Fail)
     {
         ///arrange
@@ -456,7 +456,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRING_delete(g_hString);
     }
 
-    /* Tests_SRS_STRING_07_013: [STRING_concat shall return a nonzero number if the STRING_HANDLE and const char* is NULL.] */
+    /* Tests_SRS_STRING_07_013: [STRING_concat shall return a nonzero number if an error is encountered.] */
     TEST_FUNCTION(STRING_Concat_HANDLE_and_CharPtr_NULL_Fail)
     {
         ///arrange
@@ -470,7 +470,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///cleanup
     }
 
-    /* Tests_SRS_STRING_07_013: [STRING_concat shall return a nonzero number if the STRING_HANDLE and const char* is NULL.] */
+    /* Tests_SRS_STRING_07_013: [STRING_concat shall return a nonzero number if an error is encountered.] */
     TEST_FUNCTION(STRING_Concat_Copy_Multiple_Succeed)
     {
         ///arrange
@@ -658,7 +658,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRING_delete(g_hString);
     }
 
-    /* Tests_SRS_STRING_07_018: [STRING_copy_n shall copy the number of characters defined in size_t.] */
+    /* Tests_SRS_STRING_07_018: [STRING_copy_n shall copy the number of characters in const char* or the size_t whichever is lesser.] */
     TEST_FUNCTION(STRING_Copy_n_Succeed)
     {
         ///arrange
@@ -714,7 +714,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRING_delete(g_hString);
     }
 
-    /* Tests_SRS_STRING_07_018: [STRING_copy_n shall copy the number of characters defined in size_t.] */
+    /* Tests_SRS_STRING_07_018: [STRING_copy_n shall copy the number of characters in const char* or the size_t whichever is lesser.] */
     TEST_FUNCTION(STRING_Copy_n_With_Size_0_Succeed)
     {
         ///arrange
@@ -1082,7 +1082,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRING_delete(str_handle);
     }
 
-    /*Tests_SRS_STRING_02_008: [If psz is NULL then STRING_construct_n shall return NULL*/
+    /*Tests_SRS_STRING_02_008: [If psz is NULL then STRING_construct_n shall return NULL.]*/
     TEST_FUNCTION(STRING_construct_n_with_NULL_argument_fails)
     {
         ///arrange
@@ -1183,7 +1183,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_negative_tests_deinit();
     }
 
-    /* Tests_SRS_STRING_07_036: [If h1 is NULL and h2 is nonNULL then STRING_compare shall return 1.] */
+    /* Tests_SRS_STRING_07_036: [If h1 is NULL and h2 is a non-NULL value then STRING_compare shall return 1.] */
     TEST_FUNCTION(STRING_compare_s1_NULL)
     {
         ///arrange
@@ -1202,7 +1202,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         STRING_delete(h2);
     }
 
-    /* Tests_SRS_STRING_07_037: [If h2 is NULL and h1 is nonNULL then STRING_compare shall return -1.] */
+    /* Tests_SRS_STRING_07_037: [If h2 is NULL and h1 is a non-NULL value then STRING_compare shall return -1.] */
     TEST_FUNCTION(STRING_compare_s2_NULL)
     {
         ///arrange
@@ -1321,7 +1321,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
     /*Tests_SRS_STRING_02_016: [If the character is " (quote) then it shall be repsented as \".] */
     /*Tests_SRS_STRING_02_017: [If the character is \ (backslash) then it shall represented as \\.]*/
     /*Tests_SRS_STRING_02_018: [If the character is / (slash) then it shall be represented as \/.] */
-    /*Tests_SRS_STRING_02_019: [If the character code is less than 0x20 then it shall be represented as \\u00xx, where xx is the hex representation of the character code.]*/
+    /*Tests_SRS_STRING_02_019: [If the character code is less than 0x20 then it shall be represented as \u00xx, where xx is the hex representation of the character code.]*/
     /*Tests_SRS_STRING_02_020: [The string shall end with " (quote).] */
     TEST_FUNCTION(STRING_new_JSON_succeeds)
     {
