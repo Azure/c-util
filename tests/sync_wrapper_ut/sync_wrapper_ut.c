@@ -2,14 +2,6 @@
 
 #include "sync_wrapper_ut_pch.h"
 
-#if 0
-#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
-#undef ENABLE_MOCKS_DECL
-#include "umock_c/umock_c_prod.h"
-#include "../src/interlocked_hl.c"
-#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
-#endif
-
 TEST_DEFINE_ENUM_TYPE(SYNC_WRAPPER_RESULT, SYNC_WRAPPER_RESULT_VALUES)
 
 TEST_DEFINE_ENUM_TYPE(TEST_SYNC_API_RESULT, TEST_SYNC_API_RESULT_VALUES)
