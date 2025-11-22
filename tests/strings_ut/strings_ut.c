@@ -1317,7 +1317,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
     /*Tests_SRS_STRING_02_012: [The string shall begin with the quote character.] */
     /*Tests_SRS_STRING_02_013: [The string shall copy the characters of source "as they are" (until the '\0' character) with the following exceptions:] */
-    /*Tests_SRS_STRING_02_014: [If any character has the value outside [1...127] */
+    /*Tests_SRS_STRING_02_014: [If any character has the value outside 1...127 then STRING_new_JSON shall fail and return NULL.] */
     /*Tests_SRS_STRING_02_016: [If the character is " (quote) then it shall be represented as \".] */
     /*Tests_SRS_STRING_02_017: [If the character is \ (backslash) then it shall represented as \\.]*/
     /*Tests_SRS_STRING_02_018: [If the character is / (slash) then it shall be represented as \/.] */
@@ -1381,7 +1381,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         umock_c_negative_tests_deinit();
     }
 
-    /*Tests_SRS_STRING_02_014: [If any character has the value outside [1...127] */
+    /*Tests_SRS_STRING_02_014: [If any character has the value outside 1...127 then STRING_new_JSON shall fail and return NULL.] */
     TEST_FUNCTION(STRING_new_JSON_when_character_not_ASCII_fails)
     {
         ///arrange

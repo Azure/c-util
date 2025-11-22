@@ -283,7 +283,7 @@ STRING_HANDLE STRING_new_JSON(const char* source)
 
         for (i = 0; i < vlen; i++)
         {
-            /*Codes_SRS_STRING_02_014: [If any character has the value outside [1...127] */
+            /*Codes_SRS_STRING_02_014: [If any character has the value outside 1...127 then STRING_new_JSON shall fail and return NULL.] */
             if ((unsigned char)source[i] >= 128) /*this be a UNICODE character begin*/
             {
                 break;
