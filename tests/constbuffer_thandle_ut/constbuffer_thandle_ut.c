@@ -1797,7 +1797,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_from_buffer_with_zero_content_succeeds)
     THANDLE_ASSIGN(CONSTBUFFER)(&destination, NULL);
 }
 
-/*Tests_SRS_CONSTBUFFER_THANDLE_88_057: [ If there are any failures then CONSTBUFFER_THANDLE_get_serialization_size shall fail and return 0.]*/
+/*Tests_SRS_CONSTBUFFER_THANDLE_88_057: [ If source is NULL then CONSTBUFFER_THANDLE_get_serialization_size shall fail and return 0.]*/
 TEST_FUNCTION(CONSTBUFFER_THANDLE_get_serialized_size_fails_when_error_occurs)
 {
     ///arrange
