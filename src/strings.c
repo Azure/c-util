@@ -51,7 +51,7 @@ STRING_HANDLE STRING_new(void)
     return result;
 }
 
-/*Codes_SRS_STRING_02_001: [STRING_clone shall produce a new string having the same content as the handle string.*/
+/*Codes_SRS_STRING_02_001: [STRING_clone shall produce a new string having the same content as the handle string. ] */
 STRING_HANDLE STRING_clone(STRING_HANDLE handle)
 {
     STRING* result;

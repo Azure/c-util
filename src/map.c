@@ -624,7 +624,7 @@ STRING_HANDLE Map_ToJSON(MAP_HANDLE handle)
         {
             size_t i;
             MAP_HANDLE_DATA* handleData = handle;
-            /*Codes_SRS_MAP_02_049: [If the MAP is empty, then Map_ToJSON shall produce the string "{}".*/
+            /*Codes_SRS_MAP_02_049: [If the MAP is empty, then Map_ToJSON shall produce the string "{}". ] */
             bool breakFor = false; /*used to break out of for*/
             for (i = 0; (i < handleData->count) && (!breakFor); i++)
             {
