@@ -1,4 +1,4 @@
-﻿strings requirements
+strings requirements
 ================
 
 ## Overview
@@ -100,11 +100,11 @@ STRING_new_JSON shall produce a STRING_HANDLE according to the following:
 
 **SRS_STRING_02_013: [** The string shall copy the characters of source "as they are" (until the '\\0' character) with the following exceptions: **]**
 
-	**SRS_STRING_02_014: [** If any character has the value outside 1...127 then STRING_new_JSON shall fail and return NULL.]
-	**SRS_STRING_02_016: [** If the character is " (quote) then it shall be represented as `\\"`. **]**
-	**SRS_STRING_02_017: [** If the character is \\ (backslash) then it shall represented as \\\\. **]**
-	**SRS_STRING_02_018: [** If the character is / (slash) then it shall be represented as \\/. **]**
-	**SRS_STRING_02_019: [** If the character code is less than 0x20 then it shall be represented as \\u00xx, where xx is the hex representation of the character code. **]**
+    **SRS_STRING_02_014: [** If any character has the value outside 1...127 then STRING_new_JSON shall fail and return NULL.]
+    **SRS_STRING_02_016: [** If the character is " (quote) then it shall be represented as `\\"`. **]**
+    **SRS_STRING_02_017: [** If the character is \\ (backslash) then it shall represented as \\\\. **]**
+    **SRS_STRING_02_018: [** If the character is / (slash) then it shall be represented as \\/. **]**
+    **SRS_STRING_02_019: [** If the character code is less than 0x20 then it shall be represented as \\u00xx, where xx is the hex representation of the character code. **]**
 
 **SRS_STRING_02_020: [** The string shall end with " (quote). **]**
 
