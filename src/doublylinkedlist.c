@@ -133,7 +133,7 @@ int DList_ForEach(PDLIST_ENTRY listHead, DLIST_ACTION_FUNCTION actionFunction, v
 {
     int result;
     /*Codes_SRS_DLIST_43_001: [If listHead is NULL, DList_ForEach shall fail and return a non-zero value.]*/
-    /*Codes_SRS_DLIST_43_002 : [If actionFunction is NULL, DList_ForEach shall fail and return a non - zero value.]*/
+    /*Codes_SRS_DLIST_43_002 : [If actionFunction is NULL, DList_ForEach shall fail and return a non-zero value.]*/
     if (
         listHead == NULL ||
         actionFunction == NULL

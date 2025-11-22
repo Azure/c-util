@@ -30,7 +30,7 @@ int for_each_in_folder(const char* folder, ON_EACH_IN_FOLDER on_each_in_folder, 
     }
     else
     {
-        /*Codes_SRS_FOR_EACH_IN_FOLDER_02_003: [ for_each_in_folder shall assemble the string folder\\* to enumerate all constituents in folder. ]*/
+        /*Codes_SRS_FOR_EACH_IN_FOLDER_02_003: [ for_each_in_folder shall assemble the string folder\* to enumerate all constituents in folder.]*/
         char* getEverything = sprintf_char("%s\\*", folder);
         if (getEverything == NULL)
         {

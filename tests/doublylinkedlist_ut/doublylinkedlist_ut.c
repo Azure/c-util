@@ -553,7 +553,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
     }
 
     /*Tests_SRS_DLIST_43_001: [If listHead is NULL, DList_ForEach shall fail and return a non-zero value.]*/
-    /*Tests_SRS_DLIST_43_012 : [If there are any failures, DList_ForEach shall fail and return a non - zero value.]*/
+    /*Tests_SRS_DLIST_43_012 : [If there are any failures, DList_ForEach shall fail and return a non-zero value.]*/
     TEST_FUNCTION(DList_ForEach_fails_with_NULL_listHead)
     {
         ///arrange
@@ -566,8 +566,8 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
     }
     
-    /*Tests_SRS_DLIST_43_002 : [If actionFunction is NULL, DList_ForEach shall fail and return a non - zero value.]*/
-    /*Tests_SRS_DLIST_43_012 : [If there are any failures, DList_ForEach shall fail and return a non - zero value.]*/
+    /*Tests_SRS_DLIST_43_002 : [If actionFunction is NULL, DList_ForEach shall fail and return a non-zero value.]*/
+    /*Tests_SRS_DLIST_43_012 : [If there are any failures, DList_ForEach shall fail and return a non-zero value.]*/
     TEST_FUNCTION(DList_ForEach_fails_with_NULL_actionFunction)
     {
         ///arrange

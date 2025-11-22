@@ -85,8 +85,8 @@ static bool isHexDigit(char c)
 }
 
 /*Tests_SRS_UUID_STRING_02_003: [ If any character of uuid_string doesn't match the string representation hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/
-/*Tests_SRS_UUID_STRING_02_004: [ If any character of uuid_string is \0 instead of a hex digit then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/ /*note: this happens when int_result is 0*/
-/*Tests_SRS_UUID_STRING_02_005: [ If any character of uuid_string is \0 instead of a - then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/ /*note: this happens when int_result is 0*/
+/*Tests_SRS_UUID_STRING_02_004: [ If any character of uuid_string is \0 instead of a hex digit then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA.]*/ /*note: this happens when int_result is 0*/
+/*Tests_SRS_UUID_STRING_02_005: [ If any character of uuid_string is \0 instead of a - then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA.]*/ /*note: this happens when int_result is 0*/
 TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
 {
     ///arrange
@@ -210,7 +210,7 @@ TEST_FUNCTION(UUID_to_string_NULL_uuid)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_UUID_STRING_02_008: [ uuid_to_string shall output a \0 terminated string in format hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh where every h is a nibble of one the bytes in uuid. ]*/
+/*Tests_SRS_UUID_STRING_02_008: [ uuid_to_string shall output a \0 terminated string in format hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh where every h is a nibble of one the bytes in uuid.]*/
 
 TEST_FUNCTION(UUID_to_string_succeed)
 {

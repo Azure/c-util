@@ -153,7 +153,7 @@ TEST_FUNCTION(for_each_in_folder_with_on_each_in_folder_NULL_fails)
     ///clean
 }
 
-/*Tests_SRS_FOR_EACH_IN_FOLDER_02_003: [ for_each_in_folder shall assemble the string folder\\* to enumerate all constituents in folder. ]*/
+/*Tests_SRS_FOR_EACH_IN_FOLDER_02_003: [ for_each_in_folder shall assemble the string folder\* to enumerate all constituents in folder.]*/
 /*Tests_SRS_FOR_EACH_IN_FOLDER_02_004: [ for_each_in_folder shall call FindFirstFileA with lpFileName set to the previously build string. ]*/
 /*Tests_SRS_FOR_EACH_IN_FOLDER_02_005: [ If FindFirstFileA fails and GetLastError indicates either ERROR_FILE_NOT_FOUND or ERROR_PATH_NOT_FOUND then for_each_in_folder shall succeed and return 0. ]*/
 TEST_FUNCTION(for_each_in_folder_with_with_FindFirstFileA_returning_ERROR_FILE_NOT_FOUND_succeeds)
@@ -178,7 +178,7 @@ TEST_FUNCTION(for_each_in_folder_with_with_FindFirstFileA_returning_ERROR_FILE_N
     ///clean
 }
 
-/*Tests_SRS_FOR_EACH_IN_FOLDER_02_003: [ for_each_in_folder shall assemble the string folder\\* to enumerate all constituents in folder. ]*/
+/*Tests_SRS_FOR_EACH_IN_FOLDER_02_003: [ for_each_in_folder shall assemble the string folder\* to enumerate all constituents in folder.]*/
 /*Tests_SRS_FOR_EACH_IN_FOLDER_02_004: [ for_each_in_folder shall call FindFirstFileA with lpFileName set to the previously build string. ]*/
 /*Tests_SRS_FOR_EACH_IN_FOLDER_02_005: [ If FindFirstFileA fails and GetLastError indicates either ERROR_FILE_NOT_FOUND or ERROR_PATH_NOT_FOUND then for_each_in_folder shall succeed and return 0. ]*/
 TEST_FUNCTION(for_each_in_folder_with_with_FindFirstFileA_returning_ERROR_PATH_NOT_FOUND_succeeds)

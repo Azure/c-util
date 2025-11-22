@@ -68,8 +68,8 @@ int DList_IsListEmpty(const PDLIST_ENTRY listHead);
 **SRS_DLIST_06_004: [** DList_IsListEmpty shall return 0 if there is one or more items in the list. **]**
 
 Notes:
-1.	DList_IsListEmpty shall be undefined if the DLIST_ENTRY is not currently part of a list.
-2.	DList_IsListEmpty shall be undefined if the DLIST_ENTRY has not been initialized as with DList_InitializeListHead.
+1.    DList_IsListEmpty shall be undefined if the DLIST_ENTRY is not currently part of a list.
+2.    DList_IsListEmpty shall be undefined if the DLIST_ENTRY has not been initialized as with DList_InitializeListHead.
 
 ### DList_InsertTailList
 ```c
@@ -108,8 +108,8 @@ int DList_RemoveEntryList(PDLIST_ENTRY listEntry);
 **SRS_DLIST_06_011: [** DList_RemoveEntryList shall return zero if the remaining list is NOT empty. **]**
 
 Notes:
-1.	If listEntry is NOT part of a list then the result of this function is undefined. Therefore, calling DList_RemoveEntryList twice on the same listEntry is undefined.
-2.	The Flink & Blink of the listEntry parameter shall be undefined after calling this function
+1.    If listEntry is NOT part of a list then the result of this function is undefined. Therefore, calling DList_RemoveEntryList twice on the same listEntry is undefined.
+2.    The Flink & Blink of the listEntry parameter shall be undefined after calling this function
 
 ### DList_RemoveHeadList
 ```c

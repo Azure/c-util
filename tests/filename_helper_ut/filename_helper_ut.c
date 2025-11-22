@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 
 
 
@@ -165,7 +165,7 @@ TEST_FUNCTION(filename_append_suffix_without_dot_creates_a_new_string_and_succee
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_FILENAME_HELPER_42_004: [ If filename does not contain a \ then filename_append_suffix shall return the name of the file + suffix + . + extension. ]*/
+/*Tests_SRS_FILENAME_HELPER_42_004: [ If filename does not contain a \ then filename_append_suffix shall return the name of the file + suffix + . + extension.]*/
 TEST_FUNCTION(filename_append_suffix_without_backslash_creates_a_new_string_and_succeeds)
 {
     ///arrange
@@ -186,7 +186,7 @@ TEST_FUNCTION(filename_append_suffix_without_backslash_creates_a_new_string_and_
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_FILENAME_HELPER_42_005: [ If filename contains last . before last \ then filename_append_suffix shall return filename + suffix. ]*/
+/*Tests_SRS_FILENAME_HELPER_42_005: [ If filename contains last . before last \ then filename_append_suffix shall return filename + suffix.]*/
 TEST_FUNCTION(filename_append_suffix_with_last_dot_before_backslash_creates_a_new_string_and_succeeds)
 {
     ///arrange
@@ -207,7 +207,7 @@ TEST_FUNCTION(filename_append_suffix_with_last_dot_before_backslash_creates_a_ne
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_FILENAME_HELPER_42_006: [ If filename contains last . after last \ then filename_append_suffix shall return the name of the file + suffix + . + extension. ]*/
+/*Tests_SRS_FILENAME_HELPER_42_006: [ If filename contains last . after last \ then filename_append_suffix shall return the name of the file + suffix + . + extension.]*/
 TEST_FUNCTION(filename_append_suffix_with_dot_after_backslash_creates_a_new_string_and_succeeds)
 {
     ///arrange
@@ -228,7 +228,7 @@ TEST_FUNCTION(filename_append_suffix_with_dot_after_backslash_creates_a_new_stri
     real_gballoc_hl_free(result);
 }
 
-/*Tests_SRS_FILENAME_HELPER_42_006: [ If filename contains last . after last \ then filename_append_suffix shall return the name of the file + suffix + . + extension. ]*/
+/*Tests_SRS_FILENAME_HELPER_42_006: [ If filename contains last . after last \ then filename_append_suffix shall return the name of the file + suffix + . + extension.]*/
 TEST_FUNCTION(filename_append_suffix_creates_a_new_string_and_succeeds_5)
 {
     ///arrange

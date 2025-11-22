@@ -51,7 +51,7 @@ STRING_HANDLE STRING_new(void)
     return result;
 }
 
-/*Codes_SRS_STRING_02_001: [STRING_clone shall produce a new string having the same content as the handle string.*/
+/*Codes_SRS_STRING_02_001: [STRING_clone shall produce a new string having the same content as the handle string. ] */
 STRING_HANDLE STRING_clone(STRING_HANDLE handle)
 {
     STRING* result;
@@ -283,7 +283,7 @@ STRING_HANDLE STRING_new_JSON(const char* source)
 
         for (i = 0; i < vlen; i++)
         {
-            /*Codes_SRS_STRING_02_014: [If any character has the value outside [1...127] then STRING_new_JSON shall fail and return NULL.] */
+            /*Codes_SRS_STRING_02_014: [If any character has the value outside 1...127 then STRING_new_JSON shall fail and return NULL.] */
             if ((unsigned char)source[i] >= 128) /*this be a UNICODE character begin*/
             {
                 break;
@@ -367,7 +367,7 @@ STRING_HANDLE STRING_new_JSON(const char* source)
                                     }
                                     else if (source[i] == '"')
                                     {
-                                        /*Codes_SRS_STRING_02_016: [If the character is " (quote) then it shall be repsented as \".] */
+                                        /*Codes_SRS_STRING_02_016: [If the character is " (quote) then it shall be represented as \".] */
                                         result->s[pos++] = '\\';
                                         result->s[pos++] = '"';
                                     }
