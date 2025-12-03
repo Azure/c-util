@@ -69,22 +69,6 @@ DECLARE_ASYNC_TYPE_HELPER_COPY_HANDLER(const_charptr_t, dest, source);
 DECLARE_ASYNC_TYPE_HELPER_FREE_HANDLER(const_charptr_t, value);
 ```
 
-A copy handler is defined for `UUID_T`:
-
-```c
-DECLARE_ASYNC_TYPE_HELPER_COPY_HANDLER(UUID_T, dest, source);
-DECLARE_ASYNC_TYPE_HELPER_FREE_HANDLER(UUID_T, value);
-```
-
-A copy handler is defined for `const_UUID_T`:
-
-```c
-typedef const UUID_T const_UUID_T;
-
-DECLARE_ASYNC_TYPE_HELPER_COPY_HANDLER(const_UUID_T, dest, source);
-DECLARE_ASYNC_TYPE_HELPER_FREE_HANDLER(const_UUID_T, value);
-```
-
 A copy handler is defined for `CONSTBUFFER_ARRAY_HANDLE*`:
 
 ```c
@@ -248,58 +232,6 @@ Frees a string.
 **SRS_ASYNC_TYPE_HELPER_42_012: [** If `value` is `NULL` then the free handler shall return. **]**
 
 **SRS_ASYNC_TYPE_HELPER_42_013: [** The free handler shall free `value`. **]**
-
-### ASYNC_TYPE_HELPER_COPY_HANDLER(UUID_T)
-
-```c
-DECLARE_ASYNC_TYPE_HELPER_COPY_HANDLER(UUID_T, dest, source);
-```
-
-Copies the `UUID_T` from `source` to `dest`.
-
-**SRS_ASYNC_TYPE_HELPER_04_001: [** If `dest` is `NULL` then the copy handler will fail and return a non-zero value. **]**
-
-**SRS_ASYNC_TYPE_HELPER_04_002: [** If `source` is `NULL` then the copy handler will set the `dest` to a zero UUID value. **]**
-
-**SRS_ASYNC_TYPE_HELPER_04_003: [** Otherwise, the copy handler shall copy the `UUID_T` from `source` to `dest`. **]**
-
-**SRS_ASYNC_TYPE_HELPER_04_004: [** The copy handler shall succeed and return 0. **]**
-
-### ASYNC_TYPE_HELPER_FREE_HANDLER(UUID_T)
-
-```c
-DECLARE_ASYNC_TYPE_HELPER_FREE_HANDLER(UUID_T, value);
-```
-
-Does nothing since we don't `malloc` a `UUID_T` in the copy handler.
-
-**SRS_ASYNC_TYPE_HELPER_04_005: [** This handler shall do nothing. **]**
-
-### ASYNC_TYPE_HELPER_COPY_HANDLER(const_UUID_T)
-
-```c
-DECLARE_ASYNC_TYPE_HELPER_COPY_HANDLER(const_UUID_T, dest, source);
-```
-
-Copies the const `UUID_T` from `source` to `dest`.
-
-**SRS_ASYNC_TYPE_HELPER_01_001: [** If `dest` is `NULL` then the copy handler will fail and return a non-zero value. **]**
-
-**SRS_ASYNC_TYPE_HELPER_01_002: [** If `source` is `NULL` then the copy handler will set the `dest` to a zero UUID value. **]**
-
-**SRS_ASYNC_TYPE_HELPER_01_003: [** Otherwise, the copy handler shall copy the const `UUID_T` from `source` to `dest`. **]**
-
-**SRS_ASYNC_TYPE_HELPER_01_004: [** The copy handler shall succeed and return 0. **]**
-
-### ASYNC_TYPE_HELPER_FREE_HANDLER(UUID_T)
-
-```c
-DECLARE_ASYNC_TYPE_HELPER_FREE_HANDLER(UUID_T, value);
-```
-
-Does nothing since we don't `malloc` a `UUID_T` in the copy handler.
-
-**SRS_ASYNC_TYPE_HELPER_01_005: [** This handler shall do nothing. **]**
 
 ```c
 int constbuffer_array_ptr_copy(constbuffer_array_ptr* dest, const constbuffer_array_ptr src, uint32_t item_count);

@@ -18,7 +18,7 @@ void read_uint8_t(const unsigned char* source, uint8_t* destination)
 void read_uint16_t(const unsigned char* source, uint16_t* destination)
 {
     /*Codes_SRS_MEMORY_DATA_02_042: [ read_uint16_t shall write in destination the bytes at source MSB first and return. ]*/
-    *destination = 
+    *destination =
         (source[0]<<8)+
         (source[1])
         ;
@@ -123,7 +123,7 @@ void write_int64_t(unsigned char* destination, int64_t value)
 void write_uuid_t(unsigned char* destination, const UUID_T value)
 {
     /*Codes_SRS_MEMORY_DATA_02_058: [ write_uuid_t shall write at destination the bytes of value ]*/
-    (void)memcpy(destination, (void*)value, sizeof(UUID_T));
+    (void)memcpy(destination, &value, sizeof(UUID_T));
 }
 
 void read_int8_t(const unsigned char* source, int8_t* destination)

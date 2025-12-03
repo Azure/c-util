@@ -24,7 +24,7 @@ MU_DEFINE_ENUM(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_VALUES)
 
 extern const UUID_T NIL_UUID;
 
-MOCKABLE_FUNCTION(, UUID_FROM_STRING_RESULT, uuid_from_string, const char*, uuid_string, UUID_T, uuid);
+MOCKABLE_FUNCTION(, UUID_FROM_STRING_RESULT, uuid_from_string, const char*, uuid_string, UUID_T*, uuid);
 
 MOCKABLE_FUNCTION(, char*, uuid_to_string, const UUID_T, uuid);
 

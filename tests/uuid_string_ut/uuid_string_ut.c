@@ -55,22 +55,22 @@ TEST_FUNCTION(uuid_from_string_with_uuid_string_NULL_returns_UUID_FROM_STRING_RE
     UUID_T out;
 
     ///act
-    result = uuid_from_string(NULL, out);
+    result = uuid_from_string(NULL, &out);
 
     ///arrange
     ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/*Tests_SRS_UUID_STRING_02_002: [ If uuid is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
+/*Tests_SRS_UUID_STRING_02_010: [ If uuid is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
 TEST_FUNCTION(uuid_from_string_with_uuid_NULL_returns_UUID_FROM_STRING_RESULT_INVALID_ARG)
 {
     ///arrange
     UUID_FROM_STRING_RESULT result;
-    const char* s = "0f102132-4354-6576-8798-a9bacbdcedfe";
+    const char* uuid_string = "0f102132-4354-6576-8798-a9bacbdcedfe";
 
     ///act
-    result = uuid_from_string(s, NULL);
+    result = uuid_from_string(uuid_string, NULL);
 
     ///arrange
     ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_ARG, result);
@@ -110,7 +110,7 @@ TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
                     source[pos] = replace;
 
                     ///act + assert all in one!
-                    ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, destination));
+                    ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, &destination));
                     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
                 }
             }
@@ -128,7 +128,7 @@ TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
                     source[pos] = replace;
 
                     ///act + assert all in one!
-                    ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, destination));
+                    ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, &destination));
                     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
                 }
             }
@@ -143,26 +143,11 @@ TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
                 source[pos] = replace;
 
                 ///act + assert all in one!
-                ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, destination));
+                ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, &destination));
                 ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
             }
         }
     }
-}
-
-/*Tests_SRS_UUID_STRING_02_007: [ If uuid is NULL then uuid_to_string shall fail and return NULL. ]*/
-TEST_FUNCTION(uuid_to_string_with_uuid_NULL_fails)
-{
-    ///arrange
-    char* result;
-
-    ///act
-    result = uuid_to_string(NULL);
-
-    ///assert
-    ASSERT_IS_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    
 }
 
 /*Tests_SRS_UUID_STRING_02_006: [ uuid_from_string shall convert the hex digits to the bytes of uuid, succeed and return UUID_FROM_STRING_RESULT_OK. ]*/
@@ -174,39 +159,26 @@ TEST_FUNCTION(uuid_from_string_succeeds)
     UUID_T destination = { 0 };
 
     ///act
-    result = uuid_from_string(s, destination);
+    result = uuid_from_string(s, &destination);
 
     ///assert
     ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_OK, result);
-    ASSERT_ARE_EQUAL(uint8_t, 0x0f, destination[0]);
-    ASSERT_ARE_EQUAL(uint8_t, 0x10, destination[1]);
-    ASSERT_ARE_EQUAL(uint8_t, 0x21, destination[2]);
-    ASSERT_ARE_EQUAL(uint8_t, 0x32, destination[3]);
-    ASSERT_ARE_EQUAL(uint8_t, 0x43, destination[4]);
-    ASSERT_ARE_EQUAL(uint8_t, 0x54, destination[5]);
-    ASSERT_ARE_EQUAL(uint8_t, 0x65, destination[6]);
-    ASSERT_ARE_EQUAL(uint8_t, 0x76, destination[7]);
-    ASSERT_ARE_EQUAL(uint8_t, 0x87, destination[8]);
-    ASSERT_ARE_EQUAL(uint8_t, 0x98, destination[9]);
-    ASSERT_ARE_EQUAL(uint8_t, 0xA9, destination[10]);
-    ASSERT_ARE_EQUAL(uint8_t, 0xBA, destination[11]);
-    ASSERT_ARE_EQUAL(uint8_t, 0xCB, destination[12]);
-    ASSERT_ARE_EQUAL(uint8_t, 0xDC, destination[13]);
-    ASSERT_ARE_EQUAL(uint8_t, 0xED, destination[14]);
-    ASSERT_ARE_EQUAL(uint8_t, 0xFE, destination[15]);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-}
-
-/*Tests_SRS_UUID_STRING_02_007: [ If uuid is NULL then uuid_to_string shall fail and return NULL. ]*/
-TEST_FUNCTION(UUID_to_string_NULL_uuid)
-{
-    //arrange
-
-    //act
-    char* result = uuid_to_string(NULL);
-
-    //assert
-    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(uint8_t, 0x0f, destination.bytes[0]);
+    ASSERT_ARE_EQUAL(uint8_t, 0x10, destination.bytes[1]);
+    ASSERT_ARE_EQUAL(uint8_t, 0x21, destination.bytes[2]);
+    ASSERT_ARE_EQUAL(uint8_t, 0x32, destination.bytes[3]);
+    ASSERT_ARE_EQUAL(uint8_t, 0x43, destination.bytes[4]);
+    ASSERT_ARE_EQUAL(uint8_t, 0x54, destination.bytes[5]);
+    ASSERT_ARE_EQUAL(uint8_t, 0x65, destination.bytes[6]);
+    ASSERT_ARE_EQUAL(uint8_t, 0x76, destination.bytes[7]);
+    ASSERT_ARE_EQUAL(uint8_t, 0x87, destination.bytes[8]);
+    ASSERT_ARE_EQUAL(uint8_t, 0x98, destination.bytes[9]);
+    ASSERT_ARE_EQUAL(uint8_t, 0xA9, destination.bytes[10]);
+    ASSERT_ARE_EQUAL(uint8_t, 0xBA, destination.bytes[11]);
+    ASSERT_ARE_EQUAL(uint8_t, 0xCB, destination.bytes[12]);
+    ASSERT_ARE_EQUAL(uint8_t, 0xDC, destination.bytes[13]);
+    ASSERT_ARE_EQUAL(uint8_t, 0xED, destination.bytes[14]);
+    ASSERT_ARE_EQUAL(uint8_t, 0xFE, destination.bytes[15]);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
@@ -297,7 +269,7 @@ TEST_FUNCTION(NIL_UUID_is_filled_with_zeroes)
     size_t i;
     for (i = 0; i < sizeof(UUID_T); i++)
     {
-        ASSERT_ARE_EQUAL(uint8_t, 0, NIL_UUID[i]);
+        ASSERT_ARE_EQUAL(uint8_t, 0, NIL_UUID.bytes[i]);
     }
 }
 

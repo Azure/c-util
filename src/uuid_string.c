@@ -87,18 +87,18 @@ static bool parseHexString(const char* s, uint8_t numbers, unsigned char* destin
         result = isHexByte(s + i * 2, destination + i);
         i++;
     }
-    
+
     return result;
 }
 
-UUID_FROM_STRING_RESULT uuid_from_string(const char* uuid_string, UUID_T uuid) /*uuid_string is not necessarily null terminated*/
+UUID_FROM_STRING_RESULT uuid_from_string(const char* uuid_string, UUID_T* uuid) /*uuid_string is not necessarily null terminated*/
 {
     UUID_FROM_STRING_RESULT result;
 
     if (
         /*Codes_SRS_UUID_STRING_02_001: [ If uuid_string is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
         (uuid_string == NULL) ||
-        /*Codes_SRS_UUID_STRING_02_002: [ If uuid is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
+        /*Codes_SRS_UUID_STRING_02_010: [ If uuid is NULL then uuid_from_string shall fail and return UUID_FROM_STRING_RESULT_INVALID_ARG. ]*/
         (uuid == NULL)
         )
     {
@@ -119,15 +119,15 @@ UUID_FROM_STRING_RESULT uuid_from_string(const char* uuid_string, UUID_T uuid) /
         /*Codes_SRS_UUID_STRING_02_004: [ If any character of uuid_string is \0 instead of a hex digit then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA.]*/
         /*Codes_SRS_UUID_STRING_02_005: [ If any character of uuid_string is \0 instead of a - then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA.]*/
         if (
-            (!parseHexString(uuid_string + 0, 4, uuid + 0)) ||
+            (!parseHexString(uuid_string + 0, 4, uuid->bytes + 0)) ||
             (uuid_string[8] != '-') ||
-            (!parseHexString(uuid_string + 9, 2, uuid + 4)) ||
+            (!parseHexString(uuid_string + 9, 2, uuid->bytes + 4)) ||
             (uuid_string[13] != '-') ||
-            (!parseHexString(uuid_string + 14, 2, uuid + 6)) ||
+            (!parseHexString(uuid_string + 14, 2, uuid->bytes + 6)) ||
             (uuid_string[18] != '-') ||
-            (!parseHexString(uuid_string + 19, 2, uuid + 8)) ||
+            (!parseHexString(uuid_string + 19, 2, uuid->bytes + 8)) ||
             (uuid_string[23] != '-') ||
-            (!parseHexString(uuid_string + 24, 6, uuid + 10))
+            (!parseHexString(uuid_string + 24, 6, uuid->bytes + 10))
             )
         {
             LogError("const char* uuid_string=%s cannot be parsed at UUID_T", uuid_string);
@@ -147,23 +147,14 @@ char* uuid_to_string(const UUID_T uuid)
 {
     char* result;
 
-    /*Codes_SRS_UUID_STRING_02_007: [ If uuid is NULL then uuid_to_string shall fail and return NULL. ]*/
-    if (uuid == NULL)
-    {
-        LogError("Invalid argument (const UUID_T uuid=%" PRI_UUID_T ")", UUID_T_VALUES_OR_NULL(uuid));
-        result = NULL;
-    }
-    else
-    {
-        /*Codes_SRS_UUID_STRING_02_008: [ uuid_to_string shall output a \0 terminated string in format hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh where every h is a nibble of one the bytes in uuid.]*/
-        result = sprintf_char("%" PRI_UUID_T "", UUID_T_VALUES(uuid));
+    /*Codes_SRS_UUID_STRING_02_008: [ uuid_to_string shall output a \0 terminated string in format hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh where every h is a nibble of one the bytes in uuid.]*/
+    result = sprintf_char("%" PRI_UUID_T "", UUID_T_VALUES(uuid));
 
-        /*Codes_SRS_UUID_STRING_02_009: [ If there are any failures then uuid_to_string shall fail and return NULL. ]*/
-        if (result == NULL)
-        {
-            /*return as is*/
-            LogError("failure in sprintf_char(\"%%\" PRI_UUID_T \"\", UUID_T_VALUES(uuid=%" PRI_UUID_T ")", UUID_T_VALUES(uuid));
-        }
+    /*Codes_SRS_UUID_STRING_02_009: [ If there are any failures then uuid_to_string shall fail and return NULL. ]*/
+    if (result == NULL)
+    {
+        /*return as is*/
+        LogError("failure in sprintf_char(\"%%\" PRI_UUID_T \"\", UUID_T_VALUES(uuid=%" PRI_UUID_T ")", UUID_T_VALUES(uuid));
     }
 
     return result;
