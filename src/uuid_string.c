@@ -16,9 +16,6 @@
 
 MU_DEFINE_ENUM_STRINGS(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_VALUES);
 
-/* Codes_SRS_UUID_01_001: [ NIL_UUID shall contain all zeroes. ]*/
-const UUID_T NIL_UUID = { 0 };
-
 static bool isHexDigit(char c, uint8_t* value)
 {
     int result;

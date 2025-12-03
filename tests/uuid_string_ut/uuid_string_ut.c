@@ -258,19 +258,4 @@ TEST_FUNCTION(UUID_to_string_fails_when_sprintf_char_fails)
     ///clean
 }
 
-/* Tests_SRS_UUID_01_001: [ NIL_UUID shall contain all zeroes. ]*/
-TEST_FUNCTION(NIL_UUID_is_filled_with_zeroes)
-{
-    //Arrange
-
-    //Act
-
-    //Assert
-    size_t i;
-    for (i = 0; i < sizeof(UUID_T); i++)
-    {
-        ASSERT_ARE_EQUAL(uint8_t, 0, NIL_UUID.bytes[i]);
-    }
-}
-
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

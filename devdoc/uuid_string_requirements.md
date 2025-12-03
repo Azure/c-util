@@ -16,8 +16,6 @@ MU_DEFINE_ENUM(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_VALUES)
 
 #define UUID_T_STRING_LENGTH 36 /*all UUID_T have 36 characters when stringified (not counting a '\0' terminator)*/
 
-extern const UUID_T NIL_UUID;
-
 MOCKABLE_FUNCTION(, UUID_FROM_STRING_RESULT, uuid_from_string, const char*, uuid_string, UUID_T*, uuid);
 
 MOCKABLE_FUNCTION(, char*, uuid_to_string, const UUID_T, uuid);
@@ -53,12 +51,3 @@ MOCKABLE_FUNCTION(, char*, uuid_to_string, const UUID_T, uuid);
 **SRS_UUID_STRING_02_008: [** `uuid_to_string` shall output a `\\0` terminated string in format `hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh` where every `h` is a nibble of one the bytes in `uuid`. **]**
 
 **SRS_UUID_STRING_02_009: [** If there are any failures then `uuid_to_string` shall fail and return `NULL`. **]**
-
-
-### NIL_UUID
-
-```c
-extern const UUID_T NIL_UUID;
-```
-
-**SRS_UUID_01_001: [** `NIL_UUID` shall contain all zeroes. **]**
