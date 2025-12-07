@@ -18,7 +18,7 @@
 
 
 
-    UUID_FROM_STRING_RESULT real_uuid_from_string(const char* uuid_string, UUID_T uuid);
+    UUID_FROM_STRING_RESULT real_uuid_from_string(const char* uuid_string, UUID_T* uuid);
     char* real_uuid_to_string(const UUID_T uuid);
 
 

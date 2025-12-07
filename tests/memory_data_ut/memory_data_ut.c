@@ -408,7 +408,7 @@ TEST_FUNCTION(write_uuid_t_succeeds)
     write_uuid_t(destination, value);
 
     ///assert
-    ASSERT_IS_TRUE(memcmp(value, destination, sizeof(UUID_T))==0);
+    ASSERT_IS_TRUE(memcmp(&value, destination, sizeof(UUID_T))==0);
 }
 
 /*Tests_SRS_MEMORY_DATA_02_058: [ write_uuid_t shall write at destination the bytes of value ]*/
@@ -422,7 +422,7 @@ TEST_FUNCTION(write_uuid_t_succeeds_2)
     write_uuid_t(destination, value);
 
     ///assert
-    ASSERT_IS_TRUE(memcmp(destination, value, sizeof(UUID_T))==0);
+    ASSERT_IS_TRUE(memcmp(destination, &value, sizeof(UUID_T))==0);
 }
 
 /* read_int8_t */
@@ -574,7 +574,7 @@ TEST_FUNCTION(read_uuid_t_succeeds)
     read_uuid_t(source, &destination);
 
     ///assert
-    ASSERT_ARE_EQUAL(int, 0, memcmp(source, destination, sizeof(UUID_T)));
+    ASSERT_ARE_EQUAL(int, 0, memcmp(source, &destination, sizeof(UUID_T)));
 }
 
 /*Tests_SRS_MEMORY_DATA_02_049: [ read_uuid_t shall write in destination the bytes at source. ]*/
@@ -588,7 +588,7 @@ TEST_FUNCTION(read_uuid_t_succeeds_2)
     read_uuid_t(source, &destination);
 
     ///assert
-    ASSERT_ARE_EQUAL(int, 0, memcmp(source, destination, sizeof(UUID_T)));
+    ASSERT_ARE_EQUAL(int, 0, memcmp(source, &destination, sizeof(UUID_T)));
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

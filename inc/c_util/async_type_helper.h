@@ -52,8 +52,8 @@ extern "C" {
 #define ASYNC_TYPE_HELPER_USE_CONST_TYPE_charptr_t 1
 #define ASYNC_TYPE_HELPER_CONST_TYPE_charptr_t const_charptr_t
 
-#define ASYNC_TYPE_HELPER_HAS_CONST_const_UUID_T 1
-#define ASYNC_TYPE_HELPER_NON_CONST_TYPE_const_UUID_T UUID_T
+/*UUID_T is struct => it is copy-able by assignment*/
+#define ASYNC_TYPE_HELPER_USE_ASSIGN_COPY_UUID_T 1
 
 typedef const char* const_charptr_t;
 typedef char* charptr_t;
@@ -122,12 +122,6 @@ typedef CONSTBUFFER_ARRAY_HANDLE* constbuffer_array_ptr;
 
 DECLARE_ASYNC_TYPE_HELPER_COPY_HANDLER(const_charptr_t, dest, source);
 DECLARE_ASYNC_TYPE_HELPER_FREE_HANDLER(const_charptr_t, value);
-
-DECLARE_ASYNC_TYPE_HELPER_COPY_HANDLER(UUID_T, dest, source);
-DECLARE_ASYNC_TYPE_HELPER_FREE_HANDLER(UUID_T, value);
-
-int ASYNC_TYPE_HELPER_COPY_HANDLER(const_UUID_T)(const_UUID_T* destination_arg, const_UUID_T source_arg);
-void ASYNC_TYPE_HELPER_FREE_HANDLER(const_UUID_T)(const_UUID_T value);
 
 int constbuffer_array_ptr_copy(constbuffer_array_ptr* dest, const constbuffer_array_ptr src, uint32_t item_count);
 void constbuffer_array_ptr_free(const constbuffer_array_ptr value, uint32_t item_count);

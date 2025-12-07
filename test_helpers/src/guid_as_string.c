@@ -20,7 +20,7 @@ const char* getGuidAsString(void)
 {
     UUID_T u;
     char* result;
-    if (real_uuid_produce(u) != 0)
+    if (real_uuid_produce(&u) != 0)
     {
         LogError("real_uuid_produce failed");
         result = NULL;
@@ -67,23 +67,22 @@ int getGuidFromString(const char* guidAsString, GUID* guid)
         {
             /*parse it as UUID, convert UUID to GUID*/
             UUID_T u;
-            if (real_uuid_from_string(guidAsString, u) != UUID_FROM_STRING_RESULT_OK)
+            if (real_uuid_from_string(guidAsString, &u) != UUID_FROM_STRING_RESULT_OK)
             {
                 LogError("failure in real_uuid_from_string");
                 result = MU_FAILURE;
             }
             else
             {
-                guid->Data1 = (u[0] << 24) +
-                    (u[1] << 16) +
-                    (u[2] << 8) +
-                    u[3];
-                guid->Data2 = (u[4] << 8) + 
-                    u[5];
-                guid->Data3 = (u[6] << 8) +
-                    u[7];
-                (void)memcpy(guid->Data4, u+8, 8);
-                result = 0;
+                if(GUID_from_uuid(guid, u)!=0)
+                {
+                    LogError("failure in GUID_from_uuid(guid=%p, u=%" PRI_UUID_T ")", guid, UUID_T_VALUES(u));
+                    result = MU_FAILURE;
+                }
+                else
+                {
+                    result = 0;
+                }
             }
         }
     }
