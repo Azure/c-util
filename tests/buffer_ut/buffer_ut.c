@@ -1323,7 +1323,7 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         ASSERT_ARE_EQUAL(size_t, size, 0);
     }
 
-    TEST_FUNCTION(BUFFER_Clone_Succeed)
+    TEST_FUNCTION(BUFFER_Clone_Succeed) // no-srs
     {
         ///arrange
         BUFFER_HANDLE g_hBuffer;
@@ -1347,7 +1347,7 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         BUFFER_delete(hclone);
     }
 
-    TEST_FUNCTION(BUFFER_Clone_HANDLE_NULL_Fail)
+    TEST_FUNCTION(BUFFER_Clone_HANDLE_NULL_Fail) // no-srs
     {
         ///arrange
 

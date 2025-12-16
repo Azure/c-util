@@ -724,6 +724,7 @@ TEST_FUNCTION(sync_wrapper_call_stores_internal_result_on_failure)
     ASSERT_ARE_EQUAL(TEST_SYNC_API_RESULT, DUMMY_RESULT_SYNC_2, internal_result);
 }
 
+/*Tests_SRS_SYNC_WRAPPER_01_008: [On success, the synchronous wrapper shall return SYNC_WRAPPER_OK.]*/
 TEST_FUNCTION(sync_wrapper_call_with_non_pointer_out_succeeds)
 {
     // arrange

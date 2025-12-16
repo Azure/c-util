@@ -1550,7 +1550,7 @@ TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_unhappy_path) /*this f
 }
 
 /*small tests that check code integrity*/
-TEST_FUNCTION(CONSBUFFER_HANDLE_serialization_constants)
+TEST_FUNCTION(CONSBUFFER_HANDLE_serialization_constants) // no-srs
 {
     ///arrange
 
