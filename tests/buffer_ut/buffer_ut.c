@@ -1331,7 +1331,8 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         BUFFER_HANDLE g_hBuffer;
         BUFFER_HANDLE hclone;
         g_hBuffer = BUFFER_new();
-        (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
+        ASSERT_IS_NOT_NULL(g_hBuffer);
+        ASSERT_ARE_EQUAL(int, 0, BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE));
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
@@ -1368,7 +1369,8 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         ///arrange
         BUFFER_HANDLE g_hBuffer;
         g_hBuffer = BUFFER_new();
-        (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
+        ASSERT_IS_NOT_NULL(g_hBuffer);
+        ASSERT_ARE_EQUAL(int, 0, BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE));
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
