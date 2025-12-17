@@ -638,12 +638,14 @@ size_t BUFFER_length(BUFFER_HANDLE handle)
 BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle)
 {
     BUFFER_HANDLE result;
+    /*Codes_SRS_BUFFER_88_001: [ If handle is NULL, BUFFER_clone shall return NULL.]*/
     if (handle == NULL)
     {
         result = NULL;
     }
     else
     {
+        /*Codes_SRS_BUFFER_88_002: [ BUFFER_clone shall allocate a new BUFFER_HANDLE and copy the contents of handle into it.]*/
         BUFFER* suppliedBuff = handle;
         BUFFER* b = malloc(sizeof(BUFFER));
         if (b != NULL)
@@ -651,6 +653,7 @@ BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle)
             if (BUFFER_safemalloc(b, suppliedBuff->size) != 0)
             {
                 free(b);
+                /*Codes_SRS_BUFFER_88_003: [ If any error occurs, BUFFER_clone shall return NULL.]*/
                 LogError("Failure: allocating temp buffer.");
                 result = NULL;
             }
@@ -658,11 +661,13 @@ BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle)
             {
                 (void)memcpy(b->buffer, suppliedBuff->buffer, suppliedBuff->size);
                 b->size = suppliedBuff->size;
+                /*Codes_SRS_BUFFER_88_004: [ On success, BUFFER_clone shall return a non-NULL handle.]*/
                 result = b;
             }
         }
         else
         {
+            /*Codes_SRS_BUFFER_88_003: [ If any error occurs, BUFFER_clone shall return NULL.]*/
             result = NULL;
         }
     }

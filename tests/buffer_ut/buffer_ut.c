@@ -1362,6 +1362,29 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         ASSERT_IS_NULL(result);
     }
 
+    /* Tests_SRS_BUFFER_88_003: [ If any error occurs, BUFFER_clone shall return NULL. ] */
+    TEST_FUNCTION(BUFFER_Clone_malloc_fails)
+    {
+        ///arrange
+        BUFFER_HANDLE g_hBuffer;
+        g_hBuffer = BUFFER_new();
+        (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+            .SetReturn(NULL);
+
+        ///act
+        BUFFER_HANDLE result = BUFFER_clone(g_hBuffer);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_IS_NULL(result);
+
+        ///cleanup
+        BUFFER_delete(g_hBuffer);
+    }
+
     /*Tests_SRS_BUFFER_02_001: [If source is NULL then BUFFER_create shall return NULL.] */
     TEST_FUNCTION(BUFFER_create_with_NULL_source_fails)
     {
