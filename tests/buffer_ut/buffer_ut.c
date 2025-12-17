@@ -1323,7 +1323,9 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         ASSERT_ARE_EQUAL(size_t, size, 0);
     }
 
-    TEST_FUNCTION(BUFFER_Clone_Succeed) // no-srs
+    /* Tests_SRS_BUFFER_88_002: [ BUFFER_clone shall allocate a new BUFFER_HANDLE and copy the contents of handle into it. ] */
+    /* Tests_SRS_BUFFER_88_004: [ On success, BUFFER_clone shall return a non-NULL handle. ] */
+    TEST_FUNCTION(BUFFER_Clone_Succeed)
     {
         ///arrange
         BUFFER_HANDLE g_hBuffer;
@@ -1347,7 +1349,8 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         BUFFER_delete(hclone);
     }
 
-    TEST_FUNCTION(BUFFER_Clone_HANDLE_NULL_Fail) // no-srs
+    /* Tests_SRS_BUFFER_88_001: [ If handle is NULL, BUFFER_clone shall return NULL. ] */
+    TEST_FUNCTION(BUFFER_Clone_HANDLE_NULL_Fail)
     {
         ///arrange
 
