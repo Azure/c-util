@@ -641,6 +641,7 @@ BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle)
     /*Codes_SRS_BUFFER_88_001: [ If handle is NULL, BUFFER_clone shall return NULL.]*/
     if (handle == NULL)
     {
+        LogError("invalid argument BUFFER_HANDLE handle=%p", handle);
         result = NULL;
     }
     else
