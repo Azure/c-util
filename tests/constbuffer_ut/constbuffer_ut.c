@@ -1549,7 +1549,8 @@ TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_unhappy_path) /*this f
     CONSTBUFFER_DecRef(origin);
 }
 
-/*small tests that check code integrity*/
+/* Tests_SRS_CONSTBUFFER_88_001: [ CONSTBUFFER_VERSION_SIZE shall be sizeof(uint8_t) (1 byte). ] */
+/* Tests_SRS_CONSTBUFFER_88_002: [ CONSTBUFFER_SIZE_SIZE shall be sizeof(uint32_t) (4 bytes). ] */
 TEST_FUNCTION(CONSBUFFER_HANDLE_serialization_constants)
 {
     ///arrange

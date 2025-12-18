@@ -607,6 +607,7 @@ TEST_FUNCTION_CLEANUP(TestMethodCleanup)
         ASSERT_ARE_EQUAL(int, 0, result);
     }
 
+    /*Tests_SRS_DLIST_43_011: [DList_ForEach shall succeed and return zero.]*/
     TEST_FUNCTION(DList_ForEach_succeeds_with_empty_list)
     {
         ///arrange

@@ -1261,7 +1261,8 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         BUFFER_HANDLE g_hBuffer;
         unsigned char* u;
         g_hBuffer = BUFFER_new();
-        (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
+        ASSERT_IS_NOT_NULL(g_hBuffer);
+        ASSERT_ARE_EQUAL(int, 0, BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE));
         umock_c_reset_all_calls();
 
         ///act
@@ -1296,7 +1297,8 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         BUFFER_HANDLE g_hBuffer;
         size_t l;
         g_hBuffer = BUFFER_new();
-        (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
+        ASSERT_IS_NOT_NULL(g_hBuffer);
+        ASSERT_ARE_EQUAL(int, 0, BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE));
         umock_c_reset_all_calls();
 
         ///act
@@ -1323,13 +1325,16 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         ASSERT_ARE_EQUAL(size_t, size, 0);
     }
 
+    /* Tests_SRS_BUFFER_88_002: [ BUFFER_clone shall allocate a new BUFFER_HANDLE and copy the contents of handle into it. ] */
+    /* Tests_SRS_BUFFER_88_004: [ On success, BUFFER_clone shall return a non-NULL handle. ] */
     TEST_FUNCTION(BUFFER_Clone_Succeed)
     {
         ///arrange
         BUFFER_HANDLE g_hBuffer;
         BUFFER_HANDLE hclone;
         g_hBuffer = BUFFER_new();
-        (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
+        ASSERT_IS_NOT_NULL(g_hBuffer);
+        ASSERT_ARE_EQUAL(int, 0, BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE));
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
@@ -1347,6 +1352,7 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         BUFFER_delete(hclone);
     }
 
+    /* Tests_SRS_BUFFER_88_001: [ If handle is NULL, BUFFER_clone shall return NULL. ] */
     TEST_FUNCTION(BUFFER_Clone_HANDLE_NULL_Fail)
     {
         ///arrange
@@ -1357,6 +1363,30 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         ///assert
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         ASSERT_IS_NULL(result);
+    }
+
+    /* Tests_SRS_BUFFER_88_003: [ If any error occurs, BUFFER_clone shall return NULL. ] */
+    TEST_FUNCTION(BUFFER_Clone_malloc_fails)
+    {
+        ///arrange
+        BUFFER_HANDLE g_hBuffer;
+        g_hBuffer = BUFFER_new();
+        ASSERT_IS_NOT_NULL(g_hBuffer);
+        ASSERT_ARE_EQUAL(int, 0, BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE));
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
+            .SetReturn(NULL);
+
+        ///act
+        BUFFER_HANDLE result = BUFFER_clone(g_hBuffer);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+        ASSERT_IS_NULL(result);
+
+        ///cleanup
+        BUFFER_delete(g_hBuffer);
     }
 
     /*Tests_SRS_BUFFER_02_001: [If source is NULL then BUFFER_create shall return NULL.] */
@@ -1574,7 +1604,8 @@ TEST_FUNCTION(BUFFER_prepend_Succeed)
         //arrange
         BUFFER_HANDLE buffer = BUFFER_new();
         const unsigned char RESULT_BUFFER[] = { '@', '@', '@', '@', '@' };
-        (void)BUFFER_build(buffer, BUFFER_Test1, BUFFER_TEST1_SIZE);
+        ASSERT_IS_NOT_NULL(buffer);
+        ASSERT_ARE_EQUAL(int, 0, BUFFER_build(buffer, BUFFER_Test1, BUFFER_TEST1_SIZE));
         umock_c_reset_all_calls();
 
         //act

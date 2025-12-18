@@ -1504,6 +1504,7 @@ TEST_FUNCTION(Base64_Encode_simple_good)
     BUFFER_delete(input);
 }
 
+/*Tests_SRS_BASE64_06_007: [Otherwise Azure_Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of input.]*/
 TEST_FUNCTION(Base64_Encode_one_char_encode)
 {
     //arrange
@@ -1525,6 +1526,7 @@ TEST_FUNCTION(Base64_Encode_one_char_encode)
 
 }
 
+/*Tests_SRS_BASE64_06_007: [Otherwise Azure_Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of input.]*/
 TEST_FUNCTION(Base64_Encode_leviathan_succeeds)
 {
     //arrange
@@ -1546,6 +1548,7 @@ TEST_FUNCTION(Base64_Encode_leviathan_succeeds)
 
 }
 
+/*Tests_SRS_BASE64_06_007: [Otherwise Azure_Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of input.]*/
 TEST_FUNCTION(Base64_Encode_exhaustive_succeeds)
 {
     ///arrange
@@ -1689,6 +1692,7 @@ TEST_FUNCTION(when_underlying_calls_fail_Azure_Base64_Encode_Bytes_fails)
 
 /* Azure_Base64_Decode */
 
+/*Tests_SRS_BASE64_06_009: [If the string pointed to by source is zero length then the handle returned shall refer to a zero length buffer.]*/
 TEST_FUNCTION(Azure_Base64_Decode_exhaustive_succeeds)
 {
     size_t i;

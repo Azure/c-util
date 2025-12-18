@@ -122,8 +122,8 @@ TEST_FUNCTION(hash_compute_hash_with_INT_MAX_fails)
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
-/* Tests_SRS_HASH_01_002: [ If length is greater than or equal to INT_MAX, hash_compute_hash shall fail and return a non-zero value. ]*/
 #if SIZE_MAX > INT_MAX
+/* Tests_SRS_HASH_01_002: [ If length is greater than or equal to INT_MAX, hash_compute_hash shall fail and return a non-zero value. ]*/
 TEST_FUNCTION(hash_compute_hash_with_INT_MAX_plus_1_fails)
 {
     // arrange

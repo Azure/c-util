@@ -246,3 +246,16 @@ size_t BUFFER_length(BUFFER_HANDLE handle)
 **SRS_BUFFER_07_027: [** BUFFER_length shall return the size of the underlying buffer. **]**
 
 **SRS_BUFFER_07_028: [** BUFFER_length shall return zero for any error that is encountered. **]**
+### BUFFER_clone
+
+```c
+BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle)
+```
+
+**SRS_BUFFER_88_001: [** If `handle` is `NULL`, `BUFFER_clone` shall return `NULL`. **]**
+
+**SRS_BUFFER_88_002: [** `BUFFER_clone` shall allocate a new `BUFFER_HANDLE` and copy the contents of `handle` into it. **]**
+
+**SRS_BUFFER_88_003: [** If any error occurs, `BUFFER_clone` shall return `NULL`. **]**
+
+**SRS_BUFFER_88_004: [** On success, `BUFFER_clone` shall return a non-`NULL` handle. **]**

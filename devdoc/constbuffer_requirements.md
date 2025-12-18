@@ -86,6 +86,14 @@ MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_get_writable_buffer, CONSTBUFFER
 MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_seal_writable_handle, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle);
 ```
 
+## Serialization Format Constants
+
+The following constants are defined for the serialization format:
+
+**SRS_CONSTBUFFER_88_001: [** `CONSTBUFFER_VERSION_SIZE` shall be `sizeof(uint8_t)` (1 byte). **]**
+
+**SRS_CONSTBUFFER_88_002: [** `CONSTBUFFER_SIZE_SIZE` shall be `sizeof(uint32_t)` (4 bytes). **]**
+
 ### CONSTBUFFER_Create
 
 ```c
