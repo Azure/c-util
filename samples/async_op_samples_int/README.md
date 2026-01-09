@@ -206,7 +206,7 @@ API:
 
 Callback:
 
-1. Take a lock to synchronize with calls in the chain completing and the async_op_ll changing
+1. Take a lock to synchronize with retries completing and the async_op_ll changing
 2. Increment the epoch so that we do not try to store the old async_op from before this call
 3. Reset the ll_async_op, it is complete and we don't need it anymore. Note that this is an optimization and not strictly necessary
 4. Check if cancel has already been called, if so, we should call the callback instead of calling the chained async operation
@@ -223,7 +223,7 @@ Callback:
 
 Cancel:
 
-1. Take a lock to synchronize with calls in the chain completing and the async_op_ll changing
+1. Take a lock to synchronize with retries completing and the async_op_ll changing
 2. Set the state of this module to canceled so that we do not begin new async calls for lower-layer(s)
 3. Get the current lower layer async op under the lock, note that it may be NULL if in between calls
 4. Call cancel on the lower layer async_op if we had a non-NULL
