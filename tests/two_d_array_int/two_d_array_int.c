@@ -196,6 +196,75 @@ TEST_FUNCTION(TWO_D_ARRAY_get_a_row_not_allocated_yet)
     TWO_D_ARRAY_ASSIGN(TEST_THANDLE)(&tdarr, NULL);
 }
 
+TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED_allocates_row_when_row_is_not_allocated)
+{
+    //arrange
+    TEST_THANDLE* row_result;
+    TWO_D_ARRAY(TEST_THANDLE) tdarr = TWO_D_ARRAY_CREATE(TEST_THANDLE)(5, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
+    ASSERT_IS_NULL(tdarr->row_arrays[3]);
+
+    //act
+    row_result = TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(TEST_THANDLE)(tdarr, 3);
+
+    //assert
+    ASSERT_IS_NOT_NULL(row_result);
+    ASSERT_IS_NOT_NULL(tdarr->row_arrays[3]);
+    ASSERT_IS_TRUE(row_result == tdarr->row_arrays[3]);
+
+    for (uint32_t i = 0; i < 5; i++)
+    {
+        row_result[i].a = (int64_t)i;
+    }
+
+    for (uint32_t i = 0; i < 5; i++)
+    {
+        ASSERT_ARE_EQUAL(int64_t, row_result[i].a, (int64_t)i);
+    }
+
+    //clean
+    TWO_D_ARRAY_ASSIGN(TEST_THANDLE)(&tdarr, NULL);
+}
+
+TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED_returns_existing_row_when_row_is_allocated)
+{
+    //arrange
+    TEST_THANDLE* row_result;
+    TEST_THANDLE* existing_row;
+    TWO_D_ARRAY(TEST_THANDLE) tdarr = TWO_D_ARRAY_CREATE(TEST_THANDLE)(5, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
+    ASSERT_ARE_EQUAL(int, 0, TWO_D_ARRAY_ALLOCATE_NEW_ROW(TEST_THANDLE)(tdarr, 0));
+    ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
+    existing_row = tdarr->row_arrays[0];
+
+    //act
+    row_result = TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(TEST_THANDLE)(tdarr, 0);
+
+    //assert
+    ASSERT_IS_NOT_NULL(row_result);
+    ASSERT_IS_TRUE(row_result == existing_row);
+
+    //clean
+    TWO_D_ARRAY_ASSIGN(TEST_THANDLE)(&tdarr, NULL);
+}
+
+TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED_fails_when_row_index_too_high)
+{
+    //arrange
+    TEST_THANDLE* row_result;
+    TWO_D_ARRAY(TEST_THANDLE) tdarr = TWO_D_ARRAY_CREATE(TEST_THANDLE)(5, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
+
+    //act
+    row_result = TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(TEST_THANDLE)(tdarr, 5);
+
+    //assert
+    ASSERT_IS_NULL(row_result);
+
+    //clean
+    TWO_D_ARRAY_ASSIGN(TEST_THANDLE)(&tdarr, NULL);
+}
+
 TEST_FUNCTION(TWO_D_ARRAY_free_a_row_not_allocated_yet)
 {
     //arrange
