@@ -25,12 +25,16 @@
 #define TWO_D_ARRAY_GET_ROW_DECLARE(T) TWO_D_ARRAY_LL_GET_ROW_DECLARE(T, T)
 #define TWO_D_ARRAY_GET_ROW_DEFINE(T) TWO_D_ARRAY_LL_GET_ROW_DEFINE(T, T)
 
+#define TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED_DECLARE(T) TWO_D_ARRAY_LL_GET_ROW_ALLOCATE_IF_NEEDED_DECLARE(T, T)
+#define TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED_DEFINE(T) TWO_D_ARRAY_LL_GET_ROW_ALLOCATE_IF_NEEDED_DEFINE(T, T)
+
 #define TWO_D_ARRAY_FREE_DEFINE(T) TWO_D_ARRAY_LL_FREE_DEFINE(T, T)
 
 #define TWO_D_ARRAY_CREATE(C) TWO_D_ARRAY_LL_CREATE(C)
 #define TWO_D_ARRAY_FREE_ROW(C) TWO_D_ARRAY_LL_FREE_ROW(C)
 #define TWO_D_ARRAY_ALLOCATE_NEW_ROW(C) TWO_D_ARRAY_LL_ALLOCATE_NEW_ROW(C)
 #define TWO_D_ARRAY_GET_ROW(C) TWO_D_ARRAY_LL_GET_ROW(C)
+#define TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(C) TWO_D_ARRAY_LL_GET_ROW_ALLOCATE_IF_NEEDED(C)
 
 #define TWO_D_ARRAY_INITIALIZE(T) TWO_D_ARRAY_LL_INITIALIZE(T)
 #define TWO_D_ARRAY_ASSIGN(T) TWO_D_ARRAY_LL_ASSIGN(T)
@@ -46,6 +50,7 @@
     TWO_D_ARRAY_FREE_ROW_DECLARE(T)                                                                                   \
     TWO_D_ARRAY_ALLOCATE_NEW_ROW_DECLARE(T)                                                                           \
     TWO_D_ARRAY_GET_ROW_DECLARE(T)                                                                                    \
+    TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED_DECLARE(T)                                                                 \
 
 #define TWO_D_ARRAY_TYPE_DEFINE(T)                                                                                    \
     /*hint: have THANDLE_TYPE_DEFINE(TWO_D_ARRAY_TYPEDEF_NAME(T)) before TWO_D_ARRAY_TYPE_DEFINE                   */ \
@@ -54,5 +59,6 @@
     TWO_D_ARRAY_FREE_ROW_DEFINE(T)                                                                                    \
     TWO_D_ARRAY_ALLOCATE_NEW_ROW_DEFINE(T)                                                                            \
     TWO_D_ARRAY_GET_ROW_DEFINE(T)                                                                                     \
+    TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED_DEFINE(T)                                                                  \
 
 #endif /*TWO_D_ARRAY_H*/

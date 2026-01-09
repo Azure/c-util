@@ -791,4 +791,124 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_get_all_rows_succeeds_with_uint32_t_type)
     TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
 }
 
+/* TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T) */
+
+/* Tests_SRS_TWO_D_ARRAY_88_001: [ If two_d_array is NULL, TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T) shall fail and return NULL. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED_fails_when_handle_is_null)
+{
+    //arrange
+    uint32_t* row;
+
+    //act
+    row = TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(uint32_t)(NULL, 0);
+
+    //assert
+    ASSERT_IS_NULL(row);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+}
+
+/* Tests_SRS_TWO_D_ARRAY_88_002: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T) shall fail and return NULL. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED_fails_when_row_index_too_high)
+{
+    //arrange
+    uint32_t* row_result;
+    TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
+    umock_c_reset_all_calls();
+
+    //act
+    row_result = TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(uint32_t)(tdarr, 5);
+
+    //assert
+    ASSERT_IS_NULL(row_result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+    TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
+}
+
+/* Tests_SRS_TWO_D_ARRAY_88_004: [ If the array stored in row_index is NULL, TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T) shall allocate a new row, store it in row_index, and return it. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED_allocates_row_when_row_is_not_allocated)
+{
+    //arrange
+    uint32_t* allocated_row;
+    uint32_t* row_result;
+    TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
+    ASSERT_IS_NULL(tdarr->row_arrays[1]);
+
+    allocated_row = real_gballoc_hl_malloc_2(5, sizeof(uint32_t));
+    ASSERT_IS_NOT_NULL(allocated_row);
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(malloc_2(5, sizeof(uint32_t)))
+        .SetReturn(allocated_row);
+
+    //act
+    row_result = TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(uint32_t)(tdarr, 1);
+
+    //assert
+    ASSERT_IS_NOT_NULL(row_result);
+    ASSERT_IS_NOT_NULL(tdarr->row_arrays[1]);
+    ASSERT_IS_TRUE(row_result == tdarr->row_arrays[1]);
+    ASSERT_IS_TRUE(row_result == allocated_row);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+    TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
+}
+
+/* Tests_SRS_TWO_D_ARRAY_88_003: [ If the array stored in row_index is non-NULL, TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T) shall return the existing row. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED_returns_existing_row_when_row_is_allocated)
+{
+    //arrange
+    uint32_t* row_result;
+    uint32_t* first_row;
+    TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
+    ASSERT_ARE_EQUAL(int, 0, TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0));
+    ASSERT_IS_NOT_NULL(tdarr->row_arrays[0]);
+    first_row = tdarr->row_arrays[0];
+    umock_c_reset_all_calls();
+
+    //act
+    row_result = TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(uint32_t)(tdarr, 0);
+
+    //assert
+    ASSERT_IS_NOT_NULL(row_result);
+    ASSERT_IS_TRUE(row_result == first_row);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+    TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
+}
+
+/* Tests_SRS_TWO_D_ARRAY_88_004: [ If the array stored in row_index is NULL, TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T) shall allocate a new row, store it in row_index, and return it. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED_fails_when_malloc_fails)
+{
+    //arrange
+    uint32_t* row_result;
+    TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
+    ASSERT_IS_NULL(tdarr->row_arrays[3]);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(malloc_2(5, sizeof(uint32_t)))
+        .SetReturn(NULL);
+
+    //act
+    row_result = TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(uint32_t)(tdarr, 3);
+
+    //assert
+    ASSERT_IS_NULL(row_result);
+    ASSERT_IS_NULL(tdarr->row_arrays[3]);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+    TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
+}
+
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

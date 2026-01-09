@@ -34,6 +34,7 @@ TWO_D_ARRAY(T) TWO_D_ARRAY_CREATE(T)(uint32_t row_size, uint32_t col_size);
 int TWO_D_ARRAY_FREE_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
 int TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
 T* TWO_D_ARRAY_GET_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
+T* TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
 void TWO_D_ARRAY_FREE(T)(TWO_D_ARRAY(T) two_d_array);
 
 ```
@@ -166,3 +167,19 @@ T* TWO_D_ARRAY_GET_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
 **SRS_TWO_D_ARRAY_07_021: [** If the array stored in `row_index` is `NULL`, `TWO_D_ARRAY_GET_ROW(T)` shall fail and return `NULL`. **]**
 
 **SRS_TWO_D_ARRAY_07_022: [** Otherwise, `TWO_D_ARRAY_GET_ROW(T)` shall return the entire column stored in the corresponding `row_index`. **]**
+
+### TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T)
+
+```c
+T* TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
+```
+
+`TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T)` shall return the entire row stored in `row_index`. If the row is not allocated, it shall allocate it.
+
+**SRS_TWO_D_ARRAY_88_001: [** If `two_d_array` is `NULL`, `TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T)` shall fail and return `NULL`. **]**
+
+**SRS_TWO_D_ARRAY_88_002: [** If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T)` shall fail and return `NULL`. **]**
+
+**SRS_TWO_D_ARRAY_88_003: [** If the array stored in `row_index` is non-`NULL`, `TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T)` shall return the existing row. **]**
+
+**SRS_TWO_D_ARRAY_88_004: [** If the array stored in `row_index` is `NULL`, `TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T)` shall allocate a new row, store it in `row_index`, and return it. **]**
