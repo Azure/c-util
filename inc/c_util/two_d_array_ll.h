@@ -107,7 +107,7 @@ TWO_D_ARRAY_LL(T) TWO_D_ARRAY_LL_CREATE(C)(uint32_t row_size, uint32_t col_size)
     /* Codes_SRS_TWO_D_ARRAY_07_002: [ If col_size equals to zero, TWO_D_ARRAY_CREATE(T) shall fail and return NULL. ]*/                                                                           \
        col_size == 0)                                                                                                                                                                              \
     {                                                                                                                                                                                              \
-        LogError("Invalid arguments: uint32_t row_size=%" PRIu32 "" ", col_size=%" PRIu32 "", row_size, col_size);                                                                              \
+        LogError("Invalid arguments: uint32_t row_size=%" PRIu32 ", col_size=%" PRIu32 "", row_size, col_size);                                                                                \
     }                                                                                                                                                                                              \
     else                                                                                                                                                                                           \
     {                                                                                                                                                                                              \
@@ -116,7 +116,7 @@ TWO_D_ARRAY_LL(T) TWO_D_ARRAY_LL_CREATE(C)(uint32_t row_size, uint32_t col_size)
         /* Codes_SRS_TWO_D_ARRAY_07_005: [ If there are any errors then TWO_D_ARRAY_CREATE(T) shall fail and return NULL. ]*/                                                                      \
         if (result == NULL)                                                                                                                                                                        \
         {                                                                                                                                                                                          \
-            LogError("failure in malloc_flex row_size=%" PRIu32 "" ", sizeof(T*)=%zu", row_size, sizeof(T*));                                                                                      \
+            LogError("failure in malloc_flex row_size=%" PRIu32 ", sizeof(T*)=%zu", row_size, sizeof(T*));                                                                                        \
         }                                                                                                                                                                                          \
         else                                                                                                                                                                                       \
         {                                                                                                                                                                                          \
@@ -150,7 +150,7 @@ int TWO_D_ARRAY_LL_FREE_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t row_index
         /* Codes_SRS_TWO_D_ARRAY_07_011: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_FREE_ROW(T) shall fail and return a non-zero value. ]*/          \
         if (row_index >= two_d_array->rows)                                                                                                                             \
         {                                                                                                                                                               \
-            LogError("Invalid arguments: uint32_t row_index=%" PRIu32 " out of bound, total_rows=%" PRIu32, row_index, two_d_array->rows);                            \
+            LogError("Invalid arguments: uint32_t row_index=%" PRIu32 " out of bound, total_rows=%" PRIu32 "", row_index, two_d_array->rows);                      \
             result = MU_FAILURE;                                                                                                                                        \
         }                                                                                                                                                               \
         else                                                                                                                                                            \
@@ -158,7 +158,7 @@ int TWO_D_ARRAY_LL_FREE_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t row_index
             TWO_D_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(TWO_D_ARRAY_TYPEDEF_NAME(C))(two_d_array);                                                               \
             if(array->row_arrays[row_index] == NULL)                                                                                                                    \
             {                                                                                                                                                           \
-                LogError("Row not allocated yet: uint64_t row_index=%" PRIu32 ", total_rows=%" PRIu32, row_index, two_d_array->rows);                                \
+                LogError("Row not allocated yet: uint32_t row_index=%" PRIu32 ", total_rows=%" PRIu32 "", row_index, two_d_array->rows);                          \
                 result = MU_FAILURE;                                                                                                                                    \
             }                                                                                                                                                           \
             else                                                                                                                                                        \
@@ -190,7 +190,7 @@ int TWO_D_ARRAY_LL_ALLOCATE_NEW_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t r
         /* Codes_SRS_TWO_D_ARRAY_07_015: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) shall fail and return a non-zero value. ]*/                       \
         if (row_index >= two_d_array->rows)                                                                                                                                                  \
         {                                                                                                                                                                                    \
-            LogError("Invalid arguments: uint32_t row_index=%" PRIu32 "" " out of bound, total_rows=%" PRIu32 "", row_index, two_d_array->rows);                                          \
+            LogError("Invalid arguments: uint32_t row_index=%" PRIu32 " out of bound, total_rows=%" PRIu32 "", row_index, two_d_array->rows);                                              \
             result = MU_FAILURE;                                                                                                                                                             \
         }                                                                                                                                                                                    \
         else                                                                                                                                                                                 \
@@ -199,7 +199,7 @@ int TWO_D_ARRAY_LL_ALLOCATE_NEW_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t r
             {                                                                                                                                                                                \
                 /* Codes_SRS_TWO_D_ARRAY_07_016: [ If the row specified by row_index has already been allocated, TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) shall fail and return a non-zero value. ]*/ \
                 result = MU_FAILURE;                                                                                                                                                         \
-                LogError("Invalid arguments: uint32_t row_index=%" PRIu32 "" " has already been allocated", row_index);                                                                          \
+                LogError("Invalid arguments: uint32_t row_index=%" PRIu32 " has already been allocated", row_index);                                                                        \
             }                                                                                                                                                                                \
             else                                                                                                                                                                             \
             {                                                                                                                                                                                \
@@ -208,7 +208,7 @@ int TWO_D_ARRAY_LL_ALLOCATE_NEW_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t r
                 if (new_row == NULL)                                                                                                                                                         \
                 {                                                                                                                                                                            \
                     /* Codes_SRS_TWO_D_ARRAY_07_018: [ If there are any errors then TWO_D_ARRAY_ALLOCATE_NEW_ROW(T) shall fail and return a non-zero value. ]*/                              \
-                    LogError("failure in malloc_2(number of cols=%" PRIu32 "" ", sizeof(T)=%zu)", two_d_array->cols, sizeof(T));                                                              \
+                    LogError("failure in malloc_2(number of cols=%" PRIu32 ", sizeof(T)=%zu)", two_d_array->cols, sizeof(T));                                                                \
                     result = MU_FAILURE;                                                                                                                                                     \
                 }                                                                                                                                                                            \
                 else                                                                                                                                                                         \
@@ -237,17 +237,18 @@ T* TWO_D_ARRAY_LL_GET_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t row_index) 
         /* Codes_SRS_TWO_D_ARRAY_07_020: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_GET_ROW(T) shall fail return NULL. ]*/              \
         if (row_index >= two_d_array->rows)                                                                                                                \
         {                                                                                                                                                  \
-            LogError("Invalid arguments: uint32_t row_index=%" PRIu32 "" " out of bound, total_rows=%" PRIu32 "", row_index, two_d_array->rows);     \
+            LogError("Invalid arguments: uint32_t row_index=%" PRIu32 " out of bound, total_rows=%" PRIu32 "", row_index, two_d_array->rows);         \
         }                                                                                                                                                  \
         else                                                                                                                                               \
         {                                                                                                                                                  \
             result = two_d_array->row_arrays[row_index];                                                                                                   \
             if (result != NULL)                                                                                                                            \
             {                                                                                                                                              \
-                /* Codes_SRS_TWO_D_ARRAY_07_022: [ Otherwise, TWO_D_ARRAY_GET_ROW(T) shall return the entire column stored in the corresponding row_index. ]*/ \
+                /* Codes_SRS_TWO_D_ARRAY_07_022: [ Otherwise, TWO_D_ARRAY_GET_ROW(T) shall return the entire row stored in the corresponding row_index. ]*/    \
                 goto all_ok;                                                                                                                               \
             }                                                                                                                                              \
-            /* Codes_SRS_TWO_D_ARRAY_07_021: [ If the array stored in row_index is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail and return NULL. ]*/        \
+            /* Codes_SRS_TWO_D_ARRAY_07_021: [ If the array stored in row_index is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail and return NULL. ]*/             \
+            LogError("Row not allocated yet: uint32_t row_index=%" PRIu32 ", total_rows=%" PRIu32 "", row_index, two_d_array->rows);                 \
         }                                                                                                                                                  \
     }                                                                                                                                                      \
     result = NULL;                                                                                                                                         \
@@ -258,46 +259,39 @@ all_ok:                                                                         
 #define TWO_D_ARRAY_LL_GET_ROW_ALLOCATE_IF_NEEDED_DEFINE(C, T)                                                                                              \
 T* TWO_D_ARRAY_LL_GET_ROW_ALLOCATE_IF_NEEDED(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t row_index)                                                          \
 {                                                                                                                                                          \
-    T* result;                                                                                                                                             \
+    T* result = NULL;                                                                                                                                      \
     /* Codes_SRS_TWO_D_ARRAY_88_001: [ If two_d_array is NULL, TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T) shall fail and return NULL. ]*/                   \
     if (two_d_array == NULL)                                                                                                                               \
     {                                                                                                                                                      \
-        LogError("Invalid arguments: TWO_D_ARRAY (" MU_TOSTRING(T) ") two_d_array=%p", two_d_array);                                                       \
+        LogError("Invalid arguments: TWO_D_ARRAY (" MU_TOSTRING(T) ") two_d_array=%p", two_d_array);                                                     \
     }                                                                                                                                                      \
     else                                                                                                                                                   \
     {                                                                                                                                                      \
         /* Codes_SRS_TWO_D_ARRAY_88_002: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T) shall fail and return NULL. ]*/ \
         if (row_index >= two_d_array->rows)                                                                                                                \
         {                                                                                                                                                  \
-            LogError("Invalid arguments: uint32_t row_index=%" PRIu32 "" " out of bound, total_rows=%" PRIu32 "", row_index, two_d_array->rows);     \
+            LogError("Invalid arguments: uint32_t row_index=%" PRIu32 " out of bound, total_rows=%" PRIu32 "", row_index, two_d_array->rows);         \
         }                                                                                                                                                  \
         else                                                                                                                                               \
         {                                                                                                                                                  \
             result = two_d_array->row_arrays[row_index];                                                                                                   \
             /* Codes_SRS_TWO_D_ARRAY_88_003: [ If the array stored in row_index is non-NULL, TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T) shall return the existing row. ]*/ \
-            if (result != NULL)                                                                                                                            \
-            {                                                                                                                                              \
-                goto all_ok;                                                                                                                               \
-            }                                                                                                                                              \
-            else                                                                                                                                           \
+            if (result == NULL)                                                                                                                            \
             {                                                                                                                                              \
                 /* Codes_SRS_TWO_D_ARRAY_88_004: [ If the array stored in row_index is NULL, TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED(T) shall allocate a new row and return it. ]*/ \
-                result = malloc_2(two_d_array->cols, sizeof(T));                                                                                             \
+                result = malloc_2(two_d_array->cols, sizeof(T));                                                                                           \
                 if (result == NULL)                                                                                                                        \
                 {                                                                                                                                          \
-                    LogError("failure in malloc_2(number of cols=%" PRIu32 "" ", sizeof(T)=%zu)", two_d_array->cols, sizeof(T));                                                               \
+                    LogError("failure in malloc_2(number of cols=%" PRIu32 ", sizeof(T)=%zu)", two_d_array->cols, sizeof(T));                          \
                 }                                                                                                                                          \
                 else                                                                                                                                       \
                 {                                                                                                                                          \
-                    TWO_D_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(TWO_D_ARRAY_TYPEDEF_NAME(C))(two_d_array);                                            \
-                    array->row_arrays[row_index] = result;                                                                                                  \
-                    goto all_ok;                                                                                                                           \
+                    TWO_D_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(TWO_D_ARRAY_TYPEDEF_NAME(C))(two_d_array);                                          \
+                    array->row_arrays[row_index] = result;                                                                                                 \
                 }                                                                                                                                          \
             }                                                                                                                                              \
         }                                                                                                                                                  \
     }                                                                                                                                                      \
-    result = NULL;                                                                                                                                         \
-all_ok:                                                                                                                                                    \
     return result;                                                                                                                                         \
 }                                                                                                                                                          \
 
@@ -309,6 +303,7 @@ all_ok:                                                                         
     TWO_D_ARRAY_LL_FREE_ROW_DECLARE(C, T)                                                                           \
     TWO_D_ARRAY_LL_ALLOCATE_NEW_ROW_DECLARE(C, T)                                                                   \
     TWO_D_ARRAY_LL_GET_ROW_DECLARE(C, T)                                                                            \
+    TWO_D_ARRAY_LL_GET_ROW_ALLOCATE_IF_NEEDED_DECLARE(C, T)                                                         \
 
 #define TWO_D_ARRAY_LL_TYPE_DEFINE(C, T)                                                                            \
     /*hint: have THANDLE_TYPE_DEFINE(TWO_D_ARRAY_TYPEDEF_NAME(T)) before TWO_D_ARRAY_LL_TYPE_DEFINE*/               \
@@ -317,5 +312,6 @@ all_ok:                                                                         
     TWO_D_ARRAY_LL_FREE_ROW_DEFINE(C, T)                                                                            \
     TWO_D_ARRAY_LL_ALLOCATE_NEW_ROW_DEFINE(C, T)                                                                    \
     TWO_D_ARRAY_LL_GET_ROW_DEFINE(C, T)                                                                             \
+    TWO_D_ARRAY_LL_GET_ROW_ALLOCATE_IF_NEEDED_DEFINE(C, T)                                                          \
 
 #endif  /*TWO_D_ARRAY_LL_H*/

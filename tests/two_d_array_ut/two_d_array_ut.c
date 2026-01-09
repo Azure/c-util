@@ -760,7 +760,7 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_row_not_initialized_yet)
 
 }
 
-/* Tests_SRS_TWO_D_ARRAY_07_022: [ Otherwise, TWO_D_ARRAY_GET_ROW(T) shall return the entire column stored in the corresponding row_index. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_022: [ Otherwise, TWO_D_ARRAY_GET_ROW(T) shall return the entire row stored in the corresponding row_index. ]*/
 TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_get_all_rows_succeeds_with_uint32_t_type)
 {
     //arrange
@@ -853,8 +853,8 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED_allocates_row_when_row_is_n
     //assert
     ASSERT_IS_NOT_NULL(row_result);
     ASSERT_IS_NOT_NULL(tdarr->row_arrays[1]);
-    ASSERT_IS_TRUE(row_result == tdarr->row_arrays[1]);
-    ASSERT_IS_TRUE(row_result == allocated_row);
+    ASSERT_ARE_EQUAL(void_ptr, row_result, tdarr->row_arrays[1]);
+    ASSERT_ARE_EQUAL(void_ptr, row_result, allocated_row);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
@@ -879,7 +879,7 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_ALLOCATE_IF_NEEDED_returns_existing_row_when_r
 
     //assert
     ASSERT_IS_NOT_NULL(row_result);
-    ASSERT_IS_TRUE(row_result == first_row);
+    ASSERT_ARE_EQUAL(void_ptr, row_result, first_row);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
