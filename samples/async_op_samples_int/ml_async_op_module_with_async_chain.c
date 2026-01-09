@@ -52,6 +52,11 @@ typedef struct ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_EXECUTE_CONTEXT_TAG
     // Cancel state of this module to avoid calling the next step in the chain after cancel
     volatile_atomic int32_t is_canceled;
 
+    // NOTE: It is likely cleaner to have a state enum to combine ll_async_op_step and is_canceled
+    // This sample is written slightly more generic for an arbitrary number of steps, but likely there can be the following states:
+    // INITIALIZED, LL_STEP_1_CALLED, LL_STEP_2_CALLED, CANCELED
+    // The first 3 states would be equivalent to the ll_async_op_step value, and CANCELED would be equivalent to is_canceled
+
     // Anything needed for chained call
     uint32_t complete_in_ms;
     ML_ASYNC_OP_MODULE_WITH_ASYNC_CHAIN_HANDLE handle;
@@ -294,6 +299,7 @@ static void ml_async_op_module_with_async_chain_on_ll_complete_step_1(void* cont
             {
                 LogError("ll_execute_async for lower module failed");
                 must_call_callback = true;
+                THANDLE_ASSIGN(ASYNC_OP)(&async_op_ref_for_callback, NULL);
             }
             else
             {
