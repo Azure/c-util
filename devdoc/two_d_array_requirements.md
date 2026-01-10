@@ -163,6 +163,6 @@ T* TWO_D_ARRAY_GET_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
 
 **SRS_TWO_D_ARRAY_07_020: [** If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_GET_ROW(T)` shall fail return `NULL`. **]**
 
-**SRS_TWO_D_ARRAY_07_021: [** If the array stored in `row_index` is `NULL`, `TWO_D_ARRAY_GET_ROW(T)` shall fail and return `NULL`. **]**
+**SRS_TWO_D_ARRAY_07_021: [** If the array stored in `row_index` is `NULL`, `TWO_D_ARRAY_GET_ROW(T)` shall return `NULL`. **]**
 
 **SRS_TWO_D_ARRAY_07_022: [** Otherwise, `TWO_D_ARRAY_GET_ROW(T)` shall return the entire column stored in the corresponding `row_index`. **]**
