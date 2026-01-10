@@ -241,14 +241,9 @@ T* TWO_D_ARRAY_LL_GET_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t row_index) 
         else                                                                                                                                               \
         {                                                                                                                                                  \
             result = two_d_array->row_arrays[row_index];                                                                                                   \
-            if(result == NULL)                                                                                                                             \
-            {                                                                                                                                              \
-                /* Codes_SRS_TWO_D_ARRAY_07_021: [ If the array stored in row_index is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail and return NULL. ]*/        \
-                LogError("The row trying to acquire is not allocated: TWO_D_ARRAY (" MU_TOSTRING(T) ") two_d_array=%p, row_index=%" PRIu32,              \
-                    two_d_array, row_index);                                                                                                               \
-            }                                                                                                                                              \
+            /* Codes_SRS_TWO_D_ARRAY_07_021: [ If the array stored in row_index is NULL, TWO_D_ARRAY_GET_ROW(T) shall return NULL. ]*/                     \
             /* Codes_SRS_TWO_D_ARRAY_07_022: [ Otherwise, TWO_D_ARRAY_GET_ROW(T) shall return the entire column stored in the corresponding row_index. ]*/ \
-            else                                                                                                                                           \
+            if(result != NULL)                                                                                                                             \
             {                                                                                                                                              \
                 goto all_ok;                                                                                                                               \
             }                                                                                                                                              \

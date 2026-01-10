@@ -736,7 +736,7 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_row_index_too_high)
     TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
 }
 
-/* Tests_SRS_TWO_D_ARRAY_07_021: [ If the array stored in row_index is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail and return NULL. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_021: [ If the array stored in row_index is NULL, TWO_D_ARRAY_GET_ROW(T) shall return NULL. ]*/
 TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_row_not_initialized_yet)
 {
     //arrange
