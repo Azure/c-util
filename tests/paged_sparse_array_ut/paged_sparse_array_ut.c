@@ -192,6 +192,64 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_CREATE_with_struct_type_succeeds)
     PAGED_SPARSE_ARRAY_ASSIGN(B_TEST)(&psa, NULL);
 }
 
+/*PAGED_SPARSE_ARRAY_FREE(T)*/
+
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_009: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_FREE(T) shall return. ]*/
+TEST_FUNCTION(PAGED_SPARSE_ARRAY_FREE_with_null_returns)
+{
+    //arrange
+    PAGED_SPARSE_ARRAY(uint32_t) psa = NULL;
+
+    //act - assigning NULL to a NULL handle should not crash
+    PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
+
+    //assert
+    // No crash means success - the FREE function handles NULL gracefully
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+}
+
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_010: [ PAGED_SPARSE_ARRAY_FREE(T) shall free all pages that are non-NULL. ]*/
+TEST_FUNCTION(PAGED_SPARSE_ARRAY_FREE_frees_all_allocated_pages)
+{
+    //arrange
+    PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16);
+    ASSERT_IS_NOT_NULL(psa);
+
+    // Allocate elements in multiple pages
+    uint32_t* ptr0 = PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, 0);   // Page 0
+    uint32_t* ptr20 = PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, 20); // Page 1
+    uint32_t* ptr40 = PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, 40); // Page 2
+    ASSERT_IS_NOT_NULL(ptr0);
+    ASSERT_IS_NOT_NULL(ptr20);
+    ASSERT_IS_NOT_NULL(ptr40);
+    ASSERT_IS_NOT_NULL(psa->pages[0]);
+    ASSERT_IS_NOT_NULL(psa->pages[1]);
+    ASSERT_IS_NOT_NULL(psa->pages[2]);
+
+    umock_c_reset_all_calls();
+
+    // Expect free for each page's bitmap and page data (3 pages x 2 frees each = 6 frees)
+    // Plus free for the THANDLE wrapper
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 0 bitmap
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 0 data
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 1 bitmap
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 1 data
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 2 bitmap
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 2 data
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // THANDLE wrapper
+
+    //act
+    PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
+
+    //assert
+    ASSERT_IS_NULL(psa);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+}
+
 /*PAGED_SPARSE_ARRAY_ALLOCATE(T)*/
 
 /* Tests_SRS_PAGED_SPARSE_ARRAY_88_013: [ PAGED_SPARSE_ARRAY_ALLOCATE(T) shall compute the page index as index / page_size. ]*/
