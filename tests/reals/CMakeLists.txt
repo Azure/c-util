@@ -75,6 +75,7 @@ set(c_util_reals_h_files
     real_tcall_dispatcher_cancellation_token_cancel_call_renames.h
     real_uuid_string.h
     real_uuid_string_renames.h
+    real_paged_sparse_array_helper.h
 )
 
 if(WIN32)
