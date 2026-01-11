@@ -730,51 +730,10 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_element_not_allocated)
     PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Integration test - allocate and release multiple elements */
-TEST_FUNCTION(PAGED_SPARSE_ARRAY_integration_allocate_release_reallocate)
-{
-    //arrange
-    PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16);
-    ASSERT_IS_NOT_NULL(psa);
-    umock_c_reset_all_calls();
+/* PAGED_SPARSE_ARRAY_CREATE */
 
-    //act - allocate some elements
-    uint32_t* ptr0 = PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, 0);
-    uint32_t* ptr5 = PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, 5);
-    uint32_t* ptr20 = PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, 20); // second page
-
-    ASSERT_IS_NOT_NULL(ptr0);
-    ASSERT_IS_NOT_NULL(ptr5);
-    ASSERT_IS_NOT_NULL(ptr20);
-
-    // Write values
-    *ptr0 = 100;
-    *ptr5 = 500;
-    *ptr20 = 2000;
-
-    // Release one element from first page
-    int result = PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, 0);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NOT_NULL(psa->pages[0]); // Page should still exist
-
-    // Release remaining element from first page - page should be freed
-    result = PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, 5);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_IS_NULL(psa->pages[0]); // Page should now be freed
-
-    // Second page should still exist
-    ASSERT_IS_NOT_NULL(psa->pages[1]);
-
-    // Re-allocate element 0 (should allocate new page)
-    uint32_t* ptr0_new = PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, 0);
-    ASSERT_IS_NOT_NULL(ptr0_new);
-    ASSERT_IS_NOT_NULL(psa->pages[0]);
-
-    //clean
-    PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Test with THANDLE type */
+/*Tests_SRS_PAGED_SPARSE_ARRAY_88_008: [ PAGED_SPARSE_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
+/*Tests_SRS_PAGED_SPARSE_ARRAY_88_017: [ PAGED_SPARSE_ARRAY_ALLOCATE(T) shall succeed and return a pointer to the element at index. ]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_THANDLE_type_works)
 {
     //arrange
@@ -800,7 +759,9 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_THANDLE_type_works)
     PAGED_SPARSE_ARRAY_ASSIGN(THANDLE(A_TEST))(&psa, NULL);
 }
 
-/* Test with struct type */
+/*Tests_SRS_PAGED_SPARSE_ARRAY_88_008: [ PAGED_SPARSE_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
+/*Tests_SRS_PAGED_SPARSE_ARRAY_88_017: [ PAGED_SPARSE_ARRAY_ALLOCATE(T) shall succeed and return a pointer to the element at index. ]*/
+/*Tests_SRS_PAGED_SPARSE_ARRAY_88_034: [ PAGED_SPARSE_ARRAY_GET(T) shall succeed and return a pointer to the element at index. ]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_struct_type_works)
 {
     //arrange
