@@ -112,7 +112,7 @@ struct PAGED_SPARSE_ARRAY_STRUCT_TYPE_NAME_TAG(T)                               
 
 /*helper to check if an element is allocated in the bitmap*/
 #define PAGED_SPARSE_ARRAY_IS_ALLOCATED(bitmap, index_in_page) \
-    (((bitmap)[(index_in_page) / 8] & (1 << ((index_in_page) % 8))) != 0)
+    ((bitmap)[(index_in_page) / 8] & (1 << ((index_in_page) % 8)))
 
 /*helper to set an element as allocated in the bitmap*/
 #define PAGED_SPARSE_ARRAY_SET_ALLOCATED(bitmap, index_in_page) \
