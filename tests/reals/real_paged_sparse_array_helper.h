@@ -21,7 +21,7 @@
  * - A real type alias (REAL_T) for the element type
  * - A real PAGED_SPARSE_ARRAY struct definition for the real element type
  * - THANDLE support for the real PAGED_SPARSE_ARRAY
- * - Real implementations of CREATE, ALLOCATE, RELEASE, ALLOCATE_OR_GET, GET
+ * - Real implementations of CREATE, ALLOCATE, RELEASE, GET
  */
 
 /* Declare a real PAGED_SPARSE_ARRAY for element type T */
@@ -32,7 +32,6 @@
     PAGED_SPARSE_ARRAY_LL_CREATE_DECLARE(MU_C2(REAL_, T), MU_C2(REAL_, T))                                             \
     PAGED_SPARSE_ARRAY_LL_ALLOCATE_DECLARE(MU_C2(REAL_, T), MU_C2(REAL_, T))                                           \
     PAGED_SPARSE_ARRAY_LL_RELEASE_DECLARE(MU_C2(REAL_, T), MU_C2(REAL_, T))                                            \
-    PAGED_SPARSE_ARRAY_LL_ALLOCATE_OR_GET_DECLARE(MU_C2(REAL_, T), MU_C2(REAL_, T))                                    \
     PAGED_SPARSE_ARRAY_LL_GET_DECLARE(MU_C2(REAL_, T), MU_C2(REAL_, T))                                                \
 
 /* Define a real PAGED_SPARSE_ARRAY for element type T using real_gballoc_hl functions */
@@ -48,7 +47,6 @@
     PAGED_SPARSE_ARRAY_LL_CREATE_DEFINE(MU_C2(REAL_, T), MU_C2(REAL_, T))                                              \
     PAGED_SPARSE_ARRAY_LL_ALLOCATE_DEFINE(MU_C2(REAL_, T), MU_C2(REAL_, T))                                            \
     PAGED_SPARSE_ARRAY_LL_RELEASE_DEFINE(MU_C2(REAL_, T), MU_C2(REAL_, T))                                             \
-    PAGED_SPARSE_ARRAY_LL_ALLOCATE_OR_GET_DEFINE(MU_C2(REAL_, T), MU_C2(REAL_, T))                                     \
     PAGED_SPARSE_ARRAY_LL_GET_DEFINE(MU_C2(REAL_, T), MU_C2(REAL_, T))                                                 \
 
 /* Hook the PAGED_SPARSE_ARRAY(TYPE) calls to the real implementations */
@@ -56,7 +54,6 @@
     REGISTER_GLOBAL_MOCK_HOOK(PAGED_SPARSE_ARRAY_CREATE(T), PAGED_SPARSE_ARRAY_LL_CREATE(MU_C2(REAL_, T)));            \
     REGISTER_GLOBAL_MOCK_HOOK(PAGED_SPARSE_ARRAY_ALLOCATE(T), PAGED_SPARSE_ARRAY_LL_ALLOCATE(MU_C2(REAL_, T)));        \
     REGISTER_GLOBAL_MOCK_HOOK(PAGED_SPARSE_ARRAY_RELEASE(T), PAGED_SPARSE_ARRAY_LL_RELEASE(MU_C2(REAL_, T)));          \
-    REGISTER_GLOBAL_MOCK_HOOK(PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T), PAGED_SPARSE_ARRAY_LL_ALLOCATE_OR_GET(MU_C2(REAL_, T))); \
     REGISTER_GLOBAL_MOCK_HOOK(PAGED_SPARSE_ARRAY_GET(T), PAGED_SPARSE_ARRAY_LL_GET(MU_C2(REAL_, T)));                  \
     REGISTER_GLOBAL_MOCK_HOOK(PAGED_SPARSE_ARRAY_ASSIGN(T), THANDLE_ASSIGN(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(MU_C2(REAL_, T)))); \
     REGISTER_GLOBAL_MOCK_HOOK(PAGED_SPARSE_ARRAY_INITIALIZE(T), THANDLE_INITIALIZE(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(MU_C2(REAL_, T)))); \

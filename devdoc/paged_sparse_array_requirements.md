@@ -17,12 +17,11 @@ The array is organized into pages. Each page contains `page_size` elements. The 
 Each element has an allocation state (allocated or not allocated). The user can:
 - Allocate an index for usage (fails if already allocated)
 - Release an index (when all indexes in a page are released, the page is freed)
-- Allocate or get an index (allocates if not exists, gets if exists)
 - Get an index (fails if not allocated)
 
 ### Threading Model
 
-`PAGED_SPARSE_ARRAY` is a `THANDLE`, which means that the ownership of the array (reference counting, assignment, move) is thread-safe. However, the operations on the array contents (ALLOCATE, RELEASE, ALLOCATE_OR_GET, GET) are **not thread-safe**.
+`PAGED_SPARSE_ARRAY` is a `THANDLE`, which means that the ownership of the array (reference counting, assignment, move) is thread-safe. However, the operations on the array contents (ALLOCATE, RELEASE, GET) are **not thread-safe**.
 
 If multiple threads need to access the same `PAGED_SPARSE_ARRAY` instance, the caller must provide external synchronization (e.g., using a mutex or SRW lock) to protect against concurrent modifications.
 
@@ -96,7 +95,6 @@ The macros expand to these useful APIs:
 PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint32_t max_size, uint32_t page_size);
 T* PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
 void PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
-T* PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
 T* PAGED_SPARSE_ARRAY_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
 ```
 
@@ -221,28 +219,6 @@ void PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uin
 **SRS_PAGED_SPARSE_ARRAY_88_024: [** `PAGED_SPARSE_ARRAY_RELEASE(T)` shall mark the element at `index` as not allocated. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_025: [** If all elements in the page are now not allocated, `PAGED_SPARSE_ARRAY_RELEASE(T)` shall free the page and set the page pointer to `NULL`. **]**
-
-### PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T)
-
-```c
-T* PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
-```
-
-`PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T)` allocates the element at the specified index if not already allocated, or gets it if it exists.
-
-**SRS_PAGED_SPARSE_ARRAY_88_027: [** If `paged_sparse_array` is `NULL`, `PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T)` shall fail and return `NULL`. **]**
-
-**SRS_PAGED_SPARSE_ARRAY_88_028: [** If `index` is greater than or equal to `max_size`, `PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T)` shall fail and return `NULL`. **]**
-
-**SRS_PAGED_SPARSE_ARRAY_88_029: [** `PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T)` shall compute the page index as `index / page_size`. **]**
-
-**SRS_PAGED_SPARSE_ARRAY_88_030: [** If the page is not allocated, `PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T)` shall allocate memory for the page containing `page_size` elements and an allocation bitmap, and initialize all elements as not allocated. **]**
-
-**SRS_PAGED_SPARSE_ARRAY_88_031: [** If the element at `index` is not allocated, `PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T)` shall mark it as allocated. **]**
-
-**SRS_PAGED_SPARSE_ARRAY_88_032: [** `PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T)` shall return a pointer to the element at `index`. **]**
-
-**SRS_PAGED_SPARSE_ARRAY_88_033: [** If there are any errors, `PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T)` shall fail and return `NULL`. **]**
 
 ### PAGED_SPARSE_ARRAY_GET(T)
 

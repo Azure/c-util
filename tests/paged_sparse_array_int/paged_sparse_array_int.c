@@ -33,7 +33,6 @@ PAGED_SPARSE_ARRAY_TYPE_DEFINE(TEST_ELEMENT);
 #define CHAOS_TEST_ACTION_VALUES \
     CHAOS_TEST_ACTION_ALLOCATE, \
     CHAOS_TEST_ACTION_RELEASE, \
-    CHAOS_TEST_ACTION_ALLOCATE_OR_GET, \
     CHAOS_TEST_ACTION_GET
 
 MU_DEFINE_ENUM(CHAOS_TEST_ACTION, CHAOS_TEST_ACTION_VALUES)
@@ -189,27 +188,6 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_already_allocated_fails)
     PAGED_SPARSE_ARRAY_ASSIGN(TEST_ELEMENT)(&psa, NULL);
 }
 
-TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_or_get_returns_same_element)
-{
-    //arrange
-    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE);
-    ASSERT_IS_NOT_NULL(psa);
-    TEST_ELEMENT* elem1 = PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(TEST_ELEMENT)(psa, 42);
-    ASSERT_IS_NOT_NULL(elem1);
-    elem1->value = 12345;
-
-    //act
-    TEST_ELEMENT* elem2 = PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(TEST_ELEMENT)(psa, 42);
-
-    //assert
-    ASSERT_IS_NOT_NULL(elem2);
-    ASSERT_ARE_EQUAL(void_ptr, elem1, elem2);
-    ASSERT_ARE_EQUAL(int64_t, 12345, elem2->value);
-
-    //cleanup
-    PAGED_SPARSE_ARRAY_ASSIGN(TEST_ELEMENT)(&psa, NULL);
-}
-
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_release_and_reallocate_succeeds)
 {
     //arrange
@@ -305,24 +283,6 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_chaos)
                 element_state[rand_index] = false;
             }
             // If element was not allocated, RELEASE just returns without doing anything
-            break;
-        }
-        case CHAOS_TEST_ACTION_ALLOCATE_OR_GET:
-        {
-            TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(TEST_ELEMENT)(psa, rand_index);
-            // Should always succeed
-            ASSERT_IS_NOT_NULL(elem);
-            if (!element_state[rand_index])
-            {
-                // Was not allocated, now it is
-                elem->value = rand_index;
-                element_state[rand_index] = true;
-            }
-            else
-            {
-                // Was already allocated, verify value
-                ASSERT_ARE_EQUAL(int64_t, rand_index, elem->value);
-            }
             break;
         }
         case CHAOS_TEST_ACTION_GET:

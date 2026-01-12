@@ -26,16 +26,12 @@
 #define PAGED_SPARSE_ARRAY_RELEASE_DECLARE(T) PAGED_SPARSE_ARRAY_LL_RELEASE_DECLARE(T, T)
 #define PAGED_SPARSE_ARRAY_RELEASE_DEFINE(T) PAGED_SPARSE_ARRAY_LL_RELEASE_DEFINE(T, T)
 
-#define PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET_DECLARE(T) PAGED_SPARSE_ARRAY_LL_ALLOCATE_OR_GET_DECLARE(T, T)
-#define PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET_DEFINE(T) PAGED_SPARSE_ARRAY_LL_ALLOCATE_OR_GET_DEFINE(T, T)
-
 #define PAGED_SPARSE_ARRAY_GET_DECLARE(T) PAGED_SPARSE_ARRAY_LL_GET_DECLARE(T, T)
 #define PAGED_SPARSE_ARRAY_GET_DEFINE(T) PAGED_SPARSE_ARRAY_LL_GET_DEFINE(T, T)
 
 #define PAGED_SPARSE_ARRAY_CREATE(C) PAGED_SPARSE_ARRAY_LL_CREATE(C)
 #define PAGED_SPARSE_ARRAY_ALLOCATE(C) PAGED_SPARSE_ARRAY_LL_ALLOCATE(C)
 #define PAGED_SPARSE_ARRAY_RELEASE(C) PAGED_SPARSE_ARRAY_LL_RELEASE(C)
-#define PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(C) PAGED_SPARSE_ARRAY_LL_ALLOCATE_OR_GET(C)
 #define PAGED_SPARSE_ARRAY_GET(C) PAGED_SPARSE_ARRAY_LL_GET(C)
 
 #define PAGED_SPARSE_ARRAY_INITIALIZE(T) PAGED_SPARSE_ARRAY_LL_INITIALIZE(T)
@@ -50,7 +46,6 @@
     PAGED_SPARSE_ARRAY_CREATE_DECLARE(T)                                                                               \
     PAGED_SPARSE_ARRAY_ALLOCATE_DECLARE(T)                                                                             \
     PAGED_SPARSE_ARRAY_RELEASE_DECLARE(T)                                                                              \
-    PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET_DECLARE(T)                                                                      \
     PAGED_SPARSE_ARRAY_GET_DECLARE(T)                                                                                  \
 
 #define PAGED_SPARSE_ARRAY_TYPE_DEFINE(T)                                                                              \
@@ -60,7 +55,6 @@
     PAGED_SPARSE_ARRAY_CREATE_DEFINE(T)                                                                                \
     PAGED_SPARSE_ARRAY_ALLOCATE_DEFINE(T)                                                                              \
     PAGED_SPARSE_ARRAY_RELEASE_DEFINE(T)                                                                               \
-    PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET_DEFINE(T)                                                                       \
     PAGED_SPARSE_ARRAY_GET_DEFINE(T)                                                                                   \
 
 #endif /*PAGED_SPARSE_ARRAY_H*/
