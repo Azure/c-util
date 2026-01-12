@@ -39,6 +39,36 @@ T* elem1 = PAGED_SPARSE_ARRAY_GET(T)(array, 1);
 
 Always use the provided API functions (GET, ALLOCATE, etc.) to access elements by index.
 
+### Visual Representation
+
+The following diagram shows a `PAGED_SPARSE_ARRAY` with `page_size=4` and `max_size=12` in a partially allocated state:
+
+```
+PAGED_SPARSE_ARRAY (max_size=12, page_size=4, page_count=3)
+│
+├── pages[0] ──► PAGE 0
+│                ├── bitmap: 0b1011  (slots 0,1,3 allocated)
+│                ├── items[0]: [DATA] ◄─ index 0
+│                ├── items[1]: [DATA] ◄─ index 1
+│                ├── items[2]: [    ] ◄─ index 2 (unallocated)
+│                └── items[3]: [DATA] ◄─ index 3
+│
+├── pages[1] ──► NULL (page not yet allocated, indices 4-7)
+│
+└── pages[2] ──► PAGE 2
+                 ├── bitmap: 0b0001  (only slot 0 allocated)
+                 ├── items[0]: [DATA] ◄─ index 8
+                 ├── items[1]: [    ] ◄─ index 9 (unallocated)
+                 ├── items[2]: [    ] ◄─ index 10 (unallocated)
+                 └── items[3]: [    ] ◄─ index 11 (unallocated)
+```
+
+Key observations:
+- Each page is allocated independently when first needed
+- The bitmap tracks which slots within a page are in use
+- `pages[1]` is NULL because no index in range 4-7 has been allocated yet
+- When all items in a page are released, the page is freed and its pointer becomes NULL
+
 ## Exposed API
 
 ```c
