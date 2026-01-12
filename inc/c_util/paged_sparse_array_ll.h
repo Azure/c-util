@@ -150,20 +150,16 @@ static void PAGED_SPARSE_ARRAY_LL_DISPOSE_NAME(C)(PAGED_SPARSE_ARRAY_TYPEDEF_NAM
 PAGED_SPARSE_ARRAY_LL(T) PAGED_SPARSE_ARRAY_LL_CREATE(C)(uint32_t max_size, uint32_t page_size)                                                                           \
 {                                                                                                                                                                         \
     PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* result;                                                                                                                           \
-    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_001: [ If max_size is zero, PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/                                           \
-    if (max_size == 0)                                                                                                                                                    \
+    if (                                                                                                                                                                  \
+        /* Codes_SRS_PAGED_SPARSE_ARRAY_88_001: [ If max_size is zero, PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/                                       \
+        (max_size == 0) ||                                                                                                                                                \
+        /* Codes_SRS_PAGED_SPARSE_ARRAY_88_002: [ If page_size is zero, PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/                                      \
+        (page_size == 0) ||                                                                                                                                               \
+        /* Codes_SRS_PAGED_SPARSE_ARRAY_88_040: [ If max_size + page_size - 1 would overflow, PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/                \
+        (max_size > UINT32_MAX - (page_size - 1))                                                                                                                         \
+        )                                                                                                                                                                 \
     {                                                                                                                                                                     \
-        LogError("Invalid arguments: uint32_t max_size=%" PRIu32 "", max_size);                                                                                           \
-    }                                                                                                                                                                     \
-    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_002: [ If page_size is zero, PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/                                          \
-    else if (page_size == 0)                                                                                                                                              \
-    {                                                                                                                                                                     \
-        LogError("Invalid arguments: uint32_t page_size=%" PRIu32 "", page_size);                                                                                         \
-    }                                                                                                                                                                     \
-    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_040: [ If max_size + page_size - 1 would overflow, PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/                    \
-    else if (max_size > UINT32_MAX - (page_size - 1))                                                                                                                     \
-    {                                                                                                                                                                     \
-        LogError("Overflow: max_size (%" PRIu32 ") + page_size (%" PRIu32 ") - 1 would overflow UINT32_MAX", max_size, page_size);                                        \
+        LogError("Invalid arguments: uint32_t max_size=%" PRIu32 ", uint32_t page_size=%" PRIu32 "", max_size, page_size);                                                \
     }                                                                                                                                                                     \
     else                                                                                                                                                                  \
     {                                                                                                                                                                     \
