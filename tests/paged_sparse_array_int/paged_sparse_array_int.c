@@ -120,8 +120,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_and_release_all_elements_succeeds)
     //act - release all elements
     for (uint32_t i = 0; i < MAX_SIZE; i++)
     {
-        int result = PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(psa, i);
-        ASSERT_ARE_EQUAL(int, 0, result);
+        PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(psa, i);
     }
 
     //assert - all pages should be freed, all gets should fail
@@ -225,8 +224,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_release_and_reallocate_succeeds)
     elem1->value = 100;
 
     //act
-    int release_result = PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(psa, 42);
-    ASSERT_ARE_EQUAL(int, 0, release_result);
+    PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(psa, 42);
 
     TEST_ELEMENT* elem2 = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, 42);
 
@@ -255,8 +253,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_page_freed_when_all_elements_released)
     //act - release all elements in first page
     for (uint32_t i = 0; i < PAGE_SIZE; i++)
     {
-        int result = PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(psa, i);
-        ASSERT_ARE_EQUAL(int, 0, result);
+        PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(psa, i);
     }
 
     //assert - page should be freed
@@ -306,18 +303,13 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_chaos)
         }
         case CHAOS_TEST_ACTION_RELEASE:
         {
-            int result = PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(psa, rand_index);
+            PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(psa, rand_index);
             if (element_state[rand_index])
             {
-                // Was allocated, should succeed
-                ASSERT_ARE_EQUAL(int, 0, result);
+                // Was allocated, now released
                 element_state[rand_index] = false;
             }
-            else
-            {
-                // Was not allocated, should fail
-                ASSERT_ARE_NOT_EQUAL(int, 0, result);
-            }
+            // If element was not allocated, RELEASE just returns without doing anything
             break;
         }
         case CHAOS_TEST_ACTION_ALLOCATE_OR_GET:

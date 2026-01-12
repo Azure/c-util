@@ -38,7 +38,7 @@ The macros expand to these useful APIs:
 ```c
 PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint32_t max_size, uint32_t page_size);
 T* PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
-int PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
+void PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
 T* PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
 T* PAGED_SPARSE_ARRAY_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
 ```
@@ -144,26 +144,24 @@ T* PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint
 ### PAGED_SPARSE_ARRAY_RELEASE(T)
 
 ```c
-int PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
+void PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
 ```
 
 `PAGED_SPARSE_ARRAY_RELEASE(T)` releases the element at the specified index.
 
-**SRS_PAGED_SPARSE_ARRAY_88_019: [** If `paged_sparse_array` is `NULL`, `PAGED_SPARSE_ARRAY_RELEASE(T)` shall fail and return a non-zero value. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_019: [** If `paged_sparse_array` is `NULL`, `PAGED_SPARSE_ARRAY_RELEASE(T)` shall return. **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_020: [** If `index` is greater than or equal to `max_size`, `PAGED_SPARSE_ARRAY_RELEASE(T)` shall fail and return a non-zero value. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_020: [** If `index` is greater than or equal to `max_size`, `PAGED_SPARSE_ARRAY_RELEASE(T)` shall return. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_021: [** `PAGED_SPARSE_ARRAY_RELEASE(T)` shall compute the page index as `index / page_size`. **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_022: [** If the page is not allocated, `PAGED_SPARSE_ARRAY_RELEASE(T)` shall fail and return a non-zero value. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_022: [** If the page is not allocated, `PAGED_SPARSE_ARRAY_RELEASE(T)` shall return. **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_023: [** If the element at `index` is not allocated, `PAGED_SPARSE_ARRAY_RELEASE(T)` shall fail and return a non-zero value. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_023: [** If the element at `index` is not allocated, `PAGED_SPARSE_ARRAY_RELEASE(T)` shall return. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_024: [** `PAGED_SPARSE_ARRAY_RELEASE(T)` shall mark the element at `index` as not allocated. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_025: [** If all elements in the page are now not allocated, `PAGED_SPARSE_ARRAY_RELEASE(T)` shall free the page and set the page pointer to `NULL`. **]**
-
-**SRS_PAGED_SPARSE_ARRAY_88_026: [** `PAGED_SPARSE_ARRAY_RELEASE(T)` shall return zero on success. **]**
 
 ### PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T)
 

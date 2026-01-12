@@ -1,0 +1,12 @@
+﻿gh : failed to parse jq expression (line 1, column 7)
+At line:1 char:1
++ gh api repos/Azure/c-util/pulls/565/comments 
+--paginate -q '.[] | "\( ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (failed to  
+   parse...ne 1, column 7):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    .[] | \(.path)|\(.line)|\(.body)
+          ^  unexpected token "\\"

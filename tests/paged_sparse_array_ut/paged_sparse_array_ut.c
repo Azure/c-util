@@ -425,7 +425,6 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_ALLOCATE_fails_when_page_malloc_fails)
 /* Tests_SRS_PAGED_SPARSE_ARRAY_88_021: [ PAGED_SPARSE_ARRAY_RELEASE(T) shall compute the page index as index / page_size. ]*/
 /* Tests_SRS_PAGED_SPARSE_ARRAY_88_024: [ PAGED_SPARSE_ARRAY_RELEASE(T) shall mark the element at index as not allocated. ]*/
 /* Tests_SRS_PAGED_SPARSE_ARRAY_88_025: [ If all elements in the page are now not allocated, PAGED_SPARSE_ARRAY_RELEASE(T) shall free the page and set the page pointer to NULL. ]*/
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_026: [ PAGED_SPARSE_ARRAY_RELEASE(T) shall return zero on success. ]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_succeeds_and_frees_page_when_last_element)
 {
     //arrange
@@ -437,10 +436,9 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_succeeds_and_frees_page_when_last_eleme
     STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page (includes embedded bitmap)
 
     //act
-    int result = PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, 5);
+    PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, 5);
 
     //assert
-    ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_IS_NULL(psa->pages[0]);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -449,7 +447,6 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_succeeds_and_frees_page_when_last_eleme
 }
 
 /* Tests_SRS_PAGED_SPARSE_ARRAY_88_024: [ PAGED_SPARSE_ARRAY_RELEASE(T) shall mark the element at index as not allocated. ]*/
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_026: [ PAGED_SPARSE_ARRAY_RELEASE(T) shall return zero on success. ]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_succeeds_but_keeps_page_when_other_elements_allocated)
 {
     //arrange
@@ -463,10 +460,9 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_succeeds_but_keeps_page_when_other_elem
     umock_c_reset_all_calls();
 
     //act
-    int result = PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, 5);
+    PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, 5);
 
     //assert
-    ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_IS_NOT_NULL(psa->pages[0]); // Page should still be allocated
     ASSERT_ARE_EQUAL(uint32_t, 1, psa->pages[0]->allocated_count);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -475,42 +471,22 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_succeeds_but_keeps_page_when_other_elem
     PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_019: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_RELEASE(T) shall fail and return a non-zero value. ]*/
-TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_fails_when_handle_is_null)
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_019: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_RELEASE(T) shall return. ]*/
+TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_with_null_handle_returns)
 {
     //arrange
 
     //act
-    int result = PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(NULL, 0);
+    PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(NULL, 0);
 
     //assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
 }
 
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_020: [ If index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_RELEASE(T) shall fail and return a non-zero value. ]*/
-TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_fails_when_index_out_of_bounds)
-{
-    //arrange
-    PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16);
-    ASSERT_IS_NOT_NULL(psa);
-    umock_c_reset_all_calls();
-
-    //act
-    int result = PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, 100);
-
-    //assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    //clean
-    PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_022: [ If the page is not allocated, PAGED_SPARSE_ARRAY_RELEASE(T) shall fail and return a non-zero value. ]*/
-TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_fails_when_page_not_allocated)
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_020: [ If index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_RELEASE(T) shall return. ]*/
+TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_with_index_out_of_bounds_returns)
 {
     //arrange
     PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16);
@@ -518,18 +494,35 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_fails_when_page_not_allocated)
     umock_c_reset_all_calls();
 
     //act
-    int result = PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, 5);
+    PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, 100);
 
     //assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
     PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_023: [ If the element at index is not allocated, PAGED_SPARSE_ARRAY_RELEASE(T) shall fail and return a non-zero value. ]*/
-TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_fails_when_element_not_allocated)
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_022: [ If the page is not allocated, PAGED_SPARSE_ARRAY_RELEASE(T) shall return. ]*/
+TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_with_page_not_allocated_returns)
+{
+    //arrange
+    PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16);
+    ASSERT_IS_NOT_NULL(psa);
+    umock_c_reset_all_calls();
+
+    //act
+    PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, 5);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+    PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
+}
+
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_023: [ If the element at index is not allocated, PAGED_SPARSE_ARRAY_RELEASE(T) shall return. ]*/
+TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_with_element_not_allocated_returns)
 {
     //arrange
     PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16);
@@ -539,10 +532,9 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_fails_when_element_not_allocated)
     umock_c_reset_all_calls();
 
     //act
-    int result = PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, 10); // Different element in same page
+    PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, 10); // Different element in same page
 
     //assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
