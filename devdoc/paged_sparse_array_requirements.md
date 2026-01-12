@@ -177,26 +177,28 @@ static void PAGED_SPARSE_ARRAY_DISPOSE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_arr
 ### PAGED_SPARSE_ARRAY_ALLOCATE(T)
 
 ```c
-T* PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
+PAGED_SPARSE_ARRAY_ALLOCATE_RESULT PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index, T** allocated_ptr);
 ```
 
 `PAGED_SPARSE_ARRAY_ALLOCATE(T)` allocates an element at the specified index for usage.
 
-**SRS_PAGED_SPARSE_ARRAY_88_011: [** If `paged_sparse_array` is `NULL`, `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall fail and return `NULL`. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_011: [** If `paged_sparse_array` is `NULL`, `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall fail and return `PAGED_SPARSE_ARRAY_ALLOCATE_INVALID_ARGS`. **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_012: [** If `index` is greater than or equal to `max_size`, `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall fail and return `NULL`. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_041: [** If `allocated_ptr` is `NULL`, `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall fail and return `PAGED_SPARSE_ARRAY_ALLOCATE_INVALID_ARGS`. **]**
+
+**SRS_PAGED_SPARSE_ARRAY_88_012: [** If `index` is greater than or equal to `max_size`, `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall fail and return `PAGED_SPARSE_ARRAY_ALLOCATE_INVALID_ARGS`. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_013: [** `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall compute the page index as `index / page_size`. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_014: [** If the page is not allocated, `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall call `malloc_flex` to allocate memory for the page structure containing `page_size` elements of type `T` plus a `uint8_t` allocation bitmap of `(page_size + 7) / 8` bytes, and initialize all bitmap bits to 0 (not allocated). **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_015: [** If the element at `index` is already allocated, `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall fail and return `NULL`. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_015: [** If the element at `index` is already allocated, `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall fail and return `PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED`. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_016: [** `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall mark the element at `index` as allocated. **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_017: [** `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall return a pointer to the element at `index`. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_017: [** `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall store a pointer to the element at `index` in `*allocated_ptr` and return `PAGED_SPARSE_ARRAY_ALLOCATE_OK`. **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_018: [** If there are any errors, `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall fail and return `NULL`. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_018: [** If `malloc_flex` fails, `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall fail and return `PAGED_SPARSE_ARRAY_ALLOCATE_ERROR`. **]**
 
 ### PAGED_SPARSE_ARRAY_RELEASE(T)
 

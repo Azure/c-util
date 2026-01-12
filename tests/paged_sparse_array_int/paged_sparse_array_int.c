@@ -38,6 +38,8 @@ PAGED_SPARSE_ARRAY_TYPE_DEFINE(TEST_ELEMENT);
 MU_DEFINE_ENUM(CHAOS_TEST_ACTION, CHAOS_TEST_ACTION_VALUES)
 MU_DEFINE_ENUM_STRINGS(CHAOS_TEST_ACTION, CHAOS_TEST_ACTION_VALUES)
 
+TEST_DEFINE_ENUM_TYPE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_RESULT_VALUES)
+
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -85,7 +87,9 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_all_elements_succeeds)
     //act
     for (uint32_t i = 0; i < MAX_SIZE; i++)
     {
-        TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i);
+        TEST_ELEMENT* elem;
+        PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i, &elem);
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, alloc_result);
         ASSERT_IS_NOT_NULL(elem);
         elem->value = i;
     }
@@ -111,7 +115,9 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_and_release_all_elements_succeeds)
     // Allocate all elements
     for (uint32_t i = 0; i < MAX_SIZE; i++)
     {
-        TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i);
+        TEST_ELEMENT* elem;
+        PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i, &elem);
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, alloc_result);
         ASSERT_IS_NOT_NULL(elem);
         elem->value = i;
     }
@@ -144,7 +150,9 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_sparse_allocation_succeeds)
     // Allocate only every 100th element (sparse)
     for (uint32_t i = 0; i < MAX_SIZE; i += 100)
     {
-        TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i);
+        TEST_ELEMENT* elem;
+        PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i, &elem);
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, alloc_result);
         ASSERT_IS_NOT_NULL(elem);
         elem->value = i * 10;
     }
@@ -175,14 +183,17 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_already_allocated_fails)
     //arrange
     PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE);
     ASSERT_IS_NOT_NULL(psa);
-    TEST_ELEMENT* elem1 = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, 42);
+    TEST_ELEMENT* elem1;
+    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result1 = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, 42, &elem1);
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, alloc_result1);
     ASSERT_IS_NOT_NULL(elem1);
 
     //act
-    TEST_ELEMENT* elem2 = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, 42);
+    TEST_ELEMENT* elem2;
+    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result2 = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, 42, &elem2);
 
     //assert
-    ASSERT_IS_NULL(elem2);
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED, alloc_result2);
 
     //cleanup
     PAGED_SPARSE_ARRAY_ASSIGN(TEST_ELEMENT)(&psa, NULL);
@@ -193,16 +204,20 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_release_and_reallocate_succeeds)
     //arrange
     PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE);
     ASSERT_IS_NOT_NULL(psa);
-    TEST_ELEMENT* elem1 = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, 42);
+    TEST_ELEMENT* elem1;
+    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result1 = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, 42, &elem1);
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, alloc_result1);
     ASSERT_IS_NOT_NULL(elem1);
     elem1->value = 100;
 
     //act
     PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(psa, 42);
 
-    TEST_ELEMENT* elem2 = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, 42);
+    TEST_ELEMENT* elem2;
+    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result2 = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, 42, &elem2);
 
     //assert
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, alloc_result2);
     ASSERT_IS_NOT_NULL(elem2);
     // Value should be indeterminate after reallocation, but element should be accessible
 
@@ -219,7 +234,9 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_page_freed_when_all_elements_released)
     // Allocate all elements in first page
     for (uint32_t i = 0; i < PAGE_SIZE; i++)
     {
-        TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i);
+        TEST_ELEMENT* elem;
+        PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i, &elem);
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, alloc_result);
         ASSERT_IS_NOT_NULL(elem);
     }
     ASSERT_IS_NOT_NULL(psa->pages[0]);
@@ -259,15 +276,17 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_chaos)
             break;
         case CHAOS_TEST_ACTION_ALLOCATE:
         {
-            TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, rand_index);
+            TEST_ELEMENT* elem;
+            PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, rand_index, &elem);
             if (element_state[rand_index])
             {
                 // Already allocated, should fail
-                ASSERT_IS_NULL(elem);
+                ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED, alloc_result);
             }
             else
             {
                 // Not allocated, should succeed
+                ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, alloc_result);
                 ASSERT_IS_NOT_NULL(elem);
                 elem->value = rand_index;
                 element_state[rand_index] = true;

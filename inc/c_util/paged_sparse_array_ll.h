@@ -23,6 +23,15 @@
 
 #include "umock_c/umock_c_prod.h"
 
+/*result codes for PAGED_SPARSE_ARRAY_ALLOCATE*/
+#define PAGED_SPARSE_ARRAY_ALLOCATE_RESULT_VALUES \
+    PAGED_SPARSE_ARRAY_ALLOCATE_OK, \
+    PAGED_SPARSE_ARRAY_ALLOCATE_INVALID_ARGS, \
+    PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED, \
+    PAGED_SPARSE_ARRAY_ALLOCATE_ERROR
+
+MU_DEFINE_ENUM(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_RESULT_VALUES)
+
 /*PAGED_SPARSE_ARRAY is backed by a THANDLE build on the structure below*/
 #define PAGED_SPARSE_ARRAY_STRUCT_TYPE_NAME_TAG(T) MU_C2(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T), _TAG)
 
@@ -86,7 +95,7 @@ struct PAGED_SPARSE_ARRAY_STRUCT_TYPE_NAME_TAG(T)                               
 
 /*introduces a function declaration for paged_sparse_array_allocate*/
 #define PAGED_SPARSE_ARRAY_LL_ALLOCATE_DECLARE(C, T) \
-    MOCKABLE_FUNCTION(, T*, PAGED_SPARSE_ARRAY_LL_ALLOCATE(C), PAGED_SPARSE_ARRAY_LL(T), paged_sparse_array, uint32_t, index);
+    MOCKABLE_FUNCTION(, PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_LL_ALLOCATE(C), PAGED_SPARSE_ARRAY_LL(T), paged_sparse_array, uint32_t, index, T**, allocated_ptr);
 
 /*introduces a function declaration for paged_sparse_array_release*/
 #define PAGED_SPARSE_ARRAY_LL_RELEASE_DECLARE(C, T) \
@@ -210,18 +219,24 @@ static PAGED_SPARSE_ARRAY_PAGE_TYPEDEF_NAME(T)* PAGED_SPARSE_ARRAY_LL_ALLOCATE_P
 }
 
 #define PAGED_SPARSE_ARRAY_LL_ALLOCATE_DEFINE(C, T)                                                                                                                        \
-T* PAGED_SPARSE_ARRAY_LL_ALLOCATE(C)(PAGED_SPARSE_ARRAY_LL(T) paged_sparse_array, uint32_t index)                                                                          \
+PAGED_SPARSE_ARRAY_ALLOCATE_RESULT PAGED_SPARSE_ARRAY_LL_ALLOCATE(C)(PAGED_SPARSE_ARRAY_LL(T) paged_sparse_array, uint32_t index, T** allocated_ptr)                       \
 {                                                                                                                                                                          \
-    T* result;                                                                                                                                                             \
-    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_011: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return NULL. ]*/                                \
-    if (paged_sparse_array == NULL)                                                                                                                                        \
+    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT result;                                                                                                                             \
+    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_011: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_INVALID_ARGS. ]*/ \
+    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_041: [ If allocated_ptr is NULL, PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_INVALID_ARGS. ]*/ \
+    if (                                                                                                                                                                   \
+        (paged_sparse_array == NULL) ||                                                                                                                                    \
+        (allocated_ptr == NULL)                                                                                                                                            \
+        )                                                                                                                                                                  \
     {                                                                                                                                                                      \
-        LogError("Invalid arguments: PAGED_SPARSE_ARRAY(" MU_TOSTRING(T) ") paged_sparse_array=%p", paged_sparse_array);                                                   \
+        LogError("Invalid arguments: PAGED_SPARSE_ARRAY(" MU_TOSTRING(T) ") paged_sparse_array=%p, " MU_TOSTRING(T) "** allocated_ptr=%p", paged_sparse_array, allocated_ptr); \
+        result = PAGED_SPARSE_ARRAY_ALLOCATE_INVALID_ARGS;                                                                                                                 \
     }                                                                                                                                                                      \
-    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_012: [ If index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return NULL. ]*/                \
+    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_012: [ If index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_INVALID_ARGS. ]*/ \
     else if (index >= paged_sparse_array->max_size)                                                                                                                        \
     {                                                                                                                                                                      \
         LogError("Invalid arguments: uint32_t index=%" PRIu32 " out of bound, max_size=%" PRIu32 "", index, paged_sparse_array->max_size);                                 \
+        result = PAGED_SPARSE_ARRAY_ALLOCATE_INVALID_ARGS;                                                                                                                 \
     }                                                                                                                                                                      \
     else                                                                                                                                                                   \
     {                                                                                                                                                                      \
@@ -229,36 +244,36 @@ T* PAGED_SPARSE_ARRAY_LL_ALLOCATE(C)(PAGED_SPARSE_ARRAY_LL(T) paged_sparse_array
         uint32_t page_index = index / paged_sparse_array->page_size;                                                                                                       \
         PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(C))(paged_sparse_array);                                                 \
                                                                                                                                                                            \
-        /* Codes_SRS_PAGED_SPARSE_ARRAY_88_014: [ If the page is not allocated, PAGED_SPARSE_ARRAY_ALLOCATE(T) shall allocate memory for the page containing page_size elements and an allocation bitmap, and initialize all elements as not allocated. ]*/ \
+        /* Codes_SRS_PAGED_SPARSE_ARRAY_88_014: [ If the page is not allocated, PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call malloc_flex to allocate memory for the page containing page_size elements and an allocation bitmap, and initialize all elements as not allocated. ]*/ \
         if (                                                                                                                                                               \
             (array->pages[page_index] == NULL) &&                                                                                                                          \
             ((array->pages[page_index] = PAGED_SPARSE_ARRAY_LL_ALLOCATE_PAGE_INTERNAL_NAME(C)(paged_sparse_array->page_size)) == NULL)                                     \
             )                                                                                                                                                              \
         {                                                                                                                                                                  \
-            /* Codes_SRS_PAGED_SPARSE_ARRAY_88_018: [ If there are any errors, PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return NULL. ]*/                              \
+            /* Codes_SRS_PAGED_SPARSE_ARRAY_88_018: [ If page allocation fails, PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ERROR. ]*/ \
             LogError("failure allocating page at page_index=%" PRIu32 "", page_index);                                                                                     \
+            result = PAGED_SPARSE_ARRAY_ALLOCATE_ERROR;                                                                                                                    \
         }                                                                                                                                                                  \
         else                                                                                                                                                               \
         {                                                                                                                                                                  \
             uint32_t index_in_page = index % paged_sparse_array->page_size;                                                                                                \
-            /* Codes_SRS_PAGED_SPARSE_ARRAY_88_015: [ If the element at index is already allocated, PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return NULL. ]*/         \
-            if (PAGED_SPARSE_ARRAY_IS_ALLOCATED(PAGED_SPARSE_ARRAY_GET_BITMAP(array->pages[page_index], paged_sparse_array->page_size), index_in_page))                 \
+            /* Codes_SRS_PAGED_SPARSE_ARRAY_88_015: [ If the element at index is already allocated, PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED. ]*/ \
+            if (PAGED_SPARSE_ARRAY_IS_ALLOCATED(PAGED_SPARSE_ARRAY_GET_BITMAP(array->pages[page_index], paged_sparse_array->page_size), index_in_page))                    \
             {                                                                                                                                                              \
                 LogError("Element at index=%" PRIu32 " is already allocated", index);                                                                                      \
+                result = PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED;                                                                                                    \
             }                                                                                                                                                              \
             else                                                                                                                                                           \
             {                                                                                                                                                              \
                 /* Codes_SRS_PAGED_SPARSE_ARRAY_88_016: [ PAGED_SPARSE_ARRAY_ALLOCATE(T) shall mark the element at index as allocated. ]*/                                 \
-                PAGED_SPARSE_ARRAY_SET_ALLOCATED(PAGED_SPARSE_ARRAY_GET_BITMAP(array->pages[page_index], paged_sparse_array->page_size), index_in_page);                \
+                PAGED_SPARSE_ARRAY_SET_ALLOCATED(PAGED_SPARSE_ARRAY_GET_BITMAP(array->pages[page_index], paged_sparse_array->page_size), index_in_page);                   \
                 array->pages[page_index]->allocated_count++;                                                                                                               \
-                /* Codes_SRS_PAGED_SPARSE_ARRAY_88_017: [ PAGED_SPARSE_ARRAY_ALLOCATE(T) shall return a pointer to the element at index. ]*/                               \
-                result = &array->pages[page_index]->items[index_in_page];                                                                                                  \
-                goto all_ok;                                                                                                                                               \
+                /* Codes_SRS_PAGED_SPARSE_ARRAY_88_017: [ PAGED_SPARSE_ARRAY_ALLOCATE(T) shall store a pointer to the element at index in allocated_ptr and return PAGED_SPARSE_ARRAY_ALLOCATE_OK. ]*/ \
+                *allocated_ptr = &array->pages[page_index]->items[index_in_page];                                                                                          \
+                result = PAGED_SPARSE_ARRAY_ALLOCATE_OK;                                                                                                                   \
             }                                                                                                                                                              \
         }                                                                                                                                                                  \
     }                                                                                                                                                                      \
-    result = NULL;                                                                                                                                                         \
-all_ok:                                                                                                                                                                    \
     return result;                                                                                                                                                         \
 }
 
