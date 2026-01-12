@@ -26,6 +26,19 @@ Each element has an allocation state (allocated or not allocated). The user can:
 
 If multiple threads need to access the same `PAGED_SPARSE_ARRAY` instance, the caller must provide external synchronization (e.g., using a mutex or SRW lock) to protect against concurrent modifications.
 
+### Memory Layout
+
+Elements in the array are **not stored contiguously in memory**. Each page is allocated separately, so elements in different pages are in different memory locations. Even elements within the same page should not be accessed via pointer arithmetic.
+
+**Important:** Pointer arithmetic does not work with this data structure. For example:
+```c
+T* elem0 = PAGED_SPARSE_ARRAY_GET(T)(array, 0);
+T* elem1 = PAGED_SPARSE_ARRAY_GET(T)(array, 1);
+// elem0 + 1 is NOT guaranteed to equal elem1
+```
+
+Always use the provided API functions (GET, ALLOCATE, etc.) to access elements by index.
+
 ## Exposed API
 
 ```c
