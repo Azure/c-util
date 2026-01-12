@@ -230,14 +230,11 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_FREE_frees_all_allocated_pages)
 
     umock_c_reset_all_calls();
 
-    // Expect free for each page's bitmap and page data (3 pages x 2 frees each = 6 frees)
+    // Expect free for each page (3 pages x 1 free each = 3 frees)
     // Plus free for the THANDLE wrapper
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 0 bitmap
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 0 data
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 1 bitmap
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 1 data
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 2 bitmap
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 2 data
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 0
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 1
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page 2
     STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // THANDLE wrapper
 
     //act
@@ -262,8 +259,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_ALLOCATE_succeeds_first_element)
     PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16);
     ASSERT_IS_NOT_NULL(psa);
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 16, sizeof(uint32_t)));
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, 1)); // page with embedded bitmap
 
     //act
     uint32_t* ptr = PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, 0);
@@ -286,8 +282,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_ALLOCATE_succeeds_second_page)
     PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16);
     ASSERT_IS_NOT_NULL(psa);
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 16, sizeof(uint32_t)));
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, 1)); // page with embedded bitmap
 
     //act
     uint32_t* ptr = PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, 20);
@@ -310,8 +305,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_ALLOCATE_multiple_elements_in_same_page)
     PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16);
     ASSERT_IS_NOT_NULL(psa);
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 16, sizeof(uint32_t)));
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, 1)); // page with embedded bitmap
 
     //act
     uint32_t* ptr0 = PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, 0);
@@ -412,31 +406,8 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_ALLOCATE_fails_when_page_malloc_fails)
     PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16);
     ASSERT_IS_NOT_NULL(psa);
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 16, sizeof(uint32_t)))
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, 1)) // page with embedded bitmap
         .SetReturn(NULL);
-
-    //act
-    uint32_t* ptr = PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, 0);
-
-    //assert
-    ASSERT_IS_NULL(ptr);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-
-    //clean
-    PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_018: [ If there are any errors, PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return NULL. ]*/
-TEST_FUNCTION(PAGED_SPARSE_ARRAY_ALLOCATE_fails_when_bitmap_malloc_fails)
-{
-    //arrange
-    PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16);
-    ASSERT_IS_NOT_NULL(psa);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 16, sizeof(uint32_t)));
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG))
-        .SetReturn(NULL);
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG));
 
     //act
     uint32_t* ptr = PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, 0);
@@ -463,8 +434,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_succeeds_and_frees_page_when_last_eleme
     uint32_t* ptr = PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, 5);
     ASSERT_IS_NOT_NULL(ptr);
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // bitmap
-    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page
+    STRICT_EXPECTED_CALL(free(IGNORED_ARG)); // page (includes embedded bitmap)
 
     //act
     int result = PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, 5);
@@ -591,8 +561,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET_allocates_new_element)
     PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16);
     ASSERT_IS_NOT_NULL(psa);
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 16, sizeof(uint32_t)));
-    STRICT_EXPECTED_CALL(malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, 1)); // page with embedded bitmap
 
     //act
     uint32_t* ptr = PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(uint32_t)(psa, 5);
@@ -673,7 +642,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET_fails_when_page_malloc_fails)
     PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16);
     ASSERT_IS_NOT_NULL(psa);
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, 16, sizeof(uint32_t)))
+    STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, 1)) // page with embedded bitmap
         .SetReturn(NULL);
 
     //act
