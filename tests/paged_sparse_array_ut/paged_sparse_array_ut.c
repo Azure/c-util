@@ -156,6 +156,22 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_CREATE_fails_when_page_size_is_zero)
     //clean
 }
 
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_040: [ If max_size + page_size - 1 would overflow, PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/
+TEST_FUNCTION(PAGED_SPARSE_ARRAY_CREATE_fails_when_max_size_plus_page_size_would_overflow)
+{
+    //arrange
+
+    //act
+    // Use max_size=UINT32_MAX and page_size=2, so max_size + page_size - 1 = UINT32_MAX + 1 would overflow
+    PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(UINT32_MAX, 2);
+
+    //assert
+    ASSERT_IS_NULL(psa);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+}
+
 /* Tests_SRS_PAGED_SPARSE_ARRAY_88_007: [ If there are any errors, PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_CREATE_fails_when_malloc_flex_fails)
 {

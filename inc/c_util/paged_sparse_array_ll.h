@@ -160,6 +160,11 @@ PAGED_SPARSE_ARRAY_LL(T) PAGED_SPARSE_ARRAY_LL_CREATE(C)(uint32_t max_size, uint
     {                                                                                                                                                                     \
         LogError("Invalid arguments: uint32_t page_size=%" PRIu32 "", page_size);                                                                                         \
     }                                                                                                                                                                     \
+    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_040: [ If max_size + page_size - 1 would overflow, PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/                    \
+    else if (max_size > UINT32_MAX - (page_size - 1))                                                                                                                     \
+    {                                                                                                                                                                     \
+        LogError("Overflow: max_size (%" PRIu32 ") + page_size (%" PRIu32 ") - 1 would overflow UINT32_MAX", max_size, page_size);                                        \
+    }                                                                                                                                                                     \
     else                                                                                                                                                                  \
     {                                                                                                                                                                     \
         /* Codes_SRS_PAGED_SPARSE_ARRAY_88_003: [ PAGED_SPARSE_ARRAY_CREATE(T) shall compute the number of pages as (max_size + page_size - 1) / page_size. ]*/           \

@@ -93,6 +93,8 @@ PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint32_t max_size, uint32_t p
 
 **SRS_PAGED_SPARSE_ARRAY_88_002: [** If `page_size` is zero, `PAGED_SPARSE_ARRAY_CREATE(T)` shall fail and return `NULL`. **]**
 
+**SRS_PAGED_SPARSE_ARRAY_88_040: [** If `max_size + page_size - 1` would overflow, `PAGED_SPARSE_ARRAY_CREATE(T)` shall fail and return `NULL`. **]**
+
 **SRS_PAGED_SPARSE_ARRAY_88_003: [** `PAGED_SPARSE_ARRAY_CREATE(T)` shall compute the number of pages as `(max_size + page_size - 1) / page_size`. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_004: [** `PAGED_SPARSE_ARRAY_CREATE(T)` shall call `THANDLE_MALLOC_FLEX` to allocate memory for the paged sparse array with the number of pages. **]**
