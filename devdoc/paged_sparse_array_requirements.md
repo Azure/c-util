@@ -20,6 +20,12 @@ Each element has an allocation state (allocated or not allocated). The user can:
 - Allocate or get an index (allocates if not exists, gets if exists)
 - Get an index (fails if not allocated)
 
+### Threading Model
+
+`PAGED_SPARSE_ARRAY` is a `THANDLE`, which means that the ownership of the array (reference counting, assignment, move) is thread-safe. However, the operations on the array contents (ALLOCATE, RELEASE, ALLOCATE_OR_GET, GET) are **not thread-safe**.
+
+If multiple threads need to access the same `PAGED_SPARSE_ARRAY` instance, the caller must provide external synchronization (e.g., using a mutex or SRW lock) to protect against concurrent modifications.
+
 ## Exposed API
 
 ```c
