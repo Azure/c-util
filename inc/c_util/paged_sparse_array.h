@@ -16,7 +16,7 @@
 #define PAGED_SPARSE_ARRAY_CREATE_DECLARE(T) PAGED_SPARSE_ARRAY_LL_CREATE_DECLARE(T, T)
 #define PAGED_SPARSE_ARRAY_CREATE_DEFINE(T) PAGED_SPARSE_ARRAY_LL_CREATE_DEFINE(T, T)
 
-#define PAGED_SPARSE_ARRAY_FREE_DEFINE(T) PAGED_SPARSE_ARRAY_LL_FREE_DEFINE(T, T)
+#define PAGED_SPARSE_ARRAY_DISPOSE_DEFINE(T) PAGED_SPARSE_ARRAY_LL_DISPOSE_DEFINE(T, T)
 
 #define PAGED_SPARSE_ARRAY_ALLOCATE_PAGE_INTERNAL_DEFINE(T) PAGED_SPARSE_ARRAY_LL_ALLOCATE_PAGE_INTERNAL_DEFINE(T, T)
 
@@ -55,7 +55,7 @@
 
 #define PAGED_SPARSE_ARRAY_TYPE_DEFINE(T)                                                                              \
     /*hint: have THANDLE_TYPE_DEFINE(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)) before PAGED_SPARSE_ARRAY_TYPE_DEFINE      */ \
-    PAGED_SPARSE_ARRAY_FREE_DEFINE(T)                                                                                  \
+    PAGED_SPARSE_ARRAY_DISPOSE_DEFINE(T)                                                                               \
     PAGED_SPARSE_ARRAY_ALLOCATE_PAGE_INTERNAL_DEFINE(T)                                                                \
     PAGED_SPARSE_ARRAY_CREATE_DEFINE(T)                                                                                \
     PAGED_SPARSE_ARRAY_ALLOCATE_DEFINE(T)                                                                              \

@@ -37,7 +37,6 @@ The macros expand to these useful APIs:
 
 ```c
 PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint32_t max_size, uint32_t page_size);
-void PAGED_SPARSE_ARRAY_FREE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array);
 T* PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
 int PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
 T* PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
@@ -106,17 +105,17 @@ PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint32_t max_size, uint32_t p
 
 **SRS_PAGED_SPARSE_ARRAY_88_008: [** `PAGED_SPARSE_ARRAY_CREATE(T)` shall succeed and return a non-`NULL` value. **]**
 
-### PAGED_SPARSE_ARRAY_FREE(T)
+### PAGED_SPARSE_ARRAY_DISPOSE(T)
 
 ```c
-void PAGED_SPARSE_ARRAY_FREE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array);
+static void PAGED_SPARSE_ARRAY_DISPOSE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array);
 ```
 
-`PAGED_SPARSE_ARRAY_FREE(T)` is called when there are no more references to the paged sparse array and the contents should be disposed of. This is used as the dispose function for THANDLE.
+`PAGED_SPARSE_ARRAY_DISPOSE(T)` is the internal dispose function called by `THANDLE` when all references to the paged sparse array are released.
 
-**SRS_PAGED_SPARSE_ARRAY_88_009: [** If `paged_sparse_array` is `NULL`, `PAGED_SPARSE_ARRAY_FREE(T)` shall return. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_009: [** If `paged_sparse_array` is `NULL`, `PAGED_SPARSE_ARRAY_DISPOSE(T)` shall return. **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_010: [** `PAGED_SPARSE_ARRAY_FREE(T)` shall free all pages that are non-`NULL`. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_010: [** `PAGED_SPARSE_ARRAY_DISPOSE(T)` shall free all pages that are non-`NULL`. **]**
 
 ### PAGED_SPARSE_ARRAY_ALLOCATE(T)
 

@@ -65,8 +65,8 @@ struct PAGED_SPARSE_ARRAY_STRUCT_TYPE_NAME_TAG(T)                               
 #define PAGED_SPARSE_ARRAY_LL_CREATE_NAME(C) MU_C2(PAGED_SPARSE_ARRAY_LL_CREATE_, C)
 #define PAGED_SPARSE_ARRAY_LL_CREATE(C) PAGED_SPARSE_ARRAY_LL_CREATE_NAME(C)
 
-/*introduces a name for the function that frees a PAGED_SPARSE_ARRAY when its ref count goes to 0*/
-#define PAGED_SPARSE_ARRAY_LL_FREE_NAME(C) MU_C2(PAGED_SPARSE_ARRAY_LL_FREE_, C)
+/*introduces a name for the dispose function that is called when PAGED_SPARSE_ARRAY ref count goes to 0*/
+#define PAGED_SPARSE_ARRAY_LL_DISPOSE_NAME(C) MU_C2(PAGED_SPARSE_ARRAY_LL_DISPOSE_, C)
 
 /*introduces a name for the allocate function*/
 #define PAGED_SPARSE_ARRAY_LL_ALLOCATE_NAME(C) MU_C2(PAGED_SPARSE_ARRAY_LL_ALLOCATE_, C)
@@ -123,10 +123,10 @@ struct PAGED_SPARSE_ARRAY_STRUCT_TYPE_NAME_TAG(T)                               
     ((bitmap)[(index_in_page) / 8] &= ~(1 << ((index_in_page) % 8)))
 
 /*introduces a function definition for freeing the allocated resources for a PAGED_SPARSE_ARRAY*/
-#define PAGED_SPARSE_ARRAY_LL_FREE_DEFINE(C, T)                                                                                \
-static void PAGED_SPARSE_ARRAY_LL_FREE_NAME(C)(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* paged_sparse_array)                         \
+#define PAGED_SPARSE_ARRAY_LL_DISPOSE_DEFINE(C, T)                                                                              \
+static void PAGED_SPARSE_ARRAY_LL_DISPOSE_NAME(C)(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* paged_sparse_array)                      \
 {                                                                                                                              \
-    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_009: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_FREE(T) shall return. ]*/      \
+    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_009: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_DISPOSE(T) shall return. ]*/   \
     if (paged_sparse_array == NULL)                                                                                            \
     {                                                                                                                          \
         LogError("invalid arguments " MU_TOSTRING(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)) "* paged_sparse_array=%p",               \
@@ -134,7 +134,7 @@ static void PAGED_SPARSE_ARRAY_LL_FREE_NAME(C)(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T
     }                                                                                                                          \
     else                                                                                                                       \
     {                                                                                                                          \
-        /* Codes_SRS_PAGED_SPARSE_ARRAY_88_010: [ PAGED_SPARSE_ARRAY_FREE(T) shall free all pages that are non-NULL. ]*/       \
+        /* Codes_SRS_PAGED_SPARSE_ARRAY_88_010: [ PAGED_SPARSE_ARRAY_DISPOSE(T) shall free all pages that are non-NULL. ]*/    \
         for (uint32_t i = 0; i < paged_sparse_array->page_count; i++)                                                          \
         {                                                                                                                      \
             if (paged_sparse_array->pages[i] != NULL)                                                                          \
@@ -165,7 +165,7 @@ PAGED_SPARSE_ARRAY_LL(T) PAGED_SPARSE_ARRAY_LL_CREATE(C)(uint32_t max_size, uint
         /* Codes_SRS_PAGED_SPARSE_ARRAY_88_003: [ PAGED_SPARSE_ARRAY_CREATE(T) shall compute the number of pages as (max_size + page_size - 1) / page_size. ]*/           \
         uint32_t page_count = (max_size + page_size - 1) / page_size;                                                                                                     \
         /* Codes_SRS_PAGED_SPARSE_ARRAY_88_004: [ PAGED_SPARSE_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX to allocate memory for the paged sparse array with the number of pages. ]*/ \
-        result = THANDLE_MALLOC_FLEX(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(C))(PAGED_SPARSE_ARRAY_LL_FREE_NAME(C), page_count, sizeof(PAGED_SPARSE_ARRAY_PAGE_TYPEDEF_NAME(T)*)); \
+        result = THANDLE_MALLOC_FLEX(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(C))(PAGED_SPARSE_ARRAY_LL_DISPOSE_NAME(C), page_count, sizeof(PAGED_SPARSE_ARRAY_PAGE_TYPEDEF_NAME(T)*)); \
         if (result == NULL)                                                                                                                                               \
         {                                                                                                                                                                 \
             /* Codes_SRS_PAGED_SPARSE_ARRAY_88_007: [ If there are any errors, PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/                               \

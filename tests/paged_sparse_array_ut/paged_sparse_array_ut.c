@@ -192,10 +192,10 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_CREATE_with_struct_type_succeeds)
     PAGED_SPARSE_ARRAY_ASSIGN(B_TEST)(&psa, NULL);
 }
 
-/*PAGED_SPARSE_ARRAY_FREE(T)*/
+/*PAGED_SPARSE_ARRAY_DISPOSE(T)*/
 
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_009: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_FREE(T) shall return. ]*/
-TEST_FUNCTION(PAGED_SPARSE_ARRAY_FREE_with_null_returns)
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_009: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_DISPOSE(T) shall return. ]*/
+TEST_FUNCTION(PAGED_SPARSE_ARRAY_DISPOSE_with_null_returns)
 {
     //arrange
     PAGED_SPARSE_ARRAY(uint32_t) psa = NULL;
@@ -210,8 +210,8 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_FREE_with_null_returns)
     //clean
 }
 
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_010: [ PAGED_SPARSE_ARRAY_FREE(T) shall free all pages that are non-NULL. ]*/
-TEST_FUNCTION(PAGED_SPARSE_ARRAY_FREE_frees_all_allocated_pages)
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_010: [ PAGED_SPARSE_ARRAY_DISPOSE(T) shall free all pages that are non-NULL. ]*/
+TEST_FUNCTION(PAGED_SPARSE_ARRAY_DISPOSE_frees_all_allocated_pages)
 {
     //arrange
     PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16);
