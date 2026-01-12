@@ -26,6 +26,14 @@ Each element has an allocation state (allocated or not allocated). The user can:
 
 If multiple threads need to access the same `PAGED_SPARSE_ARRAY` instance, the caller must provide external synchronization (e.g., using a mutex or SRW lock) to protect against concurrent modifications.
 
+### Page Structure
+
+Each page is a single memory allocation containing:
+- An array of `page_size` elements of type `T` (the `items` array)
+- An allocation bitmap: a `uint8_t` array where each bit tracks whether the corresponding element is allocated (1) or not (0)
+
+The bitmap size is `(page_size + 7) / 8` bytes (one bit per element, rounded up to the nearest byte). The bitmap is stored immediately after the items array in the same allocation, accessed via pointer arithmetic from the end of the items array.
+
 ### Memory Layout
 
 Elements in the array are **not stored contiguously in memory**. Each page is allocated separately, so elements in different pages are in different memory locations. Even elements within the same page should not be accessed via pointer arithmetic.
@@ -182,7 +190,7 @@ T* PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint
 
 **SRS_PAGED_SPARSE_ARRAY_88_013: [** `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall compute the page index as `index / page_size`. **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_014: [** If the page is not allocated, `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall allocate memory for the page containing `page_size` elements and an allocation bitmap, and initialize all elements as not allocated. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_014: [** If the page is not allocated, `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall call `malloc_flex` to allocate memory for the page structure containing `page_size` elements of type `T` plus a `uint8_t` allocation bitmap of `(page_size + 7) / 8` bytes, and initialize all bitmap bits to 0 (not allocated). **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_015: [** If the element at `index` is already allocated, `PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall fail and return `NULL`. **]**
 
