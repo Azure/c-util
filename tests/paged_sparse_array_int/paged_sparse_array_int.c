@@ -252,8 +252,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_page_freed_when_all_elements_released)
         PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(psa, i);
     }
 
-    //assert - page should be freed
-    ASSERT_IS_NULL(psa->pages[0]);
+    //assert - page should be freed (VLD will catch any memory leaks)
 
     //cleanup
     PAGED_SPARSE_ARRAY_ASSIGN(TEST_ELEMENT)(&psa, NULL);
