@@ -94,7 +94,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_CREATE_with_uint32_t_type_succeeds)
 
     //assert
     ASSERT_IS_NOT_NULL(psa);
-    ASSERT_ARE_EQUAL(uint64_t, 100, psa->max_size);
+    ASSERT_ARE_EQUAL(uint32_t, 100, psa->max_size);
     ASSERT_ARE_EQUAL(uint32_t, 64, psa->page_size);
     ASSERT_ARE_EQUAL(uint32_t, 2, psa->page_count);
     for (uint32_t i = 0; i < psa->page_count; i++)
@@ -184,7 +184,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_CREATE_with_struct_type_succeeds)
 
     //assert
     ASSERT_IS_NOT_NULL(psa);
-    ASSERT_ARE_EQUAL(uint64_t, 10, psa->max_size);
+    ASSERT_ARE_EQUAL(uint32_t, 10, psa->max_size);
     ASSERT_ARE_EQUAL(uint32_t, 16, psa->page_size);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
@@ -791,7 +791,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_element_not_allocated)
 /* PAGED_SPARSE_ARRAY_CREATE */
 
 /*Tests_SRS_PAGED_SPARSE_ARRAY_88_008: [ PAGED_SPARSE_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
-/*Tests_SRS_PAGED_SPARSE_ARRAY_88_017: [ PAGED_SPARSE_ARRAY_ALLOCATE(T) shall succeed and return a pointer to the element at index. ]*/
+/*Tests_SRS_PAGED_SPARSE_ARRAY_88_017: [ PAGED_SPARSE_ARRAY_ALLOCATE(T) shall return a pointer to the element at index.]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_THANDLE_type_works)
 {
     //arrange
@@ -818,8 +818,8 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_THANDLE_type_works)
 }
 
 /*Tests_SRS_PAGED_SPARSE_ARRAY_88_008: [ PAGED_SPARSE_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
-/*Tests_SRS_PAGED_SPARSE_ARRAY_88_017: [ PAGED_SPARSE_ARRAY_ALLOCATE(T) shall succeed and return a pointer to the element at index. ]*/
-/*Tests_SRS_PAGED_SPARSE_ARRAY_88_034: [ PAGED_SPARSE_ARRAY_GET(T) shall succeed and return a pointer to the element at index. ]*/
+/*Tests_SRS_PAGED_SPARSE_ARRAY_88_017: [ PAGED_SPARSE_ARRAY_ALLOCATE(T) shall return a pointer to the element at index.]*/
+/*Tests_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return NULL.]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_struct_type_works)
 {
     //arrange
