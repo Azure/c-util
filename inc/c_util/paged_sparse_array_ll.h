@@ -339,23 +339,30 @@ T* PAGED_SPARSE_ARRAY_LL_ALLOCATE_OR_GET(C)(PAGED_SPARSE_ARRAY_LL(T) paged_spars
         /* Codes_SRS_PAGED_SPARSE_ARRAY_88_029: [ PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T) shall compute the page index as index / page_size. ]*/                             \
         uint32_t page_index = index / paged_sparse_array->page_size;                                                                                                       \
         PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(C))(paged_sparse_array);                                                 \
+        bool newly_allocated_page = false;                                                                                                                                 \
                                                                                                                                                                            \
         /* Codes_SRS_PAGED_SPARSE_ARRAY_88_030: [ If the page is not allocated, PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T) shall allocate memory for the page containing page_size elements and an allocation bitmap, and initialize all elements as not allocated. ]*/ \
-        if (                                                                                                                                                               \
-            (array->pages[page_index] == NULL) &&                                                                                                                          \
-            ((array->pages[page_index] = PAGED_SPARSE_ARRAY_LL_ALLOCATE_PAGE_INTERNAL_NAME(C)(paged_sparse_array->page_size)) == NULL)                                     \
-            )                                                                                                                                                              \
+        if (array->pages[page_index] == NULL)                                                                                                                              \
         {                                                                                                                                                                  \
-            /* Codes_SRS_PAGED_SPARSE_ARRAY_88_033: [ If there are any errors, PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T) shall fail and return NULL. ]*/                       \
-            LogError("failure allocating page at page_index=%" PRIu32 "", page_index);                                                                                     \
+            array->pages[page_index] = PAGED_SPARSE_ARRAY_LL_ALLOCATE_PAGE_INTERNAL_NAME(C)(paged_sparse_array->page_size);                                                \
+            if (array->pages[page_index] == NULL)                                                                                                                          \
+            {                                                                                                                                                              \
+                /* Codes_SRS_PAGED_SPARSE_ARRAY_88_033: [ If there are any errors, PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T) shall fail and return NULL. ]*/                   \
+                LogError("failure allocating page at page_index=%" PRIu32 "", page_index);                                                                                 \
+            }                                                                                                                                                              \
+            else                                                                                                                                                           \
+            {                                                                                                                                                              \
+                newly_allocated_page = true;                                                                                                                               \
+            }                                                                                                                                                              \
         }                                                                                                                                                                  \
-        else                                                                                                                                                               \
+                                                                                                                                                                           \
+        if (array->pages[page_index] != NULL)                                                                                                                              \
         {                                                                                                                                                                  \
             uint32_t index_in_page = index % paged_sparse_array->page_size;                                                                                                \
             /* Codes_SRS_PAGED_SPARSE_ARRAY_88_031: [ If the element at index is not allocated, PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T) shall mark it as allocated. ]*/      \
-            if (!PAGED_SPARSE_ARRAY_IS_ALLOCATED(PAGED_SPARSE_ARRAY_GET_BITMAP(array->pages[page_index], paged_sparse_array->page_size), index_in_page))                \
+            if (newly_allocated_page || !PAGED_SPARSE_ARRAY_IS_ALLOCATED(PAGED_SPARSE_ARRAY_GET_BITMAP(array->pages[page_index], paged_sparse_array->page_size), index_in_page)) \
             {                                                                                                                                                              \
-                PAGED_SPARSE_ARRAY_SET_ALLOCATED(PAGED_SPARSE_ARRAY_GET_BITMAP(array->pages[page_index], paged_sparse_array->page_size), index_in_page);                \
+                PAGED_SPARSE_ARRAY_SET_ALLOCATED(PAGED_SPARSE_ARRAY_GET_BITMAP(array->pages[page_index], paged_sparse_array->page_size), index_in_page);                   \
                 array->pages[page_index]->allocated_count++;                                                                                                               \
             }                                                                                                                                                              \
             /* Codes_SRS_PAGED_SPARSE_ARRAY_88_032: [ PAGED_SPARSE_ARRAY_ALLOCATE_OR_GET(T) shall return a pointer to the element at index. ]*/                            \
