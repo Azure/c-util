@@ -88,7 +88,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_all_elements_succeeds)
     {
         TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i);
         ASSERT_IS_NOT_NULL(elem);
-        elem->value = (int64_t)i;
+        elem->value = i;
     }
 
     //assert
@@ -96,7 +96,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_all_elements_succeeds)
     {
         TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, i);
         ASSERT_IS_NOT_NULL(elem);
-        ASSERT_ARE_EQUAL(int64_t, (int64_t)i, elem->value);
+        ASSERT_ARE_EQUAL(int64_t, i, elem->value);
     }
 
     //cleanup
@@ -114,7 +114,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_and_release_all_elements_succeeds)
     {
         TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i);
         ASSERT_IS_NOT_NULL(elem);
-        elem->value = (int64_t)i;
+        elem->value = i;
     }
 
     //act - release all elements
@@ -152,7 +152,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_sparse_allocation_succeeds)
     {
         TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i);
         ASSERT_IS_NOT_NULL(elem);
-        elem->value = (int64_t)i * 10;
+        elem->value = i * 10;
     }
 
     //act & assert - verify only allocated elements are accessible
@@ -162,7 +162,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_sparse_allocation_succeeds)
         if (i % 100 == 0)
         {
             ASSERT_IS_NOT_NULL(elem);
-            ASSERT_ARE_EQUAL(int64_t, (int64_t)i * 10, elem->value);
+            ASSERT_ARE_EQUAL(int64_t, i * 10, elem->value);
         }
         else
         {
@@ -299,7 +299,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_chaos)
             {
                 // Not allocated, should succeed
                 ASSERT_IS_NOT_NULL(elem);
-                elem->value = (int64_t)rand_index;
+                elem->value = rand_index;
                 element_state[rand_index] = true;
             }
             break;
@@ -328,13 +328,13 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_chaos)
             if (!element_state[rand_index])
             {
                 // Was not allocated, now it is
-                elem->value = (int64_t)rand_index;
+                elem->value = rand_index;
                 element_state[rand_index] = true;
             }
             else
             {
                 // Was already allocated, verify value
-                ASSERT_ARE_EQUAL(int64_t, (int64_t)rand_index, elem->value);
+                ASSERT_ARE_EQUAL(int64_t, rand_index, elem->value);
             }
             break;
         }
@@ -345,7 +345,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_chaos)
             {
                 // Was allocated, should succeed
                 ASSERT_IS_NOT_NULL(elem);
-                ASSERT_ARE_EQUAL(int64_t, (int64_t)rand_index, elem->value);
+                ASSERT_ARE_EQUAL(int64_t, rand_index, elem->value);
             }
             else
             {
