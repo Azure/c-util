@@ -19,6 +19,16 @@ Each element has an allocation state (allocated or not allocated). The user can:
 - Release an index (when all indexes in a page are released, the page is freed)
 - Get an index (fails if not allocated)
 
+### Custom Item Dispose Function
+
+`PAGED_SPARSE_ARRAY` supports an optional custom item dispose function that is called for each allocated element when the paged sparse array is disposed. This allows users to provide cleanup logic for element types that require it (e.g., releasing resources, freeing memory, decrementing reference counts).
+
+The custom item dispose function is passed to `PAGED_SPARSE_ARRAY_CREATE(T)` and is called:
+- By `PAGED_SPARSE_ARRAY_RELEASE(T)` when an element is released
+- By `PAGED_SPARSE_ARRAY_DISPOSE(T)` for all elements that are still allocated at the time of disposal
+
+If no custom dispose function is needed, `NULL` can be passed to `PAGED_SPARSE_ARRAY_CREATE(T)`.
+
 ### Threading Model
 
 `PAGED_SPARSE_ARRAY` is a `THANDLE`, which means that the ownership of the array (reference counting, assignment, move) is thread-safe. However, the operations on the array contents (ALLOCATE, RELEASE, GET) are **not thread-safe**.
@@ -82,6 +92,10 @@ Key observations:
 /*to be used as the type of handle that wraps T*/
 #define PAGED_SPARSE_ARRAY(T)
 
+/*custom item dispose function type*/
+#define PAGED_SPARSE_ARRAY_ITEM_DISPOSE_FUNC(T) MU_C2(PAGED_SPARSE_ARRAY_ITEM_DISPOSE_FUNC_, T)
+typedef void (*PAGED_SPARSE_ARRAY_ITEM_DISPOSE_FUNC(T))(T* item);
+
 /*to be used in a header file*/
 #define PAGED_SPARSE_ARRAY_TYPE_DECLARE(T)
 
@@ -101,7 +115,7 @@ MU_DEFINE_ENUM(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_R
 The macros expand to these useful APIs:
 
 ```c
-PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint32_t max_size, uint32_t page_size);
+PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint32_t max_size, uint32_t page_size, PAGED_SPARSE_ARRAY_ITEM_DISPOSE_FUNC(T) item_dispose_func);
 PAGED_SPARSE_ARRAY_ALLOCATE_RESULT PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index, T** allocated_ptr);
 void PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
 T* PAGED_SPARSE_ARRAY_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
@@ -148,10 +162,12 @@ PAGED_SPARSE_ARRAY_TYPE_DEFINE(int32_t);
 ### PAGED_SPARSE_ARRAY_CREATE(T)
 
 ```c
-PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint32_t max_size, uint32_t page_size);
+PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint32_t max_size, uint32_t page_size, PAGED_SPARSE_ARRAY_ITEM_DISPOSE_FUNC(T) item_dispose_func);
 ```
 
 `PAGED_SPARSE_ARRAY_CREATE(T)` creates a new paged sparse array with the specified maximum size and page size.
+
+`item_dispose_func` is an optional custom dispose function that will be called for each allocated element when the paged sparse array is disposed. It may be `NULL` if no cleanup is needed.
 
 **SRS_PAGED_SPARSE_ARRAY_88_001: [** If `max_size` is zero, `PAGED_SPARSE_ARRAY_CREATE(T)` shall fail and return `NULL`. **]**
 
@@ -165,7 +181,7 @@ PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint32_t max_size, uint32_t p
 
 **SRS_PAGED_SPARSE_ARRAY_88_005: [** `PAGED_SPARSE_ARRAY_CREATE(T)` shall set all page pointers to `NULL`. **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_006: [** `PAGED_SPARSE_ARRAY_CREATE(T)` shall store `max_size` and `page_size` in the structure. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_006: [** `PAGED_SPARSE_ARRAY_CREATE(T)` shall store `max_size`, `page_size`, and `item_dispose_func` in the structure. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_007: [** If there are any errors, `PAGED_SPARSE_ARRAY_CREATE(T)` shall fail and return `NULL`. **]**
 
@@ -180,6 +196,8 @@ static void PAGED_SPARSE_ARRAY_DISPOSE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_arr
 `PAGED_SPARSE_ARRAY_DISPOSE(T)` is the internal dispose function called by `THANDLE` when all references to the paged sparse array are released.
 
 **SRS_PAGED_SPARSE_ARRAY_88_009: [** If `paged_sparse_array` is `NULL`, `PAGED_SPARSE_ARRAY_DISPOSE(T)` shall return. **]**
+
+**SRS_PAGED_SPARSE_ARRAY_88_043: [** If `item_dispose_func` is not `NULL`, `PAGED_SPARSE_ARRAY_DISPOSE(T)` shall call `item_dispose_func` for each element that is still allocated. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_010: [** `PAGED_SPARSE_ARRAY_DISPOSE(T)` shall free all pages that are non-`NULL`. **]**
 
@@ -215,7 +233,10 @@ PAGED_SPARSE_ARRAY_ALLOCATE_RESULT PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_A
 void PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
 ```
 
+
 `PAGED_SPARSE_ARRAY_RELEASE(T)` releases the element at the specified index.
+
+> **Note:** If a custom `item_dispose_func` was provided to `PAGED_SPARSE_ARRAY_CREATE(T)`, it will be called for the element being released before marking it as unallocated. This allows automatic cleanup of elements during individual releases as well as during final disposal of the array.
 
 **SRS_PAGED_SPARSE_ARRAY_88_019: [** If `paged_sparse_array` is `NULL`, `PAGED_SPARSE_ARRAY_RELEASE(T)` shall return. **]**
 
@@ -226,6 +247,8 @@ void PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uin
 **SRS_PAGED_SPARSE_ARRAY_88_022: [** If the page is not allocated, `PAGED_SPARSE_ARRAY_RELEASE(T)` shall return. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_023: [** If the element at `index` is not allocated, `PAGED_SPARSE_ARRAY_RELEASE(T)` shall return. **]**
+
+**SRS_PAGED_SPARSE_ARRAY_88_044: [** If `item_dispose_func` is not `NULL`, `PAGED_SPARSE_ARRAY_RELEASE(T)` shall call `item_dispose_func` for the element being released. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_024: [** `PAGED_SPARSE_ARRAY_RELEASE(T)` shall mark the element at `index` as not allocated. **]**
 

@@ -36,12 +36,18 @@ MU_DEFINE_ENUM(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_R
 
 #define PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T) MU_C2(PAGED_SPARSE_ARRAY_STRUCT_, T)
 
+/*custom item dispose function type*/
+#define PAGED_SPARSE_ARRAY_LL_ITEM_DISPOSE_FUNC(T) MU_C2(PAGED_SPARSE_ARRAY_LL_ITEM_DISPOSE_FUNC_, T)
+#define PAGED_SPARSE_ARRAY_DEFINE_ITEM_DISPOSE_FUNC_TYPE(T) typedef void (*PAGED_SPARSE_ARRAY_LL_ITEM_DISPOSE_FUNC(T))(T* item)
+
 /*PAGE_STRUCT holds a single page with elements and allocation bitmap*/
 #define PAGED_SPARSE_ARRAY_PAGE_STRUCT_TYPE_NAME_TAG(T) MU_C2(PAGED_SPARSE_ARRAY_PAGE_TYPEDEF_NAME(T), _TAG)
 #define PAGED_SPARSE_ARRAY_PAGE_TYPEDEF_NAME(T) MU_C2(PAGED_SPARSE_ARRAY_PAGE_STRUCT_, T)
 
 /*PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T) introduces the base type that holds the paged sparse array*/
 #define PAGED_SPARSE_ARRAY_DEFINE_STRUCT_TYPE(T)                                                                        \
+/*define the item dispose function type*/                                                                              \
+PAGED_SPARSE_ARRAY_DEFINE_ITEM_DISPOSE_FUNC_TYPE(T);                                                                    \
 /*define the page structure first - bitmap is embedded after items[] in the same allocation*/                          \
 typedef struct PAGED_SPARSE_ARRAY_PAGE_STRUCT_TYPE_NAME_TAG(T)                                                          \
 {                                                                                                                       \
@@ -55,6 +61,7 @@ struct PAGED_SPARSE_ARRAY_STRUCT_TYPE_NAME_TAG(T)                               
     uint32_t max_size;                                                                                                  \
     uint32_t page_size;                                                                                                 \
     uint32_t page_count;                                                                                                \
+    PAGED_SPARSE_ARRAY_LL_ITEM_DISPOSE_FUNC(T) item_dispose_func;                                                       \
     PAGED_SPARSE_ARRAY_PAGE_TYPEDEF_NAME(T)* pages[];                                                                   \
 };                                                                                                                      \
 
@@ -90,7 +97,7 @@ struct PAGED_SPARSE_ARRAY_STRUCT_TYPE_NAME_TAG(T)                               
 
 /*introduces a function declaration for paged_sparse_array_create*/
 #define PAGED_SPARSE_ARRAY_LL_CREATE_DECLARE(C, T) \
-    MOCKABLE_FUNCTION(, PAGED_SPARSE_ARRAY_LL(T), PAGED_SPARSE_ARRAY_LL_CREATE(C), uint32_t, max_size, uint32_t, page_size);
+    MOCKABLE_FUNCTION(, PAGED_SPARSE_ARRAY_LL(T), PAGED_SPARSE_ARRAY_LL_CREATE(C), uint32_t, max_size, uint32_t, page_size, PAGED_SPARSE_ARRAY_LL_ITEM_DISPOSE_FUNC(T), item_dispose_func);
 
 /*introduces a function declaration for paged_sparse_array_allocate*/
 #define PAGED_SPARSE_ARRAY_LL_ALLOCATE_DECLARE(C, T) \
@@ -139,6 +146,18 @@ static void PAGED_SPARSE_ARRAY_LL_DISPOSE_NAME(C)(PAGED_SPARSE_ARRAY_TYPEDEF_NAM
         {                                                                                                                      \
             if (paged_sparse_array->pages[i] != NULL)                                                                          \
             {                                                                                                                  \
+                /* Codes_SRS_PAGED_SPARSE_ARRAY_88_043: [ If item_dispose_func is not NULL, PAGED_SPARSE_ARRAY_DISPOSE(T) shall call item_dispose_func for each element that is still allocated. ]*/ \
+                if (paged_sparse_array->item_dispose_func != NULL)                                                             \
+                {                                                                                                              \
+                    uint8_t* bitmap = PAGED_SPARSE_ARRAY_GET_BITMAP(paged_sparse_array->pages[i], paged_sparse_array->page_size); \
+                    for (uint32_t j = 0; j < paged_sparse_array->page_size; j++)                                               \
+                    {                                                                                                          \
+                        if (PAGED_SPARSE_ARRAY_IS_ALLOCATED(bitmap, j))                                                        \
+                        {                                                                                                      \
+                            paged_sparse_array->item_dispose_func(&paged_sparse_array->pages[i]->items[j]);                    \
+                        }                                                                                                      \
+                    }                                                                                                          \
+                }                                                                                                              \
                 /* bitmap is embedded in same allocation as page, so only one free needed */                                  \
                 free((void*)paged_sparse_array->pages[i]);                                                                     \
             }                                                                                                                  \
@@ -147,7 +166,7 @@ static void PAGED_SPARSE_ARRAY_LL_DISPOSE_NAME(C)(PAGED_SPARSE_ARRAY_TYPEDEF_NAM
 }
 
 #define PAGED_SPARSE_ARRAY_LL_CREATE_DEFINE(C, T)                                                                                                                         \
-PAGED_SPARSE_ARRAY_LL(T) PAGED_SPARSE_ARRAY_LL_CREATE(C)(uint32_t max_size, uint32_t page_size)                                                                           \
+PAGED_SPARSE_ARRAY_LL(T) PAGED_SPARSE_ARRAY_LL_CREATE(C)(uint32_t max_size, uint32_t page_size, PAGED_SPARSE_ARRAY_LL_ITEM_DISPOSE_FUNC(T) item_dispose_func)             \
 {                                                                                                                                                                         \
     PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* result;                                                                                                                           \
     if (                                                                                                                                                                  \
@@ -174,10 +193,11 @@ PAGED_SPARSE_ARRAY_LL(T) PAGED_SPARSE_ARRAY_LL_CREATE(C)(uint32_t max_size, uint
         }                                                                                                                                                                 \
         else                                                                                                                                                              \
         {                                                                                                                                                                 \
-            /* Codes_SRS_PAGED_SPARSE_ARRAY_88_006: [ PAGED_SPARSE_ARRAY_CREATE(T) shall store max_size and page_size in the structure. ]*/                               \
+            /* Codes_SRS_PAGED_SPARSE_ARRAY_88_006: [ PAGED_SPARSE_ARRAY_CREATE(T) shall store max_size, page_size, and item_dispose_func in the structure. ]*/           \
             result->max_size = max_size;                                                                                                                                  \
             result->page_size = page_size;                                                                                                                                \
             result->page_count = page_count;                                                                                                                              \
+            result->item_dispose_func = item_dispose_func;                                                                                                                \
             /* Codes_SRS_PAGED_SPARSE_ARRAY_88_005: [ PAGED_SPARSE_ARRAY_CREATE(T) shall set all page pointers to NULL. ]*/                                               \
             for (uint32_t i = 0; i < page_count; i++)                                                                                                                     \
             {                                                                                                                                                             \
@@ -310,6 +330,11 @@ void PAGED_SPARSE_ARRAY_LL_RELEASE(C)(PAGED_SPARSE_ARRAY_LL(T) paged_sparse_arra
             }                                                                                                                                                               \
             else                                                                                                                                                            \
             {                                                                                                                                                               \
+                /* Codes_SRS_PAGED_SPARSE_ARRAY_88_044: [ If item_dispose_func is not NULL, PAGED_SPARSE_ARRAY_RELEASE(T) shall call item_dispose_func for the element being released. ]*/ \
+                if (array->item_dispose_func != NULL)                                                                                                                       \
+                {                                                                                                                                                           \
+                    array->item_dispose_func(&array->pages[page_index]->items[index_in_page]);                                                                              \
+                }                                                                                                                                                           \
                 /* Codes_SRS_PAGED_SPARSE_ARRAY_88_024: [ PAGED_SPARSE_ARRAY_RELEASE(T) shall mark the element at index as not allocated. ]*/                               \
                 PAGED_SPARSE_ARRAY_CLEAR_ALLOCATED(PAGED_SPARSE_ARRAY_GET_BITMAP(array->pages[page_index], paged_sparse_array->page_size), index_in_page);               \
                 array->pages[page_index]->allocated_count--;                                                                                                                \
