@@ -4,10 +4,7 @@
 #ifndef PAGED_SPARSE_ARRAY_H
 #define PAGED_SPARSE_ARRAY_H
 
-#include "c_pal/thandle_ll.h"
 #include "c_util/paged_sparse_array_ll.h"
-
-#include "umock_c/umock_c_prod.h"
 
 /*PAGED_SPARSE_ARRAY is-a THANDLE.*/
 /*given a type "T" PAGED_SPARSE_ARRAY(T) expands to the name of the type. */

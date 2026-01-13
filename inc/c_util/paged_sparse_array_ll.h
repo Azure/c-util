@@ -12,13 +12,12 @@
 #include <stdlib.h>
 #endif // __cplusplus
 
-#include "c_pal/gballoc_hl.h"
-#include "c_pal/gballoc_hl_redirect.h"
-
 #include "macro_utils/macro_utils.h"
 
 #include "c_logging/logger.h"
 
+#include "c_pal/gballoc_hl.h"
+#include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/thandle_ll.h"
 
 #include "umock_c/umock_c_prod.h"
