@@ -30,6 +30,32 @@ THANDLE_TYPE_DEFINE(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(TEST_ELEMENT));
 PAGED_SPARSE_ARRAY_TYPE_DECLARE(TEST_ELEMENT);
 PAGED_SPARSE_ARRAY_TYPE_DEFINE(TEST_ELEMENT);
 
+/*
+ * TEST_ELEMENT_WITH_MALLOC - element type with a char* that requires malloc/free
+ * This tests the custom item dispose functionality
+ */
+typedef struct TEST_ELEMENT_WITH_MALLOC_TAG
+{
+    int64_t id;
+    char* data;  /* dynamically allocated string */
+} TEST_ELEMENT_WITH_MALLOC;
+
+static void test_element_with_malloc_dispose(TEST_ELEMENT_WITH_MALLOC* item)
+{
+    if (item != NULL && item->data != NULL)
+    {
+        free(item->data);
+        item->data = NULL;
+    }
+}
+
+PAGED_SPARSE_ARRAY_DEFINE_STRUCT_TYPE(TEST_ELEMENT_WITH_MALLOC);
+THANDLE_TYPE_DECLARE(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(TEST_ELEMENT_WITH_MALLOC));
+THANDLE_TYPE_DEFINE(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(TEST_ELEMENT_WITH_MALLOC));
+
+PAGED_SPARSE_ARRAY_TYPE_DECLARE(TEST_ELEMENT_WITH_MALLOC);
+PAGED_SPARSE_ARRAY_TYPE_DEFINE(TEST_ELEMENT_WITH_MALLOC);
+
 #define CHAOS_TEST_ACTION_VALUES \
     CHAOS_TEST_ACTION_ALLOCATE, \
     CHAOS_TEST_ACTION_RELEASE, \
@@ -69,7 +95,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_CREATE_succeeds)
     //arrange
 
     //act
-    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE);
+    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE, NULL);
 
     //assert
     ASSERT_IS_NOT_NULL(psa);
@@ -81,7 +107,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_CREATE_succeeds)
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_all_elements_succeeds)
 {
     //arrange
-    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE);
+    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE, NULL);
     ASSERT_IS_NOT_NULL(psa);
 
     //act
@@ -109,7 +135,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_all_elements_succeeds)
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_and_release_all_elements_succeeds)
 {
     //arrange
-    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE);
+    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE, NULL);
     ASSERT_IS_NOT_NULL(psa);
 
     // Allocate all elements
@@ -144,7 +170,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_and_release_all_elements_succeeds)
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_sparse_allocation_succeeds)
 {
     //arrange
-    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE);
+    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE, NULL);
     ASSERT_IS_NOT_NULL(psa);
 
     // Allocate only every 100th element (sparse)
@@ -181,7 +207,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_sparse_allocation_succeeds)
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_already_allocated_fails)
 {
     //arrange
-    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE);
+    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE, NULL);
     ASSERT_IS_NOT_NULL(psa);
     TEST_ELEMENT* elem1;
     PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result1 = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, 42, &elem1);
@@ -202,7 +228,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_already_allocated_fails)
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_release_and_reallocate_succeeds)
 {
     //arrange
-    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE);
+    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE, NULL);
     ASSERT_IS_NOT_NULL(psa);
     TEST_ELEMENT* elem1;
     PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result1 = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, 42, &elem1);
@@ -228,7 +254,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_release_and_reallocate_succeeds)
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_page_freed_when_all_elements_released)
 {
     //arrange
-    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE);
+    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE, NULL);
     ASSERT_IS_NOT_NULL(psa);
     
     // Allocate all elements in first page
@@ -257,7 +283,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_page_freed_when_all_elements_released)
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_chaos)
 {
     //arrange
-    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE);
+    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE, NULL);
     ASSERT_IS_NOT_NULL(psa);
 
     //act
@@ -328,6 +354,142 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_chaos)
 
     //cleanup
     PAGED_SPARSE_ARRAY_ASSIGN(TEST_ELEMENT)(&psa, NULL);
+}
+
+/*
+ * Tests for TEST_ELEMENT_WITH_MALLOC - verifies custom dispose function is called properly
+ */
+
+#define MALLOC_MAX_SIZE 100
+#define MALLOC_PAGE_SIZE 16
+
+TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_allocate_and_dispose_succeeds)
+{
+    //arrange
+    PAGED_SPARSE_ARRAY(TEST_ELEMENT_WITH_MALLOC) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT_WITH_MALLOC)(MALLOC_MAX_SIZE, MALLOC_PAGE_SIZE, test_element_with_malloc_dispose);
+    ASSERT_IS_NOT_NULL(psa);
+
+    //act - allocate elements with malloc'd data
+    for (uint32_t i = 0; i < 10; i++)
+    {
+        TEST_ELEMENT_WITH_MALLOC* elem;
+        PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT_WITH_MALLOC)(psa, i, &elem);
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, alloc_result);
+        ASSERT_IS_NOT_NULL(elem);
+        
+        elem->id = i;
+        // Allocate a string for each element
+        elem->data = malloc(32);
+        ASSERT_IS_NOT_NULL(elem->data);
+        (void)sprintf(elem->data, "element_%u", i);
+    }
+
+    //assert - verify elements are accessible
+    for (uint32_t i = 0; i < 10; i++)
+    {
+        TEST_ELEMENT_WITH_MALLOC* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT_WITH_MALLOC)(psa, i);
+        ASSERT_IS_NOT_NULL(elem);
+        ASSERT_ARE_EQUAL(int64_t, i, elem->id);
+        ASSERT_IS_NOT_NULL(elem->data);
+    }
+
+    //cleanup - the dispose function should free all the malloc'd data
+    // VLD will catch any memory leaks if dispose is not called properly
+    PAGED_SPARSE_ARRAY_ASSIGN(TEST_ELEMENT_WITH_MALLOC)(&psa, NULL);
+}
+
+TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_release_calls_dispose)
+{
+    //arrange
+    PAGED_SPARSE_ARRAY(TEST_ELEMENT_WITH_MALLOC) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT_WITH_MALLOC)(MALLOC_MAX_SIZE, MALLOC_PAGE_SIZE, test_element_with_malloc_dispose);
+    ASSERT_IS_NOT_NULL(psa);
+
+    TEST_ELEMENT_WITH_MALLOC* elem;
+    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT_WITH_MALLOC)(psa, 5, &elem);
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, alloc_result);
+    ASSERT_IS_NOT_NULL(elem);
+    
+    elem->id = 5;
+    elem->data = malloc(64);
+    ASSERT_IS_NOT_NULL(elem->data);
+    (void)sprintf(elem->data, "test_data_for_element_5");
+
+    //act - release the element, which should call dispose and free the malloc'd data
+    PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT_WITH_MALLOC)(psa, 5);
+
+    //assert - element should no longer be accessible
+    TEST_ELEMENT_WITH_MALLOC* elem_after = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT_WITH_MALLOC)(psa, 5);
+    ASSERT_IS_NULL(elem_after);
+
+    //cleanup - VLD will catch any memory leaks
+    PAGED_SPARSE_ARRAY_ASSIGN(TEST_ELEMENT_WITH_MALLOC)(&psa, NULL);
+}
+
+TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_chaos)
+{
+    //arrange
+    PAGED_SPARSE_ARRAY(TEST_ELEMENT_WITH_MALLOC) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT_WITH_MALLOC)(MALLOC_MAX_SIZE, MALLOC_PAGE_SIZE, test_element_with_malloc_dispose);
+    ASSERT_IS_NOT_NULL(psa);
+
+    bool element_state[MALLOC_MAX_SIZE] = { false };
+
+    //act - perform random operations
+    for (uint32_t iter = 0; iter < 1000; iter++)
+    {
+        CHAOS_TEST_ACTION action = (CHAOS_TEST_ACTION)((rand() * (MU_ENUM_VALUE_COUNT(CHAOS_TEST_ACTION_VALUES) - 1) / RAND_MAX) + 1);
+        uint32_t rand_index = rand() % MALLOC_MAX_SIZE;
+
+        switch (action)
+        {
+        default:
+            break;
+        case CHAOS_TEST_ACTION_ALLOCATE:
+        {
+            TEST_ELEMENT_WITH_MALLOC* elem;
+            PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT_WITH_MALLOC)(psa, rand_index, &elem);
+            if (element_state[rand_index])
+            {
+                ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED, alloc_result);
+            }
+            else
+            {
+                ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, alloc_result);
+                ASSERT_IS_NOT_NULL(elem);
+                elem->id = rand_index;
+                elem->data = malloc(16);
+                ASSERT_IS_NOT_NULL(elem->data);
+                (void)sprintf(elem->data, "e%u", rand_index);
+                element_state[rand_index] = true;
+            }
+            break;
+        }
+        case CHAOS_TEST_ACTION_RELEASE:
+        {
+            PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT_WITH_MALLOC)(psa, rand_index);
+            element_state[rand_index] = false;
+            break;
+        }
+        case CHAOS_TEST_ACTION_GET:
+        {
+            TEST_ELEMENT_WITH_MALLOC* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT_WITH_MALLOC)(psa, rand_index);
+            if (element_state[rand_index])
+            {
+                ASSERT_IS_NOT_NULL(elem);
+                ASSERT_ARE_EQUAL(int64_t, rand_index, elem->id);
+            }
+            else
+            {
+                ASSERT_IS_NULL(elem);
+            }
+            break;
+        }
+        }
+    }
+
+    //assert - VLD will catch any memory leaks from unreleased elements
+
+    //cleanup - dispose function should free all remaining malloc'd data
+    PAGED_SPARSE_ARRAY_ASSIGN(TEST_ELEMENT_WITH_MALLOC)(&psa, NULL);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
