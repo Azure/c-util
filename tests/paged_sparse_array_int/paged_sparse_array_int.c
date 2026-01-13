@@ -42,10 +42,9 @@ typedef struct TEST_ELEMENT_WITH_MALLOC_TAG
 
 static void test_element_with_malloc_dispose(TEST_ELEMENT_WITH_MALLOC* item)
 {
-    if (item != NULL && item->data != NULL)
+    if (item->data != NULL)
     {
         free(item->data);
-        item->data = NULL;
     }
 }
 
@@ -381,7 +380,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_allocate_and_dispose_succee
         // Allocate a string for each element
         elem->data = malloc(32);
         ASSERT_IS_NOT_NULL(elem->data);
-        (void)sprintf(elem->data, "element_%u", i);
+        (void)sprintf(elem->data, "element_%" PRIu32 "", i);
     }
 
     //assert - verify elements are accessible
@@ -391,6 +390,13 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_allocate_and_dispose_succee
         ASSERT_IS_NOT_NULL(elem);
         ASSERT_ARE_EQUAL(int64_t, i, elem->id);
         ASSERT_IS_NOT_NULL(elem->data);
+    }
+
+    // verify unallocated elements are not accessible
+    for (uint32_t i = 10; i < MALLOC_MAX_SIZE; i++)
+    {
+        TEST_ELEMENT_WITH_MALLOC* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT_WITH_MALLOC)(psa, i);
+        ASSERT_IS_NULL(elem);
     }
 
     //cleanup - the dispose function should free all the malloc'd data
@@ -434,7 +440,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_chaos)
     bool element_state[MALLOC_MAX_SIZE] = { false };
 
     //act - perform random operations
-    for (uint32_t iter = 0; iter < 1000; iter++)
+    for (uint32_t iter = 0; iter < 10000; iter++)
     {
         CHAOS_TEST_ACTION action = (CHAOS_TEST_ACTION)((rand() * (MU_ENUM_VALUE_COUNT(CHAOS_TEST_ACTION_VALUES) - 1) / RAND_MAX) + 1);
         uint32_t rand_index = rand() % MALLOC_MAX_SIZE;
@@ -458,7 +464,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_chaos)
                 elem->id = rand_index;
                 elem->data = malloc(16);
                 ASSERT_IS_NOT_NULL(elem->data);
-                (void)sprintf(elem->data, "e%u", rand_index);
+                (void)sprintf(elem->data, "e%" PRIu32 "", rand_index);
                 element_state[rand_index] = true;
             }
             break;
