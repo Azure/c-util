@@ -8,6 +8,7 @@ set(c_util_reals_c_files
     real_channel.c
     real_constbuffer.c
     real_constbuffer_array.c
+    real_constbuffer_array_sync_wrapper.c
     real_constbuffer_array_tarray.c
     real_constbuffer_array_batcher_nv.c
     real_constbuffer_thandle.c
@@ -41,6 +42,8 @@ set(c_util_reals_h_files
     real_constbuffer_renames.h
     real_constbuffer_array.h
     real_constbuffer_array_renames.h
+    real_constbuffer_array_sync_wrapper.h
+    real_constbuffer_array_sync_wrapper_renames.h
     real_constbuffer_array_tarray.h
     real_constbuffer_array_tarray_renames.h
     real_constbuffer_array_batcher_nv.h
