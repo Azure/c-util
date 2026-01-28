@@ -172,7 +172,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_sparse_allocation_succeeds)
     PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(MAX_SIZE, PAGE_SIZE, NULL);
     ASSERT_IS_NOT_NULL(psa);
 
-    // Allocate only every 100th element (sparse)
+    //act
     for (uint32_t i = 0; i < MAX_SIZE; i += 100)
     {
         TEST_ELEMENT* elem;
@@ -182,7 +182,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_sparse_allocation_succeeds)
         elem->value = i * 10;
     }
 
-    //act & assert - verify only allocated elements are accessible
+    //assert - verify only allocated elements are accessible
     for (uint32_t i = 0; i < MAX_SIZE; i++)
     {
         TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, i);

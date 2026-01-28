@@ -125,6 +125,8 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 /*Tests_SRS_CONSTBUFFER_ARRAY_SPLITTER_42_001: [ If buffers is NULL then constbuffer_array_splitter_split shall fail and return NULL. ]*/
 TEST_FUNCTION(constbuffer_array_splitter_split_with_null_buffers_fails)
 {
+    /// arrange
+
     /// act
     CONSTBUFFER_ARRAY_HANDLE result = constbuffer_array_splitter_split(NULL, 42);
 

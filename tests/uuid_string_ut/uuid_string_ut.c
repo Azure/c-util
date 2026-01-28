@@ -57,7 +57,7 @@ TEST_FUNCTION(uuid_from_string_with_uuid_string_NULL_returns_UUID_FROM_STRING_RE
     ///act
     result = uuid_from_string(NULL, &out);
 
-    ///arrange
+    ///assert
     ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
@@ -72,7 +72,7 @@ TEST_FUNCTION(uuid_from_string_with_uuid_NULL_returns_UUID_FROM_STRING_RESULT_IN
     ///act
     result = uuid_from_string(uuid_string, NULL);
 
-    ///arrange
+    ///assert
     ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_ARG, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
@@ -109,7 +109,8 @@ TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
                     umock_c_reset_all_calls();
                     source[pos] = replace;
 
-                    ///act + assert all in one!
+                    ///act
+                    ///assert
                     ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, &destination));
                     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
                 }
@@ -127,7 +128,8 @@ TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
 
                     source[pos] = replace;
 
-                    ///act + assert all in one!
+                    ///act
+                    ///assert
                     ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, &destination));
                     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
                 }
@@ -142,7 +144,8 @@ TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
 
                 source[pos] = replace;
 
-                ///act + assert all in one!
+                ///act
+                    ///assert
                 ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, &destination));
                 ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
             }

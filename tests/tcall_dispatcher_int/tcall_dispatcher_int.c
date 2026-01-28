@@ -258,8 +258,7 @@ static int tcall_dispatcher_chaos_thread_func(void* arg)
 TEST_FUNCTION(TCALL_DISPATCHER_chaos_knight_test)
 {
     // This test starts N_THREADS threads
-    // All threads keep executing random actions
-    // Actions can be:
+    // All threads keep executing random actions:
     // - register target
     // - unregister target
     // - call
@@ -286,7 +285,6 @@ TEST_FUNCTION(TCALL_DISPATCHER_chaos_knight_test)
     (void)interlocked_exchange(&terminate_test, 0);
 
     // act
-    // assert
     THREAD_HANDLE thread_handles[N_THREADS];
     for (uint32_t i = 0; i < N_THREADS; i++)
     {
@@ -298,6 +296,7 @@ TEST_FUNCTION(TCALL_DISPATCHER_chaos_knight_test)
     // terminate test
     (void)interlocked_exchange(&terminate_test, 1);
 
+    // assert
     for (uint32_t i = 0; i < N_THREADS; i++)
     {
         int dont_care;

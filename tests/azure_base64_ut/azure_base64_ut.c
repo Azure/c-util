@@ -1807,6 +1807,8 @@ TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_5)
 
     ///act
     result = Azure_Base64_Decode("123456");
+
+    ///assert
     ASSERT_IS_NULL(result);
 
 }

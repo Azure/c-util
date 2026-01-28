@@ -981,6 +981,7 @@ TEST_FUNCTION(test_close_does_not_get_stuck)
 
         ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_SetAndWakeAll(&test_signal, 1));
 
+        //assert
         for (size_t i = 0; i < CHANNEL_CLOSE_TEST_THREAD_COUNT; i++)
         {
             int pull_result;

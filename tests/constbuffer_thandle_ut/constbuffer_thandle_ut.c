@@ -791,6 +791,8 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_keeps_original_alive)
 
     ///act
     THANDLE(CONSTBUFFER) result = CONSTBUFFER_THANDLE_CreateFromOffsetAndSize(source, 1, 2);
+
+    ///assert
     ASSERT_IS_NOT_NULL(result);
     
     // Release the original source handle

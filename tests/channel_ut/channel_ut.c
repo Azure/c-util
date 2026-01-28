@@ -398,6 +398,7 @@ TEST_FUNCTION(channel_create_succeeds)
 /*Tests_SRS_CHANNEL_43_002: [ If there are any failures, channel_create shall fail and return NULL. ]*/
 TEST_FUNCTION(channel_create_fails_when_underlying_functions_fail)
 {
+    // arrange
     setup_channel_create_expectations();
     umock_c_negative_tests_snapshot();
 
