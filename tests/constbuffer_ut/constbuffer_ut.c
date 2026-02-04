@@ -705,6 +705,8 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         ///act
         CONSTBUFFER_HANDLE result;
         result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source) + 1, 0);
+
+        ///assert
         ASSERT_IS_NULL(result);
         result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 0, sizeof(source) + 1);
         ASSERT_IS_NULL(result);
@@ -1426,6 +1428,8 @@ TEST_FUNCTION(CONSTBUFFER_CreateFromOffsetAndSizeWithCopy_with_offset_exceeding_
     ///act
     CONSTBUFFER_HANDLE result;
     result = CONSTBUFFER_CreateFromOffsetAndSizeWithCopy(origin, sizeof(source) + 1, 0);
+
+    ///assert
     ASSERT_IS_NULL(result);
     result = CONSTBUFFER_CreateFromOffsetAndSizeWithCopy(origin, 0, sizeof(source) + 1);
     ASSERT_IS_NULL(result);

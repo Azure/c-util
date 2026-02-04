@@ -147,7 +147,7 @@ TEST_FUNCTION(watchdog_threadpool_init_succeeds)
     // act
     int result = watchdog_threadpool_init();
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 0, result);
 }
@@ -163,7 +163,7 @@ TEST_FUNCTION(watchdog_threadpool_init_twice_fails)
     // act
     int result = watchdog_threadpool_init();
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
@@ -177,7 +177,7 @@ TEST_FUNCTION(watchdog_threadpool_init_fails_when_open_thread_pool_fails_async)
     // act
     int result = watchdog_threadpool_init();
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
@@ -219,7 +219,7 @@ TEST_FUNCTION(watchdog_threadpool_deinit_without_init_returns)
     // act
     watchdog_threadpool_deinit();
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
@@ -234,7 +234,7 @@ TEST_FUNCTION(watchdog_threadpool_deinit_cleans_up)
     // act
     watchdog_threadpool_deinit();
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
@@ -251,7 +251,7 @@ TEST_FUNCTION(watchdog_threadpool_init_works_after_deinit)
     // act
     int result = watchdog_threadpool_init();
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 0, result);
 }
@@ -273,7 +273,7 @@ TEST_FUNCTION(watchdog_threadpool_get_returns_threadpool)
     // act
     THANDLE(THREADPOOL) result = watchdog_threadpool_get();
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(uint8_t, g.test_threadpool->dummy, result->dummy);
 
@@ -290,7 +290,7 @@ TEST_FUNCTION(watchdog_threadpool_get_without_init_returns_NULL)
     // act
     THANDLE(THREADPOOL) result = watchdog_threadpool_get();
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(result);
 }

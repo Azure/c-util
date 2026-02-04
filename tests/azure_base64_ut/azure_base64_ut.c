@@ -1807,8 +1807,9 @@ TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_5)
 
     ///act
     result = Azure_Base64_Decode("123456");
-    ASSERT_IS_NULL(result);
 
+    ///assert
+    ASSERT_IS_NULL(result);
 }
 
 /*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Azure_Base64_Decode shall return NULL.]*/

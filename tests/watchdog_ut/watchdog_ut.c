@@ -126,7 +126,7 @@ TEST_FUNCTION(watchdog_start_NULL_threadpool_fails)
     // act
     WATCHDOG_HANDLE result = watchdog_start(NULL, 42, temp_message, test_callback, test_callback_context);
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(result);
 
@@ -144,7 +144,7 @@ TEST_FUNCTION(watchdog_start_NULL_callback_fails)
     // act
     WATCHDOG_HANDLE result = watchdog_start(test_threadpool, 42, temp_message, NULL, test_callback_context);
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(result);
 
@@ -172,7 +172,7 @@ TEST_FUNCTION(watchdog_start_succeeds)
     // act
     WATCHDOG_HANDLE result = watchdog_start(test_threadpool, 42, temp_message, test_callback, test_callback_context);
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NOT_NULL(result);
 
@@ -232,7 +232,7 @@ TEST_FUNCTION(watchdog_expired_callback_with_NULL_context_terminates_process)
     // act
     callback(NULL);
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
@@ -257,7 +257,7 @@ TEST_FUNCTION(watchdog_expired_callback_works)
     // act
     callback(context);
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
@@ -276,7 +276,7 @@ TEST_FUNCTION(watchdog_reset_with_NULL_watchdog_returns)
     // act
     watchdog_reset(NULL);
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
@@ -304,7 +304,7 @@ TEST_FUNCTION(watchdog_reset_cancels_and_restarts_the_timer)
     // act
     watchdog_reset(result);
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
@@ -323,7 +323,7 @@ TEST_FUNCTION(watchdog_stop_with_NULL_watchdog_returns)
     // act
     watchdog_stop(NULL);
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
@@ -349,7 +349,7 @@ TEST_FUNCTION(watchdog_stop_stops_the_timer)
     // act
     watchdog_stop(result);
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
@@ -380,7 +380,7 @@ TEST_FUNCTION(watchdog_stop_stops_the_timer_after_it_fired)
     // act
     watchdog_stop(result);
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
@@ -418,7 +418,7 @@ TEST_FUNCTION(watchdog_stop_prevents_callback_from_calling_if_timer_fires_on_sto
     // act
     watchdog_stop(result);
 
-    // arrange
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
