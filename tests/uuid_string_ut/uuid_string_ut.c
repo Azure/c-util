@@ -87,7 +87,7 @@ static bool isHexDigit(char c)
 /*Tests_SRS_UUID_STRING_02_003: [ If any character of uuid_string doesn't match the string representation hhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhh then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA. ]*/
 /*Tests_SRS_UUID_STRING_02_004: [ If any character of uuid_string is \0 instead of a hex digit then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA.]*/ /*note: this happens when int_result is 0*/
 /*Tests_SRS_UUID_STRING_02_005: [ If any character of uuid_string is \0 instead of a - then uuid_from_string shall succeed and return UUID_FROM_STRING_RESULT_INVALID_DATA.]*/ /*note: this happens when int_result is 0*/
-TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails) // no-aaa
+TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails)
 {
     ///arrange
     const char* SOURCE = "0f102132-4354-6576-8798-a9bacbdcedfe"; /*gets modified at every turn*/
@@ -109,8 +109,11 @@ TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails) // no-aaa
                     umock_c_reset_all_calls();
                     source[pos] = replace;
 
-                    ///act + assert all in one!
-                    ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, &destination));
+                    ///act
+                    UUID_FROM_STRING_RESULT result = uuid_from_string(source, &destination);
+
+                    ///assert
+                    ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, result);
                     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
                 }
             }
@@ -127,8 +130,11 @@ TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails) // no-aaa
 
                     source[pos] = replace;
 
-                    ///act + assert all in one!
-                    ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, &destination));
+                    ///act
+                    UUID_FROM_STRING_RESULT result = uuid_from_string(source, &destination);
+
+                    ///assert
+                    ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, result);
                     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
                 }
             }
@@ -142,8 +148,11 @@ TEST_FUNCTION(uuid_from_string_with_invalid_characters_fails) // no-aaa
 
                 source[pos] = replace;
 
-                ///act + assert all in one!
-                ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, uuid_from_string(source, &destination));
+                ///act
+                UUID_FROM_STRING_RESULT result = uuid_from_string(source, &destination);
+
+                ///assert
+                ASSERT_ARE_EQUAL(UUID_FROM_STRING_RESULT, UUID_FROM_STRING_RESULT_INVALID_DATA, result);
                 ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
             }
         }
