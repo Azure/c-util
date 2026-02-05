@@ -796,6 +796,7 @@ TEST_FUNCTION(CONSTBUFFER_THANDLE_CreateFromOffsetAndSize_keeps_original_alive)
     // Release the original source handle
     THANDLE_ASSIGN(CONSTBUFFER)(&source, NULL);
     
+    ///assert
     // The offset buffer should still be valid because it holds a reference to the original
     const CONSTBUFFER_CONTENT* content = CONSTBUFFER_THANDLE_GetContent(result);
     ASSERT_IS_NOT_NULL(content);
