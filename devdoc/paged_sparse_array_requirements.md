@@ -165,7 +165,7 @@ PAGED_SPARSE_ARRAY_TYPE_DEFINE(int32_t);
 PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint64_t max_size, uint64_t page_size, PAGED_SPARSE_ARRAY_ITEM_DISPOSE_FUNC(T) item_dispose_func);
 ```
 
-`PAGED_SPARSE_ARRAY_CREATE(T)` creates a new paged sparse arraywith the specified maximum size and page size.
+`PAGED_SPARSE_ARRAY_CREATE(T)` creates a new paged sparse array with the specified maximum size and page size.
 
 `item_dispose_func` is an optional custom dispose function that will be called for each allocated element when the paged sparse array is disposed. It may be `NULL` if no cleanup is needed.
 
