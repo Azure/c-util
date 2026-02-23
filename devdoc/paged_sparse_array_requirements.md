@@ -115,10 +115,10 @@ MU_DEFINE_ENUM(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_R
 The macros expand to these useful APIs:
 
 ```c
-PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint32_t max_size, uint32_t page_size, PAGED_SPARSE_ARRAY_ITEM_DISPOSE_FUNC(T) item_dispose_func);
-PAGED_SPARSE_ARRAY_ALLOCATE_RESULT PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index, T** allocated_ptr);
-void PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
-T* PAGED_SPARSE_ARRAY_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
+PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint64_t max_size, uint64_t page_size, PAGED_SPARSE_ARRAY_ITEM_DISPOSE_FUNC(T) item_dispose_func);
+PAGED_SPARSE_ARRAY_ALLOCATE_RESULT PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index, T** allocated_ptr);
+void PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index);
+T* PAGED_SPARSE_ARRAY_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index);
 ```
 
 ### PAGED_SPARSE_ARRAY(T)
@@ -162,10 +162,10 @@ PAGED_SPARSE_ARRAY_TYPE_DEFINE(int32_t);
 ### PAGED_SPARSE_ARRAY_CREATE(T)
 
 ```c
-PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint32_t max_size, uint32_t page_size, PAGED_SPARSE_ARRAY_ITEM_DISPOSE_FUNC(T) item_dispose_func);
+PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint64_t max_size, uint64_t page_size, PAGED_SPARSE_ARRAY_ITEM_DISPOSE_FUNC(T) item_dispose_func);
 ```
 
-`PAGED_SPARSE_ARRAY_CREATE(T)` creates a new paged sparse array with the specified maximum size and page size.
+`PAGED_SPARSE_ARRAY_CREATE(T)` creates a new paged sparse arraywith the specified maximum size and page size.
 
 `item_dispose_func` is an optional custom dispose function that will be called for each allocated element when the paged sparse array is disposed. It may be `NULL` if no cleanup is needed.
 
@@ -204,7 +204,7 @@ static void PAGED_SPARSE_ARRAY_DISPOSE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_arr
 ### PAGED_SPARSE_ARRAY_ALLOCATE(T)
 
 ```c
-PAGED_SPARSE_ARRAY_ALLOCATE_RESULT PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index, T** allocated_ptr);
+PAGED_SPARSE_ARRAY_ALLOCATE_RESULT PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index, T** allocated_ptr);
 ```
 
 `PAGED_SPARSE_ARRAY_ALLOCATE(T)` allocates an element at the specified index for usage.
@@ -230,7 +230,7 @@ PAGED_SPARSE_ARRAY_ALLOCATE_RESULT PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_A
 ### PAGED_SPARSE_ARRAY_RELEASE(T)
 
 ```c
-void PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
+void PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index);
 ```
 
 
@@ -257,7 +257,7 @@ void PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uin
 ### PAGED_SPARSE_ARRAY_GET(T)
 
 ```c
-T* PAGED_SPARSE_ARRAY_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint32_t index);
+T* PAGED_SPARSE_ARRAY_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index);
 ```
 
 `PAGED_SPARSE_ARRAY_GET(T)` gets the element at the specified index.
