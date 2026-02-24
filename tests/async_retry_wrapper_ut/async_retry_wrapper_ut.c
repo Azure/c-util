@@ -1,6 +1,14 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 
+// Tags below document macro expansions in test_async_retry_wrappers.c
+/*Tests_SRS_ASYNC_TYPE_HELPER_42_003: [ DEFINE_ASYNC_TYPE_HELPER_COPY_HANDLER shall expand to: ]*/
+/*Tests_SRS_ASYNC_TYPE_HELPER_42_005: [ DEFINE_ASYNC_TYPE_HELPER_FREE_HANDLER shall expand to: ]*/
+/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_002: [ DEFINE_ASYNC_RETRY_WRAPPER shall generate an asynchronous retry wrapper with the declaration: ]*/
+/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_014: [ DEFINE_ASYNC_RETRY_WRAPPER shall generate a callback to be passed to the asynchronous function with the following declaration: ]*/
+/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_022: [ DEFINE_ASYNC_RETRY_WRAPPER shall generate a function to retry the asynchronous function with the following declaration: ]*/
+/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_047: [ DEFINE_ASYNC_RETRY_WRAPPER shall generate an asynchronous retry wrapper that supports timeouts with the declaration: ]*/
+
 #include "async_retry_wrapper_ut_pch.h"
 
 static TEST_ASYNC_HANDLE test_handle = (TEST_ASYNC_HANDLE)0x42;

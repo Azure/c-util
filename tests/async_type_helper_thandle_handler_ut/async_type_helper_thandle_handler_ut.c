@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 
+// Tags below document macro expansions in test_thandle_async_type_helper_handler.c
+/* Tests_SRS_ASYNC_TYPE_HELPER_THANDLE_HANDLER_01_003: [ DEFINE_ASYNC_TYPE_HELPER_THANDLE_HANDLER shall implement the copy handler by expanding to: ]*/
+/* Tests_SRS_ASYNC_TYPE_HELPER_THANDLE_HANDLER_01_008: [ DEFINE_ASYNC_TYPE_HELPER_THANDLE_HANDLER shall implement the free handler by expanding to: ]*/
+
 #include "async_type_helper_thandle_handler_ut_pch.h"
 
 static struct G_TAG /*g comes from "global*/
