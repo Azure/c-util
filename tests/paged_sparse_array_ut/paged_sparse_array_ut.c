@@ -96,10 +96,10 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_CREATE_with_uint32_t_type_succeeds)
 
     //assert
     ASSERT_IS_NOT_NULL(psa);
-    ASSERT_ARE_EQUAL(uint32_t, 100, psa->max_size);
-    ASSERT_ARE_EQUAL(uint32_t, 64, psa->page_size);
-    ASSERT_ARE_EQUAL(uint32_t, 2, psa->page_count);
-    for (uint32_t i = 0; i < psa->page_count; i++)
+    ASSERT_ARE_EQUAL(uint64_t, 100, psa->max_size);
+    ASSERT_ARE_EQUAL(uint64_t, 64, psa->page_size);
+    ASSERT_ARE_EQUAL(uint64_t, 2, psa->page_count);
+    for (uint64_t i = 0; i < psa->page_count; i++)
     {
         ASSERT_IS_NULL(psa->pages[i]);
     }
@@ -121,7 +121,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_CREATE_computes_page_count_correctly)
 
     //assert
     ASSERT_IS_NOT_NULL(psa);
-    ASSERT_ARE_EQUAL(uint32_t, 1, psa->page_count);
+    ASSERT_ARE_EQUAL(uint64_t, 1, psa->page_count);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
@@ -164,8 +164,8 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_CREATE_fails_when_max_size_plus_page_size_would
     //arrange
 
     //act
-    // Use max_size=UINT32_MAX and page_size=2, so max_size + page_size - 1 = UINT32_MAX + 1 would overflow
-    PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(UINT32_MAX, 2, NULL);
+    // Use max_size=UINT64_MAX and page_size=2, so max_size + page_size - 1 = UINT64_MAX + 1 would overflow
+    PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(UINT64_MAX, 2, NULL);
 
     //assert
     ASSERT_IS_NULL(psa);
@@ -202,8 +202,8 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_CREATE_with_struct_type_succeeds)
 
     //assert
     ASSERT_IS_NOT_NULL(psa);
-    ASSERT_ARE_EQUAL(uint32_t, 10, psa->max_size);
-    ASSERT_ARE_EQUAL(uint32_t, 16, psa->page_size);
+    ASSERT_ARE_EQUAL(uint64_t, 10, psa->max_size);
+    ASSERT_ARE_EQUAL(uint64_t, 16, psa->page_size);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
@@ -290,7 +290,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_ALLOCATE_succeeds_first_element)
     ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, result);
     ASSERT_IS_NOT_NULL(ptr);
     ASSERT_IS_NOT_NULL(psa->pages[0]);
-    ASSERT_ARE_EQUAL(uint32_t, 1, psa->pages[0]->allocated_count);
+    ASSERT_ARE_EQUAL(uint64_t, 1, psa->pages[0]->allocated_count);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
@@ -316,7 +316,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_ALLOCATE_succeeds_second_page)
     ASSERT_IS_NOT_NULL(ptr);
     ASSERT_IS_NULL(psa->pages[0]); // First page should not be allocated
     ASSERT_IS_NOT_NULL(psa->pages[1]); // Second page should be allocated
-    ASSERT_ARE_EQUAL(uint32_t, 1, psa->pages[1]->allocated_count);
+    ASSERT_ARE_EQUAL(uint64_t, 1, psa->pages[1]->allocated_count);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
@@ -347,7 +347,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_ALLOCATE_multiple_elements_in_same_page)
     ASSERT_IS_NOT_NULL(ptr0);
     ASSERT_IS_NOT_NULL(ptr5);
     ASSERT_IS_NOT_NULL(ptr10);
-    ASSERT_ARE_EQUAL(uint32_t, 3, psa->pages[0]->allocated_count);
+    ASSERT_ARE_EQUAL(uint64_t, 3, psa->pages[0]->allocated_count);
     ASSERT_ARE_NOT_EQUAL(void_ptr, ptr0, ptr5);
     ASSERT_ARE_NOT_EQUAL(void_ptr, ptr5, ptr10);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -571,7 +571,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_succeeds_but_keeps_page_when_other_elem
     ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, 10, &ptr2));
     ASSERT_IS_NOT_NULL(ptr1);
     ASSERT_IS_NOT_NULL(ptr2);
-    ASSERT_ARE_EQUAL(uint32_t, 2, psa->pages[0]->allocated_count);
+    ASSERT_ARE_EQUAL(uint64_t, 2, psa->pages[0]->allocated_count);
     umock_c_reset_all_calls();
 
     //act
@@ -579,7 +579,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_succeeds_but_keeps_page_when_other_elem
 
     //assert
     ASSERT_IS_NOT_NULL(psa->pages[0]); // Page should still be allocated
-    ASSERT_ARE_EQUAL(uint32_t, 1, psa->pages[0]->allocated_count);
+    ASSERT_ARE_EQUAL(uint64_t, 1, psa->pages[0]->allocated_count);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean

@@ -110,7 +110,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_all_elements_succeeds)
     ASSERT_IS_NOT_NULL(psa);
 
     //act
-    for (uint32_t i = 0; i < MAX_SIZE; i++)
+    for (uint64_t i = 0; i < MAX_SIZE; i++)
     {
         TEST_ELEMENT* elem;
         PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i, &elem);
@@ -120,7 +120,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_all_elements_succeeds)
     }
 
     //assert
-    for (uint32_t i = 0; i < MAX_SIZE; i++)
+    for (uint64_t i = 0; i < MAX_SIZE; i++)
     {
         TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, i);
         ASSERT_IS_NOT_NULL(elem);
@@ -138,7 +138,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_and_release_all_elements_succeeds)
     ASSERT_IS_NOT_NULL(psa);
 
     // Allocate all elements
-    for (uint32_t i = 0; i < MAX_SIZE; i++)
+    for (uint64_t i = 0; i < MAX_SIZE; i++)
     {
         TEST_ELEMENT* elem;
         PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i, &elem);
@@ -148,13 +148,13 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_and_release_all_elements_succeeds)
     }
 
     //act - release all elements
-    for (uint32_t i = 0; i < MAX_SIZE; i++)
+    for (uint64_t i = 0; i < MAX_SIZE; i++)
     {
         PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(psa, i);
     }
 
     //assert - all pages should be freed, all gets should fail
-    for (uint32_t i = 0; i < MAX_SIZE; i++)
+    for (uint64_t i = 0; i < MAX_SIZE; i++)
     {
         TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, i);
         ASSERT_IS_NULL(elem);
@@ -173,7 +173,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_sparse_allocation_succeeds)
     ASSERT_IS_NOT_NULL(psa);
 
     // Allocate only every 100th element (sparse)
-    for (uint32_t i = 0; i < MAX_SIZE; i += 100)
+    for (uint64_t i = 0; i < MAX_SIZE; i += 100)
     {
         TEST_ELEMENT* elem;
         PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i, &elem);
@@ -183,7 +183,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_sparse_allocation_succeeds)
     }
 
     //act & assert - verify only allocated elements are accessible
-    for (uint32_t i = 0; i < MAX_SIZE; i++)
+    for (uint64_t i = 0; i < MAX_SIZE; i++)
     {
         TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, i);
         if (i % 100 == 0)
@@ -257,7 +257,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_page_freed_when_all_elements_released)
     ASSERT_IS_NOT_NULL(psa);
     
     // Allocate all elements in first page
-    for (uint32_t i = 0; i < PAGE_SIZE; i++)
+    for (uint64_t i = 0; i < PAGE_SIZE; i++)
     {
         TEST_ELEMENT* elem;
         PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, i, &elem);
@@ -267,7 +267,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_page_freed_when_all_elements_released)
     ASSERT_IS_NOT_NULL(psa->pages[0]);
 
     //act - release all elements in first page
-    for (uint32_t i = 0; i < PAGE_SIZE; i++)
+    for (uint64_t i = 0; i < PAGE_SIZE; i++)
     {
         PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(psa, i);
     }
@@ -293,7 +293,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_chaos)
         iteration_count++;
         // perform one of the several actions
         CHAOS_TEST_ACTION action = (CHAOS_TEST_ACTION)((rand() * (MU_ENUM_VALUE_COUNT(CHAOS_TEST_ACTION_VALUES) - 1) / RAND_MAX) + 1);
-        uint32_t rand_index = rand() % MAX_SIZE;
+        uint64_t rand_index = rand() % MAX_SIZE;
         switch (action)
         {
         default:
@@ -369,7 +369,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_allocate_and_dispose_succee
     ASSERT_IS_NOT_NULL(psa);
 
     //act - allocate elements with malloc'd data
-    for (uint32_t i = 0; i < 10; i++)
+    for (uint64_t i = 0; i < 10; i++)
     {
         TEST_ELEMENT_WITH_MALLOC* elem;
         PAGED_SPARSE_ARRAY_ALLOCATE_RESULT alloc_result = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT_WITH_MALLOC)(psa, i, &elem);
@@ -380,11 +380,11 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_allocate_and_dispose_succee
         // Allocate a string for each element
         elem->data = malloc(32);
         ASSERT_IS_NOT_NULL(elem->data);
-        (void)sprintf(elem->data, "element_%" PRIu32 "", i);
+        (void)sprintf(elem->data, "element_%" PRIu64 "", i);
     }
 
     //assert - verify elements are accessible
-    for (uint32_t i = 0; i < 10; i++)
+    for (uint64_t i = 0; i < 10; i++)
     {
         TEST_ELEMENT_WITH_MALLOC* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT_WITH_MALLOC)(psa, i);
         ASSERT_IS_NOT_NULL(elem);
@@ -393,7 +393,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_allocate_and_dispose_succee
     }
 
     // verify unallocated elements are not accessible
-    for (uint32_t i = 10; i < MALLOC_MAX_SIZE; i++)
+    for (uint64_t i = 10; i < MALLOC_MAX_SIZE; i++)
     {
         TEST_ELEMENT_WITH_MALLOC* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT_WITH_MALLOC)(psa, i);
         ASSERT_IS_NULL(elem);
@@ -443,7 +443,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_chaos)
     for (uint32_t iter = 0; iter < 10000; iter++)
     {
         CHAOS_TEST_ACTION action = (CHAOS_TEST_ACTION)((rand() * (MU_ENUM_VALUE_COUNT(CHAOS_TEST_ACTION_VALUES) - 1) / RAND_MAX) + 1);
-        uint32_t rand_index = rand() % MALLOC_MAX_SIZE;
+        uint64_t rand_index = rand() % MALLOC_MAX_SIZE;
 
         switch (action)
         {
@@ -464,7 +464,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_chaos)
                 elem->id = rand_index;
                 elem->data = malloc(16);
                 ASSERT_IS_NOT_NULL(elem->data);
-                (void)sprintf(elem->data, "e%" PRIu32 "", rand_index);
+                (void)sprintf(elem->data, "e%" PRIu64 "", rand_index);
                 element_state[rand_index] = true;
             }
             break;
