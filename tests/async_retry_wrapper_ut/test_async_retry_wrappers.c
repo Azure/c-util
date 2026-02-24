@@ -14,6 +14,7 @@
 
 
 
+/*Tests_SRS_ASYNC_TYPE_HELPER_42_003: [ DEFINE_ASYNC_TYPE_HELPER_COPY_HANDLER shall expand to: ]*/
 DEFINE_ASYNC_TYPE_HELPER_COPY_HANDLER(TEST_REFCOUNTED_HANDLE, dst, src)
 {
     test_refcounted_inc_ref(src);
@@ -21,6 +22,7 @@ DEFINE_ASYNC_TYPE_HELPER_COPY_HANDLER(TEST_REFCOUNTED_HANDLE, dst, src)
     return 0;
 }
 
+/*Tests_SRS_ASYNC_TYPE_HELPER_42_005: [ DEFINE_ASYNC_TYPE_HELPER_FREE_HANDLER shall expand to: ]*/
 DEFINE_ASYNC_TYPE_HELPER_FREE_HANDLER(TEST_REFCOUNTED_HANDLE, arg)
 {
     test_refcounted_dec_ref(arg);
@@ -59,6 +61,10 @@ void TEST_REFCOUNTED_HANDLE_ptr_t_free(TEST_REFCOUNTED_HANDLE_ptr_t arg, size_t 
         free(arg);
     }
 }
+
+/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_002: [ DEFINE_ASYNC_RETRY_WRAPPER shall generate an asynchronous retry wrapper with the declaration: ]*/
+/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_014: [ DEFINE_ASYNC_RETRY_WRAPPER shall generate a callback to be passed to the asynchronous function with the following declaration: ]*/
+/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_022: [ DEFINE_ASYNC_RETRY_WRAPPER shall generate a function to retry the asynchronous function with the following declaration: ]*/
 
 DEFINE_ASYNC_RETRY_WRAPPER(TEST_ASYNC_HANDLE, test_async_do_something_async, int, 0,
     IN_ARGS(ARG(int, arg1), ARG(int, arg2), ARG_CB(ON_DO_SOMETHING_ASYNC_COMPLETE, on_do_something_async_complete), ARG_CONTEXT(void_ptr, context)),
@@ -115,6 +121,7 @@ DEFINE_ASYNC_RETRY_WRAPPER(TEST_ASYNC_HANDLE, test_async_do_something_with_multi
     OUT_ARGS(ENUM(TEST_ASYNC_API_DEFAULT_RESULT, result, TEST_ASYNC_RESULT_FOR_ERRORS), ARG(int, callback_arg1, 0), ARG(int, callback_arg2, -1)),
     RETRY_ON_ASYNC(TEST_ASYNC_RESULT_FOR_RETRY), RETRY_ON_SYNC(TEST_ASYNC_API_SYNC_MULTIPLE_FOR_RETRY_1, TEST_ASYNC_API_SYNC_MULTIPLE_FOR_RETRY_2, TEST_ASYNC_API_SYNC_MULTIPLE_FOR_RETRY_3));
 
+/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_047: [ DEFINE_ASYNC_RETRY_WRAPPER shall generate an asynchronous retry wrapper that supports timeouts with the declaration: ]*/
 DEFINE_ASYNC_RETRY_WRAPPER(TEST_ASYNC_HANDLE, test_async_do_something_with_multiple_enum_return_no_async_retry_async, TEST_ASYNC_API_SYNC_MULTIPLE_RESULT, TEST_ASYNC_API_SYNC_MULTIPLE_RESULT_OK,
     IN_ARGS(ARG(int, arg1), ARG(int, arg2), ARG_CB(ON_DO_SOMETHING_NO_RETRY_ASYNC_COMPLETE, on_do_something_no_retry_async_complete), ARG_CONTEXT(void_ptr, context)),
     OUT_ARGS(ARG(int, callback_arg1, 0), ARG(int, callback_arg2, -1)),
@@ -177,6 +184,7 @@ DEFINE_ASYNC_RETRY_WRAPPER(TEST_ASYNC_HANDLE, test_async_do_something_with_multi
     OUT_ARGS(ENUM(TEST_ASYNC_API_DEFAULT_RESULT, result, TEST_ASYNC_RESULT_FOR_ERRORS, TEST_ASYNC_RESULT_FOR_TIMEOUT), ARG(int, callback_arg1, 0), ARG(int, callback_arg2, -1)),
     RETRY_ON_ASYNC(TEST_ASYNC_RESULT_FOR_RETRY), RETRY_ON_SYNC(TEST_ASYNC_API_SYNC_MULTIPLE_FOR_RETRY_1, TEST_ASYNC_API_SYNC_MULTIPLE_FOR_RETRY_2, TEST_ASYNC_API_SYNC_MULTIPLE_FOR_RETRY_3));
 
+/*Tests_SRS_ASYNC_RETRY_WRAPPER_42_047: [ DEFINE_ASYNC_RETRY_WRAPPER shall generate an asynchronous retry wrapper that supports timeouts with the declaration: ]*/
 DEFINE_ASYNC_RETRY_WRAPPER(TEST_ASYNC_HANDLE, test_async_do_something_with_multiple_enum_return_no_async_retry_async_with_timeout, TEST_ASYNC_API_SYNC_MULTIPLE_RESULT, TEST_ASYNC_API_SYNC_MULTIPLE_RESULT_OK,
     IN_ARGS(ARG(int, arg1), ARG(int, arg2), ARG_CB(ON_DO_SOMETHING_NO_RETRY_ASYNC_COMPLETE, on_do_something_no_retry_async_complete), ARG_CONTEXT(void_ptr, context)),
     OUT_ARGS(ARG(int, callback_arg1, 0), ARG(int, callback_arg2, -1)),
