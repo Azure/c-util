@@ -37,6 +37,8 @@ TWO_D_ARRAY_TYPE_DEFINE(TEST_THANDLE);
 MU_DEFINE_ENUM(CHAOS_TEST_ACTION, CHAOS_TEST_ACTION_VALUES)
 MU_DEFINE_ENUM_STRINGS(CHAOS_TEST_ACTION, CHAOS_TEST_ACTION_VALUES)
 
+TEST_DEFINE_ENUM_TYPE(TWO_D_ARRAY_GET_ROW_RESULT, TWO_D_ARRAY_GET_ROW_RESULT_VALUES)
+
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -94,7 +96,7 @@ TEST_FUNCTION(TWO_D_ARRAY_create_and_allocate_succeeds)
     {
         curr_row = NULL;
         TWO_D_ARRAY_GET_ROW_RESULT get_row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0, &curr_row);
-        ASSERT_ARE_EQUAL(int, (int)TWO_D_ARRAY_GET_ROW_OK, (int)get_row_result);
+        ASSERT_ARE_EQUAL(TWO_D_ARRAY_GET_ROW_RESULT, TWO_D_ARRAY_GET_ROW_OK, get_row_result);
         ASSERT_IS_NOT_NULL(curr_row);
     }
 
@@ -127,7 +129,7 @@ TEST_FUNCTION(TWO_D_ARRAY_allocate_row_and_free_row_succeeds)
     {
         curr_row = NULL;
         TWO_D_ARRAY_GET_ROW_RESULT get_row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0, &curr_row);
-        ASSERT_ARE_EQUAL(int, (int)TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED, (int)get_row_result);
+        ASSERT_ARE_EQUAL(TWO_D_ARRAY_GET_ROW_RESULT, TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED, get_row_result);
         ASSERT_IS_NULL(curr_row);
     }
 
@@ -173,7 +175,7 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_succeeds)
     TWO_D_ARRAY_GET_ROW_RESULT get_row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0, &row_result);
 
     //assert
-    ASSERT_ARE_EQUAL(int, (int)TWO_D_ARRAY_GET_ROW_OK, (int)get_row_result);
+    ASSERT_ARE_EQUAL(TWO_D_ARRAY_GET_ROW_RESULT, TWO_D_ARRAY_GET_ROW_OK, get_row_result);
     ASSERT_IS_NOT_NULL(row_result);
     for (unsigned int i = 0; i < 5; i++)
     {
@@ -195,7 +197,7 @@ TEST_FUNCTION(TWO_D_ARRAY_get_a_row_not_allocated_yet)
     TWO_D_ARRAY_GET_ROW_RESULT get_row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0, &row_result);
 
     //assert
-    ASSERT_ARE_EQUAL(int, (int)TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED, (int)get_row_result);
+    ASSERT_ARE_EQUAL(TWO_D_ARRAY_GET_ROW_RESULT, TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED, get_row_result);
     ASSERT_IS_NULL(row_result);
 
     //clean
@@ -213,7 +215,7 @@ TEST_FUNCTION(TWO_D_ARRAY_free_a_row_not_allocated_yet)
     {
         curr_row = NULL;
         TWO_D_ARRAY_GET_ROW_RESULT get_row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0, &curr_row);
-        ASSERT_ARE_EQUAL(int, (int)TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED, (int)get_row_result);
+        ASSERT_ARE_EQUAL(TWO_D_ARRAY_GET_ROW_RESULT, TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED, get_row_result);
         ASSERT_IS_NULL(curr_row);
     }
 
@@ -288,12 +290,12 @@ TEST_FUNCTION(TWO_D_ARRAY_chaos)
             TWO_D_ARRAY_GET_ROW_RESULT get_row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, rand_row_index, &row_result);
             if (row_state[rand_row_index])
             {
-                ASSERT_ARE_EQUAL(int, (int)TWO_D_ARRAY_GET_ROW_OK, (int)get_row_result);
+                ASSERT_ARE_EQUAL(TWO_D_ARRAY_GET_ROW_RESULT, TWO_D_ARRAY_GET_ROW_OK, get_row_result);
                 ASSERT_IS_NOT_NULL(row_result);
             }
             else
             {
-                ASSERT_ARE_EQUAL(int, (int)TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED, (int)get_row_result);
+                ASSERT_ARE_EQUAL(TWO_D_ARRAY_GET_ROW_RESULT, TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED, get_row_result);
                 ASSERT_IS_NULL(row_result);
             }
         }
