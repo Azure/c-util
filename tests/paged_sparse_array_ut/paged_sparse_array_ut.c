@@ -43,6 +43,7 @@ PAGED_SPARSE_ARRAY_TYPE_DEFINE(THANDLE(A_TEST));
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 TEST_DEFINE_ENUM_TYPE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_RESULT_VALUES)
+TEST_DEFINE_ENUM_TYPE(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_RESULT_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
@@ -660,7 +661,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_RELEASE_with_element_not_allocated_returns)
 /*PAGED_SPARSE_ARRAY_GET(T)*/
 
 /* Tests_SRS_PAGED_SPARSE_ARRAY_88_036: [ PAGED_SPARSE_ARRAY_GET(T) shall compute the page index as index / page_size. ]*/
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_039: [ PAGED_SPARSE_ARRAY_GET(T) shall return a pointer to the element at index. ]*/
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_039: [ PAGED_SPARSE_ARRAY_GET(T) shall store in item a pointer to the element at index and return PAGED_SPARSE_ARRAY_GET_OK. ]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_succeeds)
 {
     //arrange
@@ -673,9 +674,11 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_succeeds)
     umock_c_reset_all_calls();
 
     //act
-    uint32_t* ptr2 = PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, 5);
+    uint32_t* ptr2 = NULL;
+    PAGED_SPARSE_ARRAY_GET_RESULT result = PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, 5, &ptr2);
 
     //assert
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, result);
     ASSERT_IS_NOT_NULL(ptr2);
     ASSERT_ARE_EQUAL(void_ptr, ptr1, ptr2);
     ASSERT_ARE_EQUAL(uint32_t, 42, *ptr2);
@@ -685,22 +688,42 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_succeeds)
     PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return NULL. ]*/
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL or item is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_handle_is_null)
 {
     //arrange
 
     //act
-    uint32_t* ptr = PAGED_SPARSE_ARRAY_GET(uint32_t)(NULL, 0);
+    uint32_t* item = NULL;
+    PAGED_SPARSE_ARRAY_GET_RESULT result = PAGED_SPARSE_ARRAY_GET(uint32_t)(NULL, 0, &item);
 
     //assert
-    ASSERT_IS_NULL(ptr);
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_INVALID_ARGS, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
 }
 
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_035: [ If index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_GET(T) shall fail and return NULL. ]*/
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL or item is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/
+TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_item_is_null)
+{
+    //arrange
+    PAGED_SPARSE_ARRAY(uint32_t) psa = PAGED_SPARSE_ARRAY_CREATE(uint32_t)(100, 16, NULL);
+    ASSERT_IS_NOT_NULL(psa);
+    umock_c_reset_all_calls();
+
+    //act
+    PAGED_SPARSE_ARRAY_GET_RESULT result = PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, 0, NULL);
+
+    //assert
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_INVALID_ARGS, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+    PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
+}
+
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_035: [ If index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_index_out_of_bounds)
 {
     //arrange
@@ -709,17 +732,18 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_index_out_of_bounds)
     umock_c_reset_all_calls();
 
     //act
-    uint32_t* ptr = PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, 100);
+    uint32_t* item = NULL;
+    PAGED_SPARSE_ARRAY_GET_RESULT result = PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, 100, &item);
 
     //assert
-    ASSERT_IS_NULL(ptr);
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_INVALID_ARGS, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
     PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_037: [ If the page is not allocated, PAGED_SPARSE_ARRAY_GET(T) shall fail and return NULL. ]*/
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_037: [ If the page is not allocated, PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_page_not_allocated)
 {
     //arrange
@@ -728,17 +752,18 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_page_not_allocated)
     umock_c_reset_all_calls();
 
     //act
-    uint32_t* ptr = PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, 5);
+    uint32_t* item = NULL;
+    PAGED_SPARSE_ARRAY_GET_RESULT result = PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, 5, &item);
 
     //assert
-    ASSERT_IS_NULL(ptr);
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
     PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_038: [ If the element at index is not allocated, PAGED_SPARSE_ARRAY_GET(T) shall fail and return NULL. ]*/
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_038: [ If the element at index is not allocated, PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_element_not_allocated)
 {
     //arrange
@@ -750,10 +775,11 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_element_not_allocated)
     umock_c_reset_all_calls();
 
     //act
-    uint32_t* result = PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, 10); // Different element in same page
+    uint32_t* item = NULL;
+    PAGED_SPARSE_ARRAY_GET_RESULT result = PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, 10, &item); // Different element in same page
 
     //assert
-    ASSERT_IS_NULL(result);
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
@@ -793,7 +819,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_THANDLE_type_works)
 
 /*Tests_SRS_PAGED_SPARSE_ARRAY_88_008: [ PAGED_SPARSE_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
 /*Tests_SRS_PAGED_SPARSE_ARRAY_88_017: [ PAGED_SPARSE_ARRAY_ALLOCATE(T) shall store a pointer to the element at index in *allocated_ptr and return PAGED_SPARSE_ARRAY_ALLOCATE_OK. ]*/
-/*Tests_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return NULL.]*/
+/*Tests_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL or item is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS.]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_struct_type_works)
 {
     //arrange
@@ -810,7 +836,9 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_struct_type_works)
     ASSERT_IS_NOT_NULL(ptr);
     ptr->b = 42;
     
-    B_TEST* ptr_get = PAGED_SPARSE_ARRAY_GET(B_TEST)(psa, 0);
+    B_TEST* ptr_get = NULL;
+    PAGED_SPARSE_ARRAY_GET_RESULT get_result = PAGED_SPARSE_ARRAY_GET(B_TEST)(psa, 0, &ptr_get);
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, get_result);
     ASSERT_IS_NOT_NULL(ptr_get);
     ASSERT_ARE_EQUAL(int, 42, ptr_get->b);
 

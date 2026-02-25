@@ -168,6 +168,7 @@ set(c_util_c_files
     ./src/rc_string_array.c
     ./src/rc_string_utils.c
     ./src/sliding_window_average_by_count.c
+    ./src/two_d_array.c
     ./src/singlylinkedlist.c
     ./src/strings.c
     ./src/sync_wrapper.c

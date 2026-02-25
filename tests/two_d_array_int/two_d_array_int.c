@@ -92,7 +92,9 @@ TEST_FUNCTION(TWO_D_ARRAY_create_and_allocate_succeeds)
     TEST_THANDLE* curr_row;
     for (uint32_t i = 0; i < ROW_NUM; i++)
     {
-        curr_row = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0);
+        curr_row = NULL;
+        TWO_D_ARRAY_GET_ROW_RESULT get_row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0, &curr_row);
+        ASSERT_ARE_EQUAL(int, (int)TWO_D_ARRAY_GET_ROW_OK, (int)get_row_result);
         ASSERT_IS_NOT_NULL(curr_row);
     }
 
@@ -123,7 +125,9 @@ TEST_FUNCTION(TWO_D_ARRAY_allocate_row_and_free_row_succeeds)
     TEST_THANDLE* curr_row;
     for (uint32_t i = 0; i < ROW_NUM; i++)
     {
-        curr_row = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0);
+        curr_row = NULL;
+        TWO_D_ARRAY_GET_ROW_RESULT get_row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0, &curr_row);
+        ASSERT_ARE_EQUAL(int, (int)TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED, (int)get_row_result);
         ASSERT_IS_NULL(curr_row);
     }
 
@@ -153,7 +157,6 @@ TEST_FUNCTION(TWO_D_ARRAY_allocate_a_row_already_been_allocated)
 TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_succeeds)
 {
     //arrange
-    TEST_THANDLE* row_result;
     TWO_D_ARRAY(TEST_THANDLE) tdarr = TWO_D_ARRAY_CREATE(TEST_THANDLE)(5, 5);
     int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(TEST_THANDLE)(tdarr, 0);
 
@@ -166,9 +169,11 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_succeeds)
     }
 
     //act
-    row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0);
+    TEST_THANDLE* row_result = NULL;
+    TWO_D_ARRAY_GET_ROW_RESULT get_row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0, &row_result);
 
     //assert
+    ASSERT_ARE_EQUAL(int, (int)TWO_D_ARRAY_GET_ROW_OK, (int)get_row_result);
     ASSERT_IS_NOT_NULL(row_result);
     for (unsigned int i = 0; i < 5; i++)
     {
@@ -182,14 +187,15 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_succeeds)
 TEST_FUNCTION(TWO_D_ARRAY_get_a_row_not_allocated_yet)
 {
     //arrange
-    TEST_THANDLE* row_result;
     TWO_D_ARRAY(TEST_THANDLE) tdarr = TWO_D_ARRAY_CREATE(TEST_THANDLE)(5, 5);
     ASSERT_IS_NOT_NULL(tdarr);
 
     //act
-    row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0);
+    TEST_THANDLE* row_result = NULL;
+    TWO_D_ARRAY_GET_ROW_RESULT get_row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0, &row_result);
 
     //assert
+    ASSERT_ARE_EQUAL(int, (int)TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED, (int)get_row_result);
     ASSERT_IS_NULL(row_result);
 
     //clean
@@ -205,7 +211,9 @@ TEST_FUNCTION(TWO_D_ARRAY_free_a_row_not_allocated_yet)
     TEST_THANDLE* curr_row;
     for (uint32_t i = 0; i < 5; i++)
     {
-        curr_row = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0);
+        curr_row = NULL;
+        TWO_D_ARRAY_GET_ROW_RESULT get_row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, 0, &curr_row);
+        ASSERT_ARE_EQUAL(int, (int)TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED, (int)get_row_result);
         ASSERT_IS_NULL(curr_row);
     }
 
@@ -276,13 +284,16 @@ TEST_FUNCTION(TWO_D_ARRAY_chaos)
         }
         case CHAOS_TEST_ACTION_GET_ROW:
         {
-            TEST_THANDLE* row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, rand_row_index);
+            TEST_THANDLE* row_result = NULL;
+            TWO_D_ARRAY_GET_ROW_RESULT get_row_result = TWO_D_ARRAY_GET_ROW(TEST_THANDLE)(tdarr, rand_row_index, &row_result);
             if (row_state[rand_row_index])
             {
+                ASSERT_ARE_EQUAL(int, (int)TWO_D_ARRAY_GET_ROW_OK, (int)get_row_result);
                 ASSERT_IS_NOT_NULL(row_result);
             }
             else
             {
+                ASSERT_ARE_EQUAL(int, (int)TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED, (int)get_row_result);
                 ASSERT_IS_NULL(row_result);
             }
         }

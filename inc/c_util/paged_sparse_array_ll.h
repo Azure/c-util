@@ -31,6 +31,14 @@
 
 MU_DEFINE_ENUM(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_RESULT_VALUES)
 
+/*result codes for PAGED_SPARSE_ARRAY_GET*/
+#define PAGED_SPARSE_ARRAY_GET_RESULT_VALUES \
+    PAGED_SPARSE_ARRAY_GET_OK, \
+    PAGED_SPARSE_ARRAY_GET_INVALID_ARGS, \
+    PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED
+
+MU_DEFINE_ENUM(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_RESULT_VALUES)
+
 /*PAGED_SPARSE_ARRAY is backed by a THANDLE build on the structure below*/
 #define PAGED_SPARSE_ARRAY_STRUCT_TYPE_NAME_TAG(T) MU_C2(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T), _TAG)
 
@@ -109,7 +117,7 @@ struct PAGED_SPARSE_ARRAY_STRUCT_TYPE_NAME_TAG(T)                               
 
 /*introduces a function declaration for paged_sparse_array_get*/
 #define PAGED_SPARSE_ARRAY_LL_GET_DECLARE(C, T) \
-    MOCKABLE_FUNCTION(, T*, PAGED_SPARSE_ARRAY_LL_GET(C), PAGED_SPARSE_ARRAY_LL(T), paged_sparse_array, uint64_t, index);
+    MOCKABLE_FUNCTION(, PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_LL_GET(C), PAGED_SPARSE_ARRAY_LL(T), paged_sparse_array, uint64_t, index, T**, item);
 
 /*helper to compute bitmap size in bytes (1 bit per element, rounded up to nearest byte)*/
 #define PAGED_SPARSE_ARRAY_BITMAP_SIZE(page_size) (((page_size) + 7) / 8)
@@ -352,48 +360,47 @@ void PAGED_SPARSE_ARRAY_LL_RELEASE(C)(PAGED_SPARSE_ARRAY_LL(T) paged_sparse_arra
 }
 
 #define PAGED_SPARSE_ARRAY_LL_GET_DEFINE(C, T)                                                                                                                               \
-T* PAGED_SPARSE_ARRAY_LL_GET(C)(PAGED_SPARSE_ARRAY_LL(T) paged_sparse_array, uint64_t index)                                                                                 \
+PAGED_SPARSE_ARRAY_GET_RESULT PAGED_SPARSE_ARRAY_LL_GET(C)(PAGED_SPARSE_ARRAY_LL(T) paged_sparse_array, uint64_t index, T** item)                                            \
 {                                                                                                                                                                            \
-    T* result;                                                                                                                                                               \
-    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return NULL. ]*/                                       \
-    if (paged_sparse_array == NULL)                                                                                                                                          \
+    PAGED_SPARSE_ARRAY_GET_RESULT result;                                                                                                                                    \
+    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL or item is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/ \
+    if (paged_sparse_array == NULL || item == NULL)                                                                                                                           \
     {                                                                                                                                                                        \
-        LogError("Invalid arguments: PAGED_SPARSE_ARRAY(" MU_TOSTRING(T) ") paged_sparse_array=%p", paged_sparse_array);                                                     \
+        LogError("Invalid arguments: PAGED_SPARSE_ARRAY(" MU_TOSTRING(T) ") paged_sparse_array=%p, item=%p", paged_sparse_array, item);                                      \
+        result = PAGED_SPARSE_ARRAY_GET_INVALID_ARGS;                                                                                                                        \
     }                                                                                                                                                                        \
-    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_035: [ If index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_GET(T) shall fail and return NULL. ]*/                       \
-    else if (index >= paged_sparse_array->max_size)                                                                                                                          \
+    /* Codes_SRS_PAGED_SPARSE_ARRAY_88_035: [ If index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/ \
+    else if (index >= paged_sparse_array->max_size)                                                                                                                           \
     {                                                                                                                                                                        \
         LogError("Invalid arguments: uint64_t index=%" PRIu64 " out of bound, max_size=%" PRIu64 "", index, paged_sparse_array->max_size);                                   \
+        result = PAGED_SPARSE_ARRAY_GET_INVALID_ARGS;                                                                                                                        \
     }                                                                                                                                                                        \
     else                                                                                                                                                                     \
     {                                                                                                                                                                        \
         /* Codes_SRS_PAGED_SPARSE_ARRAY_88_036: [ PAGED_SPARSE_ARRAY_GET(T) shall compute the page index as index / page_size. ]*/                                           \
-        uint64_t page_index = index / paged_sparse_array->page_size;                                                                                                         \
-                                                                                                                                                                             \
-        /* Codes_SRS_PAGED_SPARSE_ARRAY_88_037: [ If the page is not allocated, PAGED_SPARSE_ARRAY_GET(T) shall fail and return NULL. ]*/                                    \
-        if (paged_sparse_array->pages[page_index] == NULL)                                                                                                                   \
+        uint64_t page_index = index / paged_sparse_array->page_size;                                                                                                          \
+                                                                                                                                                                              \
+        /* Codes_SRS_PAGED_SPARSE_ARRAY_88_037: [ If the page is not allocated, PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/              \
+        if (paged_sparse_array->pages[page_index] == NULL)                                                                                                                    \
         {                                                                                                                                                                    \
-            LogError("Page at page_index=%" PRIu64 " is not allocated", page_index);                                                                                         \
+            result = PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED;                                                                                                                   \
         }                                                                                                                                                                    \
         else                                                                                                                                                                 \
         {                                                                                                                                                                    \
-            uint64_t index_in_page = index % paged_sparse_array->page_size;                                                                                                  \
-            /* Codes_SRS_PAGED_SPARSE_ARRAY_88_038: [ If the element at index is not allocated, PAGED_SPARSE_ARRAY_GET(T) shall fail and return NULL. ]*/                    \
-            if (!PAGED_SPARSE_ARRAY_IS_ALLOCATED(PAGED_SPARSE_ARRAY_GET_BITMAP(paged_sparse_array->pages[page_index], paged_sparse_array->page_size), index_in_page))     \
+            uint64_t index_in_page = index % paged_sparse_array->page_size;                                                                                                   \
+            /* Codes_SRS_PAGED_SPARSE_ARRAY_88_038: [ If the element at index is not allocated, PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/ \
+            if (!PAGED_SPARSE_ARRAY_IS_ALLOCATED(PAGED_SPARSE_ARRAY_GET_BITMAP(paged_sparse_array->pages[page_index], paged_sparse_array->page_size), index_in_page))      \
             {                                                                                                                                                                \
-                LogError("Element at index=%" PRIu64 " is not allocated", index);                                                                                            \
+                result = PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED;                                                                                                               \
             }                                                                                                                                                                \
             else                                                                                                                                                             \
             {                                                                                                                                                                \
-                /* Codes_SRS_PAGED_SPARSE_ARRAY_88_039: [ PAGED_SPARSE_ARRAY_GET(T) shall return a pointer to the element at index. ]*/                                      \
-                result = &paged_sparse_array->pages[page_index]->items[index_in_page];                                                                                       \
-                goto all_ok;                                                                                                                                                 \
+                /* Codes_SRS_PAGED_SPARSE_ARRAY_88_039: [ PAGED_SPARSE_ARRAY_GET(T) shall store in item a pointer to the element at index and return PAGED_SPARSE_ARRAY_GET_OK. ]*/ \
+                *item = &paged_sparse_array->pages[page_index]->items[index_in_page];                                                                                         \
+                result = PAGED_SPARSE_ARRAY_GET_OK;                                                                                                                          \
             }                                                                                                                                                                \
         }                                                                                                                                                                    \
     }                                                                                                                                                                        \
-    result = NULL;                                                                                                                                                           \
-all_ok:                                                                                                                                                                      \
     return result;                                                                                                                                                           \
 }
-
 #endif /*PAGED_SPARSE_ARRAY_LL_H*/
