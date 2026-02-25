@@ -699,7 +699,7 @@ TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_with_struct_type_succeeds)
 
 /* TWO_D_ARRAY_GET_ROW(T) */
 
-/* Tests_SRS_TWO_D_ARRAY_07_019: [ If two_d_array is NULL or row is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_019: [ If two_d_array is NULL or row is NULL or row_index is equal or greater than row_size, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/
 TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_handle_is_null)
 {
     //arrange
@@ -715,7 +715,7 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_handle_is_null)
     //clean
 }
 
-/* Tests_SRS_TWO_D_ARRAY_07_019: [ If two_d_array is NULL or row is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_019: [ If two_d_array is NULL or row is NULL or row_index is equal or greater than row_size, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/
 TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_row_is_null)
 {
     //arrange
@@ -734,7 +734,7 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_row_is_null)
     TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
 }
 
-/* Tests_SRS_TWO_D_ARRAY_07_020: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_019: [ If two_d_array is NULL or row is NULL or row_index is equal or greater than row_size, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/
 TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_row_index_too_high)
 {
     //arrange

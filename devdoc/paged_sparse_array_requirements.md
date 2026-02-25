@@ -272,9 +272,7 @@ PAGED_SPARSE_ARRAY_GET_RESULT PAGED_SPARSE_ARRAY_GET(T)(PAGED_SPARSE_ARRAY(T) pa
 
 `PAGED_SPARSE_ARRAY_GET(T)` gets the element at the specified index.
 
-**SRS_PAGED_SPARSE_ARRAY_88_034: [** If `paged_sparse_array` is `NULL` or `item` is `NULL`, `PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
-
-**SRS_PAGED_SPARSE_ARRAY_88_035: [** If `index` is greater than or equal to `max_size`, `PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_034: [** If `paged_sparse_array` is `NULL` or `item` is `NULL` or `index` is greater than or equal to `max_size`, `PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_036: [** `PAGED_SPARSE_ARRAY_GET(T)` shall compute the page index as `index / page_size`. **]**
 

@@ -236,31 +236,22 @@ int TWO_D_ARRAY_LL_ALLOCATE_NEW_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t r
 TWO_D_ARRAY_GET_ROW_RESULT TWO_D_ARRAY_LL_GET_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t row_index, T** row)                                           \
 {                                                                                                                                                          \
     TWO_D_ARRAY_GET_ROW_RESULT result;                                                                                                                     \
-    /* Codes_SRS_TWO_D_ARRAY_07_019: [ If two_d_array is NULL or row is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/ \
-    if (two_d_array == NULL || row == NULL)                                                                                                                 \
+    /* Codes_SRS_TWO_D_ARRAY_07_019: [ If two_d_array is NULL or row is NULL or row_index is equal or greater than row_size, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/ \
+    if (two_d_array == NULL || row == NULL || row_index >= two_d_array->rows)                                                                               \
     {                                                                                                                                                      \
-        LogError("Invalid arguments: TWO_D_ARRAY (" MU_TOSTRING(T) ") two_d_array=%p, row=%p", two_d_array, row);                                          \
+        LogError("Invalid arguments: TWO_D_ARRAY (" MU_TOSTRING(T) ") two_d_array=%p, row=%p, uint32_t row_index=%" PRIu32, two_d_array, row, row_index);   \
         result = TWO_D_ARRAY_GET_ROW_INVALID_ARGS;                                                                                                         \
+    }                                                                                                                                                      \
+    else if (two_d_array->row_arrays[row_index] == NULL)                                                                                                     \
+    {                                                                                                                                                      \
+        /* Codes_SRS_TWO_D_ARRAY_07_021: [ If the row at row_index has not been allocated, TWO_D_ARRAY_GET_ROW(T) shall return TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED. ]*/ \
+        result = TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED;                                                                                                        \
     }                                                                                                                                                      \
     else                                                                                                                                                   \
     {                                                                                                                                                      \
-        /* Codes_SRS_TWO_D_ARRAY_07_020: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/ \
-        if (row_index >= two_d_array->rows)                                                                                                                \
-        {                                                                                                                                                  \
-            LogError("Invalid arguments: uint32_t row_index=%" PRIu32 " out of bound, total_rows=%" PRIu32, row_index, two_d_array->rows);               \
-            result = TWO_D_ARRAY_GET_ROW_INVALID_ARGS;                                                                                                     \
-        }                                                                                                                                                  \
-        else if (two_d_array->row_arrays[row_index] == NULL)                                                                                               \
-        {                                                                                                                                                  \
-            /* Codes_SRS_TWO_D_ARRAY_07_021: [ If the row at row_index has not been allocated, TWO_D_ARRAY_GET_ROW(T) shall return TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED. ]*/ \
-            result = TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED;                                                                                                    \
-        }                                                                                                                                                  \
-        else                                                                                                                                               \
-        {                                                                                                                                                  \
-            /* Codes_SRS_TWO_D_ARRAY_07_022: [ Otherwise, TWO_D_ARRAY_GET_ROW(T) shall store in row a pointer to the row at row_index and return TWO_D_ARRAY_GET_ROW_OK. ]*/ \
-            *row = two_d_array->row_arrays[row_index];                                                                                                     \
-            result = TWO_D_ARRAY_GET_ROW_OK;                                                                                                               \
-        }                                                                                                                                                  \
+        /* Codes_SRS_TWO_D_ARRAY_07_022: [ Otherwise, TWO_D_ARRAY_GET_ROW(T) shall store in row a pointer to the row at row_index and return TWO_D_ARRAY_GET_ROW_OK. ]*/ \
+        *row = two_d_array->row_arrays[row_index];                                                                                                         \
+        result = TWO_D_ARRAY_GET_ROW_OK;                                                                                                                   \
     }                                                                                                                                                      \
     return result;                                                                                                                                         \
 }                                                                                                                                                          \
