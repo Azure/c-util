@@ -364,9 +364,11 @@ PAGED_SPARSE_ARRAY_GET_RESULT PAGED_SPARSE_ARRAY_LL_GET(C)(PAGED_SPARSE_ARRAY_LL
 {                                                                                                                                                                            \
     PAGED_SPARSE_ARRAY_GET_RESULT result;                                                                                                                                    \
     if (                                                                                                                                                     \
-        /* Codes_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL or item is NULL or index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/ \
+        /* Codes_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/ \
         paged_sparse_array == NULL ||                                                                                                                        \
+        /* Codes_SRS_PAGED_SPARSE_ARRAY_88_040: [ If item is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/ \
         item == NULL ||                                                                                                                                      \
+        /* Codes_SRS_PAGED_SPARSE_ARRAY_88_035: [ If index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/ \
         index >= paged_sparse_array->max_size)                                                                                                               \
     {                                                                                                                                                        \
         LogError("Invalid arguments: PAGED_SPARSE_ARRAY(" MU_TOSTRING(T) ") paged_sparse_array=%p, item=%p, uint64_t index=%" PRIu64, paged_sparse_array, item, index); \

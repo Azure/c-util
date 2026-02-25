@@ -159,7 +159,11 @@ TWO_D_ARRAY_GET_ROW_RESULT TWO_D_ARRAY_GET_ROW(T)(TWO_D_ARRAY(T) two_d_array, ui
 
 `TWO_D_ARRAY_GET_ROW(T)` gets the row at the specified `row_index`.
 
-**SRS_TWO_D_ARRAY_07_019: [** If `two_d_array` is `NULL` or `row` is `NULL` or `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_GET_ROW(T)` shall fail and return `TWO_D_ARRAY_GET_ROW_INVALID_ARGS`. **]**
+**SRS_TWO_D_ARRAY_07_019: [** If `two_d_array` is `NULL`, `TWO_D_ARRAY_GET_ROW(T)` shall fail and return `TWO_D_ARRAY_GET_ROW_INVALID_ARGS`. **]**
+
+**SRS_TWO_D_ARRAY_07_023: [** If `row` is `NULL`, `TWO_D_ARRAY_GET_ROW(T)` shall fail and return `TWO_D_ARRAY_GET_ROW_INVALID_ARGS`. **]**
+
+**SRS_TWO_D_ARRAY_07_020: [** If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_GET_ROW(T)` shall fail and return `TWO_D_ARRAY_GET_ROW_INVALID_ARGS`. **]**
 
 **SRS_TWO_D_ARRAY_07_021: [** If the row at `row_index` has not been allocated, `TWO_D_ARRAY_GET_ROW(T)` shall return `TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED`. **]**
 

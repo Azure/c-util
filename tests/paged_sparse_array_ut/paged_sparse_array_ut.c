@@ -688,7 +688,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_succeeds)
     PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL or item is NULL or index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_handle_is_null)
 {
     //arrange
@@ -704,7 +704,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_handle_is_null)
     //clean
 }
 
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL or item is NULL or index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_040: [ If item is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_item_is_null)
 {
     //arrange
@@ -723,7 +723,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_item_is_null)
     PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL or item is NULL or index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_035: [ If index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_index_out_of_bounds)
 {
     //arrange
@@ -819,7 +819,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_THANDLE_type_works)
 
 /*Tests_SRS_PAGED_SPARSE_ARRAY_88_008: [ PAGED_SPARSE_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
 /*Tests_SRS_PAGED_SPARSE_ARRAY_88_017: [ PAGED_SPARSE_ARRAY_ALLOCATE(T) shall store a pointer to the element at index in *allocated_ptr and return PAGED_SPARSE_ARRAY_ALLOCATE_OK. ]*/
-/*Tests_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL or item is NULL or index is greater than or equal to max_size, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS.]*/
+/*Tests_SRS_PAGED_SPARSE_ARRAY_88_034: [ If paged_sparse_array is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS.]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_struct_type_works)
 {
     //arrange
