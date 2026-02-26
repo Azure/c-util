@@ -704,7 +704,7 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_handle_is_null)
     //clean
 }
 
-/* Tests_SRS_PAGED_SPARSE_ARRAY_88_040: [ If item is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/
+/* Tests_SRS_PAGED_SPARSE_ARRAY_88_045: [ If item is NULL, PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/
 TEST_FUNCTION(PAGED_SPARSE_ARRAY_GET_fails_when_item_is_null)
 {
     //arrange

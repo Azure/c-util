@@ -274,7 +274,7 @@ PAGED_SPARSE_ARRAY_GET_RESULT PAGED_SPARSE_ARRAY_GET(T)(PAGED_SPARSE_ARRAY(T) pa
 
 **SRS_PAGED_SPARSE_ARRAY_88_034: [** If `paged_sparse_array` is `NULL`, `PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_040: [** If `item` is `NULL`, `PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_045: [** If `item` is `NULL`, `PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_035: [** If `index` is greater than or equal to `max_size`, `PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
 
