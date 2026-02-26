@@ -236,12 +236,12 @@ int TWO_D_ARRAY_LL_ALLOCATE_NEW_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t r
 TWO_D_ARRAY_GET_ROW_RESULT TWO_D_ARRAY_LL_GET_ROW(C)(TWO_D_ARRAY_LL(T) two_d_array, uint32_t row_index, T** row)                                           \
 {                                                                                                                                                          \
     TWO_D_ARRAY_GET_ROW_RESULT result;                                                                                                                     \
+    /* Codes_SRS_TWO_D_ARRAY_07_019: [ If two_d_array is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/      \
+    /* Codes_SRS_TWO_D_ARRAY_07_023: [ If row is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/              \
+    /* Codes_SRS_TWO_D_ARRAY_07_020: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/ \
     if (                                                                                                                                                   \
-        /* Codes_SRS_TWO_D_ARRAY_07_019: [ If two_d_array is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/      \
         two_d_array == NULL ||                                                                                                                             \
-        /* Codes_SRS_TWO_D_ARRAY_07_023: [ If row is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/              \
         row == NULL ||                                                                                                                                     \
-        /* Codes_SRS_TWO_D_ARRAY_07_020: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/ \
         row_index >= two_d_array->rows)                                                                                                                    \
     {                                                                                                                                                      \
         LogError("Invalid arguments: TWO_D_ARRAY (" MU_TOSTRING(T) ") two_d_array=%p, row=%p, uint32_t row_index=%" PRIu32, two_d_array, row, row_index);   \
