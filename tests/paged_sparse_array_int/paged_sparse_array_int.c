@@ -501,7 +501,6 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_chaos)
             {
                 ASSERT_ARE_NOT_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, get_result);
             }
-            }
             break;
         }
         }
