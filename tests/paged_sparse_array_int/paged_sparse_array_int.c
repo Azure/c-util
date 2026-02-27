@@ -64,6 +64,7 @@ MU_DEFINE_ENUM(CHAOS_TEST_ACTION, CHAOS_TEST_ACTION_VALUES)
 MU_DEFINE_ENUM_STRINGS(CHAOS_TEST_ACTION, CHAOS_TEST_ACTION_VALUES)
 
 TEST_DEFINE_ENUM_TYPE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_RESULT_VALUES)
+TEST_DEFINE_ENUM_TYPE(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_RESULT_VALUES)
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
@@ -122,7 +123,9 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_all_elements_succeeds)
     //assert
     for (uint64_t i = 0; i < MAX_SIZE; i++)
     {
-        TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, i);
+        TEST_ELEMENT* elem = NULL;
+        PAGED_SPARSE_ARRAY_GET_RESULT get_result = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, i, &elem);
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, get_result);
         ASSERT_IS_NOT_NULL(elem);
         ASSERT_ARE_EQUAL(int64_t, i, elem->value);
     }
@@ -156,8 +159,9 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_allocate_and_release_all_elements_succeeds)
     //assert - all pages should be freed, all gets should fail
     for (uint64_t i = 0; i < MAX_SIZE; i++)
     {
-        TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, i);
-        ASSERT_IS_NULL(elem);
+        TEST_ELEMENT* elem = NULL;
+        PAGED_SPARSE_ARRAY_GET_RESULT get_result = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, i, &elem);
+        ASSERT_ARE_NOT_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, get_result);
     }
 
     // Note: VLD will catch any memory leaks if pages are not properly freed
@@ -185,17 +189,19 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_sparse_allocation_succeeds)
     //act & assert - verify only allocated elements are accessible
     for (uint64_t i = 0; i < MAX_SIZE; i++)
     {
-        TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, i);
+        TEST_ELEMENT* elem = NULL;
+        PAGED_SPARSE_ARRAY_GET_RESULT get_result = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, i, &elem);
         if (i % 100 == 0)
         {
+            ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, get_result);
             ASSERT_IS_NOT_NULL(elem);
             ASSERT_ARE_EQUAL(int64_t, i * 10, elem->value);
         }
         else
         {
             // Element not allocated - either page is NULL or element not marked as allocated
-            // GET should return NULL
-            ASSERT_IS_NULL(elem);
+            // GET should return NOT_ALLOCATED
+            ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED, get_result);
         }
     }
 
@@ -331,17 +337,19 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_chaos)
         }
         case CHAOS_TEST_ACTION_GET:
         {
-            TEST_ELEMENT* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, rand_index);
+            TEST_ELEMENT* elem = NULL;
+            PAGED_SPARSE_ARRAY_GET_RESULT get_result = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, rand_index, &elem);
             if (element_state[rand_index])
             {
                 // Was allocated, should succeed
+                ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, get_result);
                 ASSERT_IS_NOT_NULL(elem);
                 ASSERT_ARE_EQUAL(int64_t, rand_index, elem->value);
             }
             else
             {
                 // Was not allocated, should fail
-                ASSERT_IS_NULL(elem);
+                ASSERT_ARE_NOT_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, get_result);
             }
             break;
         }
@@ -386,7 +394,9 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_allocate_and_dispose_succee
     //assert - verify elements are accessible
     for (uint64_t i = 0; i < 10; i++)
     {
-        TEST_ELEMENT_WITH_MALLOC* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT_WITH_MALLOC)(psa, i);
+        TEST_ELEMENT_WITH_MALLOC* elem = NULL;
+        PAGED_SPARSE_ARRAY_GET_RESULT get_result = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT_WITH_MALLOC)(psa, i, &elem);
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, get_result);
         ASSERT_IS_NOT_NULL(elem);
         ASSERT_ARE_EQUAL(int64_t, i, elem->id);
         ASSERT_IS_NOT_NULL(elem->data);
@@ -395,8 +405,9 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_allocate_and_dispose_succee
     // verify unallocated elements are not accessible
     for (uint64_t i = 10; i < MALLOC_MAX_SIZE; i++)
     {
-        TEST_ELEMENT_WITH_MALLOC* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT_WITH_MALLOC)(psa, i);
-        ASSERT_IS_NULL(elem);
+        TEST_ELEMENT_WITH_MALLOC* elem = NULL;
+        PAGED_SPARSE_ARRAY_GET_RESULT get_result = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT_WITH_MALLOC)(psa, i, &elem);
+        ASSERT_ARE_NOT_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, get_result);
     }
 
     //cleanup - the dispose function should free all the malloc'd data
@@ -424,8 +435,9 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_release_calls_dispose)
     PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT_WITH_MALLOC)(psa, 5);
 
     //assert - element should no longer be accessible
-    TEST_ELEMENT_WITH_MALLOC* elem_after = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT_WITH_MALLOC)(psa, 5);
-    ASSERT_IS_NULL(elem_after);
+    TEST_ELEMENT_WITH_MALLOC* elem_after = NULL;
+    PAGED_SPARSE_ARRAY_GET_RESULT get_result = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT_WITH_MALLOC)(psa, 5, &elem_after);
+    ASSERT_ARE_NOT_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, get_result);
 
     //cleanup - VLD will catch any memory leaks
     PAGED_SPARSE_ARRAY_ASSIGN(TEST_ELEMENT_WITH_MALLOC)(&psa, NULL);
@@ -477,15 +489,17 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_chaos)
         }
         case CHAOS_TEST_ACTION_GET:
         {
-            TEST_ELEMENT_WITH_MALLOC* elem = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT_WITH_MALLOC)(psa, rand_index);
+            TEST_ELEMENT_WITH_MALLOC* elem = NULL;
+            PAGED_SPARSE_ARRAY_GET_RESULT get_result = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT_WITH_MALLOC)(psa, rand_index, &elem);
             if (element_state[rand_index])
             {
+                ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, get_result);
                 ASSERT_IS_NOT_NULL(elem);
                 ASSERT_ARE_EQUAL(int64_t, rand_index, elem->id);
             }
             else
             {
-                ASSERT_IS_NULL(elem);
+                ASSERT_ARE_NOT_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, get_result);
             }
             break;
         }

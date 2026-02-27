@@ -49,8 +49,10 @@ Elements in the array are **not stored contiguously in memory**. Each page is al
 
 **Important:** Pointer arithmetic does not work with this data structure. For example:
 ```c
-T* elem0 = PAGED_SPARSE_ARRAY_GET(T)(array, 0);
-T* elem1 = PAGED_SPARSE_ARRAY_GET(T)(array, 1);
+T* elem0;
+T* elem1;
+PAGED_SPARSE_ARRAY_GET(T)(array, 0, &elem0);
+PAGED_SPARSE_ARRAY_GET(T)(array, 1, &elem1);
 // elem0 + 1 is NOT guaranteed to equal elem1
 ```
 
@@ -110,6 +112,14 @@ typedef void (*PAGED_SPARSE_ARRAY_ITEM_DISPOSE_FUNC(T))(T* item);
     PAGED_SPARSE_ARRAY_ALLOCATE_ERROR
 
 MU_DEFINE_ENUM(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_RESULT_VALUES)
+
+/*result codes for PAGED_SPARSE_ARRAY_GET*/
+#define PAGED_SPARSE_ARRAY_GET_RESULT_VALUES \
+    PAGED_SPARSE_ARRAY_GET_OK, \
+    PAGED_SPARSE_ARRAY_GET_INVALID_ARGS, \
+    PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED
+
+MU_DEFINE_ENUM(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_RESULT_VALUES)
 ```
 
 The macros expand to these useful APIs:
@@ -118,7 +128,7 @@ The macros expand to these useful APIs:
 PAGED_SPARSE_ARRAY(T) PAGED_SPARSE_ARRAY_CREATE(T)(uint64_t max_size, uint64_t page_size, PAGED_SPARSE_ARRAY_ITEM_DISPOSE_FUNC(T) item_dispose_func);
 PAGED_SPARSE_ARRAY_ALLOCATE_RESULT PAGED_SPARSE_ARRAY_ALLOCATE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index, T** allocated_ptr);
 void PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index);
-T* PAGED_SPARSE_ARRAY_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index);
+PAGED_SPARSE_ARRAY_GET_RESULT PAGED_SPARSE_ARRAY_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index, T** item);
 ```
 
 ### PAGED_SPARSE_ARRAY(T)
@@ -257,19 +267,21 @@ void PAGED_SPARSE_ARRAY_RELEASE(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uin
 ### PAGED_SPARSE_ARRAY_GET(T)
 
 ```c
-T* PAGED_SPARSE_ARRAY_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index);
+PAGED_SPARSE_ARRAY_GET_RESULT PAGED_SPARSE_ARRAY_GET(T)(PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index, T** item);
 ```
 
 `PAGED_SPARSE_ARRAY_GET(T)` gets the element at the specified index.
 
-**SRS_PAGED_SPARSE_ARRAY_88_034: [** If `paged_sparse_array` is `NULL`, `PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `NULL`. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_034: [** If `paged_sparse_array` is `NULL`, `PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_035: [** If `index` is greater than or equal to `max_size`, `PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `NULL`. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_045: [** If `item` is `NULL`, `PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
+
+**SRS_PAGED_SPARSE_ARRAY_88_035: [** If `index` is greater than or equal to `max_size`, `PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
 
 **SRS_PAGED_SPARSE_ARRAY_88_036: [** `PAGED_SPARSE_ARRAY_GET(T)` shall compute the page index as `index / page_size`. **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_037: [** If the page is not allocated, `PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `NULL`. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_037: [** If the page is not allocated, `PAGED_SPARSE_ARRAY_GET(T)` shall return `PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED`. **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_038: [** If the element at `index` is not allocated, `PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `NULL`. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_038: [** If the element at `index` is not allocated, `PAGED_SPARSE_ARRAY_GET(T)` shall return `PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED`. **]**
 
-**SRS_PAGED_SPARSE_ARRAY_88_039: [** `PAGED_SPARSE_ARRAY_GET(T)` shall return a pointer to the element at `index`. **]**
+**SRS_PAGED_SPARSE_ARRAY_88_039: [** `PAGED_SPARSE_ARRAY_GET(T)` shall store in `item` a pointer to the element at `index` and return `PAGED_SPARSE_ARRAY_GET_OK`. **]**

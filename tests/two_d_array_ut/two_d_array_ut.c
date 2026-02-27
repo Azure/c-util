@@ -42,6 +42,8 @@ TWO_D_ARRAY_TYPE_DEFINE(THANDLE(A_TEST));
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
+TEST_DEFINE_ENUM_TYPE(TWO_D_ARRAY_GET_ROW_RESULT, TWO_D_ARRAY_GET_ROW_RESULT_VALUES)
+
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
@@ -697,27 +699,45 @@ TEST_FUNCTION(TWO_D_ARRAY_FREE_ROW_with_struct_type_succeeds)
 
 /* TWO_D_ARRAY_GET_ROW(T) */
 
-/* Tests_SRS_TWO_D_ARRAY_07_019: [ If two_d_array is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail return NULL. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_019: [ If two_d_array is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/
 TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_handle_is_null)
 {
     //arrange
-    uint32_t* row;
+    uint32_t* row = NULL;
 
     //act
-    row = TWO_D_ARRAY_GET_ROW(uint32_t)(NULL, 0);
+    TWO_D_ARRAY_GET_ROW_RESULT result = TWO_D_ARRAY_GET_ROW(uint32_t)(NULL, 0, &row);
 
     //assert
-    ASSERT_IS_NULL(row);
+    ASSERT_ARE_EQUAL(TWO_D_ARRAY_GET_ROW_RESULT, TWO_D_ARRAY_GET_ROW_INVALID_ARGS, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
 }
 
-/* Tests_SRS_TWO_D_ARRAY_07_020: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_GET_ROW(T) shall fail return NULL. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_023: [ If row is NULL, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/
+TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_row_is_null)
+{
+    //arrange
+    TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
+    ASSERT_IS_NOT_NULL(tdarr);
+    umock_c_reset_all_calls();
+
+    //act
+    TWO_D_ARRAY_GET_ROW_RESULT result = TWO_D_ARRAY_GET_ROW(uint32_t)(tdarr, 0, NULL);
+
+    //assert
+    ASSERT_ARE_EQUAL(TWO_D_ARRAY_GET_ROW_RESULT, TWO_D_ARRAY_GET_ROW_INVALID_ARGS, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+    TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
+}
+
+/* Tests_SRS_TWO_D_ARRAY_07_020: [ If row_index is equal or greater than row_size, TWO_D_ARRAY_GET_ROW(T) shall fail and return TWO_D_ARRAY_GET_ROW_INVALID_ARGS. ]*/
 TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_row_index_too_high)
 {
     //arrange
-    uint32_t* row_result;
     TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
     ASSERT_IS_NOT_NULL(tdarr);
     int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
@@ -726,21 +746,21 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_row_index_too_high)
     umock_c_reset_all_calls();
 
     //act
-    row_result = TWO_D_ARRAY_GET_ROW(uint32_t)(tdarr, 5);
+    uint32_t* row = NULL;
+    TWO_D_ARRAY_GET_ROW_RESULT result = TWO_D_ARRAY_GET_ROW(uint32_t)(tdarr, 5, &row);
 
     //assert
-    ASSERT_IS_NULL(row_result);
+    ASSERT_ARE_EQUAL(TWO_D_ARRAY_GET_ROW_RESULT, TWO_D_ARRAY_GET_ROW_INVALID_ARGS, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
     TWO_D_ARRAY_ASSIGN(uint32_t)(&tdarr, NULL);
 }
 
-/* Tests_SRS_TWO_D_ARRAY_07_021: [ If the array stored in row_index is NULL, TWO_D_ARRAY_GET_ROW(T) shall return NULL. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_021: [ If the row at row_index has not been allocated, TWO_D_ARRAY_GET_ROW(T) shall return TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED. ]*/
 TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_row_not_initialized_yet)
 {
     //arrange
-    uint32_t* row_result;
     TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
     ASSERT_IS_NOT_NULL(tdarr);
     int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
@@ -749,10 +769,11 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_row_not_initialized_yet)
     umock_c_reset_all_calls();
 
     //act
-    row_result = TWO_D_ARRAY_GET_ROW(uint32_t)(tdarr, 1);
+    uint32_t* row = NULL;
+    TWO_D_ARRAY_GET_ROW_RESULT result = TWO_D_ARRAY_GET_ROW(uint32_t)(tdarr, 1, &row);
 
     //assert
-    ASSERT_IS_NULL(row_result);
+    ASSERT_ARE_EQUAL(TWO_D_ARRAY_GET_ROW_RESULT, TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     //clean
@@ -760,11 +781,10 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_fails_when_row_not_initialized_yet)
 
 }
 
-/* Tests_SRS_TWO_D_ARRAY_07_022: [ Otherwise, TWO_D_ARRAY_GET_ROW(T) shall return the entire column stored in the corresponding row_index. ]*/
+/* Tests_SRS_TWO_D_ARRAY_07_022: [ Otherwise, TWO_D_ARRAY_GET_ROW(T) shall store in row a pointer to the row at row_index and return TWO_D_ARRAY_GET_ROW_OK. ]*/
 TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_get_all_rows_succeeds_with_uint32_t_type)
 {
     //arrange
-    uint32_t* row_result;
     TWO_D_ARRAY(uint32_t) tdarr = TWO_D_ARRAY_CREATE(uint32_t)(5, 5);
     ASSERT_IS_NOT_NULL(tdarr);
     int add_row_result = TWO_D_ARRAY_ALLOCATE_NEW_ROW(uint32_t)(tdarr, 0);
@@ -777,13 +797,15 @@ TEST_FUNCTION(TWO_D_ARRAY_GET_ROW_get_all_rows_succeeds_with_uint32_t_type)
     umock_c_reset_all_calls();
 
     //act
-    row_result = TWO_D_ARRAY_GET_ROW(uint32_t)(tdarr, 0);
+    uint32_t* row = NULL;
+    TWO_D_ARRAY_GET_ROW_RESULT result = TWO_D_ARRAY_GET_ROW(uint32_t)(tdarr, 0, &row);
 
     //assert
-    ASSERT_IS_NOT_NULL(row_result);
+    ASSERT_ARE_EQUAL(TWO_D_ARRAY_GET_ROW_RESULT, TWO_D_ARRAY_GET_ROW_OK, result);
+    ASSERT_IS_NOT_NULL(row);
     for (uint32_t i = 0; i < 5; i++)
     {
-        ASSERT_ARE_EQUAL(uint32_t, row_result[i], i);
+        ASSERT_ARE_EQUAL(uint32_t, row[i], i);
     }
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 

@@ -33,7 +33,7 @@ The macros expand to these useful somewhat more useful APIs:
 TWO_D_ARRAY(T) TWO_D_ARRAY_CREATE(T)(uint32_t row_size, uint32_t col_size);
 int TWO_D_ARRAY_FREE_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
 int TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
-T* TWO_D_ARRAY_GET_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
+TWO_D_ARRAY_GET_ROW_RESULT TWO_D_ARRAY_GET_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index, T** row);
 void TWO_D_ARRAY_FREE(T)(TWO_D_ARRAY(T) two_d_array);
 
 ```
@@ -154,15 +154,17 @@ int TWO_D_ARRAY_ALLOCATE_NEW_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_ind
 ### TWO_D_ARRAY_GET_ROW(T)
 
 ```c
-T* TWO_D_ARRAY_GET_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index);
+TWO_D_ARRAY_GET_ROW_RESULT TWO_D_ARRAY_GET_ROW(T)(TWO_D_ARRAY(T) two_d_array, uint32_t row_index, T** row);
 ```
 
-`TWO_D_ARRAY_GET_ROW(T)` shall return the entire column stored in `row_index`.
+`TWO_D_ARRAY_GET_ROW(T)` gets the row at the specified `row_index`.
 
-**SRS_TWO_D_ARRAY_07_019: [** If `two_d_array` is `NULL`, `TWO_D_ARRAY_GET_ROW(T)` shall fail return `NULL`. **]**
+**SRS_TWO_D_ARRAY_07_019: [** If `two_d_array` is `NULL`, `TWO_D_ARRAY_GET_ROW(T)` shall fail and return `TWO_D_ARRAY_GET_ROW_INVALID_ARGS`. **]**
 
-**SRS_TWO_D_ARRAY_07_020: [** If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_GET_ROW(T)` shall fail return `NULL`. **]**
+**SRS_TWO_D_ARRAY_07_023: [** If `row` is `NULL`, `TWO_D_ARRAY_GET_ROW(T)` shall fail and return `TWO_D_ARRAY_GET_ROW_INVALID_ARGS`. **]**
 
-**SRS_TWO_D_ARRAY_07_021: [** If the array stored in `row_index` is `NULL`, `TWO_D_ARRAY_GET_ROW(T)` shall return `NULL`. **]**
+**SRS_TWO_D_ARRAY_07_020: [** If `row_index` is equal or greater than `row_size`, `TWO_D_ARRAY_GET_ROW(T)` shall fail and return `TWO_D_ARRAY_GET_ROW_INVALID_ARGS`. **]**
 
-**SRS_TWO_D_ARRAY_07_022: [** Otherwise, `TWO_D_ARRAY_GET_ROW(T)` shall return the entire column stored in the corresponding `row_index`. **]**
+**SRS_TWO_D_ARRAY_07_021: [** If the row at `row_index` has not been allocated, `TWO_D_ARRAY_GET_ROW(T)` shall return `TWO_D_ARRAY_GET_ROW_NOT_ALLOCATED`. **]**
+
+**SRS_TWO_D_ARRAY_07_022: [** Otherwise, `TWO_D_ARRAY_GET_ROW(T)` shall store in `row` a pointer to the row at `row_index` and return `TWO_D_ARRAY_GET_ROW_OK`. **]**
