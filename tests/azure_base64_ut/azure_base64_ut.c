@@ -1744,86 +1744,23 @@ TEST_FUNCTION(Azure_Base64_Decode_zero_length_returns_zero_length)
 }
 
 /*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Azure_Base64_Decode shall return NULL.]*/
-TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_1)
+PARAMETERIZED_TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails,
+    ARGS(const char*, invalid_input),
+    CASE(("1"), length_1),
+    CASE(("12"), length_2),
+    CASE(("123"), length_3),
+    CASE(("12345"), length_5),
+    CASE(("123456"), length_6),
+    CASE(("1234567"), length_7))
 {
     ///Arrange
     BUFFER_HANDLE result;
 
     ///act
-    result = Azure_Base64_Decode("1");
+    result = Azure_Base64_Decode(invalid_input);
 
     ///assert
     ASSERT_IS_NULL(result);
-
-}
-
-/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Azure_Base64_Decode shall return NULL.]*/
-TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_2)
-{
-    ///Arrange
-    BUFFER_HANDLE result;
-
-    ///act
-    result = Azure_Base64_Decode("12");
-
-    ///assert
-    ASSERT_IS_NULL(result);
-
-}
-
-/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Azure_Base64_Decode shall return NULL.]*/
-TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_3)
-{
-    ///Arrange
-    BUFFER_HANDLE result;
-
-    ///act
-    result = Azure_Base64_Decode("123");
-
-    ///assert
-    ASSERT_IS_NULL(result);
-
-}
-
-/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Azure_Base64_Decode shall return NULL.]*/
-TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_4)
-{
-    ///Arrange
-    BUFFER_HANDLE result;
-
-    ///act
-    result = Azure_Base64_Decode("12345");
-
-    ///assert
-    ASSERT_IS_NULL(result);
-
-}
-
-/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Azure_Base64_Decode shall return NULL.]*/
-TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_5)
-{
-    ///Arrange
-    BUFFER_HANDLE result;
-
-    ///act
-    result = Azure_Base64_Decode("123456");
-
-    ///assert
-    ASSERT_IS_NULL(result);
-}
-
-/*Tests_SRS_BASE64_06_011: [If the source string has an invalid length for a base 64 encoded string then Azure_Base64_Decode shall return NULL.]*/
-TEST_FUNCTION(Azure_Base64_Decode_invalid_length_fails_6)
-{
-    ///Arrange
-    BUFFER_HANDLE result;
-
-    ///act
-    result = Azure_Base64_Decode("1234567");
-
-    ///assert
-    ASSERT_IS_NULL(result);
-
 }
 
 /*Tests_SRS_BASE64_06_010: [If there is any memory allocation failure during the decode then Azure_Base64_Decode shall return NULL.]*/
