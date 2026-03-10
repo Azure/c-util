@@ -31,106 +31,24 @@ TEST_FUNCTION_CLEANUP(cleans)
 {
 }
 
-TEST_FUNCTION(collection_one_flag_one)
+PARAMETERIZED_TEST_FUNCTION(collection_one_flags_to_string, // no-srs
+    ARGS(uint32_t, flags_value, const char*, expected_string),
+    CASE((1, "FLAG_ONE"), flag_one),
+    CASE((2, "FLAG_TWO"), flag_two),
+    CASE((3, "FLAG_ONE | FLAG_TWO"), flag_one_and_two),
+    CASE((0, ""), zero),
+    CASE((4, "UNKNOWN_FLAG(0x00000004)"), unknown_flag),
+    CASE((13, "FLAG_ONE | UNKNOWN_FLAG(0x0000000c)"), known_and_unknown_flag),
+    CASE((15, "FLAG_ONE | FLAG_TWO | UNKNOWN_FLAG(0x0000000c)"), all_known_and_unknown_flag))
 {
     ///arrange
 
     ///act
-    char* result = FLAGS_TO_STRING(COLLECTION_ONE)(1);
-    
-    ///assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, "FLAG_ONE", result);
-
-    ///clean
-    free(result);
-}
-
-TEST_FUNCTION(collection_one_flag_two)
-{
-    ///arrange
-
-    ///act
-    char* result = FLAGS_TO_STRING(COLLECTION_ONE)(2);
+    char* result = FLAGS_TO_STRING(COLLECTION_ONE)(flags_value);
 
     ///assert
     ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, "FLAG_TWO", result);
-
-    ///clean
-    free(result);
-}
-
-TEST_FUNCTION(collection_one_flag_one_and_two)
-{
-    ///arrange
-
-    ///act
-    char* result = FLAGS_TO_STRING(COLLECTION_ONE)(1 | 2);
-
-    ///assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, "FLAG_ONE | FLAG_TWO", result);
-
-    ///clean
-    free(result);
-}
-
-TEST_FUNCTION(collection_one_zero)
-{
-    ///arrange
-
-    ///act
-    char* result = FLAGS_TO_STRING(COLLECTION_ONE)(0);
-
-    ///assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, "", result);
-
-    ///clean
-    free(result);
-}
-
-TEST_FUNCTION(collection_one_unknown_flag)
-{
-    ///arrange
-
-    ///act
-    char* result = FLAGS_TO_STRING(COLLECTION_ONE)(4);
-
-    ///assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, "UNKNOWN_FLAG(0x00000004)", result);
-
-    ///clean
-    free(result);
-}
-
-TEST_FUNCTION(collection_one_known_and_unknown_flag)
-{
-    ///arrange
-
-    ///act
-    char* result = FLAGS_TO_STRING(COLLECTION_ONE)(13);
-
-    ///assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, "FLAG_ONE | UNKNOWN_FLAG(0x0000000c)", result);
-
-    ///clean
-    free(result);
-}
-
-TEST_FUNCTION(collection_one_all_known_and_unknown_flag)
-{
-    ///arrange
-
-    ///act
-    char* result = FLAGS_TO_STRING(COLLECTION_ONE)(15);
-
-    ///assert
-    ASSERT_IS_NOT_NULL(result);
-    ASSERT_ARE_EQUAL(char_ptr, "FLAG_ONE | FLAG_TWO | UNKNOWN_FLAG(0x0000000c)", result);
+    ASSERT_ARE_EQUAL(char_ptr, expected_string, result);
 
     ///clean
     free(result);
