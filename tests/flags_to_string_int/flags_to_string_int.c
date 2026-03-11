@@ -31,7 +31,7 @@ TEST_FUNCTION_CLEANUP(cleans)
 {
 }
 
-PARAMETERIZED_TEST_FUNCTION(collection_one_flags_to_string, // no-srs
+PARAMETERIZED_TEST_FUNCTION(collection_one_flags_to_string
     ARGS(uint32_t, flags_value, const char*, expected_string),
     CASE((1, "FLAG_ONE"), flag_one),
     CASE((2, "FLAG_TWO"), flag_two),
