@@ -5,10 +5,11 @@
 c-util is a Microsoft Azure C utility library providing fundamental data structures and asynchronous operation primitives. This is a C99/C11 library with extensive macro-based code generation patterns for type-safe generic programming.
 
 ## External Dependencies and Standards
-All code must follow the comprehensive coding standards defined in #file:../deps/c-build-tools/.github/general_coding_instructions.md. For detailed build infrastructure, testing patterns, and pipeline conventions, refer to dependency-specific instructions:
+All code must follow the comprehensive coding standards defined in #file:../deps/azure-messaging-ai-context/.github/general_coding_instructions.md. For detailed build infrastructure, testing patterns, and pipeline conventions, refer to dependency-specific instructions:
 
 - **Build Infrastructure**: #file:../deps/c-build-tools/.github/copilot-instructions.md
-- **Platform Abstraction**: #file:../deps/c-pal/.github/copilot-instructions.md (THANDLE patterns, execution engines, async patterns)  
+- **AI Context & Coding Standards**: #file:../deps/azure-messaging-ai-context/.github/copilot-instructions.md (git conventions, terminal rules, agent skills)
+- **Platform Abstraction**: #file:../deps/c-pal/.github/copilot-instructions.md (THANDLE patterns, execution engines, async patterns)
 - **Logging Framework**: #file:../deps/c-logging/.github/copilot-instructions.md (structured logging, ETW support)
 - **Macro Utilities**: #file:../deps/macro-utils-c/.github/copilot-instructions.md (metaprogramming patterns)
 - **Test Framework**: #file:../deps/ctest/.github/copilot-instructions.md (test execution framework)
