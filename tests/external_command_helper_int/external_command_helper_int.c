@@ -25,17 +25,13 @@ TEST_DEFINE_ENUM_TYPE(EXTERNAL_COMMAND_RESULT, EXTERNAL_COMMAND_RESULT_VALUES);
 
 #define EXE_STRING EXTERNAL_COMMAND_PATH
 
-// If we are building with VLD, then the external_command_sample.exe also has VLD linked.
-// The sample exe inherits the test runner's CWD where default_vld.ini is deployed (VLD=on
-// with IgnoreFunctionsList). VLD outputs these 5 lines to stdout:
-//   Visual Leak Detector read settings from: ...vld.ini
-//   Visual Leak Detector Version X.Y.Z installed.
-//       Ignorning these functions from leak detection: CryptFindOIDInfo
-//   No memory leaks detected.
-//   Visual Leak Detector is now exiting.
+// If we are building with VLD, then the test tool also has VLD
+// VLD is set to be disabled for the exe, but that still prints two lines:
+//   Visual Leak Detector read settings from: PATH_TO_CMAKE_BUILD\external_command_helper_int_exe\ext\vld.ini
+//   Visual Leak Detector is turned off.
 // Just ignore those lines
 #if defined _DEBUG && defined USE_VLD
-#define ADDITIONAL_LINE_COUNT 5
+#define ADDITIONAL_LINE_COUNT 2
 #else
 #define ADDITIONAL_LINE_COUNT 0
 #endif
