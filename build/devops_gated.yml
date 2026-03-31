@@ -7,13 +7,14 @@ resources:
     type: github
     name: azure/c-build-tools
     endpoint: github.com_azure
-    ref: a7391547545d8c7d39b9d71f5cc2f606e0e7bfc3
+    ref: 56184561c18790e38774d9e93e3ce8b2b82a59f2
 jobs:
 - template: /pipeline_templates/build_all_flavors.yml@c_build_tools
   parameters:
     GBALLOC_LL_TYPE_VALUES: ["PASSTHROUGH", "JEMALLOC"]
     # ARM64 build is disabled temporarily, will be re-enabled later
     ARCH_TYPE_VALUES: ["x64"]
+    validation_msbuild_target: c_util_repo_validation
 
 - template: /pipeline_templates/run_master_check.yml@c_build_tools
   parameters:
