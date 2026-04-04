@@ -7,7 +7,7 @@ resources:
     type: github
     name: azure/c-build-tools
     endpoint: github.com_azure
-    ref: 86c628aabb632fa2ba8adc10d34b320d115a42ed
+    ref: 489b3ce8031b7f08dbc81cbd97fa01f5061c5203
 jobs:
 - template: /pipeline_templates/build_all_flavors.yml@c_build_tools
   parameters:
@@ -76,6 +76,7 @@ jobs:
 #      script: |
 #          cmake --build . | tee build.log
 #          if ((Select-String -Path "./build.log" -Pattern "Warning: include-what-you-use") -ne $null) { throw "include check failed" }
+
 
 
 
