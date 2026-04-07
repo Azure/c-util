@@ -40,6 +40,7 @@ jobs:
   parameters:
     cmake_options: '-Drun_valgrind:BOOL=ON -Drun_unittests:BOOL=ON -Drun_int_tests:BOOL=ON -DCMAKE_BUILD_TYPE=Debug'
     ctest_exclude_regex: 'sm_int_helgrind|sm_int_valgrind|tqueue_int_valgrind'
+    pool_name: ${{ parameters.pool_name_linux }}
 
 # Will be re-enabled at a later time
 #- job: includecheck
