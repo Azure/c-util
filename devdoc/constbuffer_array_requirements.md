@@ -291,7 +291,7 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_add_back, CONSTB
 
 **SRS_CONSTBUFFER_ARRAY_05_005: [** `constbuffer_array_add_back` shall inc_ref all the `CONSTBUFFER_HANDLE` it had copied. **]**
 
-**SRS_CONSTBUFFER_ARRAY_05_006: [** `constbuffer_array_add_back` shall succeed and return a non-`NULL` value. ]**
+**SRS_CONSTBUFFER_ARRAY_05_006: [** `constbuffer_array_add_back` shall succeed and return a non-`NULL` value. **]**
 
 **SRS_CONSTBUFFER_ARRAY_05_007: [** If there any failures `constbuffer_array_add_back` shall fail and return `NULL`. **]**
 

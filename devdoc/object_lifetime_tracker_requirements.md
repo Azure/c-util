@@ -219,8 +219,7 @@ MOCKABLE_FUNCTION(, OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_RESULT, object_lif
 
  - **SRS_OBJECT_LIFETIME_TRACKER_43_063: [** `object_lifetime_tracker_unregister_object` shall free the memory associated with the given `key`. **]**
 
-**SRS_OBJECT_LIFETIME_TRACKER_43_052: [** `object_lifetime_tracker_unregister_object` shall release the lock.
- **]**
+**SRS_OBJECT_LIFETIME_TRACKER_43_052: [** `object_lifetime_tracker_unregister_object` shall release the lock. **]**
 
 **SRS_OBJECT_LIFETIME_TRACKER_43_031: [** `object_lifetime_tracker_unregister_object` shall succeed and return `OBJECT_LIFETIME_TRACKER_UNREGISTER_OBJECT_OK`. **]**
 
