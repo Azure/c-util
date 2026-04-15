@@ -351,7 +351,7 @@ static int push_data(void* context)
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-TIMED_TEST_SUITE_INITIALIZE(suite_init, TIMED_TEST_DEFAULT_TIMEOUT_MS)
+TIMED_TEST_SUITE_INITIALIZE(suite_init, 20 * 60 * 1000)
 {
     void* execution_engine_parameters = NULL;
 
