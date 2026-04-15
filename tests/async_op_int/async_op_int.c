@@ -15,6 +15,7 @@
 #include "c_pal/gballoc_hl_redirect.h"
 
 #include "c_pal/thandle.h"
+#include "c_pal/timed_test_suite.h"
 
 #include "c_util/async_op.h"
 
@@ -84,12 +85,12 @@ static ASYNC_OP_DISPOSE disposes[] =
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-TEST_SUITE_INITIALIZE(setsBufferTempSize)
+TIMED_TEST_SUITE_INITIALIZE(setsBufferTempSize, TIMED_TEST_DEFAULT_TIMEOUT_MS)
 {
     ASSERT_ARE_EQUAL(int, 0, gballoc_hl_init(NULL, NULL));
 }
 
-TEST_SUITE_CLEANUP(TestClassCleanup)
+TIMED_TEST_SUITE_CLEANUP(TestClassCleanup)
 {
     gballoc_hl_deinit();
 }

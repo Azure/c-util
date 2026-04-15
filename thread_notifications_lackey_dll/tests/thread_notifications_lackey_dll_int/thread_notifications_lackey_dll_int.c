@@ -11,6 +11,7 @@
 
 #include "c_pal/interlocked.h"
 #include "c_pal/threadapi.h"
+#include "c_pal/timed_test_suite.h"
 
 #include "thread_notifications_lackey_dll/thread_notifications_lackey_dll.h"
 
@@ -24,11 +25,11 @@ MU_DEFINE_ENUM_STRINGS(THREAD_NOTIFICATIONS_LACKEY_DLL_REASON, THREAD_NOTIFICATI
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-TEST_SUITE_INITIALIZE(suite_init)
+TIMED_TEST_SUITE_INITIALIZE(suite_init, TIMED_TEST_DEFAULT_TIMEOUT_MS)
 {
 }
 
-TEST_SUITE_CLEANUP(suite_cleanup)
+TIMED_TEST_SUITE_CLEANUP(suite_cleanup)
 {
 }
 

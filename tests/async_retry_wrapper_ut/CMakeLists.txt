@@ -1,4 +1,4 @@
-﻿#Copyright (c) Microsoft. All rights reserved.
+#Copyright (c) Microsoft. All rights reserved.
 
 set(theseTestsName async_retry_wrapper_ut)
 
@@ -25,6 +25,6 @@ set(${theseTestsName}_h_files
 include_directories(../../inc)
 
 build_test_artifacts(${theseTestsName} "tests/c_util" 
-    ADDITIONAL_LIBS c_util c_pal_reals
+    ADDITIONAL_LIBS real_process_watchdog c_pal c_util c_pal_reals
     ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/async_retry_wrapper_ut_pch.h"
 )

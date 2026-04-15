@@ -14,7 +14,7 @@ set(${theseTestsName}_h_files
     ../../inc/c_util/worker_thread.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_pal c_util)
 
 if (WIN32)
     if("${building}" STREQUAL "exe")

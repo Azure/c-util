@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "critical_section_ut_pch.h"
@@ -14,13 +14,13 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-    TEST_SUITE_INITIALIZE(test_suite_intialize)
+    TIMED_TEST_SUITE_INITIALIZE(test_suite_intialize, TIMED_TEST_DEFAULT_TIMEOUT_MS)
     {
         ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error), "umock_c_init failed");
         ASSERT_ARE_EQUAL(int, 0, umocktypes_stdint_register_types(), "umocktypes_stdint_register_types failed");
     }
 
-    TEST_SUITE_CLEANUP(test_class_cleanup)
+    TIMED_TEST_SUITE_CLEANUP(test_class_cleanup)
     {
         umock_c_deinit();
     }

@@ -18,6 +18,7 @@
 #include "c_pal/threadapi.h"
 #include "c_pal/sync.h"
 #include "c_pal/srw_lock.h"
+#include "c_pal/timed_test_suite.h"
 
 #include "c_util/rc_ptr.h"
 #include "c_util/channel.h"
@@ -350,7 +351,7 @@ static int push_data(void* context)
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-TEST_SUITE_INITIALIZE(suite_init)
+TIMED_TEST_SUITE_INITIALIZE(suite_init, TIMED_TEST_DEFAULT_TIMEOUT_MS)
 {
     void* execution_engine_parameters = NULL;
 
@@ -374,7 +375,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_IS_NOT_NULL(g.g_push_correlation_id);
 }
 
-TEST_SUITE_CLEANUP(suite_cleanup)
+TIMED_TEST_SUITE_CLEANUP(suite_cleanup)
 {
     THANDLE_ASSIGN(RC_STRING)(&g.g_push_correlation_id, NULL);
     THANDLE_ASSIGN(RC_STRING)(&g.g_pull_correlation_id, NULL);

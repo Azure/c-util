@@ -16,6 +16,7 @@
 #include "c_pal/sync.h"
 #include "c_pal/thandle.h"
 #include "c_pal/threadapi.h"
+#include "c_pal/timed_test_suite.h"
 
 #include "c_util/async_op.h"
 
@@ -366,12 +367,12 @@ static void test_ASYNC_OP_MODULE_CALLBACK(void* context, COMMON_ASYNC_OP_MODULE_
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-TEST_SUITE_INITIALIZE(TestClassInit)
+TIMED_TEST_SUITE_INITIALIZE(TestClassInit, TIMED_TEST_DEFAULT_TIMEOUT_MS)
 {
     ASSERT_ARE_EQUAL(int, 0, gballoc_hl_init(NULL, NULL));
 }
 
-TEST_SUITE_CLEANUP(TestClassCleanup)
+TIMED_TEST_SUITE_CLEANUP(TestClassCleanup)
 {
     gballoc_hl_deinit();
 }

@@ -1,4 +1,4 @@
-﻿#Copyright (c) Microsoft. All rights reserved.
+#Copyright (c) Microsoft. All rights reserved.
 
 set(theseTestsName rc_ptr_ut)
 
@@ -15,6 +15,6 @@ set(${theseTestsName}_h_files
 )
 
 build_test_artifacts(${theseTestsName} "tests/c_util" 
-    ADDITIONAL_LIBS c_util_reals c_pal_reals c_pal
+    ADDITIONAL_LIBS real_process_watchdog c_pal c_util_reals c_pal_reals c_pal
     ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/rc_ptr_ut_pch.h"
 )
