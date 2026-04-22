@@ -326,7 +326,7 @@ void PAGED_SPARSE_ARRAY_LL_RELEASE(C)(PAGED_SPARSE_ARRAY_LL(T) paged_sparse_arra
         /* Codes_SRS_PAGED_SPARSE_ARRAY_88_022: [ If the page is not allocated, PAGED_SPARSE_ARRAY_RELEASE(T) shall return. ]*/                                             \
         if (array->pages[page_index] == NULL)                                                                                                                               \
         {                                                                                                                                                                   \
-            LogError("Page at page_index=%" PRIu64 " is not allocated", page_index);                                                                                        \
+            /* Page at page_index is not allocated, nothing to release */                                                                                                   \
         }                                                                                                                                                                   \
         else                                                                                                                                                                \
         {                                                                                                                                                                   \
@@ -334,7 +334,7 @@ void PAGED_SPARSE_ARRAY_LL_RELEASE(C)(PAGED_SPARSE_ARRAY_LL(T) paged_sparse_arra
             /* Codes_SRS_PAGED_SPARSE_ARRAY_88_023: [ If the element at index is not allocated, PAGED_SPARSE_ARRAY_RELEASE(T) shall return. ]*/                             \
             if (!PAGED_SPARSE_ARRAY_IS_ALLOCATED(PAGED_SPARSE_ARRAY_GET_BITMAP(array->pages[page_index], paged_sparse_array->page_size), index_in_page))                 \
             {                                                                                                                                                               \
-                LogError("Element at index=%" PRIu64 " is not allocated", index);                                                                                           \
+                /* Element at index is not allocated, nothing to release */                                                                                                 \
             }                                                                                                                                                               \
             else                                                                                                                                                            \
             {                                                                                                                                                               \
