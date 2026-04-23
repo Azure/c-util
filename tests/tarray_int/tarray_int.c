@@ -16,6 +16,7 @@
 #include "umock_c/umock_c.h"
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
+#include "c_pal/timed_test_suite.h"
 #include "play_undo_op_types.h"
 #include "play_undo_op_tarray_types.h"
 #include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
@@ -34,7 +35,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-TEST_SUITE_INITIALIZE(it_does_something)
+TIMED_TEST_SUITE_INITIALIZE(it_does_something, TIMED_TEST_DEFAULT_TIMEOUT_MS)
 {
     ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
 
@@ -48,7 +49,7 @@ TEST_SUITE_INITIALIZE(it_does_something)
     REGISTER_TARRAY_UNDO_OP_GLOBAL_MOCK_HOOK();
 }
 
-TEST_SUITE_CLEANUP(TestClassCleanup)
+TIMED_TEST_SUITE_CLEANUP(TestClassCleanup)
 {
     umock_c_deinit();
 

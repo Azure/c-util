@@ -28,4 +28,4 @@ set(${theseTestsName}_h_files
     ml_async_op_module_with_retries.h
 )
 
-build_test_artifacts(${theseTestsName} "samples" ADDITIONAL_LIBS c_util)
+build_test_artifacts(${theseTestsName} "samples" ADDITIONAL_LIBS c_pal c_util)

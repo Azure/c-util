@@ -1,4 +1,4 @@
-﻿#Copyright (c) Microsoft. All rights reserved.
+#Copyright (c) Microsoft. All rights reserved.
 
 set(theseTestsName constbuffer_array_splitter_ut)
 
@@ -15,6 +15,6 @@ set(${theseTestsName}_h_files
 )
 
 build_test_artifacts(${theseTestsName} "tests/c_util" 
-    ADDITIONAL_LIBS c_util_reals
+    ADDITIONAL_LIBS real_process_watchdog c_pal c_util_reals
     ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/constbuffer_array_splitter_ut_pch.h"
 )

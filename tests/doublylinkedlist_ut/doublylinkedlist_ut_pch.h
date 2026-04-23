@@ -11,6 +11,7 @@
 #include "umock_c/umocktypes_charptr.h"
 
 #include "c_pal/containing_record.h"
+#include "c_pal/timed_test_suite.h"
 
 #include "c_util/doublylinkedlist.h"
 #include "testrunnerswitcher.h"

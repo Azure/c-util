@@ -22,7 +22,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-TEST_SUITE_INITIALIZE(setsBufferTempSize)
+TIMED_TEST_SUITE_INITIALIZE(setsBufferTempSize, TIMED_TEST_DEFAULT_TIMEOUT_MS)
 {
     ASSERT_ARE_EQUAL(int, 0, real_gballoc_hl_init(NULL, NULL));
 
@@ -33,7 +33,7 @@ TEST_SUITE_INITIALIZE(setsBufferTempSize)
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(realloc, NULL);
 }
 
-TEST_SUITE_CLEANUP(TestClassCleanup)
+TIMED_TEST_SUITE_CLEANUP(TestClassCleanup)
 {
     umock_c_deinit();
 

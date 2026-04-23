@@ -15,6 +15,7 @@
 #include "c_pal/interlocked.h"
 #include "c_pal/thandle.h"
 #include "c_pal/threadapi.h"
+#include "c_pal/timed_test_suite.h"
 
 #include "c_util/paged_sparse_array.h"
 
@@ -68,14 +69,14 @@ TEST_DEFINE_ENUM_TYPE(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_RESU
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-TEST_SUITE_INITIALIZE(suite_init)
+TIMED_TEST_SUITE_INITIALIZE(suite_init, TIMED_TEST_DEFAULT_TIMEOUT_MS)
 {
     time_t seed = time(NULL);
     LogInfo("Test using random seed=%u", (unsigned int)seed);
     srand((unsigned int)seed);
 }
 
-TEST_SUITE_CLEANUP(suite_cleanup)
+TIMED_TEST_SUITE_CLEANUP(suite_cleanup)
 {
 }
 
