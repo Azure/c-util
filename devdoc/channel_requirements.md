@@ -305,8 +305,8 @@ channel_open` opens the given `channel`.
 
 **SRS_CHANNEL_43_148: [** If `channel_op_context` is `NULL`, `execute_callbacks` shall terminate the process. **]**
 
-**SRS_CHANNEL_43_157: [** `execute_callbacks` shall call `sm_exec_end` for each callback that is called. **]**
-
 **SRS_CHANNEL_43_145: [** `execute_callbacks` shall call the stored callback(s) with the `result` of the `operation`.  **]**
+
+**SRS_CHANNEL_43_157: [** `execute_callbacks` shall call `sm_exec_end` for each callback that is called. **]**
 
 **SRS_CHANNEL_43_147: [** `execute_callbacks` shall perform cleanup of the `operation`. **]**
