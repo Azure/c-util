@@ -81,17 +81,8 @@ static void test_on_data_available_cb_cancelled_with_callback_sleep(void* contex
     wake_by_address_single(context);
     ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
 
-    // After waking the test thread, sleep here so the test thread reaches its
-    // own cleanup (release async_op, channel_close, release channel) before
-    // this callback returns and execute_callbacks proceeds to its cleanup tail.
-    // This widens the window where the worker would otherwise hold
-    // channel_op->channel (and transitively a THREADPOOL reference) past the
-    // point where the caller has dropped its references. Without the fix
-    // (release channel BEFORE the user callback), this guarantees that at
-    // process exit threadpool refcount > 0, threadpool_dispose never runs,
-    // and valgrind reports ~33 KB of "possibly lost" allocations. With the
-    // fix in place this sleep is harmless; the channel ref was already
-    // dropped before this callback ran.
+    // Sleep widens the race: the test thread races ahead to channel_close while
+    // this callback (and execute_callbacks) is still running on the worker thread.
     ThreadAPI_Sleep(100);
 }
 

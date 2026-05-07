@@ -265,14 +265,6 @@ static void execute_callbacks(void* context)
             sm_exec_end(channel_op->channel->sm);
         }
 
-        // Release the reference to channel BEFORE invoking the user callbacks. The user
-        // callbacks signal completion to the caller; once the caller wakes it may proceed
-        // to release its own reference to channel. If channel_op->channel were released
-        // AFTER the user callbacks, this thread would still be holding a channel reference
-        // (and transitively a THREADPOOL reference) past the point where the caller drops
-        // its own references. At process exit the threadpool refcount could still be > 0,
-        // preventing threadpool_dispose from joining workers and freeing pthread TLS;
-        // valgrind reports this as "possibly lost" allocations totaling ~33 KB.
         THANDLE_ASSIGN(CHANNEL)(&channel_op->channel, NULL);
 
         if (channel_op->on_data_available_cb != NULL)
