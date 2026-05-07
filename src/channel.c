@@ -254,6 +254,7 @@ static void execute_callbacks(void* context)
         // We have to call sm_exec_end for both of them before we call our first callback.
         // Otherwise, if one of the callbacks calls channel_close, it might deadlock waiting for an sm_exec_end.
 
+
         if (channel_op->on_data_available_cb != NULL)
         {
             /*Codes_SRS_CHANNEL_43_157: [ execute_callbacks shall call sm_exec_end for each callback that is called. ]*/
@@ -264,6 +265,8 @@ static void execute_callbacks(void* context)
             /*Codes_SRS_CHANNEL_43_157: [ execute_callbacks shall call sm_exec_end for each callback that is called. ]*/
             sm_exec_end(channel_op->channel->sm);
         }
+
+        THANDLE_ASSIGN(CHANNEL)(&channel_op->channel, NULL);
 
         if (channel_op->on_data_available_cb != NULL)
         {
@@ -280,7 +283,6 @@ static void execute_callbacks(void* context)
         THANDLE_ASSIGN(RC_STRING)(&channel_op->pull_correlation_id, NULL);
         THANDLE_ASSIGN(RC_STRING)(&channel_op->push_correlation_id, NULL);
         THANDLE_ASSIGN(RC_PTR)(&channel_op->data, NULL);
-        THANDLE_ASSIGN(CHANNEL)(&channel_op->channel, NULL);
 
         // copy to local reference to avoid cutting the branch you are sitting on
         THANDLE(ASYNC_OP) temp = NULL;
