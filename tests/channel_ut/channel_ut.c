@@ -202,11 +202,19 @@ static void setup_op_cleanup_expectations(bool completed)
         STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
     }
     STRICT_EXPECTED_CALL(sm_exec_end(IGNORED_ARG));
-    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_STRING)(IGNORED_ARG, NULL));
-    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_STRING)(IGNORED_ARG, NULL));
-    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(RC_PTR)(IGNORED_ARG, NULL));
+    /*Codes_SRS_CHANNEL_88_001: [ execute_callbacks shall take a local THANDLE reference on channel_op->async_op so channel_op memory remains valid for the user callbacks after the self-reference is released. ]*/
+    STRICT_EXPECTED_CALL(THANDLE_INITIALIZE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
+    /*Codes_SRS_CHANNEL_43_147: [ execute_callbacks shall release channel_op->channel and the channel_op->async_op self-reference before invoking the user callbacks. ]*/
     STRICT_EXPECTED_CALL(THANDLE_INITIALIZE_MOVE(ASYNC_OP)(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(THANDLE_ASSIGN(ASYNC_OP)(IGNORED_ARG, NULL));
+    /*Codes_SRS_CHANNEL_88_002: [ execute_callbacks shall release the local THANDLE reference on async_op after the user callbacks have returned. ]*/
+    STRICT_EXPECTED_CALL(THANDLE_ASSIGN(ASYNC_OP)(IGNORED_ARG, NULL));
+    // Note: dispose_channel_op (which releases pull_correlation_id, push_correlation_id, and data
+    // via THANDLE_ASSIGN(RC_STRING)/THANDLE_ASSIGN(RC_PTR)) runs only when the last THANDLE(ASYNC_OP)
+    // reference is released. In these unit tests, the test continues to hold an async_op reference
+    // throughout the assertion window; dispose_channel_op therefore runs during the test's own
+    // cleanup section, after the expected/actual call comparison has already been made. So those
+    // expectations are intentionally NOT included here.
 }
 
 static void setup_channel_close_expectations(size_t num_ops)

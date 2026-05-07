@@ -307,6 +307,25 @@ channel_open` opens the given `channel`.
 
 **SRS_CHANNEL_43_157: [** `execute_callbacks` shall call `sm_exec_end` for each callback that is called. **]**
 
+`sm_exec_end` is called BEFORE the user callbacks so that a user callback may call `channel_close` re-entrantly without deadlocking on its own outstanding `sm_exec_begin` reference. This is covered by the existing `channel_close_does_not_deadlock_if_called_from_pull_callback` and `channel_close_does_not_deadlock_if_called_from_push_callback` integration tests.
+
+**SRS_CHANNEL_88_001: [** `execute_callbacks` shall take a local `THANDLE` reference on `channel_op->async_op` so `channel_op` memory remains valid for the user callbacks after the self-reference is released. **]**
+
+**SRS_CHANNEL_43_147: [** `execute_callbacks` shall release `channel_op->channel` and the `channel_op->async_op` self-reference before invoking the user callbacks. **]**
+
+The `channel_op->channel` reference and the `channel_op->async_op` self-reference are released BEFORE the user callbacks are invoked. The user callbacks signal completion to the caller; once signaled, the caller may proceed with releasing its references to `async_op` and `channel`. Performing this cleanup AFTER the user callbacks would leave the worker thread holding `channel_op->channel` (and transitively a `THREADPOOL` reference) past the point where the caller releases its references. At process exit the threadpool refcount could still be > 0, preventing `threadpool_dispose` from joining workers and freeing pthread TLS - reported by valgrind as "possibly lost" allocations totaling ~33 KB (build 161912975 was the original trigger).
+
+The local `THANDLE` reference taken on `async_op` (per `SRS_CHANNEL_88_001`) keeps `channel_op` memory alive across the user callbacks so they can still reference `channel_op->pull_correlation_id`, `channel_op->push_correlation_id`, and `channel_op->data` directly. These fields are released by `dispose_channel_op` when the final `THANDLE(ASYNC_OP)` reference is released and the `async_op` is disposed.
+
 **SRS_CHANNEL_43_145: [** `execute_callbacks` shall call the stored callback(s) with the `result` of the `operation`.  **]**
 
-**SRS_CHANNEL_43_147: [** `execute_callbacks` shall perform cleanup of the `operation`. **]**
+**SRS_CHANNEL_88_002: [** `execute_callbacks` shall release the local `THANDLE` reference on `async_op` after the user callbacks have returned. **]**
+
+### dispose_channel_op
+```c
+    static void dispose_channel_op(void* context);
+```
+
+`dispose_channel_op` is the dispose function passed to `async_op_create` for the `CHANNEL_OP` context. It is invoked by the `THANDLE(ASYNC_OP)` machinery when the `async_op` reference count drops to zero.
+
+**SRS_CHANNEL_88_003: [** `dispose_channel_op` shall release the `channel_op->pull_correlation_id`, `channel_op->push_correlation_id`, and `channel_op->data` references. **]**
