@@ -265,27 +265,47 @@ static void execute_callbacks(void* context)
             sm_exec_end(channel_op->channel->sm);
         }
 
-        if (channel_op->on_data_available_cb != NULL)
-        {
-            /*Codes_SRS_CHANNEL_43_145: [ execute_callbacks shall call the stored callback(s) with the result of the operation. ]*/
-            channel_op->on_data_available_cb(channel_op->on_data_available_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id, channel_op->data);
-        }
-        if (channel_op->on_data_consumed_cb != NULL)
-        {
-            /*Codes_SRS_CHANNEL_43_145: [ execute_callbacks shall call the stored callback(s) with the result of the operation. ]*/
-            channel_op->on_data_consumed_cb(channel_op->on_data_consumed_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id);
-        }
+        // The user callbacks signal completion to the caller; once signaled, the caller
+        // may proceed with releasing its references to async_op and channel. If we left
+        // channel_op->channel and the channel_op->async_op self-reference set across the
+        // user callback, the worker thread would still be holding the channel ref (and
+        // transitively a threadpool ref) when the caller wakes and proceeds. At process
+        // exit the threadpool refcount could still be > 0 (because channel_op holds a
+        // channel ref which holds a threadpool ref), preventing threadpool_dispose from
+        // joining workers and freeing pthread TLS - reported by valgrind as "possibly
+        // lost" allocations.
+        //
+        // Release channel_op->channel and the self-reference BEFORE the user callbacks.
+        // To keep channel_op memory valid for the user callbacks (which reference
+        // channel_op->pull_correlation_id, ->push_correlation_id, and ->data), take a
+        // local strong reference on async_op first. The correlation_ids and data are
+        // released by dispose_channel_op when async_op is finally disposed.
 
-        /*Codes_SRS_CHANNEL_43_147: [ execute_callbacks shall perform cleanup of the operation. ]*/
-        THANDLE_ASSIGN(RC_STRING)(&channel_op->pull_correlation_id, NULL);
-        THANDLE_ASSIGN(RC_STRING)(&channel_op->push_correlation_id, NULL);
-        THANDLE_ASSIGN(RC_PTR)(&channel_op->data, NULL);
+        /*Codes_SRS_CHANNEL_88_001: [ execute_callbacks shall take a local THANDLE reference on channel_op->async_op so channel_op memory remains valid for the user callbacks after the self-reference is released. ]*/
+        THANDLE(ASYNC_OP) async_op_local = NULL;
+        THANDLE_INITIALIZE(ASYNC_OP)(&async_op_local, channel_op->async_op);
+
+        /*Codes_SRS_CHANNEL_43_147: [ execute_callbacks shall release channel_op->channel and the channel_op->async_op self-reference before invoking the user callbacks. ]*/
         THANDLE_ASSIGN(CHANNEL)(&channel_op->channel, NULL);
 
         // copy to local reference to avoid cutting the branch you are sitting on
         THANDLE(ASYNC_OP) temp = NULL;
         THANDLE_INITIALIZE_MOVE(ASYNC_OP)(&temp, &channel_op->async_op);
         THANDLE_ASSIGN(ASYNC_OP)(&temp, NULL);
+
+        /*Codes_SRS_CHANNEL_43_145: [ execute_callbacks shall call the stored callback(s) with the result of the operation. ]*/
+        if (channel_op->on_data_available_cb != NULL)
+        {
+            channel_op->on_data_available_cb(channel_op->on_data_available_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id, channel_op->data);
+        }
+        /*Codes_SRS_CHANNEL_43_145: [ execute_callbacks shall call the stored callback(s) with the result of the operation. ]*/
+        if (channel_op->on_data_consumed_cb != NULL)
+        {
+            channel_op->on_data_consumed_cb(channel_op->on_data_consumed_context, result, channel_op->pull_correlation_id, channel_op->push_correlation_id);
+        }
+
+        /*Codes_SRS_CHANNEL_88_002: [ execute_callbacks shall release the local THANDLE reference on async_op after the user callbacks have returned. ]*/
+        THANDLE_ASSIGN(ASYNC_OP)(&async_op_local, NULL);
     }
 }
 
@@ -347,8 +367,15 @@ static void cancel_op(void* context)
 
 static void dispose_channel_op(void* context)
 {
-    /* don't need to do anything here because actual cleanup happens in execute_callbacks */
-    (void)context;
+    /*Codes_SRS_CHANNEL_88_003: [ dispose_channel_op shall release the channel_op->pull_correlation_id, channel_op->push_correlation_id, and channel_op->data references. ]*/
+    if (context != NULL)
+    {
+        CHANNEL_OP* channel_op = (CHANNEL_OP*)context;
+        THANDLE_ASSIGN(RC_STRING)(&channel_op->pull_correlation_id, NULL);
+        THANDLE_ASSIGN(RC_STRING)(&channel_op->push_correlation_id, NULL);
+        THANDLE_ASSIGN(RC_PTR)(&channel_op->data, NULL);
+        // channel_op->channel and channel_op->async_op are released in execute_callbacks
+    }
 }
 
 static int enqueue_operation(THANDLE(CHANNEL) channel, THANDLE(ASYNC_OP)* out_op, THANDLE(RC_STRING) pull_correlation_id, ON_DATA_AVAILABLE_CB on_data_available_cb, void* on_data_available_context, THANDLE(RC_STRING) push_correlation_id, ON_DATA_CONSUMED_CB on_data_consumed_cb, void* on_data_consumed_context, THANDLE(RC_PTR) data)
