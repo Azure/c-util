@@ -69,6 +69,32 @@ static int32_t push_abandoned = 0x0007;
 static volatile_atomic int32_t test_signal;
 static SRW_LOCK_HANDLE g_lock;
 
+static void test_on_data_available_cb_cancelled_with_callback_sleep(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
+{
+    ASSERT_IS_NOT_NULL(context);
+    ASSERT_ARE_EQUAL(CHANNEL_CALLBACK_RESULT, CHANNEL_CALLBACK_RESULT_CANCELLED, result);
+    ASSERT_IS_NOT_NULL(pull_correlation_id);
+    (void)push_correlation_id; // Cannot make any assertions about push_correlation_id. May or may not be valid.
+    ASSERT_IS_NULL(data);
+
+    int32_t original_value = interlocked_exchange(context, pull_cancelled);
+    wake_by_address_single(context);
+    ASSERT_ARE_EQUAL(int32_t, TEST_ORIGINAL_VALUE, original_value);
+
+    // After waking the test thread, sleep here so the test thread reaches its
+    // own cleanup (release async_op, channel_close, release channel) before
+    // this callback returns and execute_callbacks proceeds to its cleanup tail.
+    // This widens the window where the worker would otherwise hold
+    // channel_op->channel (and transitively a THREADPOOL reference) past the
+    // point where the caller has dropped its references. Without the fix
+    // (release channel BEFORE the user callback), this guarantees that at
+    // process exit threadpool refcount > 0, threadpool_dispose never runs,
+    // and valgrind reports ~33 KB of "possibly lost" allocations. With the
+    // fix in place this sleep is harmless; the channel ref was already
+    // dropped before this callback ran.
+    ThreadAPI_Sleep(100);
+}
+
 static void test_on_data_available_cb_cancelled(void* context, CHANNEL_CALLBACK_RESULT result, THANDLE(RC_STRING) pull_correlation_id, THANDLE(RC_STRING) push_correlation_id, THANDLE(RC_PTR) data)
 {
     ASSERT_IS_NOT_NULL(context);
@@ -1079,6 +1105,55 @@ TEST_FUNCTION(channel_close_does_not_deadlock_if_called_from_pull_callback)
     free((void*)push_context);
 
     THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+}
+
+/*
+ * Regression test for the channel-ref-released-after-user-callback leak.
+ *
+ * The user callback wakes the test thread and then sleeps. While the callback is
+ * sleeping, the test thread proceeds with its cleanup: release async_op, call
+ * channel_close, release the channel reference. If channel_op->channel were
+ * released only after the user callback returns, the worker thread running this
+ * callback would still be holding a channel reference at the time the caller
+ * thinks it has fully torn down. At process exit the threadpool refcount could
+ * still be > 0, threadpool_dispose would never run, worker threads would not be
+ * joined, and valgrind would report pthread TLS and threadpool internals as
+ * "possibly lost".
+ *
+ * With the fix in place (channel ref released BEFORE the user callback fires),
+ * by the time this sleep runs the worker no longer holds any chain reaching the
+ * threadpool. The test thread's cleanup brings refcounts cleanly to zero,
+ * suite_cleanup releases its threadpool reference, and threadpool_dispose joins
+ * workers as expected.
+ */
+TEST_FUNCTION(test_pull_and_cancel_with_sleep_in_callback)
+{
+    /// arrange
+    THANDLE(CHANNEL) channel = channel_create(NULL, g.g_threadpool);
+    ASSERT_IS_NOT_NULL(channel);
+    ASSERT_ARE_EQUAL(int, 0, channel_open(channel));
+    TRIGGER_CONTEXT* context = malloc(sizeof(TRIGGER_CONTEXT));
+    ASSERT_IS_NOT_NULL(context);
+    (void)interlocked_exchange(&context->value, TEST_ORIGINAL_VALUE);
+
+    /// act
+    THANDLE(ASYNC_OP) async_op = NULL;
+    CHANNEL_RESULT result = channel_pull(channel, g.g_pull_correlation_id, test_on_data_available_cb_cancelled_with_callback_sleep, (void*)&context->value, &async_op);
+    ASSERT_IS_NOT_NULL(async_op);
+    async_op_cancel(async_op);
+
+    //wait for callback to start (it will wake us via wake_by_address_single, then sleep)
+    ASSERT_ARE_EQUAL(INTERLOCKED_HL_RESULT, INTERLOCKED_HL_OK, InterlockedHL_WaitForNotValue(&context->value, TEST_ORIGINAL_VALUE, UINT32_MAX));
+
+    /// assert
+    ASSERT_ARE_EQUAL(CHANNEL_RESULT, CHANNEL_RESULT_OK, result);
+    ASSERT_ARE_EQUAL(int32_t, pull_cancelled, interlocked_add(&context->value, 0));
+
+    // cleanup - this races with the still-sleeping callback on purpose
+    THANDLE_ASSIGN(ASYNC_OP)(&async_op, NULL);
+    channel_close(channel);
+    THANDLE_ASSIGN(CHANNEL)(&channel, NULL);
+    free(context);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
