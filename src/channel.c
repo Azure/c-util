@@ -266,8 +266,8 @@ static void execute_callbacks(void* context)
         }
 
         // Release the channel reference before the user callbacks. The callbacks wake the
-        // caller, which then drops its own channel reference; a ref held past this point
-        // keeps the channel (and transitively the threadpool) alive at process exit.
+        // caller, which may then release its own channel reference.
+        // That should be enough to let the channel be destroyed if the user disposes it in the callback.
         THANDLE_ASSIGN(CHANNEL)(&channel_op->channel, NULL);
 
         if (channel_op->on_data_available_cb != NULL)
