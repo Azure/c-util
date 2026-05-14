@@ -265,6 +265,11 @@ static void execute_callbacks(void* context)
             sm_exec_end(channel_op->channel->sm);
         }
 
+        // Release the channel reference before the user callbacks. The callbacks wake the
+        // caller, which may then release its own channel reference.
+        // That should be enough to let the channel be destroyed if the user disposes it in the callback.
+        THANDLE_ASSIGN(CHANNEL)(&channel_op->channel, NULL);
+
         if (channel_op->on_data_available_cb != NULL)
         {
             /*Codes_SRS_CHANNEL_43_145: [ execute_callbacks shall call the stored callback(s) with the result of the operation. ]*/
@@ -280,7 +285,6 @@ static void execute_callbacks(void* context)
         THANDLE_ASSIGN(RC_STRING)(&channel_op->pull_correlation_id, NULL);
         THANDLE_ASSIGN(RC_STRING)(&channel_op->push_correlation_id, NULL);
         THANDLE_ASSIGN(RC_PTR)(&channel_op->data, NULL);
-        THANDLE_ASSIGN(CHANNEL)(&channel_op->channel, NULL);
 
         // copy to local reference to avoid cutting the branch you are sitting on
         THANDLE(ASYNC_OP) temp = NULL;
