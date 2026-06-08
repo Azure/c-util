@@ -1,4 +1,4 @@
-#Copyright (c) Microsoft. All rights reserved.
+﻿#Copyright (c) Microsoft. All rights reserved.
 
 set(theseTestsName thread_notifications_dispatcher_wo_init_ut)
 
@@ -14,15 +14,15 @@ set(${theseTestsName}_h_files
 ../../inc/c_util/thread_notifications_dispatcher.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util"
- ADDITIONAL_LIBS real_process_watchdog c_pal c_pal_reals c_util c_util_reals thread_notifications_lackey_dll
- ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/thread_notifications_dispatcher_wo_init_ut_pch.h"
+build_test_artifacts(${theseTestsName} "tests/c_util" 
+    ADDITIONAL_LIBS real_process_watchdog c_pal c_pal_reals c_util c_util_reals thread_notifications_lackey_dll
+    ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/thread_notifications_dispatcher_wo_init_ut_pch.h"
 )
 
 if("${building}" STREQUAL "exe")
- copy_thread_notifications_lackey_outputs(${theseTestsName}_exe_${CMAKE_PROJECT_NAME} $<TARGET_FILE_DIR:${theseTestsName}_exe_${CMAKE_PROJECT_NAME}>)
+    copy_thread_notifications_lackey_outputs(${theseTestsName}_exe_${CMAKE_PROJECT_NAME} $<TARGET_FILE_DIR:${theseTestsName}_exe_${CMAKE_PROJECT_NAME}>)
 endif()
 
 if("${building}" STREQUAL "dll")
- copy_thread_notifications_lackey_outputs(${theseTestsName}_dll_${CMAKE_PROJECT_NAME} $<TARGET_FILE_DIR:${theseTestsName}_dll_${CMAKE_PROJECT_NAME}>)
+    copy_thread_notifications_lackey_outputs(${theseTestsName}_dll_${CMAKE_PROJECT_NAME} $<TARGET_FILE_DIR:${theseTestsName}_dll_${CMAKE_PROJECT_NAME}>)
 endif()
