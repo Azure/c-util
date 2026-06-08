@@ -4,17 +4,17 @@
 set(theseTestsName singlylinkedlist_ut)
 
 set(${theseTestsName}_test_files
-    ${theseTestsName}.c
+ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-    ../../src/singlylinkedlist.c
+ ../../src/singlylinkedlist.c
 )
 
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" 
-    ADDITIONAL_LIBS real_process_watchdog c_pal c_pal c_pal_reals
-    ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/singlylinkedlist_ut_pch.h"
+build_test_artifacts(${theseTestsName} "tests/c_util"
+ ADDITIONAL_LIBS real_process_watchdog c_pal c_pal_reals
+ ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/singlylinkedlist_ut_pch.h"
 )

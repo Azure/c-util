@@ -15,7 +15,7 @@ set(${theseTestsName}_h_files
 ../../inc/c_util/for_each_in_folder.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" 
-    ADDITIONAL_LIBS real_process_watchdog c_pal c_pal_reals c_util_reals
-    ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/for_each_in_folder_ut_pch.h"
+build_test_artifacts(${theseTestsName} "tests/c_util"
+ ADDITIONAL_LIBS real_process_watchdog c_pal_reals c_util_reals
+ ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/for_each_in_folder_ut_pch.h"
 )

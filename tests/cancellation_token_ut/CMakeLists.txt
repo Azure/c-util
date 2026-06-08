@@ -4,17 +4,17 @@
 set(theseTestsName cancellation_token_ut)
 
 set(${theseTestsName}_test_files
-    ${theseTestsName}.c
+ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-    ../../src/cancellation_token.c
+ ../../src/cancellation_token.c
 )
 
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" 
-    ADDITIONAL_LIBS real_process_watchdog c_pal c_pal c_pal_reals c_util c_util_reals
-    ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/cancellation_token_ut_pch.h"
+build_test_artifacts(${theseTestsName} "tests/c_util"
+ ADDITIONAL_LIBS real_process_watchdog c_pal c_pal_reals c_util c_util_reals
+ ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/cancellation_token_ut_pch.h"
 )

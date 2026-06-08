@@ -4,19 +4,19 @@
 set(theseTestsName azure_base64_ut)
 
 set(${theseTestsName}_test_files
-    ${theseTestsName}.c
+ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-    ../../src/azure_base64.c
-    ../../src/strings.c
-    ../../src/buffer.c
+ ../../src/azure_base64.c
+ ../../src/strings.c
+ ../../src/buffer.c
 )
 
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" 
-    ADDITIONAL_LIBS real_process_watchdog c_pal c_pal c_pal_reals
-    ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/azure_base64_ut_pch.h"
+build_test_artifacts(${theseTestsName} "tests/c_util"
+ ADDITIONAL_LIBS real_process_watchdog c_pal c_pal_reals
+ ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/azure_base64_ut_pch.h"
 )

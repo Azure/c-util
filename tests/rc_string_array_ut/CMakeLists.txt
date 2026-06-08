@@ -4,17 +4,17 @@
 set(theseTestsName rc_string_array_ut)
 
 set(${theseTestsName}_test_files
-    ${theseTestsName}.c
+ ${theseTestsName}.c
 )
 
 set(${theseTestsName}_c_files
-    ../../src/rc_string_array.c
+ ../../src/rc_string_array.c
 )
 
 set(${theseTestsName}_h_files
-    ../../inc/c_util/rc_string_array.h
+ ../../inc/c_util/rc_string_array.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS real_process_watchdog c_pal c_pal c_util_reals c_pal_reals 
-    ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/rc_string_array_ut_pch.h"
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS real_process_watchdog c_pal c_util_reals c_pal_reals
+ ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/rc_string_array_ut_pch.h"
 )

@@ -14,7 +14,7 @@ set(${theseTestsName}_h_files
 ../../inc/c_util/constbuffer_array_splitter.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" 
-    ADDITIONAL_LIBS real_process_watchdog c_pal c_util_reals
-    ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/constbuffer_array_splitter_ut_pch.h"
+build_test_artifacts(${theseTestsName} "tests/c_util"
+ ADDITIONAL_LIBS real_process_watchdog c_util_reals
+ ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/constbuffer_array_splitter_ut_pch.h"
 )
