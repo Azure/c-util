@@ -27,6 +27,7 @@ jobs:
 - template: /pipeline_templates/build_all_flavors.yml@c_build_tools
   parameters:
     GBALLOC_LL_TYPE_VALUES: ["PASSTHROUGH", "JEMALLOC"]
+    arm64_max_stage: ALL
 
 - template: /pipeline_templates/run_master_check.yml@c_build_tools
   parameters:
