@@ -36,7 +36,7 @@ TEST_DEFINE_ENUM_TYPE(EXTERNAL_COMMAND_RESULT, EXTERNAL_COMMAND_RESULT_VALUES);
 //   Visual Leak Detector is now exiting.
 // Just ignore those lines
 #if defined _DEBUG && defined USE_VLD
-#define ADDITIONAL_LINE_COUNT 6
+#define ADDITIONAL_LINE_COUNT 5
 #else
 #define ADDITIONAL_LINE_COUNT 0
 #endif
@@ -46,7 +46,6 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 TEST_SUITE_INITIALIZE(suite_init)
 {
     ASSERT_ARE_EQUAL(int, 0, gballoc_hl_init(NULL, NULL));
-    malloc(3);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
