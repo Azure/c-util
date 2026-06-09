@@ -36,7 +36,7 @@ TEST_DEFINE_ENUM_TYPE(EXTERNAL_COMMAND_RESULT, EXTERNAL_COMMAND_RESULT_VALUES);
 //   Visual Leak Detector is now exiting.
 // Just ignore those lines
 #if defined _DEBUG && defined USE_VLD
-#define ADDITIONAL_LINE_COUNT 5
+#define ADDITIONAL_LINE_COUNT 6
 #else
 #define ADDITIONAL_LINE_COUNT 0
 #endif
