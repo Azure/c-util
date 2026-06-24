@@ -14,6 +14,7 @@
 #include "c_pal/interlocked_hl.h"
 #include "c_pal/sync.h"
 #include "c_pal/threadapi.h"
+#include "c_pal/timed_test_suite.h"
 
 #include "c_util/tp_worker_thread.h"
 
@@ -52,11 +53,11 @@ static void worker_thread_func(void* context)
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-TEST_SUITE_INITIALIZE(suite_init)
+TIMED_TEST_SUITE_INITIALIZE(suite_init, TIMED_TEST_DEFAULT_TIMEOUT_MS)
 {
 }
 
-TEST_SUITE_CLEANUP(suite_cleanup)
+TIMED_TEST_SUITE_CLEANUP(suite_cleanup)
 {
 }
 

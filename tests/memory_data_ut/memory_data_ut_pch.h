@@ -15,6 +15,7 @@
 
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
+#include "c_pal/timed_test_suite.h"
 
 #include "c_util/uuid_string.h"
 

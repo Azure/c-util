@@ -16,6 +16,7 @@
 #include "c_pal/interlocked.h"
 #include "c_pal/interlocked_hl.h"
 #include "c_pal/sync.h"
+#include "c_pal/timed_test_suite.h"
 
 #include "thread_notifications_lackey_dll/thread_notifications_lackey_dll.h"
 #include "c_util/tcall_dispatcher_thread_notification_call.h"
@@ -23,12 +24,12 @@
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-TEST_SUITE_INITIALIZE(suite_init)
+TIMED_TEST_SUITE_INITIALIZE(suite_init, TIMED_TEST_DEFAULT_TIMEOUT_MS)
 {
     ASSERT_ARE_EQUAL(int, 0, gballoc_hl_init(NULL, NULL));
 }
 
-TEST_SUITE_CLEANUP(suite_cleanup)
+TIMED_TEST_SUITE_CLEANUP(suite_cleanup)
 {
     gballoc_hl_deinit();
 }

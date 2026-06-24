@@ -12,7 +12,7 @@ set(${theseTestsName}_c_files
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} "tests/thread_notifications_lackey_dll" ADDITIONAL_LIBS thread_notifications_lackey_dll)
+build_test_artifacts(${theseTestsName} "tests/thread_notifications_lackey_dll" ADDITIONAL_LIBS c_pal thread_notifications_lackey_dll)
 
 if("${building}" STREQUAL "exe")
     copy_thread_notifications_lackey_outputs(${theseTestsName}_exe_${CMAKE_PROJECT_NAME} $<TARGET_FILE_DIR:${theseTestsName}_exe_${CMAKE_PROJECT_NAME}>)

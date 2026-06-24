@@ -15,6 +15,6 @@ set(${theseTestsName}_h_files
     flags_to_string_helper.h
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util_reals 
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS real_process_watchdog c_util_reals 
     ENABLE_TEST_FILES_PRECOMPILED_HEADERS "${CMAKE_CURRENT_LIST_DIR}/flags_to_string_ut_pch.h"
 )

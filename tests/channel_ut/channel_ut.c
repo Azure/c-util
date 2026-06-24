@@ -272,7 +272,7 @@ static int hook_threadpool_schedule_work_do_nothing(THANDLE(THREADPOOL) threadpo
 }
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-TEST_SUITE_INITIALIZE(suite_init)
+TIMED_TEST_SUITE_INITIALIZE(suite_init, TIMED_TEST_DEFAULT_TIMEOUT_MS)
 {
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error), "umock_c_init failed");
     ASSERT_ARE_EQUAL(int, 0, umocktypes_bool_register_types(), "umocktypes_bool_register_types");
@@ -349,7 +349,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     }
 }
 
-TEST_SUITE_CLEANUP(suite_cleanup)
+TIMED_TEST_SUITE_CLEANUP(suite_cleanup)
 {
     THANDLE_ASSIGN(REAL_THREADPOOL)(&g.g_threadpool, NULL);
     THANDLE_ASSIGN(real_RC_STRING)((THANDLE(RC_STRING)*) & g.g_push_correlation_id, NULL);

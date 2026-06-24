@@ -7,6 +7,19 @@
    ...
 }
 {
+   <linux_sys_timer_helper_thread_leak>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   ...
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:allocate_stack
+   fun:pthread_create@@GLIBC_*
+   fun:timer_helper_thread
+   fun:start_thread
+}
+{
    <timer_create race>
    Helgrind:Race
    fun:timer_create@@GLIBC_2.3.3

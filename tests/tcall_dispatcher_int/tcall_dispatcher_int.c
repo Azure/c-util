@@ -14,6 +14,7 @@
 #include "c_pal/interlocked.h"
 #include "c_pal/thandle.h"
 #include "c_pal/threadapi.h"
+#include "c_pal/timed_test_suite.h"
 
 #include "c_util/tcall_dispatcher.h"
 #include "tcall_dispatcher_foo.h"
@@ -69,11 +70,11 @@ TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-TEST_SUITE_INITIALIZE(suite_init)
+TIMED_TEST_SUITE_INITIALIZE(suite_init, TIMED_TEST_DEFAULT_TIMEOUT_MS)
 {
 }
 
-TEST_SUITE_CLEANUP(suite_cleanup)
+TIMED_TEST_SUITE_CLEANUP(suite_cleanup)
 {
 }
 

@@ -13,18 +13,19 @@
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 #include "c_pal/thandle.h"
+#include "c_pal/timed_test_suite.h"
 
 #include "c_util/constbuffer_thandle.h"
 
 BEGIN_TEST_SUITE(constbuffer_thandle_int)
 
-TEST_SUITE_INITIALIZE(suite_init)
+TIMED_TEST_SUITE_INITIALIZE(suite_init, TIMED_TEST_DEFAULT_TIMEOUT_MS)
 {
     int result = gballoc_hl_init(NULL, NULL);
     ASSERT_ARE_EQUAL(int, 0, result);
 }
 
-TEST_SUITE_CLEANUP(suite_cleanup)
+TIMED_TEST_SUITE_CLEANUP(suite_cleanup)
 {
     gballoc_hl_deinit();
 }

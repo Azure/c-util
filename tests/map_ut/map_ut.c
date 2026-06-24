@@ -77,7 +77,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-    TEST_SUITE_INITIALIZE(TestClassInitialize)
+    TIMED_TEST_SUITE_INITIALIZE(TestClassInitialize, TIMED_TEST_DEFAULT_TIMEOUT_MS)
     {
         int result;
 
@@ -97,7 +97,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         REGISTER_GLOBAL_MOCK_HOOK(STRING_new_JSON, my_STRING_new_JSON);
     }
 
-    TEST_SUITE_CLEANUP(TestClassCleanup)
+    TIMED_TEST_SUITE_CLEANUP(TestClassCleanup)
     {
         umock_c_deinit();
 

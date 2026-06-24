@@ -15,6 +15,7 @@
 #include "c_pal/threadapi.h"
 
 #include "c_pal/thandle.h"
+#include "c_pal/timed_test_suite.h"
 #include "c_util/tarray.h"
 
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES);
@@ -36,11 +37,11 @@ TARRAY_TYPE_DEFINE(CAT);
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
-TEST_SUITE_INITIALIZE(it_does_something)
+TIMED_TEST_SUITE_INITIALIZE(it_does_something, TIMED_TEST_DEFAULT_TIMEOUT_MS)
 {
 }
 
-TEST_SUITE_CLEANUP(it_undoes_something)
+TIMED_TEST_SUITE_CLEANUP(it_undoes_something)
 {
 }
 

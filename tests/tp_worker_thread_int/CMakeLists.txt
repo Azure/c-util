@@ -16,4 +16,4 @@ set(${theseTestsName}_cpp_files
 set(${theseTestsName}_h_files
 )
 
-build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_util c_util_test_helpers)
+build_test_artifacts(${theseTestsName} "tests/c_util" ADDITIONAL_LIBS c_pal c_util c_util_test_helpers)
