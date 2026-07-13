@@ -1,8 +1,9 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-add_subdirectory(reals)
-
+if(${build_reals})
+    add_subdirectory(reals)
+endif()
 
 if(${run_unittests})
     build_test_folder(async_op_ut)
