@@ -59,6 +59,9 @@ MU_DEFINE_ENUM(CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_FROM_BUFFER_RESULT_VA
 /*this creates a new constbuffer from a memory area*/
 MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, uint32_t, size);
 
+/*this creates a new constbuffer from a memory area, with the internal buffer allocated aligned to alignment*/
+MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithAlignment, const unsigned char*, source, uint32_t, size, uint32_t, alignment);
+
 /*this creates a new constbuffer from an existing BUFFER_HANDLE*/
 MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer);
 
@@ -87,6 +90,9 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT, CONSTBUFFER_to_fixe
 MOCKABLE_FUNCTION(, CONSTBUFFER_FROM_BUFFER_RESULT, CONSTBUFFER_from_buffer, const unsigned char*, source, uint32_t, size, uint32_t*, consumed, CONSTBUFFER_HANDLE*, destination);
 
 MOCKABLE_FUNCTION(, CONSTBUFFER_WRITABLE_HANDLE, CONSTBUFFER_CreateWritableHandle, uint32_t, size);
+
+/*this creates a writable handle whose writable buffer is allocated aligned to alignment (zero-copy producer path)*/
+MOCKABLE_FUNCTION(, CONSTBUFFER_WRITABLE_HANDLE, CONSTBUFFER_CreateWritableHandleWithAlignment, uint32_t, size, uint32_t, alignment);
 
 MOCKABLE_FUNCTION(, unsigned char*, CONSTBUFFER_GetWritableBuffer, CONSTBUFFER_WRITABLE_HANDLE, constbufferWritableHandle);
 

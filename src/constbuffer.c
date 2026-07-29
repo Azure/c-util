@@ -24,7 +24,8 @@
     CONSTBUFFER_TYPE_COPIED, \
     CONSTBUFFER_TYPE_MEMORY_MOVED, \
     CONSTBUFFER_TYPE_WITH_CUSTOM_FREE, \
-    CONSTBUFFER_TYPE_FROM_OFFSET_AND_SIZE
+    CONSTBUFFER_TYPE_FROM_OFFSET_AND_SIZE, \
+    CONSTBUFFER_TYPE_ALIGNED
 
 MU_DEFINE_ENUM(CONSTBUFFER_TYPE, CONSTBUFFER_TYPE_VALUES)
 
@@ -128,6 +129,53 @@ CONSTBUFFER_HANDLE CONSTBUFFER_Create(const unsigned char* source, uint32_t size
         result = CONSTBUFFER_Create_Internal(source, size);
     }
     return result;
+}
+
+CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithAlignment(const unsigned char* source, uint32_t size, uint32_t alignment)
+{
+    CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA* result;
+    /*Codes_SRS_CONSTBUFFER_22_001: [ If source is NULL or size is 0 then CONSTBUFFER_CreateWithAlignment shall fail and return NULL. ]*/
+    if (
+        (source == NULL) ||
+        (size == 0)
+        )
+    {
+        LogError("invalid arguments passed to CONSTBUFFER_CreateWithAlignment: source=%p, size=%" PRIu32 ", alignment=%" PRIu32 "", source, size, alignment);
+        result = NULL;
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_22_002: [ CONSTBUFFER_CreateWithAlignment shall allocate memory for the CONSTBUFFER_HANDLE. ]*/
+        result = malloc(sizeof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA));
+        if (result == NULL)
+        {
+            /*Codes_SRS_CONSTBUFFER_22_003: [ If there are any failures then CONSTBUFFER_CreateWithAlignment shall fail and return NULL. ]*/
+            LogError("failure in malloc(sizeof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA)=%zu)", sizeof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA));
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_22_005: [ CONSTBUFFER_CreateWithAlignment shall allocate size bytes aligned to alignment by calling gballoc_hl_malloc_aligned. ]*/
+            unsigned char* aligned_buffer = gballoc_hl_malloc_aligned(alignment, size);
+            if (aligned_buffer == NULL)
+            {
+                /*Codes_SRS_CONSTBUFFER_22_006: [ If gballoc_hl_malloc_aligned fails then CONSTBUFFER_CreateWithAlignment shall free the allocated memory and return NULL. ]*/
+                LogError("failure in gballoc_hl_malloc_aligned(alignment=%" PRIu32 ", size=%" PRIu32 ")", alignment, size);
+                free(result);
+                result = NULL;
+            }
+            else
+            {
+                /*Codes_SRS_CONSTBUFFER_22_007: [ CONSTBUFFER_CreateWithAlignment shall copy the memory area pointed to by source having size bytes into the aligned buffer and return a non-NULL handle. ]*/
+                (void)memcpy(aligned_buffer, source, size);
+                result->alias.buffer = aligned_buffer;
+                result->alias.size = size;
+                result->buffer_type = CONSTBUFFER_TYPE_ALIGNED;
+                /*Codes_SRS_CONSTBUFFER_22_008: [ The non-NULL handle returned by CONSTBUFFER_CreateWithAlignment shall have its ref count set to 1. ]*/
+                (void)interlocked_exchange(&result->count, 1);
+            }
+        }
+    }
+    return (CONSTBUFFER_HANDLE)result;
 }
 
 /*this creates a new constbuffer from an existing BUFFER_HANDLE*/
@@ -369,6 +417,11 @@ static void CONSTBUFFER_DecRef_internal(CONSTBUFFER_HANDLE constbufferHandle)
         {
             CONSTBUFFER_HANDLE_FROM_OFFSET_AND_SIZE_DATA* handleData = (CONSTBUFFER_HANDLE_FROM_OFFSET_AND_SIZE_DATA*)constbufferHandle;
             CONSTBUFFER_DecRef_internal(handleData->originalHandle);
+        }
+        /*Codes_SRS_CONSTBUFFER_22_009: [ If the buffer was created by calling CONSTBUFFER_CreateWithAlignment or CONSTBUFFER_CreateWritableHandleWithAlignment, the aligned buffer shall be freed by calling gballoc_hl_free_aligned. ]*/
+        else if (constbufferHandle->buffer_type == CONSTBUFFER_TYPE_ALIGNED)
+        {
+            gballoc_hl_free_aligned((void*)constbufferHandle->alias.buffer);
         }
 
         /*Codes_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_DecRef shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
@@ -701,6 +754,50 @@ CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_CreateWritableHandle(uint32_t size)
 
 }
 
+CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_CreateWritableHandleWithAlignment(uint32_t size, uint32_t alignment)
+{
+    CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA* result;
+
+    if (size == 0)
+    {
+        /*Codes_SRS_CONSTBUFFER_22_010: [ If size is 0, then CONSTBUFFER_CreateWritableHandleWithAlignment shall fail and return NULL. ]*/
+        LogError("invalid arguments passed to CONSTBUFFER_CreateWritableHandleWithAlignment: size=%" PRIu32 ", alignment=%" PRIu32 "", size, alignment);
+        result = NULL;
+    }
+    else
+    {
+        /*Codes_SRS_CONSTBUFFER_22_011: [ CONSTBUFFER_CreateWritableHandleWithAlignment shall allocate memory for the CONSTBUFFER_WRITABLE_HANDLE. ]*/
+        result = malloc(sizeof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA));
+        if (result == NULL)
+        {
+            /*Codes_SRS_CONSTBUFFER_22_014: [ If there are any failures then CONSTBUFFER_CreateWritableHandleWithAlignment shall fail and return NULL. ]*/
+            LogError("failure in malloc(sizeof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA)=%zu)", sizeof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA));
+        }
+        else
+        {
+            /*Codes_SRS_CONSTBUFFER_22_012: [ CONSTBUFFER_CreateWritableHandleWithAlignment shall allocate size bytes aligned to alignment by calling gballoc_hl_malloc_aligned. ]*/
+            unsigned char* aligned_buffer = gballoc_hl_malloc_aligned(alignment, size);
+            if (aligned_buffer == NULL)
+            {
+                /*Codes_SRS_CONSTBUFFER_22_014: [ If there are any failures then CONSTBUFFER_CreateWritableHandleWithAlignment shall fail and return NULL. ]*/
+                LogError("failure in gballoc_hl_malloc_aligned(alignment=%" PRIu32 ", size=%" PRIu32 ")", alignment, size);
+                free(result);
+                result = NULL;
+            }
+            else
+            {
+                /*Codes_SRS_CONSTBUFFER_22_015: [ CONSTBUFFER_CreateWritableHandleWithAlignment shall succeed and return a non-NULL CONSTBUFFER_WRITABLE_HANDLE. ]*/
+                result->alias.buffer = aligned_buffer;
+                result->alias.size = size;
+                result->buffer_type = CONSTBUFFER_TYPE_ALIGNED;
+                /*Codes_SRS_CONSTBUFFER_22_013: [ CONSTBUFFER_CreateWritableHandleWithAlignment shall set the ref count of the newly created CONSTBUFFER_WRITABLE_HANDLE to 1. ]*/
+                (void)interlocked_exchange(&result->count, 1);
+            }
+        }
+    }
+    return (CONSTBUFFER_WRITABLE_HANDLE)result;
+}
+
 unsigned char* CONSTBUFFER_GetWritableBuffer(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle)
 {
     unsigned char* buffer;
@@ -709,6 +806,11 @@ unsigned char* CONSTBUFFER_GetWritableBuffer(CONSTBUFFER_WRITABLE_HANDLE constbu
         /*Codes_SRS_CONSTBUFFER_51_006: [ If constbufferWritableHandle is NULL, then CONSTBUFFER_GetWritableBuffer shall fail and return NULL. ]*/
         LogError("Invalid arguments: CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle=%p", constbufferWritableHandle);
         buffer = NULL;
+    }
+    else if (constbufferWritableHandle->buffer_type == CONSTBUFFER_TYPE_ALIGNED)
+    {
+        /*Codes_SRS_CONSTBUFFER_22_016: [ If constbufferWritableHandle was created by CONSTBUFFER_CreateWritableHandleWithAlignment then CONSTBUFFER_GetWritableBuffer shall return the aligned buffer. ]*/
+        buffer = (unsigned char*)constbufferWritableHandle->alias.buffer;
     }
     else
     {
@@ -761,6 +863,11 @@ void CONSTBUFFER_WritableHandleDecRef(CONSTBUFFER_WRITABLE_HANDLE constbufferWri
         /*Codes_SRS_CONSTBUFFER_51_013: [ Otherwise, CONSTBUFFER_WritableHandleDecRef shall decrement the refcount of constbufferWritableHandle. ]*/
         if (interlocked_decrement(&constbufferWritableHandle->count) == 0)
         {
+            /*Codes_SRS_CONSTBUFFER_22_017: [ If constbufferWritableHandle was created by CONSTBUFFER_CreateWritableHandleWithAlignment then CONSTBUFFER_WritableHandleDecRef shall free the aligned buffer by calling gballoc_hl_free_aligned. ]*/
+            if (constbufferWritableHandle->buffer_type == CONSTBUFFER_TYPE_ALIGNED)
+            {
+                gballoc_hl_free_aligned((void*)constbufferWritableHandle->alias.buffer);
+            }
             /*Codes_SRS_CONSTBUFFER_51_014: [ If the refcount reaches zero, then CONSTBUFFER_WritableHandleDecRef shall deallocate all resources used by the CONSTBUFFER_HANDLE. ]*/
             free(constbufferWritableHandle);
         }
