@@ -147,26 +147,36 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithAlignment(const unsigned char* source, 
     else
     {
         /*the aligned payload is placed at the base of a single aligned allocation and the handle header right after the (padded) payload, so one aligned allocation backs both*/
-        size_t padded_payload = (size + (_Alignof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA) - 1)) & ~(_Alignof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA) - 1);
-
-        /*Codes_SRS_CONSTBUFFER_22_003: [ CONSTBUFFER_CreateWithAlignment shall allocate memory aligned to alignment to hold both the handle and size bytes by calling gballoc_hl_malloc_aligned. ]*/
-        unsigned char* base = gballoc_hl_malloc_aligned(alignment, padded_payload + sizeof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA));
-        if (base == NULL)
+        size_t align_mask = _Alignof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA) - 1;
+        size_t padded_payload = (size + align_mask) & ~align_mask;
+        size_t alloc_size = padded_payload + sizeof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA);
+        if ((padded_payload < size) || (alloc_size < padded_payload))
         {
             /*Codes_SRS_CONSTBUFFER_22_004: [ If there are any failures then CONSTBUFFER_CreateWithAlignment shall fail and return NULL. ]*/
-            LogError("failure in gballoc_hl_malloc_aligned(alignment=%" PRIu32 ", size=%" PRIu32 ")", alignment, size);
+            LogError("size overflow computing the aligned allocation size, size=%" PRIu32 "", size);
             result = NULL;
         }
         else
         {
-            result = (CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA*)(base + padded_payload);
-            /*Codes_SRS_CONSTBUFFER_22_005: [ CONSTBUFFER_CreateWithAlignment shall copy the memory area pointed to by source having size bytes into the aligned buffer and return a non-NULL handle. ]*/
-            (void)memcpy(base, source, size);
-            result->alias.buffer = base;
-            result->alias.size = size;
-            result->buffer_type = CONSTBUFFER_TYPE_ALIGNED;
-            /*Codes_SRS_CONSTBUFFER_22_006: [ The non-NULL handle returned by CONSTBUFFER_CreateWithAlignment shall have its ref count set to 1. ]*/
-            (void)interlocked_exchange(&result->count, 1);
+            /*Codes_SRS_CONSTBUFFER_22_003: [ CONSTBUFFER_CreateWithAlignment shall allocate memory aligned to alignment to hold both the handle and size bytes by calling gballoc_hl_malloc_aligned. ]*/
+            unsigned char* base = gballoc_hl_malloc_aligned(alignment, alloc_size);
+            if (base == NULL)
+            {
+                /*Codes_SRS_CONSTBUFFER_22_004: [ If there are any failures then CONSTBUFFER_CreateWithAlignment shall fail and return NULL. ]*/
+                LogError("failure in gballoc_hl_malloc_aligned(alignment=%" PRIu32 ", size=%" PRIu32 ")", alignment, size);
+                result = NULL;
+            }
+            else
+            {
+                result = (CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA*)(base + padded_payload);
+                /*Codes_SRS_CONSTBUFFER_22_005: [ CONSTBUFFER_CreateWithAlignment shall copy the memory area pointed to by source having size bytes into the aligned buffer and return a non-NULL handle. ]*/
+                (void)memcpy(base, source, size);
+                result->alias.buffer = base;
+                result->alias.size = size;
+                result->buffer_type = CONSTBUFFER_TYPE_ALIGNED;
+                /*Codes_SRS_CONSTBUFFER_22_006: [ The non-NULL handle returned by CONSTBUFFER_CreateWithAlignment shall have its ref count set to 1. ]*/
+                (void)interlocked_exchange(&result->count, 1);
+            }
         }
     }
     return (CONSTBUFFER_HANDLE)result;
@@ -399,14 +409,24 @@ static void CONSTBUFFER_DecRef_internal(CONSTBUFFER_HANDLE constbufferHandle)
         switch (constbufferHandle->buffer_type)
         {
             default:
+            {
+                /*this is a defensive branch: buffer_type is only ever set internally by the create functions, so an unrecognized value indicates memory corruption*/
+                LogError("unexpected buffer_type=%d", (int)constbufferHandle->buffer_type);
+                free(constbufferHandle);
+                break;
+            }
             case CONSTBUFFER_TYPE_COPIED:
+            {
                 /*Codes_SRS_CONSTBUFFER_02_017: [If the refcount reaches zero, then CONSTBUFFER_DecRef shall deallocate all resources used by the CONSTBUFFER_HANDLE.]*/
                 free(constbufferHandle);
                 break;
+            }
             case CONSTBUFFER_TYPE_MEMORY_MOVED:
+            {
                 free((void*)constbufferHandle->alias.buffer);
                 free(constbufferHandle);
                 break;
+            }
             case CONSTBUFFER_TYPE_WITH_CUSTOM_FREE:
             {
                 CONSTBUFFER_HANDLE_WITH_CUSTOM_FREE_DATA* handleData = (CONSTBUFFER_HANDLE_WITH_CUSTOM_FREE_DATA*)constbufferHandle;
@@ -424,10 +444,12 @@ static void CONSTBUFFER_DecRef_internal(CONSTBUFFER_HANDLE constbufferHandle)
                 break;
             }
             case CONSTBUFFER_TYPE_ALIGNED:
+            {
                 /*Codes_SRS_CONSTBUFFER_22_007: [ If the buffer was created by calling CONSTBUFFER_CreateWithAlignment, CONSTBUFFER_DecRef shall free the aligned allocation by calling gballoc_hl_free_aligned. ]*/
                 /*the handle header lives inside this same aligned allocation, so freeing the base frees it too*/
                 gballoc_hl_free_aligned((void*)constbufferHandle->alias.buffer);
                 break;
+            }
         }
     }
 }
@@ -770,25 +792,35 @@ CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_CreateWritableHandleWithAlignment(uint32
     else
     {
         /*the aligned writable buffer is placed at the base of a single aligned allocation and the handle header right after the (padded) buffer, so one aligned allocation backs both*/
-        size_t padded_payload = (size + (_Alignof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA) - 1)) & ~(_Alignof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA) - 1);
-
-        /*Codes_SRS_CONSTBUFFER_22_009: [ CONSTBUFFER_CreateWritableHandleWithAlignment shall allocate memory aligned to alignment to hold both the handle and size bytes by calling gballoc_hl_malloc_aligned. ]*/
-        unsigned char* base = gballoc_hl_malloc_aligned(alignment, padded_payload + sizeof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA));
-        if (base == NULL)
+        size_t align_mask = _Alignof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA) - 1;
+        size_t padded_payload = (size + align_mask) & ~align_mask;
+        size_t alloc_size = padded_payload + sizeof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA);
+        if ((padded_payload < size) || (alloc_size < padded_payload))
         {
             /*Codes_SRS_CONSTBUFFER_22_010: [ If there are any failures then CONSTBUFFER_CreateWritableHandleWithAlignment shall fail and return NULL. ]*/
-            LogError("failure in gballoc_hl_malloc_aligned(alignment=%" PRIu32 ", size=%" PRIu32 ")", alignment, size);
+            LogError("size overflow computing the aligned allocation size, size=%" PRIu32 "", size);
             result = NULL;
         }
         else
         {
-            /*Codes_SRS_CONSTBUFFER_22_012: [ CONSTBUFFER_CreateWritableHandleWithAlignment shall succeed and return a non-NULL CONSTBUFFER_WRITABLE_HANDLE. ]*/
-            result = (CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA*)(base + padded_payload);
-            result->alias.buffer = base;
-            result->alias.size = size;
-            result->buffer_type = CONSTBUFFER_TYPE_ALIGNED;
-            /*Codes_SRS_CONSTBUFFER_22_011: [ CONSTBUFFER_CreateWritableHandleWithAlignment shall set the ref count of the newly created CONSTBUFFER_WRITABLE_HANDLE to 1. ]*/
-            (void)interlocked_exchange(&result->count, 1);
+            /*Codes_SRS_CONSTBUFFER_22_009: [ CONSTBUFFER_CreateWritableHandleWithAlignment shall allocate memory aligned to alignment to hold both the handle and size bytes by calling gballoc_hl_malloc_aligned. ]*/
+            unsigned char* base = gballoc_hl_malloc_aligned(alignment, alloc_size);
+            if (base == NULL)
+            {
+                /*Codes_SRS_CONSTBUFFER_22_010: [ If there are any failures then CONSTBUFFER_CreateWritableHandleWithAlignment shall fail and return NULL. ]*/
+                LogError("failure in gballoc_hl_malloc_aligned(alignment=%" PRIu32 ", size=%" PRIu32 ")", alignment, size);
+                result = NULL;
+            }
+            else
+            {
+                /*Codes_SRS_CONSTBUFFER_22_012: [ CONSTBUFFER_CreateWritableHandleWithAlignment shall succeed and return a non-NULL CONSTBUFFER_WRITABLE_HANDLE. ]*/
+                result = (CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA*)(base + padded_payload);
+                result->alias.buffer = base;
+                result->alias.size = size;
+                result->buffer_type = CONSTBUFFER_TYPE_ALIGNED;
+                /*Codes_SRS_CONSTBUFFER_22_011: [ CONSTBUFFER_CreateWritableHandleWithAlignment shall set the ref count of the newly created CONSTBUFFER_WRITABLE_HANDLE to 1. ]*/
+                (void)interlocked_exchange(&result->count, 1);
+            }
         }
     }
     return (CONSTBUFFER_WRITABLE_HANDLE)result;
