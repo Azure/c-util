@@ -118,21 +118,17 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithAlignment, const u
 
 `CONSTBUFFER_CreateWithAlignment` is the aligned analog of `CONSTBUFFER_Create`: it copies `source` into a buffer allocated through `gballoc_hl_malloc_aligned` so the resulting `buffer` is aligned to `alignment`.
 
-**SRS_CONSTBUFFER_22_001: [** If `source` is NULL or `size` is 0 then `CONSTBUFFER_CreateWithAlignment` shall fail and return NULL. **]**
+**SRS_CONSTBUFFER_22_001: [** If `source` is NULL then `CONSTBUFFER_CreateWithAlignment` shall fail and return NULL. **]**
 
-**SRS_CONSTBUFFER_22_002: [** `CONSTBUFFER_CreateWithAlignment` shall allocate memory for the `CONSTBUFFER_HANDLE`. **]**
+**SRS_CONSTBUFFER_22_002: [** If `size` is 0 then `CONSTBUFFER_CreateWithAlignment` shall fail and return NULL. **]**
 
-**SRS_CONSTBUFFER_22_003: [** If there are any failures then `CONSTBUFFER_CreateWithAlignment` shall fail and return NULL. **]**
+**SRS_CONSTBUFFER_22_003: [** `CONSTBUFFER_CreateWithAlignment` shall allocate memory aligned to `alignment` to hold both the handle and `size` bytes by calling `gballoc_hl_malloc_aligned`. **]**
 
-**SRS_CONSTBUFFER_22_005: [** `CONSTBUFFER_CreateWithAlignment` shall allocate `size` bytes aligned to `alignment` by calling `gballoc_hl_malloc_aligned`. **]**
+**SRS_CONSTBUFFER_22_004: [** If `gballoc_hl_malloc_aligned` fails then `CONSTBUFFER_CreateWithAlignment` shall fail and return NULL. **]**
 
-**SRS_CONSTBUFFER_22_006: [** If `gballoc_hl_malloc_aligned` fails then `CONSTBUFFER_CreateWithAlignment` shall free the allocated memory and return NULL. **]**
+**SRS_CONSTBUFFER_22_005: [** `CONSTBUFFER_CreateWithAlignment` shall copy the memory area pointed to by `source` having `size` bytes into the aligned buffer and return a non-NULL handle. **]**
 
-**SRS_CONSTBUFFER_22_007: [** `CONSTBUFFER_CreateWithAlignment` shall copy the memory area pointed to by `source` having `size` bytes into the aligned buffer and return a non-NULL handle. **]**
-
-**SRS_CONSTBUFFER_22_008: [** The non-NULL handle returned by `CONSTBUFFER_CreateWithAlignment` shall have its ref count set to 1. **]**
-
-**SRS_CONSTBUFFER_22_009: [** If the buffer was created by calling `CONSTBUFFER_CreateWithAlignment` or `CONSTBUFFER_CreateWritableHandleWithAlignment`, the aligned buffer shall be freed by calling `gballoc_hl_free_aligned`. **]**
+**SRS_CONSTBUFFER_22_006: [** The non-NULL handle returned by `CONSTBUFFER_CreateWithAlignment` shall have its ref count set to 1. **]**
 
 ### CONSTBUFFER_CreateFromBuffer
 
@@ -267,6 +263,8 @@ MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHan
 **SRS_CONSTBUFFER_01_012: [** If the buffer was created by calling `CONSTBUFFER_CreateWithCustomFree`, the `customFreeFunc` function shall be called to free the memory, while passed `customFreeFuncContext` as argument. **]**
 
 **SRS_CONSTBUFFER_02_024: [** If the `constbufferHandle` was created by calling `CONSTBUFFER_CreateFromOffsetAndSize` then `CONSTBUFFER_DecRef` shall decrement the ref count of the original `handle` passed to `CONSTBUFFER_CreateFromOffsetAndSize`. **]**
+
+**SRS_CONSTBUFFER_22_007: [** If the buffer was created by calling `CONSTBUFFER_CreateWithAlignment`, `CONSTBUFFER_DecRef` shall free the aligned allocation by calling `gballoc_hl_free_aligned`. **]**
 
 ### CONSTBUFFER_GetContent
 
@@ -420,21 +418,15 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_WRITABLE_HANDLE, CONSTBUFFER_CreateWritableHandl
 
 `CONSTBUFFER_CreateWritableHandleWithAlignment` is the aligned analog of `CONSTBUFFER_CreateWritableHandle`: its writable buffer is allocated through `gballoc_hl_malloc_aligned` so it is aligned to `alignment`.
 
-**SRS_CONSTBUFFER_22_010: [** If `size` is 0, then `CONSTBUFFER_CreateWritableHandleWithAlignment` shall fail and return NULL. **]**
+**SRS_CONSTBUFFER_22_008: [** If `size` is 0, then `CONSTBUFFER_CreateWritableHandleWithAlignment` shall fail and return NULL. **]**
 
-**SRS_CONSTBUFFER_22_011: [** `CONSTBUFFER_CreateWritableHandleWithAlignment` shall allocate memory for the `CONSTBUFFER_WRITABLE_HANDLE`. **]**
+**SRS_CONSTBUFFER_22_009: [** `CONSTBUFFER_CreateWritableHandleWithAlignment` shall allocate memory aligned to `alignment` to hold both the handle and `size` bytes by calling `gballoc_hl_malloc_aligned`. **]**
 
-**SRS_CONSTBUFFER_22_012: [** `CONSTBUFFER_CreateWritableHandleWithAlignment` shall allocate `size` bytes aligned to `alignment` by calling `gballoc_hl_malloc_aligned`. **]**
+**SRS_CONSTBUFFER_22_010: [** If `gballoc_hl_malloc_aligned` fails then `CONSTBUFFER_CreateWritableHandleWithAlignment` shall fail and return NULL. **]**
 
-**SRS_CONSTBUFFER_22_013: [** `CONSTBUFFER_CreateWritableHandleWithAlignment` shall set the ref count of the newly created `CONSTBUFFER_WRITABLE_HANDLE` to 1. **]**
+**SRS_CONSTBUFFER_22_011: [** `CONSTBUFFER_CreateWritableHandleWithAlignment` shall set the ref count of the newly created `CONSTBUFFER_WRITABLE_HANDLE` to 1. **]**
 
-**SRS_CONSTBUFFER_22_014: [** If there are any failures then `CONSTBUFFER_CreateWritableHandleWithAlignment` shall fail and return NULL. **]**
-
-**SRS_CONSTBUFFER_22_015: [** `CONSTBUFFER_CreateWritableHandleWithAlignment` shall succeed and return a non-`NULL` `CONSTBUFFER_WRITABLE_HANDLE`. **]**
-
-**SRS_CONSTBUFFER_22_016: [** If `constbufferWritableHandle` was created by `CONSTBUFFER_CreateWritableHandleWithAlignment` then `CONSTBUFFER_GetWritableBuffer` shall return the aligned buffer. **]**
-
-**SRS_CONSTBUFFER_22_017: [** If `constbufferWritableHandle` was created by `CONSTBUFFER_CreateWritableHandleWithAlignment` then `CONSTBUFFER_WritableHandleDecRef` shall free the aligned buffer by calling `gballoc_hl_free_aligned`. **]**
+**SRS_CONSTBUFFER_22_012: [** `CONSTBUFFER_CreateWritableHandleWithAlignment` shall succeed and return a non-`NULL` `CONSTBUFFER_WRITABLE_HANDLE`. **]**
 
 ### CONSTBUFFER_GetWritableBuffer
 
@@ -447,6 +439,8 @@ MOCKABLE_FUNCTION(, CONSTBUFFER_WRITABLE_HANDLE, CONSTBUFFER_CreateWritableHandl
 **SRS_CONSTBUFFER_51_006: [** If `constbufferWritableHandle` is `NULL`, then `CONSTBUFFER_GetWritableBuffer` shall fail and return `NULL`. **]**
 
 **SRS_CONSTBUFFER_51_007: [** `CONSTBUFFER_GetWritableBuffer` shall succeed and returns a pointer to the non-CONST buffer of `constbufferWritableHandle`. **]**
+
+**SRS_CONSTBUFFER_22_013: [** If `constbufferWritableHandle` was created by `CONSTBUFFER_CreateWritableHandleWithAlignment` then `CONSTBUFFER_GetWritableBuffer` shall return the aligned buffer. **]**
 
 ### CONSTBUFFER_SealWritableHandle
 
@@ -485,6 +479,8 @@ void CONSTBUFFER_WritableHandleDecRef(CONSTBUFFER_HANDLE constbufferWritableHand
 **SRS_CONSTBUFFER_51_013: [** Otherwise, `CONSTBUFFER_WritableHandleDecRef` shall decrement the refcount of `constbufferWritableHandle`. **]**
 
 **SRS_CONSTBUFFER_51_014: [** If the refcount reaches zero, then `CONSTBUFFER_WritableHandleDecRef` shall deallocate all resources used by the CONSTBUFFER_HANDLE. **]**
+
+**SRS_CONSTBUFFER_22_014: [** If `constbufferWritableHandle` was created by `CONSTBUFFER_CreateWritableHandleWithAlignment` then `CONSTBUFFER_WritableHandleDecRef` shall free the aligned allocation by calling `gballoc_hl_free_aligned`. **]**
 
 ### CONSTBUFFER_GetWritableBufferSize
 
