@@ -169,6 +169,110 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         CONSTBUFFER_DecRef(handle);
     }
 
+    /* CONSTBUFFER_CreateWithAlignment */
+
+    /*Tests_SRS_CONSTBUFFER_22_001: [ If source is NULL then CONSTBUFFER_CreateWithAlignment shall fail and return NULL. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithAlignment_with_NULL_source_and_non_zero_size_fails)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+
+        ///act
+        handle = CONSTBUFFER_CreateWithAlignment(NULL, 1, 4096);
+
+        ///assert
+        ASSERT_IS_NULL(handle);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+    }
+
+    /*Tests_SRS_CONSTBUFFER_22_002: [ If size is 0 then CONSTBUFFER_CreateWithAlignment shall fail and return NULL. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithAlignment_with_size_0_fails)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+
+        ///act
+        handle = CONSTBUFFER_CreateWithAlignment(BUFFER1_u_char, 0, 4096);
+
+        ///assert
+        ASSERT_IS_NULL(handle);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+    }
+
+    /*Tests_SRS_CONSTBUFFER_22_003: [ CONSTBUFFER_CreateWithAlignment shall allocate memory aligned to alignment to hold both the handle and size bytes by calling gballoc_hl_malloc_aligned. ]*/
+    /*Tests_SRS_CONSTBUFFER_22_005: [ CONSTBUFFER_CreateWithAlignment shall copy the memory area pointed to by source having size bytes into the aligned buffer and return a non-NULL handle. ]*/
+    /*Tests_SRS_CONSTBUFFER_22_006: [ The non-NULL handle returned by CONSTBUFFER_CreateWithAlignment shall have its ref count set to 1. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithAlignment_succeeds)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+        const CONSTBUFFER* content;
+
+        /*single aligned allocation backs both the handle and the payload*/
+        STRICT_EXPECTED_CALL(gballoc_hl_malloc_aligned(4096, IGNORED_ARG));
+
+        ///act
+        handle = CONSTBUFFER_CreateWithAlignment(BUFFER1_u_char, BUFFER1_length, 4096);
+
+        ///assert
+        ASSERT_IS_NOT_NULL(handle);
+        content = CONSTBUFFER_GetContent(handle);
+        ASSERT_ARE_EQUAL(size_t, BUFFER1_length, content->size);
+        /*the copied content matches*/
+        ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER1_u_char, content->buffer, BUFFER1_length));
+        /*it is a copy, not a pointer assignment*/
+        ASSERT_ARE_NOT_EQUAL(void_ptr, BUFFER1_u_char, content->buffer);
+        /*the buffer is aligned to the requested alignment*/
+        ASSERT_ARE_EQUAL(size_t, 0, (size_t)((uintptr_t)content->buffer % 4096));
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+        CONSTBUFFER_DecRef(handle);
+    }
+
+    /*Tests_SRS_CONSTBUFFER_22_004: [ If there are any failures then CONSTBUFFER_CreateWithAlignment shall fail and return NULL. ]*/
+    TEST_FUNCTION(CONSTBUFFER_CreateWithAlignment_fails_when_malloc_aligned_fails)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle;
+
+        STRICT_EXPECTED_CALL(gballoc_hl_malloc_aligned(4096, IGNORED_ARG))
+            .SetReturn(NULL);
+
+        ///act
+        handle = CONSTBUFFER_CreateWithAlignment(BUFFER1_u_char, BUFFER1_length, 4096);
+
+        ///assert
+        ASSERT_IS_NULL(handle);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+    }
+
+    /*Tests_SRS_CONSTBUFFER_22_007: [ If the buffer was created by calling CONSTBUFFER_CreateWithAlignment, CONSTBUFFER_DecRef shall free the aligned allocation by calling gballoc_hl_free_aligned. ]*/
+    TEST_FUNCTION(CONSTBUFFER_DecRef_on_aligned_buffer_calls_gballoc_hl_free_aligned)
+    {
+        ///arrange
+        CONSTBUFFER_HANDLE handle = CONSTBUFFER_CreateWithAlignment(BUFFER1_u_char, BUFFER1_length, 4096);
+        ASSERT_IS_NOT_NULL(handle);
+        umock_c_reset_all_calls();
+
+        /*single aligned allocation is released with a single gballoc_hl_free_aligned (the handle lives inside it)*/
+        STRICT_EXPECTED_CALL(gballoc_hl_free_aligned(IGNORED_ARG));
+
+        ///act
+        CONSTBUFFER_DecRef(handle);
+
+        ///assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        ///cleanup
+    }
+
     /* CONSTBUFFER_CreateFromBuffer */
 
     /*Tests_SRS_CONSTBUFFER_02_009: [Otherwise, CONSTBUFFER_CreateFromBuffer shall return a non-NULL handle.]*/
@@ -2612,6 +2716,118 @@ TEST_FUNCTION(CONSTBUFFER_CreateWritableHandle_succeeds)
 
     ///cleanup
     CONSTBUFFER_WritableHandleDecRef(handle);
+}
+
+/* CONSTBUFFER_CreateWritableHandleWithAlignment */
+
+/*Tests_SRS_CONSTBUFFER_22_008: [ If size is 0, then CONSTBUFFER_CreateWritableHandleWithAlignment shall fail and return NULL. ]*/
+TEST_FUNCTION(CONSTBUFFER_CreateWritableHandleWithAlignment_with_size_0_fails)
+{
+    ///arrange
+    CONSTBUFFER_WRITABLE_HANDLE handle;
+
+    ///act
+    handle = CONSTBUFFER_CreateWritableHandleWithAlignment(0, 4096);
+
+    ///assert
+    ASSERT_IS_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+}
+
+/*Tests_SRS_CONSTBUFFER_22_009: [ CONSTBUFFER_CreateWritableHandleWithAlignment shall allocate memory aligned to alignment to hold both the handle and size bytes by calling gballoc_hl_malloc_aligned. ]*/
+/*Tests_SRS_CONSTBUFFER_22_011: [ CONSTBUFFER_CreateWritableHandleWithAlignment shall set the ref count of the newly created CONSTBUFFER_WRITABLE_HANDLE to 1. ]*/
+/*Tests_SRS_CONSTBUFFER_22_012: [ CONSTBUFFER_CreateWritableHandleWithAlignment shall succeed and return a non-NULL CONSTBUFFER_WRITABLE_HANDLE. ]*/
+/*Tests_SRS_CONSTBUFFER_22_013: [ If constbufferWritableHandle was created by CONSTBUFFER_CreateWritableHandleWithAlignment then CONSTBUFFER_GetWritableBuffer shall return the aligned buffer. ]*/
+TEST_FUNCTION(CONSTBUFFER_CreateWritableHandleWithAlignment_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_WRITABLE_HANDLE handle;
+    unsigned char* writableBuffer;
+
+    /*single aligned allocation backs both the handle and the writable buffer*/
+    STRICT_EXPECTED_CALL(gballoc_hl_malloc_aligned(4096, IGNORED_ARG));
+
+    ///act
+    handle = CONSTBUFFER_CreateWritableHandleWithAlignment(BUFFER1_length, 4096);
+    writableBuffer = CONSTBUFFER_GetWritableBuffer(handle);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(handle);
+    ASSERT_IS_NOT_NULL(writableBuffer);
+    /*the writable buffer is aligned to the requested alignment*/
+    ASSERT_ARE_EQUAL(size_t, 0, (size_t)((uintptr_t)writableBuffer % 4096));
+    ASSERT_ARE_EQUAL(uint32_t, BUFFER1_length, CONSTBUFFER_GetWritableBufferSize(handle));
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    CONSTBUFFER_WritableHandleDecRef(handle);
+}
+
+/*Tests_SRS_CONSTBUFFER_22_010: [ If there are any failures then CONSTBUFFER_CreateWritableHandleWithAlignment shall fail and return NULL. ]*/
+TEST_FUNCTION(CONSTBUFFER_CreateWritableHandleWithAlignment_fails_when_malloc_aligned_fails)
+{
+    ///arrange
+    CONSTBUFFER_WRITABLE_HANDLE handle;
+
+    STRICT_EXPECTED_CALL(gballoc_hl_malloc_aligned(4096, IGNORED_ARG))
+        .SetReturn(NULL);
+
+    ///act
+    handle = CONSTBUFFER_CreateWritableHandleWithAlignment(BUFFER1_length, 4096);
+
+    ///assert
+    ASSERT_IS_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+}
+
+/*Tests_SRS_CONSTBUFFER_22_014: [ If constbufferWritableHandle was created by CONSTBUFFER_CreateWritableHandleWithAlignment then CONSTBUFFER_WritableHandleDecRef shall free the aligned allocation by calling gballoc_hl_free_aligned. ]*/
+TEST_FUNCTION(CONSTBUFFER_WritableHandleDecRef_on_aligned_calls_gballoc_hl_free_aligned)
+{
+    ///arrange
+    CONSTBUFFER_WRITABLE_HANDLE handle = CONSTBUFFER_CreateWritableHandleWithAlignment(BUFFER1_length, 4096);
+    ASSERT_IS_NOT_NULL(handle);
+    umock_c_reset_all_calls();
+
+    /*single aligned allocation is released with a single gballoc_hl_free_aligned (the handle lives inside it)*/
+    STRICT_EXPECTED_CALL(gballoc_hl_free_aligned(IGNORED_ARG));
+
+    ///act
+    CONSTBUFFER_WritableHandleDecRef(handle);
+
+    ///assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+}
+
+/*Tests_SRS_CONSTBUFFER_22_013: [ If constbufferWritableHandle was created by CONSTBUFFER_CreateWritableHandleWithAlignment then CONSTBUFFER_GetWritableBuffer shall return the aligned buffer. ]*/
+/*this is the zero-copy producer scenario: write directly into the aligned writable buffer, then seal*/
+TEST_FUNCTION(CONSTBUFFER_SealWritableHandle_on_aligned_writable_produces_aligned_content)
+{
+    ///arrange
+    CONSTBUFFER_WRITABLE_HANDLE writableHandle = CONSTBUFFER_CreateWritableHandleWithAlignment(BUFFER1_length, 4096);
+    ASSERT_IS_NOT_NULL(writableHandle);
+    unsigned char* writableBuffer = CONSTBUFFER_GetWritableBuffer(writableHandle);
+    (void)memcpy(writableBuffer, BUFFER1_u_char, BUFFER1_length);
+    umock_c_reset_all_calls();
+
+    ///act
+    CONSTBUFFER_HANDLE handle = CONSTBUFFER_SealWritableHandle(writableHandle);
+    const CONSTBUFFER* content = CONSTBUFFER_GetContent(handle);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(content);
+    ASSERT_ARE_EQUAL(uint32_t, BUFFER1_length, content->size);
+    ASSERT_ARE_EQUAL(int, 0, memcmp(BUFFER1_u_char, content->buffer, BUFFER1_length));
+    /*the sealed content is still aligned (no copy happened at seal)*/
+    ASSERT_ARE_EQUAL(size_t, 0, (size_t)((uintptr_t)content->buffer % 4096));
+
+    ///cleanup
+    CONSTBUFFER_DecRef(handle);
 }
 
 /*CONSTBUFFER_getWritableBuffer*/

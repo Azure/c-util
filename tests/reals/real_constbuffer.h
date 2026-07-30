@@ -16,6 +16,7 @@
 #define REGISTER_CONSTBUFFER_GLOBAL_MOCK_HOOK() \
     MU_FOR_EACH_1(R2, \
         CONSTBUFFER_Create, \
+        CONSTBUFFER_CreateWithAlignment, \
         CONSTBUFFER_CreateFromBuffer, \
         CONSTBUFFER_CreateWithMoveMemory, \
         CONSTBUFFER_CreateWithCustomFree, \
@@ -30,6 +31,7 @@
         CONSTBUFFER_to_fixed_size_buffer, \
         CONSTBUFFER_from_buffer, \
         CONSTBUFFER_CreateWritableHandle, \
+        CONSTBUFFER_CreateWritableHandleWithAlignment, \
         CONSTBUFFER_GetWritableBuffer, \
         CONSTBUFFER_SealWritableHandle, \
         CONSTBUFFER_WritableHandleIncRef, \
@@ -47,6 +49,8 @@
 
 
 CONSTBUFFER_HANDLE real_CONSTBUFFER_Create(const unsigned char* source, uint32_t size);
+
+CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateWithAlignment(const unsigned char* source, uint32_t size, uint32_t alignment);
 
 CONSTBUFFER_HANDLE real_CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer);
 
@@ -75,6 +79,8 @@ CONSTBUFFER_TO_FIXED_SIZE_BUFFER_RESULT real_CONSTBUFFER_to_fixed_size_buffer(CO
 CONSTBUFFER_FROM_BUFFER_RESULT real_CONSTBUFFER_from_buffer(const unsigned char* source, uint32_t size, uint32_t* consumed, CONSTBUFFER_HANDLE* destination);
 
 CONSTBUFFER_WRITABLE_HANDLE real_CONSTBUFFER_CreateWritableHandle(uint32_t size);
+
+CONSTBUFFER_WRITABLE_HANDLE real_CONSTBUFFER_CreateWritableHandleWithAlignment(uint32_t size, uint32_t alignment);
 
 unsigned char * real_CONSTBUFFER_GetWritableBuffer(CONSTBUFFER_WRITABLE_HANDLE constbufferWritableHandle);
 
