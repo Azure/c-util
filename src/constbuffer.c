@@ -153,7 +153,7 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithAlignment(const unsigned char* source, 
         unsigned char* base = gballoc_hl_malloc_aligned(alignment, padded_payload + sizeof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA));
         if (base == NULL)
         {
-            /*Codes_SRS_CONSTBUFFER_22_004: [ If gballoc_hl_malloc_aligned fails then CONSTBUFFER_CreateWithAlignment shall fail and return NULL. ]*/
+            /*Codes_SRS_CONSTBUFFER_22_004: [ If there are any failures then CONSTBUFFER_CreateWithAlignment shall fail and return NULL. ]*/
             LogError("failure in gballoc_hl_malloc_aligned(alignment=%" PRIu32 ", size=%" PRIu32 ")", alignment, size);
             result = NULL;
         }
@@ -776,7 +776,7 @@ CONSTBUFFER_WRITABLE_HANDLE CONSTBUFFER_CreateWritableHandleWithAlignment(uint32
         unsigned char* base = gballoc_hl_malloc_aligned(alignment, padded_payload + sizeof(CONSTBUFFER_HANDLE_MOVE_MEMORY_DATA));
         if (base == NULL)
         {
-            /*Codes_SRS_CONSTBUFFER_22_010: [ If gballoc_hl_malloc_aligned fails then CONSTBUFFER_CreateWritableHandleWithAlignment shall fail and return NULL. ]*/
+            /*Codes_SRS_CONSTBUFFER_22_010: [ If there are any failures then CONSTBUFFER_CreateWritableHandleWithAlignment shall fail and return NULL. ]*/
             LogError("failure in gballoc_hl_malloc_aligned(alignment=%" PRIu32 ", size=%" PRIu32 ")", alignment, size);
             result = NULL;
         }

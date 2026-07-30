@@ -234,7 +234,7 @@ BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
         CONSTBUFFER_DecRef(handle);
     }
 
-    /*Tests_SRS_CONSTBUFFER_22_004: [ If gballoc_hl_malloc_aligned fails then CONSTBUFFER_CreateWithAlignment shall fail and return NULL. ]*/
+    /*Tests_SRS_CONSTBUFFER_22_004: [ If there are any failures then CONSTBUFFER_CreateWithAlignment shall fail and return NULL. ]*/
     TEST_FUNCTION(CONSTBUFFER_CreateWithAlignment_fails_when_malloc_aligned_fails)
     {
         ///arrange
@@ -2765,7 +2765,7 @@ TEST_FUNCTION(CONSTBUFFER_CreateWritableHandleWithAlignment_succeeds)
     CONSTBUFFER_WritableHandleDecRef(handle);
 }
 
-/*Tests_SRS_CONSTBUFFER_22_010: [ If gballoc_hl_malloc_aligned fails then CONSTBUFFER_CreateWritableHandleWithAlignment shall fail and return NULL. ]*/
+/*Tests_SRS_CONSTBUFFER_22_010: [ If there are any failures then CONSTBUFFER_CreateWritableHandleWithAlignment shall fail and return NULL. ]*/
 TEST_FUNCTION(CONSTBUFFER_CreateWritableHandleWithAlignment_fails_when_malloc_aligned_fails)
 {
     ///arrange
