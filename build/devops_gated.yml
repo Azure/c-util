@@ -8,7 +8,7 @@ parameters:
   - name: pool_name_windows_arm64
     displayName: 'Windows ARM64 Pool'
     type: string
-    default: 'Azure-MessagingStore-Win-ARM64-Dpldsv6-v26'
+    default: 'Azure-MessagingStore-Win-ARM64-Dpldsv6-v28'
   - name: pool_name_linux
     displayName: 'Linux Pool'
     type: string
@@ -28,6 +28,7 @@ jobs:
 - template: /pipeline_templates/build_all_flavors.yml@c_build_tools
   parameters:
     GBALLOC_LL_TYPE_VALUES: ["PASSTHROUGH", "JEMALLOC"]
+    pool_name_arm64: ${{ parameters.pool_name_windows_arm64 }}
     arm64_max_stage: ALL
 
 - template: /pipeline_templates/run_master_check.yml@c_build_tools
