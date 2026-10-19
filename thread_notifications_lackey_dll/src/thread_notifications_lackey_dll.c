@@ -5,8 +5,6 @@
 
 #include "macro_utils/macro_utils.h"
 
-#include "c_logging/logger.h"
-
 #include "c_pal/interlocked.h"
 #include "c_pal/ps_util.h"
 
@@ -23,7 +21,6 @@ int thread_notifications_lackey_dll_init_callback(THREAD_NOTIFICATIONS_LACKEY_DL
     /* Codes_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_001: [ If thread_notification_cb is NULL, thread_notifications_lackey_set_callback shall fail and return a non-zero value. ]*/
     if (thread_notifications_cb == NULL)
     {
-        LogError("Invalid arguments: THREAD_NOTIFICATIONS_LACKEY_DLL_CALLBACK_FUNC thread_notifications_cb=%p", thread_notifications_cb);
         result = MU_FAILURE;
     }
     else
@@ -33,7 +30,6 @@ int thread_notifications_lackey_dll_init_callback(THREAD_NOTIFICATIONS_LACKEY_DL
         if (existing_callback != NULL)
         {
             /* Codes_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_003: [ If the callback was already initialized, thread_notifications_lackey_dll_init_callback shall fail and return a non-zero value. ] */
-            LogError("User error: callback already set to %p, thread_notifications_cb=%p", existing_callback, thread_notifications_cb);
             result = MU_FAILURE;
         }
         else
@@ -61,6 +57,8 @@ BOOL WINAPI DllMain(
     (void)hinstDLL;
     (void)lpvReserved;
 
+    /* DllMain runs under the loader lock and, at process exit, after other DLLs may already have detached.
+    It therefore does no initialization or cleanup, only forwards thread notifications. */
     switch (fdwReason)
     {
     default:
@@ -70,17 +68,8 @@ BOOL WINAPI DllMain(
 
     /* Codes_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_005: [ If fdwReason is DLL_PROCESS_ATTACH: ]*/
     case DLL_PROCESS_ATTACH:
-        /* Codes_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_006: [ DllMain shall call logger_init to initialize logging for the module. ]*/
-        if (logger_init() != 0)
-        {
-            /* Codes_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_008: [ If logger_init fails, DllMain shall return FALSE. ]*/
-            result = FALSE;
-        }
-        else
-        {
-            /* Codes_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_007: [ Otherwise, DllMain shall initialize the callback maintained by the module with NULL and return TRUE. ]*/
-            result = TRUE;
-        }
+        /* Codes_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_007: [ DllMain shall return TRUE. ]*/
+        result = TRUE;
         break;
 
     /* Codes_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_011: [ If fdwReason is DLL_THREAD_ATTACH: ]*/
@@ -114,8 +103,7 @@ BOOL WINAPI DllMain(
 
     /* Codes_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_009: [ If fdwReason is DLL_PROCESS_DETACH: ]*/
     case DLL_PROCESS_DETACH:
-        /* Codes_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_010: [DllMain shall call logger_deinit and return TRUE.]*/
-        logger_deinit();
+        /* Codes_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_010: [ DllMain shall return TRUE. ]*/
         result = TRUE;
         break;
     }

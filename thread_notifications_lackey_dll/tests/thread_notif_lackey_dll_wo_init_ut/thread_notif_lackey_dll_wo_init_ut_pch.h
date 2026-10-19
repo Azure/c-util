@@ -15,11 +15,8 @@
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
-#include "c_logging/logger.h"
-
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_windows.h"
-#include "umock_c/umock_c_negative_tests.h"
 
 #include "c_pal/interlocked.h"
 
