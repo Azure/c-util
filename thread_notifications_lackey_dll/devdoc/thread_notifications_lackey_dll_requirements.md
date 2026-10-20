@@ -65,6 +65,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);
 
 `DllMain` implements the DLL main entry point.
 
+`DllMain` runs under the loader lock and, at process exit, other DLLs may have already been detached. For this reason it does not initialize or clean up anything (including logging) for process attach/detach.
+
 **SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_005: [** If `fdwReason` is `DLL_PROCESS_ATTACH`: **]**
 
 - **SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_007: [** `DllMain` shall return `TRUE`. **]**
@@ -72,19 +74,6 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);
 **SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_009: [** If `fdwReason` is `DLL_PROCESS_DETACH`: **]**
 
 - **SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_010: [** `DllMain` shall return `TRUE`. **]**
-
-#### DllMain design notes
-
-`DllMain` does no initialization or cleanup for process attach/detach. In particular it does not use logging, because the
-module keeps no state that needs it and because of the following constraints from the
-[`DllMain` documentation](https://learn.microsoft.com/en-us/windows/win32/dlls/dllmain) and
-[DLL best practices](https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-best-practices):
-
-- `DllMain` runs under the loader lock and must not call `LoadLibrary` directly or indirectly. `logger_init` calls `SymInitialize`, which makes dbghelp load `symsrv.dll` when it is found next to `dbghelp.dll` (this is the case on the ARM64 build agents).
-- During process termination other DLLs may already have been detached. `symsrv.dll` is loaded after this module, so it is detached before this module, and `logger_deinit` → `SymCleanup` would call into an unloaded `symsrv.dll`. The process dies before stdout is flushed and the executable's output is lost although the exit code is 0.
-- The ideal `DLL_PROCESS_DETACH` handler is empty: when the process terminates the operating system reclaims resources.
-
-Failures of `thread_notifications_lackey_dll_init_callback` are reported to the caller through its return value, which the caller logs using its own (properly initialized) logger.
 
 **SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_011: [** If `fdwReason` is `DLL_THREAD_ATTACH`: **]**
 
