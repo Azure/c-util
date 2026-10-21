@@ -65,17 +65,15 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);
 
 `DllMain` implements the DLL main entry point.
 
+`DllMain` runs under the loader lock and, at process exit, other DLLs may have already been detached. For this reason it does not initialize or clean up anything (including logging) for process attach/detach.
+
 **SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_005: [** If `fdwReason` is `DLL_PROCESS_ATTACH`: **]**
 
-- **SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_006: [** `DllMain` shall call `logger_init` to initialize logging for the module. **]**
-
-- **SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_008: [** If `logger_init` fails, `DllMain` shall return FALSE. **]**
-
-- **SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_007: [** Otherwise, `DllMain` shall initialize the callback maintained by the module with `NULL` and return `TRUE`. **]**
+- **SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_007: [** `DllMain` shall return `TRUE`. **]**
 
 **SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_009: [** If `fdwReason` is `DLL_PROCESS_DETACH`: **]**
 
-- **SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_010: [** `DllMain` shall call `logger_deinit` and return `TRUE`. **]**
+- **SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_010: [** `DllMain` shall return `TRUE`. **]**
 
 **SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_011: [** If `fdwReason` is `DLL_THREAD_ATTACH`: **]**
 

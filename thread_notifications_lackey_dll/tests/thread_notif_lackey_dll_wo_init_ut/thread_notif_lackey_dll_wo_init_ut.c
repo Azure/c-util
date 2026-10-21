@@ -3,16 +3,6 @@
 
 #include "thread_notif_lackey_dll_wo_init_ut_pch.h"
 
-#include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
-#undef ENABLE_MOCKS_DECL
-#include "umock_c/umock_c_prod.h"
-MOCK_FUNCTION_WITH_CODE(, int, mock_logger_init);
-MOCK_FUNCTION_END(0)
-
-MOCK_FUNCTION_WITH_CODE(, void, mock_logger_deinit);
-MOCK_FUNCTION_END()
-#include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
-
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
@@ -26,15 +16,10 @@ TEST_SUITE_INITIALIZE(suite_init)
 {
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error), "umock_c_init failed");
     ASSERT_ARE_EQUAL(int, 0, umocktypes_windows_register_types(), "umocktypes_windows_register_types failed");
-
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mock_logger_init, MU_FAILURE);
-
-    ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
-    umock_c_negative_tests_deinit();
     umock_c_deinit();
 }
 

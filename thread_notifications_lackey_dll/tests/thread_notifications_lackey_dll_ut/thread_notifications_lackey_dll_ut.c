@@ -11,12 +11,6 @@ MOCK_FUNCTION_END()
 
 MOCK_FUNCTION_WITH_CODE(, void, test_thread_notifications_callback_2, THREAD_NOTIFICATIONS_LACKEY_DLL_REASON, reason);
 MOCK_FUNCTION_END()
-
-MOCK_FUNCTION_WITH_CODE(, int, mock_logger_init);
-MOCK_FUNCTION_END(0)
-
-MOCK_FUNCTION_WITH_CODE(, void, mock_logger_deinit);
-MOCK_FUNCTION_END()
 #include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 static HMODULE test_module_handle = (HMODULE)0x42;
@@ -36,15 +30,11 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error), "umock_c_init failed");
     ASSERT_ARE_EQUAL(int, 0, umocktypes_windows_register_types(), "umocktypes_windows_register_types failed");
 
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mock_logger_init, MU_FAILURE);
     REGISTER_TYPE(THREAD_NOTIFICATIONS_LACKEY_DLL_REASON, THREAD_NOTIFICATIONS_LACKEY_DLL_REASON);
-
-    ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
 {
-    umock_c_negative_tests_deinit();
     umock_c_deinit();
 }
 
@@ -135,12 +125,10 @@ TEST_FUNCTION(thread_notifications_lackey_dll_deinit_callback_when_not_initializ
 /* DllMain */
 
 /* Tests_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_005: [ If fdwReason is DLL_PROCESS_ATTACH: ]*/
-    /* Tests_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_006: [ DllMain shall call logger_init to initialize logging for the module. ]*/
-    /* Tests_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_007: [ Otherwise, DllMain shall initialize the callback maintained by the module with NULL and return TRUE. ]*/
+    /* Tests_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_007: [ DllMain shall return TRUE. ]*/
 TEST_FUNCTION(thread_notifications_lackey_DllMain_with_DLL_PROCESS_ATTACH_returns_TRUE)
 {
     // arrange
-    STRICT_EXPECTED_CALL(mock_logger_init());
 
     // act
     BOOL result = DllMain_under_test(test_module_handle, DLL_PROCESS_ATTACH, NULL);
@@ -150,39 +138,29 @@ TEST_FUNCTION(thread_notifications_lackey_DllMain_with_DLL_PROCESS_ATTACH_return
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_008: [ If logger_init fails, DllMain shall return FALSE. ]*/
-TEST_FUNCTION(when_underlying_calls_fail_thread_notifications_lackey_DllMain_with_DLL_PROCESS_ATTACH_returns_FALSE)
-{
-    // arrange
-    STRICT_EXPECTED_CALL(mock_logger_init());
-
-    umock_c_negative_tests_snapshot();
-
-    for (size_t i = 0; i < umock_c_negative_tests_call_count(); i++)
-    {
-        if (umock_c_negative_tests_can_call_fail(i))
-        {
-            umock_c_negative_tests_reset();
-            umock_c_negative_tests_fail_call(i);
-
-            // act
-            BOOL result = DllMain_under_test(test_module_handle, DLL_PROCESS_ATTACH, NULL);
-
-            // assert
-            ASSERT_IS_FALSE(result);
-        }
-    }
-}
-
 /* Tests_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_009: [ If fdwReason is DLL_PROCESS_DETACH: ]*/
-    /* Tests_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_010: [DllMain shall call logger_deinit and return TRUE.]*/
-TEST_FUNCTION(thread_notifications_lackey_DllMain_with_DLL_PROCESS_DETACH_returns_TRUE)
+    /* Tests_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_010: [ DllMain shall return TRUE. ]*/
+TEST_FUNCTION(thread_notifications_lackey_DllMain_with_DLL_PROCESS_DETACH_on_dynamic_unload_returns_TRUE)
 {
     // arrange
-    STRICT_EXPECTED_CALL(mock_logger_deinit());
 
     // act
     BOOL result = DllMain_under_test(test_module_handle, DLL_PROCESS_DETACH, NULL);
+
+    // assert
+    ASSERT_IS_TRUE(result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_009: [ If fdwReason is DLL_PROCESS_DETACH: ]*/
+    /* Tests_SRS_THREAD_NOTIFICATIONS_LACKEY_DLL_01_010: [ DllMain shall return TRUE. ]*/
+TEST_FUNCTION(thread_notifications_lackey_DllMain_with_DLL_PROCESS_DETACH_during_process_termination_returns_TRUE)
+{
+    // arrange
+    int process_termination_context = 0;
+
+    // act
+    BOOL result = DllMain_under_test(test_module_handle, DLL_PROCESS_DETACH, &process_termination_context);
 
     // assert
     ASSERT_IS_TRUE(result);
