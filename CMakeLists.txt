@@ -163,6 +163,7 @@ set(c_util_c_files
     ./src/memory_data.c
     ./src/object_lifetime_tracker.c
     ./src/paged_sparse_array.c
+    ./src/thread_safe_paged_sparse_array.c
     ./src/rc_ptr.c
     ./src/rc_string.c
     ./src/rc_string_array.c
@@ -227,6 +228,8 @@ set(c_util_h_files
     ./inc/c_util/sync_wrapper.h
     ./inc/c_util/paged_sparse_array.h
     ./inc/c_util/paged_sparse_array_ll.h
+    ./inc/c_util/thread_safe_paged_sparse_array.h
+    ./inc/c_util/thread_safe_paged_sparse_array_ll.h
     ./inc/c_util/tarray_ll.h
     ./inc/c_util/tarray.h
     ./inc/c_util/tcall_dispatcher.h
