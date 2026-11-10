@@ -19,17 +19,22 @@
 #include "umock_c/umock_c_negative_tests.h"
 
 #include "umock_c/umock_c.h"
+#include "umock_c/umocktypes_stdint.h"
 
 #include "c_pal/interlocked.h"
 
 #include "umock_c/umock_c_ENABLE_MOCKS.h" // ============================== ENABLE_MOCKS
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
+#include "c_pal/interlocked_hl.h"
 #include "c_pal/srw_lock_ll.h"
+#include "c_pal/sync.h"
 #include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 
 #include "real_gballoc_hl.h"
+#include "real_interlocked_hl.h"
 #include "real_srw_lock_ll.h"
+#include "real_sync.h"
 
 #include "c_pal/thandle.h"
 #include "c_util/thread_safe_paged_sparse_array.h"
