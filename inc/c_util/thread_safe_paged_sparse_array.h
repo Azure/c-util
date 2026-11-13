@@ -1,0 +1,66 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+#ifndef THREAD_SAFE_PAGED_SPARSE_ARRAY_H
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_H
+
+#include "c_pal/thandle.h"
+
+#include "c_util/paged_sparse_array.h"
+#include "c_util/thread_safe_paged_sparse_array_ll.h"
+
+/*THREAD_SAFE_PAGED_SPARSE_ARRAY is-a THANDLE.*/
+/*given a type "T" THREAD_SAFE_PAGED_SPARSE_ARRAY(T) expands to the name of the type. */
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL(T)
+
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_WRAPPED_ARRAY_DECLARE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_WRAPPED_ARRAY_DECLARE(T, T)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_WRAPPED_ARRAY_DEFINE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_WRAPPED_ARRAY_DEFINE(T, T)
+
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_INTERNAL_DEFINE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_INTERNAL_DEFINE(T, T)
+
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_DECLARE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_CREATE_DECLARE(T, T)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_DEFINE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_CREATE_DEFINE(T, T)
+
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE_DEFINE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_DISPOSE_DEFINE(T, T)
+
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_DECLARE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE_DECLARE(T, T)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_DEFINE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE_DEFINE(T, T)
+
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_DECLARE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_RELEASE_DECLARE(T, T)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_DEFINE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_RELEASE_DEFINE(T, T)
+
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_DECLARE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET_DECLARE(T, T)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_DEFINE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET_DEFINE(T, T)
+
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(C) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_CREATE(C)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(C) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE(C)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(C) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_RELEASE(C)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(C) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET(C)
+
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_INITIALIZE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_INITIALIZE(T)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ASSIGN(T)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_MOVE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_MOVE(T)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_INITIALIZE_MOVE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_INITIALIZE_MOVE(T)
+
+/*macro to be used in headers*/
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DECLARE(T)                                                                                     \
+    /*hint: have THREAD_SAFE_PAGED_SPARSE_ARRAY_DEFINE_STRUCT_TYPE(T) before THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DECLARE*/                 \
+    /*hint: have THANDLE_TYPE_DECLARE(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)) before THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DECLARE*/ \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_WRAPPED_ARRAY_DECLARE(T)                                                                                \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_DECLARE(T)                                                                                       \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_DECLARE(T)                                                                                     \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_DECLARE(T)                                                                                      \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_DECLARE(T)                                                                                          \
+
+/*macro to be used in .c files*/
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DEFINE(T)                                                                                    \
+    /*hint: have THANDLE_TYPE_DEFINE(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)) before THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DEFINE*/ \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_WRAPPED_ARRAY_DEFINE(T)                                                                               \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_INTERNAL_DEFINE(T)                                                                                    \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE_DEFINE(T)                                                                                     \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_DEFINE(T)                                                                                      \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_DEFINE(T)                                                                                    \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_DEFINE(T)                                                                                     \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_DEFINE(T)                                                                                         \
+
+#endif /*THREAD_SAFE_PAGED_SPARSE_ARRAY_H*/
