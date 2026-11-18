@@ -9,6 +9,8 @@
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
+#include "c_logging/logger.h"
+
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
 
@@ -510,6 +512,246 @@ TEST_FUNCTION(PAGED_SPARSE_ARRAY_with_malloc_element_chaos)
 
     //cleanup - dispose function should free all remaining malloc'd data
     PAGED_SPARSE_ARRAY_ASSIGN(TEST_ELEMENT_WITH_MALLOC)(&psa, NULL);
+}
+
+/*
+ * PAGED_SPARSE_ARRAY is not thread-safe, but calls for indexes of different pages may be made concurrently, and calls of GET may be made
+ * concurrently also for the same page (see the Threading Model in paged_sparse_array_requirements.md). No lock is used in this test:
+ * - page 0 is shared: its elements are allocated before the worker threads start and released after they end, and every worker thread
+ *   gets them, so GET is called concurrently for the same page.
+ * - the other pages belong to the worker threads: each thread allocates, gets and releases only the elements of its own pages, so its pages
+ *   are allocated and freed again and again while the other threads use their own pages. The pages of the threads are interleaved, so the
+ *   neighbor pages of a page belong to other threads.
+ * Asserts cannot be used from worker threads, so worker threads count failures and the test thread asserts on the count.
+ */
+#define PAGE_INDEPENDENCE_THREAD_COUNT 8
+#define PAGE_INDEPENDENCE_PAGES_PER_THREAD 4
+#define PAGE_INDEPENDENCE_PAGE_SIZE 4
+#define PAGE_INDEPENDENCE_ELEMENTS_PER_THREAD (PAGE_INDEPENDENCE_PAGES_PER_THREAD * PAGE_INDEPENDENCE_PAGE_SIZE)
+#define PAGE_INDEPENDENCE_MAX_SIZE ((1 + PAGE_INDEPENDENCE_THREAD_COUNT * PAGE_INDEPENDENCE_PAGES_PER_THREAD) * PAGE_INDEPENDENCE_PAGE_SIZE)
+#define PAGE_INDEPENDENCE_OPERATIONS_PER_THREAD 100000
+
+static volatile_atomic int64_t g_page_independence_dispose_count;
+
+static void page_independence_count_dispose(TEST_ELEMENT* item)
+{
+    (void)item;
+    (void)interlocked_increment_64(&g_page_independence_dispose_count);
+}
+
+static uint64_t page_independence_next_random(uint64_t* state)
+{
+    /* 64-bit LCG, each thread has its own state so no locking is needed */
+    *state = *state * 6364136223846793005ULL + 1442695040888963407ULL;
+    return *state >> 33;
+}
+
+static uint64_t page_independence_index_of_owned_element(uint32_t thread_index, uint32_t owned_element)
+{
+    /* page 1 belongs to thread 0, page 2 to thread 1, ..., page PAGE_INDEPENDENCE_THREAD_COUNT + 1 to thread 0 again */
+    uint64_t page_index = 1 + thread_index + (uint64_t)(owned_element / PAGE_INDEPENDENCE_PAGE_SIZE) * PAGE_INDEPENDENCE_THREAD_COUNT;
+    return page_index * PAGE_INDEPENDENCE_PAGE_SIZE + owned_element % PAGE_INDEPENDENCE_PAGE_SIZE;
+}
+
+typedef struct PAGE_INDEPENDENCE_TEST_CONTEXT_TAG
+{
+    const PAGED_SPARSE_ARRAY_TYPEDEF_NAME(TEST_ELEMENT)* psa;
+    volatile_atomic int64_t successful_allocations;
+    volatile_atomic int32_t failures;
+} PAGE_INDEPENDENCE_TEST_CONTEXT;
+
+typedef struct PAGE_INDEPENDENCE_THREAD_CONTEXT_TAG
+{
+    PAGE_INDEPENDENCE_TEST_CONTEXT* test_context;
+    uint32_t thread_index;
+} PAGE_INDEPENDENCE_THREAD_CONTEXT;
+
+static int page_independence_thread(void* arg)
+{
+    PAGE_INDEPENDENCE_THREAD_CONTEXT* thread_context = arg;
+    PAGE_INDEPENDENCE_TEST_CONTEXT* test_context = thread_context->test_context;
+    uint32_t thread_index = thread_context->thread_index;
+    uint64_t random_state = thread_index;
+    TEST_ELEMENT* owned_elements[PAGE_INDEPENDENCE_ELEMENTS_PER_THREAD] = { NULL };
+    int64_t expected_values[PAGE_INDEPENDENCE_ELEMENTS_PER_THREAD] = { 0 };
+
+    for (uint32_t operation = 0; operation < PAGE_INDEPENDENCE_OPERATIONS_PER_THREAD; operation++)
+    {
+        uint64_t random_value = page_independence_next_random(&random_state);
+        uint32_t owned_element = (uint32_t)(random_value % PAGE_INDEPENDENCE_ELEMENTS_PER_THREAD);
+        uint64_t index = page_independence_index_of_owned_element(thread_index, owned_element);
+        TEST_ELEMENT* element = NULL;
+        PAGED_SPARSE_ARRAY_GET_RESULT get_result = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(test_context->psa, index, &element);
+        if (owned_elements[owned_element] == NULL)
+        {
+            if (get_result != PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED)
+            {
+                LogError("thread_index=%" PRIu32 ": GET of an element that is not allocated did not return NOT_ALLOCATED, operation=%" PRIu32 ", index=%" PRIu64 ", page_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM ", element=%p",
+                    thread_index, operation, index, index / PAGE_INDEPENDENCE_PAGE_SIZE, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, get_result), (void*)element);
+                (void)interlocked_increment(&test_context->failures);
+            }
+            else
+            {
+                PAGED_SPARSE_ARRAY_ALLOCATE_RESULT allocate_result = PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(test_context->psa, index, &element);
+                if (allocate_result != PAGED_SPARSE_ARRAY_ALLOCATE_OK)
+                {
+                    LogError("thread_index=%" PRIu32 ": ALLOCATE failed, operation=%" PRIu32 ", index=%" PRIu64 ", page_index=%" PRIu64 ", allocate_result=%" PRI_MU_ENUM "",
+                        thread_index, operation, index, index / PAGE_INDEPENDENCE_PAGE_SIZE, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, allocate_result));
+                    (void)interlocked_increment(&test_context->failures);
+                }
+                else
+                {
+                    (void)interlocked_increment_64(&test_context->successful_allocations);
+                    expected_values[owned_element] = ((int64_t)thread_index << 32) | operation;
+                    element->value = expected_values[owned_element];
+                    owned_elements[owned_element] = element;
+                }
+            }
+        }
+        else
+        {
+            if (get_result != PAGED_SPARSE_ARRAY_GET_OK)
+            {
+                LogError("thread_index=%" PRIu32 ": GET of an allocated element failed, operation=%" PRIu32 ", index=%" PRIu64 ", page_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM ", allocated element=%p",
+                    thread_index, operation, index, index / PAGE_INDEPENDENCE_PAGE_SIZE, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, get_result), (void*)owned_elements[owned_element]);
+                (void)interlocked_increment(&test_context->failures);
+            }
+            else
+            {
+                if (
+                    (element != owned_elements[owned_element]) ||
+                    (element->value != expected_values[owned_element])
+                    )
+                {
+                    LogError("thread_index=%" PRIu32 ": GET of an allocated element did not return it, operation=%" PRIu32 ", index=%" PRIu64 ", page_index=%" PRIu64 ", element=%p, allocated element=%p, value=%" PRId64 ", expected_value=%" PRId64 "",
+                        thread_index, operation, index, index / PAGE_INDEPENDENCE_PAGE_SIZE, (void*)element, (void*)owned_elements[owned_element], element->value, expected_values[owned_element]);
+                    (void)interlocked_increment(&test_context->failures);
+                }
+                else
+                {
+                    /* do nothing, the element is as expected */
+                }
+            }
+            PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(test_context->psa, index);
+            owned_elements[owned_element] = NULL;
+        }
+
+        /* the elements of the shared page are allocated during the whole test and are not changed */
+        uint64_t shared_index = (random_value / PAGE_INDEPENDENCE_ELEMENTS_PER_THREAD) % PAGE_INDEPENDENCE_PAGE_SIZE;
+        TEST_ELEMENT* shared_element = NULL;
+        PAGED_SPARSE_ARRAY_GET_RESULT shared_get_result = PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(test_context->psa, shared_index, &shared_element);
+        if (shared_get_result != PAGED_SPARSE_ARRAY_GET_OK)
+        {
+            LogError("thread_index=%" PRIu32 ": GET of an element of the shared page failed, operation=%" PRIu32 ", shared_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM "",
+                thread_index, operation, shared_index, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, shared_get_result));
+            (void)interlocked_increment(&test_context->failures);
+        }
+        else
+        {
+            if (shared_element->value != (int64_t)shared_index)
+            {
+                LogError("thread_index=%" PRIu32 ": element of the shared page changed, operation=%" PRIu32 ", shared_index=%" PRIu64 ", shared_element=%p, value=%" PRId64 "",
+                    thread_index, operation, shared_index, (void*)shared_element, shared_element->value);
+                (void)interlocked_increment(&test_context->failures);
+            }
+            else
+            {
+                /* do nothing, the element is as expected */
+            }
+        }
+    }
+
+    /* release the remaining elements, so the pages of this thread are freed */
+    for (uint32_t owned_element = 0; owned_element < PAGE_INDEPENDENCE_ELEMENTS_PER_THREAD; owned_element++)
+    {
+        if (owned_elements[owned_element] != NULL)
+        {
+            PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(test_context->psa, page_independence_index_of_owned_element(thread_index, owned_element));
+        }
+        else
+        {
+            /* do nothing, the element is not allocated */
+        }
+    }
+
+    return 0;
+}
+
+TEST_FUNCTION(PAGED_SPARSE_ARRAY_calls_for_different_pages_and_GET_for_the_same_page_run_concurrently)
+{
+    //arrange
+    PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(PAGE_INDEPENDENCE_MAX_SIZE, PAGE_INDEPENDENCE_PAGE_SIZE, page_independence_count_dispose);
+    ASSERT_IS_NOT_NULL(psa);
+    (void)interlocked_exchange_64(&g_page_independence_dispose_count, 0);
+    for (uint64_t shared_index = 0; shared_index < PAGE_INDEPENDENCE_PAGE_SIZE; shared_index++)
+    {
+        TEST_ELEMENT* shared_element;
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, shared_index, &shared_element));
+        shared_element->value = (int64_t)shared_index;
+    }
+
+    PAGE_INDEPENDENCE_TEST_CONTEXT test_context;
+    test_context.psa = psa;
+    (void)interlocked_exchange_64(&test_context.successful_allocations, 0);
+    (void)interlocked_exchange(&test_context.failures, 0);
+
+    PAGE_INDEPENDENCE_THREAD_CONTEXT thread_contexts[PAGE_INDEPENDENCE_THREAD_COUNT];
+    THREAD_HANDLE threads[PAGE_INDEPENDENCE_THREAD_COUNT];
+    uint32_t threads_created = 0;
+    bool thread_api_failed = false;
+
+    //act
+    /* no ASSERT until all the started threads are joined, since they use stack variables of this function */
+    for (uint32_t i = 0; i < PAGE_INDEPENDENCE_THREAD_COUNT; i++)
+    {
+        thread_contexts[i].test_context = &test_context;
+        thread_contexts[i].thread_index = i;
+        if (ThreadAPI_Create(&threads[i], page_independence_thread, &thread_contexts[i]) != THREADAPI_OK)
+        {
+            thread_api_failed = true;
+            break;
+        }
+        else
+        {
+            threads_created++;
+        }
+    }
+    for (uint32_t i = 0; i < threads_created; i++)
+    {
+        int thread_result;
+        if (
+            (ThreadAPI_Join(threads[i], &thread_result) != THREADAPI_OK) ||
+            (thread_result != 0)
+            )
+        {
+            thread_api_failed = true;
+        }
+        else
+        {
+            /* do nothing */
+        }
+    }
+
+    //assert
+    ASSERT_IS_FALSE(thread_api_failed);
+    ASSERT_ARE_EQUAL(int32_t, 0, interlocked_add(&test_context.failures, 0));
+    ASSERT_IS_TRUE(interlocked_add_64(&test_context.successful_allocations, 0) > 0);
+    /* every element that a worker thread allocated was released once */
+    ASSERT_ARE_EQUAL(int64_t, interlocked_add_64(&test_context.successful_allocations, 0), interlocked_add_64(&g_page_independence_dispose_count, 0));
+    for (uint64_t index = PAGE_INDEPENDENCE_PAGE_SIZE; index < PAGE_INDEPENDENCE_MAX_SIZE; index++)
+    {
+        TEST_ELEMENT* element;
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED, PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, index, &element));
+    }
+    for (uint64_t shared_index = 0; shared_index < PAGE_INDEPENDENCE_PAGE_SIZE; shared_index++)
+    {
+        TEST_ELEMENT* shared_element;
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, shared_index, &shared_element));
+        ASSERT_ARE_EQUAL(int64_t, (int64_t)shared_index, shared_element->value);
+    }
+
+    //cleanup
+    PAGED_SPARSE_ARRAY_ASSIGN(TEST_ELEMENT)(&psa, NULL);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

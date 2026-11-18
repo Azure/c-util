@@ -7,10 +7,12 @@
 #ifdef __cplusplus
 #include <cinttypes>
 #include <cstddef>
+#include <cstring>
 #else // __cplusplus
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 #endif // __cplusplus
 
 #include "macro_utils/macro_utils.h"
@@ -22,7 +24,6 @@
 #include "c_pal/interlocked.h"
 #include "c_pal/interlocked_hl.h"
 #include "c_pal/srw_lock_ll.h"
-#include "c_pal/sync.h"
 #include "c_pal/thandle_ll.h"
 
 #include "c_util/paged_sparse_array_ll.h"
@@ -30,25 +31,33 @@
 #include "umock_c/umock_c_prod.h"
 
 /*
- * THREAD_SAFE_PAGED_SPARSE_ARRAY wraps a PAGED_SPARSE_ARRAY (see paged_sparse_array_ll.h) so that ALLOCATE, RELEASE and GET can be
- * called concurrently from multiple threads, without acquiring any lock when the page of the element is allocated.
+ * THREAD_SAFE_PAGED_SPARSE_ARRAY wraps a PAGED_SPARSE_ARRAY (see paged_sparse_array_ll.h) so that ALLOCATE, RELEASE, GET and END_GET can be
+ * called concurrently from multiple threads.
  * The elements of the wrapped paged sparse array are slots. A slot holds an item of type T and the state of the item
  * (THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE), the state is changed only with interlocked operations.
- * Each page has a page guard: a use count, a page state (THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE) and a lock.
- * - The wrapped paged sparse array is changed (PAGED_SPARSE_ARRAY_ALLOCATE and PAGED_SPARSE_ARRAY_RELEASE) only to allocate a page,
- *   for all the indexes of the page while holding the lock of the page, and to free a page, for all the indexes of the page after its
- *   use count was changed from 0 to THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING. The lock is not held while the page is freed.
- * - ALLOCATE, RELEASE and GET of an element of an allocated page increment the use count of the page and call PAGED_SPARSE_ARRAY_GET
- *   (which only reads the wrapped paged sparse array). ALLOCATE and RELEASE change the state of the slot with interlocked operations,
- *   GET only reads it. A successful ALLOCATE keeps its use of the page for the allocated element, RELEASE ends it.
- * - A page is freed when its use count becomes 0.
+ * Each page has a page guard: a count of the allocated elements of the page, a page state (THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE) and a lock.
+ * - ALLOCATE and GET of an element of an allocated page hold the lock of the page in shared mode, so the page is not freed while they use it,
+ *   and call PAGED_SPARSE_ARRAY_GET (which only reads the wrapped paged sparse array). Several calls can hold the lock in shared mode at the same time,
+ *   so ALLOCATE changes the state of the slot and the element count with interlocked operations, GET only reads the state of the slot.
+ *   A successful GET keeps holding the lock until END_GET, so the page is not freed while the caller uses the item.
+ * - RELEASE releases the element without acquiring the lock: the released element keeps the page allocated until RELEASE decrements the element
+ *   count, which is the last time RELEASE uses the page without holding the lock. It calls PAGED_SPARSE_ARRAY_GET and changes the state of the slot
+ *   and the element count with interlocked operations. If it released the last element of the page, it then frees the page (see below), which
+ *   acquires the lock in exclusive mode.
+ * - A page is allocated by ALLOCATE while holding the lock of the page in exclusive mode: PAGED_SPARSE_ARRAY_ALLOCATE is called for all the indexes
+ *   of the page and the items of the page are set to 0, then the element is allocated before the lock is released, so the page is not empty.
+ * - A page is freed by the RELEASE that makes its element count 0: it acquires the lock of the page in exclusive mode and, if the element count is
+ *   still 0, sets the page state to FREEING. After it releases the lock, it calls PAGED_SPARSE_ARRAY_RELEASE for all the indexes of the page and
+ *   sets the page state to NOT_ALLOCATED.
+ * - The wrapped paged sparse array is changed (PAGED_SPARSE_ARRAY_ALLOCATE and PAGED_SPARSE_ARRAY_RELEASE) only for a page that no other call uses.
+ *   Calls for different pages run concurrently. PAGED_SPARSE_ARRAY allows both, because it keeps its state per page (see the Threading Model in
+ *   paged_sparse_array_requirements.md).
  */
 
 /*states of a slot*/
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_VALUES \
     THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED, \
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED, \
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED
 
 MU_DEFINE_ENUM(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_VALUES)
 
@@ -60,18 +69,14 @@ MU_DEFINE_ENUM(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE, THREAD_SAFE_PAGED_SPAR
 
 MU_DEFINE_ENUM(THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_VALUES)
 
-/*added to the use count of a page while the page is being freed, it is larger than any count of allocated elements and calls that use the page*/
-#define THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING (INT64_C(1) << 62)
-
 /*the array has one page guard for each page of the wrapped paged sparse array, the page guards exist as long as the array exists*/
 typedef struct THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD_TAG
 {
-    /*count of allocated elements in the page plus count of calls that use the page, plus THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING while the page is being freed*/
-    volatile_atomic int64_t use_count;
+    /*count of allocated elements in the page, changed with interlocked operations by ALLOCATE (holding the lock) and by RELEASE (without the lock)*/
+    volatile_atomic int64_t element_count;
     /*THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE, the calls that allocate the page wait on it while the page is being freed*/
-    /*it is 32 bits because wait_on_address_64 on Linux compares only 32 bits of the value, so a wait on the use count could miss its change*/
     volatile_atomic int32_t page_state;
-    /*acquired in exclusive mode only to allocate the page or to start freeing it*/
+    /*acquired in shared mode by ALLOCATE and GET of an element of the page, and in exclusive mode to allocate the page or to start freeing it*/
     SRW_LOCK_LL lock;
 } THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD;
 
@@ -111,9 +116,9 @@ PAGED_SPARSE_ARRAY_DEFINE_STRUCT_TYPE(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDE
 THANDLE_LL_TYPE_DECLARE(PAGED_SPARSE_ARRAY_TYPEDEF_NAME(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)), PAGED_SPARSE_ARRAY_TYPEDEF_NAME(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T))); \
 typedef struct THREAD_SAFE_PAGED_SPARSE_ARRAY_STRUCT_TYPE_NAME_TAG(T)                                                                                                      \
 {                                                                                                                                                                          \
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_WRAPPED_ARRAY_LL(T) wrapped_array;                                                                                                      \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_WRAPPED_ARRAY_LL(T) paged_sparse_array;                                                                                                 \
     THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ITEM_DISPOSE_FUNC(T) item_dispose_func;                                                                                              \
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD page_guards[]; /*one for each page of wrapped_array*/                                                                        \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD page_guards[]; /*one for each page of paged_sparse_array*/                                                                   \
 } THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T);                                                                                                                          \
 
 /*THREAD_SAFE_PAGED_SPARSE_ARRAY is-a THANDLE*/
@@ -146,10 +151,13 @@ typedef struct THREAD_SAFE_PAGED_SPARSE_ARRAY_STRUCT_TYPE_NAME_TAG(T)           
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET_NAME(C) MU_C2(THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET_, C)
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET(C) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET_NAME(C)
 
+/*introduces a name for the end get function*/
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_GET_NAME(C) MU_C2(THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_GET_, C)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_GET(C) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_GET_NAME(C)
+
 /*introduces names for the internal functions*/
-#define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_BEGIN_PAGE_USE_INTERNAL_NAME(C) MU_C2(THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_BEGIN_PAGE_USE_INTERNAL_, C)
-#define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_PAGE_USE_INTERNAL_NAME(C) MU_C2(THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_PAGE_USE_INTERNAL_, C)
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TRY_FREE_PAGE_INTERNAL_NAME(C) MU_C2(THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TRY_FREE_PAGE_INTERNAL_, C)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE_ELEMENT_INTERNAL_NAME(C) MU_C2(THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE_ELEMENT_INTERNAL_, C)
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE_PAGE_INTERNAL_NAME(C) MU_C2(THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE_PAGE_INTERNAL_, C)
 
 /*introduces a function declaration for thread_safe_paged_sparse_array_create*/
@@ -167,6 +175,10 @@ typedef struct THREAD_SAFE_PAGED_SPARSE_ARRAY_STRUCT_TYPE_NAME_TAG(T)           
 /*introduces a function declaration for thread_safe_paged_sparse_array_get*/
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET_DECLARE(C, T) \
     MOCKABLE_FUNCTION(, PAGED_SPARSE_ARRAY_GET_RESULT, THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET(C), THREAD_SAFE_PAGED_SPARSE_ARRAY_LL(T), paged_sparse_array, uint64_t, index, T**, item);
+
+/*introduces a function declaration for thread_safe_paged_sparse_array_end_get*/
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_GET_DECLARE(C, T) \
+    MOCKABLE_FUNCTION(, void, THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_GET(C), THREAD_SAFE_PAGED_SPARSE_ARRAY_LL(T), paged_sparse_array, uint64_t, index);
 
 /*introduces the function declarations of the wrapped PAGED_SPARSE_ARRAY of slots*/
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_WRAPPED_ARRAY_DECLARE(C, T) \
@@ -197,9 +209,9 @@ static void THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_DISPOSE_NAME(C)(THREAD_SAFE_PAGED_
     }                                                                                                                                                                      \
     else                                                                                                                                                                   \
     {                                                                                                                                                                      \
-        uint64_t max_size = paged_sparse_array->wrapped_array->max_size;                                                                                                   \
-        uint64_t page_size = paged_sparse_array->wrapped_array->page_size;                                                                                                 \
-        uint64_t page_count = paged_sparse_array->wrapped_array->page_count;                                                                                               \
+        uint64_t max_size = paged_sparse_array->paged_sparse_array->max_size;                                                                                              \
+        uint64_t page_size = paged_sparse_array->paged_sparse_array->page_size;                                                                                            \
+        uint64_t page_count = paged_sparse_array->paged_sparse_array->page_count;                                                                                          \
         for (uint64_t page_index = 0; page_index < page_count; page_index++)                                                                                               \
         {                                                                                                                                                                  \
             THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD* page_guard = &paged_sparse_array->page_guards[page_index];                                                          \
@@ -214,11 +226,11 @@ static void THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_DISPOSE_NAME(C)(THREAD_SAFE_PAGED_
                 {                                                                                                                                                          \
                     THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)* slot = NULL;                                                                                      \
                     if (                                                                                                                                                   \
-                        (PAGED_SPARSE_ARRAY_LL_GET(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(paged_sparse_array->wrapped_array, index, &slot) == PAGED_SPARSE_ARRAY_GET_OK) && \
+                        (PAGED_SPARSE_ARRAY_LL_GET(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(paged_sparse_array->paged_sparse_array, index, &slot) == PAGED_SPARSE_ARRAY_GET_OK) && \
                         (interlocked_add(&slot->state, 0) == THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED)                                                          \
                         )                                                                                                                                                  \
                     {                                                                                                                                                      \
-                        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_012: [ If item_dispose_func is not NULL, THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T) shall call item_dispose_func with a pointer to the item of each slot whose state is THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED in the pages whose page state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED. ]*/ \
+                        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_012: [ If paged_sparse_array->item_dispose_func is not NULL, THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T) shall call paged_sparse_array->item_dispose_func with a pointer to the item of each slot whose state is THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED in the pages whose page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED. ]*/ \
                         paged_sparse_array->item_dispose_func(&slot->item);                                                                                                \
                     }                                                                                                                                                      \
                     else                                                                                                                                                   \
@@ -231,11 +243,11 @@ static void THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_DISPOSE_NAME(C)(THREAD_SAFE_PAGED_
             {                                                                                                                                                              \
                 /* do nothing, there is no item to dispose in the page */                                                                                                  \
             }                                                                                                                                                              \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_013: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T) shall call srw_lock_ll_deinit for the lock of each page guard. ]*/ \
+            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_013: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T) shall call srw_lock_ll_deinit for lock in each page guard of paged_sparse_array->page_guards. ]*/ \
             srw_lock_ll_deinit(&page_guard->lock);                                                                                                                         \
         }                                                                                                                                                                  \
-        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_014: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T) shall release the paged sparse array. ]*/                          \
-        PAGED_SPARSE_ARRAY_LL_ASSIGN(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(&paged_sparse_array->wrapped_array, NULL);                                       \
+        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_014: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T) shall release paged_sparse_array->paged_sparse_array. ]*/          \
+        PAGED_SPARSE_ARRAY_LL_ASSIGN(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(&paged_sparse_array->paged_sparse_array, NULL);                                  \
     }                                                                                                                                                                      \
 }
 
@@ -245,8 +257,8 @@ THREAD_SAFE_PAGED_SPARSE_ARRAY_LL(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_CREATE(C)
 {                                                                                                                                                                          \
     THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* result;                                                                                                                \
     /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_001: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall call PAGED_SPARSE_ARRAY_CREATE(T) with max_size, page_size and NULL as item_dispose_func to create the paged sparse array of slots. ]*/ \
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_WRAPPED_ARRAY_LL(T) wrapped_array = PAGED_SPARSE_ARRAY_LL_CREATE(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(max_size, page_size, NULL); \
-    if (wrapped_array == NULL)                                                                                                                                             \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_WRAPPED_ARRAY_LL(T) paged_sparse_array = PAGED_SPARSE_ARRAY_LL_CREATE(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(max_size, page_size, NULL); \
+    if (paged_sparse_array == NULL)                                                                                                                                        \
     {                                                                                                                                                                      \
         /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_002: [ If PAGED_SPARSE_ARRAY_CREATE(T) fails, THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/ \
         LogError("failure in PAGED_SPARSE_ARRAY_CREATE(" MU_TOSTRING(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)) ")(uint64_t max_size=%" PRIu64 ", uint64_t page_size=%" PRIu64 ", NULL) for " THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TYPE_STRING(T) ", item_dispose_func=%p", \
@@ -255,8 +267,8 @@ THREAD_SAFE_PAGED_SPARSE_ARRAY_LL(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_CREATE(C)
     }                                                                                                                                                                      \
     else                                                                                                                                                                   \
     {                                                                                                                                                                      \
-        uint64_t page_count = wrapped_array->page_count;                                                                                                                   \
-        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_003: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX to allocate memory for the thread safe paged sparse array with one page guard for each page of the paged sparse array. ]*/ \
+        uint64_t page_count = paged_sparse_array->page_count;                                                                                                              \
+        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_003: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX to allocate result with one page guard in result->page_guards for each page of the paged sparse array. ]*/ \
         result = THANDLE_MALLOC_FLEX(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(C))(THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_DISPOSE_NAME(C), page_count, sizeof(THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD)); \
         if (result == NULL)                                                                                                                                                \
         {                                                                                                                                                                  \
@@ -269,10 +281,10 @@ THREAD_SAFE_PAGED_SPARSE_ARRAY_LL(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_CREATE(C)
             for (initialized_lock_count = 0; initialized_lock_count < page_count; initialized_lock_count++)                                                                \
             {                                                                                                                                                              \
                 THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD* page_guard = &result->page_guards[initialized_lock_count];                                                      \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_004: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall set the use count of each page guard to 0 and the page state of each page guard to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED using interlocked operations. ]*/ \
-                (void)interlocked_exchange_64(&page_guard->use_count, 0);                                                                                                  \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_004: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall set element_count to 0 and page_state to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED in each page guard of result->page_guards. ]*/ \
+                (void)interlocked_exchange_64(&page_guard->element_count, 0);                                                                                              \
                 (void)interlocked_exchange(&page_guard->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED);                                              \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_005: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall call srw_lock_ll_init to initialize the lock of each page guard. ]*/ \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_005: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall call srw_lock_ll_init to initialize lock in each page guard of result->page_guards. ]*/ \
                 int lock_init_result = srw_lock_ll_init(&page_guard->lock);                                                                                                \
                 if (lock_init_result != 0)                                                                                                                                 \
                 {                                                                                                                                                          \
@@ -287,31 +299,26 @@ THREAD_SAFE_PAGED_SPARSE_ARRAY_LL(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_CREATE(C)
             }                                                                                                                                                              \
             if (initialized_lock_count < page_count)                                                                                                                       \
             {                                                                                                                                                              \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_006: [ If srw_lock_ll_init fails: ]*/                                                                       \
                 for (uint64_t i = 0; i < initialized_lock_count; i++)                                                                                                      \
                 {                                                                                                                                                          \
-                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_080: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall call srw_lock_ll_deinit for each lock that was initialized. ]*/ \
                     srw_lock_ll_deinit(&result->page_guards[i].lock);                                                                                                      \
                 }                                                                                                                                                          \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_081: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall free the memory of the thread safe paged sparse array. ]*/ \
                 THANDLE_FREE(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(C))(result);                                                                                      \
                 result = NULL;                                                                                                                                             \
             }                                                                                                                                                              \
             else                                                                                                                                                           \
             {                                                                                                                                                              \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_007: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall store item_dispose_func in the thread safe paged sparse array. ]*/ \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_007: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall store item_dispose_func in result->item_dispose_func. ]*/ \
                 result->item_dispose_func = item_dispose_func;                                                                                                             \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_008: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall store the paged sparse array in the thread safe paged sparse array. ]*/ \
-                PAGED_SPARSE_ARRAY_LL_INITIALIZE_MOVE(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(&result->wrapped_array, &wrapped_array);                        \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_008: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall store the paged sparse array in result->paged_sparse_array. ]*/ \
+                PAGED_SPARSE_ARRAY_LL_INITIALIZE_MOVE(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(&result->paged_sparse_array, &paged_sparse_array);              \
                 /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_009: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/              \
             }                                                                                                                                                              \
         }                                                                                                                                                                  \
         if (result == NULL)                                                                                                                                                \
         {                                                                                                                                                                  \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_010: [ If there are any other errors: ]*/                                                                       \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_082: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall release the paged sparse array. ]*/                       \
-            PAGED_SPARSE_ARRAY_LL_ASSIGN(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(&wrapped_array, NULL);                                                       \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_083: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/                                 \
+            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_010: [ If there are any other errors, THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/  \
+            PAGED_SPARSE_ARRAY_LL_ASSIGN(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(&paged_sparse_array, NULL);                                                  \
         }                                                                                                                                                                  \
         else                                                                                                                                                               \
         {                                                                                                                                                                  \
@@ -321,133 +328,109 @@ THREAD_SAFE_PAGED_SPARSE_ARRAY_LL(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_CREATE(C)
     return result;                                                                                                                                                         \
 }
 
-/*introduces the definitions of the internal functions, they are used by ALLOCATE, RELEASE and GET*/
+/*introduces the definitions of the internal functions, they are used by ALLOCATE and RELEASE*/
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_INTERNAL_DEFINE(C, T)                                                                                                            \
 static void THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TRY_FREE_PAGE_INTERNAL_NAME(C)(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* array, uint64_t page_index)                   \
 {                                                                                                                                                                          \
     THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD* page_guard = &array->page_guards[page_index];                                                                               \
     bool is_freeing;                                                                                                                                                       \
-    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_021: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall acquire the lock of the page guard in exclusive mode. ]*/  \
+    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_021: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall acquire page_guard->lock in exclusive mode. ]*/            \
     srw_lock_ll_acquire_exclusive(&page_guard->lock);                                                                                                                      \
-    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_022: [ If the page state of the page guard is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED: ]*/                  \
-    if (interlocked_add(&page_guard->page_state, 0) != THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED)                                                                \
-    {                                                                                                                                                                      \
-        /* do nothing, another call freed the page or is freeing it */                                                                                                     \
-        is_freeing = false;                                                                                                                                                \
-    }                                                                                                                                                                      \
-    else                                                                                                                                                                   \
-    {                                                                                                                                                                      \
-        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_023: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall change the use count of the page guard from 0 to THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING using interlocked_compare_exchange_64. ]*/ \
-        if (interlocked_compare_exchange_64(&page_guard->use_count, THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING, 0) != 0)                                             \
-        {                                                                                                                                                                  \
-            /* do nothing, another call uses the page */                                                                                                                   \
-            is_freeing = false;                                                                                                                                            \
-        }                                                                                                                                                                  \
-        else                                                                                                                                                               \
-        {                                                                                                                                                                  \
-            /* the calls that begin to use the page from now on see THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING and do not use the wrapped paged sparse array */      \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_024: [ If the use count was 0, THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall set the page state of the page guard to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING using interlocked operations. ]*/ \
-            (void)interlocked_exchange(&page_guard->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING);                                                        \
-            is_freeing = true;                                                                                                                                             \
-        }                                                                                                                                                                  \
-    }                                                                                                                                                                      \
-    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_025: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall release the lock of the page guard. ]*/                    \
-    srw_lock_ll_release_exclusive(&page_guard->lock);                                                                                                                      \
-    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_026: [ If the use count was changed to THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING: ]*/                            \
-    if (is_freeing)                                                                                                                                                        \
-    {                                                                                                                                                                      \
-        uint64_t page_size = array->wrapped_array->page_size;                                                                                                              \
-        uint64_t first_index = page_index * page_size;                                                                                                                     \
-        uint64_t end_index = THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_END_INDEX(first_index, page_size, array->wrapped_array->max_size);                                        \
-        for (uint64_t index = first_index; index < end_index; index++)                                                                                                     \
-        {                                                                                                                                                                  \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_027: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall call PAGED_SPARSE_ARRAY_RELEASE(T) for each index of the page. ]*/ \
-            PAGED_SPARSE_ARRAY_LL_RELEASE(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(array->wrapped_array, index);                                               \
-        }                                                                                                                                                                  \
-        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_028: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall subtract THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING from the use count of the page guard using interlocked operations. ]*/ \
-        (void)interlocked_add_64(&page_guard->use_count, -THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING);                                                               \
-        /* the use count is lower than THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING before the calls waiting for the page state see it change */                       \
-        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_077: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall set the page state of the page guard to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED using interlocked operations. ]*/ \
-        (void)interlocked_exchange(&page_guard->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED);                                                      \
-        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_029: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall call wake_by_address_all for the page state of the page guard. ]*/ \
-        wake_by_address_all(&page_guard->page_state);                                                                                                                      \
-    }                                                                                                                                                                      \
-    else                                                                                                                                                                   \
-    {                                                                                                                                                                      \
-        /* do nothing, the page is not allocated or is used */                                                                                                             \
-    }                                                                                                                                                                      \
-}                                                                                                                                                                          \
-static bool THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_BEGIN_PAGE_USE_INTERNAL_NAME(C)(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* array, uint64_t page_index)                  \
-{                                                                                                                                                                          \
-    bool result;                                                                                                                                                           \
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD* page_guard = &array->page_guards[page_index];                                                                               \
-    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_015: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) shall increment the use count of the page guard using interlocked operations. ]*/ \
-    if (interlocked_increment_64(&page_guard->use_count) >= THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING)                                                              \
-    {                                                                                                                                                                      \
-        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_016: [ If the use count is greater than or equal to THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING, THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) shall return false. ]*/ \
-        result = false;                                                                                                                                                    \
-    }                                                                                                                                                                      \
-    else                                                                                                                                                                   \
-    {                                                                                                                                                                      \
-        if (interlocked_add(&page_guard->page_state, 0) != THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED)                                                            \
-        {                                                                                                                                                                  \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_017: [ If the page state of the page guard is not THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) shall return false. ]*/ \
-            result = false;                                                                                                                                                \
-        }                                                                                                                                                                  \
-        else                                                                                                                                                               \
-        {                                                                                                                                                                  \
-            /* the page is not freed while it is used */                                                                                                                   \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_018: [ Otherwise, THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) shall return true. ]*/                       \
-            result = true;                                                                                                                                                 \
-        }                                                                                                                                                                  \
-    }                                                                                                                                                                      \
-    return result;                                                                                                                                                         \
-}                                                                                                                                                                          \
-static void THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_PAGE_USE_INTERNAL_NAME(C)(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* array, uint64_t page_index, int64_t ended_use_count) \
-{                                                                                                                                                                          \
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD* page_guard = &array->page_guards[page_index];                                                                               \
-    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_019: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) shall subtract ended_use_count from the use count of the page guard using interlocked operations. ]*/ \
-    int64_t use_count = interlocked_add_64(&page_guard->use_count, -ended_use_count);                                                                                      \
+    /* the calls that allocate an element hold the lock, so the element count can only decrease while it is checked (RELEASE decrements it without acquiring the lock), */ \
+    /* and every RELEASE that makes it 0 calls THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) after that */                                                               \
     if (                                                                                                                                                                   \
-        (use_count == 0) &&                                                                                                                                                \
-        (interlocked_add(&page_guard->page_state, 0) == THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED)                                                               \
+        (interlocked_add(&page_guard->page_state, 0) == THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED) &&                                                            \
+        (interlocked_add_64(&page_guard->element_count, 0) == 0)                                                                                                           \
         )                                                                                                                                                                  \
     {                                                                                                                                                                      \
-        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_020: [ If the use count became 0 and the page state of the page guard is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T). ]*/ \
-        THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TRY_FREE_PAGE_INTERNAL_NAME(C)(array, page_index);                                                                               \
+        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_022: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED and page_guard->element_count is 0: ]*/ \
+        /* the calls that acquire the lock from now on see THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING and do not use the wrapped paged sparse array */              \
+        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_024: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall set page_guard->page_state to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING. ]*/ \
+        (void)interlocked_exchange(&page_guard->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING);                                                            \
+        is_freeing = true;                                                                                                                                                 \
     }                                                                                                                                                                      \
     else                                                                                                                                                                   \
     {                                                                                                                                                                      \
-        /* do nothing, the page has allocated elements, is used by another call, is being freed or is not allocated */                                                     \
+        /* do nothing, another call freed the page, is freeing it or allocated an element in it */                                                                         \
+        is_freeing = false;                                                                                                                                                \
+    }                                                                                                                                                                      \
+    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_025: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall release page_guard->lock. ]*/                              \
+    srw_lock_ll_release_exclusive(&page_guard->lock);                                                                                                                      \
+    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_026: [ If page_guard->page_state was set to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING: ]*/                      \
+    if (is_freeing)                                                                                                                                                        \
+    {                                                                                                                                                                      \
+        uint64_t page_size = array->paged_sparse_array->page_size;                                                                                                         \
+        uint64_t first_index = page_index * page_size;                                                                                                                     \
+        uint64_t end_index = THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_END_INDEX(first_index, page_size, array->paged_sparse_array->max_size);                                   \
+        for (uint64_t index = first_index; index < end_index; index++)                                                                                                     \
+        {                                                                                                                                                                  \
+            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_027: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall call PAGED_SPARSE_ARRAY_RELEASE(T) on array->paged_sparse_array for each index of the page. ]*/ \
+            PAGED_SPARSE_ARRAY_LL_RELEASE(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(array->paged_sparse_array, index);                                          \
+        }                                                                                                                                                                  \
+        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_077: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall call InterlockedHL_SetAndWakeAll to set page_guard->page_state to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED and wake the calls waiting for it to change. ]*/ \
+        (void)InterlockedHL_SetAndWakeAll(&page_guard->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED);                                               \
+    }                                                                                                                                                                      \
+    else                                                                                                                                                                   \
+    {                                                                                                                                                                      \
+        /* do nothing, the page is not allocated or has allocated elements */                                                                                              \
     }                                                                                                                                                                      \
 }                                                                                                                                                                          \
-static PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE_PAGE_INTERNAL_NAME(C)(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* array, uint64_t page_index) \
+static PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE_ELEMENT_INTERNAL_NAME(C)(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* array, uint64_t page_index, uint64_t index, T** allocated_ptr) \
 {                                                                                                                                                                          \
     PAGED_SPARSE_ARRAY_ALLOCATE_RESULT result;                                                                                                                             \
     THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD* page_guard = &array->page_guards[page_index];                                                                               \
-    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_030: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall acquire the lock of the page guard in exclusive mode. ]*/  \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)* slot;                                                                                                             \
+    /* all the indexes of an allocated page are allocated in the paged sparse array, so PAGED_SPARSE_ARRAY_GET(T) does not fail */                                         \
+    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_049: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall call PAGED_SPARSE_ARRAY_GET(T) with array->paged_sparse_array and index to get the slot of the element. ]*/ \
+    (void)PAGED_SPARSE_ARRAY_LL_GET(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(array->paged_sparse_array, index, &slot);                                         \
+    /* other calls that hold the lock in shared mode can try to allocate the same element at the same time, only one of them changes the state of the slot */              \
+    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_051: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall change the state of the slot from THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED using interlocked_compare_exchange. ]*/ \
+    int32_t slot_state = interlocked_compare_exchange(&slot->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED); \
+    if (slot_state != THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED)                                                                                             \
+    {                                                                                                                                                                      \
+        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_052: [ If the state of the slot was not THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED. ]*/ \
+        result = PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED;                                                                                                            \
+        LogError("Element is already allocated in " THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TYPE_STRING(T) " array=%p, uint64_t index=%" PRIu64 ", page_index=%" PRIu64 ", slot_state=%" PRI_MU_ENUM ", result=%" PRI_MU_ENUM "", \
+            array, index, page_index, MU_ENUM_VALUE(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE, (THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE)slot_state), MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, result)); \
+    }                                                                                                                                                                      \
+    else                                                                                                                                                                   \
+    {                                                                                                                                                                      \
+        /* the page is not freed while the lock is held, and from now on the allocated element keeps the page allocated */                                                 \
+        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_098: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall increment page_guard->element_count. ]*/            \
+        (void)interlocked_increment_64(&page_guard->element_count);                                                                                                        \
+        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_053: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall store a pointer to the item of the slot in allocated_ptr and return PAGED_SPARSE_ARRAY_ALLOCATE_OK. ]*/ \
+        *allocated_ptr = &slot->item;                                                                                                                                      \
+        result = PAGED_SPARSE_ARRAY_ALLOCATE_OK;                                                                                                                           \
+    }                                                                                                                                                                      \
+    return result;                                                                                                                                                         \
+}                                                                                                                                                                          \
+static PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE_PAGE_INTERNAL_NAME(C)(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* array, uint64_t page_index, uint64_t index, T** allocated_ptr) \
+{                                                                                                                                                                          \
+    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT result;                                                                                                                             \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD* page_guard = &array->page_guards[page_index];                                                                               \
+    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_030: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall acquire page_guard->lock in exclusive mode. ]*/            \
     srw_lock_ll_acquire_exclusive(&page_guard->lock);                                                                                                                      \
     /* a call that started to free the page before the lock was acquired frees it without holding the lock */                                                              \
-    /* it subtracts THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING from the use count before it changes the page state, so the use count is lower than THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING after the wait */ \
     INTERLOCKED_HL_RESULT wait_result = INTERLOCKED_HL_OK;                                                                                                                 \
     int32_t page_state = interlocked_add(&page_guard->page_state, 0);                                                                                                      \
-    while (                                                                                                                                                                \
-        (page_state == THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING) &&                                                                                               \
-        (wait_result == INTERLOCKED_HL_OK)                                                                                                                                 \
-        )                                                                                                                                                                  \
+    if (page_state == THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING)                                                                                                   \
     {                                                                                                                                                                      \
-        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_031: [ While the page state of the page guard is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call InterlockedHL_WaitForNotValue to wait for the page state to change. ]*/ \
+        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_031: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call InterlockedHL_WaitForNotValue to wait for page_guard->page_state to change. ]*/ \
         wait_result = InterlockedHL_WaitForNotValue(&page_guard->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING, UINT32_MAX);                               \
         page_state = interlocked_add(&page_guard->page_state, 0);                                                                                                          \
+    }                                                                                                                                                                      \
+    else                                                                                                                                                                   \
+    {                                                                                                                                                                      \
+        /* do nothing, the page is not being freed */                                                                                                                      \
     }                                                                                                                                                                      \
     if (wait_result != INTERLOCKED_HL_OK)                                                                                                                                  \
     {                                                                                                                                                                      \
         /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_032: [ If InterlockedHL_WaitForNotValue fails, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ERROR. ]*/ \
         result = PAGED_SPARSE_ARRAY_ALLOCATE_ERROR;                                                                                                                        \
-        LogError("failure in InterlockedHL_WaitForNotValue(&page_guards[%" PRIu64 "].page_state, %" PRI_MU_ENUM ", UINT32_MAX)=%" PRI_MU_ENUM " for " THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TYPE_STRING(T) ", page_state=%" PRI_MU_ENUM ", use_count=%" PRId64 ", page_size=%" PRIu64 ", result=%" PRI_MU_ENUM "", \
+        LogError("failure in InterlockedHL_WaitForNotValue(&page_guards[%" PRIu64 "].page_state, %" PRI_MU_ENUM ", UINT32_MAX)=%" PRI_MU_ENUM " for " THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TYPE_STRING(T) ", page_state=%" PRI_MU_ENUM ", element_count=%" PRId64 ", index=%" PRIu64 ", page_size=%" PRIu64 ", result=%" PRI_MU_ENUM "", \
             page_index, MU_ENUM_VALUE(THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING), MU_ENUM_VALUE(INTERLOCKED_HL_RESULT, wait_result), \
-            MU_ENUM_VALUE(THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE, (THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE)page_state), interlocked_add_64(&page_guard->use_count, 0), \
-            array->wrapped_array->page_size, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, result));                                                                   \
+            MU_ENUM_VALUE(THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE, (THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE)page_state), interlocked_add_64(&page_guard->element_count, 0), \
+            index, array->paged_sparse_array->page_size, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, result));                                                       \
     }                                                                                                                                                                      \
     else                                                                                                                                                                   \
     {                                                                                                                                                                      \
@@ -458,43 +441,42 @@ static PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLO
         }                                                                                                                                                                  \
         else                                                                                                                                                               \
         {                                                                                                                                                                  \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_033: [ If the page state of the page guard is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED: ]*/      \
-            uint64_t page_size = array->wrapped_array->page_size;                                                                                                          \
+            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_033: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED: ]*/                \
+            uint64_t page_size = array->paged_sparse_array->page_size;                                                                                                     \
             uint64_t first_index = page_index * page_size;                                                                                                                 \
-            uint64_t end_index = THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_END_INDEX(first_index, page_size, array->wrapped_array->max_size);                                    \
-            uint64_t index;                                                                                                                                                \
-            result = PAGED_SPARSE_ARRAY_ALLOCATE_OK;                                                                                                                       \
-            for (index = first_index; index < end_index; index++)                                                                                                          \
+            uint64_t end_index = THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_END_INDEX(first_index, page_size, array->paged_sparse_array->max_size);                               \
+            THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)* slot;                                                                                                     \
+            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_034: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call PAGED_SPARSE_ARRAY_ALLOCATE(T) on array->paged_sparse_array for each index of the page. ]*/ \
+            PAGED_SPARSE_ARRAY_ALLOCATE_RESULT allocate_result = PAGED_SPARSE_ARRAY_LL_ALLOCATE(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(array->paged_sparse_array, first_index, &slot); \
+            if (allocate_result != PAGED_SPARSE_ARRAY_ALLOCATE_OK)                                                                                                         \
             {                                                                                                                                                              \
-                THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)* slot;                                                                                                 \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_034: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call PAGED_SPARSE_ARRAY_ALLOCATE(T) for each index of the page. ]*/ \
-                result = PAGED_SPARSE_ARRAY_LL_ALLOCATE(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(array->wrapped_array, index, &slot);                          \
-                if (result != PAGED_SPARSE_ARRAY_ALLOCATE_OK)                                                                                                              \
-                {                                                                                                                                                          \
-                    LogError("failure in PAGED_SPARSE_ARRAY_ALLOCATE(" MU_TOSTRING(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)) ")(index=%" PRIu64 ")=%" PRI_MU_ENUM " for " THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TYPE_STRING(T) ", page_index=%" PRIu64 ", first_index=%" PRIu64 ", end_index=%" PRIu64 "", \
-                        index, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, result), page_index, first_index, end_index);                                             \
-                    break;                                                                                                                                                 \
-                }                                                                                                                                                          \
-                else                                                                                                                                                       \
-                {                                                                                                                                                          \
-                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_035: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall set the state of each slot of the page to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED using interlocked operations. ]*/ \
-                    (void)interlocked_exchange(&slot->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED);                                                     \
-                }                                                                                                                                                          \
-            }                                                                                                                                                              \
-            if (result != PAGED_SPARSE_ARRAY_ALLOCATE_OK)                                                                                                                  \
-            {                                                                                                                                                              \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_036: [ If PAGED_SPARSE_ARRAY_ALLOCATE(T) fails: ]*/                                                         \
-                for (uint64_t allocated_index = first_index; allocated_index < index; allocated_index++)                                                                   \
-                {                                                                                                                                                          \
-                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_078: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call PAGED_SPARSE_ARRAY_RELEASE(T) for each index of the page that was allocated. ]*/ \
-                    PAGED_SPARSE_ARRAY_LL_RELEASE(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(array->wrapped_array, allocated_index);                             \
-                }                                                                                                                                                          \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_079: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ERROR. ]*/ \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_036: [ If PAGED_SPARSE_ARRAY_ALLOCATE(T) fails for the first index of the page, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ERROR. ]*/ \
                 result = PAGED_SPARSE_ARRAY_ALLOCATE_ERROR;                                                                                                                \
+                LogError("failure in PAGED_SPARSE_ARRAY_ALLOCATE(" MU_TOSTRING(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)) ")(index=%" PRIu64 ")=%" PRI_MU_ENUM " for " THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TYPE_STRING(T) ", page_index=%" PRIu64 ", first_index=%" PRIu64 ", end_index=%" PRIu64 ", index=%" PRIu64 ", result=%" PRI_MU_ENUM "", \
+                    first_index, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, allocate_result), page_index, first_index, end_index, index, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, result)); \
             }                                                                                                                                                              \
             else                                                                                                                                                           \
             {                                                                                                                                                              \
-                /* do nothing, all the indexes of the page are allocated in the paged sparse array */                                                                      \
+                for (uint64_t slot_index = first_index; slot_index < end_index; slot_index++)                                                                              \
+                {                                                                                                                                                          \
+                    if (slot_index == first_index)                                                                                                                         \
+                    {                                                                                                                                                      \
+                        /* do nothing, slot is the slot of the first index */                                                                                              \
+                    }                                                                                                                                                      \
+                    else                                                                                                                                                   \
+                    {                                                                                                                                                      \
+                        /* the first index allocated the page of the paged sparse array, so PAGED_SPARSE_ARRAY_ALLOCATE(T) does not fail for the other indexes of the page */ \
+                        (void)PAGED_SPARSE_ARRAY_LL_ALLOCATE(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(array->paged_sparse_array, slot_index, &slot);           \
+                    }                                                                                                                                                      \
+                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_035: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall set the state of each slot of the page to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED. ]*/ \
+                    (void)interlocked_exchange(&slot->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED);                                                     \
+                    /* no other call uses the page while the lock is held in exclusive mode, so no call gets an item before it is set to 0 */                              \
+                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_092: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall set all the bytes of the item of each slot of the page to 0. ]*/ \
+                    (void)memset(&slot->item, 0, sizeof(slot->item));                                                                                                      \
+                }                                                                                                                                                          \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_038: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall set page_guard->page_state to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED. ]*/ \
+                (void)interlocked_exchange(&page_guard->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED);                                                  \
+                result = PAGED_SPARSE_ARRAY_ALLOCATE_OK;                                                                                                                   \
             }                                                                                                                                                              \
         }                                                                                                                                                                  \
         if (result != PAGED_SPARSE_ARRAY_ALLOCATE_OK)                                                                                                                      \
@@ -503,16 +485,13 @@ static PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLO
         }                                                                                                                                                                  \
         else                                                                                                                                                               \
         {                                                                                                                                                                  \
-            /* the use count is incremented before the page state is set, so the page is not freed before the caller uses it */                                            \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_037: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall increment the use count of the page guard using interlocked operations. ]*/ \
-            (void)interlocked_increment_64(&page_guard->use_count);                                                                                                        \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_038: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall set the page state of the page guard to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED using interlocked operations. ]*/ \
-            (void)interlocked_exchange(&page_guard->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED);                                                      \
+            /* the element is allocated before the lock is released, so the page is not freed before the caller uses it */                                                 \
+            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_099: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) and return its result. ]*/ \
+            result = THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE_ELEMENT_INTERNAL_NAME(C)(array, page_index, index, allocated_ptr);                                         \
         }                                                                                                                                                                  \
     }                                                                                                                                                                      \
-    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_039: [ In all cases, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall release the lock of the page guard before returning. ]*/ \
+    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_039: [ In all cases, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall release page_guard->lock before returning. ]*/ \
     srw_lock_ll_release_exclusive(&page_guard->lock);                                                                                                                      \
-    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_040: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall succeed and return PAGED_SPARSE_ARRAY_ALLOCATE_OK. ]*/     \
     return result;                                                                                                                                                         \
 }
 
@@ -536,8 +515,8 @@ PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE(C)
     else                                                                                                                                                                   \
     {                                                                                                                                                                      \
         THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(C))(paged_sparse_array);                         \
-        uint64_t max_size = array->wrapped_array->max_size;                                                                                                                \
-        uint64_t page_size = array->wrapped_array->page_size;                                                                                                              \
+        uint64_t max_size = array->paged_sparse_array->max_size;                                                                                                           \
+        uint64_t page_size = array->paged_sparse_array->page_size;                                                                                                         \
         if (index >= max_size)                                                                                                                                             \
         {                                                                                                                                                                  \
             /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_043: [ If index is greater than or equal to max_size, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_INVALID_ARGS. ]*/ \
@@ -548,64 +527,25 @@ PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE(C)
         else                                                                                                                                                               \
         {                                                                                                                                                                  \
             uint64_t page_index = index / page_size;                                                                                                                       \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_044: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) for the page with index index / page_size. ]*/ \
-            if (THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_BEGIN_PAGE_USE_INTERNAL_NAME(C)(array, page_index))                                                                      \
+            THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD* page_guard = &array->page_guards[page_index];                                                                       \
+            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_093: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall acquire page_guard->lock in shared mode, where page_guard is the page guard of the page with index index / page_size. ]*/ \
+            srw_lock_ll_acquire_shared(&page_guard->lock);                                                                                                                 \
+            if (interlocked_add(&page_guard->page_state, 0) == THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED)                                                        \
             {                                                                                                                                                              \
-                /* do nothing, the page is allocated and it is not freed while it is used */                                                                               \
-                result = PAGED_SPARSE_ARRAY_ALLOCATE_OK;                                                                                                                   \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_094: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED: ]*/                \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_095: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) and return its result. ]*/ \
+                result = THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE_ELEMENT_INTERNAL_NAME(C)(array, page_index, index, allocated_ptr);                                     \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_096: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall release page_guard->lock in shared mode. ]*/        \
+                srw_lock_ll_release_shared(&page_guard->lock);                                                                                                             \
             }                                                                                                                                                              \
             else                                                                                                                                                           \
             {                                                                                                                                                              \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_045: [ If THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) returns false: ]*/                               \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_046: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1. ]*/ \
-                THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_PAGE_USE_INTERNAL_NAME(C)(array, page_index, 1);                                                                     \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_047: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T). ]*/ \
-                result = THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE_PAGE_INTERNAL_NAME(C)(array, page_index);                                                              \
-            }                                                                                                                                                              \
-            if (result != PAGED_SPARSE_ARRAY_ALLOCATE_OK)                                                                                                                  \
-            {                                                                                                                                                              \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_048: [ If THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) fails, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ERROR. ]*/ \
-                result = PAGED_SPARSE_ARRAY_ALLOCATE_ERROR;                                                                                                                \
-                LogError("failure allocating the page of " THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TYPE_STRING(T) " paged_sparse_array=%p, uint64_t index=%" PRIu64 ", page_index=%" PRIu64 ", page_size=%" PRIu64 ", max_size=%" PRIu64 ", result=%" PRI_MU_ENUM "", \
-                    paged_sparse_array, index, page_index, page_size, max_size, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, result));                                \
-            }                                                                                                                                                              \
-            else                                                                                                                                                           \
-            {                                                                                                                                                              \
-                THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)* slot;                                                                                                 \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_049: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call PAGED_SPARSE_ARRAY_GET(T) with the paged sparse array and index to get the slot of the element. ]*/ \
-                PAGED_SPARSE_ARRAY_GET_RESULT get_result = PAGED_SPARSE_ARRAY_LL_GET(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(array->wrapped_array, index, &slot); \
-                if (get_result != PAGED_SPARSE_ARRAY_GET_OK)                                                                                                               \
-                {                                                                                                                                                          \
-                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_050: [ If PAGED_SPARSE_ARRAY_GET(T) fails: ]*/                                                          \
-                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_084: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1. ]*/ \
-                    THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_PAGE_USE_INTERNAL_NAME(C)(array, page_index, 1);                                                                 \
-                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_085: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ERROR. ]*/ \
-                    result = PAGED_SPARSE_ARRAY_ALLOCATE_ERROR;                                                                                                            \
-                    LogError("failure in PAGED_SPARSE_ARRAY_GET(" MU_TOSTRING(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)) ")(index=%" PRIu64 ")=%" PRI_MU_ENUM " for " THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TYPE_STRING(T) " paged_sparse_array=%p, page_index=%" PRIu64 ", result=%" PRI_MU_ENUM "", \
-                        index, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, get_result), paged_sparse_array, page_index, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, result)); \
-                }                                                                                                                                                          \
-                else                                                                                                                                                       \
-                {                                                                                                                                                          \
-                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_051: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall change the state of the slot from THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED using interlocked_compare_exchange. ]*/ \
-                    int32_t slot_state = interlocked_compare_exchange(&slot->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED); \
-                    if (slot_state != THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED)                                                                             \
-                    {                                                                                                                                                      \
-                        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_052: [ If the state of the slot was not THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED: ]*/ \
-                        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_086: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1. ]*/ \
-                        THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_PAGE_USE_INTERNAL_NAME(C)(array, page_index, 1);                                                             \
-                        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_087: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED. ]*/ \
-                        result = PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED;                                                                                            \
-                        LogError("Element is already allocated in " THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TYPE_STRING(T) " paged_sparse_array=%p, uint64_t index=%" PRIu64 ", page_index=%" PRIu64 ", slot_state=%" PRI_MU_ENUM ", result=%" PRI_MU_ENUM "", \
-                            paged_sparse_array, index, page_index, MU_ENUM_VALUE(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE, (THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE)slot_state), MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, result)); \
-                    }                                                                                                                                                      \
-                    else                                                                                                                                                   \
-                    {                                                                                                                                                      \
-                        /* the use of the page is not ended, from now on it is the use of the allocated element */                                                         \
-                        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_053: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall store a pointer to the item of the slot in allocated_ptr and return PAGED_SPARSE_ARRAY_ALLOCATE_OK. ]*/ \
-                        *allocated_ptr = &slot->item;                                                                                                                      \
-                        result = PAGED_SPARSE_ARRAY_ALLOCATE_OK;                                                                                                           \
-                    }                                                                                                                                                      \
-                }                                                                                                                                                          \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_045: [ If page_guard->page_state is not THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED: ]*/            \
+                /* the lock cannot be changed from shared mode to exclusive mode, so it is released and acquired again in exclusive mode */                                \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_097: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall release page_guard->lock in shared mode. ]*/        \
+                srw_lock_ll_release_shared(&page_guard->lock);                                                                                                             \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_047: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) and return its result. ]*/ \
+                result = THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE_PAGE_INTERNAL_NAME(C)(array, page_index, index, allocated_ptr);                                        \
             }                                                                                                                                                              \
         }                                                                                                                                                                  \
     }                                                                                                                                                                      \
@@ -626,8 +566,8 @@ void THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_RELEASE(C)(THREAD_SAFE_PAGED_SPARSE_ARRAY
     else                                                                                                                                                                   \
     {                                                                                                                                                                      \
         THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(C))(paged_sparse_array);                         \
-        uint64_t max_size = array->wrapped_array->max_size;                                                                                                                \
-        uint64_t page_size = array->wrapped_array->page_size;                                                                                                              \
+        uint64_t max_size = array->paged_sparse_array->max_size;                                                                                                           \
+        uint64_t page_size = array->paged_sparse_array->page_size;                                                                                                         \
         if (index >= max_size)                                                                                                                                             \
         {                                                                                                                                                                  \
             /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_055: [ If index is greater than or equal to max_size, THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall return. ]*/ \
@@ -637,54 +577,35 @@ void THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_RELEASE(C)(THREAD_SAFE_PAGED_SPARSE_ARRAY
         else                                                                                                                                                               \
         {                                                                                                                                                                  \
             uint64_t page_index = index / page_size;                                                                                                                       \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_056: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) for the page with index index / page_size. ]*/ \
-            if (THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_BEGIN_PAGE_USE_INTERNAL_NAME(C)(array, page_index))                                                                      \
+            THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD* page_guard = &array->page_guards[page_index];                                                                       \
+            THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)* slot;                                                                                                     \
+            /* the lock of the page is not acquired: the released element keeps the page allocated until the element count is decremented, */                              \
+            /* which is the last time RELEASE uses the page */                                                                                                             \
+            /* all the indexes of an allocated page are allocated in the paged sparse array, so PAGED_SPARSE_ARRAY_GET(T) does not fail */                                 \
+            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_058: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call PAGED_SPARSE_ARRAY_GET(T) with paged_sparse_array->paged_sparse_array and index to get the slot of the element. ]*/ \
+            (void)PAGED_SPARSE_ARRAY_LL_GET(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(array->paged_sparse_array, index, &slot);                                 \
+            if (array->item_dispose_func != NULL)                                                                                                                          \
             {                                                                                                                                                              \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_057: [ If THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) returns true: ]*/                                \
-                THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)* slot;                                                                                                 \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_058: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call PAGED_SPARSE_ARRAY_GET(T) with the paged sparse array and index to get the slot of the element. ]*/ \
-                PAGED_SPARSE_ARRAY_GET_RESULT get_result = PAGED_SPARSE_ARRAY_LL_GET(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(array->wrapped_array, index, &slot); \
-                if (get_result != PAGED_SPARSE_ARRAY_GET_OK)                                                                                                               \
-                {                                                                                                                                                          \
-                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_059: [ If PAGED_SPARSE_ARRAY_GET(T) fails: ]*/                                                          \
-                    LogError("failure in PAGED_SPARSE_ARRAY_GET(" MU_TOSTRING(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)) ")(index=%" PRIu64 ")=%" PRI_MU_ENUM " for " THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TYPE_STRING(T) " paged_sparse_array=%p, page_index=%" PRIu64 "", \
-                        index, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, get_result), paged_sparse_array, page_index);                                                  \
-                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_088: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1. ]*/ \
-                    THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_PAGE_USE_INTERNAL_NAME(C)(array, page_index, 1);                                                                 \
-                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_089: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall return. ]*/                                      \
-                }                                                                                                                                                          \
-                else                                                                                                                                                       \
-                {                                                                                                                                                          \
-                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_060: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall change the state of the slot from THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING using interlocked_compare_exchange. ]*/ \
-                    if (interlocked_compare_exchange(&slot->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED) == THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED) \
-                    {                                                                                                                                                      \
-                        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_061: [ If the state of the slot was THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED: ]*/        \
-                        if (array->item_dispose_func != NULL)                                                                                                              \
-                        {                                                                                                                                                  \
-                            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_062: [ If item_dispose_func is not NULL, THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call item_dispose_func with a pointer to the item of the slot. ]*/ \
-                            array->item_dispose_func(&slot->item);                                                                                                         \
-                        }                                                                                                                                                  \
-                        else                                                                                                                                               \
-                        {                                                                                                                                                  \
-                            /* do nothing, there is no item dispose function */                                                                                            \
-                        }                                                                                                                                                  \
-                        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_063: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall set the state of the slot to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED using interlocked operations. ]*/ \
-                        (void)interlocked_exchange(&slot->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED);                                                 \
-                        /* the use of the page by the element ends together with the use of the page by this call */                                                       \
-                        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_064: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 2. ]*/ \
-                        THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_PAGE_USE_INTERNAL_NAME(C)(array, page_index, 2);                                                             \
-                    }                                                                                                                                                      \
-                    else                                                                                                                                                   \
-                    {                                                                                                                                                      \
-                        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_065: [ Otherwise, THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1. ]*/ \
-                        THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_PAGE_USE_INTERNAL_NAME(C)(array, page_index, 1);                                                             \
-                    }                                                                                                                                                      \
-                }                                                                                                                                                          \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_062: [ If paged_sparse_array->item_dispose_func is not NULL, THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call paged_sparse_array->item_dispose_func with a pointer to the item of the slot. ]*/ \
+                array->item_dispose_func(&slot->item);                                                                                                                     \
             }                                                                                                                                                              \
             else                                                                                                                                                           \
             {                                                                                                                                                              \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_066: [ If THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) returns false, THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1. ]*/ \
-                THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_PAGE_USE_INTERNAL_NAME(C)(array, page_index, 1);                                                                     \
+                /* do nothing, there is no item dispose function */                                                                                                        \
+            }                                                                                                                                                              \
+            /* the slot is still allocated while its item is disposed, so it cannot be allocated again before */                                                           \
+            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_063: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall set the state of the slot to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED. ]*/ \
+            (void)interlocked_exchange(&slot->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED);                                                             \
+            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_101: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall decrement page_guard->element_count, where page_guard is the page guard of the page with index index / page_size. ]*/ \
+            int64_t element_count = interlocked_decrement_64(&page_guard->element_count);                                                                                  \
+            if (element_count == 0)                                                                                                                                        \
+            {                                                                                                                                                              \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_103: [ If the element_count became 0, THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T). ]*/ \
+                THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TRY_FREE_PAGE_INTERNAL_NAME(C)(array, page_index);                                                                       \
+            }                                                                                                                                                              \
+            else                                                                                                                                                           \
+            {                                                                                                                                                              \
+                /* do nothing, the page has other allocated elements */                                                                                                    \
             }                                                                                                                                                              \
         }                                                                                                                                                                  \
     }                                                                                                                                                                      \
@@ -692,7 +613,6 @@ void THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_RELEASE(C)(THREAD_SAFE_PAGED_SPARSE_ARRAY
 
 /*introduces a function definition for thread_safe_paged_sparse_array_get*/
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET_DEFINE(C, T)                                                                                                                 \
-/*hint: have THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_INTERNAL_DEFINE(C, T) before THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET_DEFINE(C, T)*/                                           \
 PAGED_SPARSE_ARRAY_GET_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET(C)(THREAD_SAFE_PAGED_SPARSE_ARRAY_LL(T) paged_sparse_array, uint64_t index, T** item)                  \
 {                                                                                                                                                                          \
     PAGED_SPARSE_ARRAY_GET_RESULT result;                                                                                                                                  \
@@ -710,8 +630,8 @@ PAGED_SPARSE_ARRAY_GET_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET(C)(THREAD_SA
     else                                                                                                                                                                   \
     {                                                                                                                                                                      \
         THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(C))(paged_sparse_array);                         \
-        uint64_t max_size = array->wrapped_array->max_size;                                                                                                                \
-        uint64_t page_size = array->wrapped_array->page_size;                                                                                                              \
+        uint64_t max_size = array->paged_sparse_array->max_size;                                                                                                           \
+        uint64_t page_size = array->paged_sparse_array->page_size;                                                                                                         \
         if (index >= max_size)                                                                                                                                             \
         {                                                                                                                                                                  \
             /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_069: [ If index is greater than or equal to max_size, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall fail and return PAGED_SPARSE_ARRAY_GET_INVALID_ARGS. ]*/ \
@@ -721,44 +641,73 @@ PAGED_SPARSE_ARRAY_GET_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET(C)(THREAD_SA
         }                                                                                                                                                                  \
         else                                                                                                                                                               \
         {                                                                                                                                                                  \
-            uint64_t page_index = index / page_size;                                                                                                                       \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_070: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) for the page with index index / page_size. ]*/ \
-            if (!THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_BEGIN_PAGE_USE_INTERNAL_NAME(C)(array, page_index))                                                                     \
+            THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_GUARD* page_guard = &array->page_guards[index / page_size];                                                                \
+            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_104: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall acquire page_guard->lock in shared mode, where page_guard is the page guard of the page with index index / page_size. ]*/ \
+            srw_lock_ll_acquire_shared(&page_guard->lock);                                                                                                                 \
+            if (interlocked_add(&page_guard->page_state, 0) != THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED)                                                        \
             {                                                                                                                                                              \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_071: [ If THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) returns false, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/ \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_071: [ If page_guard->page_state is not THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/ \
                 result = PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED;                                                                                                             \
             }                                                                                                                                                              \
             else                                                                                                                                                           \
             {                                                                                                                                                              \
                 THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)* slot;                                                                                                 \
-                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_072: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall call PAGED_SPARSE_ARRAY_GET(T) with the paged sparse array and index to get the slot of the element. ]*/ \
-                result = PAGED_SPARSE_ARRAY_LL_GET(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(array->wrapped_array, index, &slot);                               \
-                if (result != PAGED_SPARSE_ARRAY_GET_OK)                                                                                                                   \
+                /* all the indexes of an allocated page are allocated in the paged sparse array, so PAGED_SPARSE_ARRAY_GET(T) does not fail */                             \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_072: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall call PAGED_SPARSE_ARRAY_GET(T) with paged_sparse_array->paged_sparse_array and index to get the slot of the element. ]*/ \
+                (void)PAGED_SPARSE_ARRAY_LL_GET(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(C))(array->paged_sparse_array, index, &slot);                             \
+                if (interlocked_add(&slot->state, 0) != THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED)                                                               \
                 {                                                                                                                                                          \
-                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_073: [ If PAGED_SPARSE_ARRAY_GET(T) fails, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall return the result of PAGED_SPARSE_ARRAY_GET(T). ]*/ \
-                    LogError("failure in PAGED_SPARSE_ARRAY_GET(" MU_TOSTRING(THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_TYPEDEF_NAME(T)) ")(index=%" PRIu64 ") for " THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TYPE_STRING(T) " paged_sparse_array=%p, page_index=%" PRIu64 ", result=%" PRI_MU_ENUM "", \
-                        index, paged_sparse_array, page_index, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, result));                                                      \
+                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_074: [ If the state of the slot is not THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/ \
+                    result = PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED;                                                                                                         \
                 }                                                                                                                                                          \
                 else                                                                                                                                                       \
                 {                                                                                                                                                          \
-                    if (interlocked_add(&slot->state, 0) != THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED)                                                           \
-                    {                                                                                                                                                      \
-                        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_074: [ If the state of the slot is not THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/ \
-                        result = PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED;                                                                                                     \
-                    }                                                                                                                                                      \
-                    else                                                                                                                                                   \
-                    {                                                                                                                                                      \
-                        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_075: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall store a pointer to the item of the slot in item and return PAGED_SPARSE_ARRAY_GET_OK. ]*/ \
-                        *item = &slot->item;                                                                                                                               \
-                        result = PAGED_SPARSE_ARRAY_GET_OK;                                                                                                                \
-                    }                                                                                                                                                      \
+                    /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_075: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall store a pointer to the item of the slot in item and return PAGED_SPARSE_ARRAY_GET_OK. ]*/ \
+                    *item = &slot->item;                                                                                                                                   \
+                    result = PAGED_SPARSE_ARRAY_GET_OK;                                                                                                                    \
                 }                                                                                                                                                          \
             }                                                                                                                                                              \
-            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_076: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1 before returning, also when THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) returns false. ]*/ \
-            THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_PAGE_USE_INTERNAL_NAME(C)(array, page_index, 1);                                                                         \
+            if (result == PAGED_SPARSE_ARRAY_GET_OK)                                                                                                                       \
+            {                                                                                                                                                              \
+                /* do nothing, the lock is held until THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T) so the page is not freed while the caller uses the item */                 \
+            }                                                                                                                                                              \
+            else                                                                                                                                                           \
+            {                                                                                                                                                              \
+                /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_105: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall release page_guard->lock in shared mode before returning, unless it returns PAGED_SPARSE_ARRAY_GET_OK. ]*/ \
+                srw_lock_ll_release_shared(&page_guard->lock);                                                                                                             \
+            }                                                                                                                                                              \
         }                                                                                                                                                                  \
     }                                                                                                                                                                      \
     return result;                                                                                                                                                         \
+}
+
+/*introduces a function definition for thread_safe_paged_sparse_array_end_get*/
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_GET_DEFINE(C, T)                                                                                                             \
+void THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_GET(C)(THREAD_SAFE_PAGED_SPARSE_ARRAY_LL(T) paged_sparse_array, uint64_t index)                                                 \
+{                                                                                                                                                                          \
+    if (paged_sparse_array == NULL)                                                                                                                                        \
+    {                                                                                                                                                                      \
+        /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_106: [ If paged_sparse_array is NULL, THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T) shall return. ]*/                   \
+        LogError("Invalid arguments: " THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TYPE_STRING(T) " paged_sparse_array=%p, uint64_t index=%" PRIu64 "",                              \
+            paged_sparse_array, index);                                                                                                                                    \
+    }                                                                                                                                                                      \
+    else                                                                                                                                                                   \
+    {                                                                                                                                                                      \
+        THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)* array = THANDLE_GET_T(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(C))(paged_sparse_array);                         \
+        uint64_t max_size = array->paged_sparse_array->max_size;                                                                                                           \
+        uint64_t page_size = array->paged_sparse_array->page_size;                                                                                                         \
+        if (index >= max_size)                                                                                                                                             \
+        {                                                                                                                                                                  \
+            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_107: [ If index is greater than or equal to max_size, THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T) shall return. ]*/ \
+            LogError("Invalid arguments: " THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TYPE_STRING(T) " paged_sparse_array=%p, uint64_t index=%" PRIu64 " out of bound, max_size=%" PRIu64 ", page_size=%" PRIu64 "", \
+                paged_sparse_array, index, max_size, page_size);                                                                                                           \
+        }                                                                                                                                                                  \
+        else                                                                                                                                                               \
+        {                                                                                                                                                                  \
+            /* Codes_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_108: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T) shall release page_guard->lock in shared mode, where page_guard is the page guard of the page with index index / page_size. ]*/ \
+            srw_lock_ll_release_shared(&array->page_guards[index / page_size].lock);                                                                                       \
+        }                                                                                                                                                                  \
+    }                                                                                                                                                                      \
 }
 
 #endif /*THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_H*/

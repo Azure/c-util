@@ -25,7 +25,6 @@ TEST_DEFINE_ENUM_TYPE(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_RESU
 #define TEST_LAST_PAGE_INDEX_COUNT 4 /*TEST_MAX_SIZE - TEST_LAST_PAGE_INDEX * TEST_PAGE_SIZE*/
 #define TEST_INDEX_IN_FIRST_PAGE 5
 #define TEST_OTHER_INDEX_IN_FIRST_PAGE 10
-#define TEST_INDEX_ALLOCATED_DIRECTLY_IN_FIRST_PAGE 3
 #define TEST_INDEX_IN_THIRD_PAGE 40
 #define TEST_LAST_INDEX (TEST_MAX_SIZE - 1)
 #define TEST_ITEM_VALUE 42
@@ -35,14 +34,12 @@ TEST_DEFINE_ENUM_TYPE(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_RESU
 #define TEST_ARRAY(psa) ((THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(uint32_t)*)(psa))
 #define TEST_PAGE_GUARD(psa, page_index) (&TEST_ARRAY(psa)->page_guards[(page_index)])
 #define TEST_PAGE_LOCK(psa, page_index) (&TEST_PAGE_GUARD(psa, page_index)->lock)
-#define TEST_USE_COUNT(psa, page_index) interlocked_add_64(&TEST_PAGE_GUARD(psa, page_index)->use_count, 0)
+#define TEST_ELEMENT_COUNT(psa, page_index) interlocked_add_64(&TEST_PAGE_GUARD(psa, page_index)->element_count, 0)
 #define TEST_PAGE_STATE(psa, page_index) interlocked_add(&TEST_PAGE_GUARD(psa, page_index)->page_state, 0)
-#define TEST_WRAPPED_PAGE(psa, page_index) ((psa)->wrapped_array->pages[(page_index)])
+#define TEST_WRAPPED_PAGE(psa, page_index) ((psa)->paged_sparse_array->pages[(page_index)])
 #define TEST_SLOT(psa, index) (&TEST_WRAPPED_PAGE(psa, TEST_PAGE_INDEX(index))->items[(index) % TEST_PAGE_SIZE])
 #define TEST_SLOT_STATE(psa, index) interlocked_add(&TEST_SLOT(psa, index)->state, 0)
 
-#define TEST_BEGIN_PAGE_USE THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_BEGIN_PAGE_USE_INTERNAL_NAME(uint32_t)
-#define TEST_END_PAGE_USE THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_PAGE_USE_INTERNAL_NAME(uint32_t)
 #define TEST_TRY_FREE_PAGE THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_TRY_FREE_PAGE_INTERNAL_NAME(uint32_t)
 #define TEST_ALLOCATE_PAGE THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE_PAGE_INTERNAL_NAME(uint32_t)
 
@@ -76,11 +73,30 @@ static INTERLOCKED_HL_RESULT hook_InterlockedHL_WaitForNotValue(int32_t volatile
     else
     {
         /* the other call finishes freeing the page */
-        (void)interlocked_add_64(&g_page_guard_freed_while_waiting->use_count, -THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING);
         (void)interlocked_exchange(&g_page_guard_freed_while_waiting->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED);
         g_page_guard_freed_while_waiting = NULL;
     }
     return real_InterlockedHL_WaitForNotValue(address_to_check, value_to_wait, timeout_ms);
+}
+
+/*used by the tests that check that the items of a new page are set to 0: memory allocated with malloc_flex is filled with a pattern that is not 0*/
+static bool g_fill_new_allocations;
+
+static void* hook_malloc_flex(size_t base, size_t nmemb, size_t size)
+{
+    void* result = real_gballoc_hl_malloc_flex(base, nmemb, size);
+    if (
+        (result == NULL) ||
+        (!g_fill_new_allocations)
+        )
+    {
+        /* do nothing, the memory is not filled */
+    }
+    else
+    {
+        (void)memset(result, 0xA5, base + nmemb * size);
+    }
+    return result;
 }
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
@@ -105,22 +121,6 @@ static uint32_t* test_allocate(THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa, uin
     return ptr;
 }
 
-/*marks the element at index as not allocated in the wrapped paged sparse array, behind the back of the thread safe paged sparse array*/
-static void test_release_in_wrapped_array(THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa, uint64_t index)
-{
-    PAGED_SPARSE_ARRAY_RELEASE(TEST_SLOT_TYPE)(psa->wrapped_array, index);
-    umock_c_reset_all_calls();
-}
-
-/*marks the element at index as allocated again in the wrapped paged sparse array, with a slot that is not allocated*/
-static void test_allocate_in_wrapped_array(THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa, uint64_t index)
-{
-    TEST_SLOT_TYPE* slot;
-    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, PAGED_SPARSE_ARRAY_ALLOCATE(TEST_SLOT_TYPE)(psa->wrapped_array, index, &slot));
-    (void)interlocked_exchange(&slot->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED);
-    umock_c_reset_all_calls();
-}
-
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -135,8 +135,8 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
     REGISTER_SRW_LOCK_LL_GLOBAL_MOCK_HOOK();
     REGISTER_INTERLOCKED_HL_GLOBAL_MOCK_HOOK();
-    REGISTER_SYNC_GLOBAL_MOCK_HOOK();
     REGISTER_GLOBAL_MOCK_HOOK(InterlockedHL_WaitForNotValue, hook_InterlockedHL_WaitForNotValue);
+    REGISTER_GLOBAL_MOCK_HOOK(malloc_flex, hook_malloc_flex);
 
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(malloc_flex, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(srw_lock_ll_init, MU_FAILURE);
@@ -153,6 +153,7 @@ TEST_FUNCTION_INITIALIZE(method_init)
 {
     (void)memset(&g_dispose_observer, 0, sizeof(g_dispose_observer));
     g_page_guard_freed_while_waiting = NULL;
+    g_fill_new_allocations = false;
 
     umock_c_negative_tests_init();
     umock_c_reset_all_calls();
@@ -166,11 +167,11 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 /*THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)*/
 
 /* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_001: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall call PAGED_SPARSE_ARRAY_CREATE(T) with max_size, page_size and NULL as item_dispose_func to create the paged sparse array of slots. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_003: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX to allocate memory for the thread safe paged sparse array with one page guard for each page of the paged sparse array. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_004: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall set the use count of each page guard to 0 and the page state of each page guard to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED using interlocked operations. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_005: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall call srw_lock_ll_init to initialize the lock of each page guard. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_007: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall store item_dispose_func in the thread safe paged sparse array. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_008: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall store the paged sparse array in the thread safe paged sparse array. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_003: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall call THANDLE_MALLOC_FLEX to allocate result with one page guard in result->page_guards for each page of the paged sparse array. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_004: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall set element_count to 0 and page_state to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED in each page guard of result->page_guards. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_005: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall call srw_lock_ll_init to initialize lock in each page guard of result->page_guards. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_007: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall store item_dispose_func in result->item_dispose_func. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_008: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall store the paged sparse array in result->paged_sparse_array. ]*/
 /* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_009: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall succeed and return a non-NULL value. ]*/
 TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_succeeds)
 {
@@ -189,15 +190,15 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_succeeds)
 
     //assert
     ASSERT_IS_NOT_NULL(psa);
-    ASSERT_IS_NOT_NULL(psa->wrapped_array);
-    ASSERT_ARE_EQUAL(uint64_t, TEST_MAX_SIZE, psa->wrapped_array->max_size);
-    ASSERT_ARE_EQUAL(uint64_t, TEST_PAGE_SIZE, psa->wrapped_array->page_size);
-    ASSERT_ARE_EQUAL(uint64_t, TEST_PAGE_COUNT, psa->wrapped_array->page_count);
-    ASSERT_IS_NULL(psa->wrapped_array->item_dispose_func);
+    ASSERT_IS_NOT_NULL(psa->paged_sparse_array);
+    ASSERT_ARE_EQUAL(uint64_t, TEST_MAX_SIZE, psa->paged_sparse_array->max_size);
+    ASSERT_ARE_EQUAL(uint64_t, TEST_PAGE_SIZE, psa->paged_sparse_array->page_size);
+    ASSERT_ARE_EQUAL(uint64_t, TEST_PAGE_COUNT, psa->paged_sparse_array->page_count);
+    ASSERT_IS_NULL(psa->paged_sparse_array->item_dispose_func);
     ASSERT_IS_TRUE(psa->item_dispose_func == test_item_dispose_func);
     for (uint64_t i = 0; i < TEST_PAGE_COUNT; i++)
     {
-        ASSERT_ARE_EQUAL(int64_t, 0, TEST_USE_COUNT(psa, i));
+        ASSERT_ARE_EQUAL(int64_t, 0, TEST_ELEMENT_COUNT(psa, i));
         ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED, TEST_PAGE_STATE(psa, i));
         ASSERT_ARE_EQUAL(void_ptr, TEST_PAGE_LOCK(psa, i), initialized_locks[i]);
     }
@@ -220,9 +221,7 @@ TEST_FUNCTION(when_PAGED_SPARSE_ARRAY_CREATE_fails_then_THREAD_SAFE_PAGED_SPARSE
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_010: [ If there are any other errors: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_082: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall release the paged sparse array. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_083: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_010: [ If there are any other errors, THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/
 TEST_FUNCTION(when_THANDLE_MALLOC_FLEX_fails_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_releases_the_paged_sparse_array_and_fails)
 {
     //arrange
@@ -242,12 +241,7 @@ TEST_FUNCTION(when_THANDLE_MALLOC_FLEX_fails_then_THREAD_SAFE_PAGED_SPARSE_ARRAY
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_006: [ If srw_lock_ll_init fails: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_080: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall call srw_lock_ll_deinit for each lock that was initialized. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_081: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall free the memory of the thread safe paged sparse array. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_010: [ If there are any other errors: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_082: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall release the paged sparse array. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_083: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_010: [ If there are any other errors, THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/
 TEST_FUNCTION(when_srw_lock_ll_init_fails_for_the_third_lock_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_deinitializes_the_initialized_locks_and_fails)
 {
     //arrange
@@ -282,9 +276,7 @@ TEST_FUNCTION(when_srw_lock_ll_init_fails_for_the_third_lock_then_THREAD_SAFE_PA
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_006: [ If srw_lock_ll_init fails: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_080: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall call srw_lock_ll_deinit for each lock that was initialized. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_081: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall free the memory of the thread safe paged sparse array. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_010: [ If there are any other errors, THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/
 TEST_FUNCTION(when_srw_lock_ll_init_fails_for_the_first_lock_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_frees_the_arrays_and_fails)
 {
     //arrange
@@ -309,9 +301,7 @@ TEST_FUNCTION(when_srw_lock_ll_init_fails_for_the_first_lock_then_THREAD_SAFE_PA
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_010: [ If there are any other errors: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_082: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall release the paged sparse array. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_083: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_010: [ If there are any other errors, THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T) shall fail and return NULL. ]*/
 TEST_FUNCTION(when_underlying_calls_fail_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_fails)
 {
     //arrange
@@ -354,9 +344,9 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE_with_NULL_returns)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_012: [ If item_dispose_func is not NULL, THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T) shall call item_dispose_func with a pointer to the item of each slot whose state is THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED in the pages whose page state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_013: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T) shall call srw_lock_ll_deinit for the lock of each page guard. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_014: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T) shall release the paged sparse array. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_012: [ If paged_sparse_array->item_dispose_func is not NULL, THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T) shall call paged_sparse_array->item_dispose_func with a pointer to the item of each slot whose state is THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED in the pages whose page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_013: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T) shall call srw_lock_ll_deinit for lock in each page guard of paged_sparse_array->page_guards. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_014: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T) shall release paged_sparse_array->paged_sparse_array. ]*/
 TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE_disposes_the_allocated_items_deinitializes_the_locks_and_releases_the_paged_sparse_array)
 {
     //arrange
@@ -397,7 +387,7 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE_disposes_the_allocated_item
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_012: [ If item_dispose_func is not NULL, THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T) shall call item_dispose_func with a pointer to the item of each slot whose state is THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED in the pages whose page state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_012: [ If paged_sparse_array->item_dispose_func is not NULL, THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T) shall call paged_sparse_array->item_dispose_func with a pointer to the item of each slot whose state is THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED in the pages whose page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED. ]*/
 TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE_with_NULL_item_dispose_func_does_not_dispose_the_items)
 {
     //arrange
@@ -473,23 +463,29 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_with_index_equal_to_max_si
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_045: [ If THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) returns false: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_046: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_047: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T). ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_030: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall acquire the lock of the page guard in exclusive mode. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_033: [ If the page state of the page guard is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_034: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call PAGED_SPARSE_ARRAY_ALLOCATE(T) for each index of the page. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_035: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall set the state of each slot of the page to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED using interlocked operations. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_037: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall increment the use count of the page guard using interlocked operations. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_038: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall set the page state of the page guard to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED using interlocked operations. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_039: [ In all cases, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall release the lock of the page guard before returning. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_040: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall succeed and return PAGED_SPARSE_ARRAY_ALLOCATE_OK. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_in_a_page_that_is_not_allocated_allocates_the_page_while_holding_the_lock_of_the_page_guard)
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_093: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall acquire page_guard->lock in shared mode, where page_guard is the page guard of the page with index index / page_size. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_045: [ If page_guard->page_state is not THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED: ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_097: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall release page_guard->lock in shared mode. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_047: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) and return its result. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_030: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall acquire page_guard->lock in exclusive mode. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_033: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED: ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_034: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call PAGED_SPARSE_ARRAY_ALLOCATE(T) on array->paged_sparse_array for each index of the page. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_035: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall set the state of each slot of the page to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_038: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall set page_guard->page_state to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_099: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) and return its result. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_049: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall call PAGED_SPARSE_ARRAY_GET(T) with array->paged_sparse_array and index to get the slot of the element. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_051: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall change the state of the slot from THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED using interlocked_compare_exchange. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_098: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall increment page_guard->element_count. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_053: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall store a pointer to the item of the slot in allocated_ptr and return PAGED_SPARSE_ARRAY_ALLOCATE_OK. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_039: [ In all cases, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall release page_guard->lock before returning. ]*/
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_in_a_page_that_is_not_allocated_allocates_the_page_and_the_element_while_holding_the_lock_of_the_page_guard_in_exclusive_mode)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
     uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_THIRD_PAGE);
     uint32_t* ptr = NULL;
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(TEST_PAGE_LOCK(psa, page_index)));
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(TEST_PAGE_LOCK(psa, page_index)));
     STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(TEST_PAGE_LOCK(psa, page_index)));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)); /*the page of the paged sparse array*/
     STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(TEST_PAGE_LOCK(psa, page_index)));
@@ -506,19 +502,45 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_in_a_page_that_is_not_allo
     {
         ASSERT_ARE_EQUAL(int32_t, (index == TEST_INDEX_IN_THIRD_PAGE) ? THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED : THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED, TEST_SLOT_STATE(psa, index));
     }
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
+    ASSERT_ARE_EQUAL(int64_t, 1, TEST_ELEMENT_COUNT(psa, page_index));
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, TEST_PAGE_STATE(psa, page_index));
 
     //clean
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_034: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call PAGED_SPARSE_ARRAY_ALLOCATE(T) for each index of the page. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_092: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall set all the bytes of the item of each slot of the page to 0. ]*/
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_in_a_page_that_is_not_allocated_sets_the_items_of_the_page_to_0)
+{
+    //arrange
+    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
+    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_THIRD_PAGE);
+    uint32_t* ptr = NULL;
+    g_fill_new_allocations = true;
+
+    //act
+    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT result = THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, TEST_INDEX_IN_THIRD_PAGE, &ptr);
+
+    //assert
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, result);
+    ASSERT_ARE_EQUAL(uint32_t, 0, *ptr);
+    for (uint64_t index = page_index * TEST_PAGE_SIZE; index < (page_index + 1) * TEST_PAGE_SIZE; index++)
+    {
+        ASSERT_ARE_EQUAL(uint32_t, 0, TEST_SLOT(psa, index)->item, "index=%" PRIu64 "", index);
+    }
+
+    //clean
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
+}
+
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_034: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call PAGED_SPARSE_ARRAY_ALLOCATE(T) on array->paged_sparse_array for each index of the page. ]*/
 TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_of_the_last_index_allocates_only_the_indexes_of_the_last_page_that_are_lower_than_max_size)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
     uint32_t* ptr = NULL;
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(TEST_PAGE_LOCK(psa, TEST_LAST_PAGE_INDEX)));
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(TEST_PAGE_LOCK(psa, TEST_LAST_PAGE_INDEX)));
     STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(TEST_PAGE_LOCK(psa, TEST_LAST_PAGE_INDEX)));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)); /*the page of the paged sparse array*/
     STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(TEST_PAGE_LOCK(psa, TEST_LAST_PAGE_INDEX)));
@@ -536,16 +558,23 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_of_the_last_index_allocate
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_044: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) for the page with index index / page_size. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_049: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call PAGED_SPARSE_ARRAY_GET(T) with the paged sparse array and index to get the slot of the element. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_051: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall change the state of the slot from THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED using interlocked_compare_exchange. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_053: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall store a pointer to the item of the slot in allocated_ptr and return PAGED_SPARSE_ARRAY_ALLOCATE_OK. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_in_an_allocated_page_does_not_acquire_any_lock)
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_093: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall acquire page_guard->lock in shared mode, where page_guard is the page guard of the page with index index / page_size. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_094: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED: ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_095: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) and return its result. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_096: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall release page_guard->lock in shared mode. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_049: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall call PAGED_SPARSE_ARRAY_GET(T) with array->paged_sparse_array and index to get the slot of the element. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_051: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall change the state of the slot from THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED using interlocked_compare_exchange. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_098: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall increment page_guard->element_count. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_053: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall store a pointer to the item of the slot in allocated_ptr and return PAGED_SPARSE_ARRAY_ALLOCATE_OK. ]*/
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_in_an_allocated_page_allocates_the_element_while_holding_the_lock_of_the_page_guard_in_shared_mode)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
+    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
     (void)test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
     uint32_t* ptr = NULL;
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(TEST_PAGE_LOCK(psa, page_index)));
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(TEST_PAGE_LOCK(psa, page_index)));
 
     //act
     PAGED_SPARSE_ARRAY_ALLOCATE_RESULT result = THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE, &ptr);
@@ -555,22 +584,23 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_in_an_allocated_page_does_
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(void_ptr, &TEST_SLOT(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE)->item, ptr);
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED, TEST_SLOT_STATE(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE));
-    ASSERT_ARE_EQUAL(int64_t, 2, TEST_USE_COUNT(psa, TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE)));
+    ASSERT_ARE_EQUAL(int64_t, 2, TEST_ELEMENT_COUNT(psa, page_index));
 
     //clean
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_036: [ If PAGED_SPARSE_ARRAY_ALLOCATE(T) fails: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_078: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call PAGED_SPARSE_ARRAY_RELEASE(T) for each index of the page that was allocated. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_079: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ERROR. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_048: [ If THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) fails, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ERROR. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_036: [ If PAGED_SPARSE_ARRAY_ALLOCATE(T) fails for the first index of the page, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ERROR. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_047: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) and return its result. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_039: [ In all cases, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall release page_guard->lock before returning. ]*/
 TEST_FUNCTION(when_allocating_the_page_fails_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_releases_the_lock_of_the_page_guard_and_fails)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
     uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
     uint32_t* ptr = NULL;
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(TEST_PAGE_LOCK(psa, page_index)));
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(TEST_PAGE_LOCK(psa, page_index)));
     STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(TEST_PAGE_LOCK(psa, page_index)));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)) /*the page of the paged sparse array*/
         .SetReturn(NULL);
@@ -584,44 +614,15 @@ TEST_FUNCTION(when_allocating_the_page_fails_then_THREAD_SAFE_PAGED_SPARSE_ARRAY
     ASSERT_IS_NULL(ptr);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(TEST_WRAPPED_PAGE(psa, page_index));
-    ASSERT_ARE_EQUAL(int64_t, 0, TEST_USE_COUNT(psa, page_index));
+    ASSERT_ARE_EQUAL(int64_t, 0, TEST_ELEMENT_COUNT(psa, page_index));
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED, TEST_PAGE_STATE(psa, page_index));
 
     //clean
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_036: [ If PAGED_SPARSE_ARRAY_ALLOCATE(T) fails: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_078: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call PAGED_SPARSE_ARRAY_RELEASE(T) for each index of the page that was allocated. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_079: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ERROR. ]*/
-TEST_FUNCTION(when_PAGED_SPARSE_ARRAY_ALLOCATE_fails_for_an_index_after_the_first_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_releases_the_indexes_allocated_before_and_fails)
-{
-    //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    uint32_t* ptr = NULL;
-    test_allocate_in_wrapped_array(psa, TEST_INDEX_ALLOCATED_DIRECTLY_IN_FIRST_PAGE);
-    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(TEST_PAGE_LOCK(psa, page_index)));
-    STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(TEST_PAGE_LOCK(psa, page_index)));
-
-    //act
-    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT result = THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, TEST_INDEX_IN_FIRST_PAGE, &ptr);
-
-    //assert
-    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_ERROR, result);
-    ASSERT_IS_NULL(ptr);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    /* only the index allocated directly in the paged sparse array is still allocated */
-    ASSERT_ARE_EQUAL(uint64_t, 1, TEST_WRAPPED_PAGE(psa, page_index)->allocated_count);
-    ASSERT_ARE_EQUAL(int64_t, 0, TEST_USE_COUNT(psa, page_index));
-    ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED, TEST_PAGE_STATE(psa, page_index));
-
-    //clean
-    test_release_in_wrapped_array(psa, TEST_INDEX_ALLOCATED_DIRECTLY_IN_FIRST_PAGE);
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_031: [ While the page state of the page guard is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call InterlockedHL_WaitForNotValue to wait for the page state to change. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_045: [ If page_guard->page_state is not THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED: ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_031: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call InterlockedHL_WaitForNotValue to wait for page_guard->page_state to change. ]*/
 TEST_FUNCTION(when_the_page_is_being_freed_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_waits_for_the_page_to_be_freed_and_allocates_it)
 {
     //arrange
@@ -629,9 +630,10 @@ TEST_FUNCTION(when_the_page_is_being_freed_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_A
     uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
     uint32_t* ptr = NULL;
     /* another call is freeing the page */
-    (void)interlocked_exchange_64(&TEST_PAGE_GUARD(psa, page_index)->use_count, THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING);
     (void)interlocked_exchange(&TEST_PAGE_GUARD(psa, page_index)->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING);
     g_page_guard_freed_while_waiting = TEST_PAGE_GUARD(psa, page_index);
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(TEST_PAGE_LOCK(psa, page_index)));
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(TEST_PAGE_LOCK(psa, page_index)));
     STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(TEST_PAGE_LOCK(psa, page_index)));
     STRICT_EXPECTED_CALL(InterlockedHL_WaitForNotValue(&TEST_PAGE_GUARD(psa, page_index)->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING, UINT32_MAX));
     STRICT_EXPECTED_CALL(malloc_flex(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)); /*the page of the paged sparse array*/
@@ -644,7 +646,7 @@ TEST_FUNCTION(when_the_page_is_being_freed_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_A
     ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(void_ptr, &TEST_SLOT(psa, TEST_INDEX_IN_FIRST_PAGE)->item, ptr);
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
+    ASSERT_ARE_EQUAL(int64_t, 1, TEST_ELEMENT_COUNT(psa, page_index));
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, TEST_PAGE_STATE(psa, page_index));
 
     //clean
@@ -659,8 +661,9 @@ TEST_FUNCTION(when_InterlockedHL_WaitForNotValue_fails_then_THREAD_SAFE_PAGED_SP
     uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
     uint32_t* ptr = NULL;
     /* another call is freeing the page */
-    (void)interlocked_exchange_64(&TEST_PAGE_GUARD(psa, page_index)->use_count, THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING);
     (void)interlocked_exchange(&TEST_PAGE_GUARD(psa, page_index)->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING);
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(TEST_PAGE_LOCK(psa, page_index)));
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(TEST_PAGE_LOCK(psa, page_index)));
     STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(TEST_PAGE_LOCK(psa, page_index)));
     STRICT_EXPECTED_CALL(InterlockedHL_WaitForNotValue(&TEST_PAGE_GUARD(psa, page_index)->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING, UINT32_MAX))
         .SetReturn(INTERLOCKED_HL_ERROR);
@@ -673,77 +676,80 @@ TEST_FUNCTION(when_InterlockedHL_WaitForNotValue_fails_then_THREAD_SAFE_PAGED_SP
     ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_ERROR, result);
     ASSERT_IS_NULL(ptr);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING, TEST_USE_COUNT(psa, page_index));
+    ASSERT_ARE_EQUAL(int64_t, 0, TEST_ELEMENT_COUNT(psa, page_index));
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING, TEST_PAGE_STATE(psa, page_index));
 
     //clean
-    (void)interlocked_exchange_64(&TEST_PAGE_GUARD(psa, page_index)->use_count, 0);
     (void)interlocked_exchange(&TEST_PAGE_GUARD(psa, page_index)->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED);
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_037: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall increment the use count of the page guard using interlocked operations. ]*/
-TEST_FUNCTION(when_another_call_allocated_the_page_before_the_lock_is_acquired_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE_only_begins_a_use_of_the_page)
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_099: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) and return its result. ]*/
+TEST_FUNCTION(when_another_call_allocated_the_page_before_the_lock_is_acquired_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE_only_allocates_the_element)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
     uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
     (void)test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
     void* page = TEST_WRAPPED_PAGE(psa, page_index);
+    uint32_t* ptr = NULL;
     STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(TEST_PAGE_LOCK(psa, page_index)));
     STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(TEST_PAGE_LOCK(psa, page_index)));
 
     //act
-    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT result = TEST_ALLOCATE_PAGE(TEST_ARRAY(psa), page_index);
+    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT result = TEST_ALLOCATE_PAGE(TEST_ARRAY(psa), page_index, TEST_OTHER_INDEX_IN_FIRST_PAGE, &ptr);
 
     //assert
     ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(void_ptr, page, TEST_WRAPPED_PAGE(psa, page_index));
+    ASSERT_ARE_EQUAL(void_ptr, &TEST_SLOT(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE)->item, ptr);
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED, TEST_SLOT_STATE(psa, TEST_INDEX_IN_FIRST_PAGE));
-    ASSERT_ARE_EQUAL(int64_t, 2, TEST_USE_COUNT(psa, page_index));
+    ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED, TEST_SLOT_STATE(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE));
+    ASSERT_ARE_EQUAL(int64_t, 2, TEST_ELEMENT_COUNT(psa, page_index));
 
     //clean
-    TEST_END_PAGE_USE(TEST_ARRAY(psa), page_index, 1);
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_050: [ If PAGED_SPARSE_ARRAY_GET(T) fails: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_084: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_085: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ERROR. ]*/
-TEST_FUNCTION(when_PAGED_SPARSE_ARRAY_GET_fails_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ends_the_use_of_the_page_and_fails)
-{
-    //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    (void)test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
-    test_release_in_wrapped_array(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE);
-    uint32_t* ptr = NULL;
-
-    //act
-    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT result = THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE, &ptr);
-
-    //assert
-    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_ERROR, result);
-    ASSERT_IS_NULL(ptr);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
-
-    //clean
-    test_allocate_in_wrapped_array(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE);
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_052: [ If the state of the slot was not THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_086: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_087: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_of_an_allocated_element_fails_and_ends_the_use_of_the_page)
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_099: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) and return its result. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_052: [ If the state of the slot was not THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED. ]*/
+TEST_FUNCTION(when_another_call_allocated_the_page_and_the_element_before_the_lock_is_acquired_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE_fails_with_ALREADY_ALLOCATED)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
     uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
     uint32_t* allocated = test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
     uint32_t* ptr = NULL;
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(TEST_PAGE_LOCK(psa, page_index)));
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(TEST_PAGE_LOCK(psa, page_index)));
+
+    //act
+    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT result = TEST_ALLOCATE_PAGE(TEST_ARRAY(psa), page_index, TEST_INDEX_IN_FIRST_PAGE, &ptr);
+
+    //assert
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED, result);
+    ASSERT_IS_NULL(ptr);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(void_ptr, &TEST_SLOT(psa, TEST_INDEX_IN_FIRST_PAGE)->item, allocated);
+    ASSERT_ARE_EQUAL(int64_t, 1, TEST_ELEMENT_COUNT(psa, page_index));
+
+    //clean
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
+}
+
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_095: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) and return its result. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_096: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall release page_guard->lock in shared mode. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_052: [ If the state of the slot was not THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED. ]*/
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_of_an_allocated_element_releases_the_lock_of_the_page_guard_and_fails_with_ALREADY_ALLOCATED)
+{
+    //arrange
+    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
+    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
+    uint32_t* allocated = test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
+    uint32_t* ptr = NULL;
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(TEST_PAGE_LOCK(psa, page_index)));
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(TEST_PAGE_LOCK(psa, page_index)));
 
     //act
     PAGED_SPARSE_ARRAY_ALLOCATE_RESULT result = THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, TEST_INDEX_IN_FIRST_PAGE, &ptr);
@@ -753,36 +759,9 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_of_an_allocated_element_fa
     ASSERT_IS_NULL(ptr);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(void_ptr, &TEST_SLOT(psa, TEST_INDEX_IN_FIRST_PAGE)->item, allocated);
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
+    ASSERT_ARE_EQUAL(int64_t, 1, TEST_ELEMENT_COUNT(psa, page_index));
 
     //clean
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_052: [ If the state of the slot was not THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_086: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_087: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T) shall fail and return PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_of_an_element_that_is_being_released_fails)
-{
-    //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    (void)test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
-    (void)interlocked_exchange(&TEST_SLOT(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE)->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING);
-    uint32_t* ptr = NULL;
-
-    //act
-    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT result = THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(uint32_t)(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE, &ptr);
-
-    //assert
-    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED, result);
-    ASSERT_IS_NULL(ptr);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING, TEST_SLOT_STATE(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE));
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
-
-    //clean
-    (void)interlocked_exchange(&TEST_SLOT(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE)->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED);
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
@@ -816,76 +795,11 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_with_index_equal_to_max_siz
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_056: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) for the page with index index / page_size. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_066: [ If THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) returns false, THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_in_a_page_that_is_not_allocated_returns)
-{
-    //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(test_item_dispose_func);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-
-    //act
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, TEST_INDEX_IN_FIRST_PAGE);
-
-    //assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_IS_NULL(TEST_WRAPPED_PAGE(psa, page_index));
-    ASSERT_ARE_EQUAL(int64_t, 0, TEST_USE_COUNT(psa, page_index));
-
-    //clean
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_065: [ Otherwise, THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_of_an_element_that_is_not_allocated_in_an_allocated_page_returns)
-{
-    //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(test_item_dispose_func);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    (void)test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
-
-    //act
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE);
-
-    //assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED, TEST_SLOT_STATE(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE));
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
-
-    //clean
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_065: [ Otherwise, THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_of_an_element_that_is_being_released_by_another_call_does_not_dispose_the_item)
-{
-    //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(test_item_dispose_func);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    (void)test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
-    (void)interlocked_exchange(&TEST_SLOT(psa, TEST_INDEX_IN_FIRST_PAGE)->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING);
-
-    //act
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, TEST_INDEX_IN_FIRST_PAGE);
-
-    //assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING, TEST_SLOT_STATE(psa, TEST_INDEX_IN_FIRST_PAGE));
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
-
-    //clean
-    (void)interlocked_exchange(&TEST_SLOT(psa, TEST_INDEX_IN_FIRST_PAGE)->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED);
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_057: [ If THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) returns true: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_058: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call PAGED_SPARSE_ARRAY_GET(T) with the paged sparse array and index to get the slot of the element. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_060: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall change the state of the slot from THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING using interlocked_compare_exchange. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_061: [ If the state of the slot was THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_062: [ If item_dispose_func is not NULL, THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call item_dispose_func with a pointer to the item of the slot. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_063: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall set the state of the slot to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED using interlocked operations. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_064: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 2. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_of_an_element_disposes_the_item_while_the_slot_is_releasing_and_does_not_free_the_page_that_has_other_elements)
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_058: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call PAGED_SPARSE_ARRAY_GET(T) with paged_sparse_array->paged_sparse_array and index to get the slot of the element. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_062: [ If paged_sparse_array->item_dispose_func is not NULL, THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call paged_sparse_array->item_dispose_func with a pointer to the item of the slot. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_063: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall set the state of the slot to THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_101: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall decrement page_guard->element_count, where page_guard is the page guard of the page with index index / page_size. ]*/
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_of_an_element_disposes_the_item_while_the_slot_is_still_allocated_and_does_not_free_the_page_that_has_other_elements)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(test_item_dispose_func);
@@ -900,17 +814,17 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_of_an_element_disposes_the_
 
     //assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING, g_dispose_observer.state_when_called);
+    ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED, g_dispose_observer.state_when_called);
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED, TEST_SLOT_STATE(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE));
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED, TEST_SLOT_STATE(psa, TEST_INDEX_IN_FIRST_PAGE));
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
+    ASSERT_ARE_EQUAL(int64_t, 1, TEST_ELEMENT_COUNT(psa, page_index));
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, TEST_PAGE_STATE(psa, page_index));
 
     //clean
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_062: [ If item_dispose_func is not NULL, THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call item_dispose_func with a pointer to the item of the slot. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_062: [ If paged_sparse_array->item_dispose_func is not NULL, THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call paged_sparse_array->item_dispose_func with a pointer to the item of the slot. ]*/
 TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_with_NULL_item_dispose_func_releases_the_element)
 {
     //arrange
@@ -925,16 +839,20 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_with_NULL_item_dispose_func
     //assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED, TEST_SLOT_STATE(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE));
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
+    ASSERT_ARE_EQUAL(int64_t, 1, TEST_ELEMENT_COUNT(psa, page_index));
 
     //clean
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_064: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 2. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_020: [ If the use count became 0 and the page state of the page guard is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T). ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_026: [ If the use count was changed to THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_027: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall call PAGED_SPARSE_ARRAY_RELEASE(T) for each index of the page. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_103: [ If the element_count became 0, THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T). ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_021: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall acquire page_guard->lock in exclusive mode. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_022: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED and page_guard->element_count is 0: ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_024: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall set page_guard->page_state to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_025: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall release page_guard->lock. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_026: [ If page_guard->page_state was set to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING: ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_027: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall call PAGED_SPARSE_ARRAY_RELEASE(T) on array->paged_sparse_array for each index of the page. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_077: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall call InterlockedHL_SetAndWakeAll to set page_guard->page_state to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED and wake the calls waiting for it to change. ]*/
 TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_of_the_last_element_of_a_page_frees_the_page_after_releasing_the_lock_of_the_page_guard)
 {
     //arrange
@@ -946,7 +864,7 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_of_the_last_element_of_a_pa
     STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(TEST_PAGE_LOCK(psa, page_index)));
     STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(TEST_PAGE_LOCK(psa, page_index)));
     STRICT_EXPECTED_CALL(free(page));
-    STRICT_EXPECTED_CALL(wake_by_address_all(&TEST_PAGE_GUARD(psa, page_index)->page_state));
+    STRICT_EXPECTED_CALL(InterlockedHL_SetAndWakeAll(&TEST_PAGE_GUARD(psa, page_index)->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED));
 
     //act
     THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, TEST_INDEX_IN_THIRD_PAGE);
@@ -954,14 +872,14 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_of_the_last_element_of_a_pa
     //assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(TEST_WRAPPED_PAGE(psa, page_index));
-    ASSERT_ARE_EQUAL(int64_t, 0, TEST_USE_COUNT(psa, page_index));
+    ASSERT_ARE_EQUAL(int64_t, 0, TEST_ELEMENT_COUNT(psa, page_index));
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED, TEST_PAGE_STATE(psa, page_index));
 
     //clean
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_027: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall call PAGED_SPARSE_ARRAY_RELEASE(T) for each index of the page. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_027: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall call PAGED_SPARSE_ARRAY_RELEASE(T) on array->paged_sparse_array for each index of the page. ]*/
 TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_of_the_last_element_of_the_last_page_frees_the_last_page)
 {
     //arrange
@@ -972,7 +890,7 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_of_the_last_element_of_the_
     STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(TEST_PAGE_LOCK(psa, TEST_LAST_PAGE_INDEX)));
     STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(TEST_PAGE_LOCK(psa, TEST_LAST_PAGE_INDEX)));
     STRICT_EXPECTED_CALL(free(page));
-    STRICT_EXPECTED_CALL(wake_by_address_all(&TEST_PAGE_GUARD(psa, TEST_LAST_PAGE_INDEX)->page_state));
+    STRICT_EXPECTED_CALL(InterlockedHL_SetAndWakeAll(&TEST_PAGE_GUARD(psa, TEST_LAST_PAGE_INDEX)->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED));
 
     //act
     THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, TEST_LAST_INDEX);
@@ -980,33 +898,10 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_of_the_last_element_of_the_
     //assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(TEST_WRAPPED_PAGE(psa, TEST_LAST_PAGE_INDEX));
-    ASSERT_ARE_EQUAL(int64_t, 0, TEST_USE_COUNT(psa, TEST_LAST_PAGE_INDEX));
+    ASSERT_ARE_EQUAL(int64_t, 0, TEST_ELEMENT_COUNT(psa, TEST_LAST_PAGE_INDEX));
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED, TEST_PAGE_STATE(psa, TEST_LAST_PAGE_INDEX));
 
     //clean
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_059: [ If PAGED_SPARSE_ARRAY_GET(T) fails: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_088: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_089: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T) shall return. ]*/
-TEST_FUNCTION(when_PAGED_SPARSE_ARRAY_GET_fails_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_ends_the_use_of_the_page_and_returns)
-{
-    //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(test_item_dispose_func);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    (void)test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
-    test_release_in_wrapped_array(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE);
-
-    //act
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(uint32_t)(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE);
-
-    //assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
-
-    //clean
-    test_allocate_in_wrapped_array(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE);
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
@@ -1063,15 +958,17 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_with_index_equal_to_max_size_fa
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_070: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) for the page with index index / page_size. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_071: [ If THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) returns false, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_076: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1 before returning, also when THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) returns false. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_in_a_page_that_is_not_allocated_returns_NOT_ALLOCATED)
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_104: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall acquire page_guard->lock in shared mode, where page_guard is the page guard of the page with index index / page_size. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_071: [ If page_guard->page_state is not THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_105: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall release page_guard->lock in shared mode before returning, unless it returns PAGED_SPARSE_ARRAY_GET_OK. ]*/
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_in_a_page_that_is_not_allocated_releases_the_lock_of_the_page_guard_and_returns_NOT_ALLOCATED)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
     uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
     uint32_t* item = NULL;
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(TEST_PAGE_LOCK(psa, page_index)));
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(TEST_PAGE_LOCK(psa, page_index)));
 
     //act
     PAGED_SPARSE_ARRAY_GET_RESULT result = THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, TEST_INDEX_IN_FIRST_PAGE, &item);
@@ -1080,22 +977,24 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_in_a_page_that_is_not_allocated
     ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED, result);
     ASSERT_IS_NULL(item);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, 0, TEST_USE_COUNT(psa, page_index));
 
     //clean
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_071: [ If THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) returns false, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_in_a_page_that_is_being_freed_returns_NOT_ALLOCATED)
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_071: [ If page_guard->page_state is not THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_105: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall release page_guard->lock in shared mode before returning, unless it returns PAGED_SPARSE_ARRAY_GET_OK. ]*/
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_in_a_page_that_is_being_freed_releases_the_lock_of_the_page_guard_and_returns_NOT_ALLOCATED)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
     uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
     (void)test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
-    /* another call is freeing the page and did not yet set the page state to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING */
-    int64_t use_count = interlocked_exchange_64(&TEST_PAGE_GUARD(psa, page_index)->use_count, THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING);
+    /* another call is freeing the page */
+    (void)interlocked_exchange(&TEST_PAGE_GUARD(psa, page_index)->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING);
     uint32_t* item = NULL;
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(TEST_PAGE_LOCK(psa, page_index)));
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(TEST_PAGE_LOCK(psa, page_index)));
 
     //act
     PAGED_SPARSE_ARRAY_GET_RESULT result = THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, TEST_INDEX_IN_FIRST_PAGE, &item);
@@ -1104,22 +1003,24 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_in_a_page_that_is_being_freed_r
     ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED, result);
     ASSERT_IS_NULL(item);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING, TEST_USE_COUNT(psa, page_index));
 
     //clean
-    (void)interlocked_exchange_64(&TEST_PAGE_GUARD(psa, page_index)->use_count, use_count);
+    (void)interlocked_exchange(&TEST_PAGE_GUARD(psa, page_index)->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED);
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_073: [ If PAGED_SPARSE_ARRAY_GET(T) fails, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall return the result of PAGED_SPARSE_ARRAY_GET(T). ]*/
-TEST_FUNCTION(when_PAGED_SPARSE_ARRAY_GET_fails_then_THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_returns_its_result)
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_072: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall call PAGED_SPARSE_ARRAY_GET(T) with paged_sparse_array->paged_sparse_array and index to get the slot of the element. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_074: [ If the state of the slot is not THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_105: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall release page_guard->lock in shared mode before returning, unless it returns PAGED_SPARSE_ARRAY_GET_OK. ]*/
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_of_an_element_that_is_not_allocated_in_an_allocated_page_releases_the_lock_of_the_page_guard_and_returns_NOT_ALLOCATED)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
     uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
     (void)test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
-    test_release_in_wrapped_array(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE);
     uint32_t* item = NULL;
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(TEST_PAGE_LOCK(psa, page_index)));
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(TEST_PAGE_LOCK(psa, page_index)));
 
     //act
     PAGED_SPARSE_ARRAY_GET_RESULT result = THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE, &item);
@@ -1128,63 +1029,16 @@ TEST_FUNCTION(when_PAGED_SPARSE_ARRAY_GET_fails_then_THREAD_SAFE_PAGED_SPARSE_AR
     ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED, result);
     ASSERT_IS_NULL(item);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
-
-    //clean
-    test_allocate_in_wrapped_array(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE);
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_074: [ If the state of the slot is not THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_of_an_element_that_is_not_allocated_in_an_allocated_page_returns_NOT_ALLOCATED)
-{
-    //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    (void)test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
-    uint32_t* item = NULL;
-
-    //act
-    PAGED_SPARSE_ARRAY_GET_RESULT result = THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, TEST_OTHER_INDEX_IN_FIRST_PAGE, &item);
-
-    //assert
-    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED, result);
-    ASSERT_IS_NULL(item);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
 
     //clean
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_074: [ If the state of the slot is not THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall return PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_of_an_element_that_is_being_released_returns_NOT_ALLOCATED)
-{
-    //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    (void)test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
-    (void)interlocked_exchange(&TEST_SLOT(psa, TEST_INDEX_IN_FIRST_PAGE)->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING);
-    uint32_t* item = NULL;
-
-    //act
-    PAGED_SPARSE_ARRAY_GET_RESULT result = THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, TEST_INDEX_IN_FIRST_PAGE, &item);
-
-    //assert
-    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED, result);
-    ASSERT_IS_NULL(item);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
-
-    //clean
-    (void)interlocked_exchange(&TEST_SLOT(psa, TEST_INDEX_IN_FIRST_PAGE)->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED);
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_072: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall call PAGED_SPARSE_ARRAY_GET(T) with the paged sparse array and index to get the slot of the element. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_104: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall acquire page_guard->lock in shared mode, where page_guard is the page guard of the page with index index / page_size. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_072: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall call PAGED_SPARSE_ARRAY_GET(T) with paged_sparse_array->paged_sparse_array and index to get the slot of the element. ]*/
 /* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_075: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall store a pointer to the item of the slot in item and return PAGED_SPARSE_ARRAY_GET_OK. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_076: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) with ended_use_count 1 before returning, also when THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) returns false. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_of_an_allocated_element_succeeds_without_acquiring_any_lock)
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_105: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T) shall release page_guard->lock in shared mode before returning, unless it returns PAGED_SPARSE_ARRAY_GET_OK. ]*/
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_of_an_allocated_element_succeeds_and_keeps_holding_the_lock_of_the_page_guard)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
@@ -1192,6 +1046,7 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_of_an_allocated_element_succeed
     uint32_t* allocated = test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
     *allocated = TEST_ITEM_VALUE;
     uint32_t* item = NULL;
+    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_shared(TEST_PAGE_LOCK(psa, page_index)));
 
     //act
     PAGED_SPARSE_ARRAY_GET_RESULT result = THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, TEST_INDEX_IN_FIRST_PAGE, &item);
@@ -1201,178 +1056,72 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_of_an_allocated_element_succeed
     ASSERT_ARE_EQUAL(void_ptr, allocated, item);
     ASSERT_ARE_EQUAL(uint32_t, TEST_ITEM_VALUE, *item);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
 
     //clean
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(uint32_t)(psa, TEST_INDEX_IN_FIRST_PAGE);
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/*THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T)*/
+/*THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T)*/
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_015: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) shall increment the use count of the page guard using interlocked operations. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_017: [ If the page state of the page guard is not THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) shall return false. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE_of_a_page_that_is_not_allocated_returns_false)
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_106: [ If paged_sparse_array is NULL, THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T) shall return. ]*/
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET_with_NULL_paged_sparse_array_returns)
 {
     //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
 
     //act
-    bool result = TEST_BEGIN_PAGE_USE(TEST_ARRAY(psa), page_index);
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(uint32_t)(NULL, TEST_INDEX_IN_FIRST_PAGE);
 
     //assert
-    ASSERT_IS_FALSE(result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
-
-    //clean
-    TEST_END_PAGE_USE(TEST_ARRAY(psa), page_index, 1);
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_016: [ If the use count is greater than or equal to THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING, THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) shall return false. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE_of_a_page_that_is_being_freed_returns_false)
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_107: [ If index is greater than or equal to max_size, THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T) shall return. ]*/
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET_with_index_equal_to_max_size_returns)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, TEST_ALLOCATE_PAGE(TEST_ARRAY(psa), page_index));
-    /* another call is freeing the page and did not yet set the page state to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING */
-    (void)interlocked_exchange_64(&TEST_PAGE_GUARD(psa, page_index)->use_count, THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING);
+
+    //act
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(uint32_t)(psa, TEST_MAX_SIZE);
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //clean
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
+}
+
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_108: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T) shall release page_guard->lock in shared mode, where page_guard is the page guard of the page with index index / page_size. ]*/
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET_releases_the_lock_of_the_page_guard_that_GET_holds)
+{
+    //arrange
+    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
+    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_THIRD_PAGE);
+    (void)test_allocate(psa, TEST_INDEX_IN_THIRD_PAGE);
+    uint32_t* item = NULL;
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(uint32_t)(psa, TEST_INDEX_IN_THIRD_PAGE, &item));
     umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(srw_lock_ll_release_shared(TEST_PAGE_LOCK(psa, page_index)));
 
     //act
-    bool result = TEST_BEGIN_PAGE_USE(TEST_ARRAY(psa), page_index);
-
-    //assert
-    ASSERT_IS_FALSE(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING + 1, TEST_USE_COUNT(psa, page_index));
-
-    //clean
-    (void)interlocked_exchange_64(&TEST_PAGE_GUARD(psa, page_index)->use_count, 0);
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_017: [ If the page state of the page guard is not THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) shall return false. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE_of_a_page_whose_page_state_is_still_FREEING_returns_false)
-{
-    //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    /* another call freed the page and subtracted THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING, but did not yet set the page state to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED */
-    (void)interlocked_exchange(&TEST_PAGE_GUARD(psa, page_index)->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING);
-
-    //act
-    bool result = TEST_BEGIN_PAGE_USE(TEST_ARRAY(psa), page_index);
-
-    //assert
-    ASSERT_IS_FALSE(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
-
-    //clean
-    TEST_END_PAGE_USE(TEST_ARRAY(psa), page_index, 1);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    (void)interlocked_exchange(&TEST_PAGE_GUARD(psa, page_index)->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED);
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_018: [ Otherwise, THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE(T) shall return true. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_BEGIN_PAGE_USE_of_an_allocated_page_returns_true)
-{
-    //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    (void)test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
-
-    //act
-    bool result = TEST_BEGIN_PAGE_USE(TEST_ARRAY(psa), page_index);
-
-    //assert
-    ASSERT_IS_TRUE(result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, 2, TEST_USE_COUNT(psa, page_index));
-
-    //clean
-    TEST_END_PAGE_USE(TEST_ARRAY(psa), page_index, 1);
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/*THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T)*/
-
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_019: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) shall subtract ended_use_count from the use count of the page guard using interlocked operations. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE_of_a_page_that_is_still_used_does_not_free_the_page)
-{
-    //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    (void)test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
-    ASSERT_IS_TRUE(TEST_BEGIN_PAGE_USE(TEST_ARRAY(psa), page_index));
-
-    //act
-    TEST_END_PAGE_USE(TEST_ARRAY(psa), page_index, 1);
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(uint32_t)(psa, TEST_INDEX_IN_THIRD_PAGE);
 
     //assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
-    ASSERT_IS_NOT_NULL(TEST_WRAPPED_PAGE(psa, page_index));
+    /* no call holds the lock anymore */
+    ASSERT_IS_TRUE(real_srw_lock_ll_try_acquire_exclusive(TEST_PAGE_LOCK(psa, page_index)) == SRW_LOCK_LL_TRY_ACQUIRE_OK);
 
     //clean
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_019: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) shall subtract ended_use_count from the use count of the page guard using interlocked operations. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE_of_the_last_use_of_a_page_that_is_not_allocated_does_not_free_the_page)
-{
-    //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    ASSERT_IS_FALSE(TEST_BEGIN_PAGE_USE(TEST_ARRAY(psa), page_index));
-
-    //act
-    TEST_END_PAGE_USE(TEST_ARRAY(psa), page_index, 1);
-
-    //assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, 0, TEST_USE_COUNT(psa, page_index));
-
-    //clean
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
-}
-
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_020: [ If the use count became 0 and the page state of the page guard is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE(T) shall call THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T). ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_END_PAGE_USE_of_the_last_use_of_an_allocated_page_frees_the_page)
-{
-    //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
-    uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, TEST_ALLOCATE_PAGE(TEST_ARRAY(psa), page_index));
-    void* page = TEST_WRAPPED_PAGE(psa, page_index);
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(TEST_PAGE_LOCK(psa, page_index)));
-    STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(TEST_PAGE_LOCK(psa, page_index)));
-    STRICT_EXPECTED_CALL(free(page));
-    STRICT_EXPECTED_CALL(wake_by_address_all(&TEST_PAGE_GUARD(psa, page_index)->page_state));
-
-    //act
-    TEST_END_PAGE_USE(TEST_ARRAY(psa), page_index, 1);
-
-    //assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_IS_NULL(TEST_WRAPPED_PAGE(psa, page_index));
-    ASSERT_ARE_EQUAL(int64_t, 0, TEST_USE_COUNT(psa, page_index));
-    ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED, TEST_PAGE_STATE(psa, page_index));
-
-    //clean
+    real_srw_lock_ll_release_exclusive(TEST_PAGE_LOCK(psa, page_index));
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
 /*THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T)*/
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_021: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall acquire the lock of the page guard in exclusive mode. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_022: [ If the page state of the page guard is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_025: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall release the lock of the page guard. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_021: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall acquire page_guard->lock in exclusive mode. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_022: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED and page_guard->element_count is 0: ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_025: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall release page_guard->lock. ]*/
 TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE_of_a_page_that_another_call_freed_does_nothing)
 {
     //arrange
@@ -1386,21 +1135,20 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE_of_a_page_that_anothe
 
     //assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, 0, TEST_USE_COUNT(psa, page_index));
+    ASSERT_ARE_EQUAL(int64_t, 0, TEST_ELEMENT_COUNT(psa, page_index));
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED, TEST_PAGE_STATE(psa, page_index));
 
     //clean
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_022: [ If the page state of the page guard is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED: ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_022: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED and page_guard->element_count is 0: ]*/
 TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE_of_a_page_that_another_call_is_freeing_does_nothing)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
     uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
     /* another call is freeing the page */
-    (void)interlocked_exchange_64(&TEST_PAGE_GUARD(psa, page_index)->use_count, THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING);
     (void)interlocked_exchange(&TEST_PAGE_GUARD(psa, page_index)->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING);
     STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(TEST_PAGE_LOCK(psa, page_index)));
     STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(TEST_PAGE_LOCK(psa, page_index)));
@@ -1410,17 +1158,15 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE_of_a_page_that_anothe
 
     //assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_ARE_EQUAL(int64_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING, TEST_USE_COUNT(psa, page_index));
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING, TEST_PAGE_STATE(psa, page_index));
 
     //clean
-    (void)interlocked_exchange_64(&TEST_PAGE_GUARD(psa, page_index)->use_count, 0);
     (void)interlocked_exchange(&TEST_PAGE_GUARD(psa, page_index)->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED);
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_023: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall change the use count of the page guard from 0 to THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING using interlocked_compare_exchange_64. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE_of_a_page_that_another_call_began_to_use_does_not_free_the_page)
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_022: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED and page_guard->element_count is 0: ]*/
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE_of_a_page_in_which_another_call_allocated_an_element_does_not_free_the_page)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
@@ -1435,35 +1181,33 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE_of_a_page_that_anothe
     //assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NOT_NULL(TEST_WRAPPED_PAGE(psa, page_index));
-    ASSERT_ARE_EQUAL(int64_t, 1, TEST_USE_COUNT(psa, page_index));
+    ASSERT_ARE_EQUAL(int64_t, 1, TEST_ELEMENT_COUNT(psa, page_index));
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED, TEST_PAGE_STATE(psa, page_index));
 
     //clean
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(uint32_t)(&psa, NULL);
 }
 
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_023: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall change the use count of the page guard from 0 to THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING using interlocked_compare_exchange_64. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_024: [ If the use count was 0, THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall set the page state of the page guard to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING using interlocked operations. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_025: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall release the lock of the page guard. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_026: [ If the use count was changed to THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING: ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_027: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall call PAGED_SPARSE_ARRAY_RELEASE(T) for each index of the page. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_028: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall subtract THREAD_SAFE_PAGED_SPARSE_ARRAY_USE_COUNT_FREEING from the use count of the page guard using interlocked operations. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_077: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall set the page state of the page guard to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED using interlocked operations. ]*/
-/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_029: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall call wake_by_address_all for the page state of the page guard. ]*/
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE_of_an_unused_allocated_page_frees_the_page_without_holding_the_lock_of_the_page_guard)
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_022: [ If page_guard->page_state is THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED and page_guard->element_count is 0: ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_024: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall set page_guard->page_state to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_025: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall release page_guard->lock. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_026: [ If page_guard->page_state was set to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING: ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_027: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall call PAGED_SPARSE_ARRAY_RELEASE(T) on array->paged_sparse_array for each index of the page. ]*/
+/* Tests_SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_077: [ THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T) shall call InterlockedHL_SetAndWakeAll to set page_guard->page_state to THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED and wake the calls waiting for it to change. ]*/
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE_of_an_allocated_page_without_elements_frees_the_page_without_holding_the_lock_of_the_page_guard)
 {
     //arrange
     THREAD_SAFE_PAGED_SPARSE_ARRAY(uint32_t) psa = test_create(NULL);
     uint64_t page_index = TEST_PAGE_INDEX(TEST_INDEX_IN_FIRST_PAGE);
-    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, TEST_ALLOCATE_PAGE(TEST_ARRAY(psa), page_index));
-    /* the use that allocated the page ended */
-    (void)interlocked_decrement_64(&TEST_PAGE_GUARD(psa, page_index)->use_count);
+    (void)test_allocate(psa, TEST_INDEX_IN_FIRST_PAGE);
+    /* the last element of the page was released */
+    (void)interlocked_exchange(&TEST_SLOT(psa, TEST_INDEX_IN_FIRST_PAGE)->state, THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED);
+    (void)interlocked_exchange_64(&TEST_PAGE_GUARD(psa, page_index)->element_count, 0);
     void* page = TEST_WRAPPED_PAGE(psa, page_index);
-    umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(srw_lock_ll_acquire_exclusive(TEST_PAGE_LOCK(psa, page_index)));
     STRICT_EXPECTED_CALL(srw_lock_ll_release_exclusive(TEST_PAGE_LOCK(psa, page_index)));
     STRICT_EXPECTED_CALL(free(page));
-    STRICT_EXPECTED_CALL(wake_by_address_all(&TEST_PAGE_GUARD(psa, page_index)->page_state));
+    STRICT_EXPECTED_CALL(InterlockedHL_SetAndWakeAll(&TEST_PAGE_GUARD(psa, page_index)->page_state, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED));
 
     //act
     TEST_TRY_FREE_PAGE(TEST_ARRAY(psa), page_index);
@@ -1471,7 +1215,7 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE_of_an_unused_allocate
     //assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_NULL(TEST_WRAPPED_PAGE(psa, page_index));
-    ASSERT_ARE_EQUAL(int64_t, 0, TEST_USE_COUNT(psa, page_index));
+    ASSERT_ARE_EQUAL(int64_t, 0, TEST_ELEMENT_COUNT(psa, page_index));
     ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED, TEST_PAGE_STATE(psa, page_index));
 
     //clean

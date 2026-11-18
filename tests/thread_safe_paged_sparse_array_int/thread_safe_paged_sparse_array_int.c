@@ -4,9 +4,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <inttypes.h>
+#include <string.h>
 
 #include "macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
+
+#include "c_logging/logger.h"
 
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
@@ -32,6 +35,7 @@ THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DEFINE(TEST_ELEMENT);
 /*RING_ELEMENT - element type used by the producer/consumer ring buffer test*/
 typedef struct RING_ELEMENT_TAG
 {
+    volatile_atomic int64_t published_sequence_plus_one; /*0 until the producer wrote the element*/
     int64_t sequence;
 } RING_ELEMENT;
 
@@ -44,16 +48,26 @@ THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DEFINE(RING_ELEMENT);
 
 TEST_DEFINE_ENUM_TYPE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_RESULT_VALUES)
 TEST_DEFINE_ENUM_TYPE(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_RESULT_VALUES)
+TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES)
 
-/*once all the elements are released and all the calls returned, every page is freed and no page is used*/
+/*
+ * once all the elements are released and all the calls returned, every page is freed. This is checked with the API only: a page that was freed
+ * is allocated again with all the bytes of its items set to 0, while a page that was not freed still has the items that the test wrote
+ */
 #define DEFINE_ASSERT_ALL_PAGES_ARE_FREED(T)                                                                                                                               \
-static void MU_C2(assert_all_pages_are_freed_, T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T) psa)                                                                                   \
+static void MU_C2(assert_all_pages_are_freed_, T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T) psa, uint64_t max_size)                                                                \
 {                                                                                                                                                                          \
-    for (uint64_t page_index = 0; page_index < psa->wrapped_array->page_count; page_index++)                                                                               \
+    T zero_item;                                                                                                                                                           \
+    (void)memset(&zero_item, 0, sizeof(zero_item));                                                                                                                        \
+    for (uint64_t index = 0; index < max_size; index++)                                                                                                                    \
     {                                                                                                                                                                      \
-        ASSERT_IS_NULL(psa->wrapped_array->pages[page_index], "page_index=%" PRIu64 "", page_index);                                                                       \
-        ASSERT_ARE_EQUAL(int32_t, THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED, interlocked_add((volatile_atomic int32_t*)&psa->page_guards[page_index].page_state, 0), "page_index=%" PRIu64 "", page_index); \
-        ASSERT_ARE_EQUAL(int64_t, 0, interlocked_add_64((volatile_atomic int64_t*)&psa->page_guards[page_index].use_count, 0), "page_index=%" PRIu64 "", page_index);      \
+        T* item;                                                                                                                                                           \
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T)(psa, index, &item), "index=%" PRIu64 "", index); \
+        ASSERT_ARE_EQUAL(int, 0, memcmp(item, &zero_item, sizeof(zero_item)), "index=%" PRIu64 "", index);                                                                 \
+    }                                                                                                                                                                      \
+    for (uint64_t index = 0; index < max_size; index++)                                                                                                                    \
+    {                                                                                                                                                                      \
+        THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)(psa, index);                                                                                                             \
     }                                                                                                                                                                      \
 }
 
@@ -124,18 +138,26 @@ static void concurrent_release_held_element(CONCURRENT_TEST_CONTEXT* test_contex
     {
         TEST_ELEMENT* element_from_get = NULL;
         PAGED_SPARSE_ARRAY_GET_RESULT get_result = THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(test_context->psa, held->index, &element_from_get);
-        if (
-            (get_result != PAGED_SPARSE_ARRAY_GET_OK) ||
-            (element_from_get != held->element)
-            )
+        if (get_result != PAGED_SPARSE_ARRAY_GET_OK)
         {
-            LogError("thread_id=%" PRId32 ": GET of a held element did not return the allocated pointer, index=%" PRIu64 ", page_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM ", element_from_get=%p, allocated element=%p",
-                thread_id, held->index, held->index / CONCURRENT_PAGE_SIZE, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, get_result), (void*)element_from_get, (void*)held->element);
+            LogError("thread_id=%" PRId32 ": GET of a held element failed, index=%" PRIu64 ", page_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM ", allocated element=%p",
+                thread_id, held->index, held->index / CONCURRENT_PAGE_SIZE, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, get_result), (void*)held->element);
             concurrent_record_failure(test_context);
         }
         else
         {
-            /* do nothing, the element is as expected */
+            if (element_from_get != held->element)
+            {
+                LogError("thread_id=%" PRId32 ": GET of a held element did not return the allocated pointer, index=%" PRIu64 ", page_index=%" PRIu64 ", element_from_get=%p, allocated element=%p",
+                    thread_id, held->index, held->index / CONCURRENT_PAGE_SIZE, (void*)element_from_get, (void*)held->element);
+                concurrent_record_failure(test_context);
+            }
+            else
+            {
+                /* do nothing, the element is as expected */
+            }
+            /* END_GET is called before RELEASE: no other call of the array is made while GET holds the page */
+            THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(TEST_ELEMENT)(test_context->psa, held->index);
         }
     }
 
@@ -220,18 +242,22 @@ static int concurrent_chaos_thread(void* arg)
         uint64_t other_index = test_next_random(&random_state) % CONCURRENT_MAX_SIZE;
         TEST_ELEMENT* other_element;
         PAGED_SPARSE_ARRAY_GET_RESULT get_result = THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(test_context->psa, other_index, &other_element);
-        if (
-            (get_result != PAGED_SPARSE_ARRAY_GET_OK) &&
-            (get_result != PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED)
-            )
+        if (get_result == PAGED_SPARSE_ARRAY_GET_OK)
         {
-            LogError("thread_id=%" PRId32 ": GET returned an unexpected result, operation=%" PRIu32 ", index=%" PRIu64 ", page_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM "",
-                thread_id, operation, other_index, other_index / CONCURRENT_PAGE_SIZE, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, get_result));
-            concurrent_record_failure(test_context);
+            THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(TEST_ELEMENT)(test_context->psa, other_index);
         }
         else
         {
-            /* do nothing, both results are possible */
+            if (get_result != PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED)
+            {
+                LogError("thread_id=%" PRId32 ": GET returned an unexpected result, operation=%" PRIu32 ", index=%" PRIu64 ", page_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM "",
+                    thread_id, operation, other_index, other_index / CONCURRENT_PAGE_SIZE, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, get_result));
+                concurrent_record_failure(test_context);
+            }
+            else
+            {
+                /* do nothing, the element is not allocated */
+            }
         }
     }
 
@@ -246,14 +272,19 @@ static int concurrent_chaos_thread(void* arg)
 
 /*
  * Producer/consumer ring buffer over a thread safe paged sparse array:
- * producers allocate sequence % RING_MAX_SIZE (at most RING_MAX_SIZE sequences ahead of the tail), write the sequence in the element
- * and then publish it, a single consumer gets and releases the elements in sequence order.
- * The page that the tail leaves is freed when its last element is released, unless producers already allocated elements of the next lap in it.
+ * producers allocate sequence % RING_MAX_SIZE (less than RING_WINDOW sequences ahead of the tail), write the sequence in the element
+ * and then publish it in the element. A single consumer polls the element of the tail sequence with GET until it is published, the way
+ * the EBS writer polls the slot of its head sequence, and releases the elements in sequence order.
+ * The published sequence of an element that the producer did not write yet is 0: the items of a new page are set to 0, and the item dispose
+ * function sets it back to 0 when the element is released, because an element that is allocated again keeps its item.
+ * RING_WINDOW keeps a page between the producers and the tail, so the page that the tail leaves has no element of the next lap: it is freed
+ * when its last element is released and it is allocated again in the next lap.
  */
 #define RING_PRODUCER_COUNT 4
 #define RING_TOTAL_SEQUENCES 200000
 #define RING_MAX_SIZE 2048
 #define RING_PAGE_SIZE 256
+#define RING_WINDOW (RING_MAX_SIZE - RING_PAGE_SIZE)
 
 typedef struct RING_TEST_CONTEXT_TAG
 {
@@ -261,9 +292,12 @@ typedef struct RING_TEST_CONTEXT_TAG
     volatile_atomic int64_t next_sequence;
     volatile_atomic int64_t tail;
     volatile_atomic int32_t failures; /*once not 0, the producers and the consumer stop instead of waiting for each other*/
-    /*the contents of a new element are not initialized, so the producer publishes the sequence of each index here after writing the element*/
-    volatile_atomic int64_t published_sequence_plus_one[RING_MAX_SIZE];
 } RING_TEST_CONTEXT;
+
+static void ring_element_dispose(RING_ELEMENT* element)
+{
+    (void)interlocked_exchange_64(&element->published_sequence_plus_one, 0);
+}
 
 static bool ring_has_failed(RING_TEST_CONTEXT* test_context)
 {
@@ -281,7 +315,7 @@ static int ring_producer_thread(void* arg)
     {
         /* wait until the sequence is within the window */
         while (
-            (sequence - interlocked_add_64(&test_context->tail, 0) >= RING_MAX_SIZE) &&
+            (sequence - interlocked_add_64(&test_context->tail, 0) >= RING_WINDOW) &&
             (!ring_has_failed(test_context))
             )
         {
@@ -306,7 +340,7 @@ static int ring_producer_thread(void* arg)
             else
             {
                 element->sequence = sequence;
-                (void)interlocked_exchange_64(&test_context->published_sequence_plus_one[index], sequence + 1);
+                (void)interlocked_exchange_64(&element->published_sequence_plus_one, sequence + 1);
             }
         }
     }
@@ -316,7 +350,7 @@ static int ring_producer_thread(void* arg)
 static void run_ring_buffer_test(void)
 {
     //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(RING_ELEMENT) psa = THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(RING_ELEMENT)(RING_MAX_SIZE, RING_PAGE_SIZE, NULL);
+    THREAD_SAFE_PAGED_SPARSE_ARRAY(RING_ELEMENT) psa = THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(RING_ELEMENT)(RING_MAX_SIZE, RING_PAGE_SIZE, ring_element_dispose);
     ASSERT_IS_NOT_NULL(psa);
 
     RING_TEST_CONTEXT* test_context = malloc(sizeof(RING_TEST_CONTEXT));
@@ -325,10 +359,6 @@ static void run_ring_buffer_test(void)
     (void)interlocked_exchange_64(&test_context->next_sequence, 0);
     (void)interlocked_exchange_64(&test_context->tail, 0);
     (void)interlocked_exchange(&test_context->failures, 0);
-    for (uint32_t i = 0; i < RING_MAX_SIZE; i++)
-    {
-        (void)interlocked_exchange_64(&test_context->published_sequence_plus_one[i], 0);
-    }
 
     THREAD_HANDLE producers[RING_PRODUCER_COUNT];
     uint32_t producers_created = 0;
@@ -352,38 +382,68 @@ static void run_ring_buffer_test(void)
     for (int64_t tail = 0; (tail < RING_TOTAL_SEQUENCES) && (!ring_has_failed(test_context)); tail++)
     {
         uint64_t index = (uint64_t)tail % RING_MAX_SIZE;
+        bool published = false;
 
-        /* wait until a producer allocated the element and published this sequence */
+        /* poll the element of the tail sequence until its producer allocated it and published this sequence */
         while (
-            (!ring_has_failed(test_context)) &&
-            (interlocked_add_64(&test_context->published_sequence_plus_one[index], 0) != tail + 1)
+            (!published) &&
+            (!ring_has_failed(test_context))
             )
-        {
-            ThreadAPI_Sleep(0);
-        }
-
-        if (ring_has_failed(test_context))
-        {
-            /* do nothing, the loop ends */
-        }
-        else
         {
             RING_ELEMENT* element = NULL;
             PAGED_SPARSE_ARRAY_GET_RESULT get_result = THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(RING_ELEMENT)(psa, index, &element);
-            if (
-                (get_result != PAGED_SPARSE_ARRAY_GET_OK) ||
-                (element->sequence != tail)
-                )
+            if (get_result == PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED)
             {
-                LogError("consumer GET did not return the published element, tail=%" PRId64 ", index=%" PRIu64 ", page_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM ", element sequence=%" PRId64 "",
-                    tail, index, index / RING_PAGE_SIZE, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, get_result), (element == NULL) ? -1 : element->sequence);
-                (void)interlocked_increment(&test_context->failures);
+                /* the producer did not allocate the element yet */
+                ThreadAPI_Sleep(0);
             }
             else
             {
-                THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(RING_ELEMENT)(psa, index);
-                (void)interlocked_exchange_64(&test_context->tail, tail + 1);
+                if (get_result != PAGED_SPARSE_ARRAY_GET_OK)
+                {
+                    LogError("consumer GET failed, tail=%" PRId64 ", index=%" PRIu64 ", page_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM "",
+                        tail, index, index / RING_PAGE_SIZE, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, get_result));
+                    (void)interlocked_increment(&test_context->failures);
+                }
+                else
+                {
+                    int64_t published_sequence_plus_one = interlocked_add_64(&element->published_sequence_plus_one, 0);
+                    int64_t element_sequence = element->sequence;
+                    /* END_GET is called before RELEASE: no other call of the array is made while GET holds the page */
+                    THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(RING_ELEMENT)(psa, index);
+                    if (published_sequence_plus_one == 0)
+                    {
+                        /* the producer allocated the element but did not publish it yet */
+                        ThreadAPI_Sleep(0);
+                    }
+                    else
+                    {
+                        if (
+                            (published_sequence_plus_one != tail + 1) ||
+                            (element_sequence != tail)
+                            )
+                        {
+                            LogError("consumer got an element that is not the one of the tail sequence, tail=%" PRId64 ", index=%" PRIu64 ", page_index=%" PRIu64 ", published_sequence_plus_one=%" PRId64 ", element sequence=%" PRId64 "",
+                                tail, index, index / RING_PAGE_SIZE, published_sequence_plus_one, element_sequence);
+                            (void)interlocked_increment(&test_context->failures);
+                        }
+                        else
+                        {
+                            published = true;
+                        }
+                    }
+                }
             }
+        }
+
+        if (!published)
+        {
+            /* do nothing, the test failed and the loop ends */
+        }
+        else
+        {
+            THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(RING_ELEMENT)(psa, index);
+            (void)interlocked_exchange_64(&test_context->tail, tail + 1);
         }
     }
 
@@ -411,7 +471,7 @@ static void run_ring_buffer_test(void)
     ASSERT_ARE_EQUAL(int32_t, 0, interlocked_add(&test_context->failures, 0));
     ASSERT_ARE_EQUAL(int64_t, RING_TOTAL_SEQUENCES, interlocked_add_64(&test_context->tail, 0));
     /* every element was released, so every page was freed when its last element was released */
-    assert_all_pages_are_freed_RING_ELEMENT(psa);
+    assert_all_pages_are_freed_RING_ELEMENT(psa, RING_MAX_SIZE);
 
     //cleanup
     free(test_context);
@@ -500,7 +560,7 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_chaos_allocate_release_and_get_from
     ASSERT_IS_TRUE(interlocked_add_64(&test_context->successful_allocations, 0) > 0);
     ASSERT_ARE_EQUAL(int64_t, interlocked_add_64(&test_context->successful_allocations, 0), interlocked_add_64(&g_dispose_count, 0));
     /* every element was released, so every page was freed when its last element was released */
-    assert_all_pages_are_freed_TEST_ELEMENT(psa);
+    assert_all_pages_are_freed_TEST_ELEMENT(psa, CONCURRENT_MAX_SIZE);
 
     //cleanup
     free(test_context);
@@ -510,6 +570,63 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_chaos_allocate_release_and_get_from
 TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ring_buffer_with_multiple_producers_and_one_consumer)
 {
     run_ring_buffer_test();
+}
+
+/*
+ * A call that got an element with GET holds the page of the element until END_GET: the RELEASE of the last element of the page
+ * by another thread does not free the page (and does not return) before END_GET.
+ */
+#define HELD_PAGE_INDEX 3
+#define HELD_PAGE_RELEASE_WAIT_MS 200
+
+typedef struct HELD_PAGE_RELEASE_CONTEXT_TAG
+{
+    const THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(TEST_ELEMENT)* psa;
+    volatile_atomic int32_t release_returned;
+} HELD_PAGE_RELEASE_CONTEXT;
+
+static int held_page_release_thread(void* arg)
+{
+    HELD_PAGE_RELEASE_CONTEXT* release_context = arg;
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(release_context->psa, HELD_PAGE_INDEX);
+    (void)interlocked_exchange(&release_context->release_returned, 1);
+    return 0;
+}
+
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_of_the_last_element_of_a_page_does_not_free_the_page_before_END_GET)
+{
+    //arrange
+    THREAD_SAFE_PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(CONCURRENT_MAX_SIZE, CONCURRENT_PAGE_SIZE, NULL);
+    ASSERT_IS_NOT_NULL(psa);
+    TEST_ELEMENT* allocated;
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, HELD_PAGE_INDEX, &allocated));
+    allocated->value = 42;
+    TEST_ELEMENT* element;
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, HELD_PAGE_INDEX, &element));
+    HELD_PAGE_RELEASE_CONTEXT release_context;
+    release_context.psa = psa;
+    (void)interlocked_exchange(&release_context.release_returned, 0);
+    THREAD_HANDLE release_thread;
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&release_thread, held_page_release_thread, &release_context));
+
+    //act
+    ThreadAPI_Sleep(HELD_PAGE_RELEASE_WAIT_MS);
+    int32_t release_returned_before_end_get = interlocked_add(&release_context.release_returned, 0);
+    int64_t value_before_end_get = element->value;
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(TEST_ELEMENT)(psa, HELD_PAGE_INDEX);
+    int thread_result;
+    THREADAPI_RESULT join_result = ThreadAPI_Join(release_thread, &thread_result);
+
+    //assert
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, join_result);
+    ASSERT_ARE_EQUAL(int, 0, thread_result);
+    ASSERT_ARE_EQUAL(int32_t, 0, release_returned_before_end_get);
+    ASSERT_ARE_EQUAL(int64_t, 42, value_before_end_get);
+    ASSERT_ARE_EQUAL(int32_t, 1, interlocked_add(&release_context.release_returned, 0));
+    assert_all_pages_are_freed_TEST_ELEMENT(psa, CONCURRENT_MAX_SIZE);
+
+    //cleanup
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(TEST_ELEMENT)(&psa, NULL);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
