@@ -20,23 +20,28 @@
 
 #include "c_util/thread_safe_paged_sparse_array.h"
 
-typedef struct TEST_ELEMENT_TAG
+/*TEST_ITEM - the items of the arrays of THANDLE(TEST_ITEM), they are not changed after they are created*/
+typedef struct TEST_ITEM_TAG
 {
+    uint64_t index;
     int64_t value;
-} TEST_ELEMENT;
+} TEST_ITEM;
 
-THREAD_SAFE_PAGED_SPARSE_ARRAY_DEFINE_STRUCT_TYPE(TEST_ELEMENT);
-THANDLE_TYPE_DECLARE(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(TEST_ELEMENT));
-THANDLE_TYPE_DEFINE(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(TEST_ELEMENT));
+THANDLE_TYPE_DECLARE(TEST_ITEM);
+THANDLE_TYPE_DEFINE(TEST_ITEM);
 
-THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DECLARE(TEST_ELEMENT);
-THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DEFINE(TEST_ELEMENT);
+THREAD_SAFE_PAGED_SPARSE_ARRAY_DEFINE_STRUCT_TYPE(THANDLE(TEST_ITEM));
+THANDLE_TYPE_DECLARE(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(THANDLE(TEST_ITEM)));
+THANDLE_TYPE_DEFINE(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(THANDLE(TEST_ITEM)));
 
-/*RING_ELEMENT - element type used by the producer/consumer ring buffer test*/
+THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DECLARE(THANDLE(TEST_ITEM));
+THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DEFINE(THANDLE(TEST_ITEM));
+
+/*RING_ELEMENT - element type used by the producer/consumer ring buffer test, it is copied by value*/
 typedef struct RING_ELEMENT_TAG
 {
-    volatile_atomic int64_t published_sequence_plus_one; /*0 until the producer wrote the element*/
     int64_t sequence;
+    int64_t sequence_check; /*~sequence, an ACQUIRE_ITEM that copies a partly written element gets a sequence_check that does not match*/
 } RING_ELEMENT;
 
 THREAD_SAFE_PAGED_SPARSE_ARRAY_DEFINE_STRUCT_TYPE(RING_ELEMENT);
@@ -46,33 +51,97 @@ THANDLE_TYPE_DEFINE(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(RING_ELEMENT));
 THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DECLARE(RING_ELEMENT);
 THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DEFINE(RING_ELEMENT);
 
+/*SLOW_COPY_ELEMENT - element type used by the test where RELEASE waits for an ACQUIRE_ITEM that copies the item*/
+typedef struct SLOW_COPY_ELEMENT_TAG
+{
+    int64_t value;
+} SLOW_COPY_ELEMENT;
+
+THREAD_SAFE_PAGED_SPARSE_ARRAY_DEFINE_STRUCT_TYPE(SLOW_COPY_ELEMENT);
+THANDLE_TYPE_DECLARE(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(SLOW_COPY_ELEMENT));
+THANDLE_TYPE_DEFINE(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(SLOW_COPY_ELEMENT));
+
+THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DECLARE(SLOW_COPY_ELEMENT);
+THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DEFINE(SLOW_COPY_ELEMENT);
+
 TEST_DEFINE_ENUM_TYPE(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_RESULT_VALUES)
 TEST_DEFINE_ENUM_TYPE(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_RESULT_VALUES)
 TEST_DEFINE_ENUM_TYPE(THREADAPI_RESULT, THREADAPI_RESULT_VALUES)
 
-/*
- * once all the elements are released and all the calls returned, every page is freed. This is checked with the API only: a page that was freed
- * is allocated again with all the bytes of its items set to 0, while a page that was not freed still has the items that the test wrote
- */
-#define DEFINE_ASSERT_ALL_PAGES_ARE_FREED(T)                                                                                                                               \
-static void MU_C2(assert_all_pages_are_freed_, T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T) psa, uint64_t max_size)                                                                \
-{                                                                                                                                                                          \
-    T zero_item;                                                                                                                                                           \
-    (void)memset(&zero_item, 0, sizeof(zero_item));                                                                                                                        \
-    for (uint64_t index = 0; index < max_size; index++)                                                                                                                    \
-    {                                                                                                                                                                      \
-        T* item;                                                                                                                                                           \
-        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T)(psa, index, &item), "index=%" PRIu64 "", index); \
-        ASSERT_ARE_EQUAL(int, 0, memcmp(item, &zero_item, sizeof(zero_item)), "index=%" PRIu64 "", index);                                                                 \
-    }                                                                                                                                                                      \
-    for (uint64_t index = 0; index < max_size; index++)                                                                                                                    \
-    {                                                                                                                                                                      \
-        THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)(psa, index);                                                                                                             \
-    }                                                                                                                                                                      \
+static volatile_atomic int64_t g_created_item_count;
+static volatile_atomic int64_t g_disposed_item_count;
+
+static void test_item_dispose(TEST_ITEM* item)
+{
+    (void)item;
+    (void)interlocked_increment_64(&g_disposed_item_count);
 }
 
-DEFINE_ASSERT_ALL_PAGES_ARE_FREED(TEST_ELEMENT)
-DEFINE_ASSERT_ALL_PAGES_ARE_FREED(RING_ELEMENT)
+static void reset_item_counts(void)
+{
+    (void)interlocked_exchange_64(&g_created_item_count, 0);
+    (void)interlocked_exchange_64(&g_disposed_item_count, 0);
+}
+
+/*returns a new item that the caller owns, or NULL*/
+static THANDLE(TEST_ITEM) create_item(uint64_t index, int64_t value)
+{
+    TEST_ITEM* result = THANDLE_MALLOC(TEST_ITEM)(test_item_dispose);
+    if (result != NULL)
+    {
+        result->index = index;
+        result->value = value;
+        (void)interlocked_increment_64(&g_created_item_count);
+    }
+    return result;
+}
+
+static void test_item_handle_copy(THANDLE(TEST_ITEM)* dst, THANDLE(TEST_ITEM)* src)
+{
+    THANDLE_INITIALIZE(TEST_ITEM)(dst, *src);
+}
+
+static void test_item_handle_dispose(THANDLE(TEST_ITEM)* item)
+{
+    THANDLE_ASSIGN(TEST_ITEM)(item, NULL);
+}
+
+/*allocates the element at index with a new item, the array holds the only reference to the item*/
+static PAGED_SPARSE_ARRAY_ALLOCATE_RESULT allocate_new_item(THREAD_SAFE_PAGED_SPARSE_ARRAY(THANDLE(TEST_ITEM)) psa, uint64_t index, int64_t value)
+{
+    PAGED_SPARSE_ARRAY_ALLOCATE_RESULT result;
+    THANDLE(TEST_ITEM) item = create_item(index, value);
+    if (item == NULL)
+    {
+        LogError("failure in create_item(index=%" PRIu64 ", value=%" PRId64 ")", index, value);
+        result = PAGED_SPARSE_ARRAY_ALLOCATE_ERROR;
+    }
+    else
+    {
+        result = THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(THANDLE(TEST_ITEM))(psa, index, &item);
+        THANDLE_ASSIGN(TEST_ITEM)(&item, NULL);
+    }
+    return result;
+}
+
+/*once all the elements are released, ACQUIRE_ITEM returns PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED for every index*/
+static void assert_all_items_are_released(THREAD_SAFE_PAGED_SPARSE_ARRAY(THANDLE(TEST_ITEM)) psa, uint64_t max_size)
+{
+    for (uint64_t index = 0; index < max_size; index++)
+    {
+        THANDLE(TEST_ITEM) item = NULL;
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(THANDLE(TEST_ITEM))(psa, index, &item), "index=%" PRIu64 "", index);
+    }
+}
+
+static void assert_all_ring_elements_are_released(THREAD_SAFE_PAGED_SPARSE_ARRAY(RING_ELEMENT) psa, uint64_t max_size)
+{
+    for (uint64_t index = 0; index < max_size; index++)
+    {
+        RING_ELEMENT element;
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED, THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(RING_ELEMENT)(psa, index, &element), "index=%" PRIu64 "", index);
+    }
+}
 
 /*
  * Multi-threaded tests for THREAD_SAFE_PAGED_SPARSE_ARRAY.
@@ -80,17 +149,9 @@ DEFINE_ASSERT_ALL_PAGES_ARE_FREED(RING_ELEMENT)
  */
 #define CONCURRENT_THREAD_COUNT 8
 #define CONCURRENT_OPERATIONS_PER_THREAD 20000
-#define CONCURRENT_MAX_SIZE 256
+#define CONCURRENT_MAX_SIZE 250 /*not a multiple of CONCURRENT_PAGE_SIZE, so the last page has fewer indexes than the other pages*/
 #define CONCURRENT_PAGE_SIZE 16
 #define CONCURRENT_MAX_HELD_ELEMENTS_PER_THREAD 4
-
-static volatile_atomic int64_t g_dispose_count;
-
-static void count_dispose(TEST_ELEMENT* item)
-{
-    (void)item;
-    (void)interlocked_increment_64(&g_dispose_count);
-}
 
 static uint64_t test_next_random(uint64_t* state)
 {
@@ -101,9 +162,10 @@ static uint64_t test_next_random(uint64_t* state)
 
 typedef struct CONCURRENT_TEST_CONTEXT_TAG
 {
-    const THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(TEST_ELEMENT)* psa;
+    const THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(THANDLE(TEST_ITEM))* psa;
     volatile_atomic int32_t owners[CONCURRENT_MAX_SIZE];
     volatile_atomic int64_t successful_allocations;
+    volatile_atomic int64_t successful_gets_of_other_elements;
     volatile_atomic int32_t failures;
 } CONCURRENT_TEST_CONTEXT;
 
@@ -116,7 +178,6 @@ typedef struct CONCURRENT_THREAD_CONTEXT_TAG
 typedef struct HELD_ELEMENT_TAG
 {
     uint64_t index;
-    TEST_ELEMENT* element;
     int64_t expected_value;
 } HELD_ELEMENT;
 
@@ -127,38 +188,31 @@ static void concurrent_record_failure(CONCURRENT_TEST_CONTEXT* test_context)
 
 static void concurrent_release_held_element(CONCURRENT_TEST_CONTEXT* test_context, int32_t thread_id, const HELD_ELEMENT* held)
 {
-    /* the element is owned by this thread, so its value must not have been changed and its page must not have been freed */
-    if (held->element->value != held->expected_value)
+    /* the element is owned by this thread, so ACQUIRE_ITEM returns the item that this thread allocated */
+    THANDLE(TEST_ITEM) item = NULL;
+    PAGED_SPARSE_ARRAY_GET_RESULT get_result = THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(THANDLE(TEST_ITEM))(test_context->psa, held->index, &item);
+    if (get_result != PAGED_SPARSE_ARRAY_GET_OK)
     {
-        LogError("thread_id=%" PRId32 ": held element value changed, index=%" PRIu64 ", page_index=%" PRIu64 ", element=%p, value=%" PRId64 ", expected_value=%" PRId64 "",
-            thread_id, held->index, held->index / CONCURRENT_PAGE_SIZE, (void*)held->element, held->element->value, held->expected_value);
+        LogError("thread_id=%" PRId32 ": ACQUIRE_ITEM of a held element failed, index=%" PRIu64 ", page_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM "",
+            thread_id, held->index, held->index / CONCURRENT_PAGE_SIZE, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, get_result));
         concurrent_record_failure(test_context);
     }
     else
     {
-        TEST_ELEMENT* element_from_get = NULL;
-        PAGED_SPARSE_ARRAY_GET_RESULT get_result = THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(test_context->psa, held->index, &element_from_get);
-        if (get_result != PAGED_SPARSE_ARRAY_GET_OK)
+        if (
+            (item->index != held->index) ||
+            (item->value != held->expected_value)
+            )
         {
-            LogError("thread_id=%" PRId32 ": GET of a held element failed, index=%" PRIu64 ", page_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM ", allocated element=%p",
-                thread_id, held->index, held->index / CONCURRENT_PAGE_SIZE, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, get_result), (void*)held->element);
+            LogError("thread_id=%" PRId32 ": ACQUIRE_ITEM of a held element returned another item, index=%" PRIu64 ", page_index=%" PRIu64 ", item index=%" PRIu64 ", item value=%" PRId64 ", expected_value=%" PRId64 "",
+                thread_id, held->index, held->index / CONCURRENT_PAGE_SIZE, item->index, item->value, held->expected_value);
             concurrent_record_failure(test_context);
         }
         else
         {
-            if (element_from_get != held->element)
-            {
-                LogError("thread_id=%" PRId32 ": GET of a held element did not return the allocated pointer, index=%" PRIu64 ", page_index=%" PRIu64 ", element_from_get=%p, allocated element=%p",
-                    thread_id, held->index, held->index / CONCURRENT_PAGE_SIZE, (void*)element_from_get, (void*)held->element);
-                concurrent_record_failure(test_context);
-            }
-            else
-            {
-                /* do nothing, the element is as expected */
-            }
-            /* END_GET is called before RELEASE: no other call of the array is made while GET holds the page */
-            THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(TEST_ELEMENT)(test_context->psa, held->index);
+            /* do nothing, the item is as expected */
         }
+        THANDLE_ASSIGN(TEST_ITEM)(&item, NULL);
     }
 
     int32_t owner = interlocked_exchange(&test_context->owners[held->index], 0);
@@ -173,7 +227,7 @@ static void concurrent_release_held_element(CONCURRENT_TEST_CONTEXT* test_contex
         /* do nothing, ownership was exclusive */
     }
 
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(test_context->psa, held->index);
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(THANDLE(TEST_ITEM))(test_context->psa, held->index);
 }
 
 static int concurrent_chaos_thread(void* arg)
@@ -194,8 +248,8 @@ static int concurrent_chaos_thread(void* arg)
             )
         {
             uint64_t index = test_next_random(&random_state) % CONCURRENT_MAX_SIZE;
-            TEST_ELEMENT* element;
-            PAGED_SPARSE_ARRAY_ALLOCATE_RESULT allocate_result = THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(test_context->psa, index, &element);
+            int64_t value = ((int64_t)thread_id << 32) | operation;
+            PAGED_SPARSE_ARRAY_ALLOCATE_RESULT allocate_result = allocate_new_item(test_context->psa, index, value);
             if (allocate_result == PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED)
             {
                 /* do nothing, the element is owned by another thread (or by this one) */
@@ -223,9 +277,7 @@ static int concurrent_chaos_thread(void* arg)
                         /* do nothing, this thread is now the only owner */
                     }
                     held[held_count].index = index;
-                    held[held_count].element = element;
-                    held[held_count].expected_value = ((int64_t)thread_id << 32) | operation;
-                    element->value = held[held_count].expected_value;
+                    held[held_count].expected_value = value;
                     held_count++;
                 }
             }
@@ -238,19 +290,29 @@ static int concurrent_chaos_thread(void* arg)
             held[held_position] = held[held_count];
         }
 
-        /* elements of other threads are not read, only the result of GET is checked */
+        /* the item of an element of another thread can be read, even if the other thread releases the element at the same time */
         uint64_t other_index = test_next_random(&random_state) % CONCURRENT_MAX_SIZE;
-        TEST_ELEMENT* other_element;
-        PAGED_SPARSE_ARRAY_GET_RESULT get_result = THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(test_context->psa, other_index, &other_element);
+        THANDLE(TEST_ITEM) other_item = NULL;
+        PAGED_SPARSE_ARRAY_GET_RESULT get_result = THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(THANDLE(TEST_ITEM))(test_context->psa, other_index, &other_item);
         if (get_result == PAGED_SPARSE_ARRAY_GET_OK)
         {
-            THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(TEST_ELEMENT)(test_context->psa, other_index);
+            if (other_item->index != other_index)
+            {
+                LogError("thread_id=%" PRId32 ": ACQUIRE_ITEM returned the item of another index, operation=%" PRIu32 ", index=%" PRIu64 ", page_index=%" PRIu64 ", item index=%" PRIu64 ", item value=%" PRId64 "",
+                    thread_id, operation, other_index, other_index / CONCURRENT_PAGE_SIZE, other_item->index, other_item->value);
+                concurrent_record_failure(test_context);
+            }
+            else
+            {
+                (void)interlocked_increment_64(&test_context->successful_gets_of_other_elements);
+            }
+            THANDLE_ASSIGN(TEST_ITEM)(&other_item, NULL);
         }
         else
         {
             if (get_result != PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED)
             {
-                LogError("thread_id=%" PRId32 ": GET returned an unexpected result, operation=%" PRIu32 ", index=%" PRIu64 ", page_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM "",
+                LogError("thread_id=%" PRId32 ": ACQUIRE_ITEM returned an unexpected result, operation=%" PRIu32 ", index=%" PRIu64 ", page_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM "",
                     thread_id, operation, other_index, other_index / CONCURRENT_PAGE_SIZE, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, get_result));
                 concurrent_record_failure(test_context);
             }
@@ -271,12 +333,10 @@ static int concurrent_chaos_thread(void* arg)
 }
 
 /*
- * Producer/consumer ring buffer over a thread safe paged sparse array:
- * producers allocate sequence % RING_MAX_SIZE (less than RING_WINDOW sequences ahead of the tail), write the sequence in the element
- * and then publish it in the element. A single consumer polls the element of the tail sequence with GET until it is published, the way
- * the EBS writer polls the slot of its head sequence, and releases the elements in sequence order.
- * The published sequence of an element that the producer did not write yet is 0: the items of a new page are set to 0, and the item dispose
- * function sets it back to 0 when the element is released, because an element that is allocated again keeps its item.
+ * Producer/consumer ring buffer over a thread safe paged sparse array of elements copied by value:
+ * producers allocate sequence % RING_MAX_SIZE (less than RING_WINDOW sequences ahead of the tail) with an element that has the sequence.
+ * A single consumer polls the element of the tail sequence with ACQUIRE_ITEM until its producer allocated it, the way the EBS writer polls the slot
+ * of its head sequence, and releases the elements in sequence order. ACQUIRE_ITEM does not copy an element that ALLOCATE did not copy completely.
  * RING_WINDOW keeps a page between the producers and the tail, so the page that the tail leaves has no element of the next lap: it is freed
  * when its last element is released and it is allocated again in the next lap.
  */
@@ -293,11 +353,6 @@ typedef struct RING_TEST_CONTEXT_TAG
     volatile_atomic int64_t tail;
     volatile_atomic int32_t failures; /*once not 0, the producers and the consumer stop instead of waiting for each other*/
 } RING_TEST_CONTEXT;
-
-static void ring_element_dispose(RING_ELEMENT* element)
-{
-    (void)interlocked_exchange_64(&element->published_sequence_plus_one, 0);
-}
 
 static bool ring_has_failed(RING_TEST_CONTEXT* test_context)
 {
@@ -329,7 +384,9 @@ static int ring_producer_thread(void* arg)
         else
         {
             uint64_t index = (uint64_t)sequence % RING_MAX_SIZE;
-            RING_ELEMENT* element;
+            RING_ELEMENT element;
+            element.sequence = sequence;
+            element.sequence_check = ~sequence;
             PAGED_SPARSE_ARRAY_ALLOCATE_RESULT allocate_result = THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(RING_ELEMENT)(test_context->psa, index, &element);
             if (allocate_result != PAGED_SPARSE_ARRAY_ALLOCATE_OK)
             {
@@ -339,8 +396,7 @@ static int ring_producer_thread(void* arg)
             }
             else
             {
-                element->sequence = sequence;
-                (void)interlocked_exchange_64(&element->published_sequence_plus_one, sequence + 1);
+                /* do nothing, the consumer releases the element */
             }
         }
     }
@@ -350,7 +406,7 @@ static int ring_producer_thread(void* arg)
 static void run_ring_buffer_test(void)
 {
     //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(RING_ELEMENT) psa = THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(RING_ELEMENT)(RING_MAX_SIZE, RING_PAGE_SIZE, ring_element_dispose);
+    THREAD_SAFE_PAGED_SPARSE_ARRAY(RING_ELEMENT) psa = THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(RING_ELEMENT)(RING_MAX_SIZE, RING_PAGE_SIZE, NULL, NULL);
     ASSERT_IS_NOT_NULL(psa);
 
     RING_TEST_CONTEXT* test_context = malloc(sizeof(RING_TEST_CONTEXT));
@@ -382,16 +438,16 @@ static void run_ring_buffer_test(void)
     for (int64_t tail = 0; (tail < RING_TOTAL_SEQUENCES) && (!ring_has_failed(test_context)); tail++)
     {
         uint64_t index = (uint64_t)tail % RING_MAX_SIZE;
-        bool published = false;
+        bool consumed = false;
 
-        /* poll the element of the tail sequence until its producer allocated it and published this sequence */
+        /* poll the element of the tail sequence until its producer allocated it */
         while (
-            (!published) &&
+            (!consumed) &&
             (!ring_has_failed(test_context))
             )
         {
-            RING_ELEMENT* element = NULL;
-            PAGED_SPARSE_ARRAY_GET_RESULT get_result = THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(RING_ELEMENT)(psa, index, &element);
+            RING_ELEMENT element;
+            PAGED_SPARSE_ARRAY_GET_RESULT get_result = THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(RING_ELEMENT)(psa, index, &element);
             if (get_result == PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED)
             {
                 /* the producer did not allocate the element yet */
@@ -401,42 +457,30 @@ static void run_ring_buffer_test(void)
             {
                 if (get_result != PAGED_SPARSE_ARRAY_GET_OK)
                 {
-                    LogError("consumer GET failed, tail=%" PRId64 ", index=%" PRIu64 ", page_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM "",
+                    LogError("consumer ACQUIRE_ITEM failed, tail=%" PRId64 ", index=%" PRIu64 ", page_index=%" PRIu64 ", get_result=%" PRI_MU_ENUM "",
                         tail, index, index / RING_PAGE_SIZE, MU_ENUM_VALUE(PAGED_SPARSE_ARRAY_GET_RESULT, get_result));
                     (void)interlocked_increment(&test_context->failures);
                 }
                 else
                 {
-                    int64_t published_sequence_plus_one = interlocked_add_64(&element->published_sequence_plus_one, 0);
-                    int64_t element_sequence = element->sequence;
-                    /* END_GET is called before RELEASE: no other call of the array is made while GET holds the page */
-                    THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(RING_ELEMENT)(psa, index);
-                    if (published_sequence_plus_one == 0)
+                    if (
+                        (element.sequence != tail) ||
+                        (element.sequence_check != ~tail)
+                        )
                     {
-                        /* the producer allocated the element but did not publish it yet */
-                        ThreadAPI_Sleep(0);
+                        LogError("consumer got an element that is not the one of the tail sequence, tail=%" PRId64 ", index=%" PRIu64 ", page_index=%" PRIu64 ", element sequence=%" PRId64 ", element sequence_check=%" PRId64 "",
+                            tail, index, index / RING_PAGE_SIZE, element.sequence, element.sequence_check);
+                        (void)interlocked_increment(&test_context->failures);
                     }
                     else
                     {
-                        if (
-                            (published_sequence_plus_one != tail + 1) ||
-                            (element_sequence != tail)
-                            )
-                        {
-                            LogError("consumer got an element that is not the one of the tail sequence, tail=%" PRId64 ", index=%" PRIu64 ", page_index=%" PRIu64 ", published_sequence_plus_one=%" PRId64 ", element sequence=%" PRId64 "",
-                                tail, index, index / RING_PAGE_SIZE, published_sequence_plus_one, element_sequence);
-                            (void)interlocked_increment(&test_context->failures);
-                        }
-                        else
-                        {
-                            published = true;
-                        }
+                        consumed = true;
                     }
                 }
             }
         }
 
-        if (!published)
+        if (!consumed)
         {
             /* do nothing, the test failed and the loop ends */
         }
@@ -470,12 +514,172 @@ static void run_ring_buffer_test(void)
     ASSERT_IS_FALSE(thread_api_failed);
     ASSERT_ARE_EQUAL(int32_t, 0, interlocked_add(&test_context->failures, 0));
     ASSERT_ARE_EQUAL(int64_t, RING_TOTAL_SEQUENCES, interlocked_add_64(&test_context->tail, 0));
-    /* every element was released, so every page was freed when its last element was released */
-    assert_all_pages_are_freed_RING_ELEMENT(psa, RING_MAX_SIZE);
+    assert_all_ring_elements_are_released(psa, RING_MAX_SIZE);
 
     //cleanup
     free(test_context);
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(RING_ELEMENT)(&psa, NULL);
+}
+
+/*
+ * RELEASE does not dispose an item while ACQUIRE_ITEM calls copy it: item_copy_func of each ACQUIRE_ITEM waits until the RELEASE of the element started,
+ * then the copies end one after the other and each one checks that the item is not disposed before it ends.
+ */
+#define SLOW_COPY_INDEX 3
+#define SLOW_COPY_WAIT_FOR_RELEASE_MS 10000
+#define SLOW_COPY_RELEASE_TIME_MS 200
+#define SLOW_COPY_MAX_READER_COUNT 3
+
+typedef struct SLOW_COPY_TEST_CONTEXT_TAG
+{
+    const THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(SLOW_COPY_ELEMENT)* psa;
+    volatile_atomic int32_t copy_is_slow; /*1 while the copies of the ACQUIRE_ITEM calls wait for RELEASE*/
+    volatile_atomic int32_t copy_started_count;
+    volatile_atomic int32_t release_started;
+    volatile_atomic int32_t release_returned;
+    volatile_atomic int32_t dispose_count;
+    volatile_atomic int32_t copies_that_ended_after_dispose;
+} SLOW_COPY_TEST_CONTEXT;
+
+typedef struct SLOW_COPY_READER_CONTEXT_TAG
+{
+    SLOW_COPY_TEST_CONTEXT* test_context;
+    PAGED_SPARSE_ARRAY_GET_RESULT get_result;
+    SLOW_COPY_ELEMENT got_element;
+} SLOW_COPY_READER_CONTEXT;
+
+static SLOW_COPY_TEST_CONTEXT* g_slow_copy_test_context;
+
+static void slow_copy_element_copy(SLOW_COPY_ELEMENT* dst, SLOW_COPY_ELEMENT* src)
+{
+    SLOW_COPY_TEST_CONTEXT* test_context = g_slow_copy_test_context;
+    if (interlocked_add(&test_context->copy_is_slow, 0) == 0)
+    {
+        /* do nothing, ALLOCATE copies the element */
+    }
+    else
+    {
+        int32_t copy_order = interlocked_increment(&test_context->copy_started_count);
+        for (uint32_t waited_ms = 0; (waited_ms < SLOW_COPY_WAIT_FOR_RELEASE_MS) && (interlocked_add(&test_context->release_started, 0) == 0); waited_ms++)
+        {
+            ThreadAPI_Sleep(1);
+        }
+        /* RELEASE has time to dispose the item if it does not wait for all the ACQUIRE_ITEM calls, the copies end one after the other */
+        ThreadAPI_Sleep(SLOW_COPY_RELEASE_TIME_MS * (uint32_t)copy_order);
+    }
+    dst->value = src->value;
+    if (interlocked_add(&test_context->dispose_count, 0) != 0)
+    {
+        (void)interlocked_increment(&test_context->copies_that_ended_after_dispose);
+    }
+    else
+    {
+        /* do nothing, the item is not disposed */
+    }
+}
+
+static void slow_copy_element_dispose(SLOW_COPY_ELEMENT* item)
+{
+    (void)item;
+    (void)interlocked_increment(&g_slow_copy_test_context->dispose_count);
+}
+
+static int slow_copy_get_thread(void* arg)
+{
+    SLOW_COPY_READER_CONTEXT* reader_context = arg;
+    reader_context->get_result = THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(SLOW_COPY_ELEMENT)(reader_context->test_context->psa, SLOW_COPY_INDEX, &reader_context->got_element);
+    return 0;
+}
+
+static int slow_copy_release_thread(void* arg)
+{
+    SLOW_COPY_TEST_CONTEXT* test_context = arg;
+    (void)interlocked_exchange(&test_context->release_started, 1);
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(SLOW_COPY_ELEMENT)(test_context->psa, SLOW_COPY_INDEX);
+    (void)interlocked_exchange(&test_context->release_returned, 1);
+    return 0;
+}
+
+#define SLOW_COPY_ITEM_VALUE 42
+
+static void run_slow_copy_test(uint32_t reader_count)
+{
+    //arrange
+    ASSERT_IS_TRUE(reader_count <= SLOW_COPY_MAX_READER_COUNT);
+    SLOW_COPY_TEST_CONTEXT test_context;
+    (void)memset(&test_context, 0, sizeof(test_context));
+    g_slow_copy_test_context = &test_context;
+    THREAD_SAFE_PAGED_SPARSE_ARRAY(SLOW_COPY_ELEMENT) psa = THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(SLOW_COPY_ELEMENT)(CONCURRENT_MAX_SIZE, CONCURRENT_PAGE_SIZE, slow_copy_element_copy, slow_copy_element_dispose);
+    ASSERT_IS_NOT_NULL(psa);
+    test_context.psa = psa;
+    SLOW_COPY_ELEMENT element = { SLOW_COPY_ITEM_VALUE };
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(SLOW_COPY_ELEMENT)(psa, SLOW_COPY_INDEX, &element));
+    (void)interlocked_exchange(&test_context.copy_is_slow, 1);
+
+    /* no ASSERT until all the started threads are joined, since they use stack variables of this function */
+    SLOW_COPY_READER_CONTEXT reader_contexts[SLOW_COPY_MAX_READER_COUNT];
+    THREAD_HANDLE reader_threads[SLOW_COPY_MAX_READER_COUNT];
+    uint32_t readers_created = 0;
+    THREADAPI_RESULT reader_create_result = THREADAPI_OK;
+    for (uint32_t i = 0; i < reader_count; i++)
+    {
+        reader_contexts[i].test_context = &test_context;
+        reader_contexts[i].get_result = PAGED_SPARSE_ARRAY_GET_INVALID_ARGS;
+        reader_contexts[i].got_element.value = 0;
+        reader_create_result = ThreadAPI_Create(&reader_threads[i], slow_copy_get_thread, &reader_contexts[i]);
+        if (reader_create_result != THREADAPI_OK)
+        {
+            break;
+        }
+        else
+        {
+            readers_created++;
+        }
+    }
+    /* RELEASE starts once every ACQUIRE_ITEM copies the item */
+    for (uint32_t waited_ms = 0; (waited_ms < SLOW_COPY_WAIT_FOR_RELEASE_MS) && (interlocked_add(&test_context.copy_started_count, 0) < (int32_t)readers_created); waited_ms++)
+    {
+        ThreadAPI_Sleep(1);
+    }
+
+    //act
+    THREAD_HANDLE release_thread;
+    THREADAPI_RESULT release_create_result = ThreadAPI_Create(&release_thread, slow_copy_release_thread, &test_context);
+    THREADAPI_RESULT reader_join_result = THREADAPI_OK;
+    for (uint32_t i = 0; i < readers_created; i++)
+    {
+        int reader_thread_result;
+        THREADAPI_RESULT join_result = ThreadAPI_Join(reader_threads[i], &reader_thread_result);
+        if (join_result != THREADAPI_OK)
+        {
+            reader_join_result = join_result;
+        }
+        else
+        {
+            /* do nothing */
+        }
+    }
+    int release_thread_result = 0;
+    THREADAPI_RESULT release_join_result = (release_create_result != THREADAPI_OK) ? release_create_result : ThreadAPI_Join(release_thread, &release_thread_result);
+
+    //assert
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, reader_create_result);
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, release_create_result);
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, reader_join_result);
+    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, release_join_result);
+    ASSERT_ARE_EQUAL(int32_t, (int32_t)reader_count, interlocked_add(&test_context.copy_started_count, 0));
+    for (uint32_t i = 0; i < reader_count; i++)
+    {
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, reader_contexts[i].get_result, "reader %" PRIu32 "", i);
+        ASSERT_ARE_EQUAL(int64_t, SLOW_COPY_ITEM_VALUE, reader_contexts[i].got_element.value, "reader %" PRIu32 "", i);
+    }
+    ASSERT_ARE_EQUAL(int32_t, 0, interlocked_add(&test_context.copies_that_ended_after_dispose, 0));
+    ASSERT_ARE_EQUAL(int32_t, 1, interlocked_add(&test_context.release_returned, 0));
+    ASSERT_ARE_EQUAL(int32_t, 1, interlocked_add(&test_context.dispose_count, 0));
+
+    //cleanup
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(SLOW_COPY_ELEMENT)(&psa, NULL);
+    g_slow_copy_test_context = NULL;
 }
 
 BEGIN_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)
@@ -490,6 +694,7 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
+    reset_item_counts();
 }
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
@@ -500,10 +705,10 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
  * Tests for THREAD_SAFE_PAGED_SPARSE_ARRAY
  */
 
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_chaos_allocate_release_and_get_from_multiple_threads)
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_chaos_allocate_release_and_acquire_item_from_multiple_threads)
 {
     //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(CONCURRENT_MAX_SIZE, CONCURRENT_PAGE_SIZE, count_dispose);
+    THREAD_SAFE_PAGED_SPARSE_ARRAY(THANDLE(TEST_ITEM)) psa = THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(THANDLE(TEST_ITEM))(CONCURRENT_MAX_SIZE, CONCURRENT_PAGE_SIZE, test_item_handle_copy, test_item_handle_dispose);
     ASSERT_IS_NOT_NULL(psa);
 
     CONCURRENT_TEST_CONTEXT* test_context = malloc(sizeof(CONCURRENT_TEST_CONTEXT));
@@ -514,8 +719,8 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_chaos_allocate_release_and_get_from
         (void)interlocked_exchange(&test_context->owners[i], 0);
     }
     (void)interlocked_exchange_64(&test_context->successful_allocations, 0);
+    (void)interlocked_exchange_64(&test_context->successful_gets_of_other_elements, 0);
     (void)interlocked_exchange(&test_context->failures, 0);
-    (void)interlocked_exchange_64(&g_dispose_count, 0);
 
     CONCURRENT_THREAD_CONTEXT thread_contexts[CONCURRENT_THREAD_COUNT];
     THREAD_HANDLE threads[CONCURRENT_THREAD_COUNT];
@@ -555,16 +760,20 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_chaos_allocate_release_and_get_from
     }
 
     //assert
+    LogInfo("chaos test: successful_allocations=%" PRId64 ", successful_gets_of_other_elements=%" PRId64 ", created items=%" PRId64 ", disposed items=%" PRId64 ", failures=%" PRId32 "",
+        interlocked_add_64(&test_context->successful_allocations, 0), interlocked_add_64(&test_context->successful_gets_of_other_elements, 0),
+        interlocked_add_64(&g_created_item_count, 0), interlocked_add_64(&g_disposed_item_count, 0), interlocked_add(&test_context->failures, 0));
     ASSERT_IS_FALSE(thread_api_failed);
     ASSERT_ARE_EQUAL(int32_t, 0, interlocked_add(&test_context->failures, 0));
     ASSERT_IS_TRUE(interlocked_add_64(&test_context->successful_allocations, 0) > 0);
-    ASSERT_ARE_EQUAL(int64_t, interlocked_add_64(&test_context->successful_allocations, 0), interlocked_add_64(&g_dispose_count, 0));
-    /* every element was released, so every page was freed when its last element was released */
-    assert_all_pages_are_freed_TEST_ELEMENT(psa, CONCURRENT_MAX_SIZE);
+    ASSERT_IS_TRUE(interlocked_add_64(&test_context->successful_gets_of_other_elements, 0) > 0);
+    /* every element was released and every item that ACQUIRE_ITEM returned was released, so every item was disposed */
+    ASSERT_ARE_EQUAL(int64_t, interlocked_add_64(&g_created_item_count, 0), interlocked_add_64(&g_disposed_item_count, 0));
+    assert_all_items_are_released(psa, CONCURRENT_MAX_SIZE);
 
     //cleanup
     free(test_context);
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(TEST_ELEMENT)(&psa, NULL);
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(THANDLE(TEST_ITEM))(&psa, NULL);
 }
 
 TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ring_buffer_with_multiple_producers_and_one_consumer)
@@ -573,60 +782,75 @@ TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_ring_buffer_with_multiple_producers
 }
 
 /*
- * A call that got an element with GET holds the page of the element until END_GET: the RELEASE of the last element of the page
- * by another thread does not free the page (and does not return) before END_GET.
+ * The item that ACQUIRE_ITEM returned does not depend on the array: it stays valid after the element is released and its page is freed.
  */
-#define HELD_PAGE_INDEX 3
-#define HELD_PAGE_RELEASE_WAIT_MS 200
+#define OUTLIVING_ITEM_INDEX 3
+#define OUTLIVING_ITEM_VALUE 42
 
-typedef struct HELD_PAGE_RELEASE_CONTEXT_TAG
-{
-    const THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(TEST_ELEMENT)* psa;
-    volatile_atomic int32_t release_returned;
-} HELD_PAGE_RELEASE_CONTEXT;
-
-static int held_page_release_thread(void* arg)
-{
-    HELD_PAGE_RELEASE_CONTEXT* release_context = arg;
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(TEST_ELEMENT)(release_context->psa, HELD_PAGE_INDEX);
-    (void)interlocked_exchange(&release_context->release_returned, 1);
-    return 0;
-}
-
-TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_of_the_last_element_of_a_page_does_not_free_the_page_before_END_GET)
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_item_that_ACQUIRE_ITEM_returned_stays_valid_after_RELEASE_of_the_last_element_of_its_page)
 {
     //arrange
-    THREAD_SAFE_PAGED_SPARSE_ARRAY(TEST_ELEMENT) psa = THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(TEST_ELEMENT)(CONCURRENT_MAX_SIZE, CONCURRENT_PAGE_SIZE, NULL);
+    THREAD_SAFE_PAGED_SPARSE_ARRAY(THANDLE(TEST_ITEM)) psa = THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(THANDLE(TEST_ITEM))(CONCURRENT_MAX_SIZE, CONCURRENT_PAGE_SIZE, test_item_handle_copy, test_item_handle_dispose);
     ASSERT_IS_NOT_NULL(psa);
-    TEST_ELEMENT* allocated;
-    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(TEST_ELEMENT)(psa, HELD_PAGE_INDEX, &allocated));
-    allocated->value = 42;
-    TEST_ELEMENT* element;
-    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(TEST_ELEMENT)(psa, HELD_PAGE_INDEX, &element));
-    HELD_PAGE_RELEASE_CONTEXT release_context;
-    release_context.psa = psa;
-    (void)interlocked_exchange(&release_context.release_returned, 0);
-    THREAD_HANDLE release_thread;
-    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, ThreadAPI_Create(&release_thread, held_page_release_thread, &release_context));
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, allocate_new_item(psa, OUTLIVING_ITEM_INDEX, OUTLIVING_ITEM_VALUE));
+    THANDLE(TEST_ITEM) item = NULL;
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(THANDLE(TEST_ITEM))(psa, OUTLIVING_ITEM_INDEX, &item));
 
     //act
-    ThreadAPI_Sleep(HELD_PAGE_RELEASE_WAIT_MS);
-    int32_t release_returned_before_end_get = interlocked_add(&release_context.release_returned, 0);
-    int64_t value_before_end_get = element->value;
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(TEST_ELEMENT)(psa, HELD_PAGE_INDEX);
-    int thread_result;
-    THREADAPI_RESULT join_result = ThreadAPI_Join(release_thread, &thread_result);
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(THANDLE(TEST_ITEM))(psa, OUTLIVING_ITEM_INDEX);
 
     //assert
-    ASSERT_ARE_EQUAL(THREADAPI_RESULT, THREADAPI_OK, join_result);
-    ASSERT_ARE_EQUAL(int, 0, thread_result);
-    ASSERT_ARE_EQUAL(int32_t, 0, release_returned_before_end_get);
-    ASSERT_ARE_EQUAL(int64_t, 42, value_before_end_get);
-    ASSERT_ARE_EQUAL(int32_t, 1, interlocked_add(&release_context.release_returned, 0));
-    assert_all_pages_are_freed_TEST_ELEMENT(psa, CONCURRENT_MAX_SIZE);
+    assert_all_items_are_released(psa, CONCURRENT_MAX_SIZE);
+    ASSERT_ARE_EQUAL(int64_t, 0, interlocked_add_64(&g_disposed_item_count, 0));
+    ASSERT_ARE_EQUAL(uint64_t, OUTLIVING_ITEM_INDEX, item->index);
+    ASSERT_ARE_EQUAL(int64_t, OUTLIVING_ITEM_VALUE, item->value);
+    THANDLE_ASSIGN(TEST_ITEM)(&item, NULL);
+    ASSERT_ARE_EQUAL(int64_t, 1, interlocked_add_64(&g_created_item_count, 0));
+    ASSERT_ARE_EQUAL(int64_t, 1, interlocked_add_64(&g_disposed_item_count, 0));
 
     //cleanup
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(TEST_ELEMENT)(&psa, NULL);
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(THANDLE(TEST_ITEM))(&psa, NULL);
+}
+
+/*
+ * The dispose of the array disposes the items of the elements that are still allocated, in every page, including the last page that has fewer indexes.
+ * An item that ACQUIRE_ITEM returned stays valid after the array is disposed.
+ */
+#define DISPOSE_TEST_ACQUIRED_INDEX (CONCURRENT_PAGE_SIZE + 1)
+
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_dispose_of_the_array_disposes_the_items_of_the_allocated_elements)
+{
+    //arrange
+    THREAD_SAFE_PAGED_SPARSE_ARRAY(THANDLE(TEST_ITEM)) psa = THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(THANDLE(TEST_ITEM))(CONCURRENT_MAX_SIZE, CONCURRENT_PAGE_SIZE, test_item_handle_copy, test_item_handle_dispose);
+    ASSERT_IS_NOT_NULL(psa);
+    uint64_t allocated_indexes[] = { 0, 1, DISPOSE_TEST_ACQUIRED_INDEX, CONCURRENT_MAX_SIZE - 1 };
+    for (size_t i = 0; i < MU_COUNT_ARRAY_ITEMS(allocated_indexes); i++)
+    {
+        ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_ALLOCATE_RESULT, PAGED_SPARSE_ARRAY_ALLOCATE_OK, allocate_new_item(psa, allocated_indexes[i], (int64_t)allocated_indexes[i]), "index=%" PRIu64 "", allocated_indexes[i]);
+    }
+    THANDLE(TEST_ITEM) item = NULL;
+    ASSERT_ARE_EQUAL(PAGED_SPARSE_ARRAY_GET_RESULT, PAGED_SPARSE_ARRAY_GET_OK, THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(THANDLE(TEST_ITEM))(psa, DISPOSE_TEST_ACQUIRED_INDEX, &item));
+
+    //act
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(THANDLE(TEST_ITEM))(&psa, NULL);
+
+    //assert
+    ASSERT_ARE_EQUAL(int64_t, (int64_t)MU_COUNT_ARRAY_ITEMS(allocated_indexes), interlocked_add_64(&g_created_item_count, 0));
+    ASSERT_ARE_EQUAL(int64_t, (int64_t)MU_COUNT_ARRAY_ITEMS(allocated_indexes) - 1, interlocked_add_64(&g_disposed_item_count, 0));
+    ASSERT_ARE_EQUAL(uint64_t, DISPOSE_TEST_ACQUIRED_INDEX, item->index);
+    ASSERT_ARE_EQUAL(int64_t, (int64_t)DISPOSE_TEST_ACQUIRED_INDEX, item->value);
+    THANDLE_ASSIGN(TEST_ITEM)(&item, NULL);
+    ASSERT_ARE_EQUAL(int64_t, (int64_t)MU_COUNT_ARRAY_ITEMS(allocated_indexes), interlocked_add_64(&g_disposed_item_count, 0));
+}
+
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_waits_for_the_ACQUIRE_ITEM_that_copies_the_item_before_disposing_the_item)
+{
+    run_slow_copy_test(1);
+}
+
+TEST_FUNCTION(THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_waits_for_all_the_ACQUIRE_ITEM_calls_that_copy_the_item_before_disposing_the_item)
+{
+    run_slow_copy_test(SLOW_COPY_MAX_READER_COUNT);
 }
 
 END_TEST_SUITE(TEST_SUITE_NAME_FROM_CMAKE)

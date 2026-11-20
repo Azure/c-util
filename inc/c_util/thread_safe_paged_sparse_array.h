@@ -29,17 +29,13 @@
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_DECLARE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_RELEASE_DECLARE(T, T)
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_DEFINE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_RELEASE_DEFINE(T, T)
 
-#define THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_DECLARE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET_DECLARE(T, T)
-#define THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_DEFINE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET_DEFINE(T, T)
-
-#define THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET_DECLARE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_GET_DECLARE(T, T)
-#define THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET_DEFINE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_GET_DEFINE(T, T)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM_DECLARE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ACQUIRE_ITEM_DECLARE(T, T)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM_DEFINE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ACQUIRE_ITEM_DEFINE(T, T)
 
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(C) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_CREATE(C)
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(C) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ALLOCATE(C)
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(C) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_RELEASE(C)
-#define THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(C) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_GET(C)
-#define THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(C) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_END_GET(C)
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(C) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ACQUIRE_ITEM(C)
 
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_INITIALIZE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_INITIALIZE(T)
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_ASSIGN(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ASSIGN(T)
@@ -54,8 +50,7 @@
     THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_DECLARE(T)                                                                                       \
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_DECLARE(T)                                                                                     \
     THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_DECLARE(T)                                                                                      \
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_DECLARE(T)                                                                                          \
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET_DECLARE(T)                                                                                      \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM_DECLARE(T)                                                                                 \
 
 /*macro to be used in .c files*/
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DEFINE(T)                                                                                    \
@@ -66,7 +61,6 @@
     THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_DEFINE(T)                                                                                      \
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_DEFINE(T)                                                                                    \
     THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE_DEFINE(T)                                                                                     \
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_GET_DEFINE(T)                                                                                         \
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET_DEFINE(T)                                                                                     \
+    THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM_DEFINE(T)                                                                                \
 
 #endif /*THREAD_SAFE_PAGED_SPARSE_ARRAY_H*/

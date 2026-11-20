@@ -2,7 +2,7 @@
 
 ## Overview
 
-`THREAD_SAFE_PAGED_SPARSE_ARRAY` is a module that wraps a [`PAGED_SPARSE_ARRAY`](paged_sparse_array_requirements.md) so that `ALLOCATE`, `RELEASE`, `GET` and `END_GET` can be called concurrently from multiple threads. Each page has a lock: `ALLOCATE` and `GET` of an element of an allocated page hold it in shared mode, so many calls use the same page at the same time, and it is held in exclusive mode only to allocate a page and to start freeing a page. `RELEASE` releases the element without acquiring it, because the element it releases keeps the page allocated. `ALLOCATE` of an element of a page that is not allocated allocates the page, and `RELEASE` of the last element of a page frees the page, so only that `RELEASE` acquires the lock (in exclusive mode). A successful `GET` keeps holding the lock of the page until `END_GET`, so the page is not freed while the caller uses the item.
+`THREAD_SAFE_PAGED_SPARSE_ARRAY` is a module that wraps a [`PAGED_SPARSE_ARRAY`](paged_sparse_array_requirements.md) so that `ALLOCATE`, `RELEASE` and `ACQUIRE_ITEM` can be called concurrently from multiple threads. Each page has a lock: `ALLOCATE` and `ACQUIRE_ITEM` of an element of an allocated page hold it in shared mode, so many calls use the same page at the same time, and it is held in exclusive mode only to allocate a page and to start freeing a page. `RELEASE` releases the element without acquiring it, because the element it releases keeps the page allocated. `ALLOCATE` of an element of a page that is not allocated allocates the page, and `RELEASE` of the last element of a page frees the page, so only that `RELEASE` acquires the lock (in exclusive mode). `ALLOCATE` copies the item into the array and `ACQUIRE_ITEM` copies the item out of the array, so what `ACQUIRE_ITEM` copied stays valid after the element is released.
 
 The indexes, the pages, `max_size`, `page_size` and the result codes are those of the wrapped `PAGED_SPARSE_ARRAY` (see its [Design](paged_sparse_array_requirements.md#design) section). The wrapped `PAGED_SPARSE_ARRAY` is not changed.
 
@@ -15,41 +15,43 @@ The indexes, the pages, `max_size`, `page_size` and the result codes are those o
 ## Design
 
 Terms:
-- **slot**: an element of the wrapped `PAGED_SPARSE_ARRAY`. A slot holds an item of type `T` and the state of the item: `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED` or `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED`. The state is changed only with interlocked operations.
+- **slot**: an element of the wrapped `PAGED_SPARSE_ARRAY`. A slot holds an item of type `T` and the state of the item: `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED` (0), `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATING` (-1) while `ALLOCATE` copies the item into the slot, or `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED` (1) plus the number of `ACQUIRE_ITEM` calls that copy the item out of the slot, to which `RELEASE` adds `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING` (2^30). The state is changed only with interlocked operations.
 - **page guard**: there is one page guard for each page. It has an element count, a page state and a lock.
 - **element count**: the number of allocated elements of the page. It is changed with interlocked operations, because several calls change it at the same time: `ALLOCATE` while holding the lock and `RELEASE` without holding it.
 - **page state**: `THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED` when the page is allocated in the wrapped `PAGED_SPARSE_ARRAY` and its slots can be used, `THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING` while the page is being freed and `THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED` otherwise.
-- **lock**: an `SRW_LOCK_LL`. It is held in shared mode by `ALLOCATE` and `GET` of an element of the page and in exclusive mode by the calls that allocate the page or start freeing it.
+- **lock**: an `SRW_LOCK_LL`. It is held in shared mode by `ALLOCATE` and `ACQUIRE_ITEM` of an element of the page and in exclusive mode by the calls that allocate the page or start freeing it.
 - **indexes of a page**: the indexes from `page_index * page_size` up to `(page_index + 1) * page_size - 1`. The last page has only the indexes lower than `max_size`.
 
 How the operations work:
-- `ALLOCATE` and `GET` of an element of an allocated page hold the lock of the page in shared mode while they use the page, and call `PAGED_SPARSE_ARRAY_GET(T)` (which only reads the wrapped `PAGED_SPARSE_ARRAY`) to get the slot. `ALLOCATE` changes the state of the slot and the element count with interlocked operations, `GET` only reads the state of the slot. `ALLOCATE` releases the lock before returning, a successful `GET` keeps holding it until `END_GET`.
-- `RELEASE` releases the element without acquiring the lock of the page. The released element is counted in the element count until `RELEASE` decrements it, so until then the page is not freed or allocated again. `RELEASE` calls `PAGED_SPARSE_ARRAY_GET(T)` to get the slot, disposes the item, sets the state of the slot to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED` and decrements the element count with interlocked operations, which is the last time it uses the page without holding the lock. If the element count became 0, `RELEASE` then frees the page (see below), which acquires the lock in exclusive mode.
-- A page is allocated by `ALLOCATE` while holding the lock of the page in exclusive mode: `PAGED_SPARSE_ARRAY_ALLOCATE(T)` is called for each index of the page, all the slots are set to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED` and all the bytes of their items are set to 0. The element is allocated before the lock is released, so a new page is never empty.
-- A page is freed by the `RELEASE` that makes its element count 0. It acquires the lock of the page in exclusive mode (it waits for the calls that hold the lock, including the `GET`s that did not call `END_GET` yet) and, if the page is still allocated and its element count is still 0, sets the page state to `THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING`. After the lock is released, `PAGED_SPARSE_ARRAY_RELEASE(T)` is called for each index of the page (the last one frees the page), the page state is set to `THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED` and the calls waiting for the page state to change are woken. `GET` of an element of a page that is being freed returns `PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED`, and `ALLOCATE` of an element of a page that is being freed waits (while holding the lock in exclusive mode) for the page state to change and then allocates the page again.
+- `ALLOCATE` and `ACQUIRE_ITEM` of an element of an allocated page hold the lock of the page in shared mode while they use the page, and call `PAGED_SPARSE_ARRAY_GET(T)` (which only reads the wrapped `PAGED_SPARSE_ARRAY`) to get the slot. `ALLOCATE` changes the state of the slot from `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED` to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATING`, copies the item into the slot, increments the element count and sets the state of the slot to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED`. `ACQUIRE_ITEM` adds 1 to the state of an allocated slot that is not being released, copies the item out of the slot and subtracts the 1. They release the lock before returning.
+- `RELEASE` releases the element without acquiring the lock of the page. The released element is counted in the element count until `RELEASE` decrements it, so until then the page is not freed or allocated again. `RELEASE` calls `PAGED_SPARSE_ARRAY_GET(T)` to get the slot, adds `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING` to the state of the slot (from then on `ACQUIRE_ITEM` of the element returns `PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED`), waits until no `ACQUIRE_ITEM` copies the item, disposes the item, sets the state of the slot to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED` and decrements the element count with interlocked operations, which is the last time it uses the page without holding the lock. If the element count became 0, `RELEASE` then frees the page (see below), which acquires the lock in exclusive mode.
+- A page is allocated by `ALLOCATE` while holding the lock of the page in exclusive mode: `PAGED_SPARSE_ARRAY_ALLOCATE(T)` is called for each index of the page and all the slots are set to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED`. The element is allocated before the lock is released, so a new page is never empty.
+- A page is freed by the `RELEASE` that makes its element count 0. It acquires the lock of the page in exclusive mode (it waits for the calls that hold the lock) and, if the page is still allocated and its element count is still 0, sets the page state to `THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_FREEING`. After the lock is released, `PAGED_SPARSE_ARRAY_RELEASE(T)` is called for each index of the page (the last one frees the page), the page state is set to `THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_NOT_ALLOCATED` and the calls waiting for the page state to change are woken. `ACQUIRE_ITEM` of an element of a page that is being freed returns `PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED`, and `ALLOCATE` of an element of a page that is being freed waits (while holding the lock in exclusive mode) for the page state to change and then allocates the page again.
 - `PAGED_SPARSE_ARRAY_ALLOCATE(T)` and `PAGED_SPARSE_ARRAY_RELEASE(T)` are called only for a page that no other call uses, so only `PAGED_SPARSE_ARRAY_GET(T)` is called concurrently for the same page. Calls for different pages run concurrently. The wrapped `PAGED_SPARSE_ARRAY` allows both, because it keeps its state per page (see its [Threading Model](paged_sparse_array_requirements.md#threading-model)).
 
 ## Threading Model
 
-`ALLOCATE`, `RELEASE`, `GET` and `END_GET` may be called concurrently from any number of threads.
+`ALLOCATE`, `RELEASE` and `ACQUIRE_ITEM` may be called concurrently from any number of threads.
 
 The array guarantees:
-- A pointer obtained from `ALLOCATE` for an `index` remains valid until that `index` is released.
-- A pointer obtained from `GET` remains valid until `END_GET` is called for that `index`: the page of the element is not freed before. The owner of the `index` can still release it in the meantime (then the item is disposed, and the element can be allocated again).
-- The items of a new page have all their bytes set to 0 before any call can get them. An element that is allocated again keeps its item as it was when it was released.
+- `ACQUIRE_ITEM` does not copy an item that `ALLOCATE` did not completely copy into the array, and `RELEASE` does not dispose an item while an `ACQUIRE_ITEM` copies it.
+- What `ACQUIRE_ITEM` copied belongs to the caller: it remains valid after the `index` is released and after its page is freed.
+- `item_copy_func` is called while holding the lock of the page: by `ALLOCATE` for the element being allocated and by `ACQUIRE_ITEM` for the element whose item it copies out. It may be called concurrently from multiple threads, also for the same element.
 - `item_dispose_func` is called without holding any lock: by `RELEASE` for the element being released, and by the dispose of the array for each element that is still allocated. It may be called concurrently from multiple threads, for different elements.
 
 Callers shall follow these rules:
 - Only the owner of an `index` shall release it, and an `index` shall not be released more than once per allocation. The owner of an `index` is the caller that allocated it, or the caller that the owner handed it over to (e.g., a producer allocates an `index` and a consumer releases it).
-- Each `GET` that returns `PAGED_SPARSE_ARRAY_GET_OK` shall be followed by exactly one `END_GET` for the same `index`, from the same thread (on Linux the lock is a `pthread_rwlock_t`, which shall be released by the thread that acquired it). `END_GET` shall not be called otherwise.
-- Between `GET` and `END_GET` the thread shall not call `ALLOCATE`, `RELEASE` or `GET` of any `THREAD_SAFE_PAGED_SPARSE_ARRAY` (the same array or another one). Between `GET` and `END_GET` the thread shall also not wait for anything (a lock, an event, a queue, another thread) that depends on a call to `ALLOCATE` or `RELEASE` of the same array, because `RELEASE` of the last element of the page and `ALLOCATE` of an element of a page that is being freed wait for `END_GET`. The time between `GET` and `END_GET` should be short: the `RELEASE` of the last element of the page waits for `END_GET` before it frees the page, and while it waits, the calls that acquire the lock of the page can wait too.
-- `GET` can get an element right after `ALLOCATE`, before its owner wrote the item. A caller that gets an element it does not own shall check that the owner wrote it, for example with a state in the item that is 0 until the owner sets it with an interlocked operation after writing the rest of the item. An element that is allocated again keeps its item, so the owner shall set that state back to 0 before releasing the `index` (for example, in `item_dispose_func`). Other concurrent access to the contents of an item shall be synchronized by the callers: the array only protects its own bookkeeping.
+- `item_copy_func` shall not call `ALLOCATE`, `RELEASE` or `ACQUIRE_ITEM` of any `THREAD_SAFE_PAGED_SPARSE_ARRAY` and shall not wait for anything that depends on a call to `ALLOCATE` or `RELEASE` of the same array, and it should be short: it is called while holding the lock of the page, and `RELEASE` of the element waits for it.
+- Concurrent access to what an item points to (for example, the content of a `THANDLE`) shall be synchronized by the callers: the array only protects its own bookkeeping.
 
 ## Exposed API
 
 ```c
 /*to be used as the type of handle that wraps T*/
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY(T)
+
+/*custom item copy function type*/
+#define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ITEM_COPY_FUNC(T)
 
 /*custom item dispose function type*/
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ITEM_DISPOSE_FUNC(T)
@@ -65,11 +67,10 @@ Callers shall follow these rules:
 The macros expand to these useful APIs:
 
 ```c
-THREAD_SAFE_PAGED_SPARSE_ARRAY(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)(uint64_t max_size, uint64_t page_size, THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ITEM_DISPOSE_FUNC(T) item_dispose_func);
-PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index, T** allocated_ptr);
+THREAD_SAFE_PAGED_SPARSE_ARRAY(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)(uint64_t max_size, uint64_t page_size, THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ITEM_COPY_FUNC(T) item_copy_func, THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ITEM_DISPOSE_FUNC(T) item_dispose_func);
+PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index, T* item);
 void THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index);
-PAGED_SPARSE_ARRAY_GET_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index, T** item);
-void THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index);
+PAGED_SPARSE_ARRAY_GET_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index, T* item);
 ```
 
 ### THREAD_SAFE_PAGED_SPARSE_ARRAY(T)
@@ -78,7 +79,15 @@ void THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T)
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY(T)
 ```
 
-`THREAD_SAFE_PAGED_SPARSE_ARRAY(T)` is a `THANDLE`(`THREAD_SAFE_PAGED_SPARSE_ARRAY_STRUCT_T`), where `THREAD_SAFE_PAGED_SPARSE_ARRAY_STRUCT_T` is a structure that holds the wrapped `PAGED_SPARSE_ARRAY` of slots, the custom item dispose function and one page guard for each page.
+`THREAD_SAFE_PAGED_SPARSE_ARRAY(T)` is a `THANDLE`(`THREAD_SAFE_PAGED_SPARSE_ARRAY_STRUCT_T`), where `THREAD_SAFE_PAGED_SPARSE_ARRAY_STRUCT_T` is a structure that holds the wrapped `PAGED_SPARSE_ARRAY` of slots, the custom item copy and dispose functions and one page guard for each page.
+
+### THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ITEM_COPY_FUNC(T)
+
+```c
+typedef void (*THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ITEM_COPY_FUNC(T))(T* dst, T* src);
+```
+
+The custom item copy function initializes `dst` from `src`. `dst` is not initialized when it is called.
 
 ### THREAD_SAFE_PAGED_SPARSE_ARRAY_DEFINE_STRUCT_TYPE(T)
 
@@ -86,7 +95,7 @@ void THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T)
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_DEFINE_STRUCT_TYPE(T)
 ```
 
-`THREAD_SAFE_PAGED_SPARSE_ARRAY_DEFINE_STRUCT_TYPE(T)` is a macro to be used in a header declaration. It introduces the item dispose function type (`THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ITEM_DISPOSE_FUNC(T)`), the slot type, the wrapped `PAGED_SPARSE_ARRAY` of slots (with its `THANDLE` declaration) and `THREAD_SAFE_PAGED_SPARSE_ARRAY_STRUCT_T`.
+`THREAD_SAFE_PAGED_SPARSE_ARRAY_DEFINE_STRUCT_TYPE(T)` is a macro to be used in a header declaration. It introduces the item copy and dispose function types (`THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ITEM_COPY_FUNC(T)` and `THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ITEM_DISPOSE_FUNC(T)`), the slot type, the wrapped `PAGED_SPARSE_ARRAY` of slots (with its `THANDLE` declaration) and `THREAD_SAFE_PAGED_SPARSE_ARRAY_STRUCT_T`.
 
 ### THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DECLARE(T)
 
@@ -124,10 +133,12 @@ THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DEFINE(int32_t);
 ### THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)
 
 ```c
-THREAD_SAFE_PAGED_SPARSE_ARRAY(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)(uint64_t max_size, uint64_t page_size, THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ITEM_DISPOSE_FUNC(T) item_dispose_func);
+THREAD_SAFE_PAGED_SPARSE_ARRAY(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)(uint64_t max_size, uint64_t page_size, THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ITEM_COPY_FUNC(T) item_copy_func, THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_ITEM_DISPOSE_FUNC(T) item_dispose_func);
 ```
 
-`THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)` creates a new thread safe paged sparse array with the specified maximum size and page size. `PAGED_SPARSE_ARRAY_CREATE(T)` validates the arguments. `item_dispose_func` is optional: when it is not `NULL`, it is called for an element when the element is released and, when the array is disposed, for each element that was not released.
+`THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)` creates a new thread safe paged sparse array with the specified maximum size and page size. `PAGED_SPARSE_ARRAY_CREATE(T)` validates `max_size` and `page_size`. `item_copy_func` and `item_dispose_func` are optional, but shall be both `NULL` or both not `NULL`: when `item_copy_func` is not `NULL`, it is called to copy an item into the array and out of the array (otherwise the item is copied as is), and when `item_dispose_func` is not `NULL`, it is called for an element when the element is released and, when the array is disposed, for each element that was not released.
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_109: [** If only one of `item_copy_func` and `item_dispose_func` is `NULL`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)` shall fail and return `NULL`. **]**
 
 **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_001: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)` shall call `PAGED_SPARSE_ARRAY_CREATE(T)` with `max_size`, `page_size` and `NULL` as `item_dispose_func` to create the paged sparse array of slots. **]**
 
@@ -140,6 +151,8 @@ THREAD_SAFE_PAGED_SPARSE_ARRAY(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)(uint6
 **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_005: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)` shall call `srw_lock_ll_init` to initialize `lock` in each page guard of `result->page_guards`. **]**
 
 **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_007: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)` shall store `item_dispose_func` in `result->item_dispose_func`. **]**
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_110: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)` shall store `item_copy_func` in `result->item_copy_func`. **]**
 
 **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_008: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE(T)` shall store the paged sparse array in `result->paged_sparse_array`. **]**
 
@@ -166,14 +179,14 @@ static void THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE(T)(THREAD_SAFE_PAGED_SPARSE_A
 ### THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T)
 
 ```c
-PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index, T** allocated_ptr);
+PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index, T* item);
 ```
 
-`THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T)` allocates the element at `index`. When the page of the element is allocated, the element is allocated while holding the lock of the page in shared mode. Otherwise, the page and then the element are allocated while holding the lock of the page in exclusive mode.
+`THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T)` allocates the element at `index` and copies `item` into it. When the page of the element is allocated, the element is allocated while holding the lock of the page in shared mode. Otherwise, the page and then the element are allocated while holding the lock of the page in exclusive mode.
 
 **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_041: [** If `paged_sparse_array` is `NULL`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall fail and return `PAGED_SPARSE_ARRAY_ALLOCATE_INVALID_ARGS`. **]**
 
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_042: [** If `allocated_ptr` is `NULL`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall fail and return `PAGED_SPARSE_ARRAY_ALLOCATE_INVALID_ARGS`. **]**
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_111: [** If `item` is `NULL`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall fail and return `PAGED_SPARSE_ARRAY_ALLOCATE_INVALID_ARGS`. **]**
 
 **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_043: [** If `index` is greater than or equal to `max_size`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE(T)` shall fail and return `PAGED_SPARSE_ARRAY_ALLOCATE_INVALID_ARGS`. **]**
 
@@ -205,53 +218,59 @@ void THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T)
 
 **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_058: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)` shall call `PAGED_SPARSE_ARRAY_GET(T)` with `paged_sparse_array->paged_sparse_array` and `index` to get the slot of the element. **]**
 
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_062: [** If `paged_sparse_array->item_dispose_func` is not `NULL`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)` shall call `paged_sparse_array->item_dispose_func` with a pointer to the item of the slot. **]**
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_119: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)` shall add `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING` to the state of the slot using `interlocked_compare_exchange` if the state is greater than or equal to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED` and lower than `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING`. **]**
 
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_063: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)` shall set the state of the slot to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED`. **]**
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_121: [** If the state of the slot was greater than or equal to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED` and lower than `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING`: **]**
 
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_101: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)` shall decrement `page_guard->element_count`, where `page_guard` is the page guard of the page with index `index / page_size`. **]**
+ - **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_122: [** If the state of the slot was not `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)` shall call `InterlockedHL_WaitForValue` to wait for the state of the slot to be `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING` + `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED`. **]**
 
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_103: [** If the `element_count` became 0, `THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)` shall call `THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T)`. **]**
+ - **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_123: [** If `InterlockedHL_WaitForValue` fails, `THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)` shall subtract `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING` from the state of the slot and return. **]**
 
-### THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T)
+ - **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_062: [** If `paged_sparse_array->item_dispose_func` is not `NULL`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)` shall call `paged_sparse_array->item_dispose_func` with a pointer to the item of the slot. **]**
 
-```c
-PAGED_SPARSE_ARRAY_GET_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index, T** item);
-```
+ - **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_063: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)` shall set the state of the slot to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED`. **]**
 
-`THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T)` gets the element at `index`. When it returns `PAGED_SPARSE_ARRAY_GET_OK`, it keeps holding the lock of the page in shared mode, so the page is not freed while the caller uses the item: the caller shall call `THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T)` for the same `index` when it does not use the item anymore (see [Threading Model](#threading-model)).
+ - **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_101: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)` shall decrement `page_guard->element_count`, where `page_guard` is the page guard of the page with index `index / page_size`. **]**
 
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_067: [** If `paged_sparse_array` is `NULL`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
+ - **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_103: [** If the `element_count` became 0, `THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)` shall call `THREAD_SAFE_PAGED_SPARSE_ARRAY_TRY_FREE_PAGE(T)`. **]**
 
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_068: [** If `item` is `NULL`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_124: [** Otherwise, `THREAD_SAFE_PAGED_SPARSE_ARRAY_RELEASE(T)` shall return. **]**
 
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_069: [** If `index` is greater than or equal to `max_size`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
-
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_104: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T)` shall acquire `page_guard->lock` in shared mode, where `page_guard` is the page guard of the page with index `index / page_size`. **]**
-
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_071: [** If `page_guard->page_state` is not `THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T)` shall return `PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED`. **]**
-
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_072: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T)` shall call `PAGED_SPARSE_ARRAY_GET(T)` with `paged_sparse_array->paged_sparse_array` and `index` to get the slot of the element. **]**
-
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_074: [** If the state of the slot is not `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T)` shall return `PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED`. **]**
-
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_075: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T)` shall store a pointer to the item of the slot in `item` and return `PAGED_SPARSE_ARRAY_GET_OK`. **]**
-
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_105: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T)` shall release `page_guard->lock` in shared mode before returning, unless it returns `PAGED_SPARSE_ARRAY_GET_OK`. **]**
-
-### THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T)
+### THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)
 
 ```c
-void THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index);
+PAGED_SPARSE_ARRAY_GET_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY(T) paged_sparse_array, uint64_t index, T* item);
 ```
 
-`THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T)` ends the use of an element that `THREAD_SAFE_PAGED_SPARSE_ARRAY_GET(T)` got: it releases the lock of the page that `GET` holds. After it returns, the pointer obtained from `GET` shall not be used.
+`THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` copies the item of the element at `index` to `item`, while holding the lock of the page in shared mode.
 
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_106: [** If `paged_sparse_array` is `NULL`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T)` shall return. **]**
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_067: [** If `paged_sparse_array` is `NULL`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
 
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_107: [** If `index` is greater than or equal to `max_size`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T)` shall return. **]**
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_068: [** If `item` is `NULL`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
 
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_108: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_END_GET(T)` shall release `page_guard->lock` in shared mode, where `page_guard` is the page guard of the page with index `index / page_size`. **]**
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_069: [** If `index` is greater than or equal to `max_size`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` shall fail and return `PAGED_SPARSE_ARRAY_GET_INVALID_ARGS`. **]**
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_104: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` shall acquire `page_guard->lock` in shared mode, where `page_guard` is the page guard of the page with index `index / page_size`. **]**
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_071: [** If `page_guard->page_state` is not `THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` shall return `PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED`. **]**
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_072: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` shall call `PAGED_SPARSE_ARRAY_GET(T)` with `paged_sparse_array->paged_sparse_array` and `index` to get the slot of the element. **]**
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_125: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` shall add 1 to the state of the slot using `interlocked_compare_exchange` if the state is greater than or equal to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED` and lower than `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING`. **]**
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_074: [** If the state of the slot is lower than `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED` or greater than or equal to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` shall return `PAGED_SPARSE_ARRAY_GET_NOT_ALLOCATED`. **]**
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_126: [** If `paged_sparse_array->item_copy_func` is not `NULL`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` shall call `paged_sparse_array->item_copy_func` with `item` as `dst` and a pointer to the item of the slot as `src`. **]**
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_127: [** Otherwise, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` shall copy the item of the slot to `item`. **]**
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_128: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` shall subtract 1 from the state of the slot. **]**
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_129: [** If the state of the slot became `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_RELEASING` + `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` shall call `wake_by_address_single` on the state of the slot. **]**
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_130: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` shall succeed and return `PAGED_SPARSE_ARRAY_GET_OK`. **]**
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_131: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ACQUIRE_ITEM(T)` shall release `page_guard->lock` in shared mode before returning. **]**
 
 ### Internal functions
 
@@ -260,25 +279,31 @@ In the requirements of the internal functions, `page_guard` is `array->page_guar
 #### THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)
 
 ```c
-static PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY_STRUCT_T* array, uint64_t page_index, uint64_t index, T** allocated_ptr);
+static PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY_STRUCT_T* array, uint64_t page_index, uint64_t index, T* item);
 ```
 
-`THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)` allocates the element at `index` of the allocated page with index `page_index`. It is called while holding the lock of the page, in shared mode or in exclusive mode. In shared mode, other calls can try to allocate the same element at the same time: the state of the slot is changed with `interlocked_compare_exchange`, so only one of them allocates the element and the others return `PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED`.
+`THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)` allocates the element at `index` of the allocated page with index `page_index` and copies `item` into it. It is called while holding the lock of the page, in shared mode or in exclusive mode. In shared mode, other calls can try to allocate the same element at the same time: the state of the slot is changed with `interlocked_compare_exchange`, so only one of them allocates the element and the others return `PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED`.
 
 **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_049: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)` shall call `PAGED_SPARSE_ARRAY_GET(T)` with `array->paged_sparse_array` and `index` to get the slot of the element. **]**
 
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_051: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)` shall change the state of the slot from `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED` to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED` using `interlocked_compare_exchange`. **]**
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_112: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)` shall change the state of the slot from `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED` to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATING` using `interlocked_compare_exchange`. **]**
 
 **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_052: [** If the state of the slot was not `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)` shall fail and return `PAGED_SPARSE_ARRAY_ALLOCATE_ALREADY_ALLOCATED`. **]**
 
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_113: [** If `array->item_copy_func` is not `NULL`, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)` shall call `array->item_copy_func` with a pointer to the item of the slot as `dst` and `item` as `src`. **]**
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_114: [** Otherwise, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)` shall copy `item` to the item of the slot. **]**
+
 **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_098: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)` shall increment `page_guard->element_count`. **]**
 
-**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_053: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)` shall store a pointer to the item of the slot in `allocated_ptr` and return `PAGED_SPARSE_ARRAY_ALLOCATE_OK`. **]**
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_115: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)` shall set the state of the slot to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_ALLOCATED`. **]**
+
+**SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_116: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_ELEMENT(T)` shall succeed and return `PAGED_SPARSE_ARRAY_ALLOCATE_OK`. **]**
 
 #### THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T)
 
 ```c
-static PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY_STRUCT_T* array, uint64_t page_index, uint64_t index, T** allocated_ptr);
+static PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T)(THREAD_SAFE_PAGED_SPARSE_ARRAY_STRUCT_T* array, uint64_t page_index, uint64_t index, T* item);
 ```
 
 `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T)` allocates the page with index `page_index` if it is not allocated, and then allocates the element at `index`, while holding the lock of the page in exclusive mode. Another call can allocate the page between the release of the lock in shared mode by `ALLOCATE` and the acquire in exclusive mode. `PAGED_SPARSE_ARRAY_ALLOCATE(T)` for the first index of the page allocates the page of the wrapped `PAGED_SPARSE_ARRAY`, so it cannot fail for the other indexes of the page.
@@ -293,11 +318,9 @@ static PAGED_SPARSE_ARRAY_ALLOCATE_RESULT THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCAT
 
  - **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_034: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T)` shall call `PAGED_SPARSE_ARRAY_ALLOCATE(T)` on `array->paged_sparse_array` for each index of the page. **]**
 
- - **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_035: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T)` shall set the state of each slot of the page to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED`. **]**
-
- - **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_092: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T)` shall set all the bytes of the item of each slot of the page to 0. **]**
-
  - **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_036: [** If `PAGED_SPARSE_ARRAY_ALLOCATE(T)` fails for the first index of the page, `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T)` shall fail and return `PAGED_SPARSE_ARRAY_ALLOCATE_ERROR`. **]**
+
+ - **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_035: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T)` shall set the state of each slot of the page to `THREAD_SAFE_PAGED_SPARSE_ARRAY_SLOT_STATE_NOT_ALLOCATED`. **]**
 
  - **SRS_THREAD_SAFE_PAGED_SPARSE_ARRAY_09_038: [** `THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_PAGE(T)` shall set `page_guard->page_state` to `THREAD_SAFE_PAGED_SPARSE_ARRAY_PAGE_STATE_ALLOCATED`. **]**
 

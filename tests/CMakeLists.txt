@@ -82,3 +82,7 @@ if(${run_int_tests})
         build_test_folder(thread_notifications_dispatcher_int)
     endif()
 endif()
+
+if(${run_perf_tests})
+    build_test_folder(thread_safe_paged_sparse_array_perf)
+endif()
