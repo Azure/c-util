@@ -163,7 +163,6 @@ set(c_util_c_files
     ./src/memory_data.c
     ./src/object_lifetime_tracker.c
     ./src/paged_sparse_array.c
-    ./src/thread_safe_paged_sparse_array.c
     ./src/rc_ptr.c
     ./src/rc_string.c
     ./src/rc_string_array.c

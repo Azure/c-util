@@ -35,12 +35,6 @@ If no custom dispose function is needed, `NULL` can be passed to `PAGED_SPARSE_A
 
 If multiple threads need to access the same `PAGED_SPARSE_ARRAY` instance, the caller must provide external synchronization (e.g., using a mutex or SRW lock) to protect against concurrent modifications.
 
-The state of the array is kept per page. The array guarantees:
-- `PAGED_SPARSE_ARRAY_ALLOCATE(T)`, `PAGED_SPARSE_ARRAY_RELEASE(T)` and `PAGED_SPARSE_ARRAY_GET(T)` of an `index` use only the page of `index` (the pointer to the page in the array and the memory of the page) and the fields that `PAGED_SPARSE_ARRAY_CREATE(T)` sets (`max_size`, `page_size`, the number of pages and `item_dispose_func`), which are not changed after. So calls for indexes of different pages may be made concurrently, and `item_dispose_func` may then be called concurrently for items of different pages.
-- `PAGED_SPARSE_ARRAY_GET(T)` does not change the array, so calls of `PAGED_SPARSE_ARRAY_GET(T)` may be made concurrently, also for the same page.
-
-State that is shared by all the pages (e.g., a count of the allocated elements of the array) shall not be changed by `PAGED_SPARSE_ARRAY_ALLOCATE(T)`, `PAGED_SPARSE_ARRAY_RELEASE(T)` or `PAGED_SPARSE_ARRAY_GET(T)`, because it would break these guarantees.
-
 ### Page Structure
 
 Each page is a single memory allocation containing:

@@ -16,8 +16,6 @@
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_WRAPPED_ARRAY_DECLARE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_WRAPPED_ARRAY_DECLARE(T, T)
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_WRAPPED_ARRAY_DEFINE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_WRAPPED_ARRAY_DEFINE(T, T)
 
-#define THREAD_SAFE_PAGED_SPARSE_ARRAY_INTERNAL_DEFINE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_INTERNAL_DEFINE(T, T)
-
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_DECLARE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_CREATE_DECLARE(T, T)
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_DEFINE(T) THREAD_SAFE_PAGED_SPARSE_ARRAY_LL_CREATE_DEFINE(T, T)
 
@@ -56,7 +54,6 @@
 #define THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DEFINE(T)                                                                                    \
     /*hint: have THANDLE_TYPE_DEFINE(THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPEDEF_NAME(T)) before THREAD_SAFE_PAGED_SPARSE_ARRAY_TYPE_DEFINE*/ \
     THREAD_SAFE_PAGED_SPARSE_ARRAY_WRAPPED_ARRAY_DEFINE(T)                                                                               \
-    THREAD_SAFE_PAGED_SPARSE_ARRAY_INTERNAL_DEFINE(T)                                                                                    \
     THREAD_SAFE_PAGED_SPARSE_ARRAY_DISPOSE_DEFINE(T)                                                                                     \
     THREAD_SAFE_PAGED_SPARSE_ARRAY_CREATE_DEFINE(T)                                                                                      \
     THREAD_SAFE_PAGED_SPARSE_ARRAY_ALLOCATE_DEFINE(T)                                                                                    \
