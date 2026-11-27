@@ -26,7 +26,7 @@
 #include "c_pal/gballoc_hl_redirect.h"
 
 #include "c_pal/srw_lock_ll.h"
-#include "c_util/doublylinkedlist.h"
+#include "c_pal/doublylinkedlist.h"
 
 #include "umock_c/umock_c_DISABLE_MOCKS.h" // ============================== DISABLE_MOCKS
 

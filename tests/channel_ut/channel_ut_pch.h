@@ -31,8 +31,8 @@
 #include "c_pal/thandle_log_context_handle.h"
 #include "c_pal/sm.h"
 #include "c_pal/log_critical_and_terminate.h"
+#include "c_pal/doublylinkedlist.h"
 
-#include "c_util/doublylinkedlist.h"
 #include "c_util/async_op.h"
 #include "c_util/rc_ptr.h"
 #include "c_util/rc_string.h"
@@ -44,8 +44,8 @@
 #include "real_thandle_helper.h"
 #include "real_thandle_log_context_handle.h"
 #include "real_sm.h"
-
 #include "real_doublylinkedlist.h"
+
 #include "real_async_op.h"
 #include "real_rc_ptr.h"
 #include "real_rc_string.h"

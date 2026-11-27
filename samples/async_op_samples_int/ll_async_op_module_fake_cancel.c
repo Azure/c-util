@@ -12,6 +12,7 @@
 
 #include "c_pal/gballoc_hl.h"
 #include "c_pal/gballoc_hl_redirect.h"
+#include "c_pal/doublylinkedlist.h"
 #include "c_pal/execution_engine.h"
 #include "c_pal/interlocked.h"
 #include "c_pal/interlocked_hl.h"
@@ -23,7 +24,6 @@
 #include "c_pal/threadpool.h"
 
 #include "c_util/async_op.h"
-#include "c_util/doublylinkedlist.h"
 
 #include "common_async_op_module_interface.h"
 #include "ll_async_op_module_fake_cancel.h"

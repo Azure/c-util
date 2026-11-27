@@ -135,7 +135,7 @@ Reals maintain the same dependency order as the main modules:
 - **Threading**: Use `real_interlocked_*` when testing thread-safe components
 - **Async Operations**: Use `real_async_op` when testing async patterns without mocking the framework
 - **THANDLE Types**: Use `real_thandle_helper.h` to create real THANDLE implementations with leak detection and memory management even when the underlying type is mocked. Pattern: include interlocked renames, use `REAL_THANDLE_DECLARE(TYPE)` and `REAL_THANDLE_DEFINE(TYPE)`, then `REGISTER_REAL_THANDLE_MOCK_HOOK(TYPE)` to hook THANDLE operations to real implementations
-- **Collections**: Use `real_doublylinkedlist`, `real_tarray` for data structure functionality
+- **Collections**: Use `real_doublylinkedlist` (provided by c-pal's `c_pal_reals`), `real_tarray` for data structure functionality
 - **Platform Services**: Use `real_threadpool`, `real_srw_lock` on Windows for system integration
 
 #### IWYU Pragma Requirement
