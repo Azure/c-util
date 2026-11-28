@@ -11,6 +11,6 @@
 #include "c_pal/gballoc_hl_redirect.h"
 
 #include "c_pal/srw_lock.h"
-#include "c_util/doublylinkedlist.h"
+#include "c_pal/doublylinkedlist.h"
 
 #include "c_util/tcall_dispatcher.h"
