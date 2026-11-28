@@ -57,13 +57,19 @@ static struct G_TAG
     uint32_t concurrent_schedule_compare_exchange_count;
 } g = { NULL };
 
-// Runs another tp_worker_thread_schedule_process just before the 2nd interlocked_compare_exchange, so that the state is no longer IDLE when the call under test tries to change it from IDLE to EXECUTING
-static int32_t hook_interlocked_compare_exchange_with_concurrent_schedule(volatile_atomic int32_t* destination, int32_t exchange, int32_t comperand)
+// When concurrent_schedule_worker_thread is set, runs tp_worker_thread_schedule_process on it just before the 2nd interlocked_compare_exchange,
+// so that the state is no longer IDLE when the call under test tries to change it from IDLE to EXECUTING
+static int32_t hook_interlocked_compare_exchange(volatile_atomic int32_t* destination, int32_t exchange, int32_t comperand)
 {
-    g.concurrent_schedule_compare_exchange_count++;
-    if (g.concurrent_schedule_compare_exchange_count == 2)
+    if (g.concurrent_schedule_worker_thread != NULL)
     {
-        ASSERT_ARE_EQUAL(TP_WORKER_THREAD_SCHEDULE_PROCESS_RESULT, TP_WORKER_THREAD_SCHEDULE_PROCESS_OK, tp_worker_thread_schedule_process(g.concurrent_schedule_worker_thread));
+        g.concurrent_schedule_compare_exchange_count++;
+        if (g.concurrent_schedule_compare_exchange_count == 2)
+        {
+            TP_WORKER_THREAD_HANDLE worker_thread = g.concurrent_schedule_worker_thread;
+            g.concurrent_schedule_worker_thread = NULL;
+            ASSERT_ARE_EQUAL(TP_WORKER_THREAD_SCHEDULE_PROCESS_RESULT, TP_WORKER_THREAD_SCHEDULE_PROCESS_OK, tp_worker_thread_schedule_process(worker_thread));
+        }
     }
     return real_interlocked_compare_exchange(destination, exchange, comperand);
 }
@@ -202,6 +208,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_GBALLOC_HL_GLOBAL_MOCK_HOOK();
     REGISTER_INTERLOCKED_GLOBAL_MOCK_HOOK();
+    REGISTER_GLOBAL_MOCK_HOOK(interlocked_compare_exchange, hook_interlocked_compare_exchange);
     REGISTER_SM_GLOBAL_MOCK_HOOK();
     REGISTER_REAL_THANDLE_MOCK_HOOK(THREADPOOL);
     REGISTER_REAL_THANDLE_MOCK_HOOK(THREADPOOL_WORK_ITEM);
@@ -232,6 +239,8 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 TEST_FUNCTION_INITIALIZE(method_init)
 {
     THANDLE_ASSIGN(REAL_THREADPOOL_WORK_ITEM)(&g.last_created_work_item, NULL);
+    g.concurrent_schedule_worker_thread = NULL;
+    g.concurrent_schedule_compare_exchange_count = 0;
 
     test_worker_context.schedule_again_count = 0;
     test_worker_context.schedule_again_count_per_call = 1;
@@ -795,8 +804,6 @@ TEST_FUNCTION(tp_worker_thread_schedule_process_when_state_changes_from_idle_che
     void* captured_work_context;
     TP_WORKER_THREAD_HANDLE worker_thread = test_create_and_open(&captured_work_func, &captured_work_context);
     g.concurrent_schedule_worker_thread = worker_thread;
-    g.concurrent_schedule_compare_exchange_count = 0;
-    REGISTER_GLOBAL_MOCK_HOOK(interlocked_compare_exchange, hook_interlocked_compare_exchange_with_concurrent_schedule);
 
     STRICT_EXPECTED_CALL(sm_exec_begin(IGNORED_ARG));
     STRICT_EXPECTED_CALL(interlocked_compare_exchange(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
@@ -814,7 +821,6 @@ TEST_FUNCTION(tp_worker_thread_schedule_process_when_state_changes_from_idle_che
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
-    REGISTER_GLOBAL_MOCK_HOOK(interlocked_compare_exchange, real_interlocked_compare_exchange);
     tp_worker_thread_destroy(worker_thread);
 }
 
