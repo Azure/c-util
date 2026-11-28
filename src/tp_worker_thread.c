@@ -11,7 +11,6 @@
 
 #include "c_pal/execution_engine.h"
 #include "c_pal/interlocked.h"
-#include "c_pal/interlocked_hl.h"
 #include "c_pal/sync.h"
 #include "c_pal/log_critical_and_terminate.h"
 #include "c_pal/sm.h"
@@ -306,8 +305,8 @@ TP_WORKER_THREAD_SCHEDULE_PROCESS_RESULT tp_worker_thread_schedule_process(TP_WO
                     }
                     else
                     {
-                        // need to retry
-                        (void)InterlockedHL_WaitForNotValue(&worker_thread->processing_state, current_processing_state, UINT32_MAX);
+                        /*Codes_SRS_TP_WORKER_THREAD_42_044: [ If the state changes from IDLE before tp_worker_thread_schedule_process can set it to EXECUTING then tp_worker_thread_schedule_process shall check the state again without waiting for it to change. ]*/
+                        // Waiting for the state to change can deadlock when worker_func is waiting for the caller (e.g. threadpool_timer_cancel waiting for the timer callback calling this function)
                     }
                 }
             } while (1);

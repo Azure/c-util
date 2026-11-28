@@ -176,6 +176,8 @@ MOCKABLE_FUNCTION(, TP_WORKER_THREAD_SCHEDULE_PROCESS_RESULT, tp_worker_thread_s
 
 `tp_worker_thread_schedule_process` starts the worker thread if it is not already running. This function is idempotent and will return `TP_WORKER_THREAD_SCHEDULE_PROCESS_OK` if the worker thread is already running.
 
+`tp_worker_thread_schedule_process` does not wait for `worker_func`, so it can be called from a callback that `worker_func` waits for (e.g. a timer callback when `worker_func` calls `threadpool_timer_cancel`).
+
 **SRS_TP_WORKER_THREAD_42_025: [** If `worker_thread` is `NULL` then `tp_worker_thread_schedule_process` shall fail and return `TP_WORKER_THREAD_SCHEDULE_PROCESS_INVALID_ARGS`. **]**
 
 **SRS_TP_WORKER_THREAD_42_026: [** `tp_worker_thread_schedule_process` shall call `sm_exec_begin`. **]**
@@ -191,6 +193,8 @@ MOCKABLE_FUNCTION(, TP_WORKER_THREAD_SCHEDULE_PROCESS_RESULT, tp_worker_thread_s
  - **SRS_TP_WORKER_THREAD_42_031: [** `tp_worker_thread_schedule_process` shall call `threadpool_schedule_work_item` on the work item created in the module open. **]**
 
  - **SRS_TP_WORKER_THREAD_42_035: [** `tp_worker_thread_schedule_process` shall return `TP_WORKER_THREAD_SCHEDULE_PROCESS_OK`. **]**
+
+**SRS_TP_WORKER_THREAD_42_044: [** If the state changes from `IDLE` before `tp_worker_thread_schedule_process` can set it to `EXECUTING` then `tp_worker_thread_schedule_process` shall check the state again without waiting for it to change. **]**
 
 **SRS_TP_WORKER_THREAD_42_036: [** `tp_worker_thread_schedule_process` shall call `sm_exec_end`. **]**
 
